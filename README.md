@@ -1,1 +1,33 @@
 # health-nlp
+
+#### Version
+This library uses Python 3.
+
+## Setup
+
+#### Installing Requirements
+```
+pip install -r requirements.txt
+python -m spacy download en
+```
+
+#### Properties
+Copy `example.cfg` to `project.cfg` and update with your settings.
+
+#### Solr
+TODO
+
+#### Postgres
+Setup with DDL in `scripts/ddl.sql`
+
+## Running
+
+#### Run Flask app
+```bash
+FLASK_APP=api.py flask run
+```
+
+#### Run the NER Pipeline with pipeline id of 1
+```bash
+PYTHONPATH='.' luigi --module pipeline NERPipeline --pipeline 1 --job 1234 --owner user --local-scheduler
+```
