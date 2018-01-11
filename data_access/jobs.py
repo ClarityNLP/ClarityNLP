@@ -8,7 +8,7 @@ class NlpJob(BaseModel):
     description = ''
     date_ended = None
 
-    def __init__(self, name, description, owner, pipeline_id, phenotype_id, status, date_started, date_ended):
+    def __init__(self, name, description, owner, pipeline_id, phenotype_id, status, date_started, date_ended, job_type):
         self.name = name
         self.description = description
         self.owner = owner
@@ -17,7 +17,7 @@ class NlpJob(BaseModel):
         self.status = status
         self.date_started = date_started
         self.date_ended = date_ended
-        self.type = type
+        self.job_type = job_type
 
 
 def create_new_job(job: NlpJob, connection_string: str):
