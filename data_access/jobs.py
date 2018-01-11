@@ -1,6 +1,7 @@
 import psycopg2
 import psycopg2.extras
 from .base_model import BaseModel
+import datetime
 
 
 class NlpJob(BaseModel):
@@ -75,3 +76,18 @@ def get_job_status(job_id: str, connection_string: str):
         conn.close()
 
     return "UNKNOWN"
+
+def update_job_status(job_id:str, connection_string:str, updated_status:str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    try:
+        updated_date = datetime.datetime.now()
+        cursor.execute("""UPDATE nlp.nlp_job_status set status = %s, date_updated = current_timestamp where nlp_job_id = %s""",
+                       updated_status, updated_date, job_id)
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
+
+    return 1
