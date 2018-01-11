@@ -28,7 +28,7 @@ def create_new_job(job: NlpJob, connection_string: str):
     try:
         cursor.execute("""
                 INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, date_started, date_ended)
-                VALUES (%s, %s, %s, %s, current_timestamp, null) RETURNING pipeline_id""",
+                VALUES (%s, %s, %s, %s, %s, current_timestamp, null) RETURNING pipeline_id""",
                        job.name, job.job_type, job.description, job.owner,
                        job.status)
 
