@@ -20,6 +20,9 @@ TODO
 #### Postgres
 Setup with DDL in `scripts/ddl.sql`
 
+### Temp directory
+Setup a temporary directory on your system, make sure it's writable by the user running the application, and set the value in tmp.dir in project.cfg
+
 ## Running
 
 #### Run Flask app

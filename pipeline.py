@@ -9,6 +9,8 @@ import util
 row_count = 500
 client = MongoClient(util.mongo_host, util.mongo_port)
 
+# TODO get scheduler type and additonal config
+
 
 class CleanDocsToSentences(luigi.Task):
     pipeline = luigi.IntParameter()
@@ -46,6 +48,10 @@ class NERPipeline(luigi.Task):
     def run(self):
         for t in self.input():
             print(t)
+
+
+def run_ner_pipeline(pipeline_id: str, job_id: int, owner: str):
+    luigi.run(['NERPipeline', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--local-scheduler'])
 
 
 if __name__ == "__main__":
