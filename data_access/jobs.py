@@ -8,10 +8,11 @@ class NlpJob(BaseModel):
     description = ''
     date_ended = None
 
-    def __init__(self, name, description, owner, pipeline_id, phenotype_id, status, date_started, date_ended, job_type):
+    def __init__(self, name, description, owner, job_id, pipeline_id, phenotype_id, status, date_started, date_ended, job_type):
         self.name = name
         self.description = description
         self.owner = owner
+        self.job_id
         self.pipeline_id = pipeline_id
         self.phenotype_id = phenotype_id
         self.status = status
@@ -22,13 +23,10 @@ class NlpJob(BaseModel):
 class NlpJobStatus(BaseModel):
 
     description = ''
-    #date_ended = None
 
     def __init__(self, description, pipeline_id, phenotype_id, status, date_updated):
-        #self.name = name
         self.description = description
-        self.pipeline_id = pipeline_id
-        self.phenotype_id = phenotype_id
+        self.job_id
         self.status = status
         self.date_updated = date_updated
         self.type = type
