@@ -1,7 +1,6 @@
 from flask import Flask, redirect, url_for, request
 import util
 import json
-import luigi
 import datetime
 from data_access import pipeline_config as p_config
 from data_access import jobs
@@ -16,6 +15,8 @@ def pipeline():
         return 'POST a JSON pipeline config to execute or an id to GET'
     try:
         p_cfg = p_config.PipelineConfig.from_dict(request.get_json())
+        # TODO write to pipeline table
+        # TODO create job
 
     except Exception as e:
         return 'Failed to load JSON. ' + str(e), 400
@@ -38,6 +39,7 @@ def pipeline_id():
                                                   date_ended=None,
                                                   date_started=datetime.datetime.now(),
                                                   type='PIPELINE'), util.conn_string)
+            # TODO kick off
 
             return '{ "job_id", %s }' % job
         except Exception as e:

@@ -42,7 +42,9 @@ def get_pipeline_config(pipeline_id, connection_string):
 
         row = cursor.fetchone()
         if row:
+            print(row)
             obj = json.loads(row["config"])
+            print(obj)
             if obj:
                 return obj
             else:

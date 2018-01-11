@@ -26,7 +26,8 @@ CREATE TABLE nlp.nlp_job
     name VARCHAR(512),
     description TEXT,
     owner VARCHAR(100),
-    pipeline_id BIGSERIAL,
+    pipeline_id BIGINT,
+		phenotype_id BIGINT,
     status VARCHAR(256),
     date_started TIMESTAMP,
     date_ended TIMESTAMP
@@ -41,7 +42,7 @@ create table nlp_job_status
 	status varchar(256) not null,
 	description text,
 	date_updated timestamp not null,
-	source_id bigint
+	nlp_job_id bigint
 )
 ;
 
@@ -52,3 +53,6 @@ create unique index nlp_job_status_nlp_job_status_id_uindex
 create index nlp_job_status_phenotype_id_index
 	on nlp_job_status (source_id)
 ;
+
+
+
