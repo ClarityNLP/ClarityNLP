@@ -48,7 +48,7 @@ def create_new_job(job: NlpJob, connection_string: str):
 
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
-                VALUES (%s, %s, current_timestamp, %d) RETURNING pipeline_id""",
+                VALUES (%s, %s, current_timestamp, %s) RETURNING pipeline_id""",
                        job.status, job.description, job.date_started, job_id)
 
         return job_id
@@ -77,14 +77,19 @@ def get_job_status(job_id: str, connection_string: str):
 
     return "UNKNOWN"
 
-def update_job_status(job_id:str, connection_string:str, updated_status:str):
+def update_job_status(job_id:str, connection_string:str, updated_status:str, job:NlpJob):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     try:
         updated_date = datetime.datetime.now()
-        cursor.execute("""UPDATE nlp.nlp_job_status set status = %s, date_updated = current_timestamp where nlp_job_id = %s""",
-                       updated_status, updated_date, job_id)
+        cursor.execute("""UPDATE nlp.nlp_job set status = %s where nlp_job_id = %s""", updated_status, job_id)
+        job.status = updated_status
+        cursor.execute("""
+                INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
+                VALUES (%s, %s, current_timestamp, %s) RETURNING pipeline_id""",
+                       job.status, job.description, updated_date, job_id)
+
     except Exception as e:
         print(e)
     finally:
