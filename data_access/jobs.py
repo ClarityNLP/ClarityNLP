@@ -21,18 +21,6 @@ class NlpJob(BaseModel):
         self.date_ended = date_ended
         self.job_type = job_type
 
-class NlpJobStatus(BaseModel):
-
-    description = ''
-
-    def __init__(self, description, pipeline_id, phenotype_id, status, date_updated):
-        self.description = description
-        self.job_id
-        self.status = status
-        self.date_updated = date_updated
-        self.type = type
-
-
 def create_new_job(job: NlpJob, connection_string: str):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -42,14 +30,14 @@ def create_new_job(job: NlpJob, connection_string: str):
                 INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, date_started, date_ended)
                 VALUES (%s, %s, %s, %s, current_timestamp, null) RETURNING pipeline_id""",
                        job.name, job.job_type, job.description, job.owner,
-                       job.status, job.date_started, job.date_ended)
+                       job.status)
 
         job_id = cursor.fetchone()[0]
 
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
                 VALUES (%s, %s, current_timestamp, %s) RETURNING pipeline_id""",
-                       job.status, job.description, job.date_started, job_id)
+                       job.status, job.description, job_id)
 
         return job_id
     except Exception as e:
@@ -80,6 +68,7 @@ def get_job_status(job_id: str, connection_string: str):
 def update_job_status(job_id:str, connection_string:str, updated_status:str, job:NlpJob):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    flag = -1 # To determine whether the update was successful or not
 
     try:
         updated_date = datetime.datetime.now()
@@ -88,11 +77,13 @@ def update_job_status(job_id:str, connection_string:str, updated_status:str, job
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
                 VALUES (%s, %s, current_timestamp, %s) RETURNING pipeline_id""",
-                       job.status, job.description, updated_date, job_id)
+                       job.status, job.description, job_id)
+        flag = 1
 
     except Exception as e:
+        flag = -1
         print(e)
     finally:
         conn.close()
 
-    return 1
+    return flag
