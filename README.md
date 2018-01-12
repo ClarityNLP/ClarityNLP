@@ -41,4 +41,4 @@ PYTHONPATH='.' luigi --module pipeline NERPipeline --pipeline 1 --job 1234 --own
 ```docker build -t health-nlp-sample:latest . ```
 
 #### Running Application
-```docker run -d -p 5000:5000 health-nlp-sample-one```
+```docker run -d -p 5000:5000 health-nlp-sample```
