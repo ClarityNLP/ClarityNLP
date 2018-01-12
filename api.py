@@ -8,6 +8,10 @@ from data_access import jobs
 
 app = Flask(__name__)
 
+@app.route('/')
+def hello_world():
+    return "Dockerized Flask App"
+
 
 @app.route('/pipeline', methods=['POST'])
 def pipeline():
