@@ -35,5 +35,10 @@ FLASK_APP=api.py flask run
 PYTHONPATH='.' luigi --module pipeline NERPipeline --pipeline 1 --job 1234 --owner user --local-scheduler
 ```
 
-## Building Docker Image
+## Docker
+
+#### Building Image
 ```docker build -t health-nlp-sample:latest . ```
+
+#### Running Application
+```docker run -d -p 5000:5000 health-nlp-sample-one```
