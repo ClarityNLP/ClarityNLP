@@ -3,5 +3,5 @@
     "description" : "some diabetes drugs",
     "terms": ["metformin", "Glumetza", "Glucophage", "Fortamet", "Riomet", "Glucophage XR"],
     "limit" : 5000,
-    "type" : "NER"
+    "config_type" : "NER"
 }

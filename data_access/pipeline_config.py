@@ -3,7 +3,12 @@ import psycopg2.extras
 import sys
 import json
 import configparser
-from .base_model import BaseModel
+
+try:
+    from .base_model import BaseModel
+except Exception as e:
+    print(e)
+    from base_model import BaseModel
 
 
 class Pipeline(BaseModel):
@@ -21,8 +26,8 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, type, name, description, terms, limit):
-        self.type = type
+    def __init__(self, config_type, name, description, terms, limit):
+        self.config_type = config_type
         self.name = name
         self.description = description
         self.terms = terms
@@ -42,15 +47,15 @@ def get_pipeline_config(pipeline_id, connection_string):
 
         row = cursor.fetchone()
         if row:
-            print(row)
-            obj = json.loads(row["config"])
-            print(obj)
+            obj = PipelineConfig.from_json(row["config"])
             if obj:
                 return obj
             else:
                 return get_default_config()
-    except Exception as e:
-        print(e)
+        else:
+            print("no rows returned")
+    except Exception as ex:
+        print(ex)
     finally:
         conn.close()
 
@@ -58,21 +63,19 @@ def get_pipeline_config(pipeline_id, connection_string):
 
 
 def get_default_config():
-    return {}
+    return PipelineConfig('UNKNOWN', 'UNKNOWN', 'UNKNOWN', [], -1)
 
 
-def get_query(p_config):
-    if 'override_query' in p_config and p_config['override_query']:
-        return p_config['override_query']
-    elif 'terms' in p_config and len(p_config['terms']) > 0:
-        return 'report_text:("' + '" OR "'.join(p_config['terms']) + '")'
+def get_query(p_config:PipelineConfig):
+    if p_config.terms is not None and len(p_config.terms) > 0:
+        return 'report_text:("' + '" OR "'.join(p_config.terms) + '")'
     else:
         return '*'
 
 
-def get_limit(doc_count, p_config):
-    if 'limit' in p_config:
-        return int(p_config['limit'])
+def get_limit(doc_count, p_config: PipelineConfig):
+    if p_config.limit is not None:
+        return int(p_config.limit)
     else:
         return int(doc_count)
 
@@ -89,8 +92,11 @@ if __name__ == '__main__':
                                                                                  config.get('pg', 'password'),
                                                                                  config.get('pg', 'port'))
 
-        print(get_pipeline_config(q, conn_string))
-        sys.exit(1)
+        config = (get_pipeline_config(q, conn_string))
+        print(config)
+        config_obj = PipelineConfig.from_dict(config)
+        print(config_obj)
+        sys.exit(0)
     else:
         print("Enter pipeline id")
         sys.exit(-1)

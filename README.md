@@ -7,7 +7,8 @@ This library uses Python 3.
 
 #### Installing Requirements
 ```
-pip install -r requirements.txt
+pip3 install -r requirements.txt
+pip3 install -U pytest
 python -m spacy download en
 ```
 

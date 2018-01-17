@@ -1,6 +1,12 @@
-from .base_model import BaseModel
-from .pipeline_config import PipelineConfig
 from typing import List
+
+try:
+    from .base_model import BaseModel
+    from .pipeline_config import PipelineConfig
+except Exception as e:
+    print(e)
+    from base_model import BaseModel
+    from pipeline_config import PipelineConfig
 
 
 class PhenotypeModel(BaseModel):
