@@ -79,7 +79,12 @@ def get_ngram():
         n = requst.args['n']
         frequency = request.args['frequency']
 
-        result = extract_ngrams(cohort_id, keyword, n, frequency)
+        print (cohort_id)
+        print (keyword)
+        print (n)
+        print (frequency)
+
+        #result = extract_ngrams(cohort_id, keyword, n, frequency)
 
         # TODO: Format the output
 
