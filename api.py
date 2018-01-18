@@ -4,13 +4,14 @@ import json
 import datetime
 from data_access import pipeline_config as p_config
 from data_access import jobs
-
+import luigi_pipeline
 
 app = Flask(__name__)
 
+
 @app.route('/')
 def hello_world():
-    return "Dockerized Flask App"
+    return "Hello NLP"
 
 
 @app.route('/pipeline', methods=['POST'])
@@ -19,11 +20,20 @@ def pipeline():
         return 'POST a JSON pipeline config to execute or an id to GET'
     try:
         p_cfg = p_config.PipelineConfig.from_dict(request.get_json())
-        # TODO write to pipeline table
-        # TODO create job
+        p_id = p_config.insert_pipeline_config(p_cfg, util.conn_string)
+        if p_id == -1:
+            return '{ "success", false }'
+        job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
+                                                 owner=p_cfg.owner, status='STARTED', date_ended=None, phenotype_id=-1,
+                                                 pipeline_id=p_id, date_started=datetime.datetime.now(),
+                                                 job_type='PIPELINE'), util.conn_string)
+
+        luigi_pipeline.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
+
+        return '{ "pipeline_id": "%s", "job_id": "%s" }' % (str(p_id), str(job_id))
 
     except Exception as e:
-        return 'Failed to load JSON. ' + str(e), 400
+        return 'Failed to load and insert pipeline. ' + str(e), 400
 
 
 @app.route('/pipeline_id', methods=['POST', 'GET'])
@@ -35,14 +45,14 @@ def pipeline_id():
             pid = request.data
             p = p_config.get_pipeline_config(pid, util.conn_string)
             print(p)
-            job = jobs.create_new_job(jobs.NlpJob(id=-1,
+            job = jobs.create_new_job(jobs.NlpJob(job_id=-1,
                                                   name=p.name,
                                                   description=p.description,
                                                   owner=p.owner,
                                                   status='STARTED',
                                                   date_ended=None,
                                                   date_started=datetime.datetime.now(),
-                                                  type='PIPELINE'), util.conn_string)
+                                                  job_type='PIPELINE'), util.conn_string)
             # TODO kick off
 
             return '{ "job_id", %s }' % job
@@ -54,9 +64,9 @@ def pipeline_id():
     except Exception as e:
         return "Failed to extract pipeline id parameter" + str(e)
 
-
 # TODO POST a phenotype job for running
 # TODO GET a phenotype job status
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

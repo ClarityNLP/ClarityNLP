@@ -1,7 +1,9 @@
 {
-	"name" : "The Diabetes",
+	"name" : "Diabetes Terms",
     "description" : "some diabetes drugs",
     "terms": ["metformin", "Glumetza", "Glucophage", "Fortamet", "Riomet", "Glucophage XR"],
-    "limit" : 5000,
-    "type" : "NER"
+    "limit" : 500,
+    "config_type" : "NER",
+    "concept_code": -1,
+    "owner": "test"
 }

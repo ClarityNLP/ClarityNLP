@@ -7,7 +7,8 @@ This library uses Python 3.
 
 #### Installing Requirements
 ```
-pip install -r requirements.txt
+pip3 install -r requirements.txt
+pip3 install -U pytest
 python -m spacy download en
 ```
 
@@ -24,6 +25,9 @@ Setup with DDL in `scripts/ddl.sql`
 Setup a temporary directory on your system, make sure it's writable by the user running the application, and set the value in tmp.dir in project.cfg
 
 ## Running
+
+#### Running the Luigi Central Scheduler
+luigid --background --pidfile <PATH_TO_PIDFILE> --logdir <PATH_TO_LOGDIR> --state-path <PATH_TO_STATEFILE>
 
 #### Run Flask app
 ```bash
