@@ -26,6 +26,9 @@ Setup a temporary directory on your system, make sure it's writable by the user 
 
 ## Running
 
+#### Running the Luigi Central Scheduler
+luigid --background --pidfile <PATH_TO_PIDFILE> --logdir <PATH_TO_LOGDIR> --state-path <PATH_TO_STATEFILE>
+
 #### Run Flask app
 ```bash
 FLASK_APP=api.py flask run
