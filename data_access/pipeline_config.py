@@ -10,6 +10,20 @@ except Exception as e:
     print(e)
     from base_model import BaseModel
 
+pipeline_output_positions = {
+    'report_id': 0,
+    'subject': 1,
+    'report_date': 2,
+    'report_type': 3,
+    'section': 4,
+    'section_code': 5,
+    'sentence': 6,
+    'term': 7,
+    'term_start': 8,
+    'term_end': 9,
+    'concept_code': 10
+}
+
 
 class Pipeline(BaseModel):
 
@@ -26,28 +40,56 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, description, terms, limit):
+    def __init__(self, config_type, name, description, terms, limit, concept_code, owner):
         self.config_type = config_type
         self.name = name
         self.description = description
         self.terms = terms
         self.limit = limit
+        self.concept_code = concept_code
+        self.owner = owner
+
+
+def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
+
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    pipeline_id = -1
+
+    try:
+        pipeline_json = pipeline.to_json()
+        cursor.execute("""
+                      INSERT INTO
+                      nlp.pipeline_config(owner, config, pipeline_type, name, description, date_created)
+                      VALUES(%s, %s, %s, %s, %s, current_timestamp) RETURNING pipeline_id
+                      """, (pipeline.owner, pipeline_json, pipeline.config_type, pipeline.name, pipeline.description))
+
+        pipeline_id = cursor.fetchone()[0]
+        conn.commit()
+
+    except Exception as ex:
+        print('failed to insert pipeline')
+        print(str(ex))
+    finally:
+        conn.close()
+
+    return pipeline_id
 
 
 def get_pipeline_config(pipeline_id, connection_string):
     conn = psycopg2.connect(connection_string)
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
 
     try:
         cursor.execute("""
                      SELECT  *
                      FROM    nlp.pipeline_config
                      WHERE   pipeline_id = %s 
-                     """, str(pipeline_id))
+                     """, [str(pipeline_id)])
 
         row = cursor.fetchone()
         if row:
-            obj = PipelineConfig.from_json(row["config"])
+            obj = PipelineConfig.from_json(row[2])
             if obj:
                 return obj
             else:

@@ -13,7 +13,7 @@ class NlpJob(BaseModel):
         self.name = name
         self.description = description
         self.owner = owner
-        self.job_id
+        self.job_id = job_id
         self.pipeline_id = pipeline_id
         self.phenotype_id = phenotype_id
         self.status = status
@@ -21,23 +21,24 @@ class NlpJob(BaseModel):
         self.date_ended = date_ended
         self.job_type = job_type
 
+
 def create_new_job(job: NlpJob, connection_string: str):
     conn = psycopg2.connect(connection_string)
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
 
     try:
         cursor.execute("""
-                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, date_started, date_ended)
-                VALUES (%s, %s, %s, %s, %s, current_timestamp, null) RETURNING pipeline_id""",
-                       job.name, job.job_type, job.description, job.owner,
-                       job.status)
+                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, date_started)
+                VALUES (%s, %s, %s, %s, %s, current_timestamp) RETURNING nlp_job_id""",
+                       (job.name, job.job_type, job.description, job.owner, job.status))
 
         job_id = cursor.fetchone()[0]
 
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
-                VALUES (%s, %s, current_timestamp, %s) RETURNING pipeline_id""",
-                       job.status, job.description, job_id)
+                VALUES (%s, 'Starting Job', current_timestamp, %s) RETURNING nlp_job_status_id""",
+                       (job.status, job_id))
+        conn.commit()
 
         return job_id
     except Exception as e:
@@ -65,20 +66,21 @@ def get_job_status(job_id: str, connection_string: str):
 
     return "UNKNOWN"
 
+
 def update_job_status(job_id:str, connection_string:str, updated_status:str, job:NlpJob):
     conn = psycopg2.connect(connection_string)
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
     flag = -1 # To determine whether the update was successful or not
 
     try:
-        updated_date = datetime.datetime.now()
         cursor.execute("""UPDATE nlp.nlp_job set status = %s where nlp_job_id = %s""", updated_status, job_id)
         job.status = updated_status
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
-                VALUES (%s, %s, current_timestamp, %s) RETURNING pipeline_id""",
-                       job.status, job.description, job_id)
+                VALUES (%s, %s, current_timestamp, %s) RETURNING nlp_job_status_id""",
+                       (job.status, job.description, job_id))
         flag = 1
+        conn.commit()
 
     except Exception as e:
         flag = -1
