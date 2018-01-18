@@ -55,6 +55,15 @@ from collections import Counter
 def extract_ngrams(cohort_id, keyword='NIL', n=3, frequency=1):
     # GET DATA
     # text = ?
+
+    patient_url = 'https://bluebookshelf01.icl.gtri.org/cohortentities/%s/WebAPI' % cohort_id
+    # for patient in patient_json
+    #   patient_id = patient.personSourceValue
+    #   document_url = 'https://bluebookshelf01.icl.gtri.org/subjectdocuments/%s/*:*' % patient_id
+    #   Returns JSON object
+    #   for doc in obj['documents']:
+    #       text = doc['reportText']
+
     if keyword != 'NIL':
         sentences = nltk.sent_tokenize(text)
         sentence_list = [x for x in sentences if word in x]
