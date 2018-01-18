@@ -17,38 +17,38 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.util import ngrams
 from collections import Counter
 
-
-# Inputs for testing
-n = 4
-word = 'through'
-
-# For texting using text file.
-# TODO: Extract information from Solr
-with open('input.txt') as f:
-    text = f.read()
-f.close()
-
-if word:
-    #sentences = text.split('.')
-    sentences = nltk.sent_tokenize(text)
-    sentence_list = [x for x in sentences if word in x]
-    text = ''.join(sentence_list)
-
-#token = nltk.word_tokenize(text) #With Punctuations
-token = RegexpTokenizer(r'\w+') #without Punctuations
-token = token.tokenize(text)
-all_ngrams = ngrams(token, n)
-
-"""
-Filterning ngrams which contain a keyword
-result = [x for x in all_ngrams if word in x]
-"""
-
-# Printing ngrams and their frequences
-fdist = nltk.FreqDist(all_ngrams)
-for i,j in fdist.items():
-    if j>2:
-        print (i,j)
+#
+# # Inputs for testing
+# n = 4
+# word = 'through'
+#
+# # For texting using text file.
+# # TODO: Extract information from Solr
+# with open('input.txt') as f:
+#     text = f.read()
+# f.close()
+#
+# if word:
+#     #sentences = text.split('.')
+#     sentences = nltk.sent_tokenize(text)
+#     sentence_list = [x for x in sentences if word in x]
+#     text = ''.join(sentence_list)
+#
+# #token = nltk.word_tokenize(text) #With Punctuations
+# token = RegexpTokenizer(r'\w+') #without Punctuations
+# token = token.tokenize(text)
+# all_ngrams = ngrams(token, n)
+#
+# """
+# Filterning ngrams which contain a keyword
+# result = [x for x in all_ngrams if word in x]
+# """
+#
+# # Printing ngrams and their frequences
+# fdist = nltk.FreqDist(all_ngrams)
+# for i,j in fdist.items():
+#     if j>2:
+#         print (i,j)
 
 
 
