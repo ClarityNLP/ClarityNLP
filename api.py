@@ -5,6 +5,7 @@ import datetime
 from data_access import pipeline_config as p_config
 from data_access import jobs
 import luigi_pipeline
+from nlp import extract_ngrams
 
 app = Flask(__name__)
 
@@ -63,6 +64,27 @@ def pipeline_id():
         return json.dumps(p_config.get_pipeline_config(pid, util.conn_string))
     except Exception as e:
         return "Failed to extract pipeline id parameter" + str(e)
+
+# ngram API
+@app.route('/ngram', methods=['GET'])
+def get_ngram():
+    if request.method == 'GET':
+        if not request.data:
+            return 'Provide cohort_id'
+
+        # TODO: Parse data and make request
+        # TODO: Error checking to see if all of these entries are passed
+        cohort_id = requst.args['cohort_id']
+        keyword = requst.args['keyword']
+        n = requst.args['n']
+        frequency = request.args['frequency']
+
+        result = extract_ngrams(cohort_id, keyword, n, frequency)
+
+        # TODO: Format the output
+
+    return -1
+
 
 # TODO POST a phenotype job for running
 # TODO GET a phenotype job status
