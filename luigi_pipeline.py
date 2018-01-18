@@ -4,10 +4,11 @@ from data_access import solr_data
 from data_access import pipeline_config as config
 from nlp import segmentation
 from nlp import terms
-from nlp import section_tagger
+from nlp import sec_tag_process
+from nlp import section_tagger_init
 import util
 
-section_tagger.section_tagger_init()
+section_tagger_init()
 
 row_count = 10
 delimiter = '|'
@@ -31,7 +32,7 @@ class TermFinderBatchTask(luigi.Task):
             csv_writer = csv.writer(outfile, delimiter=delimiter,
                                     quotechar=quote_character, quoting=csv.QUOTE_MINIMAL)
             for doc in docs:
-                section_headers, section_texts = section_tagger.process_report(doc["report_text"])
+                section_headers, section_texts = sec_tag_process(doc["report_text"])
                 subject = doc["subject"]
                 report_type = doc["report_type"]
                 report_id = doc["report_id"]
