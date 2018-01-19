@@ -69,15 +69,15 @@ def pipeline_id():
 @app.route('/ngram', methods=['GET'])
 def get_ngram():
     if request.method == 'GET':
-        if not request.data:
-            return 'Provide cohort_id'
+        #if not request.data:
+        #    return 'Provide cohort_id'
 
         # TODO: Parse data and make request
         # TODO: Error checking to see if all of these entries are passed
-        cohort_id = requst.args['cohort_id']
-        keyword = requst.args['keyword']
-        n = requst.args['n']
-        frequency = request.args['frequency']
+        cohort_id = request.args.get('cohort_id')
+        keyword = request.args.get('keyword')
+        n = request.args.get('n')
+        frequency = request.args.get('frequency')
 
         print (cohort_id)
         print (keyword)
@@ -88,7 +88,7 @@ def get_ngram():
 
         # TODO: Format the output
 
-    return -1
+    return "Okay for now"
 
 
 # TODO POST a phenotype job for running
