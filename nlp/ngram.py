@@ -126,7 +126,7 @@ def extract_ngrams(cohort_id, keyword='NIL', n=5, frequency=3):
 
     if keyword != None:
         sentences = nltk.sent_tokenize(text)
-        sentence_list = [x for x in sentences if word in x]
+        sentence_list = [x for x in sentences if keyword in x]
         text = ''.join(sentence_list)
 
     token = RegexpTokenizer(r'\w+') #without Punctuations
