@@ -46,3 +46,20 @@ PYTHONPATH='.' luigi --module pipeline NERPipeline --pipeline 1 --job 1234 --own
 
 #### Running Application
 ```docker run -d -p 5000:5000 health-nlp-sample```
+
+## API Usage
+
+#### n-gram
+
+Fields
+
+- Cohort ID : mandatory
+- Keyword : optional
+- n : mandatory
+- frequency : mandatory
+
+Example usage 
+
+`~/ngram?cohort_id=6&n=15&frequency=10`
+
+`~/ngram?cohort_id=6&keyword=cancer&n=15&frequency=10`
