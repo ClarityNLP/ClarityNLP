@@ -84,12 +84,14 @@ def get_ngram():
         print (n)
         print (frequency)
 
-        #result = extract_ngrams(cohort_id, keyword, n, frequency)
+        result = extract_ngrams(cohort_id, keyword, int(n), int(frequency))
 
-        # TODO: Format the output
+        ans = '\n\n\n'.join(result)
 
-    return "Okay for now"
 
+
+    #return "Okay for now"
+    return ans
 
 # TODO POST a phenotype job for running
 # TODO GET a phenotype job status
