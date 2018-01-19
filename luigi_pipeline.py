@@ -38,8 +38,13 @@ class TermFinderBatchTask(luigi.Task):
                 report_id = doc["report_id"]
                 report_date = doc["report_date"]
                 for idx in range(0, len(section_headers)):
-                    sentences = segmentation.parse_sentences(section_texts[idx])
+                    txt = section_texts[idx]
+                    sentences = segmentation.parse_sentences(txt)
                     section_code = ".".join([str(i) for i in section_headers[idx].treecode_list])
+                    # for m in term_matcher.get_matches(txt):
+                    #     csv_writer.writerow([report_id, subject, report_date, report_type,
+                    #                          section_headers[idx].concept, section_code,
+                    #                          txt, m.group(), m.start(), m.end(), pipeline_config.concept_code])
 
                     for sentence in sentences:
                         for m in term_matcher.get_matches(sentence):

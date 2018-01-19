@@ -9,7 +9,8 @@ This library uses Python 3.
 ```
 pip3 install -r requirements.txt
 pip3 install -U pytest
-python -m spacy download en
+python3 -m spacy download en
+python -m spacy download en_core_web_md
 ```
 
 #### Properties

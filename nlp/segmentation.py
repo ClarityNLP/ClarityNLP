@@ -1,10 +1,10 @@
 import re
 import spacy
-import spacy.lang.en
+import en_core_web_md
 import nltk
 from nltk.tokenize import sent_tokenize
 
-nlp = spacy.load('en')
+nlp = en_core_web_md.load()
 regex_multi_space = re.compile(r' +')
 regex_multi_newline = re.compile(r'\n+')
 
