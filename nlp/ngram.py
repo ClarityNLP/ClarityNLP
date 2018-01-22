@@ -146,4 +146,4 @@ def extract_ngrams(cohort_id, keyword='NIL', n=5, frequency=3):
     return result
 
 
-extract_ngrams('29', None, 2, 12)
+# extract_ngrams('29', None, 2, 12)
