@@ -79,19 +79,17 @@ def get_ngram():
         n = request.args.get('n')
         frequency = request.args.get('frequency')
 
-        print (cohort_id)
-        print (keyword)
-        print (n)
-        print (frequency)
+        print(cohort_id)
+        print(keyword)
+        print(n)
+        print(frequency)
 
         result = extract_ngrams(cohort_id, keyword, int(n), int(frequency))
 
-        ans = '\n\n\n'.join(result)
+        ans = '\n'.join(result)
 
-
-
-    #return "Okay for now"
-    return ans
+        return ans
+    return 'Unable to extract n-gram'
 
 # TODO POST a phenotype job for running
 # TODO GET a phenotype job status

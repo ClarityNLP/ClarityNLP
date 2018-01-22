@@ -123,24 +123,27 @@ def extract_ngrams(cohort_id, keyword='NIL', n=5, frequency=3):
     #   for doc in obj['documents']:
     #       text = doc['reportText']
 
-
-    if keyword != None:
+    if keyword:
         sentences = nltk.sent_tokenize(text)
         sentence_list = [x for x in sentences if keyword in x]
         text = ''.join(sentence_list)
 
     token = RegexpTokenizer(r'\w+') #without Punctuations
-    token = token.tokenize(text)
+    token = token.tokenize(text.lower())
     all_ngrams = ngrams(token, n)
 
     result = []
     fdist = nltk.FreqDist(all_ngrams)
-    for i,j in fdist.items():
-        if j>frequency:
-            result.append(str((i,j)))
-            print ((i,j))
+    for i, j in fdist.items():
+        if j > frequency:
+            gram = ' '.join(i)
+            freq = str(j)
+            if gram and freq:
+                formatted = "'%s',%s" % (gram, freq)
+                result.append(formatted)
 
+    print("\n".join(result))
     return result
 
 
-#extract_ngrams('6',None,5,9)
+extract_ngrams('29', None, 2, 12)
