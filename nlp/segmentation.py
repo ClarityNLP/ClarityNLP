@@ -1,36 +1,36 @@
 import re
-import spacy
 import en_core_web_md
-import nltk
 from nltk.tokenize import sent_tokenize
 
-nlp = en_core_web_md.load()
-regex_multi_space = re.compile(r' +')
-regex_multi_newline = re.compile(r'\n+')
 
+class Segmentation(object):
 
-def remove_newlines(text):
+    def __init__(self):
+        self.nlp = en_core_web_md.load()
+        self.regex_multi_space = re.compile(r' +')
+        self.regex_multi_newline = re.compile(r'\n+')
 
-    # replace newline with space
-    no_newlines = regex_multi_newline.sub(' ', text)
+    def remove_newlines(self, text):
 
-    # replace multiple consecutive spaces with single space
-    cleaned_text = regex_multi_space.sub(' ', no_newlines)
-    return cleaned_text
+        # replace newline with space
+        no_newlines = self.regex_multi_newline.sub(' ', text)
 
+        # replace multiple consecutive spaces with single space
+        cleaned_text = self.regex_multi_space.sub(' ', no_newlines)
+        return cleaned_text
 
-def parse_sentences(text):
-    return parse_sentences_nltk(text)
+    def parse_sentences(self, text):
+        return self.parse_sentences_spacy(text)
 
+    def parse_sentences_nltk(self, text):
+        # needs punkt
+        return sent_tokenize(self, text)
 
-def parse_sentences_nltk(text):
-    return sent_tokenize(text)
-
-
-def parse_sentences_spacy(text):
-    doc = nlp(text)
-    return [sent.string.strip() for sent in doc.sents]
+    def parse_sentences_spacy(self, text):
+        doc = self.nlp(text)
+        return [sent.string.strip() for sent in doc.sents]
 
 
 if __name__ == '__main__':
-    print(parse_sentences("My name is Bob. I'm a doctor."))
+    seg = Segmentation()
+    print(seg.parse_sentences("My name is Bob. I'm a doctor."))

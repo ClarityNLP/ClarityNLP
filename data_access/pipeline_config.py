@@ -24,6 +24,10 @@ pipeline_output_positions = {
     'concept_code': 10
 }
 
+pipeline_config_types = {
+    "NER" : "NER"
+}
+
 
 class Pipeline(BaseModel):
 
@@ -105,10 +109,10 @@ def get_pipeline_config(pipeline_id, connection_string):
 
 
 def get_default_config():
-    return PipelineConfig('UNKNOWN', 'UNKNOWN', 'UNKNOWN', [], -1)
+    return PipelineConfig('UNKNOWN', 'UNKNOWN', 'UNKNOWN', [], -1, -1, 'none')
 
 
-def get_query(p_config:PipelineConfig):
+def get_query(p_config: PipelineConfig):
     if p_config.terms is not None and len(p_config.terms) > 0:
         return 'report_text:("' + '" OR "'.join(p_config.terms) + '")'
     else:
@@ -117,7 +121,7 @@ def get_query(p_config:PipelineConfig):
 
 def get_limit(doc_count, p_config: PipelineConfig):
     if p_config.limit is not None:
-        return int(p_config.limit)
+        return min(int(p_config.limit), doc_count)
     else:
         return int(doc_count)
 
@@ -136,9 +140,7 @@ if __name__ == '__main__':
 
         config = (get_pipeline_config(q, conn_string))
         print(config)
-        config_obj = PipelineConfig.from_dict(config)
-        print(config_obj)
-        sys.exit(0)
+        sys.exit(1)
     else:
         print("Enter pipeline id")
         sys.exit(-1)

@@ -12,6 +12,7 @@ pip3 install -U pytest
 python3 -m spacy download en
 python -m spacy download en_core_web_md
 ```
+If you want to use conda, you can setup the environment using `spec-file.txt`
 
 #### Properties
 Copy `example.cfg` to `project.cfg` and update with your settings.
@@ -37,7 +38,7 @@ FLASK_APP=api.py flask run
 
 #### Run the NER Pipeline with pipeline id of 1
 ```bash
-PYTHONPATH='.' luigi --module pipeline NERPipeline --pipeline 1 --job 1234 --owner user --local-scheduler
+PYTHONPATH='.' luigi --module luigi_pipeline NERPipeline --pipeline 1 --job 1234 --owner user 
 ```
 
 ## Docker

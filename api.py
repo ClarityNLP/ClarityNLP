@@ -1,11 +1,13 @@
-from flask import Flask, redirect, url_for, request
+from flask import Flask, request, send_file
 import util
 import json
 import datetime
 from data_access import pipeline_config as p_config
 from data_access import jobs
-import luigi_pipeline
+from data_access import job_results
+import luigi_pipeline_runner
 from nlp import extract_ngrams
+
 
 app = Flask(__name__)
 
@@ -25,53 +27,53 @@ def pipeline():
         if p_id == -1:
             return '{ "success", false }'
         job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
-                                                 owner=p_cfg.owner, status='STARTED', date_ended=None, phenotype_id=-1,
-                                                 pipeline_id=p_id, date_started=datetime.datetime.now(),
+                                                 owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
+                                                 phenotype_id=-1, pipeline_id=p_id, date_started=datetime.datetime.now(),
                                                  job_type='PIPELINE'), util.conn_string)
 
-        luigi_pipeline.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
+        luigi_pipeline_runner.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
 
-        return '{ "pipeline_id": "%s", "job_id": "%s" }' % (str(p_id), str(job_id))
+        return '{ "pipeline_id": "%s", "job_id": "%s", "status_endpoint": "/status?job=%s", ' \
+               '"results_endpoint": "/job_results?job=%s&type=%s"}' % \
+               (str(p_id), str(job_id), str(job_id), str(job_id), 'pipeline')
 
     except Exception as e:
         return 'Failed to load and insert pipeline. ' + str(e), 400
 
 
-@app.route('/pipeline_id', methods=['POST', 'GET'])
+@app.route('/pipeline_id', methods=['GET'])
 def pipeline_id():
-    if request.method == 'POST':
-        if not request.data:
-            return 'POST a pipeline id'
-        try:
-            pid = request.data
-            p = p_config.get_pipeline_config(pid, util.conn_string)
-            print(p)
-            job = jobs.create_new_job(jobs.NlpJob(job_id=-1,
-                                                  name=p.name,
-                                                  description=p.description,
-                                                  owner=p.owner,
-                                                  status='STARTED',
-                                                  date_ended=None,
-                                                  date_started=datetime.datetime.now(),
-                                                  job_type='PIPELINE'), util.conn_string)
-            # TODO kick off
-
-            return '{ "job_id", %s }' % job
-        except Exception as e:
-            return 'Failed to load pipeline id ' + str(e), 400
     try:
         pid = request.args.get('id')
         return json.dumps(p_config.get_pipeline_config(pid, util.conn_string))
     except Exception as e:
         return "Failed to extract pipeline id parameter" + str(e)
 
-# ngram API
+
+@app.route('/status', methods=['GET'])
+def get_job_status():
+    try:
+        job = request.args.get('job')
+        status = jobs.get_job_status(int(job), util.conn_string)
+        return json.dumps(status)
+    except Exception as e:
+        return "Failed to get job status" + str(e)
+
+
+@app.route('/job_results', methods=['GET'])
+def get_job_results():
+    try:
+        job = request.args.get('job')
+        job_type = request.args.get('type')
+        results = job_results(job_type, job)
+        return results
+    except Exception as e:
+        return "Failed to get job results" + str(e)
+
+
 @app.route('/ngram', methods=['GET'])
 def get_ngram():
     if request.method == 'GET':
-        #if not request.data:
-        #    return 'Provide cohort_id'
-
         # TODO: Parse data and make request
         # TODO: Error checking to see if all of these entries are passed
         cohort_id = request.args.get('cohort_id')
@@ -90,9 +92,6 @@ def get_ngram():
 
         return ans
     return 'Unable to extract n-gram'
-
-# TODO POST a phenotype job for running
-# TODO GET a phenotype job status
 
 
 if __name__ == '__main__':

@@ -17,3 +17,6 @@ mongo_working_index = config.get('mongo', 'working_index')
 mongo_working_collection = config.get('mongo', 'working_collection')
 
 tmp_dir = config.get('tmp', 'dir')
+log_dir = config.get('log', 'dir')
+
+luigi_home = config.get('luigi', 'home')

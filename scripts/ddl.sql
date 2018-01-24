@@ -14,7 +14,7 @@ CREATE TABLE nlp.pipeline_config
 	date_updated timestamp
 );
 
-CREATE UNIQUE INDEX nlp.pipeline_config_pipeline_id_uindex
+CREATE UNIQUE INDEX nlp_pipeline_config_pipeline_id_uindex
 	on nlp.pipeline_config (pipeline_id)
 ;
 
@@ -34,7 +34,7 @@ CREATE TABLE nlp.nlp_job
 );
 CREATE UNIQUE INDEX nlp_job_nlp_job_id_uindex ON nlp.nlp_job (nlp_job_id);
 
-create table nlp_job_status
+create table nlp.nlp_job_status
 (
 	nlp_job_status_id bigserial not null
 		constraint nlp_job_status_pkey
@@ -47,12 +47,10 @@ create table nlp_job_status
 ;
 
 create unique index nlp_job_status_nlp_job_status_id_uindex
-	on nlp_job_status (nlp_job_status_id)
+	on nlp.nlp_job_status (nlp_job_status_id)
 ;
 
-create index nlp_job_status_phenotype_id_index
-	on nlp_job_status (source_id)
-;
+
 
 
 

@@ -3,6 +3,10 @@ import psycopg2.extras
 from .base_model import BaseModel
 import datetime
 
+STARTED = "STARTED"
+COMPLETED = "COMPLETED"
+IN_PROGRESS = "IN_PROGRESS"
+
 
 class NlpJob(BaseModel):
 
@@ -28,9 +32,9 @@ def create_new_job(job: NlpJob, connection_string: str):
 
     try:
         cursor.execute("""
-                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, date_started)
-                VALUES (%s, %s, %s, %s, %s, current_timestamp) RETURNING nlp_job_id""",
-                       (job.name, job.job_type, job.description, job.owner, job.status))
+                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, pipeline_id, date_started)
+                VALUES (%s, %s, %s, %s, %s, %s, current_timestamp) RETURNING nlp_job_id""",
+                       (job.name, job.job_type, job.description, job.owner, job.status, job.pipeline_id))
 
         job_id = cursor.fetchone()[0]
 
@@ -49,13 +53,13 @@ def create_new_job(job: NlpJob, connection_string: str):
     return -1
 
 
-def get_job_status(job_id: str, connection_string: str):
+def get_job_status(job_id: int, connection_string: str):
     conn = psycopg2.connect(connection_string)
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
 
     try:
-        cursor.execute("""SELECT status from nlp.nlp_job where nlp_job = %s""",
-                       job_id)
+        cursor.execute("""SELECT status from nlp.nlp_job where nlp_job_id = %s""",
+                       [job_id])
 
         status = cursor.fetchone()[0]
         return status
@@ -67,18 +71,18 @@ def get_job_status(job_id: str, connection_string: str):
     return "UNKNOWN"
 
 
-def update_job_status(job_id:str, connection_string:str, updated_status:str, job:NlpJob):
+def update_job_status(job_id: str, connection_string: str, updated_status: str, description: str):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
     flag = -1 # To determine whether the update was successful or not
 
     try:
-        cursor.execute("""UPDATE nlp.nlp_job set status = %s where nlp_job_id = %s""", updated_status, job_id)
-        job.status = updated_status
+        cursor.execute("""UPDATE nlp.nlp_job set status = %s where nlp_job_id = %s""", (updated_status, job_id))
+
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
                 VALUES (%s, %s, current_timestamp, %s) RETURNING nlp_job_status_id""",
-                       (job.status, job.description, job_id))
+                       (updated_status, description, job_id))
         flag = 1
         conn.commit()
 
