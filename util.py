@@ -20,3 +20,5 @@ tmp_dir = config.get('tmp', 'dir')
 log_dir = config.get('log', 'dir')
 
 luigi_home = config.get('luigi', 'home')
+
+main_url = config.get('main', 'url')

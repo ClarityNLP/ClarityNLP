@@ -33,9 +33,9 @@ def pipeline():
 
         luigi_pipeline_runner.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
 
-        return '{ "pipeline_id": "%s", "job_id": "%s", "status_endpoint": "/status?job=%s", ' \
-               '"results_endpoint": "/job_results?job=%s&type=%s"}' % \
-               (str(p_id), str(job_id), str(job_id), str(job_id), 'pipeline')
+        return '{ "pipeline_id": "%s", "job_id": "%s", "status_endpoint": "%s/status?job=%s", ' \
+               '"results_endpoint": "%s/job_results?job=%s&type=%s"}' % \
+               (str(p_id), str(job_id), util.main_url, str(job_id), util.main_url, str(job_id), 'pipeline')
 
     except Exception as e:
         return 'Failed to load and insert pipeline. ' + str(e), 400
