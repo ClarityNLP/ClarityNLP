@@ -24,10 +24,6 @@ pipeline_output_positions = [
     'concept_code'
 ]
 
-pipeline_config_types = {
-    "NER" : "NER"
-}
-
 
 class Pipeline(BaseModel):
 
