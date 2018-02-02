@@ -10,19 +10,19 @@ except Exception as e:
     print(e)
     from base_model import BaseModel
 
-pipeline_output_positions = {
-    'report_id': 0,
-    'subject': 1,
-    'report_date': 2,
-    'report_type': 3,
-    'section': 4,
-    'section_code': 5,
-    'sentence': 6,
-    'term': 7,
-    'term_start': 8,
-    'term_end': 9,
-    'concept_code': 10
-}
+pipeline_output_positions = [
+    'report_id',
+    'person',
+    'report_date',
+    'report_type',
+    'section',
+    'section_code',
+    'sentence',
+    'term',
+    'term_start',
+    'term_end',
+    'concept_code'
+]
 
 pipeline_config_types = {
     "NER" : "NER"
@@ -120,7 +120,7 @@ def get_query(p_config: PipelineConfig):
 
 
 def get_limit(doc_count, p_config: PipelineConfig):
-    if p_config.limit is not None:
+    if p_config.limit is not None and int(p_config.limit) > 0:
         return min(int(p_config.limit), doc_count)
     else:
         return int(doc_count)

@@ -2,7 +2,8 @@ from subprocess import call
 import util
 
 pipeline_types = {
-    "NER": "NERPipeline"
+    "TermFinder": "TermFinderPipeline",
+    "NER": "TermFinderPipeline"
 }
 luigi_log = util.log_dir + '/luigi.log'
 

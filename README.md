@@ -20,6 +20,9 @@ import nltk
 nltk.download('punkt')
 ```
 
+### Vocabulary
+OMOP Vocabulary should be loaded (TODO)
+
 #### Properties
 Copy `example.cfg` to `project.cfg` and update with your settings.
 

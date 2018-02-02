@@ -1,69 +1,12 @@
 import luigi
-import csv
 from data_access import solr_data
 from data_access import pipeline_config as config
-from nlp import segmentation
-from nlp import terms
-from nlp import sec_tag_process
-from nlp import section_tagger_init
 from data_access import jobs
 import util
-
-section_tagger_init()
-
-row_count = 10
-delimiter = '|'
-quote_character = '"'
-
-# TODO get scheduler type and additional config
+from tasks import TermFinderBatchTask
 
 
-class TermFinderBatchTask(luigi.Task):
-    pipeline = luigi.IntParameter()
-    job = luigi.IntParameter()
-    start = luigi.IntParameter()
-    batch = luigi.IntParameter()
-    solr_query = luigi.Parameter()
-    segment = segmentation.Segmentation()
-
-    def run(self):
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running TermFinder Batch %s" %
-                               self.batch)
-
-        docs = solr_data.query(self.solr_query, rows=row_count, start=self.start, solr_url=util.solr_url)
-        pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-        term_matcher = terms.SimpleTermFinder(pipeline_config.terms)
-
-        with self.output().open('w') as outfile:
-            csv_writer = csv.writer(outfile, delimiter=delimiter,
-                                    quotechar=quote_character, quoting=csv.QUOTE_MINIMAL)
-            for doc in docs:
-                section_headers, section_texts = sec_tag_process(doc["report_text"])
-                subject = doc["subject"]
-                report_type = doc["report_type"]
-                report_id = doc["report_id"]
-                report_date = doc["report_date"]
-                for idx in range(0, len(section_headers)):
-                    txt = section_texts[idx]
-                    sentences = self.segment.parse_sentences(txt)
-                    section_code = ".".join([str(i) for i in section_headers[idx].treecode_list])
-                    # for m in term_matcher.get_matches(txt):
-                    #     csv_writer.writerow([report_id, subject, report_date, report_type,
-                    #                          section_headers[idx].concept, section_code,
-                    #                          txt, m.group(), m.start(), m.end(), pipeline_config.concept_code])
-
-                    for sentence in sentences:
-                        for m in term_matcher.get_matches(sentence):
-                            csv_writer.writerow([report_id, subject, report_date, report_type,
-                                                 section_headers[idx].concept, section_code,
-                                                 sentence, m.group(), m.start(), m.end(), pipeline_config.concept_code])
-
-    def output(self):
-        return luigi.LocalTarget("%s/pipeline_job%s_term_finder_batch%s.txt" % (util.tmp_dir, str(self.job),
-                                                                                str(self.start)))
-
-
-class NERPipeline(luigi.Task):
+class TermFinderPipeline(luigi.Task):
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
@@ -73,18 +16,18 @@ class NERPipeline(luigi.Task):
         solr_query = config.get_query(pipeline_config)
         total_docs = solr_data.query_doc_size(solr_query, solr_url=util.solr_url)
         doc_limit = config.get_limit(total_docs, pipeline_config)
-        ranges = range(0, (doc_limit + row_count), row_count)
+        ranges = range(0, (doc_limit + util.row_count), util.row_count)
         matches = [TermFinderBatchTask(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n) for n in
                    ranges]
 
         return matches
 
     def run(self):
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished NER Pipeline")
+        jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished TermFinder Pipeline")
 
 
 def run_ner_pipeline(pipeline_id, job_id, owner):
-    luigi.run(['NERPipeline', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner])
+    luigi.run(['TermFinderPipeline', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner])
 
 
 if __name__ == "__main__":

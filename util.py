@@ -23,3 +23,7 @@ luigi_home = config.get('luigi', 'home')
 luigi_url = config.get('luigi', 'url')
 
 main_url = config.get('main', 'url')
+
+row_count = 10
+delimiter = ','
+quote_character = '"'

@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello_world():
-    return "Hello NLP"
+    return "Welcome to NLP!"
 
 
 @app.route('/pipeline', methods=['POST'])
@@ -52,6 +52,14 @@ def pipeline_id():
         return "Failed to extract pipeline id parameter" + str(e)
 
 
+@app.route('/pipeline_types', methods=['GET'])
+def pipeline_types():
+    try:
+        return repr(list(luigi_pipeline_runner.pipeline_types.keys()))
+    except Exception as e:
+        return "Failed to get pipeline types" + str(e)
+
+
 @app.route('/status', methods=['GET'])
 def get_job_status():
     try:
@@ -68,7 +76,7 @@ def get_job_results():
         job = request.args.get('job')
         job_type = request.args.get('type')
         results = job_results(job_type, job)
-        return results
+        return send_file(results)
     except Exception as e:
         return "Failed to get job results" + str(e)
 
