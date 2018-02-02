@@ -84,8 +84,6 @@ def get_job_results():
 @app.route('/ngram', methods=['GET'])
 def get_ngram():
     if request.method == 'GET':
-        # TODO: Parse data and make request
-        # TODO: Error checking to see if all of these entries are passed
         cohort_id = request.args.get('cohort_id')
         keyword = request.args.get('keyword')
         n = request.args.get('n')
@@ -102,6 +100,30 @@ def get_ngram():
 
         return ans
     return 'Unable to extract n-gram'
+
+@app.route('/vocabExpansion', methods=['GET'])
+def vocabulary_expansion():
+    if request.method == 'GET':
+        """
+        type:
+            1 - synonyms
+            2 - ancestors
+            3 - descendants
+        concept:
+            user entered term
+        """
+        k = request.args.get('type')
+        concept = request.args.get('concept')
+
+        print(k)
+        print(concept)
+        print (util.conn_string)
+
+
+        return "VocabExpansion [IN DEV]"
+    return 'Vocabulary Expansion Failed'
+
+
 
 
 if __name__ == '__main__':
