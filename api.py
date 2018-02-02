@@ -7,6 +7,7 @@ from data_access import jobs
 from data_access import job_results
 import luigi_pipeline_runner
 from nlp import extract_ngrams
+from nlp import get_synonyms
 
 
 app = Flask(__name__)
@@ -117,10 +118,15 @@ def vocabulary_expansion():
 
         print(k)
         print(concept)
-        print (util.conn_string)
+
+        if k =='1':
+            result = get_synonyms(util.conn_string, concept)
+            print (result)
+
 
 
         return "VocabExpansion [IN DEV]"
+
     return 'Vocabulary Expansion Failed'
 
 
