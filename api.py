@@ -117,6 +117,7 @@ def vocabulary_expansion():
 
         print(k)
         print(concept)
+        print (util.conn_string)
 
 
         return "VocabExpansion [IN DEV]"
