@@ -21,6 +21,7 @@ log_dir = config.get('log', 'dir')
 
 luigi_home = config.get('luigi', 'home')
 luigi_url = config.get('luigi', 'url')
+luigi_workers = config.get('luigi', 'workers')
 
 main_url = config.get('main', 'url')
 
