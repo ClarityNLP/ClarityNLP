@@ -116,16 +116,19 @@ def vocabulary_expansion():
         k = request.args.get('type')
         concept = request.args.get('concept')
 
-        print(k)
-        print(concept)
+        result = {"vocab":[]}
 
         if k =='1':
-            result = get_synonyms(util.conn_string, concept)
-            print (result)
+            r = get_synonyms(util.conn_string, concept)
 
 
 
-        return "VocabExpansion [IN DEV]"
+        for i in r:
+            result['vocab'].append(i[0])
+
+
+
+        return str(result)
 
     return 'Vocabulary Expansion Failed'
 
