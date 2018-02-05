@@ -7,7 +7,7 @@ from data_access import jobs
 from data_access import job_results
 import luigi_pipeline_runner
 from nlp import extract_ngrams
-from nlp import get_synonyms
+from nlp import get_synonyms, get_ancestors
 
 
 app = Flask(__name__)
@@ -120,6 +120,8 @@ def vocabulary_expansion():
 
         if k =='1':
             r = get_synonyms(util.conn_string, concept)
+        elif k =='2':
+            r = get_ancestors(util.conn_string, concept)
 
 
 

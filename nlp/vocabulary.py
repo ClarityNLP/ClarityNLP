@@ -44,7 +44,24 @@ def get_ancestors(conn_string, concept):
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
 
-    #TODO: Write query
+    try:
+        cursor.execute(""" SELECT concept_name
+        FROM nlp.concept_ancestor INNER JOIN nlp.concept on concept_id = ancestor_concept_id
+        WHERE descendant_concept_id in (SELECT concept_id from nlp.concept where concept_name = %s
+        AND vocabulary_id=%s AND invalid_reason IS null) AND vocabulary_id=%s AND invalid_reason is null
+        order by max_levels_of_separation asc
+        """, (concept, vocabulary, vocabulary))
+
+        result = cursor.fetchall()
+
+    except Exception as ex:
+        print('Failed to get ancestors')
+        print(str(ex))
+
+    finally:
+        conn.close()
+
+    return result
 
 # Function to get descendants for given concept
 def get_descendants(conn_string, concept):
