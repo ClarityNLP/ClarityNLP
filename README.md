@@ -74,3 +74,17 @@ Example usage
 `~/ngram?cohort_id=6&n=15&frequency=10`
 
 `~/ngram?cohort_id=6&keyword=cancer&n=15&frequency=10`
+
+#### OMOP Vocabulary
+
+Fields
+
+- Type: mandatory
+  - 1: synonyms
+  - 2: ancestors
+  - 3: descendants
+- Concept: mandatory
+
+Example usage
+
+`~/vocabExpansion?type=1&concept=Inactive`
