@@ -7,7 +7,7 @@ from data_access import jobs
 from data_access import job_results
 import luigi_pipeline_runner
 from nlp import extract_ngrams
-from nlp import get_synonyms, get_ancestors
+from nlp import get_synonyms, get_ancestors, get_descendants
 
 
 app = Flask(__name__)
@@ -122,13 +122,13 @@ def vocabulary_expansion():
             r = get_synonyms(util.conn_string, concept)
         elif k =='2':
             r = get_ancestors(util.conn_string, concept)
-
-
+        elif k =='3':
+            r = get_descendants(util.conn_string, concept)
+        else:
+            return 'Incorrect request format'
 
         for i in r:
             result['vocab'].append(i[0])
-
-
 
         return str(result)
 
@@ -138,4 +138,4 @@ def vocabulary_expansion():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True, use_reloader=True)
