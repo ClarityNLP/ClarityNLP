@@ -215,6 +215,7 @@ if __name__ == '__main__':
     m8 = ctxt.run_context("dementia", "The patient has no evidence of dementia, but has a history of diabetes")
     m9 = ctxt.run_context("nausea", "He has had signs of nausea and vomiting for the past 2 weeks")
     m10 = ctxt.run_context("heart attack", "FAMILY HISTORY: grandmother recently suffered heart attack")
+    m11 = ctxt.run_context("heart attack", "Pt with three children and 1 grandaughter, pt voiced concerns over grandaughter and son (pt son 36 y/o had heart attack in FL).")
 
     print(m1)
     print(m2)
@@ -226,3 +227,4 @@ if __name__ == '__main__':
     print(m8)
     print(m9)
     print(m10)
+    print(m11)
