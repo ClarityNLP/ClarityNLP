@@ -21,7 +21,10 @@ pipeline_output_positions = [
     'term',
     'term_start',
     'term_end',
-    'concept_code'
+    'concept_code',
+    'negation',
+    'temporality',
+    'experiencer'
 ]
 
 

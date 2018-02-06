@@ -87,12 +87,13 @@ def run_individual_context(sentence, target_phrase, key, rules, phrase_regex):
         eval_sentence = ".%s." % eval_sentence
 
         if key == "historical":
-            over_several_period_match = over_several_period_rule.match(eval_sentence)
-            if over_several_period_match:
-                rules.append("%s\t\t[CONJ]" % over_several_period_match.group().strip())
-            for_the_past_period_match = for_the_past_period_rule.match(eval_sentence)
-            if for_the_past_period_match:
-                rules.append("%s\t\t[CONJ]" % for_the_past_period_match.group().strip())
+            over_several_period_match = re.findall(over_several_period_rule, eval_sentence)
+            if any(True for _ in over_several_period_match):
+                rules.append("%s\t\t[CONJ]" % over_several_period_match[0][0].strip())
+
+            for_the_past_period_match = re.findall(for_the_past_period_rule, eval_sentence)
+            if any(True for _ in for_the_past_period_match):
+                rules.append("%s\t\t[CONJ]" % for_the_past_period_match[0][0].strip())
 
         rules.sort(key=len, reverse=True)
 

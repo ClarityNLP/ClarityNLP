@@ -2,12 +2,10 @@ import luigi
 import csv
 from data_access import solr_data
 from data_access import pipeline_config as config
-from nlp import segmentation
-from nlp import terms
-from nlp import sec_tag_process
-from nlp import section_tagger_init
+from nlp import *
 from data_access import jobs
 import util
+
 
 section_tagger_init()
 
@@ -27,6 +25,7 @@ class TermFinderBatchTask(luigi.Task):
         docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start, solr_url=util.solr_url)
         pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
         term_matcher = terms.SimpleTermFinder(pipeline_config.terms)
+        context = Context()
 
         with self.output().open('w') as outfile:
             csv_writer = csv.writer(outfile, delimiter=util.delimiter,
@@ -44,9 +43,12 @@ class TermFinderBatchTask(luigi.Task):
 
                     for sentence in sentences:
                         for m in term_matcher.get_matches(sentence):
+                            context_matches = context.run_context(m, sentence)
                             csv_writer.writerow([report_id, subject, report_date, report_type,
                                                  section_headers[idx].concept, section_code,
-                                                 sentence, m.group(), m.start(), m.end(), pipeline_config.concept_code])
+                                                 sentence, m.group(), m.start(), m.end(), pipeline_config.concept_code,
+                                                 context_matches.negex.value, context_matches.temporality.value,
+                                                 context_matches.experiencier.value])
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_term_finder_batch%s.csv" % (util.tmp_dir, str(self.job),

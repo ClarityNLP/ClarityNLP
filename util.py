@@ -25,6 +25,6 @@ luigi_workers = config.get('luigi', 'workers')
 
 main_url = config.get('main', 'url')
 
-row_count = 10
+row_count = 500
 delimiter = ','
 quote_character = '"'
