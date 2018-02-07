@@ -1,4 +1,6 @@
-import re, os
+import re
+import os
+import traceback
 from enum import Enum
 
 SCRIPT_DIR = os.path.dirname(__file__)
@@ -67,23 +69,30 @@ windows = {
 
 
 def load_terms(key):
-    path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
+    try:
+        path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
+        print(path)
+        with open(path) as f:
+            triggers = f.read().splitlines()
+            return triggers
+    except Exception as e:
+        print("cannot open %s_triggers.txt" % key)
+        print(e)
 
-    with open(path) as f:
-        triggers = f.read().splitlines()
-        return triggers
+    return []
 
 
 def stop_trigger(ipt: str):
    return ipt.startswith("[CONJ]") or ipt.startswith("[PSEU]") or ipt.startswith("[POST]")  or ipt.startswith("[PREN]")  or ipt.startswith("[PREP]") or ipt.startswith("[POSP]") or ipt.startswith("[FSTT]") or ipt.startswith("[ONEW]")
   
 
-def run_individual_context(sentence, target_phrase, key, rules, phrase_regex):
+def run_individual_context(sentence: str, target_phrase: str, key: str, rules, phrase_regex):
     found = []
     custom_window = windows[key]
 
     try:
-        eval_sentence = sentence.replace(target_phrase, target_phrase.replace(" ", "_"))
+        target_replace = repr(target_phrase).replace(" ", "_")
+        eval_sentence = sentence.replace(target_phrase, target_replace)
         eval_sentence = ".%s." % eval_sentence
 
         if key == "historical":
@@ -107,7 +116,7 @@ def run_individual_context(sentence, target_phrase, key, rules, phrase_regex):
             if all_matched:
                 for matched in all_matched:
                     tokens = rule_tokens[1].strip().split("[")
-                    match_text = matched.group().strip().replace(" ", "_")
+                    match_text = str(matched.group(0)).strip().replace(" ", "_")
                     repl = "[%s%s[/%s" % (tokens[1], match_text, tokens[1])
                     repl_sent = "%s%s%s" % (eval_sentence[0:matched.start()], repl, eval_sentence[matched.end():len(
                         eval_sentence)])
@@ -162,6 +171,8 @@ def run_individual_context(sentence, target_phrase, key, rules, phrase_regex):
 
     except Exception as e:
         print(e)
+        traceback.print_exc()
+
     return found
 
 

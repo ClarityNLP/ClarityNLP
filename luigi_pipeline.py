@@ -3,7 +3,13 @@ from data_access import solr_data
 from data_access import pipeline_config as config
 from data_access import jobs
 import util
+import copy
 from tasks import TermFinderBatchTask
+try:
+    from .nlp import get_related_terms
+except Exception as e:
+    print(e)
+    from nlp import get_related_terms
 
 
 class TermFinderPipeline(luigi.Task):
@@ -12,8 +18,15 @@ class TermFinderPipeline(luigi.Task):
     owner = luigi.Parameter()
 
     def requires(self):
+
         pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-        solr_query = config.get_query(pipeline_config)
+        added = copy.copy(pipeline_config.terms)
+        for term in pipeline_config.terms:
+            related_terms = get_related_terms(util.conn_string, term, pipeline_config.include_synonyms, pipeline_config
+                                              .include_descendants, pipeline_config.include_ancestors, escape=False)
+            if related_terms and len(related_terms) > 0:
+                added.extend(related_terms)
+        solr_query = config.get_query(added)
         total_docs = solr_data.query_doc_size(solr_query, solr_url=util.solr_url)
         doc_limit = config.get_limit(total_docs, pipeline_config)
         ranges = range(0, (doc_limit + util.row_count), util.row_count)
@@ -31,4 +44,4 @@ def run_ner_pipeline(pipeline_id, job_id, owner):
 
 
 if __name__ == "__main__":
-    run_ner_pipeline(str(1), str(1), 'test')
+    run_ner_pipeline(str(61), str(1), 'test')

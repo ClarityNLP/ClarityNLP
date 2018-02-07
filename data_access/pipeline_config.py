@@ -43,7 +43,8 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, description, terms, limit, concept_code, owner):
+    def __init__(self, config_type, name, description, terms, limit=1000, concept_code=-1, owner='system', include_synonyms=False,
+                 include_descendants=False, include_ancestors=False):
         self.config_type = config_type
         self.name = name
         self.description = description
@@ -51,6 +52,9 @@ class PipelineConfig(BaseModel):
         self.limit = limit
         self.concept_code = concept_code
         self.owner = owner
+        self.include_synonyms = include_synonyms
+        self.include_descendants = include_descendants
+        self.include_ancestors = include_ancestors
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
@@ -111,9 +115,9 @@ def get_default_config():
     return PipelineConfig('UNKNOWN', 'UNKNOWN', 'UNKNOWN', [], -1, -1, 'none')
 
 
-def get_query(p_config: PipelineConfig):
-    if p_config.terms is not None and len(p_config.terms) > 0:
-        return 'report_text:("' + '" OR "'.join(p_config.terms) + '")'
+def get_query(terms: PipelineConfig):
+    if terms is not None and len(terms) > 0:
+        return 'report_text:("' + '" OR "'.join(terms) + '")'
     else:
         return '*'
 

@@ -102,7 +102,8 @@ def get_ngram():
         return ans
     return 'Unable to extract n-gram'
 
-@app.route('/vocabExpansion', methods=['GET'])
+
+@app.route('/vocab_expansion', methods=['GET'])
 def vocabulary_expansion():
     if request.method == 'GET':
         """
@@ -118,11 +119,11 @@ def vocabulary_expansion():
 
         result = {"vocab":[]}
 
-        if k =='1':
+        if k == '1':
             r = get_synonyms(util.conn_string, concept)
-        elif k =='2':
+        elif k == '2':
             r = get_ancestors(util.conn_string, concept)
-        elif k =='3':
+        elif k == '3':
             r = get_descendants(util.conn_string, concept)
         else:
             return 'Incorrect request format'
@@ -133,8 +134,6 @@ def vocabulary_expansion():
         return str(result)
 
     return 'Vocabulary Expansion Failed'
-
-
 
 
 if __name__ == '__main__':
