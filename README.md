@@ -89,4 +89,5 @@ Fields
 Example usage
 
 `~/vocabExpansion?type=1&concept=Inactive`
+
 `~/vocabExpansion?type=1&concept=Inactive&vocab=SNOMED`
