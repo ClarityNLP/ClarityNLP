@@ -1,0 +1,48 @@
+version: '3'
+
+volumes:
+  pgdata:
+  redisdata:
+
+services:
+  postgres:
+    image: postgres
+    container_name: 'RTM_POSTGRES'
+    environment:
+      POSTGRES_PASSWORD: sails
+      POSTGRES_USER: sails
+      POSTGRES_DB: report-type-mapper
+    ports:
+      - "5432:5432"
+    volumes:
+      - 'pgdata:/var/lib/postgresql/data/'
+  mapper-api:
+    build: ./mapper-api
+    container_name: RTM_Backend
+    ports:
+      - "1338:1337"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - NODE_ENV=production
+    command: "pm2-runtime app.js"
+  client:
+    build:
+      context: ./mapper-client
+      dockerfile: Dockerfile.prod
+    container_name: RTM_Frontend
+    ports:
+      - "80:8000"
+  redis:
+    image: redis:3.2.0
+    container_name: RTM_Redis
+    ports:
+      - "6379:6379"
+  swagger:
+    image: swaggerapi/swagger-ui
+    container_name: RTM_Swagger_Docs
+    # environment:
+    # - "API_URL=http://report-type-mapper.hdap.gatech.edu:1338/v1/swagger.json"
+    ports:
+      - "3000:8080"

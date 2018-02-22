@@ -1,0 +1,54 @@
+version: '3'
+
+volumes:
+  pgdata:
+  redisdata:
+
+services:
+  postgres:
+    image: postgres
+    container_name: 'RTM_POSTGRES'
+    environment:
+      POSTGRES_PASSWORD: sails
+      POSTGRES_USER: sails
+      POSTGRES_DB: report-type-mapper
+    ports:
+      - "5432:5432"
+    volumes:
+      - 'pgdata:/var/lib/postgresql/data/'
+  mapper-api:
+    build: ./mapper-api
+    container_name: RTM_Backend
+    volumes:
+      - ./mapper-api:/app
+      - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
+    ports:
+      - "1337:1337"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - NODE_ENV=development
+  # mapper-client:
+  #   build:
+  #     context: ./mapper-client
+  #     dockerfile: Dockerfile
+  #   container_name: RTM_Frontend
+  #   volumes:
+  #     - ./mapper-client:/app
+  #   ports:
+  #     - "8000:8000"
+  redis:
+    image: redis:3.2.0
+    container_name: RTM_Redis
+    ports:
+      - "6379:6379"
+    volumes:
+    - 'redisdata:/data'
+  swagger:
+    image: swaggerapi/swagger-ui
+    container_name: RTM_Swagger_Docs
+    environment:
+    - "API_URL=http://localhost:1337/v1/swagger.json"
+    ports:
+      - "3000:8080"
