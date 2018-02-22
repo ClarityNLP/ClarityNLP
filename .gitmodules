@@ -1,0 +1,12 @@
+[submodule "mapper-api"]
+	path = mapper-api
+	url = https://github.gatech.edu/HDAP/report-type-mapper-api.git
+[submodule "mapper-client"]
+	path = mapper-client
+	url = https://github.gatech.edu/HDAP/report-type-mapper-client.git
+[submodule "nlp"]
+	path = nlp
+	url = https://github.gatech.edu/HDAP/health-nlp.git
+[submodule "validation"]
+	path = validation
+	url = https://github.gatech.edu/HDAP/validation-framework.git
