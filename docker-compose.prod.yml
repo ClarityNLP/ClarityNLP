@@ -1,11 +1,70 @@
+# NOT FINISED YET, use non prod for now
+
 version: '3'
 
 volumes:
-  pgdata:
-  redisdata:
+  mapper-pgdata:
+  mapper-redisdata:
+  nlp-pgdata:
+  nlp-mongodata:
+  nlp-solrdata:
+  nlp-luigi-worker-data:
 
 services:
-  postgres:
+  nlp-postgres:
+    image: postgres
+    container_name: 'NLP_POSTGRES'
+    environment:
+      POSTGRES_PASSWORD: pg
+      POSTGRES_USER: pg
+      POSTGRES_DB: nlp
+    ports:
+      - "5433:5433"
+    volumes:
+      - 'nlp-pgdata:/var/lib/postgresql/data/'
+  nlp-mongo:
+    image: mongo
+    container_name: 'NLP_MONGO'
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    ports:
+      - "27017:27017"
+    volumes:
+      - 'nlp-mongodata:/data/db'
+  nlp-solr:
+    image: solr
+    ports:
+      - "8983:8983"
+    volumes:
+      - nlp-solrdata:/opt/solr/server/solr/mycores
+    entrypoint:
+      - docker-entrypoint.sh
+      - solr-precreate
+      - mycore
+  nlp-luigi-scheduler:
+    image: spiside/luigi:latest
+    ports:
+      - "8082:8082"
+    environment:
+      LUIGI_TASK_HISTORY_DB_CONNECTION: postgres://pg:pg@nlp-postgres:5433/nlp
+      LUIGI_SCHEDULER_RECORD_TASK_HISTORY: "true"
+    depends_on:
+      - nlp-postgres
+    entrypoint:
+      - ./luigi/wait-for-postgres.sh
+      - nlp-postgres
+  nlp-luigi-worker:
+    build:
+      dockerfile: luigi/Dockerfile.worker
+      context: .
+    hostname: worker
+    volumes: nlp-luigi-worker-data:/luigi
+    environment:
+      LUIGI_CORE_DEFAULT-SCHEDULER-URL: http://nlp-luigi-scheduler:8082
+    depends_on:
+      - nlp-luigi-scheduler
+  mapper-postgres:
     image: postgres
     container_name: 'RTM_POSTGRES'
     environment:
@@ -15,7 +74,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - 'pgdata:/var/lib/postgresql/data/'
+      - 'mapper-pgdata:/var/lib/postgresql/data/'
   mapper-api:
     build: ./mapper-api
     container_name: RTM_Backend
@@ -27,19 +86,19 @@ services:
     environment:
       - NODE_ENV=production
     command: "pm2-runtime app.js"
-  client:
+  mapper-client:
     build:
       context: ./mapper-client
       dockerfile: Dockerfile.prod
     container_name: RTM_Frontend
     ports:
       - "80:8000"
-  redis:
+  mapper-redis:
     image: redis:3.2.0
     container_name: RTM_Redis
     ports:
       - "6379:6379"
-  swagger:
+  mapper-swagger:
     image: swaggerapi/swagger-ui
     container_name: RTM_Swagger_Docs
     # environment:

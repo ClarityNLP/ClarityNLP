@@ -1,53 +1,131 @@
 version: '3'
 
 volumes:
-  pgdata:
-  redisdata:
+  mapper-pgdata:
+  mapper-redisdata:
+  nlp-solrdata:
+  nlp-mongodata:
+  luigi-pgdata:
 
 services:
-  postgres:
+
+  scheduler:
+    container_name: 'LUIGI_SCHEDULER'
+    image: spiside/luigi:latest
+    ports:
+      - "8082:8082"
+    environment:
+      LUIGI_TASK_HISTORY_DB_CONNECTION: postgres://luigi:luigi@luigi-pg:5432/nlp
+      LUIGI_SCHEDULER_RECORD_TASK_HISTORY: "true"
+    depends_on:
+      - luigi-pg
+    entrypoint:
+      - ./wait-for-postgres.sh
+      - luigi-pg
+
+  worker:
+    container_name: 'LUIGI_WORKER'
+    build:
+      dockerfile: docker/Dockerfile.worker
+      context: ./luigi
+    hostname: worker
+    volumes:
+      - .:/luigi
+    environment:
+      LUIGI_CORE_DEFAULT-SCHEDULER-URL: http://scheduler:8082
+    depends_on:
+      - scheduler
+
+  luigi-pg:
+    container_name: 'LUIGI_POSTGRES'
+    image: postgres:9.5.4
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: luigi
+      POSTGRES_PASS: luigi
+      POSTGRES_DB: nlp
+    volumes:
+      - 'luigi-pgdata:/var/lib/postgresql/data/'
+
+  nlp-api:
+    container_name: 'NLP_API'
+    build:
+      context: ./nlp-api
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./nlp-api:/api
+
+  nlp-mongo:
+    image: mongo
+    container_name: 'NLP_MONGO'
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    ports:
+      - "27017:27017"
+    volumes:
+      - 'nlp-mongodata:/data/db'
+
+  nlp-solr:
+    image: solr
+    container_name: 'NLP_SOLR'
+    ports:
+      - "8983:8983"
+    volumes:
+      - 'nlp-solrdata:/opt/solr/server/solr/mycores'
+    entrypoint:
+      - docker-entrypoint.sh
+      - solr-precreate
+      - mycore
+
+  mapper-pg:
     image: postgres
-    container_name: 'RTM_POSTGRES'
+    container_name: 'MAPPER_POSTGRES'
     environment:
       POSTGRES_PASSWORD: sails
       POSTGRES_USER: sails
       POSTGRES_DB: report-type-mapper
     ports:
-      - "5432:5432"
+      - "5444:5444"
     volumes:
-      - 'pgdata:/var/lib/postgresql/data/'
+      - 'mapper-pgdata:/var/lib/postgresql/data/'
+
   mapper-api:
     build: ./mapper-api
-    container_name: RTM_Backend
+    container_name: MAPPER_API
     volumes:
       - ./mapper-api:/app
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
     ports:
       - "1337:1337"
     depends_on:
-      - postgres
+      - mapper-pg
       - redis
     environment:
       - NODE_ENV=development
-  # mapper-client:
-  #   build:
-  #     context: ./mapper-client
-  #     dockerfile: Dockerfile
-  #   container_name: RTM_Frontend
-  #   volumes:
-  #     - ./mapper-client:/app
-  #   ports:
-  #     - "8000:8000"
+
+  mapper-client:
+    container_name: MAPPER_CLIENT
+    build:
+      context: ./mapper-client
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+
   redis:
     image: redis:3.2.0
-    container_name: RTM_Redis
+    container_name: MAPPER_Redis
     ports:
       - "6379:6379"
     volumes:
-    - 'redisdata:/data'
+    - 'mapper-redisdata:/data'
+
   swagger:
     image: swaggerapi/swagger-ui
-    container_name: RTM_Swagger_Docs
+    container_name: MAPPER_Swagger_Docs
     environment:
     - "API_URL=http://localhost:1337/v1/swagger.json"
     ports:
