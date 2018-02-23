@@ -27,7 +27,10 @@ class TermFinderPipeline(luigi.Task):
             if related_terms and len(related_terms) > 0:
                 added.extend(related_terms)
         solr_query = config.get_query(added)
-        total_docs = solr_data.query_doc_size(solr_query, solr_url=util.solr_url)
+        total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
+                                              mapper_url=util.report_mapper_url,
+                                              mapper_key=util.report_mapper_key, solr_url=util.solr_url,
+                                              tags=pipeline_config.report_tags)
         doc_limit = config.get_limit(total_docs, pipeline_config)
         ranges = range(0, (doc_limit + util.row_count), util.row_count)
         matches = [TermFinderBatchTask(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n) for n in

@@ -6,12 +6,11 @@ from data_access import pipeline_config as p_config
 from data_access import jobs
 from data_access import job_results
 import luigi_pipeline_runner
-from nlp import extract_ngrams
-from nlp import get_synonyms, get_ancestors, get_descendants
+from nlp import *
 
 
 app = Flask(__name__)
-
+segmentor = Segmentation()
 
 @app.route('/')
 def hello_world():
@@ -101,6 +100,28 @@ def get_ngram():
 
         return ans
     return 'Unable to extract n-gram'
+
+
+@app.route('/value_extraction', methods=['GET'])
+def value_extractions():
+    if request.method == 'GET':
+        s = request.args.get('s')
+        q = request.args.get('q')
+
+        results = run_value_extractor(s, q)
+        return json.dumps([r.__dict__ for r in results], indent=4)
+    return "unable to perform vocabulary expansion"
+
+
+@app.route('/value_extraction_full', methods=['GET'])
+def value_extractions_full():
+    if request.method == 'GET':
+        t = request.args.get('t')
+        q = request.args.get('q')
+
+        results = run_value_extractor_on_sentences(segmentor.parse_sentences(t), q)
+        return json.dumps([r.__dict__ for r in results], indent=4)
+    return "unable to perform vocabulary expansion"
 
 
 @app.route('/vocab_expansion', methods=['GET'])

@@ -1,7 +1,9 @@
 import configparser
+import os
 
+SCRIPT_DIR = os.path.dirname(__file__)
 config = configparser.RawConfigParser()
-config.read('./project.cfg')
+config.read(os.path.join(SCRIPT_DIR, 'project.cfg'))
 
 solr_url = config.get('solr', 'url')
 conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (config.get('pg', 'host'),
@@ -28,3 +30,8 @@ main_url = config.get('main', 'url')
 row_count = 100
 delimiter = ','
 quote_character = '"'
+
+report_mapper_url = config.get('report_mapper', 'url')
+report_mapper_key = config.get('report_mapper', 'key')
+report_mapper_inst = config.get('report_mapper', 'institute')
+
