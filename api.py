@@ -137,15 +137,17 @@ def vocabulary_expansion():
         """
         k = request.args.get('type')
         concept = request.args.get('concept')
+        vocab = request.args.get('vocab')
+        print(vocab)
 
         result = {"vocab":[]}
 
         if k == '1':
-            r = get_synonyms(util.conn_string, concept)
+            r = get_synonyms(util.conn_string, concept, vocab)
         elif k == '2':
-            r = get_ancestors(util.conn_string, concept)
+            r = get_ancestors(util.conn_string, concept, vocab)
         elif k == '3':
-            r = get_descendants(util.conn_string, concept)
+            r = get_descendants(util.conn_string, concept, vocab)
         else:
             return 'Incorrect request format'
 

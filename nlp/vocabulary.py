@@ -12,12 +12,16 @@ import psycopg2
 import psycopg2.extras
 
 
-vocabulary = "SNOMED"
+
 
 # Function to get synonyms for given concept
-def get_synonyms(conn_string, concept):
+def get_synonyms(conn_string, concept, vocabulary):
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
+
+    if vocabulary is None:
+        vocabulary = "SNOMED"
+
 
     try:
         cursor.execute(""" SELECT concept_synonym_name
@@ -40,9 +44,12 @@ def get_synonyms(conn_string, concept):
 
 
 # Function to get ancestors for given concept
-def get_ancestors(conn_string, concept):
+def get_ancestors(conn_string, concept, vocabulary):
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
+
+    if vocabulary is None:
+        vocabulary = "SNOMED"
 
     try:
         cursor.execute(""" SELECT concept_name
@@ -64,9 +71,12 @@ def get_ancestors(conn_string, concept):
     return result
 
 # Function to get descendants for given concept
-def get_descendants(conn_string, concept):
+def get_descendants(conn_string, concept, vocabulary):
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
+
+    if vocabulary is None:
+        vocabulary = "SNOMED"
 
     try:
         cursor.execute(""" SELECT concept_name
@@ -88,24 +98,24 @@ def get_descendants(conn_string, concept):
     return result
 
 
-def get_related_terms(conn_string, concept, get_synonyms_bool=True, get_descendants_bool=False, get_ancestors_bool=False
+def get_related_terms(conn_string, concept, vocabulary, get_synonyms_bool=True, get_descendants_bool=False, get_ancestors_bool=False
                       , escape=True):
     related_terms = []
     escaped = []
     if get_synonyms_bool:
-        res = get_synonyms(conn_string, concept)
+        res = get_synonyms(conn_string, concept, vocabulary)
         if res:
             for r in res:
                 related_terms.append(r[0])
                 escaped.append(re.escape(r[0]))
     if get_descendants_bool:
-        res = get_descendants(conn_string, concept)
+        res = get_descendants(conn_string, concept, vocabulary)
         if res:
             for r in res:
                 related_terms.append(r[0])
                 escaped.append(re.escape(r[0]))
     if get_ancestors_bool:
-        res = get_ancestors(conn_string, concept)
+        res = get_ancestors(conn_string, concept, vocabulary)
         if res:
             for r in res:
                 related_terms.append(r[0])

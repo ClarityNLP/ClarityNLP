@@ -84,7 +84,10 @@ Fields
   - 2: ancestors
   - 3: descendants
 - Concept: mandatory
+- Vocab: optional
 
 Example usage
 
 `~/vocabExpansion?type=1&concept=Inactive`
+
+`~/vocabExpansion?type=1&concept=Inactive&vocab=SNOMED`
