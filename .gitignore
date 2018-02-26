@@ -92,3 +92,5 @@ ENV/
 .ropeproject
 
 .idea/
+
+project.cfg
