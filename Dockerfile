@@ -16,6 +16,7 @@ RUN pip3 install -r requirements.txt
 RUN pip3 install -U pytest
 RUN python3 -m spacy download en
 RUN python3 -m spacy download en_core_web_md
+RUN python3 install_models.py
 
 COPY . .
 
