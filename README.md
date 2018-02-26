@@ -13,11 +13,10 @@ python3 -m spacy download en
 python -m spacy download en_core_web_md
 ```
 If you want to use conda, you can setup the environment using `spec-file.txt`
-##### Install NLTK dependencies 
-(From Python)
-```python
-import nltk
-nltk.download('punkt')
+##### Install models 
+
+```bash 
+python3 install_models.py
 ```
 
 ### Vocabulary
