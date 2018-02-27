@@ -36,4 +36,4 @@ curl -X POST -H 'Content-type:application/json' --data-binary '{
 "add-dynamic-field":{"name":"*_attrs","type":"string","multiValued":true,"indexed":true,"stored":true}
 }' http://localhost:8983/solr/sample/schema
 
-/home/solr/bin/post -c sample
+/home/solr/bin/post -c sample sample.csv
