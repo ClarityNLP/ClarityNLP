@@ -1064,8 +1064,11 @@ def process_report(report):
 
     return section_headers, section_texts
 
+
 ###############################################################################
 def section_tagger_init():
+
+    print("section_tagger_init...")
     
     # load the mapping of concept strings to synonyms
     try:

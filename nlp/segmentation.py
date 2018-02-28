@@ -2,11 +2,13 @@ import re
 import en_core_web_md
 from nltk.tokenize import sent_tokenize
 
+print('Segmentation init...')
+nlp = en_core_web_md.load()
+
 
 class Segmentation(object):
 
     def __init__(self):
-        self.nlp = en_core_web_md.load()
         self.regex_multi_space = re.compile(r' +')
         self.regex_multi_newline = re.compile(r'\n+')
 
@@ -27,10 +29,10 @@ class Segmentation(object):
         return sent_tokenize(self, text)
 
     def parse_sentences_spacy(self, text):
-        doc = self.nlp(text)
+        doc = nlp(text)
         return [sent.string.strip() for sent in doc.sents]
 
 
-if __name__ == '__main__':
-    seg = Segmentation()
-    print(seg.parse_sentences("My name is Bob. I'm a doctor."))
+# if __name__ == '__main__':
+    # seg = Segmentation()
+    # print(seg.parse_sentences("My name is Bob. I'm a doctor."))

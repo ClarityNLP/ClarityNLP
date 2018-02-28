@@ -179,6 +179,7 @@ def run_individual_context(sentence: str, target_phrase: str, key: str, rules, p
 class Context(object):
 
     def __init__(self):
+        print("Context init...")
         self.terms = {
             "negated": load_terms("negex"),
             "experiencier": load_terms("experiencer"),

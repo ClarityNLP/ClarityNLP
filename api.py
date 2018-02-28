@@ -1,26 +1,28 @@
 from flask import Flask, request, send_file
-import util
-import json
 import datetime
 from data_access import pipeline_config as p_config
 from data_access import jobs
 from data_access import job_results
 import luigi_pipeline_runner
+from flask_autodoc import Autodoc
 from nlp import *
 
 
 app = Flask(__name__)
-segmentor = Segmentation()
+auto = Autodoc(app)
+
 
 @app.route('/')
-def hello_world():
-    return "Welcome to NLP!"
+def home():
+    return auto.html()
 
 
 @app.route('/pipeline', methods=['POST'])
+@auto.doc()
 def pipeline():
+    """POST a pipeline job (JSON) to run on the Luigi pipeline."""
     if not request.data:
-        return 'POST a JSON pipeline config to execute or an id to GET'
+        return 'POST a JSON pipeline config to execute or an id to GET. Body should be pipeline JSON'
     try:
         p_cfg = p_config.PipelineConfig.from_dict(request.get_json())
         p_id = p_config.insert_pipeline_config(p_cfg, util.conn_string)
@@ -44,7 +46,9 @@ def pipeline():
 
 
 @app.route('/pipeline_id', methods=['GET'])
+@auto.doc()
 def pipeline_id():
+    """GET a pipeline JSON based on the pipeline_id, PARAMETERS: id=pipeline id"""
     try:
         pid = request.args.get('id')
         return json.dumps(p_config.get_pipeline_config(pid, util.conn_string))
@@ -53,7 +57,9 @@ def pipeline_id():
 
 
 @app.route('/pipeline_types', methods=['GET'])
+@auto.doc()
 def pipeline_types():
+    """GET valid pipeline types"""
     try:
         return repr(list(luigi_pipeline_runner.pipeline_types.keys()))
     except Exception as e:
@@ -61,7 +67,9 @@ def pipeline_types():
 
 
 @app.route('/status', methods=['GET'])
+@auto.doc()
 def get_job_status():
+    """GET current job status, PARAMETERS: job=job id"""
     try:
         job = request.args.get('job')
         status = jobs.get_job_status(int(job), util.conn_string)
@@ -72,6 +80,7 @@ def get_job_status():
 
 @app.route('/job_results', methods=['GET'])
 def get_job_results():
+    """GET job results as CSV, PARAMETERS: job=job id, type=job type"""
     try:
         job = request.args.get('job')
         job_type = request.args.get('type')
@@ -82,7 +91,9 @@ def get_job_results():
 
 
 @app.route('/ngram', methods=['GET'])
+@auto.doc()
 def get_ngram():
+    """GET n-grams for a cohort, PARAMETERS: cohort_id=cohort_id, keyword=keyword, n=ngram length, frequency=cutoff frequency"""
     if request.method == 'GET':
         cohort_id = request.args.get('cohort_id')
         keyword = request.args.get('keyword')
@@ -103,38 +114,67 @@ def get_ngram():
 
 
 @app.route('/value_extraction', methods=['GET'])
+@auto.doc()
 def value_extractions():
-    if request.method == 'GET':
-        s = request.args.get('s')
-        q = request.args.get('q')
-
-        results = run_value_extractor(s, q)
-        return json.dumps([r.__dict__ for r in results], indent=4)
-    return "unable to perform vocabulary expansion"
-
-
-@app.route('/value_extraction_full', methods=['GET'])
-def value_extractions_full():
+    """GET measurements from text (no sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
     if request.method == 'GET':
         t = request.args.get('t')
         q = request.args.get('q')
 
-        results = run_value_extractor_on_sentences(segmentor.parse_sentences(t), q)
+        results = run_value_extractor({'sentence': t, 'query': q})
         return json.dumps([r.__dict__ for r in results], indent=4)
-    return "unable to perform vocabulary expansion"
+    return "Please pass in params t (text) and q (comma-separated list of search terms)"
+
+
+@app.route('/value_extraction_full', methods=['GET'])
+@auto.doc()
+def value_extractions_full():
+    """GET measurements from text (with sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
+    if request.method == 'GET':
+        t = request.args.get('t')
+        q = request.args.get('q')
+
+        results = run_value_extractor_full(t, q)
+        return json.dumps([r for r in results], indent=4)
+    return "Please pass in params t (text) and q (comma-separated list of search terms)"
+
+
+@app.route('/term_finder', methods=['GET'])
+@auto.doc()
+def term_finder():
+    """GET terms, context, negex, sections from text (no sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
+    if request.method == 'GET':
+        t = request.args.get('t')
+        q = request.args.get('q')
+        q_terms = q.split(',')
+        finder = TermFinder(q_terms)
+
+        results = finder.get_term_matches(t)
+        return json.dumps([r.__dict__ for r in results], indent=4)
+    return "Please pass in params t (text) and q (comma-separated list of search terms)"
+
+
+@app.route('/term_finder_full', methods=['GET'])
+@auto.doc()
+def term_finder_full():
+    """GET terms, context, negex, sections from text (with sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
+    if request.method == 'GET':
+        t = request.args.get('t')
+        q = request.args.get('q')
+        q_terms = q.split(',')
+        finder = TermFinder(q_terms)
+
+        results = finder.get_term_full_text_matches(t)
+        return json.dumps([r.__dict__ for r in results], indent=4)
+    return "Please pass in params t (text) and q (comma-separated list of search terms)"
 
 
 @app.route('/vocab_expansion', methods=['GET'])
+@auto.doc()
 def vocabulary_expansion():
+    """GET related terms based a user entered term, PARAMETERS: type=1 (synonyms), 2 (ancestors), 3 (descendants), concept=user entered term, vocab=(optional, default is SNOMED)"""
     if request.method == 'GET':
-        """
-        type:
-            1 - synonyms
-            2 - ancestors
-            3 - descendants
-        concept:
-            user entered term
-        """
+
         k = request.args.get('type')
         concept = request.args.get('concept')
         vocab = request.args.get('vocab')

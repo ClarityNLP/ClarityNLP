@@ -7,11 +7,8 @@ Vocabulary Expansion
 """
 
 import re
-import configparser
 import psycopg2
 import psycopg2.extras
-
-
 
 
 # Function to get synonyms for given concept
@@ -32,6 +29,8 @@ def get_synonyms(conn_string, concept, vocabulary):
 
         result = cursor.fetchall()
 
+        return result
+
     except Exception as ex:
         print('Failed to get synonyms')
         print(str(ex))
@@ -39,8 +38,7 @@ def get_synonyms(conn_string, concept, vocabulary):
     finally:
         conn.close()
 
-    return result
-
+    return list()
 
 
 # Function to get ancestors for given concept
@@ -60,7 +58,7 @@ def get_ancestors(conn_string, concept, vocabulary):
         """, (concept.lower(), vocabulary, vocabulary))
 
         result = cursor.fetchall()
-
+        return result
     except Exception as ex:
         print('Failed to get ancestors')
         print(str(ex))
@@ -68,7 +66,8 @@ def get_ancestors(conn_string, concept, vocabulary):
     finally:
         conn.close()
 
-    return result
+    return list()
+
 
 # Function to get descendants for given concept
 def get_descendants(conn_string, concept, vocabulary):
@@ -87,6 +86,7 @@ def get_descendants(conn_string, concept, vocabulary):
         """, (concept.lower(), vocabulary, vocabulary))
 
         result = cursor.fetchall()
+        return result
 
     except Exception as ex:
         print('Failed to get descendants')
@@ -95,7 +95,7 @@ def get_descendants(conn_string, concept, vocabulary):
     finally:
         conn.close()
 
-    return result
+    return list()
 
 
 def get_related_terms(conn_string, concept, vocabulary, get_synonyms_bool=True, get_descendants_bool=False, get_ancestors_bool=False

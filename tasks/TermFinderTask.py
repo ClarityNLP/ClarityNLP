@@ -7,9 +7,6 @@ from data_access import jobs
 import util
 
 
-section_tagger_init()
-
-
 class TermFinderBatchTask(luigi.Task):
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
@@ -26,38 +23,28 @@ class TermFinderBatchTask(luigi.Task):
         docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start, solr_url=util.solr_url,
                                tags=pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
-        term_matcher = terms.SimpleTermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
-                                              .include_descendants, pipeline_config.include_ancestors)
-        c_text = Context()
+        term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
+                                  .include_descendants, pipeline_config.include_ancestors)
 
         with self.output().open('w') as outfile:
             csv_writer = csv.writer(outfile, delimiter=util.delimiter,
                                     quotechar=util.quote_character, quoting=csv.QUOTE_MINIMAL)
+            # self.sentence = sentence
+            # self.term = term
+            # self.negex = negex
+            # self.temporality = temporality
+            # self.experiencer = experiencer
+            # self.section = section
+            # self.start = start
+            # self.end = end
             for doc in docs:
-                if doc["report_text"] and len(doc["report_text"]) > 0:
-                    section_headers, section_texts = [UNKNOWN], [doc["report_text"]]
-                    try:
-                        section_headers, section_texts = sec_tag_process(doc["report_text"])
-                    except Exception as e:
-                        print(e)
-
-                    subject = doc["subject"]
-                    report_type = doc["report_type"]
-                    report_id = doc["report_id"]
-                    report_date = doc["report_date"]
-                    for idx in range(0, len(section_headers)):
-                        txt = section_texts[idx]
-                        sentences = self.segment.parse_sentences(txt)
-                        section_code = ".".join([str(i) for i in section_headers[idx].treecode_list])
-
-                        for sentence in sentences:
-                            for m in term_matcher.get_matches(sentence):
-                                context_matches = c_text.run_context(m.group(0), sentence)
-                                csv_writer.writerow([report_id, subject, report_date, report_type,
-                                                     section_headers[idx].concept, section_code,
-                                                     sentence, m.group(), m.start(), m.end(), pipeline_config.concept_code,
-                                                     context_matches.negex.value, context_matches.temporality.value,
-                                                     context_matches.experiencier.value])
+                terms_found = term_matcher.get_term_full_text_matches(doc["report_text"])
+                for term in terms_found:
+                    csv_writer.writerow([doc["report_id"], doc["subject"], doc["report_date"], doc["report_type"],
+                                         term.section, "",
+                                         term.sentence, term.term, term.start, term.end, pipeline_config.concept_code,
+                                         term.negex, term.temporality,
+                                         term.experiencer])
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_term_finder_batch%s.csv" % (util.tmp_dir, str(self.job),
