@@ -113,40 +113,37 @@ def get_ngram():
     return 'Unable to extract n-gram'
 
 
-@app.route('/value_extraction', methods=['GET'])
+@app.route('/value_extraction/<query>', methods=['POST'])
 @auto.doc()
-def value_extractions():
-    """GET measurements from text (no sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
-    if request.method == 'GET':
-        t = request.args.get('t')
-        q = request.args.get('q')
+def value_extractions(query):
+    """POST text to extract measurements (no sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
+    if request.method == 'POST' and request.data:
+        t = request.data.decode("utf-8")
 
-        results = run_value_extractor({'sentence': t, 'query': q})
+        results = run_value_extractor({'sentence': t, 'query': query})
         return json.dumps([r.__dict__ for r in results], indent=4)
     return "Please pass in params t (text) and q (comma-separated list of search terms)"
 
 
-@app.route('/value_extraction_full', methods=['GET'])
+@app.route('/value_extraction_full/<query>', methods=['POST'])
 @auto.doc()
-def value_extractions_full():
-    """GET measurements from text (with sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
-    if request.method == 'GET':
-        t = request.args.get('t')
-        q = request.args.get('q')
+def value_extractions_full(query):
+    """POST text to extract measurements (with sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
+    if request.method == 'POST' and request.data:
+        t = request.data.decode("utf-8")
 
-        results = run_value_extractor_full(t, q)
-        return json.dumps([r for r in results], indent=4)
+        results = run_value_extractor_full(t, query)
+        return json.dumps([r.__dict__ for r in results], indent=4)
     return "Please pass in params t (text) and q (comma-separated list of search terms)"
 
 
-@app.route('/term_finder', methods=['GET'])
+@app.route('/term_finder/<query>', methods=['POST'])
 @auto.doc()
-def term_finder():
-    """GET terms, context, negex, sections from text (no sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
-    if request.method == 'GET':
-        t = request.args.get('t')
-        q = request.args.get('q')
-        q_terms = q.split(',')
+def term_finder(query):
+    """GET terms, context, negex, sections from text (no sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
+    if request.method == 'POST' and request.data:
+        t = request.data.decode("utf-8")
+        q_terms = query.split(',')
         finder = TermFinder(q_terms)
 
         results = finder.get_term_matches(t)
@@ -154,19 +151,18 @@ def term_finder():
     return "Please pass in params t (text) and q (comma-separated list of search terms)"
 
 
-@app.route('/term_finder_full', methods=['GET'])
+@app.route('/term_finder_full/<query>', methods=['POST'])
 @auto.doc()
-def term_finder_full():
-    """GET terms, context, negex, sections from text (with sentence parsing), PARAMETERS: t=text, q=comma-separated list of terms"""
-    if request.method == 'GET':
-        t = request.args.get('t')
-        q = request.args.get('q')
-        q_terms = q.split(',')
+def term_finder_full(query):
+    """GET terms, context, negex, sections from text (with sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
+    if request.method == 'POST' and request.data:
+        t = request.data.decode("utf-8")
+        q_terms = query.split(',')
         finder = TermFinder(q_terms)
 
         results = finder.get_term_full_text_matches(t)
         return json.dumps([r.__dict__ for r in results], indent=4)
-    return "Please pass in params t (text) and q (comma-separated list of search terms)"
+    return "Please pass "
 
 
 @app.route('/vocab_expansion', methods=['GET'])
