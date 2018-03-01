@@ -34,13 +34,11 @@ def upload():
 
     elif request.method == 'POST':
         f = request.files['file']
-        fname = f.filename
-        if fname.endswith('.csv'):
-            #f.save(os.path.join(TMP_DIR, secure_filename(f.filename)))
-            msg = upload_file(util.solr_url, os.path.join(TMP_DIR, secure_filename(f.filename)))
-            return render_template('solr_upload.html',result = msg)
-        else:
-            return render_template('solr_upload.html',result = "Only CSV files are currently supported")
+        filepath = os.path.join(TMP_DIR, secure_filename(f.filename))
+        f.save(filepath)
+        msg = upload_file(util.solr_url, filepath)
+        os.remove(filepath)
+        return render_template('solr_upload.html',result = msg)
 
     return render_template('404.html')
 

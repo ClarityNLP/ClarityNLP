@@ -3,22 +3,22 @@ import json
 import string
 import csv
 
-def upload_file(solr_url, filename):
-    # filepath = "../tmp/" + filename
-    # csvfile = open(filename, 'r')
-    # content = csvfile.readlines()
-    # req = urllib.request(solr_url)
-    # req.add_header('Content-Type', 'application/csv')
-    # print (urllib.urlopen(req, string.join(entry)))
+def upload_file(solr_url, filepath):
 
-    url = solr_url + '/update/csv'
-    print (url)
+    if filepath.endswith(".csv"):
+        url = solr_url + '/update/csv'
+        headers = {
+        'Content-type': 'text/plain; charset=utf-8',
+        }
+    elif filepath.endswith(".json"):
+        url = solr_url + '/update/json'
+        headers = {
+        'Content-type': 'text/json; charset=utf-8',
+        }
+    else:
+        return "Could not upload. Unsupported file type. Currently only CSV files are supported."
 
-    headers = {
-    'Content-type': 'text/plain; charset=utf-8',
-    }
-
-    data = open(filename, 'rb').read()
+    data = open(filepath, 'rb').read()
     response = requests.post(url, headers=headers, data=data)
     print (response.status_code)
     print (response.reason)
