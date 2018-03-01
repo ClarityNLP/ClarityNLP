@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, send_file, render_template
 from werkzeug import secure_filename
 import datetime
@@ -8,6 +9,7 @@ import luigi_pipeline_runner
 from flask_autodoc import Autodoc
 from nlp import *
 
+TMP_DIR = 'tmp'
 
 app = Flask(__name__)
 auto = Autodoc(app)
@@ -27,7 +29,7 @@ def upload():
         f = request.files['file']
         fname = f.filename
         if fname.endswith('.csv'):
-            f.save(secure_filename(f.filename))
+            f.save(os.path.join(TMP_DIR, secure_filename(f.filename)))
             return render_template('solr_upload.html',result = "File successfully uploaded")
         else:
             return render_template('solr_upload.html',result = "Only CSV files are currently supported")
