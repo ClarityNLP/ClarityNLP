@@ -8,12 +8,12 @@ def upload_file(solr_url, filepath):
     if filepath.endswith(".csv"):
         url = solr_url + '/update/csv'
         headers = {
-        'Content-type': 'text/plain; charset=utf-8',
+        'Content-type': 'application/csv',
         }
     elif filepath.endswith(".json"):
         url = solr_url + '/update/json'
         headers = {
-        'Content-type': 'text/json; charset=utf-8',
+        'Content-type': 'application/json/docs',
         }
     else:
         return "Could not upload. Unsupported file type. Currently only CSV files are supported."
