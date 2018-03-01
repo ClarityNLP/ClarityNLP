@@ -1,4 +1,5 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, render_template
+from werkzeug import secure_filename
 import datetime
 from data_access import pipeline_config as p_config
 from data_access import jobs, job_results
@@ -15,6 +16,23 @@ auto = Autodoc(app)
 @app.route('/')
 def home():
     return auto.html()
+
+@app.errorhandler(404)
+@app.route('/upload', methods = ['POST', 'GET'])
+def upload():
+    if request.method == 'GET':
+        return render_template('solr_upload.html')
+
+    elif request.method == 'POST':
+        f = request.files['file']
+        fname = f.filename
+        if fname.endswith('.csv'):
+            f.save(secure_filename(f.filename))
+            return render_template('solr_upload.html',result = "File successfully uploaded")
+        else:
+            return render_template('solr_upload.html',result = "Only CSV files are currently supported")
+
+    return render_template('404.html')
 
 
 @app.route('/pipeline', methods=['POST'])
