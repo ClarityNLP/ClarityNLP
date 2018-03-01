@@ -17,25 +17,22 @@ auto = Autodoc(app)
 def home():
     return auto.html()
 
-@app.route('/upload')
+@app.errorhandler(404)
+@app.route('/upload', methods = ['POST', 'GET'])
 def upload():
-    return render_template('solr_upload.html')
+    if request.method == 'GET':
+        return render_template('solr_upload.html')
 
-@app.route('/upload_file', methods = ['POST', 'GET'])
-def upload_doc():
-    if request.method == 'POST':
-      f = request.files['file']
-      fname = f.filename
-      if fname.endswith('.csv'):
-          f.save(secure_filename(f.filename))
-          return render_template('solr_upload.html',result = "File successfully uploaded")
-      else:
-          return render_template('solr_upload.html',result = "Only CSV files are currently supported")
+    elif request.method == 'POST':
+        f = request.files['file']
+        fname = f.filename
+        if fname.endswith('.csv'):
+            f.save(secure_filename(f.filename))
+            return render_template('solr_upload.html',result = "File successfully uploaded")
+        else:
+            return render_template('solr_upload.html',result = "Only CSV files are currently supported")
 
-    return render_template('solr_upload.html',result = "File could not be uploaded. Report to admin")
-
-
-
+    return render_template('404.html')
 
 
 @app.route('/pipeline', methods=['POST'])
