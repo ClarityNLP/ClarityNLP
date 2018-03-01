@@ -8,6 +8,7 @@ from data_access import NLPModel
 import luigi_pipeline_runner
 from flask_autodoc import Autodoc
 from nlp import *
+from upload import upload_file
 
 TMP_DIR = 'tmp'
 
@@ -35,8 +36,9 @@ def upload():
         f = request.files['file']
         fname = f.filename
         if fname.endswith('.csv'):
-            f.save(os.path.join(TMP_DIR, secure_filename(f.filename)))
-            return render_template('solr_upload.html',result = "File successfully uploaded")
+            #f.save(os.path.join(TMP_DIR, secure_filename(f.filename)))
+            msg = upload_file(util.solr_url, os.path.join(TMP_DIR, secure_filename(f.filename)))
+            return render_template('solr_upload.html',result = msg)
         else:
             return render_template('solr_upload.html',result = "Only CSV files are currently supported")
 
