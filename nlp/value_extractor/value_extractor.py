@@ -1,6 +1,9 @@
 from subprocess import Popen, PIPE, STDOUT
 import os
 import json
+import random, string
+import re
+from itertools import product
 from multiprocessing import Pool
 from data_access import BaseModel
 from nlp.segmentation import *
@@ -43,48 +46,55 @@ class MeasurementResults(BaseModel):
         self.measurements = measurements
 
 
-def run_value_extractor(value_query):
+def run_value_extractor(filename):
 
     measurements = list()
     try:
-        p = Popen(['java', '-jar', FULL_JAR, '-s', value_query['sentence'], '-q', value_query['query'], '-m', MODEL_FULL_DIR], stdout=PIPE, stderr=STDOUT)
+        p = Popen(['java', '-jar', FULL_JAR, '-f', filename, '-m', MODEL_FULL_DIR], stdout=PIPE, stderr=STDOUT)
         json_str = ''
         for line in p.stdout:
-            json_str += (str(line, 'utf-8') + '\n')
+            json_str += str(line, 'utf-8')
 
         json_obj = json.loads(json_str)
-        meas_list = json_obj['measurements']
-        for meas in meas_list:
-            meas_obj = Measurement.from_dict(meas)
-            meas_obj.__setattr__('sentence', value_query['sentence'])
-            measurements.append(meas_obj)
+        results = json_obj['results']
+        for res in results:
+            if res["querySuccess"] == 'TRUE':
+                meas_results = res['measurements']
+                for meas in meas_results:
+                    meas_obj = Measurement.from_dict(meas)
+                    meas_obj.__setattr__('sentence', res['sentence'])
+                    measurements.append(meas_obj)
     except Exception as e:
         print(e)
 
     return measurements
 
 
-def run_value_extractor_full(text, query):
-    measurements = list()
-    inputs = list()
+def run_value_extractor_full(text, query: list()):
     sentences = segmentor.parse_sentences(text)
-    for sentence in sentences:
-        i = {
-            'sentence': sentence,
-            'query': query
-        }
-        inputs.append(i)
-    pool = Pool(processes=20)
-    results = pool.map(run_value_extractor, inputs)
-    for r in results:
-        measurements.extend(r)
+    rand_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(random.randint(1, 10)))
+    filename = "/tmp/%s.txt" % rand_name
+    matchers = [re.compile(r"\b%s\b" % t, re.IGNORECASE) for t in query]
+    vals = product(sentences, matchers)
+    with open(filename, "w") as fileout:
+        for v in vals:
+            sentence = v[0]
+            matcher = v[1]
+            match = matcher.search(sentence)
+            if match:
+                term = match.group(0)
+                # TODO filter out sentence if matching
+                fileout.write("QUERY: %s\n" % term)
+                fileout.write(sentence.replace('\n', ' '))
+                fileout.write("\n\n")
+
+    measurements = run_value_extractor(filename)
+    os.remove(filename)
 
     return measurements
 
 
 if __name__ == '__main__':
-    res = run_value_extractor({'sentence': 'the tumor measures 5 cm x 1 cm', 'query': "tumor"})
-    json_string = json.dumps([r.__dict__ for r in res], indent=4)
-    res = run_value_extractor_full("COMPLETE GU U.S. (BLADDER & RENAL) \n Reason: r/o stones, tumor hydro, need PVR prostate size\n\n UNDERLYING MEDICAL CONDITION:\n  hx TURP and bladder ca\n REASON FOR THIS EXAMINATION:\n  r/o stones, tumor hydro, need PVR prostate size\n  FINAL REPORT\n COMPLETE GU ULTRASOUND\n\n INDICATION:  History of bladder cancer and TURB.  Rule out stones, tumor\n burden, need PVR and prostate size.\n\n COMPLETE GU ULTRASOUND:  Comparison is made to prior CT examination date.  The right kidney measures 12.3 cm.  The left kidney measures 9.9 cm.\n There is no hydronephrosis or stones.  Multiple cysts are seen bilaterally.\n These appear simple.  The largest cyst is seen in the lower pole of the left\n kidney and measures 3.0 x 1.8 x 2.4 cm.  The bladder is partially filled.  The\n prostate gland measures 3.8 x 2.9 x 3.0 cm resulting in a volume of 17 cc and\n a predicted PSA of 2.1.  Upon voiding, there was no post-void residual.\n\n IMPRESSION:  Multiple bilateral renal cysts.  Otherwise, normal examination.", 'tumor')
+    res = run_value_extractor_full("COMPLETE GU U.S. (BLADDER & RENAL) \n Reason: r/o stones, tumor hydro, need PVR prostate size\n\n UNDERLYING MEDICAL CONDITION:\n  hx TURP and bladder ca\n REASON FOR THIS EXAMINATION:\n  r/o stones, tumor hydro, need PVR prostate size\n  FINAL REPORT\n COMPLETE GU ULTRASOUND\n\n INDICATION:  History of bladder cancer and TURB.  Rule out stones, tumor\n burden, need PVR and prostate size.\n\n COMPLETE GU ULTRASOUND:  Comparison is made to prior CT examination date.  The right kidney measures 12.3 cm.  The left kidney measures 9.9 cm.\n There is no hydronephrosis or stones.  Multiple cysts are seen bilaterally.\n These appear simple.  The largest cyst is seen in the lower pole of the left\n kidney and measures 3.0 x 1.8 x 2.4 cm.  The bladder is partially filled.  The\n prostate gland measures 3.8 x 2.9 x 3.0 cm resulting in a volume of 17 cc and\n a predicted PSA of 2.1.  Upon voiding, there was no post-void residual.\n\n IMPRESSION:  Multiple bilateral renal cysts.  Otherwise, normal examination.", ['tumor', 'cyst'])
     json_string = json.dumps([r.__dict__ for r in res], indent=4)
     print(json_string)

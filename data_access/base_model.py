@@ -7,9 +7,16 @@ class BaseModel(object):
 
     @classmethod
     def from_json(cls, string: str):
-        obj = json.loads(string)
+        obj = json.loads(string, strict=False)
         return cls(**obj)
 
     @classmethod
     def from_dict(cls, obj: dict):
         return cls(**obj)
+
+
+class NLPModel(BaseModel):
+
+    def __init__(self, terms=[], text=''):
+        self.terms = terms
+        self.text = text

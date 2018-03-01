@@ -1,8 +1,8 @@
 from flask import Flask, request, send_file
 import datetime
 from data_access import pipeline_config as p_config
-from data_access import jobs
-from data_access import job_results
+from data_access import jobs, job_results
+from data_access import NLPModel
 import luigi_pipeline_runner
 from flask_autodoc import Autodoc
 from nlp import *
@@ -113,54 +113,27 @@ def get_ngram():
     return 'Unable to extract n-gram'
 
 
-@app.route('/value_extraction/<query>', methods=['POST'])
+@app.route('/value_extraction', methods=['POST'])
 @auto.doc()
-def value_extractions(query):
-    """POST text to extract measurements (no sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
+def value_extraction():
+    """POST to extract measurements, text=text to parse, terms=an array of terms"""
     if request.method == 'POST' and request.data:
-        t = request.data.decode("utf-8")
+        obj = NLPModel.from_dict(request.get_json())
 
-        results = run_value_extractor({'sentence': t, 'query': query})
+        results = run_value_extractor_full(obj.text, obj.terms)
         return json.dumps([r.__dict__ for r in results], indent=4)
     return "Please pass in params t (text) and q (comma-separated list of search terms)"
 
 
-@app.route('/value_extraction_full/<query>', methods=['POST'])
+@app.route('/term_finder', methods=['POST'])
 @auto.doc()
-def value_extractions_full(query):
-    """POST text to extract measurements (with sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
+def term_finder():
+    """POST to extract terms, context, negex, sections from text, text=text to parse, terms=array of terms"""
     if request.method == 'POST' and request.data:
-        t = request.data.decode("utf-8")
+        obj = NLPModel.from_dict(request.get_json())
+        finder = TermFinder(obj.terms)
 
-        results = run_value_extractor_full(t, query)
-        return json.dumps([r.__dict__ for r in results], indent=4)
-    return "Please pass in params t (text) and q (comma-separated list of search terms)"
-
-
-@app.route('/term_finder/<query>', methods=['POST'])
-@auto.doc()
-def term_finder(query):
-    """GET terms, context, negex, sections from text (no sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
-    if request.method == 'POST' and request.data:
-        t = request.data.decode("utf-8")
-        q_terms = query.split(',')
-        finder = TermFinder(q_terms)
-
-        results = finder.get_term_matches(t)
-        return json.dumps([r.__dict__ for r in results], indent=4)
-    return "Please pass in params t (text) and q (comma-separated list of search terms)"
-
-
-@app.route('/term_finder_full/<query>', methods=['POST'])
-@auto.doc()
-def term_finder_full(query):
-    """GET terms, context, negex, sections from text (with sentence parsing), POST a text body to parse, query=comma-separated list of terms"""
-    if request.method == 'POST' and request.data:
-        t = request.data.decode("utf-8")
-        q_terms = query.split(',')
-        finder = TermFinder(q_terms)
-
-        results = finder.get_term_full_text_matches(t)
+        results = finder.get_term_full_text_matches(obj.text)
         return json.dumps([r.__dict__ for r in results], indent=4)
     return "Please pass "
 
