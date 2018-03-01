@@ -15,7 +15,13 @@ auto = Autodoc(app)
 
 @app.route('/')
 def home():
+    return "Welcome to Clarity NLP"
+
+
+@app.route('/documentation')
+def doc():
     return auto.html()
+
 
 @app.errorhandler(404)
 @app.route('/upload', methods = ['POST', 'GET'])
