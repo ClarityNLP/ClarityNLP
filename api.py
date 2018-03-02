@@ -26,7 +26,6 @@ def doc():
     return auto.html()
 
 
-@app.errorhandler(404)
 @app.route('/upload', methods = ['POST', 'GET'])
 def upload():
     if request.method == 'GET':
@@ -40,7 +39,7 @@ def upload():
         os.remove(filepath)
         return render_template('solr_upload.html',result = msg)
 
-    return render_template('404.html')
+    return "ERROR. Contact Admin and try again later."
 
 
 @app.route('/pipeline', methods=['POST'])
