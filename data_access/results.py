@@ -1,36 +1,62 @@
-import glob
 import util
 import csv
 import os
+from pymongo import MongoClient
 from datetime import datetime
-try:
-    from .pipeline_config import pipeline_output_positions
-except Exception as e:
-    print(e)
-    from pipeline_config import pipeline_output_positions
 
 
-def job_results(prefix: str, job: str):
+pipeline_output_positions = [
+    '_id',
+    'job_id',
+    'pipeline_id',
+    'pipeline_type',
+    'report_id',
+    'subject',
+    'report_date',
+    'report_type',
+    'section',
+    'sentence',
+    'term',
+    'start',
+    'end',
+    'concept_code',
+    'negation',
+    'temporality',
+    'experiencer'
+]
+
+
+def job_results(job_type: str, job: str):
+    client = MongoClient(util.mongo_host, util.mongo_port)
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
-    filename = '/tmp/job%s_%s.csv' % (str(job), today)
+    filename = '/tmp/job%s_%s_%s.csv' % (job, job_type, today)
+    length = len(pipeline_output_positions)
 
-    result_dir = "%s/%s_job%s_*.csv" % (util.tmp_dir, prefix, job)
-    files = glob.glob(result_dir)
+    db = client[util.mongo_db]
 
     with open(filename, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile, delimiter=util.delimiter, quotechar=util.quote_character,
                                quoting=csv.QUOTE_MINIMAL)
 
         csv_writer.writerow(pipeline_output_positions)
-        for matched_file in files:
-            with open(matched_file, newline='') as readfile:
-                csv_reader = csv.reader(readfile, delimiter=util.delimiter, quotechar=util.quote_character,
-                               quoting=csv.QUOTE_MINIMAL)
-                for row in csv_reader:
-                    csv_writer.writerow(row)
+        for res in db.pipeline_results.find({"job_id": int(job)}):
+            keys = list(res.keys())
+            output = [''] * length
+            i = 0
+            for key in pipeline_output_positions:
+                if key in keys:
+                    val = res[key]
+                    output[i] = val
+                i += 1
+            csv_writer.writerow(output)
+
     return filename
 
 
 def remove_tmp_file(filename):
     if filename:
         os.remove(filename)
+
+
+if __name__ == "__main__":
+    job_results("pipeline", "97")

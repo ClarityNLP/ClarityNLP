@@ -1,9 +1,10 @@
 import luigi
-import csv
 from data_access import solr_data
 from data_access import pipeline_config as config
 from nlp import *
 from data_access import jobs
+from pymongo import MongoClient
+import datetime
 import util
 
 
@@ -14,8 +15,11 @@ class TermFinderBatchTask(luigi.Task):
     batch = luigi.IntParameter()
     solr_query = luigi.Parameter()
     segment = segmentation.Segmentation()
+    client = MongoClient(util.mongo_host, util.mongo_port)
 
     def run(self):
+        db = self.client[util.mongo_db]
+
         jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running TermFinder Batch %s" %
                                self.batch)
 
@@ -27,25 +31,34 @@ class TermFinderBatchTask(luigi.Task):
                                   .include_descendants, pipeline_config.include_ancestors)
 
         with self.output().open('w') as outfile:
-            csv_writer = csv.writer(outfile, delimiter=util.delimiter,
-                                    quotechar=util.quote_character, quoting=csv.QUOTE_MINIMAL)
-            # self.sentence = sentence
-            # self.term = term
-            # self.negex = negex
-            # self.temporality = temporality
-            # self.experiencer = experiencer
-            # self.section = section
-            # self.start = start
-            # self.end = end
             for doc in docs:
                 terms_found = term_matcher.get_term_full_text_matches(doc["report_text"])
                 for term in terms_found:
-                    csv_writer.writerow([doc["report_id"], doc["subject"], doc["report_date"], doc["report_type"],
-                                         term.section, "",
-                                         term.sentence, term.term, term.start, term.end, pipeline_config.concept_code,
-                                         term.negex, term.temporality,
-                                         term.experiencer])
+                    inserted = db.pipeline_results.insert_one({
+                        "pipeline_type": "TermFinder",
+                        "pipeline_id": self.pipeline,
+                        "job_id": self.job,
+                        "batch": self.batch,
+                        "owner": pipeline_config.owner,
+                        "sentence": term.sentence,
+                        "report_type": doc["report_type"],
+                        "nlpql_feature": pipeline_config.name,
+                        "inserted_date": datetime.datetime.now(),
+                        "report_id": doc["report_id"],
+                        "subject": doc["subject"],
+                        "report_date": doc["report_date"],
+                        "section": term.section,
+                        "term": term.term,
+                        "start": term.start,
+                        "end": term.end,
+                        "concept_code": pipeline_config.concept_code,
+                        "negation": term.negex,
+                        "temporality": term.temporality,
+                        "experiencer": term.experiencer
+                    }).inserted_id
+                    outfile.write(str(inserted))
+                    outfile.write('\n')
 
     def output(self):
-        return luigi.LocalTarget("%s/pipeline_job%s_term_finder_batch%s.csv" % (util.tmp_dir, str(self.job),
+        return luigi.LocalTarget("%s/pipeline_job%s_term_finder_batch%s.txt" % (util.tmp_dir, str(self.job),
                                                                                 str(self.start)))

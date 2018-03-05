@@ -7,25 +7,7 @@ import configparser
 try:
     from .base_model import BaseModel
 except Exception as e:
-    print(e)
     from base_model import BaseModel
-
-pipeline_output_positions = [
-    'report_id',
-    'person',
-    'report_date',
-    'report_type',
-    'section',
-    'section_code',
-    'sentence',
-    'term',
-    'term_start',
-    'term_end',
-    'concept_code',
-    'negation',
-    'temporality',
-    'experiencer'
-]
 
 
 class Pipeline(BaseModel):
