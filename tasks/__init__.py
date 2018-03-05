@@ -1,1 +1,1 @@
-from .TermFinderTask import TermFinderBatchTask
+from .TermFinderTask import *

@@ -35,20 +35,38 @@ class IdentifiedTerm(BaseModel):
         self.end = end
 
 
-def get_matches(matcher, sentence: str, section='UNKNOWN'):
+def get_filter_values(filters, key):
+    if key in filters:
+        val = filters[key]
+        if val is not None:
+            return val
+        else:
+            return []
+    else:
+        return []
+
+
+def get_matches(matcher, sentence: str, section='UNKNOWN', filters={}):
     matches = []
     match = matcher.search(sentence)
+    temporality_filters = get_filter_values(filters, "temporality")
+    experiencer_filters = get_filter_values(filters, "experiencer")
+    negex_filters = get_filter_values(filters, "negex")
+
     if match:
         context_matches = c_text.run_context(match.group(0), sentence)
         term = IdentifiedTerm(sentence, match.group(), str(context_matches.negex.name),
                               str(context_matches.temporality.name), str(context_matches.experiencier.name),
                               section, match.start(), match.end())
-        matches.append(term)
+        if (len(temporality_filters) == 0 or term.temporality in temporality_filters) and \
+            (len(experiencer_filters) == 0 or term.experiencer in experiencer_filters) and \
+                (len(negex_filters) == 0 or term.negex in negex_filters):
+            matches.append(term)
 
     return matches
 
 
-def get_full_text_matches(matchers, text: str):
+def get_full_text_matches(matchers, text: str, filters={}):
     found_terms = list()
     section_headers, section_texts = [UNKNOWN], [text]
     try:
@@ -62,7 +80,7 @@ def get_full_text_matches(matchers, text: str):
 
         list_product = itertools.product(matchers, sentences)
         for l in list_product:
-            found = get_matches(l[0], l[1], section_headers[idx].concept)
+            found = get_matches(l[0], l[1], section_headers[idx].concept, filters)
             if found:
                 found_terms.extend(found)
     return found_terms
@@ -92,8 +110,8 @@ class TermFinder(BaseModel):
             term_matches.extend(cur)
         return term_matches
 
-    def get_term_full_text_matches(self, txt: str):
-        return get_full_text_matches(self.matchers, txt)
+    def get_term_full_text_matches(self, txt: str, filters={}):
+        return get_full_text_matches(self.matchers, txt, filters)
 
 
 if __name__ == "__main__":
