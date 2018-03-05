@@ -14,11 +14,11 @@ provider_assertion_filters = {
 }
 
 
-def mongo_writer(client, pipeline, job, batch, pipeline_config, term, doc):
+def mongo_writer(client, pipeline, job, batch, pipeline_config, term, doc, type):
     db = client[util.mongo_db]
 
     inserted = db.pipeline_results.insert_one({
-        "pipeline_type": "TermFinder",
+        "pipeline_type": type,
         "pipeline_id": pipeline,
         "job_id": job,
         "batch": batch,
@@ -69,7 +69,7 @@ class TermFinderBatchTask(luigi.Task):
                 for doc in docs:
                     terms_found = term_matcher.get_term_full_text_matches(doc["report_text"])
                     for term in terms_found:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc)
+                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc, "TermFinder")
                         outfile.write(str(inserted))
                         outfile.write('\n')
         except Exception as ex:
@@ -110,7 +110,7 @@ class ProviderAssertionBatchTask(luigi.Task):
                 for doc in docs:
                     terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], provider_assertion_filters)
                     for term in terms_found:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc)
+                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc, "ProviderAssertion")
                         outfile.write(str(inserted))
                         outfile.write('\n')
         except Exception as ex:
