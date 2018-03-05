@@ -46,7 +46,10 @@ def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key):
             new_fq += ' AND '
         matched_reports = list()
         for tag in tags:
-            matched_reports.extend(mapped_items[tag])
+            try:
+                matched_reports.extend(mapped_items[tag])
+            except Exception as e:
+                print("Unable to map tag %s" % tag)
         if len(matched_reports) > 0:
             report_types = 'report_type: ("' + '" OR "'.join(matched_reports) + '")'
             new_fq += report_types
