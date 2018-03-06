@@ -26,7 +26,7 @@ def get_report_type_mappings(url, inst, key):
                     lookup_tag = normalize_tag(tag)
                     if lookup_tag not in tag_lookup_dict:
                         tag_lookup_dict[lookup_tag] = list()
-                        tag_lookup_dict[lookup_tag].append(rep['name'])
+                    tag_lookup_dict[lookup_tag].append(rep['name'])
 
     return tag_lookup_dict
 
@@ -105,4 +105,5 @@ if __name__ == '__main__':
     report_mapper_inst = config.get('report_mapper', 'institute')
     mappings = get_report_type_mappings(report_mapper_url, report_mapper_inst, report_mapper_key)
 
+    print(simplejson.dumps(mappings, indent=4*' '))
     sys.exit(1)
