@@ -6,6 +6,7 @@ import datetime
 STARTED = "STARTED"
 COMPLETED = "COMPLETED"
 IN_PROGRESS = "IN_PROGRESS"
+FAILURE = "FAILURE"
 
 
 class NlpJob(BaseModel):

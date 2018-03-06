@@ -59,6 +59,8 @@ class TermFinderBatchTask(luigi.Task):
                                    self.batch)
 
             pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
+
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
             docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start, solr_url=util.solr_url,
                                    tags=pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                    mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
@@ -66,6 +68,8 @@ class TermFinderBatchTask(luigi.Task):
                                       .include_descendants, pipeline_config.include_ancestors, pipeline_config.vocabulary)
 
             with self.output().open('w') as outfile:
+                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
+                                       "Finding terms with TermFinder")
                 for doc in docs:
                     terms_found = term_matcher.get_term_full_text_matches(doc["report_text"])
                     for term in terms_found:
@@ -73,6 +77,7 @@ class TermFinderBatchTask(luigi.Task):
                         outfile.write(str(inserted))
                         outfile.write('\n')
         except Exception as ex:
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
             print(ex)
         finally:
             client.close()
@@ -96,10 +101,12 @@ class ProviderAssertionBatchTask(luigi.Task):
         client = MongoClient(util.mongo_host, util.mongo_port)
 
         try:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running TermFinder Batch %s" %
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running ProviderAssertion Batch %s" %
                                    self.batch)
 
             pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
+
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
             docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start, solr_url=util.solr_url,
                                    tags=pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                    mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
@@ -108,6 +115,7 @@ class ProviderAssertionBatchTask(luigi.Task):
                                       .vocabulary)
 
             with self.output().open('w') as outfile:
+                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Finding terms with TermFinder")
                 for doc in docs:
                     terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], provider_assertion_filters)
                     for term in terms_found:
@@ -115,6 +123,7 @@ class ProviderAssertionBatchTask(luigi.Task):
                         outfile.write(str(inserted))
                         outfile.write('\n')
         except Exception as ex:
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
             print(ex)
         finally:
             client.close()
