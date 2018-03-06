@@ -5,8 +5,14 @@ from urllib.parse import quote
 import simplejson
 
 
+def normalize_tag(tag):
+    lower_tag = tag.lower().strip()
+    norm_tag = "_".join(lower_tag.split(" "))
+    return norm_tag
+
+
 def get_report_type_mappings(url, inst, key):
-    tag_lookup = {}
+    tag_lookup_dict = {}
 
     if len(url) > 0:
         url = "%s/institutes/%s/reportTypes?apiToken=%s" % (url, inst, key)
@@ -17,11 +23,12 @@ def get_report_type_mappings(url, inst, key):
             if len(rep['tags']) > 0:
                 for tag_dict in rep['tags']:
                     tag = tag_dict['documentSubjectMatterDomain']
-                    if tag not in tag_lookup:
-                        tag_lookup[tag] = list()
-                    tag_lookup[tag].append(rep['name'])
+                    lookup_tag = normalize_tag(tag)
+                    if lookup_tag not in tag_lookup_dict:
+                        tag_lookup_dict[lookup_tag] = list()
+                        tag_lookup_dict[lookup_tag].append(rep['name'])
 
-    return tag_lookup
+    return tag_lookup_dict
 
 
 def make_url(qry, fq, sort, start, rows, solr_url):
@@ -47,7 +54,8 @@ def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key):
         matched_reports = list()
         for tag in tags:
             try:
-                matched_reports.extend(mapped_items[tag])
+                lookup_tag = normalize_tag(tag)
+                matched_reports.extend(mapped_items[lookup_tag])
             except Exception as e:
                 print("Unable to map tag %s" % tag)
         if len(matched_reports) > 0:

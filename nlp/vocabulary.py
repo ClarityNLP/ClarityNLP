@@ -121,7 +121,8 @@ def get_related_terms(conn_string, concept, vocabulary, get_synonyms_bool=True, 
                 related_terms.append(r[0])
                 escaped.append(re.escape(r[0]))
 
-    print(related_terms)
+    if len(related_terms) > 0:
+        print(related_terms)
 
     if escape:
         return list(set(escaped))

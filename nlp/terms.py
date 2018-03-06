@@ -88,17 +88,18 @@ def get_full_text_matches(matchers, text: str, filters={}):
 
 class TermFinder(BaseModel):
 
-    def __init__(self, match_terms,  include_synonyms=False,
-                 include_descendants=False, include_ancestors=False):
+    def __init__(self, match_terms,  include_synonyms=True,
+                 include_descendants=False, include_ancestors=False,
+                 vocabulary='SNOMED'):
         self.terms = match_terms
         self.matchers = []
         added = []
         if include_synonyms or include_descendants or include_ancestors:
             for term in self.terms:
-                added.extend(get_related_terms(util.conn_string, term, include_synonyms, include_descendants,
-                                               include_ancestors, True))
-        if len(added) > 0:
-            print("added the following terms through vocab expansion %s" % str(added))
+                added.extend(get_related_terms(util.conn_string, term, vocabulary, include_synonyms,
+                                               include_descendants, include_ancestors))
+        # if len(added) > 0:
+        #     print("added the following terms through vocab expansion %s" % str(added))
             self.terms.extend(added)
         # print("all terms to find %s" % str(self.terms))
         self.matchers = [re.compile(r"\b%s\b" % t, re.IGNORECASE) for t in self.terms]

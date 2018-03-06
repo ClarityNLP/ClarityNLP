@@ -63,7 +63,7 @@ class TermFinderBatchTask(luigi.Task):
                                    tags=pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                    mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
             term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
-                                      .include_descendants, pipeline_config.include_ancestors)
+                                      .include_descendants, pipeline_config.include_ancestors, pipeline_config.vocabulary)
 
             with self.output().open('w') as outfile:
                 for doc in docs:
@@ -104,7 +104,8 @@ class ProviderAssertionBatchTask(luigi.Task):
                                    tags=pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                    mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
             term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
-                                      .include_descendants, pipeline_config.include_ancestors)
+                                      .include_descendants, pipeline_config.include_ancestors, pipeline_config
+                                      .vocabulary)
 
             with self.output().open('w') as outfile:
                 for doc in docs:
