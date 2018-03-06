@@ -36,6 +36,18 @@ class TermFinderPipeline(luigi.Task):
     def run(self):
         jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished TermFinder Pipeline")
 
+# @luigi.Task.event_handler(luigi.Event.FAILURE)
+# def mourn_failure(self, exception):
+#     """
+#     Report failure event
+#     Uses "-!--!--!--!--!--!--!--!--!--!-"  as indicator
+#     """
+#
+#     print(26 * '-!-')
+#     print("Boo!, {c} failed.  :(".format(c=self.__class__.__name__))
+#     print(".. with this exception: '{e}'".format(e=str(exception)))
+#     print(26 * '-!-')
+
 
 class ProviderAssertionPipeline(luigi.Task):
     pipeline = luigi.IntParameter()
