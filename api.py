@@ -1,10 +1,8 @@
-import os
 from flask import Flask, request, send_file, render_template
 from werkzeug import secure_filename
+import simplejson
 import datetime
-from data_access import pipeline_config as p_config
-from data_access import jobs, job_results
-from data_access import NLPModel
+from data_access import *
 import luigi_pipeline_runner
 from flask_autodoc import Autodoc
 from nlp import *
@@ -150,7 +148,7 @@ def value_extraction():
 
         results = run_value_extractor_full(obj.text, obj.terms)
         return json.dumps([r.__dict__ for r in results], indent=4)
-    return "Please pass in params t (text) and q (comma-separated list of search terms)"
+    return "Please POST a valid JSON object with terms and text"
 
 
 @app.route('/term_finder', methods=['POST'])
@@ -163,7 +161,15 @@ def term_finder():
 
         results = finder.get_term_full_text_matches(obj.text)
         return json.dumps([r.__dict__ for r in results], indent=4)
-    return "Please pass "
+    return "Please POST a valid JSON object with terms and text"
+
+
+@app.route("/report_type_mappings", methods=["GET"])
+@auto.doc()
+def report_type_mappings():
+    """GET dictionary of report type mappings"""
+    mappings = get_report_type_mappings(util.report_mapper_url, util.report_mapper_inst, util.report_mapper_key)
+    return simplejson.dumps(mappings, sort_keys=True, indent=4 * ' ')
 
 
 @app.route('/vocab_expansion', methods=['GET'])
