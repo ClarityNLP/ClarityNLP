@@ -60,11 +60,14 @@ def pipeline():
 
         luigi_pipeline_runner.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
 
-        return '{ "pipeline_id": "%s", "job_id": "%s", "status_endpoint": "%s/status?job=%s", ' \
-               '"results_endpoint": "%s/job_results?job=%s&type=%s", "luigi_task_monitoring":' \
-               '"%s/static/visualiser/index.html#search__search=job=%s"}' % \
-               (str(p_id), str(job_id), util.main_url, str(job_id), util.main_url, str(job_id), 'pipeline',
-                util.luigi_url, str(job_id))
+        output = dict()
+        output["pipeline_id"] = str(p_id)
+        output["job_id"] = str(job_id)
+        output["status_endpoint"] = "%s/status?job=%s" % (util.main_url, str(job_id))
+        output["results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'pipeline')
+        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (util.luigi_url, str(job_id))
+
+        return json.dumps(output, indent=4)
 
     except Exception as e:
         return 'Failed to load and insert pipeline. ' + str(e), 400
@@ -76,7 +79,7 @@ def pipeline_id():
     """GET a pipeline JSON based on the pipeline_id, PARAMETERS: id=pipeline id"""
     try:
         pid = request.args.get('id')
-        return json.dumps(p_config.get_pipeline_config(pid, util.conn_string))
+        return json.dumps(p_config.get_pipeline_config(pid, util.conn_string), indent=4)
     except Exception as e:
         return "Failed to extract pipeline id parameter" + str(e)
 
@@ -98,7 +101,7 @@ def get_job_status():
     try:
         job = request.args.get('job')
         status = jobs.get_job_status(int(job), util.conn_string)
-        return json.dumps(status)
+        return json.dumps(status, indent=4)
     except Exception as e:
         return "Failed to get job status" + str(e)
 

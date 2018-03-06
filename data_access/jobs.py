@@ -1,7 +1,13 @@
 import psycopg2
 import psycopg2.extras
-from .base_model import BaseModel
-import datetime
+import configparser
+import json
+try:
+    from .base_model import BaseModel
+except Exception as e:
+    print(e)
+    from base_model import BaseModel
+
 
 STARTED = "STARTED"
 COMPLETED = "COMPLETED"
@@ -57,19 +63,36 @@ def create_new_job(job: NlpJob, connection_string: str):
 def get_job_status(job_id: int, connection_string: str):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
+    status_dict = {
+        "status": "UNKNOWN",
+        "updates": list()
+    }
 
     try:
         cursor.execute("""SELECT status from nlp.nlp_job where nlp_job_id = %s""",
                        [job_id])
 
         status = cursor.fetchone()[0]
-        return status
-    except Exception as e:
-        print(e)
+        status_dict["status"] = status
+
+        cursor.execute("""SELECT status, description, date_updated, nlp_job_status_id from nlp.nlp_job_status where nlp_job_id = %s order by date_updated""",
+                       [job_id])
+        updates = cursor.fetchall()
+        for row in updates:
+            udict = dict()
+            udict["nlp_job_status_id"] = row[3]
+            udict["date_updated"] = (row[2]).strftime("%Y-%m-%d %H:%M:%S")
+            udict["status"] = row[0]
+            udict["description"]= row[1]
+            status_dict["updates"].append(udict)
+
+        return status_dict
+    except Exception as ex:
+        print(ex)
     finally:
         conn.close()
 
-    return "UNKNOWN"
+    return status_dict
 
 
 def update_job_status(job_id: str, connection_string: str, updated_status: str, description: str):
@@ -94,3 +117,15 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
         conn.close()
 
     return flag
+
+
+if __name__ == "__main__":
+    config = configparser.RawConfigParser()
+    config.read('../project.cfg')
+    conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (config.get('pg', 'host'),
+                                                                             config.get('pg', 'dbname'),
+                                                                             config.get('pg', 'user'),
+                                                                             config.get('pg', 'password'),
+                                                                             config.get('pg', 'port'))
+    status = get_job_status(117, conn_string)
+    print(json.dumps(status, indent=4))
