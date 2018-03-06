@@ -8,7 +8,6 @@ from flask_autodoc import Autodoc
 from nlp import *
 from upload import upload_file
 
-TMP_DIR = 'tmp'
 
 app = Flask(__name__)
 auto = Autodoc(app)
@@ -31,7 +30,7 @@ def upload():
 
     elif request.method == 'POST':
         f = request.files['file']
-        filepath = os.path.join(TMP_DIR, secure_filename(f.filename))
+        filepath = os.path.join(util.tmp_dir, secure_filename(f.filename))
         f.save(filepath)
         msg = upload_file(util.solr_url, filepath)
         os.remove(filepath)
