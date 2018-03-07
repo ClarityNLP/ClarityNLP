@@ -11,6 +11,29 @@ space_rule = r"[\s+]"
 negative_window = 4
 
 
+def load_terms(key):
+    try:
+        path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
+        print(path)
+        with open(path) as f:
+            triggers = f.read().splitlines()
+            return triggers
+    except Exception as e:
+        print("cannot open %s_triggers.txt" % key)
+        print(e)
+
+    return []
+
+
+print("Context init...")
+all_terms = {
+    "negated": load_terms("negex"),
+    "experiencier": load_terms("experiencer"),
+    "historical": load_terms("history"),
+    "hypothetical": load_terms("hypothetical")
+}
+
+
 class ContextFeature(object):
 
     def __init__(self, target_phrase, matched_phrase, sentence, eval_sentence, context_type):
@@ -180,12 +203,7 @@ class Context(object):
 
     def __init__(self):
         print("Context init...")
-        self.terms = {
-            "negated": load_terms("negex"),
-            "experiencier": load_terms("experiencer"),
-            "historical": load_terms("history"),
-            "hypothetical": load_terms("hypothetical")
-        }
+        self.terms = all_terms
 
     def run_context(self, expected_term, sentence):
         features = []
