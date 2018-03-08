@@ -46,8 +46,8 @@ def pipeline():
     if not request.data:
         return 'POST a JSON pipeline config to execute or an id to GET. Body should be pipeline JSON'
     try:
-        p_cfg = p_config.PipelineConfig.from_dict(request.get_json())
-        p_id = p_config.insert_pipeline_config(p_cfg, util.conn_string)
+        p_cfg = PipelineConfig.from_dict(request.get_json())
+        p_id = insert_pipeline_config(p_cfg, util.conn_string)
         if p_id == -1:
             return '{ "success", false }'
         job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
