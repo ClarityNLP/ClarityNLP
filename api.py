@@ -87,7 +87,7 @@ def pipeline_id():
     """GET a pipeline JSON based on the pipeline_id, PARAMETERS: id=pipeline id"""
     try:
         pid = request.args.get('id')
-        return json.dumps(p_config.get_pipeline_config(pid, util.conn_string), indent=4)
+        return json.dumps(get_pipeline_config(pid, util.conn_string), indent=4)
     except Exception as e:
         return "Failed to extract pipeline id parameter" + str(e)
 
