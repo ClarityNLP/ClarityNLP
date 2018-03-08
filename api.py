@@ -6,7 +6,7 @@ from data_access import *
 import luigi_pipeline_runner
 from flask_autodoc import Autodoc
 from nlp import *
-from upload import upload_file
+from upload import upload_file, upload_from_db
 
 
 app = Flask(__name__)
@@ -37,6 +37,17 @@ def upload():
         return render_template('solr_upload.html',result = msg)
 
     return "ERROR. Contact Admin and try again later."
+
+
+@app.route('/upload_from_db', methods = ['GET'])
+@auto.doc()
+def db_to_solr():
+    """Migrate data from DB to Solr."""
+    if request.method == 'GET':
+        msg = upload_from_db(util.conn_string2, util.solr_url)
+        return msg
+
+    return "Couldn't migrate data."
 
 
 @app.route('/pipeline', methods=['POST'])
