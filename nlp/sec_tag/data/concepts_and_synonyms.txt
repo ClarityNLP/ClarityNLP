@@ -1483,10 +1483,10 @@ cid,concept_name,synonym_id,synonym_name,synonym_type
 307	habits	691	habits	PT
 307	habits	692	habit	NORM
 307	habits	4972	habits	KM
-308	sleep_habits,_sleep	1396	sleep_habits,_sleep	KM
-308	sleep_habits,_sleep	1397	sleep_habits _sleep	NORM
-308	sleep_habits,_sleep	4593	sleep habits, sleep	PT
-308	sleep_habits,_sleep	4594	sleep habit sleep	NORM
+308	sleep_habits	1396	sleep_habits,_sleep	KM
+308	sleep_habits	1397	sleep_habits _sleep	NORM
+308	sleep_habits	4593	sleep habits, sleep	PT
+308	sleep_habits	4594	sleep habit sleep	NORM
 309	exercise_habits	63	exercise	PT
 309	exercise_habits	67	exercise habits	PT
 309	exercise_habits	68	exercise habit	NORM
@@ -5989,3 +5989,10 @@ cid,concept_name,synonym_id,synonym_name,synonym_type
 856	ultrasound	6910	ultrasound rue	PT
 372	oncology_family_history	6920	oncology hx	PT
 372	oncology_family_history	6921	onc hx	PT
+839	chest_xray	6930	chest pa and lateral	PT
+839	chest_xray	6931	chest pa, and lateral	PT
+839	chest_xray	6932	chest pa and lateral	PT
+839	chest_xray	6933	chest pa lateral	PT
+839	chest_xray	6934	pa and lateral	PT
+308	sleep_habits	6940	sleep habits	PT
+308	sleep_habits	6941	sleep_habits	KM
