@@ -120,10 +120,22 @@ def get_job_results():
     try:
         job = request.args.get('job')
         job_type = request.args.get('type')
-        results = job_results(job_type, job)
-        return send_file(results)
-    except Exception as e:
-        return "Failed to get job results" + str(e)
+        job_output = job_results(job_type, job)
+        return send_file(job_output)
+    except Exception as ex:
+        return "Failed to get job results" + str(ex)
+
+
+@app.route('/sections', methods=['GET'])
+@auto.doc()
+def get_section_source():
+    """GET source file for sections and synonyms"""
+    try:
+        file_path = get_sec_tag_source_tags()
+        return send_file(file_path)
+    except Exception as ex:
+        print(ex)
+        return "Failed to retrieve sections source file"
 
 
 @app.route('/ngram', methods=['GET'])

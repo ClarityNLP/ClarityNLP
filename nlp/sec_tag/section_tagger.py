@@ -1066,13 +1066,18 @@ def process_report(report):
 
 
 ###############################################################################
+def sec_tag_file_path():
+    path = os.path.join(SCRIPT_DIR, CS_MAP_FILE)
+    return path
+
+
 def section_tagger_init():
 
     print("section_tagger_init...")
     
     # load the mapping of concept strings to synonyms
     try:
-        path = os.path.join(SCRIPT_DIR, CS_MAP_FILE)
+        path = sec_tag_file_path()
         infile = open(path, 'rt')
     except:
         print("Could not open file {0}.".format(CS_MAP_FILE))
