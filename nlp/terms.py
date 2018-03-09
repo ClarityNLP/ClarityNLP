@@ -39,28 +39,45 @@ def get_filter_values(filters, key):
     if key in filters:
         val = filters[key]
         if val is not None:
-            return val
+            t = type(val)
+            if t is list or t is set:
+                return [str(x).strip().lower() for x in val]
+            elif t is str:
+                return [val.strip().lower()]
+            elif t is int or t or float or t is complex or t is bool:
+                return [str(val)]
+            else:
+                return val
+
         else:
             return []
     else:
         return []
 
 
-def get_matches(matcher, sentence: str, section='UNKNOWN', filters={}):
+def filter_match(lookup, filters):
+    if filters is None or len(filters) == 0:
+        return True
+    else:
+        lookup_str = lookup.strip().lower()
+        return lookup_str in filters
+
+
+def get_matches(matcher, sentence: str, section='UNKNOWN', filters=dict()):
     matches = []
     match = matcher.search(sentence)
     temporality_filters = get_filter_values(filters, "temporality")
     experiencer_filters = get_filter_values(filters, "experiencer")
     negex_filters = get_filter_values(filters, "negex")
+    section_filters = get_filter_values(filters, "sections")
 
     if match:
         context_matches = c_text.run_context(match.group(0), sentence)
         term = IdentifiedTerm(sentence, match.group(), str(context_matches.negex.name),
                               str(context_matches.temporality.name), str(context_matches.experiencier.name),
                               section, match.start(), match.end())
-        if (len(temporality_filters) == 0 or term.temporality in temporality_filters) and \
-            (len(experiencer_filters) == 0 or term.experiencer in experiencer_filters) and \
-                (len(negex_filters) == 0 or term.negex in negex_filters):
+        if filter_match(term.temporality, temporality_filters) and filter_match(term.negex, negex_filters) \
+                and filter_match(term.experiencer, experiencer_filters) and filter_match(term.section, section_filters):
             matches.append(term)
 
     return matches
@@ -111,8 +128,8 @@ class TermFinder(BaseModel):
             term_matches.extend(cur)
         return term_matches
 
-    def get_term_full_text_matches(self, txt: str, filters={}):
-        return get_full_text_matches(self.matchers, txt, filters)
+    def get_term_full_text_matches(self, full_text: str, filters={}):
+        return get_full_text_matches(self.matchers, full_text, filters)
 
 
 if __name__ == "__main__":

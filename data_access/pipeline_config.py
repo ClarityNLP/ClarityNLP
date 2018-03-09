@@ -1,7 +1,6 @@
 import psycopg2
 import psycopg2.extras
 import sys
-import json
 import configparser
 
 try:
@@ -25,8 +24,9 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, description, terms, limit=1000, concept_code=-1, owner='system', include_synonyms=False,
-                 include_descendants=False, include_ancestors=False, report_tags=list(), vocabulary='SNOMED'):
+    def __init__(self, config_type, name, description, terms, limit=1000, concept_code=-1, owner='system',
+                 include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
+                 vocabulary='SNOMED', sections=list()):
         self.config_type = config_type
         self.name = name
         self.description = description
@@ -39,6 +39,7 @@ class PipelineConfig(BaseModel):
         self.include_ancestors = include_ancestors
         self.report_tags = report_tags
         self.vocabulary = vocabulary
+        self.sections = sections
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):

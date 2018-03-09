@@ -12,6 +12,7 @@ provider_assertion_filters = {
     "temporality": ["Recent", "Historical"],
     "experiencer": ["Patient"]
 }
+SECTIONS_FILTER = "sections"
 
 
 def mongo_writer(client, pipeline, job, batch, pipeline_config, term, doc, type):
@@ -65,15 +66,20 @@ class TermFinderBatchTask(luigi.Task):
                                    tags=pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                    mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
             term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
-                                      .include_descendants, pipeline_config.include_ancestors, pipeline_config.vocabulary)
+                                      .include_descendants, pipeline_config.include_ancestors, pipeline_config
+                                      .vocabulary)
+            filters = dict()
+            if pipeline_config.sections and len(pipeline_config.sections) > 0:
+                filters[SECTIONS_FILTER] = pipeline_config.sections
 
             with self.output().open('w') as outfile:
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Finding terms with TermFinder")
                 for doc in docs:
-                    terms_found = term_matcher.get_term_full_text_matches(doc["report_text"])
+                    terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], filters)
                     for term in terms_found:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc, "TermFinder")
+                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc,
+                                                "TermFinder")
                         outfile.write(str(inserted))
                         outfile.write('\n')
         except Exception as ex:
@@ -101,7 +107,8 @@ class ProviderAssertionBatchTask(luigi.Task):
         client = MongoClient(util.mongo_host, util.mongo_port)
 
         try:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running ProviderAssertion Batch %s" %
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
+                                   "Running ProviderAssertion Batch %s" %
                                    self.batch)
 
             pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
@@ -113,13 +120,18 @@ class ProviderAssertionBatchTask(luigi.Task):
             term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
                                       .include_descendants, pipeline_config.include_ancestors, pipeline_config
                                       .vocabulary)
+            pa_filters = provider_assertion_filters
+            if pipeline_config.sections and len(pipeline_config.sections) > 0:
+                pa_filters[SECTIONS_FILTER] = pipeline_config.sections
 
             with self.output().open('w') as outfile:
-                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Finding terms with TermFinder")
+                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
+                                       "Finding terms with TermFinder")
                 for doc in docs:
-                    terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], provider_assertion_filters)
+                    terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], pa_filters)
                     for term in terms_found:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc, "ProviderAssertion")
+                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc,
+                                                "ProviderAssertion")
                         outfile.write(str(inserted))
                         outfile.write('\n')
         except Exception as ex:
