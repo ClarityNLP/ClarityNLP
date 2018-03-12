@@ -2,8 +2,10 @@ version: '3'
 
 volumes:
   mapper-pgdata:
+  auto-mapper-pgdata:
   mapper-redisdata:
   nlp-solrdata:
+  nlp-pgdata:
   nlp-mongodata:
   luigi-pgdata:
 
@@ -40,7 +42,7 @@ services:
     container_name: 'LUIGI_POSTGRES'
     image: postgres:9.5.4
     ports:
-      - "5433:5432"
+      - "5432:5432"
     environment:
       POSTGRES_USER: luigi
       POSTGRES_PASS: luigi
@@ -57,6 +59,26 @@ services:
       - "5000:5000"
     volumes:
       - ./nlp-api:/api
+    command: ["/api/scripts/solr/wait-for-solr.sh", "nlp-solr:8983", "python3", "api.py"]
+
+  nlp-postgres:
+    container_name: 'NLP_POSTGRES'
+    build:
+      context: ./nlp-postgres
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_PASSWORD: pg
+      POSTGRES_USER: pg
+      POSTGRES_DB: clarity
+    ports:
+      - "5433:5432"
+    volumes:
+      - './nlp-postgres/ddl/ddl.sql:/docker-entrypoint-initdb.d/10-ddl.sql'
+      - './nlp-postgres/ddl/omop_vocab.sql:/docker-entrypoint-initdb.d/20-omop_vocab.sql'
+      - './nlp-postgres/dml/load_vocab.sh:/docker-entrypoint-initdb.d/30-load_vocab.sh'
+      - './nlp-postgres/dml/copy_vocab.sql:/docker-entrypoint-initdb.d/40-copy_vocab.sql'
+      - './nlp-postgres/ddl/omop_indexes.sql:/docker-entrypoint-initdb.d/50-omop_indexes.sql'
+      - 'nlp-pgdata:/var/lib/postgresql/data/'
 
   nlp-mongo:
     image: mongo
@@ -70,16 +92,18 @@ services:
       - 'nlp-mongodata:/data/db'
 
   nlp-solr:
-    image: solr
     container_name: 'NLP_SOLR'
+    image: solr:6.6
     ports:
       - "8983:8983"
     volumes:
       - 'nlp-solrdata:/opt/solr/server/solr/mycores'
+      - './solr/precreate-core:/opt/docker-solr/scripts/precreate-core'
+      - './solr/sample.csv:/sample.csv'
     entrypoint:
       - docker-entrypoint.sh
       - solr-precreate
-      - mycore
+      - sample
 
   mapper-pg:
     image: postgres
@@ -130,3 +154,27 @@ services:
     - "API_URL=http://localhost:1337/v1/swagger.json"
     ports:
       - "3000:8080"
+
+  auto-mapper-api:
+    container_name: AUTO_MAPPER_API
+    build:
+      context: ./auto-mapper
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    depends_on:
+      - auto-mapper-pg
+    volumes:
+      - ./auto-mapper:/api
+
+  auto-mapper-pg:
+    image: postgres
+    container_name: 'AUTO_MAPPER_PG'
+    environment:
+      POSTGRES_PASSWORD: pg
+      POSTGRES_USER: pg
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5433"
+    volumes:
+      - 'auto-mapper-pgdata:/var/lib/postgresql/data/'

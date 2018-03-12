@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+# Create a core on disk
+# arguments are: corename configdir
+
+set -e
+
+echo "Executing $0" "$@"
+
+if [[ "${VERBOSE:-}" = "yes" ]]; then
+    set -x
+fi
+
+CORE=${1:-gettingstarted}
+CONFIG_SOURCE="${2:-}"
+if [[ -z "$CONFIG_SOURCE" ]]; then
+    DEFAULT_CONFIGS=(_default data_driven_schema_configs)
+    for config_dir in "${DEFAULT_CONFIGS[@]}"; do
+        config_dir="/opt/solr/server/solr/configsets/$config_dir"
+        if [ -d "$config_dir" ]; then
+           CONFIG_SOURCE="$config_dir"
+           break
+        fi
+    done
+    if [[ -z $CONFIG_SOURCE ]]; then
+        echo "Cannot find default config"
+        exit 1
+    fi
+fi
+
+if [[ -z $SOLR_HOME ]]; then
+    coresdir="/opt/solr/server/solr/mycores"
+    mkdir -p $coresdir
+else
+    coresdir=$SOLR_HOME
+fi
+coredir="$coresdir/$CORE"
+if [[ ! -d $coredir ]]; then
+    cp -r "$CONFIG_SOURCE/" "$coredir"
+    touch "$coredir/core.properties"
+    echo created "$CORE"
+
+    start-local-solr
+    # Now configure with the Schema API
+    # Modify this with your desired schema configuration
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-field-type" : {
+         "name":"searchText",
+         "class":"solr.TextField",
+         "positionIncrementGap":"100",
+         "analyzer" : {
+            "charFilters":[{
+               "class":"solr.PatternReplaceCharFilterFactory",
+               "replacement":"$1$1",
+               "pattern":"([a-zA-Z])\\\\1+" }],
+            "tokenizer":{
+               "class":"solr.WhitespaceTokenizerFactory" },
+            "filters":[{
+               "class":"solr.WordDelimiterFilterFactory",
+               "preserveOriginal":"0" }]}}
+    }' http://localhost:8983/solr/$CORE/schema
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-field":{"name":"report_date","type":"date","indexed":true,"stored":true},
+      "add-field":{"name":"report_id","type":"string","indexed":true,"stored":true},
+      "add-field":{"name":"report_text","type":"searchText","indexed":true,"stored":true,"termPositions":true,"termVectors":true,"docValues":false,"required":true},
+      "add-field":{"name":"source","type":"string","indexed":true,"stored":true},
+      "add-field":{"name":"subject","type":"string","indexed":true,"stored":true},"add-field":{"name":"report_type","type":"string","indexed":true,"stored":true}
+    }' http://localhost:8983/solr/$CORE/schema
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-dynamic-field":{"name":"*_section","type":"searchText","indexed":true,"stored":false},
+      "add-dynamic-field":{"name":"*_id","type":"long","indexed":true,"stored":true},
+      "add-dynamic-field":{"name":"*_ids","type":"long","multiValued":true,"indexed":true,"stored":true},
+      "add-dynamic-field":{"name":"*_system","type":"string","indexed":true,"stored":true},
+      "add-dynamic-field":{"name":"*_attr","type":"string","indexed":true,"stored":true},
+      "add-dynamic-field":{"name":"*_attrs","type":"string","multiValued":true,"indexed":true,"stored":true}
+    }' http://localhost:8983/solr/$CORE/schema
+
+    echo "finished configuring with the Schema API"
+
+    if [[ $CORE == 'sample' ]]; then
+      /opt/solr/bin/post -c $CORE /sample.csv
+      echo "finished uploading sample.csv"
+    fi
+
+    stop-local-solr
+else
+    echo "core $CORE already exists"
+fi
