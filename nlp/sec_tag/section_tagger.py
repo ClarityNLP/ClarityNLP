@@ -9,14 +9,24 @@ from copy import deepcopy
 import nltk
 from nltk.tokenize import sent_tokenize
 
-from .concept_graph import DuplicateNodeException
-from .concept_graph import NodeNotFoundException
-from .concept_graph import ConceptGraph
-from .concept_graph import Node
-from .normalize import NORM_MAP
+try:
+    from .concept_graph import DuplicateNodeException
+    from .concept_graph import NodeNotFoundException
+    from .concept_graph import ConceptGraph
+    from .concept_graph import Node
+    from .normalize import NORM_MAP
+except Exception as e:
+    from concept_graph import DuplicateNodeException
+    from concept_graph import NodeNotFoundException
+    from concept_graph import ConceptGraph
+    from concept_graph import Node
+    from normalize import NORM_MAP
 
 import pkg_resources
 SCRIPT_DIR = os.path.dirname(__file__)
+
+SEC_TAG_VERSION_MAJOR = 1
+SEC_TAG_VERSION_MINOR = 1
 
 # set to True to trace ambiguity resolution process, False otherwise
 TRACE = False
@@ -830,29 +840,8 @@ def process_report(report):
                     lab_result_match = regex_hyphenated_lab_result.search(s[ws_left:ws_right+1])
                     if lab_result_match:
 
-                        inferred = False
-
-                        # This section has problems...TBD
-                        # # if not in a lab section infer LABORATORY_DATA
-                        # if 0 == len(stack):
-                        #     inferred = True
-                        # elif 'LAB' not in stack[-1].concept:
-                        #     inferred = True
-                            
-                        # if inferred:
-                        #     header = SectionHeader(sentence_index, 0, 0,
-                        #                            'laboratory data', 'LABORATORY_DATA', '6.41.144')
-                        #     if TRACE: print("\t\tFound hyphenated lab result, inferring lab section...")
-
-                        #     # start and end refer to the hyphenated lab result match
-                        #     stack.append(header)
-                        #     section_headers.append(header)
-                        #     header_count += 1
-                        #     continue
-
-                        if not inferred:
-                            if TRACE: print("\t\tSkipping hyphenated lab result: ->{0}<-".
-                                            format(lab_result_match.group()))
+                        if TRACE: print("\t\tSkipping hyphenated lab result: ->{0}<-".
+                                        format(lab_result_match.group()))
                         continue
 
             prev_end = end

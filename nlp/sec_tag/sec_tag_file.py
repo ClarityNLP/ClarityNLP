@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Process a JSON file with the section tagger and print results to stdout.
+"""
 
 import re
 import os
@@ -7,8 +10,8 @@ import json
 import nltk
 from nltk.tokenize import sent_tokenize
 
-from sec_tag import section_tagger_init
-from sec_tag import process_report
+from section_tagger import section_tagger_init
+from section_tagger import process_report
 
 # XML character entity
 regex_xml_character_entity = re.compile(r'&(?:#([0-9]+)|#x([0-9a-fA-F]+)|([0-9a-zA-Z]+));');
@@ -74,7 +77,10 @@ if __name__ == '__main__':
         # collapse repeated spaces into a single space
         clean_report = regex_multi_space.sub(' ', single_newline_report)
 
-        process_report(clean_report)
+        section_headers, section_texts = process_report(clean_report)
+        for i in range(len(section_headers)):
+            print("<{0}>\n\t{1}".format(section_headers[i].to_output_string(), section_texts[i]))
+
         print("\n\n*** END OF REPORT {0} ***\n\n".format(index))
         
         index += 1
