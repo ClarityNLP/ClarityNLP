@@ -1,14 +1,32 @@
 import re
 import en_core_web_md
 from nltk.tokenize import sent_tokenize
+import time
 
 data = {}
+loading_status = 'none'
 
 
-def segmentation_init():
-    print('Segmentation init...')
-    if 'nlp' not in data:
-        data['nlp'] = en_core_web_md.load()
+def segmentation_init(tries=0):
+    if tries > 0:
+        print('Retrying, try%d' % tries)
+
+    global loading_status
+    if loading_status == 'none' and 'nlp' not in data:
+        try:
+            print('Segmentation init...')
+            loading_status = 'loading'
+            data['nlp'] = en_core_web_md.load()
+            loading_status = 'done'
+        except Exception as exc:
+            print(exc)
+            loading_status = 'none'
+    elif loading_status == 'loading' and tries < 30:
+        time.sleep(10)
+        if loading_status == 'loading':
+            new_tries = tries + 1
+            return segmentation_init(tries=new_tries)
+
     return data['nlp']
 
 
