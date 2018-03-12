@@ -97,7 +97,7 @@ class ConceptGraph():
         
     def add_node(self, node):
         if node.cid in self.cid_to_index_map:
-            raise DuplicateNodeException(cid)
+            raise DuplicateNodeException(node.cid)
         self.nodes.append(node)
         self.cid_to_index_map[node.cid] = len(self.nodes) - 1
 
