@@ -9,12 +9,14 @@ over_several_period_rule = re.compile(r"(within the last|in the last|for the pas
 for_the_past_period_rule = re.compile(r"(for the past|for the last|over the past|over the last|for)(\s+\d*(\.\d*)*|\s+(\w+)(\s+\w*)?(\s+\w*)?(\s+\w*)?(\s+\w*)?(\s+\w*)?)?(\s+weeks|\s+week|\s+months|\s+month|\s+years|\s+year)", re.IGNORECASE|re.MULTILINE)
 space_rule = r"[\s+]"
 negative_window = 4
+all_terms = dict()
+inited = False
 
 
 def load_terms(key):
     try:
         path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
-        print(path)
+        # print(path)
         with open(path) as f:
             triggers = f.read().splitlines()
             return triggers
@@ -25,13 +27,18 @@ def load_terms(key):
     return []
 
 
-print("Context init...")
-all_terms = {
-    "negated": load_terms("negex"),
-    "experiencier": load_terms("experiencer"),
-    "historical": load_terms("history"),
-    "hypothetical": load_terms("hypothetical")
-}
+def context_init():
+    print("Context init...")
+    global inited
+    global all_terms
+    if not inited:
+        all_terms["negated"] = load_terms("negex")
+        all_terms["experiencier"] = load_terms("experiencer")
+        all_terms["historical"] = load_terms("history")
+        all_terms["hypothetical"] = load_terms("hypothetical")
+
+        inited = True
+    return all_terms
 
 
 class ContextFeature(object):
@@ -91,22 +98,8 @@ windows = {
 }
 
 
-def load_terms(key):
-    try:
-        path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
-        print(path)
-        with open(path) as f:
-            triggers = f.read().splitlines()
-            return triggers
-    except Exception as e:
-        print("cannot open %s_triggers.txt" % key)
-        print(e)
-
-    return []
-
-
 def stop_trigger(ipt: str):
-   return ipt.startswith("[CONJ]") or ipt.startswith("[PSEU]") or ipt.startswith("[POST]")  or ipt.startswith("[PREN]")  or ipt.startswith("[PREP]") or ipt.startswith("[POSP]") or ipt.startswith("[FSTT]") or ipt.startswith("[ONEW]")
+    return ipt.startswith("[CONJ]") or ipt.startswith("[PSEU]") or ipt.startswith("[POST]")  or ipt.startswith("[PREN]")  or ipt.startswith("[PREP]") or ipt.startswith("[POSP]") or ipt.startswith("[FSTT]") or ipt.startswith("[ONEW]")
   
 
 def run_individual_context(sentence: str, target_phrase: str, key: str, rules, phrase_regex):
@@ -203,7 +196,7 @@ class Context(object):
 
     def __init__(self):
         print("Context init...")
-        self.terms = all_terms
+        self.terms = context_init()
 
     def run_context(self, expected_term, sentence):
         features = []

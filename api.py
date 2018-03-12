@@ -12,6 +12,22 @@ from upload import upload_file, upload_from_db
 app = Flask(__name__)
 auto = Autodoc(app)
 
+init_status = "none"
+
+
+def init():
+    global init_status
+    if init_status == "none" or init_status == "error":
+        try:
+            init_status = "loading"
+            section_tagger_init()
+            segmentation_init()
+            context_init()
+            init_status = "done"
+        except Exception as ex:
+            print(ex)
+            init_status = "error"
+
 
 @app.route('/')
 def home():
@@ -57,6 +73,7 @@ def pipeline():
     if not request.data:
         return 'POST a JSON pipeline config to execute or an id to GET. Body should be pipeline JSON'
     try:
+        init()
         p_cfg = PipelineConfig.from_dict(request.get_json())
         p_id = insert_pipeline_config(p_cfg, util.conn_string)
         if p_id == -1:
@@ -166,6 +183,7 @@ def get_ngram():
 def value_extraction():
     """POST to extract measurements, text=text to parse, terms=an array of terms"""
     if request.method == 'POST' and request.data:
+        init()
         obj = NLPModel.from_dict(request.get_json())
 
         results = run_value_extractor_full(obj.text, obj.terms)
@@ -178,6 +196,7 @@ def value_extraction():
 def term_finder():
     """POST to extract terms, context, negex, sections from text, text=text to parse, terms=array of terms"""
     if request.method == 'POST' and request.data:
+        init()
         obj = NLPModel.from_dict(request.get_json())
         finder = TermFinder(obj.terms)
 

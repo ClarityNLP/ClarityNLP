@@ -2,8 +2,20 @@ import re
 import en_core_web_md
 from nltk.tokenize import sent_tokenize
 
-print('Segmentation init...')
-nlp = en_core_web_md.load()
+data = {}
+
+
+def segmentation_init():
+    print('Segmentation init...')
+    if 'nlp' not in data:
+        data['nlp'] = en_core_web_md.load()
+    return data['nlp']
+
+
+def parse_sentences_spacy(text):
+    spacy = segmentation_init()
+    doc = spacy(text)
+    return [sent.string.strip() for sent in doc.sents]
 
 
 class Segmentation(object):
@@ -22,15 +34,11 @@ class Segmentation(object):
         return cleaned_text
 
     def parse_sentences(self, text):
-        return self.parse_sentences_spacy(text)
+        return parse_sentences_spacy(text)
 
     def parse_sentences_nltk(self, text):
         # needs punkt
         return sent_tokenize(self, text)
-
-    def parse_sentences_spacy(self, text):
-        doc = nlp(text)
-        return [sent.string.strip() for sent in doc.sents]
 
 
 # if __name__ == '__main__':
