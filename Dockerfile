@@ -1,16 +1,13 @@
-FROM ubuntu:latest
+FROM python:3
 
 MAINTAINER Health Data Analytics
-
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt-get install -y python-pip python-dev build-essential python3-pip
 
 ENV APP_HOME /api
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
 COPY requirements.txt $APP_HOME
+COPY install_models.py $APP_HOME
 
 RUN pip3 install -r requirements.txt
 RUN pip3 install -U pytest
@@ -20,8 +17,4 @@ RUN python3 install_models.py
 
 COPY . .
 
-
-# COPY . /api
-# WORKDIR /api
-ENTRYPOINT ["python3"]
-CMD ["api.py"]
+CMD ["python3", "api.py"]
