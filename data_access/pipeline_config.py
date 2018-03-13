@@ -24,7 +24,7 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, description, terms, limit=1000, concept_code=-1, owner='system',
+    def __init__(self, config_type, name, description, terms, limit=0, concept_code=-1, owner='system',
                  include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
                  vocabulary='SNOMED', sections=list()):
         self.config_type = config_type
