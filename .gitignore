@@ -1,2 +1,4 @@
 .cache/
 docker-compose.png
+.env
+prod.env

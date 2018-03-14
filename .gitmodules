@@ -7,9 +7,6 @@
 [submodule "validation"]
 	path = validation
 	url = https://github.gatech.edu/HDAP/validation-framework.git
-[submodule "luigi"]
-	path = luigi
-	url = https://github.gatech.edu/HDAP/docker-luigi.git
 [submodule "nlp-api"]
 	path = nlp-api
 	url = https://github.gatech.edu/HDAP/health-nlp.git
