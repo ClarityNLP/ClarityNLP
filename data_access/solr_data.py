@@ -1,4 +1,3 @@
-import configparser
 import sys
 from urllib import request
 from urllib.parse import quote
