@@ -22,12 +22,13 @@ mongo_working_collection = os.environ.get('NLP_MONGO_WORKING_COLLECTION', config
 tmp_dir = os.environ.get('NLP_API_TMP_DIR', config.get('tmp', 'dir'))
 log_dir = os.environ.get('NLP_API_LOG_DIR', config.get('log', 'dir'))
 
+luigi_scheduler = os.environ.get('LUIGI_SCHEDULER_URL', config.get('luigi', 'scheduler'))
 luigi_url = os.environ.get('LUIGI_URL', config.get('luigi', 'url'))
 luigi_workers = os.environ.get('LUIGI_WORKERS', config.get('luigi', 'workers'))
 
 main_url = os.environ.get('NLP_API_URL', config.get('main', 'url'))
 
-row_count = 100
+row_count = 10
 delimiter = ','
 quote_character = '"'
 
