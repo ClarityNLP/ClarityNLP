@@ -2,6 +2,7 @@ import psycopg2
 import psycopg2.extras
 import sys
 import configparser
+import util
 
 try:
     from .base_model import BaseModel
@@ -76,7 +77,7 @@ def get_pipeline_config(pipeline_id, connection_string):
         cursor.execute("""
                      SELECT  *
                      FROM    nlp.pipeline_config
-                     WHERE   pipeline_id = %s 
+                     WHERE   pipeline_id = %s
                      """, [str(pipeline_id)])
 
         row = cursor.fetchone()
@@ -117,15 +118,7 @@ def get_limit(doc_count, p_config: PipelineConfig):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         q = sys.argv[1]
-
-        config = configparser.RawConfigParser()
-        config.read('../project.cfg')
-        conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (config.get('pg', 'host'),
-                                                                                 config.get('pg', 'dbname'),
-                                                                                 config.get('pg', 'user'),
-                                                                                 config.get('pg', 'password'),
-                                                                                 config.get('pg', 'port'))
-
+        conn_string = util.conn_string
         config = (get_pipeline_config(q, conn_string))
         print(config)
         sys.exit(1)
