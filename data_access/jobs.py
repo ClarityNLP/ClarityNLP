@@ -2,6 +2,7 @@ import psycopg2
 import psycopg2.extras
 import configparser
 import json
+import util
 try:
     from .base_model import BaseModel
 except Exception as e:
@@ -120,12 +121,6 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
 
 
 if __name__ == "__main__":
-    config = configparser.RawConfigParser()
-    config.read('../project.cfg')
-    conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (config.get('pg', 'host'),
-                                                                             config.get('pg', 'dbname'),
-                                                                             config.get('pg', 'user'),
-                                                                             config.get('pg', 'password'),
-                                                                             config.get('pg', 'port'))
+    conn_string = util.conn_string
     status = get_job_status(117, conn_string)
     print(json.dumps(status, indent=4))

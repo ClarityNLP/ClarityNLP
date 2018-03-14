@@ -3,6 +3,7 @@ import sys
 from urllib import request
 from urllib.parse import quote
 import simplejson
+import util
 
 
 def normalize_tag(tag):
@@ -65,7 +66,7 @@ def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key):
     return new_fq
 
 
-def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='', sort='', start=0, rows=10, solr_url='http://localhost:8983/solr/mimic'):
+def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='', sort='', start=0, rows=10, solr_url='http://nlp-solr:8983/solr/sample'):
     url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key), sort, start, rows, solr_url)
 
     print("Querying " + url)
@@ -80,7 +81,7 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='',
     return response['response']['docs']
 
 
-def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), fq='', sort='', start=0, rows=10, solr_url='http://localhost:8983/solr/mimic'):
+def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), fq='', sort='', start=0, rows=10, solr_url='http://nlp-solr:8983/solr/sample'):
     url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key), sort, start, rows, solr_url)
 
     print("Querying " + url)
@@ -91,18 +92,16 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), fq='',
 
 
 if __name__ == '__main__':
-    config = configparser.RawConfigParser()
-    config.read('../project.cfg')
-    solr = config.get('solr', 'url')
+    solr = util.solr_url
     if len(sys.argv) > 1:
         q = sys.argv[1]
     else:
         q = "report_text:*"
     query(q, solr_url=solr)
 
-    report_mapper_url = config.get('report_mapper', 'url')
-    report_mapper_key = config.get('report_mapper', 'key')
-    report_mapper_inst = config.get('report_mapper', 'institute')
+    report_mapper_url = util.report_mapper_url
+    report_mapper_key = util.report_mapper_key
+    report_mapper_inst = util.report_mapper_inst
     mappings = get_report_type_mappings(report_mapper_url, report_mapper_inst, report_mapper_key)
 
     print(simplejson.dumps(mappings, indent=4*' '))

@@ -7,6 +7,7 @@ import luigi_pipeline_runner
 from flask_autodoc import Autodoc
 from nlp import *
 from upload import upload_file, upload_from_db
+import sys
 
 
 app = Flask(__name__)
@@ -244,4 +245,4 @@ def vocabulary_expansion():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, threaded=True)
