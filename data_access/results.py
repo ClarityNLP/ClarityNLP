@@ -25,6 +25,33 @@ pipeline_output_positions = [
     'experiencer'
 ]
 
+value_extractor_positions = [
+    '_id',
+    'job_id',
+    'pipeline_id',
+    'pipeline_type',
+    'report_id',
+    'subject',
+    'report_date',
+    'report_type',
+    'section',
+    'sentence',
+    'text',
+    'start',
+    'end',
+    'concept_code',
+    'temporality',
+    "subject",
+    "dimension_X",
+    "dimension_Y",
+    "dimension_Z",
+    "units",
+    "location",
+    "condition",
+    "value1",
+    "value2"
+    ]
+
 
 def job_results(job_type: str, job: str):
     client = MongoClient(util.mongo_host, util.mongo_port)
@@ -44,7 +71,11 @@ def job_results(job_type: str, job: str):
                 keys = list(res.keys())
                 output = [''] * length
                 i = 0
-                for key in pipeline_output_positions:
+                if res['type'] == "ValueExtractor":
+                    positions = value_extractor_positions
+                else:
+                    positions = pipeline_output_positions
+                for key in positions:
                     if key in keys:
                         val = res[key]
                         output[i] = val

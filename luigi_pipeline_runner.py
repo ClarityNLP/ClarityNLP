@@ -5,7 +5,8 @@ import sys
 # this maps the user friendly name to the pipeline task in luigi_pipeline.py
 pipeline_types = {
     "TermFinder": "TermFinderPipeline",
-    "ProviderAssertion": "ProviderAssertionPipeline"
+    "ProviderAssertion": "ProviderAssertionPipeline",
+    "ValueExtractor": "ValueExtractorPipeline"
 }
 luigi_log = util.log_dir + '/luigi.log'
 

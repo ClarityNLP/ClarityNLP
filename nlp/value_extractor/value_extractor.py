@@ -59,6 +59,7 @@ def run_value_extractor(filename):
         results = json_obj['results']
         for res in results:
             if res["querySuccess"] == 'TRUE':
+                print(json_str)
                 meas_results = res['measurements']
                 for meas in meas_results:
                     meas_obj = Measurement.from_dict(meas)
@@ -83,7 +84,7 @@ def run_value_extractor_full(text, query: list()):
             match = matcher.search(sentence)
             if match:
                 term = match.group(0)
-                # TODO filter out sentence if matching
+                # print("Value Extraction QUERY: %s\n %s" % (term, sentence.replace('\n', ' ')))
                 fileout.write("QUERY: %s\n" % term)
                 fileout.write(sentence.replace('\n', ' '))
                 fileout.write("\n\n")
