@@ -1,9 +1,31 @@
-import json
+import simplejson as json
+
+
+def is_empty(item):
+    if item is None:
+        return True
+
+    t = type(item)
+    if t is str or t is list or t is set:
+        if len(item) > 0:
+            return False
+        else:
+            return True
+
+    if t is dict:
+        if len(item.items()) > 0:
+            return False
+        else:
+            return True
+
+    return False
 
 
 class BaseModel(object):
+
     def to_json(self):
-        return json.dumps(self.__dict__, indent=4)
+        non_empty = {k: v for k, v in self.__dict__.items() if not is_empty(v)}
+        return json.dumps(non_empty, indent=4, ignore_nan=True)
 
     @classmethod
     def from_json(cls, string: str):
