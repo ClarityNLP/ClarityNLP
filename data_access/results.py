@@ -22,26 +22,8 @@ pipeline_output_positions = [
     'concept_code',
     'negation',
     'temporality',
-    'experiencer'
-]
-
-value_extractor_positions = [
-    '_id',
-    'job_id',
-    'pipeline_id',
-    'pipeline_type',
-    'report_id',
-    'subject',
-    'report_date',
-    'report_type',
-    'section',
-    'sentence',
-    'text',
-    'start',
-    'end',
-    'concept_code',
-    'temporality',
-    "subject",
+    'experiencer',
+    "extracted_subject",
     "dimension_X",
     "dimension_Y",
     "dimension_Z",
@@ -50,7 +32,8 @@ value_extractor_positions = [
     "condition",
     "value1",
     "value2"
-    ]
+]
+
 
 
 def job_results(job_type: str, job: str):
@@ -71,11 +54,7 @@ def job_results(job_type: str, job: str):
                 keys = list(res.keys())
                 output = [''] * length
                 i = 0
-                if res['type'] == "ValueExtractor":
-                    positions = value_extractor_positions
-                else:
-                    positions = pipeline_output_positions
-                for key in positions:
+                for key in pipeline_output_positions:
                     if key in keys:
                         val = res[key]
                         output[i] = val
