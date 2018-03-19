@@ -58,8 +58,9 @@ def run_value_extractor(filename):
         json_obj = json.loads(json_str)
         results = json_obj['results']
         for res in results:
-            if res["querySuccess"] == 'TRUE':
-                print(json_str)
+            meas_count = int(res["measurementCount"])
+            if meas_count > 0:
+                print("found %d measurements" % meas_count)
                 meas_results = res['measurements']
                 for meas in meas_results:
                     meas_obj = Measurement.from_dict(meas)

@@ -32,7 +32,7 @@ def mongo_writer(client, pipeline, job, batch, pipeline_config, meas: Measuremen
         "text": meas.text,
         "start": meas.start,
         "end": meas.end,
-        "extracted_subject": meas.subject,
+        "term": meas.subject,
         "dimension_X": meas.X,
         "dimension_Y": meas.Y,
         "dimension_Z": meas.Z,
