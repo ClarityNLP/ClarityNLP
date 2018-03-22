@@ -1,107 +1,166 @@
-# NOT FINISED YET, use non prod for now
-
 version: '3'
 
 volumes:
-  mapper-pgdata:
-  mapper-redisdata:
-  nlp-pgdata:
-  nlp-mongodata:
+  # mapper-pgdata:
+  # mapper-redisdata:
+  # auto-mapper-pgdata:
   nlp-solrdata:
-  nlp-luigi-worker-data:
+  # nlp-pgdata:
+  # nlp-mongodata:
 
 services:
-  nlp-postgres:
-    image: postgres
-    container_name: 'NLP_POSTGRES'
-    environment:
-      POSTGRES_PASSWORD: pg
-      POSTGRES_USER: pg
-      POSTGRES_DB: nlp
+
+  nlp-api:
+    container_name: 'NLP_API'
+    hostname: ${NLP_API_HOSTNAME}
+    build:
+      context: ./nlp-api
+      dockerfile: Dockerfile
     ports:
-      - "5433:5433"
-    volumes:
-      - 'nlp-pgdata:/var/lib/postgresql/data/'
-  nlp-mongo:
-    image: mongo
-    container_name: 'NLP_MONGO'
-    environment:
-      - MONGO_DATA_DIR=/data/db
-      - MONGO_LOG_DIR=/dev/null
+      - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
+    command: ["/api/scripts/wait-for-it.sh", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
+    env_file:
+      - .env
+
+  scheduler:
+    container_name: 'LUIGI_SCHEDULER'
+    hostname: ${SCHEDULER_HOSTNAME}
+    image: 'axiom/docker-luigi:2.7.1'
     ports:
-      - "27017:27017"
-    volumes:
-      - 'nlp-mongodata:/data/db'
+      - "${SCHEDULER_HOST_PORT}:${SCHEDULER_CONTAINER_PORT}"
+    env_file:
+      - .env
+
   nlp-solr:
-    image: solr
+    container_name: 'NLP_SOLR'
+    hostname: ${NLP_SOLR_HOSTNAME}
+    build:
+      context: ./nlp-solr
+      dockerfile: Dockerfile.prod
     ports:
-      - "8983:8983"
+      - "${NLP_SOLR_HOST_PORT}:${NLP_SOLR_CONTAINER_PORT}"
     volumes:
-      - nlp-solrdata:/opt/solr/server/solr/mycores
+      - 'nlp-solrdata:/opt/solr/server/solr/mycores'
     entrypoint:
       - docker-entrypoint.sh
       - solr-precreate
-      - mycore
-  nlp-luigi-scheduler:
-    image: spiside/luigi:latest
-    ports:
-      - "8082:8082"
-    environment:
-      LUIGI_TASK_HISTORY_DB_CONNECTION: postgres://pg:pg@nlp-postgres:5433/nlp
-      LUIGI_SCHEDULER_RECORD_TASK_HISTORY: "true"
-    depends_on:
-      - nlp-postgres
-    entrypoint:
-      - ./luigi/wait-for-postgres.sh
-      - nlp-postgres
-  nlp-luigi-worker:
-    build:
-      dockerfile: luigi/Dockerfile.worker
-      context: .
-    hostname: worker
-    volumes: nlp-luigi-worker-data:/luigi
-    environment:
-      LUIGI_CORE_DEFAULT-SCHEDULER-URL: http://nlp-luigi-scheduler:8082
-    depends_on:
-      - nlp-luigi-scheduler
-  mapper-postgres:
-    image: postgres
-    container_name: 'RTM_POSTGRES'
-    environment:
-      POSTGRES_PASSWORD: sails
-      POSTGRES_USER: sails
-      POSTGRES_DB: report-type-mapper
-    ports:
-      - "5432:5432"
-    volumes:
-      - 'mapper-pgdata:/var/lib/postgresql/data/'
-  mapper-api:
-    build: ./mapper-api
-    container_name: RTM_Backend
-    ports:
-      - "1338:1337"
-    depends_on:
-      - postgres
-      - redis
-    environment:
-      - NODE_ENV=production
-    command: "pm2-runtime app.js"
-  mapper-client:
-    build:
-      context: ./mapper-client
-      dockerfile: Dockerfile.prod
-    container_name: RTM_Frontend
-    ports:
-      - "80:8000"
-  mapper-redis:
-    image: redis:3.2.0
-    container_name: RTM_Redis
-    ports:
-      - "6379:6379"
-  mapper-swagger:
-    image: swaggerapi/swagger-ui
-    container_name: RTM_Swagger_Docs
-    # environment:
-    # - "API_URL=http://report-type-mapper.hdap.gatech.edu:1338/v1/swagger.json"
-    ports:
-      - "3000:8080"
+      - ${NLP_CORE_NAME}
+    env_file:
+      - .env
+
+  # nlp-mongo:
+  #   image: mongo
+  #   hostname: ${NLP_MONGO_HOSTNAME}
+  #   container_name: 'NLP_MONGO'
+  #   environment:
+  #     - MONGO_DATA_DIR=/data/db
+  #     - MONGO_LOG_DIR=/dev/null
+  #     - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
+  #   ports:
+  #     - "${NLP_MONGO_HOST_PORT}:${NLP_MONGO_CONTAINER_PORT}"
+  #   volumes:
+  #     - './nlp-api/scripts/mongo/setup.js:/docker-entrypoint-initdb.d/setup.js'
+  #     - 'nlp-mongodata:/data/db'
+  #   env_file:
+  #     - .env
+  #
+  # nlp-postgres:
+  #   container_name: 'NLP_POSTGRES'
+  #   hostname: ${NLP_PG_HOSTNAME}
+  #   build:
+  #     context: ./nlp-postgres
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     POSTGRES_USER: ${NLP_PG_USER}
+  #     POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
+  #     POSTGRES_DB: ${NLP_PG_DATABASE}
+  #   ports:
+  #     - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
+  #   volumes:
+  #     - './nlp-postgres/ddl/ddl.sql:/docker-entrypoint-initdb.d/10-ddl.sql'
+  #     - './nlp-postgres/ddl/omop_vocab.sql:/docker-entrypoint-initdb.d/20-omop_vocab.sql'
+  #     - './nlp-postgres/dml/load_vocab.sh:/docker-entrypoint-initdb.d/30-load_vocab.sh'
+  #     - './nlp-postgres/dml/copy_vocab.sql:/docker-entrypoint-initdb.d/40-copy_vocab.sql'
+  #     - './nlp-postgres/ddl/omop_indexes.sql:/docker-entrypoint-initdb.d/50-omop_indexes.sql'
+  #     - 'nlp-pgdata:/var/lib/postgresql/data/'
+  #   env_file:
+  #     - .env
+  #
+  # mapper-api:
+  #   container_name: MAPPER_API
+  #   hostname: ${MAPPER_API_HOSTNAME}
+  #   build: ./mapper-api
+  #   volumes:
+  #     - ./mapper-api:/app
+  #     - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
+  #   ports:
+  #     - "${MAPPER_API_HOST_PORT}:${MAPPER_API_CONTAINER_PORT}"
+  #   depends_on:
+  #     - mapper-pg
+  #     - redis
+  #   environment:
+  #     - NODE_ENV=development
+  #
+  # mapper-client:
+  #   container_name: MAPPER_CLIENT
+  #   hostname: ${MAPPER_CLIENT_HOSTNAME}
+  #   build:
+  #     context: ./mapper-client
+  #     dockerfile: Dockerfile.prod
+  #   ports:
+  #     - "${MAPPER_CLIENT_HOST_PORT}:${MAPPER_CLIENT_CONTAINER_PORT}"
+  #
+  # mapper-pg:
+  #   container_name: 'MAPPER_POSTGRES'
+  #   hostname: ${MAPPER_PG_HOSTNAME}
+  #   image: postgres
+  #   environment:
+  #     POSTGRES_USER: ${MAPPER_PG_USER}
+  #     POSTGRES_PASSWORD: ${MAPPER_PG_PASSWORD}
+  #     POSTGRES_DB: ${MAPPER_PG_DATABASE}
+  #   ports:
+  #     - "${MAPPER_PG_HOST_PORT}:${MAPPER_PG_CONTAINER_PORT}"
+  #   volumes:
+  #     - 'mapper-pgdata:/var/lib/postgresql/data/'
+  #
+  # redis:
+  #   container_name: MAPPER_Redis
+  #   hostname: ${MAPPER_REDIS_HOSTNAME}
+  #   image: redis:3.2.0
+  #   ports:
+  #     - "${MAPPER_REDIS_HOST_PORT}:${MAPPER_REDIS_CONTAINER_PORT}"
+  #   volumes:
+  #   - 'mapper-redisdata:/data'
+  #
+  # swagger:
+  #   container_name: MAPPER_Swagger_Docs
+  #   hostname: ${MAPPER_SWAGGER_HOSTNAME}
+  #   image: swaggerapi/swagger-ui
+  #   environment:
+  #   - "API_URL=${MAPPER_SWAGGER_API_URL}"
+  #   ports:
+  #     - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
+  #
+  # auto-mapper-api:
+  #   container_name: AUTO_MAPPER_API
+  #   build:
+  #     context: ./auto-mapper
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5001:5001"
+  #   depends_on:
+  #     - auto-mapper-pg
+  #   volumes:
+  #     - ./auto-mapper:/api
+  #
+  # auto-mapper-pg:
+  #   image: postgres
+  #   container_name: 'AUTO_MAPPER_PG'
+  #   environment:
+  #     POSTGRES_PASSWORD: pg
+  #     POSTGRES_USER: pg
+  #     POSTGRES_DB: postgres
+  #   ports:
+  #     - "5433:5433"
+  #   volumes:
+  #     - 'auto-mapper-pgdata:/var/lib/postgresql/data/'
