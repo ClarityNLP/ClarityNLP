@@ -71,3 +71,16 @@ create index phenotype_name_index
 	on phenotype (name)
 ;
 
+
+create table phenotype_mapping
+(
+	phenotype_id bigint not null,
+	pipeline_id bigint not null
+)
+;
+
+create index phenotype_mapping_phenotype_id_index
+	on phenotype_mapping (phenotype_id)
+;
+
+
