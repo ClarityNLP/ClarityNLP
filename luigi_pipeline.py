@@ -6,144 +6,70 @@ except Exception as e:
     print(e)
     from nlp import get_related_terms
 
+luigi_pipeline_types = {
+    "TermFinder": TermFinderBatchTask,
+    "ProviderAssertion": ProviderAssertionBatchTask,
+    "MeasurementFinder": MeasurementFinderTask
+}
 
-# TODO can some of this be reused
 
-class TermFinderPipeline(luigi.Task):
+def initialize_task_and_get_documents(pipeline_id, job_id, owner):
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS,
+                           "Initializing task -- pipeline: %s, job: %s, owner: %s" % (str(pipeline_id), str(job_id),
+                                                                                      str(owner)))
+
+    pipeline_config = config.get_pipeline_config(pipeline_id, util.conn_string)
+
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Getting related terms")
+    added = copy.copy(pipeline_config.terms)
+
+    for term in pipeline_config.terms:
+        related_terms = get_related_terms(util.conn_string, term, pipeline_config.include_synonyms, pipeline_config
+                                          .include_descendants, pipeline_config.include_ancestors, escape=False)
+        if related_terms and len(related_terms) > 0:
+            added.extend(related_terms)
+
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Getting Solr doc size")
+    solr_query = config.get_query(added)
+    total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
+                                          mapper_url=util.report_mapper_url,
+                                          mapper_key=util.report_mapper_key, solr_url=util.solr_url,
+                                          tags=pipeline_config.report_tags)
+    doc_limit = config.get_limit(total_docs, pipeline_config)
+    ranges = range(0, (doc_limit + util.row_count), util.row_count)
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
+
+    return solr_query, total_docs, doc_limit, ranges
+
+
+class PipelineTask(luigi.Task):
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
+    pipelinetype = luigi.Parameter()
 
     def requires(self):
-
-        pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Getting related terms")
-        added = copy.copy(pipeline_config.terms)
-
-        for term in pipeline_config.terms:
-            related_terms = get_related_terms(util.conn_string, term, pipeline_config.include_synonyms, pipeline_config
-                                              .include_descendants, pipeline_config.include_ancestors, escape=False)
-            if related_terms and len(related_terms) > 0:
-                added.extend(related_terms)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Getting Solr doc size")
-        solr_query = config.get_query(added)
-        total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
-                                              mapper_url=util.report_mapper_url,
-                                              mapper_key=util.report_mapper_key, solr_url=util.solr_url,
-                                              tags=pipeline_config.report_tags)
-        doc_limit = config.get_limit(total_docs, pipeline_config)
-        ranges = range(0, (doc_limit + util.row_count), util.row_count)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
-        matches = [TermFinderBatchTask(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n) for n in
-                   ranges]
+        solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job, self
+                                                                                      .owner)
+        task = luigi_pipeline_types[str(self.pipelinetype)]
+        matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n)
+                   for n in ranges]
 
         return matches
 
     def run(self):
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished TermFinder Pipeline")
-
-# @luigi.Task.event_handler(luigi.Event.FAILURE)
-# def mourn_failure(self, exception):
-#     """
-#     Report failure event
-#     Uses "-!--!--!--!--!--!--!--!--!--!-"  as indicator
-#     """
-#
-#     print(26 * '-!-')
-#     print("Boo!, {c} failed.  :(".format(c=self.__class__.__name__))
-#     print(".. with this exception: '{e}'".format(e=str(exception)))
-#     print(26 * '-!-')
-
-
-class ProviderAssertionPipeline(luigi.Task):
-    pipeline = luigi.IntParameter()
-    job = luigi.IntParameter()
-    owner = luigi.Parameter()
-
-    def requires(self):
-
-        pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Getting related terms")
-        added = copy.copy(pipeline_config.terms)
-        for term in pipeline_config.terms:
-            related_terms = get_related_terms(util.conn_string, term, pipeline_config.include_synonyms,
-                                              pipeline_config
-                                              .include_descendants, pipeline_config.include_ancestors,
-                                              escape=False)
-            if related_terms and len(related_terms) > 0:
-                added.extend(related_terms)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Getting Solr doc size")
-        solr_query = config.get_query(added)
-        total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
-                                              mapper_url=util.report_mapper_url,
-                                              mapper_key=util.report_mapper_key, solr_url=util.solr_url,
-                                              tags=pipeline_config.report_tags)
-        doc_limit = config.get_limit(total_docs, pipeline_config)
-        ranges = range(0, (doc_limit + util.row_count), util.row_count)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
-        matches = [
-            ProviderAssertionBatchTask(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n)
-            for n in
-            ranges]
-
-        return matches
-
-    def run(self):
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished ProviderAssertion Pipeline")
-
-
-class ValueExtractorPipeline(luigi.Task):
-    pipeline = luigi.IntParameter()
-    job = luigi.IntParameter()
-    owner = luigi.Parameter()
-
-    def requires(self):
-
-        pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Getting related terms")
-        added = copy.copy(pipeline_config.terms)
-        for term in pipeline_config.terms:
-            related_terms = get_related_terms(util.conn_string, term, pipeline_config.include_synonyms,
-                                              pipeline_config
-                                              .include_descendants, pipeline_config.include_ancestors,
-                                              escape=False)
-            if related_terms and len(related_terms) > 0:
-                added.extend(related_terms)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Getting Solr doc size")
-        solr_query = config.get_query(added)
-        total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
-                                              mapper_url=util.report_mapper_url,
-                                              mapper_key=util.report_mapper_key, solr_url=util.solr_url,
-                                              tags=pipeline_config.report_tags)
-        doc_limit = config.get_limit(total_docs, pipeline_config)
-        ranges = range(0, (doc_limit + util.row_count), util.row_count)
-
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
-        matches = [
-            ValueExtractorTask(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n)
-            for n in
-            ranges]
-
-        return matches
-
-    def run(self):
-        jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished ValueExtractor Pipeline")
+        jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % self
+                               .pipelinetype)
 
 
 def run_ner_pipeline(pipeline_id, job_id, owner):
-    luigi.run(['TermFinderPipeline', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner])
+    luigi.run(['PipelineTask', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--pipelinetype',
+               'TermFinder'])
 
 
 def run_provider_assertion_pipeline(pipeline_id, job_id, owner):
-    luigi.run(['ProviderAssertionPipeline', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner])
+    luigi.run(['PipelineTask', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--pipelinetype',
+               'ProviderAssertion'])
 
 
 if __name__ == "__main__":

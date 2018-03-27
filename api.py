@@ -3,11 +3,10 @@ from werkzeug import secure_filename
 import simplejson
 import datetime
 from data_access import *
-import luigi_pipeline_runner
+import luigi_runner, luigi_pipeline
 from flask_autodoc import Autodoc
 from nlp import *
 from upload import upload_file, upload_from_db
-import sys
 
 
 app = Flask(__name__)
@@ -67,6 +66,32 @@ def db_to_solr():
     return "Couldn't migrate data."
 
 
+@app.route('/phenotype', methods=['POST'])
+@auto.doc()
+def phenotype():
+    """POST a phenotype job (JSON) to run"""
+    if not request.data:
+        return 'POST a JSON phenotype config to execute or an id to GET. Body should be phenotype JSON'
+    try:
+        init()
+        p_cfg = PhenotypeModel.from_dict(request.get_json())
+        p_id = insert_phenotype_model(p_cfg, util.conn_string)
+        if p_id == -1:
+            return '{ "success", false }'
+        job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
+                                                 owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
+                                                 phenotype_id=p_id, pipeline_id=-1, date_started=datetime.datetime.now(),
+                                                 job_type='PHENOTYPE'), util.conn_string)
+
+        luigi_runner.run_phenotype(p_cfg, p_id, job_id)
+
+        output = dict()
+        return json.dumps(output, indent=4)
+
+    except Exception as e:
+        return 'Failed to load and insert phenotype. ' + str(e), 400
+
+
 @app.route('/pipeline', methods=['POST'])
 @auto.doc()
 def pipeline():
@@ -84,7 +109,7 @@ def pipeline():
                                                  phenotype_id=-1, pipeline_id=p_id, date_started=datetime.datetime.now(),
                                                  job_type='PIPELINE'), util.conn_string)
 
-        luigi_pipeline_runner.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
+        luigi_runner.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
 
         output = dict()
         output["pipeline_id"] = str(p_id)
@@ -115,7 +140,7 @@ def pipeline_id():
 def pipeline_types():
     """GET valid pipeline types"""
     try:
-        return repr(list(luigi_pipeline_runner.pipeline_types.keys()))
+        return repr(list(luigi_pipeline.luigi_pipeline_types.keys()))
     except Exception as e:
         return "Failed to get pipeline types" + str(e)
 
@@ -179,15 +204,15 @@ def get_ngram():
     return 'Unable to extract n-gram'
 
 
-@app.route('/value_extraction', methods=['POST'])
+@app.route('/measurement_finder', methods=['POST'])
 @auto.doc()
-def value_extraction():
+def measurement_finder():
     """POST to extract measurements, text=text to parse, terms=an array of terms"""
     if request.method == 'POST' and request.data:
         init()
         obj = NLPModel.from_dict(request.get_json())
 
-        results = run_value_extractor_full(obj.text, obj.terms)
+        results = run_measurement_finder_full(obj.text, obj.terms)
         return json.dumps([r.__dict__ for r in results], indent=4)
     return "Please POST a valid JSON object with terms and text"
 

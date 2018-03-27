@@ -84,7 +84,7 @@ def get_job_status(job_id: int, connection_string: str):
             udict["nlp_job_status_id"] = row[3]
             udict["date_updated"] = (row[2]).strftime("%Y-%m-%d %H:%M:%S")
             udict["status"] = row[0]
-            udict["description"]= row[1]
+            udict["description"] = row[1]
             status_dict["updates"].append(udict)
 
         return status_dict

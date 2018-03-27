@@ -1,3 +1,5 @@
+import psycopg2
+import psycopg2.extras
 try:
     from .base_model import BaseModel
     from .pipeline_config import PipelineConfig
@@ -59,6 +61,78 @@ class PhenotypeModel(BaseModel):
         self.operations = operations
 
 
+def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+                     INSERT INTO nlp.phenotype_mapping(phenotype_id, pipeline_id) VALUES
+                     (%s, %s) 
+                      """, (phenotype_id, pipeline_id))
+
+        conn.commit()
+
+    except Exception as ex:
+        print('failed to insert phenotype mapping')
+        print(str(ex))
+    finally:
+        conn.close()
+
+    return 'done'
+
+
+def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
+
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    p_id = -1
+
+    try:
+        if len(phenotype.description) > 250:
+            name = phenotype.description[0:249]
+        else:
+            name = phenotype.description
+        p_json = phenotype.to_json()
+        cursor.execute("""
+                      INSERT INTO nlp.phenotype(owner, config, name, description, date_created) 
+                      VALUES(%s, %s, %s, %s, current_timestamp) RETURNING phenotype_id
+                      """, (phenotype.owner, p_json, name, phenotype.description))
+
+        p_id = cursor.fetchone()[0]
+        conn.commit()
+
+    except Exception as ex:
+        print('failed to insert phenotype')
+        print(str(ex))
+    finally:
+        conn.close()
+
+    return p_id
+
+
+def query_pipeline_ids(phenotype_id: int, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    pipeline_ids = list()
+
+    try:
+
+        cursor.execute("""SELECT pipeline_id from nlp.phenotype_mapping where phenotype_id = %s""",
+                       [phenotype_id])
+        rows = cursor.fetchall()
+        for row in rows:
+            pipeline_ids.append(row[0])
+
+        return pipeline_ids
+    except Exception as ex:
+        print(ex)
+    finally:
+        conn.close()
+
+    return pipeline_ids
+
+
 # TODO is it a logical operation or a 'job'
 
 
@@ -106,32 +180,32 @@ if __name__ == "__main__":
                                         "Radiology"
                                     ]
                                 })
+    #
+    # transfusionEvent = PhenotypeEntity('transfusionEvent', 'define',
+    #                                    library='OHDSI',
+    #                                    function='getCohortIndexDateTime',
+    #                                    arguments=["RBC Tranfusion Patients"])
 
-    transfusionEvent = PhenotypeEntity('transfusionEvent', 'define',
-                                       library='OHDSI',
-                                       function='getCohortIndexDateTime',
-                                       arguments=["RBC Tranfusion Patients"])
+    SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'], final=True)
 
-    SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'])
-
-    SepsisPostTransfusion = PhenotypeOperations('SepsisPostTransfusion', 'AND',
-                                                [
-                                                    'SepsisState',
-                                                    PhenotypeOperations('SepsisPostTransfusion_inner1',
-                                                                        'LESS_THAN',
-                                                                        [
-                                                                            PhenotypeOperations(
-                                                                                'SepsisPostTransfusion_inner2',
-                                                                                'MINUS',
-                                                                                [
-                                                                                    'SepsisState.report_date',
-                                                                                    'transfusionEvent.procedure_date'
-                                                                                ]),
-                                                                            '72H'
-                                                                        ]
-                                                                        )
-                                                ],
-                                                final=True)
+    # SepsisPostTransfusion = PhenotypeOperations('SepsisPostTransfusion', 'AND',
+    #                                             [
+    #                                                 'SepsisState',
+    #                                                 PhenotypeOperations('SepsisPostTransfusion_inner1',
+    #                                                                     'LESS_THAN',
+    #                                                                     [
+    #                                                                         PhenotypeOperations(
+    #                                                                             'SepsisPostTransfusion_inner2',
+    #                                                                             'MINUS',
+    #                                                                             [
+    #                                                                                 'SepsisState.report_date',
+    #                                                                                 'transfusionEvent.procedure_date'
+    #                                                                             ]),
+    #                                                                         '72H'
+    #                                                                     ]
+    #                                                                     )
+    #                                             ],
+    #                                             final=True)
     sepsisPhenotype = PhenotypeModel('jduke',
                                      phenotype=lib,
                                      description='Sepsis definition derived from Murff HJ, FitzHenry F, Matheny ME, et al. Automated identification of postoperative complications within an electronic medical record using natural language processing. JAMA. 2011;306(8):848-855.',
@@ -143,14 +217,15 @@ if __name__ == "__main__":
                                      document_sets=[ProviderNotes],
                                      population='RBC Transfusion Patients',
                                      data_entities=[
-                                         onVentilator, hasSepsis, transfusionEvent
+                                         onVentilator, hasSepsis
                                      ],
                                      operations=[
-                                         SepsisState, SepsisPostTransfusion
+                                         SepsisState
                                      ])
 
     json = sepsisPhenotype.to_json()
     print(json)
+
 
 
 # conceptset or termset as inputs for entities

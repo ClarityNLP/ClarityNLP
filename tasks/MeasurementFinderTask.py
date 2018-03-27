@@ -47,7 +47,7 @@ def mongo_writer(client, pipeline, job, batch, pipeline_config, meas: Measuremen
     return inserted
 
 
-class ValueExtractorTask(luigi.Task):
+class MeasurementFinderTask(luigi.Task):
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
     start = luigi.IntParameter()
@@ -59,7 +59,8 @@ class ValueExtractorTask(luigi.Task):
         client = MongoClient(util.mongo_host, util.mongo_port)
 
         try:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running ValueExtractor Batch %s" %
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
+                                   "Running MeasurementFinder Batch %s" %
                                    self.batch)
 
             pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
@@ -76,13 +77,13 @@ class ValueExtractorTask(luigi.Task):
 
             with self.output().open('w') as outfile:
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
-                                       "Finding terms with ValueExtractor")
+                                       "Finding terms with MeasurementFinder")
                 # TODO incorporate sections and filters
                 for doc in docs:
-                    res = run_value_extractor_full(doc["report_text"], pipeline_config.terms)
+                    res = run_measurement_finder_full(doc["report_text"], pipeline_config.terms)
                     for meas in res:
                         inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, meas, doc,
-                                                "ValueExtractor")
+                                                "MeasurementFinder")
                         outfile.write(str(inserted))
                         outfile.write('\n')
         except Exception as ex:
@@ -92,5 +93,5 @@ class ValueExtractorTask(luigi.Task):
             client.close()
 
     def output(self):
-        return luigi.LocalTarget("%s/pipeline_job%s_value_extractor_batch%s.txt" % (util.tmp_dir, str(self.job),
+        return luigi.LocalTarget("%s/pipeline_job%s_measurement_finder_batch%s.txt" % (util.tmp_dir, str(self.job),
                                                                                 str(self.start)))
