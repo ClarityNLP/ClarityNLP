@@ -20,7 +20,7 @@ services:
       - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
     command: ["/api/scripts/wait-for-it.sh", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
     env_file:
-      - prod.env
+      - .env
 
   scheduler:
     container_name: 'LUIGI_SCHEDULER'
@@ -29,7 +29,7 @@ services:
     ports:
       - "${SCHEDULER_HOST_PORT}:${SCHEDULER_CONTAINER_PORT}"
     env_file:
-      - prod.env
+      - .env
 
   nlp-solr:
     container_name: 'NLP_SOLR'
@@ -46,7 +46,7 @@ services:
       - solr-precreate
       - ${NLP_CORE_NAME}
     env_file:
-      - prod.env
+      - .env
 
   nlp-mongo:
     container_name: 'NLP_MONGO'
@@ -63,7 +63,7 @@ services:
     volumes:
       - 'nlp-mongodata:/data/db'
     env_file:
-      - prod.env
+      - .env
 
   nlp-postgres:
     container_name: 'NLP_POSTGRES'
@@ -80,7 +80,7 @@ services:
     volumes:
       - 'nlp-pgdata:/var/lib/postgresql/data/'
     env_file:
-      - prod.env
+      - .env
 
   mapper-api:
     container_name: MAPPER_API
@@ -95,7 +95,7 @@ services:
       - NODE_ENV=production
     command: "pm2-runtime app.js"
     env_file:
-      - prod.env
+      - .env
 
   # mapper-client:
   #   container_name: MAPPER_CLIENT
@@ -119,7 +119,7 @@ services:
     volumes:
       - 'mapper-pgdata:/var/lib/postgresql/data/'
     env_file:
-      - prod.env
+      - .env
 
   redis:
     container_name: MAPPER_REDIS
@@ -130,7 +130,7 @@ services:
     volumes:
       - 'mapper-redisdata:/data'
     env_file:
-      - prod.env
+      - .env
 
   swagger:
     container_name: MAPPER_SWAGGER
@@ -141,7 +141,7 @@ services:
     ports:
       - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
     env_file:
-      - prod.env
+      - .env
 
   # auto-mapper-api:
   #   container_name: AUTO_MAPPER_API
