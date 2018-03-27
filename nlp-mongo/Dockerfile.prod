@@ -1,0 +1,6 @@
+FROM mongo
+
+COPY setup.js /docker-entrypoint-initdb.d/setup.js
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["mongod"]

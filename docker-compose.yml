@@ -51,9 +51,9 @@ services:
       - .env
 
   nlp-mongo:
+    container_name: 'NLP_MONGO'
     image: mongo
     hostname: ${NLP_MONGO_HOSTNAME}
-    container_name: 'NLP_MONGO'
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null

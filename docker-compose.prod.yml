@@ -1,12 +1,12 @@
 version: '3'
 
 volumes:
-  # mapper-pgdata:
-  # mapper-redisdata:
+  mapper-pgdata:
+  mapper-redisdata:
   # auto-mapper-pgdata:
   nlp-solrdata:
-  # nlp-pgdata:
-  # nlp-mongodata:
+  nlp-pgdata:
+  nlp-mongodata:
 
 services:
 
@@ -15,12 +15,12 @@ services:
     hostname: ${NLP_API_HOSTNAME}
     build:
       context: ./nlp-api
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     ports:
       - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
     command: ["/api/scripts/wait-for-it.sh", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
     env_file:
-      - .env
+      - prod.env
 
   scheduler:
     container_name: 'LUIGI_SCHEDULER'
@@ -29,7 +29,7 @@ services:
     ports:
       - "${SCHEDULER_HOST_PORT}:${SCHEDULER_CONTAINER_PORT}"
     env_file:
-      - .env
+      - prod.env
 
   nlp-solr:
     container_name: 'NLP_SOLR'
@@ -46,61 +46,57 @@ services:
       - solr-precreate
       - ${NLP_CORE_NAME}
     env_file:
-      - .env
+      - prod.env
 
-  # nlp-mongo:
-  #   image: mongo
-  #   hostname: ${NLP_MONGO_HOSTNAME}
-  #   container_name: 'NLP_MONGO'
-  #   environment:
-  #     - MONGO_DATA_DIR=/data/db
-  #     - MONGO_LOG_DIR=/dev/null
-  #     - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
-  #   ports:
-  #     - "${NLP_MONGO_HOST_PORT}:${NLP_MONGO_CONTAINER_PORT}"
-  #   volumes:
-  #     - './nlp-api/scripts/mongo/setup.js:/docker-entrypoint-initdb.d/setup.js'
-  #     - 'nlp-mongodata:/data/db'
-  #   env_file:
-  #     - .env
-  #
-  # nlp-postgres:
-  #   container_name: 'NLP_POSTGRES'
-  #   hostname: ${NLP_PG_HOSTNAME}
-  #   build:
-  #     context: ./nlp-postgres
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     POSTGRES_USER: ${NLP_PG_USER}
-  #     POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
-  #     POSTGRES_DB: ${NLP_PG_DATABASE}
-  #   ports:
-  #     - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
-  #   volumes:
-  #     - './nlp-postgres/ddl/ddl.sql:/docker-entrypoint-initdb.d/10-ddl.sql'
-  #     - './nlp-postgres/ddl/omop_vocab.sql:/docker-entrypoint-initdb.d/20-omop_vocab.sql'
-  #     - './nlp-postgres/dml/load_vocab.sh:/docker-entrypoint-initdb.d/30-load_vocab.sh'
-  #     - './nlp-postgres/dml/copy_vocab.sql:/docker-entrypoint-initdb.d/40-copy_vocab.sql'
-  #     - './nlp-postgres/ddl/omop_indexes.sql:/docker-entrypoint-initdb.d/50-omop_indexes.sql'
-  #     - 'nlp-pgdata:/var/lib/postgresql/data/'
-  #   env_file:
-  #     - .env
-  #
-  # mapper-api:
-  #   container_name: MAPPER_API
-  #   hostname: ${MAPPER_API_HOSTNAME}
-  #   build: ./mapper-api
-  #   volumes:
-  #     - ./mapper-api:/app
-  #     - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
-  #   ports:
-  #     - "${MAPPER_API_HOST_PORT}:${MAPPER_API_CONTAINER_PORT}"
-  #   depends_on:
-  #     - mapper-pg
-  #     - redis
-  #   environment:
-  #     - NODE_ENV=development
-  #
+  nlp-mongo:
+    container_name: 'NLP_MONGO'
+    hostname: ${NLP_MONGO_HOSTNAME}
+    build:
+      context: ./nlp-mongo
+      dockerfile: Dockerfile.prod
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+      - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
+    ports:
+      - "${NLP_MONGO_HOST_PORT}:${NLP_MONGO_CONTAINER_PORT}"
+    volumes:
+      - 'nlp-mongodata:/data/db'
+    env_file:
+      - prod.env
+
+  nlp-postgres:
+    container_name: 'NLP_POSTGRES'
+    hostname: ${NLP_PG_HOSTNAME}
+    build:
+      context: ./nlp-postgres
+      dockerfile: Dockerfile.prod
+    environment:
+      POSTGRES_USER: ${NLP_PG_USER}
+      POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
+      POSTGRES_DB: ${NLP_PG_DATABASE}
+    ports:
+      - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
+    volumes:
+      - 'nlp-pgdata:/var/lib/postgresql/data/'
+    env_file:
+      - prod.env
+
+  mapper-api:
+    container_name: MAPPER_API
+    hostname: ${MAPPER_API_HOSTNAME}
+    build: ./mapper-api
+    ports:
+      - "${MAPPER_API_HOST_PORT}:${MAPPER_API_CONTAINER_PORT}"
+    depends_on:
+      - mapper-pg
+      - redis
+    environment:
+      - NODE_ENV=production
+    command: "pm2-runtime app.js"
+    env_file:
+      - prod.env
+
   # mapper-client:
   #   container_name: MAPPER_CLIENT
   #   hostname: ${MAPPER_CLIENT_HOSTNAME}
@@ -110,37 +106,43 @@ services:
   #   ports:
   #     - "${MAPPER_CLIENT_HOST_PORT}:${MAPPER_CLIENT_CONTAINER_PORT}"
   #
-  # mapper-pg:
-  #   container_name: 'MAPPER_POSTGRES'
-  #   hostname: ${MAPPER_PG_HOSTNAME}
-  #   image: postgres
-  #   environment:
-  #     POSTGRES_USER: ${MAPPER_PG_USER}
-  #     POSTGRES_PASSWORD: ${MAPPER_PG_PASSWORD}
-  #     POSTGRES_DB: ${MAPPER_PG_DATABASE}
-  #   ports:
-  #     - "${MAPPER_PG_HOST_PORT}:${MAPPER_PG_CONTAINER_PORT}"
-  #   volumes:
-  #     - 'mapper-pgdata:/var/lib/postgresql/data/'
-  #
-  # redis:
-  #   container_name: MAPPER_Redis
-  #   hostname: ${MAPPER_REDIS_HOSTNAME}
-  #   image: redis:3.2.0
-  #   ports:
-  #     - "${MAPPER_REDIS_HOST_PORT}:${MAPPER_REDIS_CONTAINER_PORT}"
-  #   volumes:
-  #   - 'mapper-redisdata:/data'
-  #
-  # swagger:
-  #   container_name: MAPPER_Swagger_Docs
-  #   hostname: ${MAPPER_SWAGGER_HOSTNAME}
-  #   image: swaggerapi/swagger-ui
-  #   environment:
-  #   - "API_URL=${MAPPER_SWAGGER_API_URL}"
-  #   ports:
-  #     - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
-  #
+  mapper-pg:
+    container_name: 'MAPPER_POSTGRES'
+    hostname: ${MAPPER_PG_HOSTNAME}
+    image: postgres
+    environment:
+      POSTGRES_USER: ${MAPPER_PG_USER}
+      POSTGRES_PASSWORD: ${MAPPER_PG_PASSWORD}
+      POSTGRES_DB: ${MAPPER_PG_DATABASE}
+    ports:
+      - "${MAPPER_PG_HOST_PORT}:${MAPPER_PG_CONTAINER_PORT}"
+    volumes:
+      - 'mapper-pgdata:/var/lib/postgresql/data/'
+    env_file:
+      - prod.env
+
+  redis:
+    container_name: MAPPER_REDIS
+    hostname: ${MAPPER_REDIS_HOSTNAME}
+    image: redis:3.2.0
+    ports:
+      - "${MAPPER_REDIS_HOST_PORT}:${MAPPER_REDIS_CONTAINER_PORT}"
+    volumes:
+      - 'mapper-redisdata:/data'
+    env_file:
+      - prod.env
+
+  swagger:
+    container_name: MAPPER_SWAGGER
+    hostname: ${MAPPER_SWAGGER_HOSTNAME}
+    image: swaggerapi/swagger-ui
+    environment:
+    - "API_URL=${MAPPER_SWAGGER_API_URL}"
+    ports:
+      - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
+    env_file:
+      - prod.env
+
   # auto-mapper-api:
   #   container_name: AUTO_MAPPER_API
   #   build:
