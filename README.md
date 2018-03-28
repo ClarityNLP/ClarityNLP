@@ -1,4 +1,8 @@
-### GETTING STARTED
+## Docker Compose Clarity Application
+
+### Docker Compose (Development) Architecture Diagram
+
+![Alt text](/docker-compose.png?raw=true "Docker Compose Dev Diagram")
 
 ```
 git clone [url] [project-name]
