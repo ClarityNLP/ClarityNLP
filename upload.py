@@ -186,7 +186,7 @@ def aact_db_upload(solr_url):
     response3 = requests.post(url, headers=headers, data=data)
 
     # Result verification
-    if response.status_code == 200 and response2.status_code == 200 response3.status_code == 200:
+    if response.status_code == 200 and response2.status_code == 200 and response3.status_code == 200:
         response_msg = "Successfully migrated data to Solr."
     else:
         response_msg = "Could not upload. Contact Admin."
