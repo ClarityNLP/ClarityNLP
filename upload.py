@@ -5,6 +5,7 @@ import csv
 import configparser
 import psycopg2
 import psycopg2.extras
+import re
 
 def upload_file(solr_url, filepath):
 
@@ -152,8 +153,40 @@ def aact_db_upload(solr_url):
     data = json.dumps(result_list)
     response2 = requests.post(url, headers=headers, data=data)
 
+    # Extracting information - Eligibilities
+    cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE studies.first_received_date > '2018-01-01' LIMIT 1000 """)
+    #cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE eligibilities.nct_id= 'NCT03454529' """)
+    result = cursor.fetchall()
+
+    result_list = []
+    for i in result:
+        report_text = re.sub(r'([^\s\w]|_)+', '', i[2])
+        report_text = " ".join(report_text.split())
+
+        d = {"subject":i[1],
+            "description_attr":"AACT Clinical Trials",
+            "source":"AACT",
+            "report_type":"Clinical Trial Criteria",
+            "report_text": str(report_text) ,
+            "cg_id": "",
+            "report_id": i[0],
+            "is_error_attr": "",
+            "id": i[0],
+            "store_time_attr": "",
+            "chart_time_attr": "",
+            "admission_id": "",
+            "report_date": str(i[3])
+            }
+
+        result_list.append(d)
+
+
+    # Pushing data to Solr
+    data = json.dumps(result_list)
+    response3 = requests.post(url, headers=headers, data=data)
+
     # Result verification
-    if response.status_code == 200 and response2.status_code == 200:
+    if response.status_code == 200 and response2.status_code == 200 response3.status_code == 200:
         response_msg = "Successfully migrated data to Solr."
     else:
         response_msg = "Could not upload. Contact Admin."
