@@ -88,7 +88,7 @@ def phenotype():
         p_id = insert_phenotype_model(p_cfg, util.conn_string)
         if p_id == -1:
             return '{ "success", false }'
-        job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
+        job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
                                                  owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
                                                  phenotype_id=p_id, pipeline_id=-1, date_started=datetime.datetime.now(),
                                                  job_type='PHENOTYPE'), util.conn_string)
