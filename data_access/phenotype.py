@@ -13,10 +13,10 @@ class PhenotypeDefine(dict):
 
     def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = '',
                  named_arguments: dict = dict(),
-                 arguments: list = list(), function: str = '', values: list = list(), description: str = '',
+                 arguments: list = list(), funct: str = '', values: list = list(), description: str = '',
                  concept: str = ''):
         dict.__init__(self, name=name, declaration=declaration, version=version, alias=alias, arguments=arguments,
-                      named_arguments=named_arguments, library=library, function=function, values=values,
+                      named_arguments=named_arguments, library=library, funct=funct, values=values,
                       description=description, concept=concept)
 
 
@@ -24,10 +24,10 @@ class PhenotypeEntity(dict):
 
     def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = '',
                  named_arguments: dict = dict(),
-                 arguments: list = list(), function: str = '', values: list = list(), description: str = '',
+                 arguments: list = list(), funct: str = '', values: list = list(), description: str = '',
                  concept: str = '', final: bool = False, raw_text: str = ''):
         dict.__init__(self, name=name, declaration=declaration, version=version, alias=alias, arguments=arguments,
-                      named_arguments=named_arguments, library=library, function=function, values=values,
+                      named_arguments=named_arguments, library=library, funct=funct, values=values,
                       description=description, concept=concept, final=final, raw_text=raw_text)
 
 
@@ -45,7 +45,7 @@ class PhenotypeModel(BaseModel):
                  includes: list = list(), code_systems: list = list(),
                  value_sets: list = list(), term_sets: list = list(),
                  document_sets: list = list(), data_entities: list = list(),
-                 operations: list = list()):
+                 operations: list = list(), debug=False):
         self.owner = owner
         self.description = description
         self.population = population
@@ -59,6 +59,7 @@ class PhenotypeModel(BaseModel):
         self.document_sets = document_sets
         self.data_entities = data_entities
         self.operations = operations
+        self.debug = debug
 
 
 def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
@@ -133,38 +134,60 @@ def query_pipeline_ids(phenotype_id: int, connection_string: str):
     return pipeline_ids
 
 
-# TODO is it a logical operation or a 'job'
+def query_phenotype(phenotype_id: int, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    phenotype = None
+
+    try:
+
+        cursor.execute("""SELECT config from nlp.phenotype where phenotype_id = %s""",
+                       [phenotype_id])
+        val = cursor.fetchone()[0]
+        phenotype = PhenotypeModel.from_json(val)
+
+        return phenotype
+    except Exception as ex:
+        print(ex)
+    finally:
+        conn.close()
+
+    return phenotype
 
 
-if __name__ == "__main__":
+def get_sample_phenotype():
     lib = PhenotypeDefine('Sepsis', 'library', version='1')
     using_omop = PhenotypeDefine('OMOP', 'datamodel', version='5.3')
     clarity_core = PhenotypeDefine('ClarityCore', 'include', version='1.0', alias='Clarity')
     ohdsi_helpers = PhenotypeDefine('OHDSIHelpers', 'include', version='1.0', alias='OHDSI')
     omop = PhenotypeDefine('OMOP', 'codesystem', values=['http://omop.org'])
     isbt = PhenotypeDefine('ISBT', 'codesystem', values=['https://www.iccbba.org'])
-    Sepsis = PhenotypeDefine('Sepsis', 'valueset', library='OHDSI',
-                             function='getConceptSet',
-                             arguments=['assets/Sepsis.json'])
+    # Sepsis = PhenotypeDefine('Sepsis', 'valueset', library='OHDSI',
+    #                          funct='getConceptSet',
+    #                          arguments=['assets/Sepsis.json'])
     # sepsisAmaValueSet = PhenotypeEntity('Sepsis AMA-PCPI', 'valueset', values=['2.16.840.1.113883.17.4077.3.2033'])
     # redBloodValueSet = PhenotypeEntity('Red Blood Cells Example', 'valueset',
     #                                   values=['E0150', 'E0161', 'E0178'],
     #                                   library='ISBT')
-
-    Ventilator = PhenotypeDefine("Ventilator", "termsetset", values=['ventilator', 'vent'])
+    Sepsis = PhenotypeDefine("Sepsis", "termset", values=['Sepsis', 'Systemic infection'])
+    Ventilator = PhenotypeDefine("Ventilator", "termset", values=['ventilator', 'vent'])
     ProviderNotes = PhenotypeDefine("ProviderNotes", "documentset",
                                     library="Clarity",
-                                    function="createDocumentList",
-                                    arguments=["'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'"])
+                                    funct="createReportTagList",
+                                    arguments=["Physician", "Nurse", "Note", "Discharge Summary"])
+    RadiologyNotes = PhenotypeDefine("Radiology", "documentset",
+                                     library="Clarity",
+                                     funct="createReportTagList",
+                                     arguments=["Radiology"])
 
     RBCTransfusionPatients = PhenotypeDefine('RBCTransfusionPatients', 'cohort',
                                              library='OHDSI',
-                                             function='getCohortByName',
+                                             funct='getCohortByName',
                                              arguments=['RBC New Exposures'])
 
     onVentilator = PhenotypeEntity('onVentilator', 'define',
                                    library='Clarity',
-                                   function='TermFinder',
+                                   funct='TermFinder',
                                    named_arguments={
                                        "termsets": ['Ventilator'],
                                        "documentsets": ['ProviderNotes']
@@ -172,7 +195,7 @@ if __name__ == "__main__":
 
     hasSepsis = PhenotypeEntity('hasSepsis', 'define',
                                 library='Clarity',
-                                function='ProviderAssertion',
+                                funct='ProviderAssertion',
                                 named_arguments={
                                     "termsets": ['Sepsis'],
                                     "documentsets": [
@@ -183,7 +206,7 @@ if __name__ == "__main__":
     #
     # transfusionEvent = PhenotypeEntity('transfusionEvent', 'define',
     #                                    library='OHDSI',
-    #                                    function='getCohortIndexDateTime',
+    #                                    funct='getCohortIndexDateTime',
     #                                    arguments=["RBC Tranfusion Patients"])
 
     SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'], final=True)
@@ -212,9 +235,9 @@ if __name__ == "__main__":
                                      versions=[using_omop],
                                      includes=[clarity_core, ohdsi_helpers],
                                      code_systems=[omop, isbt],
-                                     value_sets=[Sepsis],
-                                     term_sets=[Ventilator],
-                                     document_sets=[ProviderNotes],
+                                     value_sets=[],
+                                     term_sets=[Ventilator, Sepsis],
+                                     document_sets=[ProviderNotes, RadiologyNotes],
                                      population='RBC Transfusion Patients',
                                      data_entities=[
                                          onVentilator, hasSepsis
@@ -222,10 +245,16 @@ if __name__ == "__main__":
                                      operations=[
                                          SepsisState
                                      ])
+    return sepsisPhenotype
 
-    json = sepsisPhenotype.to_json()
+
+# TODO is it a logical operation or a 'job'
+
+
+if __name__ == "__main__":
+
+    json = get_sample_phenotype().to_json()
     print(json)
-
 
 
 # conceptset or termset as inputs for entities

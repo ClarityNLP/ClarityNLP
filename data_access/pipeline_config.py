@@ -24,9 +24,9 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, description, terms, limit=0, concept_code=-1, owner='system',
+    def __init__(self, config_type, name, terms, description = '', limit=0, concept_code=-1, owner='system',
                  include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
-                 vocabulary='SNOMED', sections=list()):
+                 vocabulary='SNOMED', sections=list(), report_type_query=''):
         self.config_type = config_type
         self.name = name
         self.description = description
@@ -40,6 +40,7 @@ class PipelineConfig(BaseModel):
         self.report_tags = report_tags
         self.vocabulary = vocabulary
         self.sections = sections
+        self.report_type_query = report_type_query
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
@@ -97,10 +98,10 @@ def get_pipeline_config(pipeline_id, connection_string):
 
 
 def get_default_config():
-    return PipelineConfig('UNKNOWN', 'UNKNOWN', 'UNKNOWN', [], -1, -1, 'none')
+    return PipelineConfig('UNKNOWN', 'UNKNOWN', [])
 
 
-def get_query(terms: PipelineConfig):
+def get_query(terms: list()):
     if terms is not None and len(terms) > 0:
         return 'report_text:("' + '" OR "'.join(terms) + '")'
     else:

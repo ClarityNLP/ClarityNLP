@@ -34,7 +34,7 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
     total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
                                           mapper_url=util.report_mapper_url,
                                           mapper_key=util.report_mapper_key, solr_url=util.solr_url,
-                                          tags=pipeline_config.report_tags)
+                                          tags=pipeline_config.report_tags, report_type_query=pipeline_config.report_type_query)
     doc_limit = config.get_limit(total_docs, pipeline_config)
     ranges = range(0, (doc_limit + util.row_count), util.row_count)
     jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
@@ -60,6 +60,10 @@ class PipelineTask(luigi.Task):
     def run(self):
         jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % self
                                .pipelinetype)
+
+    def complete(self):
+        status = jobs.get_job_status(str(self.job), util.conn_string)
+        return status['status'] == jobs.COMPLETED
 
 
 def run_ner_pipeline(pipeline_id, job_id, owner):

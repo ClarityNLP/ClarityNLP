@@ -43,10 +43,14 @@ def make_url(qry, fq, sort, start, rows, solr_url):
     return url
 
 
-def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key):
+def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query):
     new_fq = fq
 
     mapped_items = get_report_type_mappings(mapper_url, mapper_inst, mapper_key)
+
+    if len(report_type_query) > 0:
+        report_types = 'report_type: ("' + report_type_query + '")'
+        new_fq += report_types
 
     if len(tags) > 0:
         if len(new_fq) > 0:
@@ -59,14 +63,16 @@ def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key):
             except Exception as e:
                 print("Unable to map tag %s" % tag)
         if len(matched_reports) > 0:
-            report_types = 'report_type: ("' + '" OR "'.join(matched_reports) + '")'
+            match_report_clause = '" OR "'.join(matched_reports)
+            report_types = 'report_type: ("' + match_report_clause + '")'
             new_fq += report_types
 
     return new_fq
 
 
-def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='', sort='', start=0, rows=10, solr_url='http://nlp-solr:8983/solr/sample'):
-    url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key), sort, start, rows, solr_url)
+def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='', sort='', start=0, rows=10,
+          report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
+    url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query), sort, start, rows, solr_url)
 
     print("Querying " + url)
     connection = request.urlopen(url)
@@ -80,8 +86,9 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='',
     return response['response']['docs']
 
 
-def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), fq='', sort='', start=0, rows=10, solr_url='http://nlp-solr:8983/solr/sample'):
-    url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key), sort, start, rows, solr_url)
+def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), fq='', sort='', start=0, rows=10,
+                   report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
+    url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query), sort, start, rows, solr_url)
 
     print("Querying " + url)
     connection = request.urlopen(url)

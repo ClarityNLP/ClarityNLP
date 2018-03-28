@@ -1,12 +1,14 @@
 from subprocess import call
 import util
 import sys
+import datetime
 from data_access import *
-
-luigi_log = util.log_dir + '/luigi.log'
+from phenotype_helper import *
 
 
 def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
+    luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
+
     scheduler = util.luigi_scheduler
     print("running job %s on pipeline %s; logging here %s" % (str(job_id), str(pipeline_id), luigi_log))
     func = "PYTHONPATH='.' luigi --workers %s --module luigi_pipeline %s  --pipeline %s --job %s --owner %s --pipelinetype %s --scheduler-url %s > %s 2>&1 &" % (
@@ -19,6 +21,8 @@ def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
 
 
 def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
+    luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
+
     scheduler = util.luigi_scheduler
     print("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
     func = "PYTHONPATH='.' luigi --workers %s --module luigi_phenotype %s --phenotype %s --job %s --owner %s --scheduler-url %s > %s 2>&1 &" % (
@@ -30,35 +34,23 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
         print("unable to execute %s" % func, file=sys.stderr)
 
 
-def get_pipelines_from_phenotype(model: PhenotypeModel):
-    pipelines = list()
-    if model and model.data_entities and len(model.data_entities) > 0:
-        for e in model.data_entities:
-            # self.config_type = config_type
-            # self.name = name
-            # self.description = description
-            # self.terms = terms
-            # self.limit = limit
-            # self.concept_code = concept_code
-            # self.owner = owner
-            # self.include_synonyms = include_synonyms
-            # self.include_descendants = include_descendants
-            # self.include_ancestors = include_ancestors
-            # self.report_tags = report_tags
-            # self.vocabulary = vocabulary
-            # self.sections = sections
-
-
-            pipeline = PipelineConfig() # TODO
-            pipelines.append(pipeline)
-    return pipelines
-
-
-def run_phenotype(model: PhenotypeModel, phenotype_id: str, job_id: int):
-    pipelines = get_pipelines_from_phenotype(model)
+def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: int):
+    pipelines = get_pipelines_from_phenotype(phenotype_model)
     if pipelines and len(pipelines) > 0:
         for pipeline in pipelines:
             pipeline_id = insert_pipeline_config(pipeline, util.conn_string)
             insert_phenotype_mapping(phenotype_id, pipeline_id, util.conn_string)
 
-        run_phenotype_job(phenotype_id, str(job_id), model.owner)
+        run_phenotype_job(phenotype_id, str(job_id), phenotype_model.owner)
+
+
+if __name__ == "__main__":
+    test_model = get_sample_phenotype()
+    test_model.debug = True
+    p_id = insert_phenotype_model(test_model, util.conn_string)
+    the_job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name="Test Phenotype", description=test_model.description,
+                                             owner=test_model.owner, status=jobs.STARTED, date_ended=None,
+                                             phenotype_id=p_id, pipeline_id=-1, date_started=datetime.datetime.now(),
+                                             job_type='PHENOTYPE'), util.conn_string)
+
+    run_phenotype(test_model, p_id, the_job_id)
