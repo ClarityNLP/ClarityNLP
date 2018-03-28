@@ -53,7 +53,7 @@ def upload_from_db(conn_string, solr_url):
         d = {"subject":i[1],
             "description_attr":"Report",
             "source":"MIMIC Notes",
-            "report_type":"test resport",
+            "report_type":"test report",
             "report_text":i[5],
             "cg_id": "",
             "report_id": i[1],
@@ -75,3 +75,54 @@ def upload_from_db(conn_string, solr_url):
         responseMsg = "Could not upload. Contact Admin."
 
     return responseMsg
+
+def aact_db_upload(solr_url):
+    conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % ('aact-db.ctti-clinicaltrials.org',
+                                                                             'aact',
+                                                                             'aact',
+                                                                             'aact',
+                                                                             '5432')
+    # Connecting to the AACT DB
+    conn = psycopg2.connect(conn_string)
+    cursor = conn.cursor()
+
+    # SOLR upload headers
+    url = solr_url + '/update/json'
+    headers = {
+    'Content-type': 'application/json',
+    }
+
+    # Extracting information
+    cursor.execute("""SELECT * FROM detailed_descriptions INNER JOIN studies ON studies.nct_id = detailed_descriptions.nct_id WHERE studies.first_received_date > '2018-01-01' LIMIT 1000""")
+    result = cursor.fetchall()
+
+    result_list = []
+    for i in result:
+        d = {"subject":i[1],
+            "description_attr":"AACT Clinical Trials",
+            "source":"AACT Clinical Trials",
+            "report_type":"Clinical Trial Description",
+            "report_text":i[2],
+            "cg_id": "",
+            "report_id": i[0],
+            "is_error_attr": "",
+            "id": i[0],
+            "store_time_attr": "",
+            "chart_time_attr": "",
+            "admission_id": "",
+            "report_date": str(i[5])
+            }
+
+        result_list.append(d)
+
+    # Pushing data to Solr
+    data = json.dumps(result_list)
+    response = requests.post(url, headers=headers, data=data)
+
+    # Result verification
+    if response.status_code == 200:
+        response_msg = "Successfully migrated data to Solr."
+    else:
+        response_msg = "Could not upload. Contact Admin."
+
+    return response_msg

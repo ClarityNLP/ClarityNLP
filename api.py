@@ -6,7 +6,7 @@ from data_access import *
 import luigi_runner, luigi_pipeline
 from flask_autodoc import Autodoc
 from nlp import *
-from upload import upload_file, upload_from_db
+from upload import upload_file, upload_from_db, aact_db_upload
 
 
 app = Flask(__name__)
@@ -61,6 +61,16 @@ def db_to_solr():
     """Migrate data from DB to Solr."""
     if request.method == 'GET':
         msg = upload_from_db(util.conn_string2, util.solr_url)
+        return msg
+
+    return "Couldn't migrate data."
+
+@app.route('/upload_from_aact', methods = ['GET'])
+@auto.doc()
+def aact_upload():
+    """Migrate data from aact DB to Solr."""
+    if request.method == 'GET':
+        msg = aact_db_upload(util.solr_url)
         return msg
 
     return "Couldn't migrate data."
