@@ -82,12 +82,14 @@ def aact_db_upload(solr_url):
                                                                              'aact',
                                                                              'aact',
                                                                              '5432')
+
     # Connecting to the AACT DB
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
 
     # SOLR upload headers
-    url = solr_url + '/update/json'
+    #url = solr_url_2 + '/update/json'
+    url = solr_url + '/update?commit=true'
     headers = {
     'Content-type': 'application/json',
     }

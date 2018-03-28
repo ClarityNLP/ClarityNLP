@@ -96,3 +96,6 @@ ENV/
 .idea/
 
 project.cfg
+
+# DS_Store
+.DS_Store
