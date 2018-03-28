@@ -154,8 +154,8 @@ def aact_db_upload(solr_url):
     response2 = requests.post(url, headers=headers, data=data)
 
     # Extracting information - Eligibilities
-    cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE studies.first_received_date > '2018-01-01' LIMIT 1000 """)
-    #cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE eligibilities.nct_id= 'NCT03454529' """)
+    #cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE studies.first_received_date > '2018-01-01' LIMIT 1000 """)
+    cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE eligibilities.nct_id= 'NCT03454529' """)
     result = cursor.fetchall()
 
     result_list = []
@@ -190,6 +190,10 @@ def aact_db_upload(solr_url):
         response_msg = "Successfully migrated data to Solr."
     else:
         response_msg = "Could not upload. Contact Admin."
+
+    print (response.status_code)
+    print (response2.status_code)
+    print (response3.status_code)
 
     conn.close()
 
