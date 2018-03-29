@@ -154,14 +154,14 @@ def aact_db_upload(solr_url):
     response2 = requests.post(url, headers=headers, data=data)
 
     # Extracting information - Eligibilities
-    #cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE studies.first_received_date > '2018-01-01' LIMIT 1000 """)
-    cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE eligibilities.nct_id= 'NCT03454529' """)
+    cursor.execute("""SELECT eligibilities.id, eligibilities.nct_id, eligibilities.criteria, studies.first_received_date FROM eligibilities INNER JOIN studies ON studies.nct_id = eligibilities.nct_id WHERE studies.first_received_date > '2018-01-01' LIMIT 1000 """)
     result = cursor.fetchall()
 
     result_list = []
     for i in result:
-        report_text = re.sub(r'([^\s\w]|_)+', '', i[2])
-        report_text = " ".join(report_text.split())
+        # Encoding as ASCII - Criteria field contains non ASCII characters
+        report_text = i[2].encode('ascii','ignore')
+
 
         d = {"subject":i[1],
             "description_attr":"AACT Clinical Trials",
@@ -180,8 +180,7 @@ def aact_db_upload(solr_url):
 
         result_list.append(d)
 
-
-    # Pushing data to Solr
+    #Pushing data to Solr
     data = json.dumps(result_list)
     response3 = requests.post(url, headers=headers, data=data)
 
@@ -194,7 +193,6 @@ def aact_db_upload(solr_url):
     print (response.status_code)
     print (response2.status_code)
     print (response3.status_code)
-
     conn.close()
 
     return response_msg
