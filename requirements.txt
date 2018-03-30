@@ -7,6 +7,7 @@ jobtastic==2.0.0
 kazoo==2.4.0
 luigi==2.7.1
 nltk==3.2.5
+numpy==1.13.3
 pandas==0.21.1
 psycopg2==2.7.3.2
 pymongo==3.6.0

@@ -34,7 +34,6 @@ pipeline_output_positions = [
 ]
 
 
-
 def job_results(job_type: str, job: str):
     client = MongoClient(util.mongo_host, util.mongo_port)
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
@@ -65,6 +64,19 @@ def job_results(job_type: str, job: str):
         client.close()
 
     return filename
+
+
+def phenotype_results(job: str):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    try:
+        for res in db.phenotype_results.find({"job_id": int(job)}):
+            keys = list(res.keys())
+
+    except Exception as e:
+        print(e)
+    finally:
+        client.close()
 
 
 def remove_tmp_file(filename):

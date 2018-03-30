@@ -51,7 +51,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         # config_type, name, description, terms
         tags = get_report_tags_by_keys(report_tags, e['named_arguments']['documentsets'])
         if debug:
-            limit = 50
+            limit = 100
         else:
             limit = 0
         pipeline = PipelineConfig(e['funct'], e['name'],

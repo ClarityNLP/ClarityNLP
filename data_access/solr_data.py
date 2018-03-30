@@ -14,19 +14,22 @@ def normalize_tag(tag):
 def get_report_type_mappings(url, inst, key):
     tag_lookup_dict = {}
 
-    if len(url) > 0:
-        url = "%s/institutes/%s/reportTypes?apiToken=%s" % (url, inst, key)
-        connection = request.urlopen(url)
-        response = simplejson.load(connection)
+    try:
+        if len(url) > 0:
+            url = "%s/institutes/%s/reportTypes?apiToken=%s" % (url, inst, key)
+            connection = request.urlopen(url)
+            response = simplejson.load(connection)
 
-        for rep in response:
-            if len(rep['tags']) > 0:
-                for tag_dict in rep['tags']:
-                    tag = tag_dict['documentSubjectMatterDomain']
-                    lookup_tag = normalize_tag(tag)
-                    if lookup_tag not in tag_lookup_dict:
-                        tag_lookup_dict[lookup_tag] = list()
-                    tag_lookup_dict[lookup_tag].append(rep['name'])
+            for rep in response:
+                if len(rep['tags']) > 0:
+                    for tag_dict in rep['tags']:
+                        tag = tag_dict['documentSubjectMatterDomain']
+                        lookup_tag = normalize_tag(tag)
+                        if lookup_tag not in tag_lookup_dict:
+                            tag_lookup_dict[lookup_tag] = list()
+                        tag_lookup_dict[lookup_tag].append(rep['name'])
+    except Exception as ex:
+        print(ex)
 
     return tag_lookup_dict
 
