@@ -6,7 +6,7 @@
 
 ### Production Deployment
 
-1. Install both Docker and Docker-Compose on your (most likely) Linux box. Go [here](https://docs.docker.com/install/#server) to install Docker, <br/>
+1. Install both Docker and Docker-Compose on your machine. Go [here](https://docs.docker.com/install/#server) to install Docker, <br/>
 find your OS and follow instructions. Go [here](https://docs.docker.com/compose/install/) to install Docker Compose.
 
 2. Run `git clone [this-project-url] [folder-name]`
