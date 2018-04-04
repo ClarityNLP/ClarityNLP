@@ -209,8 +209,7 @@ def get_sample_phenotype():
     #                                    funct='getCohortIndexDateTime',
     #                                    arguments=["RBC Tranfusion Patients"])
 
-    SepsisState = PhenotypeOperations('SepsisState', 'AND', ['onVentilator', 'hasSepsis'], final=True,
-                                      raw_text="Patient on ventilator has an affirmed mention of sepsis")
+    SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'], final=True)
 
     # SepsisPostTransfusion = PhenotypeOperations('SepsisPostTransfusion', 'AND',
     #                                             [
@@ -220,7 +219,7 @@ def get_sample_phenotype():
     #                                                                     [
     #                                                                         PhenotypeOperations(
     #                                                                             'SepsisPostTransfusion_inner2',
-    #                                                                             'MINUS',
+    #                                                                             'SUBTRACT',
     #                                                                             [
     #                                                                                 'SepsisState.report_date',
     #                                                                                 'transfusionEvent.procedure_date'

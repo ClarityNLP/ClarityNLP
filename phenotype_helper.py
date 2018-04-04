@@ -1,4 +1,12 @@
+import datetime
+from functools import reduce
+
+import pandas as pd
+
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity
+
+valid_operations = ["AND", "OR", "NOT", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL",
+                    "LESS_THAN_OR_EQUAL", "SUBTRACT", "ADD", "MULTIPLY", "DIVIDE", "MODULO"]
 
 
 def get_terms(model: PhenotypeModel):
@@ -74,3 +82,52 @@ def get_pipelines_from_phenotype(model: PhenotypeModel):
         for e in model.data_entities:
             pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug))
     return pipelines
+
+
+def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
+    if phenotype.operations:
+        cursor = db.pipeline_results.find({"job_id": int(job)})
+        df = pd.DataFrame(list(cursor))
+
+        for c in phenotype.operations:
+            operation_name = c['name']
+
+            if phenotype.context == 'Document':
+                on = 'report_id'
+            else:
+                on = 'subject'
+            col_list = ["_id", "nlpql_feature", "report_date", 'report_id', 'subject', 'sentence']
+
+            if c['final']:
+                if 'data_entities' in c:
+                    action = c['action']
+                    data_entities = c['data_entities']
+
+                    dfs = []
+                    if action == 'AND' or action == 'OR' or action == 'NOT':
+                        if action == 'OR':
+                            how = "outer"
+                        elif action == 'AND':
+                            how = "inner"
+                        else:
+                            how = "left"
+
+                        for de in data_entities:
+                            new_df = df.loc[df['nlpql_feature'] == de]
+                            new_df = new_df[col_list]
+                            dfs.append(new_df)
+
+                        if len(dfs) > 0:
+                            ret = reduce(lambda x, y: pd.merge(x, y, on=on, how=how), dfs)
+                            ret['job_id'] = job
+                            ret['phenotype_id'] = phenotype_id
+                            ret['owner'] = phenotype_owner
+                            ret['job_date'] = datetime.datetime.now()
+                            ret['context_type'] = on
+                            ret['raw_definition_text'] = c['raw_text']
+                            ret['result_name'] = operation_name
+
+                            db.phenotype_results.insert_many(ret.to_dict('records'))
+
+            else:
+                print('nothing to do for ' + operation_name)
