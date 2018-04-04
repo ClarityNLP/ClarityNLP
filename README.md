@@ -61,7 +61,11 @@ PYTHONPATH='.' luigi --module luigi_pipeline NERPipeline --pipeline 1 --job 1234
 
 ### n-gram Generator
 
-**Fields:**
+**About:** 
+
+Generating n-grams of the Report Text for a particular Cohort. API has to accept the Cohort ID, the _n_ in n-gram, and frequency (the minimum occurrence of a particular n-gram). The API also accepts a keyword. If given the keyword, only n-grams which contain that keyword are returned. 
+
+**Parameters:**
 
 - Cohort ID : mandatory
 - Keyword : optional
@@ -80,7 +84,11 @@ PYTHONPATH='.' luigi --module luigi_pipeline NERPipeline --pipeline 1 --job 1234
 
 ### OMOP Vocabulary
 
-**Fields:**
+**About:** 
+
+This API is responsible for vocabulary explosion for a given concept. API accepts a _type_ which can be synonyms, ancestors or descendants. The API has to accept the _concept_ name which is supposed be exploded. The vocabulary _vocab_ can also be passed as an optional parameter.
+
+**Parameters:**
 
 - Type: mandatory
   - 1: synonyms
@@ -101,11 +109,11 @@ PYTHONPATH='.' luigi --module luigi_pipeline NERPipeline --pipeline 1 --job 1234
 
 ### Migrating data from AACT Database to Clarity's Solr Instance
 
-**Fields:** None
+**Parameters:** None
 
 **Example Usage:** `~/upload_from_aact`
 
-**API Structure:** 
+**About:** 
 
 POST an array of JSON objects, where each JSON object has the below structure. Endpoints and Request creation can be found in `upload.py`. 
 
@@ -126,3 +134,13 @@ POST an array of JSON objects, where each JSON object has the below structure. E
         "report_date": "2161-06-13T04:00:00Z"
     }
 ```
+
+### Uploading Files to Clarity's Solr Instance
+
+**About:** 
+
+A simple UI interface to upload files to Clarity's Solr instance. Currently accepts only JSON and CSV files with the structure mentioned in the UI. 
+
+**Parameters:** None
+
+**Example Usage**: `~/upload`
