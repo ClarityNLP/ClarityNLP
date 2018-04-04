@@ -70,9 +70,11 @@ PYTHONPATH='.' luigi --module luigi_pipeline NERPipeline --pipeline 1 --job 1234
 
 **Example usage:** 
 
-`~/ngram?cohort_id=6&n=15&frequency=10`
+```
+~/ngram?cohort_id=6&n=15&frequency=10
 
-`~/ngram?cohort_id=6&keyword=cancer&n=15&frequency=10`
+~/ngram?cohort_id=6&keyword=cancer&n=15&frequency=10
+```
 
 
 
@@ -89,9 +91,11 @@ PYTHONPATH='.' luigi --module luigi_pipeline NERPipeline --pipeline 1 --job 1234
 
 **Example usage:**
 
-`~/vocabExpansion?type=1&concept=Inactive`
+```
+~/vocabExpansion?type=1&concept=Inactive
 
-`~/vocabExpansion?type=1&concept=Inactive&vocab=SNOMED`
+~/vocabExpansion?type=1&concept=Inactive&vocab=SNOMED
+```
 
 
 
