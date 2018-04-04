@@ -82,7 +82,7 @@ Generating n-grams of the Report Text for a particular Cohort. API has to accept
 
 
 
-### OMOP Vocabulary
+### Vocabulary Explosion
 
 **About:** 
 
