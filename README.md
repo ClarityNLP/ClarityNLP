@@ -59,24 +59,26 @@ PYTHONPATH='.' luigi --module luigi_pipeline NERPipeline --pipeline 1 --job 1234
 
 ## API Usage
 
-#### n-gram
+### n-gram Generator
 
-Fields
+**Fields:**
 
 - Cohort ID : mandatory
 - Keyword : optional
 - n : mandatory
 - frequency : mandatory
 
-Example usage 
+**Example usage:** 
 
 `~/ngram?cohort_id=6&n=15&frequency=10`
 
 `~/ngram?cohort_id=6&keyword=cancer&n=15&frequency=10`
 
-#### OMOP Vocabulary
 
-Fields
+
+### OMOP Vocabulary
+
+**Fields:**
 
 - Type: mandatory
   - 1: synonyms
@@ -85,8 +87,38 @@ Fields
 - Concept: mandatory
 - Vocab: optional
 
-Example usage
+**Example usage:**
 
 `~/vocabExpansion?type=1&concept=Inactive`
 
 `~/vocabExpansion?type=1&concept=Inactive&vocab=SNOMED`
+
+
+
+### Migrating data from AACT Database to Clarity's Solr Instance
+
+**Fields:** None
+
+**Example Usage:** `~/upload_from_aact`
+
+**API Structure:** 
+
+POST an array of JSON objects, where each JSON object has the below structure. Endpoints and Request creation can be found in `upload.py`. 
+
+```
+    {
+        "subject": 123456,
+        "description_attr": "Report",
+        "source": "Report Source",
+        "report_type": "Report Type",
+        "report_text": "Report Content",
+        "cg_id": "CD ID",
+        "report_id": "Report ID",
+        "is_error_attr": "",
+        "id": 1234,
+        "store_time_attr": "",
+        "chart_time_attr": "",
+        "admission_id": 12345,
+        "report_date": "2161-06-13T04:00:00Z"
+    }
+```
