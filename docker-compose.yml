@@ -41,8 +41,8 @@ services:
       - "${NLP_SOLR_HOST_PORT}:${NLP_SOLR_CONTAINER_PORT}"
     volumes:
       - 'nlp-solrdata:/opt/solr/server/solr/mycores'
-      - './solr/precreate-core:/opt/docker-solr/scripts/precreate-core'
-      - './solr/sample.csv:/sample.csv'
+      - './nlp-solr/precreate-core:/opt/docker-solr/scripts/precreate-core'
+      - './nlp-solr/sample.csv:/sample.csv'
     entrypoint:
       - docker-entrypoint.sh
       - solr-precreate
