@@ -7,7 +7,6 @@ from pymongo import MongoClient
 import util
 from .MeasurementFinderTask import mongo_writer
 
-
 SECTIONS_FILTER = "sections"
 
 
@@ -43,12 +42,14 @@ class ValueExtractorTask(luigi.Task):
                                        "Finding terms with ValueExtractor")
                 # TODO incorporate sections and filters
                 for doc in docs:
-                    result = process_sentence_full(pipeline_config.terms, doc["report_text"], float(pipeline_config.
-                                                   minimum_value), float(pipeline_config.maximum_value), pipeline_config.
-                                                   case_sensitive)
+                    result = run_value_extractor_full(pipeline_config.terms, doc["report_text"], float(pipeline_config.
+                                                                                                       minimum_value),
+                                                      float(pipeline_config.maximum_value), pipeline_config.
+                                                      case_sensitive)
                     if result:
                         for val in result:
-                            inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, val, doc,
+                            inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, val,
+                                                    doc,
                                                     "ValueExtractor")
                             outfile.write(str(inserted))
                             outfile.write('\n')
@@ -62,4 +63,4 @@ class ValueExtractorTask(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_value_extractor_batch%s.txt" % (util.tmp_dir, str(self.job),
-                                                                                str(self.start)))
+                                                                                    str(self.start)))
