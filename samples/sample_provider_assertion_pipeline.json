@@ -1,0 +1,23 @@
+{
+    "minimum_value": 0,
+    "include_synonyms": false,
+    "include_ancestors": false,
+    "include_descendants": false,
+    "owner": "test",
+    "vocabulary": "SNOMED",
+    "name": "hasSepsis",
+    "case_sensitive": false,
+    "config_type": "ProviderAssertion",
+    "concept_code": -1,
+    "report_tags": [
+        "Physician",
+        "Nurse",
+        "Note",
+        "Discharge Summary",
+        "Radiology"
+    ],
+    "terms": [
+        "Sepsis",
+        "Systemic infection"
+    ]
+}

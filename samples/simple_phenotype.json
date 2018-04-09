@@ -1,0 +1,223 @@
+{
+    "phenotype": {
+        "version": "1",
+        "named_arguments": {},
+        "arguments": [],
+        "alias": "",
+        "funct": "",
+        "values": [],
+        "library": "",
+        "concept": "",
+        "declaration": "library",
+        "description": "",
+        "name": "Sepsis"
+    },
+    "population": "RBC Transfusion Patients",
+    "versions": [
+        {
+            "version": "5.3",
+            "named_arguments": {},
+            "arguments": [],
+            "alias": "",
+            "funct": "",
+            "values": [],
+            "library": "",
+            "concept": "",
+            "declaration": "datamodel",
+            "description": "",
+            "name": "OMOP"
+        }
+    ],
+    "owner": "jduke",
+    "document_sets": [
+        {
+            "version": "",
+            "named_arguments": {},
+            "arguments": [
+                "Physician",
+                "Nurse",
+                "Note",
+                "Discharge Summary"
+            ],
+            "alias": "",
+            "funct": "createReportTagList",
+            "values": [],
+            "library": "Clarity",
+            "concept": "",
+            "declaration": "documentset",
+            "description": "",
+            "name": "ProviderNotes"
+        },
+        {
+            "version": "",
+            "named_arguments": {},
+            "arguments": [
+                "Radiology"
+            ],
+            "alias": "",
+            "funct": "createReportTagList",
+            "values": [],
+            "library": "Clarity",
+            "concept": "",
+            "declaration": "documentset",
+            "description": "",
+            "name": "Radiology"
+        }
+    ],
+    "operations": [
+        {
+            "action": "OR",
+            "raw_text": "",
+            "name": "SepsisState",
+            "final": true,
+            "data_entities": [
+                "onVentilator",
+                "hasSepsis"
+            ]
+        }
+    ],
+    "code_systems": [
+        {
+            "version": "",
+            "named_arguments": {},
+            "arguments": [],
+            "alias": "",
+            "funct": "",
+            "values": [
+                "http://omop.org"
+            ],
+            "library": "",
+            "concept": "",
+            "declaration": "codesystem",
+            "description": "",
+            "name": "OMOP"
+        },
+        {
+            "version": "",
+            "named_arguments": {},
+            "arguments": [],
+            "alias": "",
+            "funct": "",
+            "values": [
+                "https://www.iccbba.org"
+            ],
+            "library": "",
+            "concept": "",
+            "declaration": "codesystem",
+            "description": "",
+            "name": "ISBT"
+        }
+    ],
+    "includes": [
+        {
+            "version": "1.0",
+            "named_arguments": {},
+            "arguments": [],
+            "alias": "Clarity",
+            "funct": "",
+            "values": [],
+            "library": "",
+            "concept": "",
+            "declaration": "include",
+            "description": "",
+            "name": "ClarityCore"
+        },
+        {
+            "version": "1.0",
+            "named_arguments": {},
+            "arguments": [],
+            "alias": "OHDSI",
+            "funct": "",
+            "values": [],
+            "library": "",
+            "concept": "",
+            "declaration": "include",
+            "description": "",
+            "name": "OHDSIHelpers"
+        }
+    ],
+    "debug": true,
+    "context": "Patient",
+    "data_entities": [
+        {
+            "version": "",
+            "named_arguments": {
+                "termsets": [
+                    "Ventilator"
+                ],
+                "documentsets": [
+                    "ProviderNotes"
+                ]
+            },
+            "raw_text": "",
+            "arguments": [],
+            "alias": "",
+            "funct": "TermFinder",
+            "values": [],
+            "library": "Clarity",
+            "concept": "",
+            "declaration": "define",
+            "description": "",
+            "name": "onVentilator",
+            "final": false
+        },
+        {
+            "version": "",
+            "named_arguments": {
+                "termsets": [
+                    "Sepsis"
+                ],
+                "documentsets": [
+                    "ProviderNotes",
+                    "Radiology"
+                ]
+            },
+            "raw_text": "",
+            "arguments": [],
+            "alias": "",
+            "funct": "ProviderAssertion",
+            "values": [],
+            "library": "Clarity",
+            "concept": "",
+            "declaration": "define",
+            "description": "",
+            "name": "hasSepsis",
+            "final": false
+        }
+    ],
+    "description": "Sepsis definition derived from Murff HJ, FitzHenry F, Matheny ME, et al. Automated identification of postoperative complications within an electronic medical record using natural language processing. JAMA. 2011;306(8):848-855.",
+    "term_sets": [
+        {
+            "version": "",
+            "named_arguments": {},
+            "arguments": [],
+            "alias": "",
+            "funct": "",
+            "values": [
+                "ventilator",
+                "vent"
+            ],
+            "library": "",
+            "concept": "",
+            "declaration": "termset",
+            "description": "",
+            "name": "Ventilator"
+        },
+        {
+            "version": "",
+            "named_arguments": {},
+            "arguments": [],
+            "alias": "",
+            "funct": "",
+            "values": [
+                "Sepsis",
+                "Systemic infection"
+            ],
+            "library": "",
+            "concept": "",
+            "declaration": "termset",
+            "description": "",
+            "name": "Sepsis"
+        }
+    ]
+}

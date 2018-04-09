@@ -8,7 +8,6 @@ from flask_autodoc import Autodoc
 from nlp import *
 from upload import upload_file, upload_from_db, aact_db_upload
 
-
 app = Flask(__name__)
 auto = Autodoc(app)
 
@@ -39,7 +38,7 @@ def doc():
     return auto.html()
 
 
-@app.route('/upload', methods = ['POST', 'GET'])
+@app.route('/upload', methods=['POST', 'GET'])
 def upload():
     if request.method == 'GET':
         return render_template('solr_upload.html')
@@ -50,12 +49,12 @@ def upload():
         f.save(filepath)
         msg = upload_file(util.solr_url, filepath)
         os.remove(filepath)
-        return render_template('solr_upload.html',result = msg)
+        return render_template('solr_upload.html', result=msg)
 
     return "ERROR. Contact Admin and try again later."
 
 
-@app.route('/upload_from_db', methods = ['GET'])
+@app.route('/upload_from_db', methods=['GET'])
 @auto.doc()
 def db_to_solr():
     """Migrate data from DB to Solr."""
@@ -66,7 +65,7 @@ def db_to_solr():
     return "Couldn't migrate data."
 
 
-@app.route('/upload_from_aact', methods = ['GET'])
+@app.route('/upload_from_aact', methods=['GET'])
 @auto.doc()
 def aact_upload():
     """Migrate data from aact DB to Solr."""
@@ -91,7 +90,8 @@ def phenotype():
             return '{ "success", false }'
         job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
                                                  owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
-                                                 phenotype_id=p_id, pipeline_id=-1, date_started=datetime.datetime.now(),
+                                                 phenotype_id=p_id, pipeline_id=-1,
+                                                 date_started=datetime.datetime.now(),
                                                  job_type='PHENOTYPE'), util.conn_string)
 
         pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id)
@@ -102,7 +102,8 @@ def phenotype():
         output['pipelines'] = pipeline_ids
         output["status_endpoint"] = "%s/status?job=%s" % (util.main_url, str(job_id))
         output["results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'phenotype')
-        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (util.luigi_url, str(job_id))
+        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
+        util.luigi_url, str(job_id))
 
         return json.dumps(output, indent=4)
 
@@ -124,7 +125,8 @@ def pipeline():
             return '{ "success", false }'
         job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
                                                  owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
-                                                 phenotype_id=-1, pipeline_id=p_id, date_started=datetime.datetime.now(),
+                                                 phenotype_id=-1, pipeline_id=p_id,
+                                                 date_started=datetime.datetime.now(),
                                                  job_type='PIPELINE'), util.conn_string)
 
         luigi_runner.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)
@@ -134,7 +136,8 @@ def pipeline():
         output["job_id"] = str(job_id)
         output["status_endpoint"] = "%s/status?job=%s" % (util.main_url, str(job_id))
         output["results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'pipeline')
-        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (util.luigi_url, str(job_id))
+        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
+        util.luigi_url, str(job_id))
 
         return json.dumps(output, indent=4)
 
@@ -249,6 +252,32 @@ def term_finder():
     return "Please POST a valid JSON object with terms and text"
 
 
+@app.route('/value_extractor', methods=['POST'])
+@auto.doc()
+def value_extractor():
+    """POST to extract values such as BP, LVEF, Vital Signs etc."""
+    if request.method == 'POST' and request.data:
+        init()
+        obj = NLPModel.from_dict(request.get_json())
+        results = run_value_extractor_full(obj.terms, obj.text, obj.min_value, obj.max_value, obj.case_sensitive)
+
+        return json.dumps([r.__dict__ for r in results], indent=4)
+    return "Please POST a valid JSON object with terms and text"
+
+
+@app.route("/tnm_stage", methods=["POST"])
+@auto.doc()
+def tnm_stage():
+    """POST to TNM cancer stage"""
+    if request.method == 'POST' and request.data:
+        init()
+        obj = NLPModel.from_dict(request.get_json())
+        res = run_tnm_stager_full(obj.text)
+
+        return json.dumps(res, indent=4)
+    return "Please POST a valid JSON object text"
+
+
 @app.route("/report_type_mappings", methods=["GET"])
 @auto.doc()
 def report_type_mappings():
@@ -268,7 +297,7 @@ def vocabulary_expansion():
         vocab = request.args.get('vocab')
         print(vocab)
 
-        result = {"vocab":[]}
+        result = {"vocab": []}
 
         if k == '1':
             r = get_synonyms(util.conn_string, concept, vocab)
