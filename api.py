@@ -65,6 +65,7 @@ def db_to_solr():
 
     return "Couldn't migrate data."
 
+
 @app.route('/upload_from_aact', methods = ['GET'])
 @auto.doc()
 def aact_upload():
@@ -93,9 +94,16 @@ def phenotype():
                                                  phenotype_id=p_id, pipeline_id=-1, date_started=datetime.datetime.now(),
                                                  job_type='PHENOTYPE'), util.conn_string)
 
-        luigi_runner.run_phenotype(p_cfg, p_id, job_id)
+        pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id)
 
         output = dict()
+        output["phenotype_id"] = str(p_id)
+        output["job_id"] = str(job_id)
+        output['pipelines'] = pipeline_ids
+        output["status_endpoint"] = "%s/status?job=%s" % (util.main_url, str(job_id))
+        output["results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'phenotype')
+        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (util.luigi_url, str(job_id))
+
         return json.dumps(output, indent=4)
 
     except Exception as e:

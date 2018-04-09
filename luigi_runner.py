@@ -36,12 +36,15 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
 
 def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: int):
     pipelines = get_pipelines_from_phenotype(phenotype_model)
+    pipeline_ids = []
     if pipelines and len(pipelines) > 0:
         for pipeline in pipelines:
             pipeline_id = insert_pipeline_config(pipeline, util.conn_string)
             insert_phenotype_mapping(phenotype_id, pipeline_id, util.conn_string)
+            pipeline_ids.append(pipeline_id)
 
         run_phenotype_job(phenotype_id, str(job_id), phenotype_model.owner)
+    return pipeline_ids
 
 
 if __name__ == "__main__":
