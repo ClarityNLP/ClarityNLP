@@ -1,44 +1,111 @@
 #!/usr/bin/env python3
 """
-Search a sentence for one or more query terms and return any values associated
-with those terms. The term list and the sentence are specified on the command
-line. Returns results only for values in the range [--min, --max].
 
-Values are assumed to occur AFTER the query term.
+
+OVERVIEW:
+
+
+The code in this module searches a sentence for one or more query terms and
+returns a JSON result containing any values associated with those terms. The
+term list and the sentence are specified on the command line. Results are
+returned only for values in the range [--min, --max].
+
+Values are assumed to occur AFTER the query term. In general, the first
+acceptable value occurring after the query term will be the one returned.
 
 The default behavior is to do case-insensitive matching. Case-sensitive
 matching can be enabled with a command line option.
 
-Set the variable 'USE_TEST_SENTENCES' below to True to use the test sentences
-contained within this file. Use of the test sentences causes the command line
-'-s' and '--sentence' options to be ignored.
+
+OUTPUT:
+
+
+The set of JSON fields in the output includes:
+
+        sentence             the sentence from which values were extracted
+        terms                comma-separated list of query terms
+        querySuccess         whether any query terms were found in the sentence
+        measurementCount     number of values found
+        measurements         array of results
+
+            text             matching text of this value
+            start            value starting char offset
+            end              value ending char offset + 1
+            condition        relation of query term to value; value are:
+                             'APPROX', 'LESS_THAN', 'LESS_THAN_OR_EQUAL',
+                             'GREATER_THAN', 'GREATER_THAN_OR_EQUAL',
+                             'EQUAL', 'RANGE', FRACTION_RANGE'
+            matchingTerm     the query term associated with this value
+            x                matching numeric value
+            y                matching numeric value
+
+All JSON results will have an identical number of fields. Any fields with a
+value of EMPTY_FIELD should be ignored. This will be the case for the y-field
+for non-range results.
+
+
+USAGE:
+
+To use this code as an imported module, add the following lines to the
+import list in the importing module:
+
+        import json
+        import value_extractor as ve
+
+To find values in a sentence and capture the JSON result:
+
+        json_string = ve.run(search_term_string, sentence, minval, maxval)
+
+To unpack the JSON data:
+
+        json_data = json.loads(json_string)
+        result = ve.ValueResult(**json_data)
+
+        The entries result.sentence, result.terms, result.querySuccess, and
+        result.measurementCount and result.measurementList are now accessible.
+
+To unpack the array of values:
+
+        measurements = result.measurementList
+        values = [ve.Value(**m) for m in measurements]
+
+        for v in values:
+            print(v.text)
+            print(v.start)
+            print(v.end)
+            etc.
+
 """
 
 import re
 import os
 import sys
+import json
 import optparse
 from collections import namedtuple
-from nlp.segmentation import *
 
+# imports from clarity core
 try:
-    from .measurement_finder import Measurement
-except Exception as e:
-    print(e)
-    from measurement_finder import Measurement
-
-print('Initializing models for value extractor...')
-segmentor = Segmentation()
-print('Done initializing models for value extractor...')
+    from .date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from .size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
+except Exception as ex:
+    print(ex)
+    from date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 3
+VERSION_MINOR = 4
 
 # set to True to enable debug output
 TRACE = False
 
-# set to True to use test sentences and ingore the '-s' and '--sentence' opts
-USE_TEST_SENTENCES = False
+# serializable result object; measurementList is an array of Value namedtuples
+EMPTY_FIELD = -1
+VALUE_RESULT_FIELDS = ['sentence', 'measurementCount', 'terms', 'querySuccess', 'measurementList']
+ValueResult = namedtuple('ValueResult', VALUE_RESULT_FIELDS)
+
+VALUE_FIELDS = ['text', 'start', 'end', 'condition', 'matchingTerm', 'x', 'y']
+Value = namedtuple('Value', VALUE_FIELDS)
 
 # match (), {}, and []
 str_brackets = r'[(){}\[\]]'
@@ -60,28 +127,28 @@ str_gte = r'(>=|' + str_gt_than + r'\s+or\s+' + str_equal + r')'
 str_separator = r'([-:=\s]\s*)?'
 str_num = r'(\d+(\.\d+)?|\.\d+)'
 str_cond = r'(?P<cond>' + str_op + r')'
-str_val = r'(?P<val>' + str_num + r')'
-str_range_sep = r'\s*(-|to)\s*'
-str_range = r'(?P<num1>' + str_num + r')' + str_range_sep + \
-            r'(?P<num2>' + str_num + r')'
+str_val = r'(?P<val>' + str_num + r')(\'?s)?'
+str_range_sep = r'\s*(-|to(\s+the)?)\s*'
+str_range = r'(?P<num1>' + str_num + r')(\'?s)?' + str_range_sep + \
+            r'(?P<num2>' + str_num + r')(\'?s)?'
 
 # 'between' and 'from' often denote ranges, such as 'between 10 and 20'
 str_bf = r'\b(between|from)\s*'
 str_bf_sep = r'\s*(-|to|and)\s*'
 
 str_bf_range = str_bf + \
-               r'(?P<num1>' + str_num + r')' + str_bf_sep + \
-               r'(?P<num2>' + str_num + r')'
+               r'(?P<num1>' + str_num + r')(\'?s)?' + str_bf_sep + \
+               r'(?P<num2>' + str_num + r')(\'?s)?'
 
 # two integers separated by '/'
 str_fraction = r'\d+\s*/\s*\d+'
-str_fraction_range = r'(?P<frac1>' + str_fraction + r')' + str_range_sep + \
-                     r'(?P<frac2>' + str_fraction + r')'
+str_fraction_range = r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_range_sep + \
+                     r'(?P<frac2>' + str_fraction + r')(\'?s)?'
 
 # between 110/70 and 120/80, from 100/60 to 120/70, etc.
 str_bf_fraction_range = str_bf + \
-                        r'(?P<frac1>' + str_fraction + r')' + str_bf_sep + \
-                        r'(?P<frac2>' + str_fraction + r')'
+                        r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_bf_sep + \
+                        r'(?P<frac2>' + str_fraction + r')(\'?s)?'
 
 regex_number = re.compile(str_num)
 regex_digits = re.compile(str_digits)
@@ -102,7 +169,7 @@ STR_EQUAL = 'EQUAL'
 STR_RANGE = 'RANGE'
 STR_FRACTION_RANGE = 'FRACTION_RANGE'
 
-ValueMeasurement = namedtuple('ValueMeasurement', 'text start end num1 num2 cond')
+ValueMeasurement = namedtuple('ValueMeasurement', 'text start end num1 num2 cond matching_term')
 
 # indentation levels for JSON output
 I1 = ' ' * 4
@@ -112,73 +179,43 @@ I4 = ' ' * 16
 I5 = ' ' * 20
 I6 = ' ' * 24
 
-
-###############################################################################
-def num_to_json(num):
-    """
-    Format num appropriately for JSON; num could be an int or a 2-tuple.
-    """
-
-    if isinstance(num, tuple):
-        return '[{0}, {1}]'.format(num[0], num[1])
-    else:
-        return '"{0}"'.format(num)
+NO_VALUE = -1
 
 
 ###############################################################################
-def write_json_result(terms, sentence, results):
+def to_json(original_terms, original_sentence, results):
     """
-    Prettyprint the result as JSON.
+    Convert results to a JSON string.
     """
-
-    # header
-    print('{')
-    print(I1 + '"results":[')
 
     total = len(results)
 
-    print(I2 + '{')
-    print(I3 + '"sentence":"{0}",'.format(sentence))
-    print(I3 + '"measurementCount":"{0}",'.format(len(results)))
-    print(I3 + '"measurements":[')
+    result_dict = {}
+    result_dict['sentence'] = original_sentence
+    result_dict['measurementCount'] = len(results)
+    result_dict['terms'] = original_terms
+    result_dict['querySuccess'] = len(results) > 0
 
-    num_written = 0
-    for vm in results:
-        print(I4 + '{')
-        print(I5 + '"text":"{0}",'.format(sentence[vm.start:vm.end]))
-        print(I5 + '"start":"{0}",'.format(vm.start))
-        print(I5 + '"end":"{0}",'.format(vm.end))
-        print(I5 + '"condition":"{0}",'.format(vm.cond))
-        print(I5 + '"X":{0}'.format(num_to_json(vm.num1)), end='')
-        if -1 != vm.num2:
-            print(',')
-            print(I5 + '"Y":{0}'.format(num_to_json(vm.num2)))
+    # build a list of dictionaries for the value measurements
+    dict_list = []
+    for m in results:
+        m_dict = {}
+        m_dict['text'] = m.text
+        m_dict['start'] = m.start
+        m_dict['end'] = m.end
+        m_dict['condition'] = m.cond
+        m_dict['matchingTerm'] = m.matching_term
+        m_dict['x'] = m.num1
+
+        if NO_VALUE == m.num2:
+            m_dict['y'] = EMPTY_FIELD
         else:
-            print('')
-        print(I4 + '}', end='')
+            m_dict['y'] = m.num2
 
-        num_written = num_written + 1
-        if num_written < total:
-            print(',')
-        else:
-            print('')
+        dict_list.append(m_dict)
 
-    print(I3 + '],')
-
-    # join the query terms into a comma-separated list
-    words = ','.join(terms)
-
-    print(I3 + '"terms":"{0}",'.format(words))
-    if total > 0:
-        print(I3 + '"querySuccess":"TRUE"')
-    else:
-        print(I3 + '"querySuccess":"FALSE"')
-
-    print(I2 + '}')
-
-    # footer
-    print(I1 + ']')
-    print('}')
+    result_dict['measurementList'] = dict_list
+    return json.dumps(result_dict, indent=4)
 
 
 ###############################################################################
@@ -218,7 +255,7 @@ def get_num_and_denom(str_fraction):
 
 
 ###############################################################################
-def update_match_results(match, spans, results, num1, num2, cond):
+def update_match_results(match, spans, results, num1, num2, cond, matching_term):
     """
     Given a match object, check its [start, end) span against all matching
     spans thus far, and add to span list only if no overlap. This prevents
@@ -235,7 +272,7 @@ def update_match_results(match, spans, results, num1, num2, cond):
             break
 
     if keep_it:
-        meas = ValueMeasurement(match_text, start, end, num1, num2, cond)
+        meas = ValueMeasurement(match_text, start, end, num1, num2, cond, matching_term)
         results.append(meas)
         spans.append((start, end))
 
@@ -256,9 +293,17 @@ def extract_value(query_term, sentence, minval, maxval):
 
     # form a query string from either a standalone query term or a
     # query term followed by optional words plus a separator symbol
-    str_query = r'\b(' + query_term + r'\s*' + r'|' + \
-                query_term + r'\s+([a-zA-Z]+\s*)' + r')' + str_separator
-    str_start = str_query + r'(?P<words>' + str_words + r')'
+    if len(query_term) > 1:
+        str_query = r'\b(' + query_term + r'\s*' + r'|' + \
+                    query_term + r'\s+([a-zA-Z]+\s*)' + r')' + str_separator
+        str_start = str_query + r'(?P<words>' + str_words + r')'
+    else:
+        # If the query term is a single letter, it cannot be followed by
+        # another letter, since likely starting a new word. Must be followed
+        # either by a non-letter character, such as a digit or whitespace.
+        str_query = r'\b(' + query_term + r'(?![a-zA-Z])\s*' + r'|' + \
+                    query_term + r'\s+([a-zA-Z]+\s*)' + r')' + str_separator
+        str_start = str_query + r'(?P<words>' + str_words + r')'
 
     # find two ints separated by '/', such as blood pressure values
     str_fraction_query = str_start + str_cond + r'(?P<frac>' + str_fraction + r')'
@@ -291,7 +336,7 @@ def extract_value(query_term, sentence, minval, maxval):
             match_text = match.group().strip()
             start = match.start()
             end = start + len(match_text)
-            meas = ValueMeasurement(match_text, start, end, (n1, d1), (n2, d2), cond)
+            meas = ValueMeasurement(match_text, start, end, (n1, d1), (n2, d2), cond, query_term)
             results.append(meas)
             spans.append((start, end))
 
@@ -303,7 +348,7 @@ def extract_value(query_term, sentence, minval, maxval):
         # accept a fraction range if both numerators are contained in [minval, maxval]
         if n1 >= minval and n1 <= maxval and n2 >= minval and n2 <= maxval:
             cond = STR_FRACTION_RANGE
-            update_match_results(match, spans, results, (n1, d1), (n2, d2), cond)
+            update_match_results(match, spans, results, (n1, d1), (n2, d2), cond, query_term)
 
     # check for fractions
     iterator = re.finditer(str_fraction_query, sentence)
@@ -314,7 +359,7 @@ def extract_value(query_term, sentence, minval, maxval):
             words = match.group('words')
             cond_words = match.group('cond').strip()
             cond = cond_to_string(words, cond_words)
-            update_match_results(match, spans, results, (n, d), -1, cond)
+            update_match_results(match, spans, results, (n, d), NO_VALUE, cond, query_term)
 
     # check for bf numeric ranges
     iterator = re.finditer(str_bf_range_query, sentence)
@@ -324,7 +369,7 @@ def extract_value(query_term, sentence, minval, maxval):
         # accept a numeric range if both numbers are contained in [minval, maxval]
         if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
             cond = STR_RANGE
-            update_match_results(match, spans, results, num1, num2, cond)
+            update_match_results(match, spans, results, num1, num2, cond, query_term)
 
             # check for numeric ranges
     iterator = re.finditer(str_range_query, sentence)
@@ -334,7 +379,7 @@ def extract_value(query_term, sentence, minval, maxval):
         # accept a numeric range if both numbers are contained in [minval, maxval]
         if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
             cond = STR_RANGE
-            update_match_results(match, spans, results, num1, num2, cond)
+            update_match_results(match, spans, results, num1, num2, cond, query_term)
 
     # check for op-value matches
     iterator = re.finditer(str_op_val_query, sentence)
@@ -344,14 +389,14 @@ def extract_value(query_term, sentence, minval, maxval):
             words = match.group('words')
             cond_words = match.group('cond').strip()
             cond = cond_to_string(words, cond_words)
-            update_match_results(match, spans, results, val, -1, cond)
+            update_match_results(match, spans, results, val, NO_VALUE, cond, query_term)
 
     # check for wds-value matches
     iterator = re.finditer(str_wds_val_query, sentence)
     for match in iterator:
         val = float(match.group('val'))
         if val >= minval and val <= maxval:
-            update_match_results(match, spans, results, val, -1, -1)
+            update_match_results(match, spans, results, val, NO_VALUE, NO_VALUE, query_term)
 
     return results
 
@@ -380,6 +425,32 @@ def clean_sentence(sentence, is_case_sensitive):
     if not is_case_sensitive:
         sentence = sentence.lower()
 
+    # find date expressions in the sentence
+    json_string = run_date_finder(sentence)
+    json_data = json.loads(json_string)
+
+    # unpack JSON result into a list of DateMeasurement namedtuples
+    dates = [DateValue(**record) for record in json_data]
+
+    # erase each date from the sentence
+    for date in dates:
+        start = int(date.start)
+        end = int(date.end)
+        sentence = erase(sentence, start, end)
+
+    # find size measurements in the sentence
+    json_string = run_size_measurement(sentence)
+    json_data = json.loads(json_string)
+
+    # unpack JSON result into a list of SizeMeasurement namedtuples
+    measurements = [SizeMeasurement(**m) for m in json_data]
+
+    # erase each measurement from the sentence
+    for m in measurements:
+        start = int(m.start)
+        end = int(m.end)
+        sentence = erase(sentence, start, end)
+
     return sentence
 
 
@@ -392,48 +463,77 @@ def get_version():
 def show_help():
     print(get_version())
     print("""
-    USAGE: python3 ./value_extractor.py -t <terms> -s <sentence> --min <minval> --max <maxval> [-i]
+    USAGE: python3 ./value_extractor.py -t <terms> -s <sentence> --min <minval> --max <maxval> [-chvz]
 
     OPTIONS:
-        -h, --help                      Print this information and exit.
-        -v, --version                   Print version information and exit.
-        -c, --case                      Preserve case when matching terms.
+
         -t, --terms    <quoted string>  List of comma-separated search terms.
         -s, --sentence <quoted string>  Sentence to be processed.
         -m, --min      <float or int>   Minimum acceptable value.
         -n, --max      <float or int>   Maximum acceptable value.
 
+    FLAGS:
+
+        -h, --help                      Print this information and exit.
+        -v, --version                   Print version information and exit.
+        -c, --case                      Preserve case when matching terms.
+        -z, --test                      Disable -s option and use internal test sentences.
+
     """)
 
 
 ###############################################################################
+def run(term_string, sentence, str_minval, str_maxval, is_case_sensitive=False):
+    """
+    Run the value extractor for all query terms and return a list of
+    ValueMeasurement namedtuples.
+    """
 
-def process_sentence(term_list, sentence_value, minimum_value, maximum_value):
-    process_results = []
-    for term in term_list:
-        values = extract_value(term, sentence_value, minimum_value, maximum_value)
-        process_results.extend(values)
-    return process_results
+    # save a copy of the original sentence (needed for results)
+    original_sentence = sentence
 
+    terms = term_string.split(',')  # produces a list
+    terms = [term.strip() for term in terms]
 
-def process_sentence_full(term_list, text, minimum_value, maximum_value, is_case_sensitive_text=True):
-    sentence_list = segmentor.parse_sentences(text)
-    process_results = []
-    for s in sentence_list:
-        s = clean_sentence(s, is_case_sensitive_text)
-        value_results = process_sentence(term_list, s, minimum_value, maximum_value)
-        if len(value_results) > 0:
-            for x in value_results:
-                process_results.append(Measurement(sentence=s, text=s[x.start:x.end], start=x.start, end=x.end,
-                                                   condition=x.cond, X=x.num1, Y=x.num2))
+    # save a copy of the original terms
+    original_terms = terms.copy()
 
-    return process_results
+    # convert terms to lowercase unless doing a case-sensitive match
+    if not is_case_sensitive:
+        terms = [term.lower() for term in terms]
+
+    # do range check on numerator values for fractions
+    if isinstance(str_minval, str):
+        if -1 != str_minval.find('/'):
+            str_minval = str_minval.split('/')[0]
+
+    if isinstance(str_maxval, str):
+        if -1 != str_maxval.find('/'):
+            str_maxval = str_maxval.split('/')[0]
+
+    minval = float(str_minval)
+    maxval = float(str_maxval)
+
+    # end of setup
+
+    sentence = clean_sentence(sentence, is_case_sensitive)
+
+    results = []
+    for term in terms:
+        values = extract_value(term, sentence, minval, maxval)
+        results.extend(values)
+
+    # order results by their starting character offset
+    results = sorted(results, key=lambda x: x.start)
+
+    # write_json_result(original_terms, original_sentence, results)
+    return to_json(original_terms, original_sentence, results)
 
 
 ###############################################################################
 if __name__ == '__main__':
 
-    test_sentences = [
+    TEST_SENTENCES = [
 
         # LVEF
         'The LVEF is 40%.',
@@ -535,7 +635,23 @@ if __name__ == '__main__':
         'her BP was less than 120/80, his BP was gt 110 /70, BP lt. 110/70',
 
         # some blood pressure ranges
-        'BP 110/70 to 120/80, BP was between 100/60 and 120/80, BP range: 105/75 - 120/70'
+        'BP 110/70 to 120/80, BP was between 100/60 and 120/80, BP range: 105/75 - 120/70',
+
+        # sentences containing date expressions
+        'Her BP on 3/27 measured 110/70.',
+        'Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.',
+
+        # numbers followed by s, e.g. 90s
+        "her HR varied from the 80s to the 90's",
+        'her HR was in the 90s',
+        "her BP was near the 120/80's",
+
+        # single letter queries
+        'T was 98.6 and it went to 98',
+        'T98.6 degrees F, p100, pulse 70, derp 80',
+
+        # sentences containing dates and size measurements
+        "Her BP on 3/27 from her 12 cm x 9 cm x 6 cm heart was 110/70."
     ]
 
     optparser = optparse.OptionParser(add_help_option=False)
@@ -546,6 +662,7 @@ if __name__ == '__main__':
     optparser.add_option('-c', '--case', action='store_true', dest='case_sensitive', default=False)
     optparser.add_option('-v', '--version', action='store_true', dest='get_version')
     optparser.add_option('-h', '--help', action='store_true', dest='show_help', default=False)
+    optparser.add_option('-z', '--test', action='store_true', dest='use_test_sentences', default=False)
 
     if 1 == len(sys.argv):
         show_help()
@@ -561,20 +678,23 @@ if __name__ == '__main__':
         print(get_version())
         sys.exit(0)
 
-    terms = opts.terms.split(',')  # produces a list
-    terms = [term.strip() for term in terms]
-
+    terms = opts.terms
     str_minval = opts.minval
     str_maxval = opts.maxval
     sentence = opts.sentence
     is_case_sensitive = opts.case_sensitive
+    use_test_sentences = opts.use_test_sentences
 
-    if not sentence and not USE_TEST_SENTENCES:
-        print('A sentence must be specified on the command line.')
+    if not sentence and not use_test_sentences:
+        print('A sentence must be provided on the command line.')
         sys.exit(-1)
 
     if not str_minval or not str_maxval:
         print('Both the --min and --max arguments must be specified.')
+        sys.exit(-1)
+
+    if not terms:
+        print('One or more search terms must be provided on the command line.')
         sys.exit(-1)
 
     if TRACE:
@@ -586,35 +706,18 @@ if __name__ == '__main__':
         print('\t               sentence: {0}'.format(sentence))
         print('\n')
 
-    # save a copy of the original terms
-    original_terms = terms.copy()
-
-    # convert terms to lowercase unless doing a case-sensitive match
-    if not is_case_sensitive:
-        terms = [term.lower() for term in terms]
-
-    # do range check on numerator values for fractions
-    if -1 != str_minval.find('/'):
-        str_minval = str_minval.split('/')[0]
-    if -1 != str_maxval.find('/'):
-        str_maxval = str_maxval.split('/')[0]
-
-    min_value = float(str_minval)
-    max_value = float(str_maxval)
-
     sentences = []
-    if USE_TEST_SENTENCES:
-        sentences = test_sentences
+    if use_test_sentences:
+        sentences = TEST_SENTENCES
     else:
         sentences.append(sentence)
 
+    # end of setup
+
     for sentence in sentences:
-        original_sentence = sentence
-        sentence = clean_sentence(sentence, is_case_sensitive)
-        results = process_sentence(terms, sentence, min_value, max_value)
 
-        # order results by their starting character offset
-        results = sorted(results, key=lambda x: x.start)
+        if use_test_sentences:
+            print(sentence)
 
-        # write JSON result to stdout
-        write_json_result(original_terms, original_sentence, results)
+        json_string = run(terms, sentence, str_minval, str_maxval, is_case_sensitive)
+        print(json_string)
