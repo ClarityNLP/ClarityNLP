@@ -42,7 +42,7 @@ def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_c
 
 
 if __name__ == '__main__':
-    res = process_sentence_full(["bp", "blood pressure"],
+    res = run_value_extractor_full(["bp", "blood pressure"],
                                 "BP was between 100/60 and 120/80 then BP range: 105/75 - 120/70. "
                                 "Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.",
                                 20, 250, False)
