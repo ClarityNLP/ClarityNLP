@@ -1,9 +1,10 @@
-from subprocess import Popen, PIPE, STDOUT
-import os
 import json
+import os
 import random
 import string
 from itertools import product
+from subprocess import Popen, PIPE, STDOUT
+
 from data_access import BaseModel
 from nlp.segmentation import *
 
@@ -22,8 +23,7 @@ FULL_JAR = os.path.join(SCRIPT_DIR, JAR)
 
 class Measurement(BaseModel):
 
-    def __init__(self, subject='', X='', Y='', Z='', units='', text='', start='', end='', location='', temporality='',
-                 sentence='', condition='', value1='', value2=''):
+    def __init__(self, subject='', X='', Y='', Z='', units='', text='', start='', end='', location='', temporality='',  sentence='', condition='', value1='', value2=''):
         self.subject = subject
         self.X = X
         self.Y = Y
