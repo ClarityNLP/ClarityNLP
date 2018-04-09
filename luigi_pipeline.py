@@ -1,10 +1,7 @@
 import copy
 from tasks import *
-try:
-    from .nlp import get_related_terms
-except Exception as e:
-    print(e)
-    from nlp import get_related_terms
+from nlp import get_related_terms
+
 
 luigi_pipeline_types = {
     "TermFinder": TermFinderBatchTask,

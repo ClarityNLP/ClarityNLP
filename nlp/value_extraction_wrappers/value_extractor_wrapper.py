@@ -1,19 +1,14 @@
 from nlp.segmentation import *
 
-try:
-    from .measurement_finder import Measurement
-    from .value_extractor import extract_value, clean_sentence
-except Exception as ex:
-    print(ex)
-    from measurement_finder import Measurement
-    from value_extractor import extract_value, clean_sentence
+from nlp.value_extraction.measurement_extractor import Measurement
+from nlp.value_extraction.value_extractor import extract_value, clean_sentence
 
 print('Initializing models for value extractor...')
 segmentor = Segmentation()
 print('Done initializing models for value extractor...')
 
 
-def process_sentence_full(term_list, text, minimum_value, maximum_value, is_case_sensitive_text=False):
+def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_case_sensitive_text=False):
     # convert terms to lowercase unless doing a case-sensitive match
     if not is_case_sensitive_text:
         term_list = [term.lower() for term in term_list]

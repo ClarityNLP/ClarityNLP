@@ -78,20 +78,15 @@ To unpack the array of values:
 """
 
 import re
-import os
 import sys
 import json
 import optparse
 from collections import namedtuple
 
 # imports from clarity core
-try:
-    from .date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    from .size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
-except Exception as ex:
-    print(ex)
-    from date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    from size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
+from nlp.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+from nlp.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
+
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 4

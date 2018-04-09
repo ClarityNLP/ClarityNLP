@@ -1,11 +1,7 @@
 from nlp.segmentation import *
 
 import json
-try:
-    from .tnm_stager import run as run_tnm_stager, TNM_FIELDS, TnmCode, EMPTY_FIELD as EMPTY_TNM_FIELD
-except Exception as ex:
-    print(ex)
-    from tnm_stager import run as run_tnm_stager, TNM_FIELDS, TnmCode, EMPTY_FIELD as EMPTY_TNM_FIELD
+from nlp.value_extraction.tnm_stage_extractor import run as run_tnm_stager
 
 segmentor = Segmentation()
 

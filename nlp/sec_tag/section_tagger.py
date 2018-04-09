@@ -2,11 +2,8 @@
 
 import re
 import os
-import sys
-import json
 from copy import deepcopy
 
-import nltk
 from nltk.tokenize import sent_tokenize
 
 try:

@@ -7,7 +7,6 @@ from pymongo import MongoClient
 import datetime
 import util
 
-
 SECTIONS_FILTER = "sections"
 
 
@@ -70,7 +69,6 @@ class MeasurementFinderTask(luigi.Task):
                                    tags=pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                    mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
 
-
             filters = dict()
             if pipeline_config.sections and len(pipeline_config.sections) > 0:
                 filters[SECTIONS_FILTER] = pipeline_config.sections
@@ -94,4 +92,4 @@ class MeasurementFinderTask(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_measurement_finder_batch%s.txt" % (util.tmp_dir, str(self.job),
-                                                                                str(self.start)))
+                                                                                       str(self.start)))

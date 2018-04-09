@@ -1,19 +1,10 @@
-import re
-from multiprocessing import Pool
 from data_access import BaseModel
 import itertools
 import util
-try:
-    from .vocabulary import get_related_terms
-    from .context import *
-    from .sec_tag import *
-    from .segmentation import *
-except Exception as e:
-    from vocabulary import get_related_terms
-    from context import *
-    from sec_tag import *
-    from segmentation import *
-
+from nlp.vocabulary import get_related_terms
+from nlp.context import *
+from nlp.sec_tag import *
+from nlp.segmentation import *
 
 print('Initializing models for term finder...')
 section_tagger_init()
