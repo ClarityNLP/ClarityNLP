@@ -1,16 +1,15 @@
 from subprocess import Popen, PIPE, STDOUT
 import os
 import json
-import random, string
-import re
+import random
+import string
 from itertools import product
-from multiprocessing import Pool
 from data_access import BaseModel
 from nlp.segmentation import *
 
-print('Initializing models for value extractor...')
+print('Initializing models for measurement finder...')
 segmentor = Segmentation()
-print('Done initializing models for value extractor...')
+print('Done initializing models for measurement finder...')
 
 SCRIPT_DIR = os.path.dirname(__file__)
 JAR = "jars/QueryValueExtractor.jar"
@@ -23,7 +22,8 @@ FULL_JAR = os.path.join(SCRIPT_DIR, JAR)
 
 class Measurement(BaseModel):
 
-    def __init__(self, subject='', X='', Y='', Z='', units='', text='', start='', end='', location='', temporality='', sentence='', condition='', value1='', value2=''):
+    def __init__(self, subject='', X='', Y='', Z='', units='', text='', start='', end='', location='', temporality='',
+                 sentence='', condition='', value1='', value2=''):
         self.subject = subject
         self.X = X
         self.Y = Y

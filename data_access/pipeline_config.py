@@ -26,7 +26,8 @@ class PipelineConfig(BaseModel):
 
     def __init__(self, config_type, name, terms, description = '', limit=0, concept_code=-1, owner='system',
                  include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
-                 vocabulary='SNOMED', sections=list(), report_type_query=''):
+                 vocabulary='SNOMED', sections=list(), report_type_query='', minimum_value=0, maximum_value=10000,
+                 case_sensitive=False):
         self.config_type = config_type
         self.name = name
         self.description = description
@@ -41,6 +42,9 @@ class PipelineConfig(BaseModel):
         self.vocabulary = vocabulary
         self.sections = sections
         self.report_type_query = report_type_query
+        self.minimum_value = minimum_value
+        self.maximum_value = maximum_value
+        self.case_sensitive = case_sensitive
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):

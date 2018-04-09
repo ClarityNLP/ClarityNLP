@@ -1,5 +1,5 @@
 import re
-import en_core_web_md
+import en_core_web_sm as english_model
 from nltk.tokenize import sent_tokenize
 import time
 
@@ -16,7 +16,7 @@ def segmentation_init(tries=0):
         try:
             print('Segmentation init...')
             loading_status = 'loading'
-            data['nlp'] = en_core_web_md.load()
+            data['nlp'] = english_model.load()
             loading_status = 'done'
         except Exception as exc:
             print(exc)

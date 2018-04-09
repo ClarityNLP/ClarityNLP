@@ -9,7 +9,8 @@ except Exception as e:
 luigi_pipeline_types = {
     "TermFinder": TermFinderBatchTask,
     "ProviderAssertion": ProviderAssertionBatchTask,
-    "MeasurementFinder": MeasurementFinderTask
+    "MeasurementFinder": MeasurementFinderTask,
+    "ValueExtractor": ValueExtractorTask
 }
 
 
@@ -76,5 +77,10 @@ def run_provider_assertion_pipeline(pipeline_id, job_id, owner):
                'ProviderAssertion'])
 
 
+def run_value_extraction_pipeline(pipeline_id, job_id, owner):
+    luigi.run(['PipelineTask', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--pipelinetype',
+               'ValueExtractor'])
+
+
 if __name__ == "__main__":
-    run_provider_assertion_pipeline(str(116), str(1), 'test')
+    run_value_extraction_pipeline(str(223), str(222), 'test')
