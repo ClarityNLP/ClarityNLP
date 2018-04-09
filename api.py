@@ -228,7 +228,7 @@ def get_ngram():
 @app.route('/measurement_finder', methods=['POST'])
 @auto.doc()
 def measurement_finder():
-    """POST to extract measurements, text=text to parse, terms=an array of terms"""
+    """POST to extract measurements, See samples/sample_measurement_finder.json"""
     if request.method == 'POST' and request.data:
         init()
         obj = NLPModel.from_dict(request.get_json())
@@ -241,7 +241,7 @@ def measurement_finder():
 @app.route('/term_finder', methods=['POST'])
 @auto.doc()
 def term_finder():
-    """POST to extract terms, context, negex, sections from text, text=text to parse, terms=array of terms"""
+    """POST to extract terms, context, negex, sections from text, See samples/sample_term_finder.json"""
     if request.method == 'POST' and request.data:
         init()
         obj = NLPModel.from_dict(request.get_json())
@@ -255,7 +255,7 @@ def term_finder():
 @app.route('/value_extractor', methods=['POST'])
 @auto.doc()
 def value_extractor():
-    """POST to extract values such as BP, LVEF, Vital Signs etc."""
+    """POST to extract values such as BP, LVEF, Vital Signs etc. (See samples/sample_value_extractor.json)"""
     if request.method == 'POST' and request.data:
         init()
         obj = NLPModel.from_dict(request.get_json())
@@ -268,7 +268,7 @@ def value_extractor():
 @app.route("/tnm_stage", methods=["POST"])
 @auto.doc()
 def tnm_stage():
-    """POST to TNM cancer stage"""
+    """POST to extract TNM cancer stage (See samples/sample_tnm_stage.json)"""
     if request.method == 'POST' and request.data:
         init()
         obj = NLPModel.from_dict(request.get_json())
