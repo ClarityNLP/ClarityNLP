@@ -5,6 +5,8 @@ This library uses Python 3.
 
 ## Setup
 
+Note: These instructions are only needed if you are not install via Docker through clarity. In that case, you can skip past this setup.
+
 #### Installing Requirements
 ```
 pip3 install -r requirements.txt
@@ -124,7 +126,7 @@ POST an array of JSON objects, where each JSON object has the below structure. E
         "source": "Report Source",
         "report_type": "Report Type",
         "report_text": "Report Content",
-        "cg_id": "CD ID",
+        "cg_id": "CG ID",
         "report_id": "Report ID",
         "is_error_attr": "",
         "id": 1234,
