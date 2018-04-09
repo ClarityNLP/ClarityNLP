@@ -5,6 +5,8 @@ This library uses Python 3.
 
 ## Setup
 
+Note: These instructions are only needed if you are not install via Docker through clarity. In that case, you can skip past this setup.
+
 #### Installing Requirements
 ```
 pip3 install -r requirements.txt
