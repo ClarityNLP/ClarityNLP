@@ -95,7 +95,7 @@ Reference: Natural Language Processing Techniques for Extracting and
 
 """
 
-import re
+import regex as re
 import os
 import sys
 import json
