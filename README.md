@@ -126,7 +126,7 @@ POST an array of JSON objects, where each JSON object has the below structure. E
         "source": "Report Source",
         "report_type": "Report Type",
         "report_text": "Report Content",
-        "cg_id": "CD ID",
+        "cg_id": "CG ID",
         "report_id": "Report ID",
         "is_error_attr": "",
         "id": 1234,
