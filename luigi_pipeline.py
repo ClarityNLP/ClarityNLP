@@ -8,7 +8,8 @@ luigi_pipeline_types = {
     "ProviderAssertion": ProviderAssertionBatchTask,
     "MeasurementFinder": MeasurementFinderTask,
     "ValueExtractor": ValueExtractorTask,
-    "NamedEntityRecognition": NERTask
+    "NamedEntityRecognition": NERTask,
+    "POSTagger": POSTaggerTask
 }
 
 

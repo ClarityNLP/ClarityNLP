@@ -275,7 +275,20 @@ def named_entity_recognition():
         results = get_standard_entities(obj.text)
 
         return json.dumps([r.__dict__ for r in results], indent=4)
-    return "Please POST a valid JSON object with terms and text"
+    return "Please POST a valid JSON object with text"
+
+
+@app.route('/pos_tagger', methods=['POST'])
+@auto.doc()
+def pos_tagger():
+    """POST to extract Tags. (See samples/sample_pos_tag_text.json)"""
+    if request.method == 'POST' and request.data:
+        init()
+        obj = NLPModel.from_dict(request.get_json())
+        tags = get_tags(obj.text)
+
+        return json.dumps([t.__dict__ for t in tags], indent=4)
+    return "Please POST a valid JSON object with text"
 
 
 @app.route("/tnm_stage", methods=["POST"])
