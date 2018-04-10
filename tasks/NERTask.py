@@ -1,7 +1,7 @@
 import luigi
 from data_access import solr_data
 from data_access import pipeline_config as config
-from nlp import *
+from nlp import get_standard_entities, segmentation
 from data_access import jobs
 from pymongo import MongoClient
 import datetime
@@ -10,7 +10,7 @@ import util
 SECTIONS_FILTER = "sections"
 
 
-def mongo_writer(client, pipeline, job, batch, pipeline_config, val: NamedEntity, doc, type):
+def mongo_writer(client, pipeline, job, batch, pipeline_config, val, doc, type):
     db = client[util.mongo_db]
 
     inserted = db.pipeline_results.insert_one({
