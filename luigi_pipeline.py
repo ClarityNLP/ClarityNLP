@@ -7,7 +7,8 @@ luigi_pipeline_types = {
     "TermFinder": TermFinderBatchTask,
     "ProviderAssertion": ProviderAssertionBatchTask,
     "MeasurementFinder": MeasurementFinderTask,
-    "ValueExtractor": ValueExtractorTask
+    "ValueExtractor": ValueExtractorTask,
+    "NamedEntityRecognition": NERTask
 }
 
 

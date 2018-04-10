@@ -265,6 +265,19 @@ def value_extractor():
     return "Please POST a valid JSON object with terms and text"
 
 
+@app.route('/named_entity_recognition', methods=['POST'])
+@auto.doc()
+def named_entity_recognition():
+    """POST to extract standard named entities. (See samples/sample_ner.json)"""
+    if request.method == 'POST' and request.data:
+        init()
+        obj = NLPModel.from_dict(request.get_json())
+        results = get_standard_entities(obj.text)
+
+        return json.dumps([r.__dict__ for r in results], indent=4)
+    return "Please POST a valid JSON object with terms and text"
+
+
 @app.route("/tnm_stage", methods=["POST"])
 @auto.doc()
 def tnm_stage():

@@ -5,7 +5,8 @@ import util
 
 try:
     from .base_model import BaseModel
-except Exception as e:
+except Exception as ex:
+    print(ex)
     from base_model import BaseModel
 
 
@@ -24,7 +25,7 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, terms, description = '', limit=0, concept_code=-1, owner='system',
+    def __init__(self, config_type, name, terms=list(), description = '', limit=0, concept_code=-1, owner='system',
                  include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
                  vocabulary='SNOMED', sections=list(), report_type_query='', minimum_value=0, maximum_value=10000,
                  case_sensitive=False):
