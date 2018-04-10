@@ -18,18 +18,7 @@ pipeline_output_positions = [
     'term',
     'start',
     'end',
-    'concept_code',
-    'negation',
-    'experiencer',
-    'temporality',
-    "dimension_X",
-    "dimension_Y",
-    "dimension_Z",
-    "units",
-    "location",
-    "condition",
-    "value1",
-    "value2"
+    'concept_code'
 ]
 
 
@@ -55,12 +44,26 @@ def pipeline_results(job: str):
             csv_writer = csv.writer(csvfile, delimiter=util.delimiter, quotechar=util.quote_character,
                                     quoting=csv.QUOTE_MINIMAL)
 
-            csv_writer.writerow(pipeline_output_positions)
+            header_written = False
+            header_values = pipeline_output_positions
+            length = 0
             for res in db.pipeline_results.find({"job_id": int(job)}):
                 keys = list(res.keys())
-                output = [''] * length
+                if not header_written:
+                    new_cols = []
+                    for k in keys:
+                        if k not in header_values:
+                            new_cols.append(k)
+                    new_cols = sorted(new_cols)
+                    header_values.extend(new_cols)
+
+                    length = len(header_values)
+                    csv_writer.writerow(header_values)
+                    header_written = True
+
                 i = 0
-                for key in pipeline_output_positions:
+                output = [''] * length
+                for key in header_values:
                     if key in keys:
                         val = res[key]
                         output[i] = val
