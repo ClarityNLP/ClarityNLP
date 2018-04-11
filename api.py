@@ -101,14 +101,14 @@ def phenotype():
         output["job_id"] = str(job_id)
         output['pipelines'] = pipeline_ids
         output["status_endpoint"] = "%s/status?job=%s" % (util.main_url, str(job_id))
-        output["results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'phenotype')
-        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
-        util.luigi_url, str(job_id))
+        output["main_results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'phenotype')
+        output["pipeline_results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'pipeline')
+        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (util.luigi_url, str(job_id))
 
         return json.dumps(output, indent=4)
 
-    except Exception as e:
-        return 'Failed to load and insert phenotype. ' + str(e), 400
+    except Exception as ex:
+        return 'Failed to load and insert phenotype. ' + str(ex), 400
 
 
 @app.route('/pipeline', methods=['POST'])
