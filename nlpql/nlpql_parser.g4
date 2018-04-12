@@ -1,45 +1,72 @@
-grammar nlpql;
+grammar nlpql_parser;
 
+options { tokenVocab=nlpql_lexer; }
 
-LIBRARY
-    : 'phenotype' | 'library'
+validExpression:
+    statement*
+    EOF
     ;
 
-DESCRIPTION
-    : 'description'
+statement:
+    (phenotypeName |
+    description |
+    dataModel |
+    include |
+    codeSystem |
+    valueSet |
+    termSet
+    )
+    SEMI
     ;
 
-LPAREN:             '(';
-RPAREN:             ')';
-LBRACE:             '{';
-RBRACE:             '}';
-LBRACK:             '[';
-RBRACK:             ']';
-SEMI:               ';';
-COMMA:              ',';
-DOT:                '.';
-ASSIGN:             '=';
-GT:                 '>';
-LT:                 '<';
-BANG:               '!';
-TILDE:              '~';
-QUESTION:           '?';
-COLON:              ':';
-EQUAL:              '==';
-LE:                 '<=';
-GE:                 '>=';
-NOTEQUAL:           '!=';
-AND:                '&&';
-OR:                 '||';
-INC:                '++';
-DEC:                '--';
-ADD:                '+';
-SUB:                '-';
-MUL:                '*';
-DIV:                '/';
-BITAND:             '&';
-BITOR:              '|';
-CARET:              '^';
-WS:                 [ \t\r\n\u000C]+ -> channel(HIDDEN);
-COMMENT:            '/*' .*? '*/'    -> channel(HIDDEN);
-LINE_COMMENT:       '//' ~[\r\n]*    -> channel(HIDDEN);
+phenotypeName:
+    PHENOTYPE_NAME STRING VERSION? STRING?
+    ;
+
+description:
+    DESCRIPTION STRING VERSION? STRING?
+    ;
+
+dataModel:
+    DATAMODEL (OMOP|STRING) VERSION? STRING?
+    ;
+
+include:
+    INCLUDE (CLARITY_CORE|OHDSI_HELPERS|STRING) VERSION? STRING? CALLED IDENTIFIER
+    ;
+
+codeSystem:
+    CODE_SYSTEM STRING COLON value
+    ;
+
+valueSet:
+    VALUE_SET STRING COLON methodCall
+    ;
+
+methodCall:
+    IDENTIFIER DOT IDENTIFIER L_PAREN value R_PAREN
+    ;
+
+termSet:
+    TERM_SET STRING COLON (array|STRING)
+    ;
+
+obj: L_CURLY pair (COMMA pair)* R_CURLY
+   | L_CURLY R_CURLY
+   ;
+
+pair: STRING COLON value
+   ;
+
+array: L_BRACKET value (COMMA value)* R_BRACKET
+   | L_BRACKET R_BRACKET
+   ;
+
+value: STRING
+   | DECIMAL
+   | obj
+   | array
+   | BOOL
+   | NULL
+   ;
+
