@@ -50,6 +50,17 @@ def ohdsi_get_cohort():
 
     return "Could not retrieve Cohort"
 
+@app.route('/ohdsi_get_cohort_by_name', methods=['GET'])
+@auto.doc()
+def ohdsi_get_cohort_by_name():
+    """Get cohort details from OHDSI."""
+    if request.method == 'GET':
+        cohort_name = request.args.get('cohort_name')
+        cohort = getCohortByName(cohort_name)
+        return cohort
+
+    return "Could not retrieve Cohort"
+
 
 @app.route('/upload', methods=['POST', 'GET'])
 def upload():
