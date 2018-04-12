@@ -3,6 +3,7 @@ nohup.out
 /tmp
 /gen
 *.log
+/gen
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
