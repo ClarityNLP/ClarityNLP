@@ -13,13 +13,14 @@ def getCohortByName(cohort_name):
     url = ENDPOINT + '/cohortdefinition'
     cohort_definitions = requests.get(url).json()
 
+    # Identifying cohort_id with respect to name
     cohort_id = None
-
     for cohort in cohort_definitions:
         if cohort['name'] == cohort_name:
             cohort_id = cohort['id']
             break
 
+    # Returning results
     if cohort_id is not None:
         return getCohort(cohort_id)
     else:
@@ -36,19 +37,14 @@ def getCohort(cohort_id):
     url = ENDPOINT + '/cohort/%s' %(cohort_id)
     cohort_patients = requests.get(url).json()
 
+    # Creating and returning results
     cohort = {'Details':cohort_details,'Patients':cohort_patients}
-
     return json.dumps(cohort)
 
 
-    # print (data['cohortDefinition'])
-    #
-    # for key, val in cohort.items():
-    #     print (key)
-
-
-
+# For testing purposes
+# # TODO: remove once stable
 if __name__ == '__main__':
-    #getCohort(6)
+    # m = getCohort(6)
     m = getCohortByName("text")
     print (m)
