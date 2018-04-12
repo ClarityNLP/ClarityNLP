@@ -7,6 +7,7 @@ import luigi_runner, luigi_pipeline
 from flask_autodoc import Autodoc
 from nlp import *
 from upload import upload_file, upload_from_db, aact_db_upload
+from ohdsi import *
 
 app = Flask(__name__)
 auto = Autodoc(app)
@@ -36,6 +37,18 @@ def home():
 @app.route('/documentation')
 def doc():
     return auto.html()
+
+
+@app.route('/ohdsi_get_cohort', methods=['GET'])
+@auto.doc()
+def ohdsi_get_cohort():
+    """Get cohort details from OHDSI."""
+    if request.method == 'GET':
+        cohort_id = request.args.get('cohort_id')
+        cohort = getCohort(cohort_id)
+        return cohort
+
+    return "Could not retrieve Cohort"
 
 
 @app.route('/upload', methods=['POST', 'GET'])
