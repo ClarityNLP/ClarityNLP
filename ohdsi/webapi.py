@@ -8,6 +8,24 @@ import json
 
 ENDPOINT = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI'
 
+def getCohortByName(cohort_name):
+    # Getting all cohort definitions
+    url = ENDPOINT + '/cohortdefinition'
+    cohort_definitions = requests.get(url).json()
+
+    cohort_id = None
+
+    for cohort in cohort_definitions:
+        if cohort['name'] == cohort_name:
+            cohort_id = cohort['id']
+            break
+
+    if cohort_id is not None:
+        return getCohort(cohort_id)
+    else:
+        return json.dumps({})
+
+
 def getCohort(cohort_id):
 
     # Getting the cohort summary
@@ -31,4 +49,6 @@ def getCohort(cohort_id):
 
 
 if __name__ == '__main__':
-    getCohort(6)
+    #getCohort(6)
+    m = getCohortByName("text")
+    print (m)
