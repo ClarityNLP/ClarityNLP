@@ -2,6 +2,7 @@ project.cfg
 nohup.out
 /tmp
 *.log
+/gen
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
