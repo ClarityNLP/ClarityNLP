@@ -8,6 +8,31 @@ import json
 
 ENDPOINT = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI'
 
+
+# Getting concept set information
+def getConceptSet(conceptset_id):
+    # Getting conceptset metainfo
+    url = ENDPOINT + '/conceptset/%s' %(conceptset_id)
+    meta = requests.get(url).json()
+
+    # Getting conceptset expressions
+    url = ENDPOINT + '/conceptset/%s/expression' %(conceptset_id)
+    expression = requests.get(url).json()
+
+    # Getting conceptset generationinfo
+    url = ENDPOINT + '/conceptset/%s/generationinfo' %(conceptset_id)
+    generationinfo = requests.get(url).json()
+
+    # Getting conceptset items
+    url = ENDPOINT + '/conceptset/%s/items' %(conceptset_id)
+    items = requests.get(url).json()
+
+    conceptset = {"Meta":meta, "Expression":expression, "GenerationInfo":generationinfo, "Items":items}
+    return json.dumps(conceptset)
+
+
+
+# Getting Cohort information based on Cohort Name
 def getCohortByName(cohort_name):
     # Getting all cohort definitions
     url = ENDPOINT + '/cohortdefinition'
@@ -27,6 +52,7 @@ def getCohortByName(cohort_name):
         return json.dumps({})
 
 
+# Getting Cohort information based on Cohort ID
 def getCohort(cohort_id):
 
     # Getting the cohort summary
@@ -46,5 +72,6 @@ def getCohort(cohort_id):
 # # TODO: remove once stable
 if __name__ == '__main__':
     # m = getCohort(6)
-    m = getCohortByName("text")
+    #m = getCohortByName("text")
+    m = getConceptSet(1)
     print (m)
