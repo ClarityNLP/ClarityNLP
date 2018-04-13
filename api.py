@@ -38,6 +38,16 @@ def home():
 def doc():
     return auto.html()
 
+@app.route('/ohdsi_get_conceptset', methods=['GET'])
+@auto.doc()
+def ohdsi_get_conceptset():
+    """Get concept set details."""
+    if request.method == 'GET':
+        conceptset_id = request.args.get('conceptset_id')
+        conceptset = getConceptSet(conceptset_id)
+        return conceptset
+
+    return "Could not retrieve Cohort"
 
 @app.route('/ohdsi_get_cohort', methods=['GET'])
 @auto.doc()
@@ -53,7 +63,7 @@ def ohdsi_get_cohort():
 @app.route('/ohdsi_get_cohort_by_name', methods=['GET'])
 @auto.doc()
 def ohdsi_get_cohort_by_name():
-    """Get cohort details from OHDSI."""
+    """Get cohort details from OHDSI by giving Cohort name."""
     if request.method == 'GET':
         cohort_name = request.args.get('cohort_name')
         cohort = getCohortByName(cohort_name)
