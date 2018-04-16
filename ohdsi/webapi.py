@@ -10,9 +10,8 @@ import os
 ENDPOINT = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI'
 
 def getConceptSet2(filepath):
-    #url = ENDPOINT + '/vocabulary/1PCT/resolveConceptSetExpression'
-    url = 'http://api.ohdsi.org/WebAPI/vocabulary/1PCT/resolveConceptSetExpression'
-    #url = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI/vocabulary/1PCT/resolveConceptSetExpression'
+    url = ENDPOINT + '/vocabulary/OHDSI-CDMV5/resolveConceptSetExpression'
+    #url = 'http://api.ohdsi.org/WebAPI/vocabulary/1PCT/resolveConceptSetExpression'
     headers = {
     'Content-type': 'application/json',
     }
@@ -20,9 +19,9 @@ def getConceptSet2(filepath):
     file = open(filepath,'r')
     data = file.read()
     response = requests.post(url, headers=headers, data=data)
-
     data = response.text
-    url = 'http://api.ohdsi.org/WebAPI/vocabulary/1PCT/lookup/identifiers'
+
+    url = ENDPOINT + '/vocabulary/OHDSI-CDMV5/lookup/identifiers'
     response = requests.post(url, headers=headers, data=data)
 
     return response.text
@@ -87,11 +86,23 @@ def getCohort(cohort_id):
     cohort = {'Details':cohort_details,'Patients':cohort_patients}
     return json.dumps(cohort)
 
+def createCohort(filepath):
+    url = ENDPOINT + '/cohortdefinition/'
+    headers = {
+    'Content-type': 'application/json',
+    }
+    file = open(filepath,'r')
+    data = file.read()
+    response = requests.post(url, headers=headers, data=data)
+
+    print (response.status_code)
+    print (response.reason)
 
 # For testing purposes
 # # TODO: remove once stable
 if __name__ == '__main__':
     # m = getCohort(6)
     #m = getCohortByName("text")
-    m = getConceptSet2('c2.json')
+    m = getConceptSet2('data/test_concept.json')
+    #m = createCohort('data/test_cohort.json')
     print (m)
