@@ -1,0 +1,9 @@
+{
+    "name" : "test measurement terms",
+    "description" : "demo",
+    "terms": ["node", "nodule"],
+    "config_type" : "MeasurementFinder",
+    "include_synonyms" : false,
+    "owner": "test",
+    "limit": 200
+}
