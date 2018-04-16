@@ -2,6 +2,8 @@ grammar nlpql_parser;
 
 options { tokenVocab=nlpql_lexer; }
 
+// TODO no strings on names
+
 validExpression:
     statement*
     EOF
@@ -14,17 +16,28 @@ statement:
     include |
     codeSystem |
     valueSet |
-    termSet
+    termSet |
+    documentSet |
+    cohort |
+    population |
+    define |
+    context
     )
+    version?
+    description?
     SEMI
     ;
 
+version:
+    VERSION STRING
+    ;
+
 phenotypeName:
-    PHENOTYPE_NAME STRING VERSION? STRING?
+    PHENOTYPE_NAME STRING
     ;
 
 description:
-    DESCRIPTION STRING VERSION? STRING?
+    DESCRIPTION STRING
     ;
 
 dataModel:
@@ -36,27 +49,125 @@ include:
     ;
 
 codeSystem:
-    CODE_SYSTEM STRING COLON value
+    CODE_SYSTEM pair
     ;
 
 valueSet:
-    VALUE_SET STRING COLON methodCall
+    VALUE_SET pairMethod
     ;
 
-methodCall:
-    IDENTIFIER DOT IDENTIFIER L_PAREN value R_PAREN
+documentSet:
+    DOCUMENT_SET pairMethod
     ;
+
 
 termSet:
-    TERM_SET STRING COLON (array|STRING)
+    TERM_SET pairStringArray
+    ;
+
+cohort:
+    COHORT pairMethod
+    ;
+
+population:
+    DEFAULT? POPULATION STRING
+    ;
+
+context:
+    CONTEXT (PATIENT|DOCUMENT)
+    ;
+
+define:
+    DEFINE finalModifier? defineName COLON (dataEntity | operation)
+    ;
+
+finalModifier:
+    FINAL
+    ;
+
+defineName:
+    IDENTIFIER
+    ;
+
+dataEntity:
+     methodCall
+    ;
+
+operation:
+    WHERE? expression
+    ;
+
+expression:
+    operand |
+    operand (binaryOperator operand)*
+    ;
+
+unaryOperator:
+    NOT
+    ;
+
+comparisonOperator:
+    GT |
+    LT |
+    GTE |
+    LTE |
+    EQUAL |
+    NOT_EQUAL
+;
+
+binaryOperator:
+    AND |
+    OR |
+    PLUS |
+    MINUS |
+    MULT |
+    DIV |
+    CARET |
+    MOD
+;
+
+operand:
+    value
+    ;
+
+
+methodCall:
+    IDENTIFIER dotIdentifier L_PAREN value (COMMA value)* R_PAREN
+    ;
+
+dotIdentifier:
+    DOT IDENTIFIER
+    ;
+    
+pairMethod:
+    STRING COLON methodCall
+    ;
+
+pairStringArray:
+    STRING COLON (array|STRING)
+;
+
+
+modifiers:
+    DEFAULT |
+    FINAL
     ;
 
 obj: L_CURLY pair (COMMA pair)* R_CURLY
    | L_CURLY R_CURLY
    ;
 
-pair: STRING COLON value
+pair: (STRING | named) COLON value
    ;
+
+named:
+    CODE_SYSTEM |
+    VALUE_SET |
+    TERM_SET |
+    DOCUMENT_SET |
+    COHORT |
+    POPULATION |
+    DATAMODEL;
 
 array: L_BRACKET value (COMMA value)* R_BRACKET
    | L_BRACKET R_BRACKET
@@ -68,5 +179,8 @@ value: STRING
    | array
    | BOOL
    | NULL
+   | ALL
+   | IDENTIFIER
+   | IDENTIFIER dotIdentifier?
    ;
 

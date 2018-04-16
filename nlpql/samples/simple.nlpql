@@ -93,3 +93,74 @@ termset "HypotensionTerms": [
 termset "ShockTerms": [
 "Shock"
 ];
+
+
+// # Document sets## Uses Simple Document Ontology
+documentset "ProviderNotes":
+    Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
+
+// #Population
+//## Cohorts
+
+//cohort "RBC Transfusion Patients":OHDSI.getCohortByName('RBC New Exposures')
+cohort "RBC Transfusion Patients":OHDSI.createCohort("assets/RBC_new_exposures.json");
+
+//default population to run analyses
+//default population "RBC Transfusion Patients"
+
+//CDS logical Context (Patient, Document)
+context Patient;
+
+
+define final Tester:
+  where hasFever AND hasRigors;
+
+// #phenotype features
+define hasRigors:
+  Clarity.ProviderAssertion({
+    valueset: ["RigorsTerms"],
+    documentset: [ProviderNotes]
+    });
+
+define hasDyspnea:
+  Clarity.ProviderAssertion({
+      valueset: ["DyspneaTerms"],
+      documentset: [ProviderNotes]
+    })
+;
+
+define hasNausea:
+  Clarity.ProviderAssertion({
+    valueset: ["NauseaTerms"],
+    documentset: [ProviderNotes]
+  });
+
+define hasVomiting:
+  Clarity.ProviderAssertion({
+    valueset: ["VomitingTerms"],
+    documentset: [ProviderNotes]
+  });
+
+define hasShock:
+  Clarity.ProviderAssertion({
+    valueset: ["ShockTerms"],
+    documentset: [ProviderNotes]
+  });
+
+//Quantitative metrics
+define Temperature:
+  Clarity.GetTemperature({
+    documentset: [All]
+  });
+
+define HeartRate:
+  Clarity.GetHeartRate({
+    documentset: [All]
+  });
+
+define BloodPressure:
+  Clarity.GetBloodPressure({
+    documentset: [All]
+  });
+
+
