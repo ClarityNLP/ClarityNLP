@@ -1,7 +1,11 @@
 /** References from https://github.com/antlr/grammars-v4 */
 lexer grammar nlpql_lexer;
 
-// defines
+// modifiers
+DEFAULT: 'default';
+FINAL: 'final';
+
+// declares
 PHENOTYPE_NAME: 'phenotype';
 VERSION: 'version';
 DESCRIPTION: 'description';
@@ -11,11 +15,38 @@ CALLED: 'called';
 CODE_SYSTEM: 'codesystem';
 VALUE_SET: 'valueset';
 TERM_SET: 'termset';
+DOCUMENT_SET: 'documentset';
+COHORT: 'cohort';
+POPULATION: 'population';
+DEFINE: 'define';
+CONTEXT: 'context';
+
 
 // Custom Clarity Features
 OMOP: 'OMOP';
 CLARITY_CORE: 'ClarityCore';
 OHDSI_HELPERS: 'OHDSIHelpers';
+ALL: 'All';
+PATIENT: 'Patient';
+DOCUMENT: 'Document';
+
+//  Operators
+WHERE: 'WHERE';
+AND: 'AND';
+OR: 'OR';
+NOT: 'NOT';
+GT: '>';
+LT: '<';
+LTE:    '<=';
+GTE: '>=';
+EQUAL: '==';
+NOT_EQUAL: '!=';
+PLUS:   '+';
+MINUS: '-';
+MULT: '*';
+DIV: '/';
+CARET: '^';
+MOD: '%';
 
 // Data types
 SEMI:               ';';

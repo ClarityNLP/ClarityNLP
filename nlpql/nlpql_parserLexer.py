@@ -7,16 +7,9 @@ import sys
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\2\7")
-        buf.write("\32\b\1\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\3\2\3")
-        buf.write("\2\3\3\3\3\3\4\3\4\3\5\3\5\3\6\3\6\3\6\3\6\3\6\2\2\7\3")
-        buf.write("\3\5\4\7\5\t\6\13\7\3\2\2\2\31\2\3\3\2\2\2\2\5\3\2\2\2")
-        buf.write("\2\7\3\2\2\2\2\t\3\2\2\2\2\13\3\2\2\2\3\r\3\2\2\2\5\17")
-        buf.write("\3\2\2\2\7\21\3\2\2\2\t\23\3\2\2\2\13\25\3\2\2\2\r\16")
-        buf.write("\7}\2\2\16\4\3\2\2\2\17\20\7.\2\2\20\6\3\2\2\2\21\22\7")
-        buf.write("\177\2\2\22\b\3\2\2\2\23\24\7<\2\2\24\n\3\2\2\2\25\26")
-        buf.write("\7p\2\2\26\27\7w\2\2\27\30\7n\2\2\30\31\7n\2\2\31\f\3")
-        buf.write("\2\2\2\3\2\2")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\2\3")
+        buf.write("\7\b\1\4\2\t\2\3\2\3\2\2\2\3\3\3\3\2\2\2\6\2\3\3\2\2\2")
+        buf.write("\3\5\3\2\2\2\5\6\7\60\2\2\6\4\3\2\2\2\3\2\2")
         return buf.getvalue()
 
 
@@ -27,22 +20,18 @@ class nlpql_parserLexer(Lexer):
     decisionsToDFA = [ DFA(ds, i) for i, ds in enumerate(atn.decisionToState) ]
 
     T__0 = 1
-    T__1 = 2
-    T__2 = 3
-    T__3 = 4
-    T__4 = 5
 
     channelNames = [ u"DEFAULT_TOKEN_CHANNEL", u"HIDDEN" ]
 
     modeNames = [ "DEFAULT_MODE" ]
 
     literalNames = [ "<INVALID>",
-            "'{'", "','", "'}'", "':'", "'null'" ]
+            "'.'" ]
 
     symbolicNames = [ "<INVALID>",
  ]
 
-    ruleNames = [ "T__0", "T__1", "T__2", "T__3", "T__4" ]
+    ruleNames = [ "T__0" ]
 
     grammarFileName = "nlpql_parser.g4"
 
