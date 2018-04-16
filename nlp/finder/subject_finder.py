@@ -187,8 +187,15 @@ import optparse
 from collections import namedtuple
 from spacy.symbols import ORTH, LEMMA, POS, TAG
 
+if __name__ is not None and "." in __name__:
+    from .size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
+else:
+    from size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
+    
+FILE_DIR = os.path.dirname(__file__)
+
 # imports from clarity
-import size_measurement_finder as smf
+# import size_measurement_finder as smf
 
 # debug only
 from spacy import displacy
@@ -467,10 +474,10 @@ class Meas():
     The measurement objects manipulated by this code.
     """
 
-    # initialize with a smf.SizeMeasurement namedtuple
+    # initialize with a SizeMeasurement namedtuple
     def __init__(self, sm):
 
-        # from smf.SizeMeasurement
+        # from SizeMeasurement
         self.text         = sm.text
         self.start        = sm.start
         self.end          = sm.end
@@ -526,7 +533,8 @@ def load_ngram_file(filepath, ngram_dict):
 
     global ngram_min_chars
     
-    with open(NGRAM_FILE, 'rt') as fin:
+    path = os.path.join(FILE_DIR, "%s" % NGRAM_FILE)
+    with open(path, 'rt') as fin:
         
         n = -1
         for line in fin:
@@ -1146,16 +1154,16 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     sentence = clean_sentence(sentence)
     
     # find all size measurements
-    json_string = smf.run(sentence)
+    json_string = smf_run(sentence)
     json_data = json.loads(json_string)
-    size_measurements = [smf.SizeMeasurement(**m) for m in json_data]
+    size_measurements = [SizeMeasurement(**m) for m in json_data]
 
     if TRACE:
         print('SizeMeasurements: ')
         for sm in size_measurements:
             print('\t{0}'.format(sm))
 
-    # convert from immutable smf.SizeMeasurement namedtuple to mutable Meas
+    # convert from immutable SizeMeasurement namedtuple to mutable Meas
     measurements = [Meas(sm) for sm in size_measurements]
             
     # if no measurements then no measurement subjects
@@ -1329,7 +1337,7 @@ def process_2(m_sentence, sentence, measurements):
                 # this is also the subject for the second measurement
 
                 # set temporality of 2nd measurement to PREVIOUS
-                measurements[m_index + 1].temporality = smf.STR_PREVIOUS
+                measurements[m_index + 1].temporality = STR_PREVIOUS
                 return True
             
     # check for two independent 'measures M' clauses
