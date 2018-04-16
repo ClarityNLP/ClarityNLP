@@ -1,12 +1,12 @@
 [submodule "mapper-api"]
 	path = mapper-api
-	url = https://github.gatech.edu/HDAP/report-type-mapper-api.git
+	url = https://github.com/ClarityNLP/report-type-mapper-api.git
 [submodule "mapper-client"]
 	path = mapper-client
-	url = https://github.gatech.edu/HDAP/report-type-mapper-client.git
+	url = https://github.com/ClarityNLP/report-type-mapper-client.git
 [submodule "validation"]
 	path = validation
-	url = https://github.gatech.edu/HDAP/validation-framework.git
+	url = https://github.com/ClarityNLP/validation-framework.git
 [submodule "nlp-api"]
 	path = nlp-api
-	url = https://github.gatech.edu/HDAP/health-nlp.git
+	url = https://github.com/ClarityNLP/health-nlp.git
