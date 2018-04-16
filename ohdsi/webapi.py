@@ -1,10 +1,8 @@
 """
 OHDSI Helpers
 """
-
 import requests
 import json
-import os
 
 
 ENDPOINT = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI'
@@ -72,7 +70,6 @@ def getCohortByName(cohort_name):
 
 # Getting Cohort information based on Cohort ID
 def getCohort(cohort_id):
-
     # Getting the cohort summary
     url = ENDPOINT + '/cohortanalysis/%s/summary' %(cohort_id)
     cohort_details = requests.get(url).json()
@@ -92,17 +89,17 @@ def createCohort(filepath):
     'Content-type': 'application/json',
     }
     file = open(filepath,'r')
-    data = file.read()
-    response = requests.post(url, headers=headers, data=data)
+    data = file.read() # Don't parse to JSON. Weird OHDSI standard
+    #data = json.loads(file.read())
 
-    print (response.status_code)
-    print (response.reason)
+    response = requests.post(url, headers=headers, data=data)
+    return response.text
 
 # For testing purposes
 # # TODO: remove once stable
 if __name__ == '__main__':
     # m = getCohort(6)
     #m = getCohortByName("text")
-    m = getConceptSet2('data/test_concept.json')
-    #m = createCohort('data/test_cohort.json')
+    #m = getConceptSet2('data/test_concept.json')
+    m = createCohort('data/test_cohort.json')
     print (m)

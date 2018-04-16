@@ -8,6 +8,7 @@ from flask_autodoc import Autodoc
 from nlp import *
 from upload import upload_file, upload_from_db, aact_db_upload
 from ohdsi import *
+import json
 
 app = Flask(__name__)
 auto = Autodoc(app)
@@ -38,6 +39,17 @@ def home():
 def doc():
     return auto.html()
 
+@app.route('/ohdsi_create_cohort', methods=['GET'])
+@auto.doc()
+def ohdsi_create_cohort():
+    """Get concept set details."""
+    if request.method == 'GET':
+        filepath = 'ohdsi/data/' + request.args.get('file')
+        cohort = createCohort(filepath)
+        return cohort
+
+    return "Could not retrieve Cohort"
+
 @app.route('/ohdsi_get_conceptset', methods=['GET'])
 @auto.doc()
 def ohdsi_get_conceptset():
@@ -47,7 +59,7 @@ def ohdsi_get_conceptset():
         conceptset = getConceptSet2(filepath)
         return conceptset
 
-    return "Could not retrieve Cohort"
+    return "Could not retrieve Concept Set"
 
 @app.route('/ohdsi_get_cohort', methods=['GET'])
 @auto.doc()
