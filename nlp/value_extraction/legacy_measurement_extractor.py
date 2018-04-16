@@ -4,8 +4,7 @@ import random
 import string
 from itertools import product
 from subprocess import Popen, PIPE, STDOUT
-
-from data_access import BaseModel
+from data_access import Measurement
 from nlp.segmentation import *
 
 print('Initializing models for measurement finder...')
@@ -19,31 +18,6 @@ MODEL_DIR = "jars/models"
 
 MODEL_FULL_DIR = os.path.join(SCRIPT_DIR, MODEL_DIR)
 FULL_JAR = os.path.join(SCRIPT_DIR, JAR)
-
-
-class Measurement(BaseModel):
-
-    def __init__(self, subject='', X='', Y='', Z='', units='', text='', start='', end='', location='', temporality='',  sentence='', condition='', value1='', value2=''):
-        self.subject = subject
-        self.X = X
-        self.Y = Y
-        self.Z = Z
-        self.units = units
-        self.text = text
-        self.start = start
-        self.end = end
-        self.location = location
-        self.temporality = temporality
-        self.sentence = sentence
-        self.condition = condition
-        self.value1 = value1
-        self.value2 = value2
-
-
-class MeasurementResults(BaseModel):
-
-    def __init__(self, measurements):
-        self.measurements = measurements
 
 
 def run_measurement_finder(filename):
@@ -72,7 +46,7 @@ def run_measurement_finder(filename):
     return measurements
 
 
-def run_measurement_finder_full(text, query: list()):
+def run_legacy_measurement_finder_full(text, query: list()):
     sentences = segmentor.parse_sentences(text)
     rand_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(random.randint(1, 10)))
     filename = "/tmp/%s.txt" % rand_name
@@ -97,6 +71,6 @@ def run_measurement_finder_full(text, query: list()):
 
 
 if __name__ == '__main__':
-    res = run_measurement_finder_full("COMPLETE GU U.S. (BLADDER & RENAL) \n Reason: r/o stones, tumor hydro, need PVR prostate size\n\n UNDERLYING MEDICAL CONDITION:\n  hx TURP and bladder ca\n REASON FOR THIS EXAMINATION:\n  r/o stones, tumor hydro, need PVR prostate size\n  FINAL REPORT\n COMPLETE GU ULTRASOUND\n\n INDICATION:  History of bladder cancer and TURB.  Rule out stones, tumor\n burden, need PVR and prostate size.\n\n COMPLETE GU ULTRASOUND:  Comparison is made to prior CT examination date.  The right kidney measures 12.3 cm.  The left kidney measures 9.9 cm.\n There is no hydronephrosis or stones.  Multiple cysts are seen bilaterally.\n These appear simple.  The largest cyst is seen in the lower pole of the left\n kidney and measures 3.0 x 1.8 x 2.4 cm.  The bladder is partially filled.  The\n prostate gland measures 3.8 x 2.9 x 3.0 cm resulting in a volume of 17 cc and\n a predicted PSA of 2.1.  Upon voiding, there was no post-void residual.\n\n IMPRESSION:  Multiple bilateral renal cysts.  Otherwise, normal examination.", ['tumor', 'cyst'])
+    res = run_legacy_measurement_finder_full("COMPLETE GU U.S. (BLADDER & RENAL) \n Reason: r/o stones, tumor hydro, need PVR prostate size\n\n UNDERLYING MEDICAL CONDITION:\n  hx TURP and bladder ca\n REASON FOR THIS EXAMINATION:\n  r/o stones, tumor hydro, need PVR prostate size\n  FINAL REPORT\n COMPLETE GU ULTRASOUND\n\n INDICATION:  History of bladder cancer and TURB.  Rule out stones, tumor\n burden, need PVR and prostate size.\n\n COMPLETE GU ULTRASOUND:  Comparison is made to prior CT examination date.  The right kidney measures 12.3 cm.  The left kidney measures 9.9 cm.\n There is no hydronephrosis or stones.  Multiple cysts are seen bilaterally.\n These appear simple.  The largest cyst is seen in the lower pole of the left\n kidney and measures 3.0 x 1.8 x 2.4 cm.  The bladder is partially filled.  The\n prostate gland measures 3.8 x 2.9 x 3.0 cm resulting in a volume of 17 cc and\n a predicted PSA of 2.1.  Upon voiding, there was no post-void residual.\n\n IMPRESSION:  Multiple bilateral renal cysts.  Otherwise, normal examination.", ['tumor', 'cyst'])
     json_string = json.dumps([r.__dict__ for r in res], indent=4)
     print(json_string)

@@ -1,6 +1,7 @@
 project.cfg
 nohup.out
 /tmp
+/gen
 *.log
 
 # Byte-compiled / optimized / DLL files

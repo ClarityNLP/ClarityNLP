@@ -1,6 +1,6 @@
 from nlp.segmentation import *
 
-from nlp.value_extraction.measurement_extractor import Measurement
+from data_access import Measurement
 from nlp.value_extraction.value_extractor import extract_value, clean_sentence
 
 print('Initializing models for value extractor...')
