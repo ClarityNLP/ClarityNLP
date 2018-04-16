@@ -43,7 +43,7 @@ def doc():
 def ohdsi_get_conceptset():
     """Get concept set details."""
     if request.method == 'GET':
-        filepath = 'ohdsi/concepts/' + request.args.get('file')
+        filepath = 'ohdsi/data/' + request.args.get('file')
         conceptset = getConceptSet2(filepath)
         return conceptset
 
