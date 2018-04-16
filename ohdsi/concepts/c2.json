@@ -1,0 +1,89 @@
+{
+  "items": [
+    {
+      "concept": {
+        "CONCEPT_ID": 37689228,
+        "CONCEPT_NAME": "Hypotensive",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10021107",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 317002,
+        "CONCEPT_NAME": "Low blood pressure",
+        "STANDARD_CONCEPT": "S",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "45007003",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "SNOMED",
+        "CONCEPT_CLASS_ID": "Clinical Finding",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Standard"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 37689231,
+        "CONCEPT_NAME": "Low blood pressure",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10024895",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 37689232,
+        "CONCEPT_NAME": "Low BP",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10024896",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 37689241,
+        "CONCEPT_NAME": "Preshock",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10051586",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    }
+  ]
+}

@@ -4,9 +4,28 @@ OHDSI Helpers
 
 import requests
 import json
+import os
 
 
 ENDPOINT = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI'
+
+def getConceptSet2(filepath):
+    #url = ENDPOINT + '/vocabulary/1PCT/resolveConceptSetExpression'
+    url = 'http://api.ohdsi.org/WebAPI/vocabulary/1PCT/resolveConceptSetExpression'
+    #url = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI/vocabulary/1PCT/resolveConceptSetExpression'
+    headers = {
+    'Content-type': 'application/json',
+    }
+
+    file = open(filepath,'r')
+    data = file.read()
+    response = requests.post(url, headers=headers, data=data)
+
+    data = response.text
+    url = 'http://api.ohdsi.org/WebAPI/vocabulary/1PCT/lookup/identifiers'
+    response = requests.post(url, headers=headers, data=data)
+
+    return response.text
 
 
 # Getting concept set information
@@ -27,7 +46,7 @@ def getConceptSet(conceptset_id):
     url = ENDPOINT + '/conceptset/%s/items' %(conceptset_id)
     items = requests.get(url).json()
 
-    conceptset = {"Meta":meta, "Expression":expression, "GenerationInfo":generationinfo, "Items":items}
+    conceptset = {"Meta":meta, "Expression":json.dumps(expression), "GenerationInfo":generationinfo, "Items":items}
     return json.dumps(conceptset)
 
 
@@ -58,6 +77,9 @@ def getCohort(cohort_id):
     # Getting the cohort summary
     url = ENDPOINT + '/cohortanalysis/%s/summary' %(cohort_id)
     cohort_details = requests.get(url).json()
+    print (cohort_details['cohortDefinition']['expression'])
+    #print (cohort_details['cohortDefinition'])
+    #cohort_details = json.dumps(json.JSONDecoder().decode(cohort_details))
 
     # Getting list of patients in the cohort
     url = ENDPOINT + '/cohort/%s' %(cohort_id)
@@ -73,5 +95,5 @@ def getCohort(cohort_id):
 if __name__ == '__main__':
     # m = getCohort(6)
     #m = getCohortByName("text")
-    m = getConceptSet(1)
+    m = getConceptSet2('c2.json')
     print (m)
