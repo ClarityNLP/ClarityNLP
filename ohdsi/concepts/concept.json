@@ -1,0 +1,327 @@
+{
+  "items": [
+    {
+      "concept": {
+        "CONCEPT_ID": 35227035,
+        "CONCEPT_NAME": "Air hunger",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10001529",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227037,
+        "CONCEPT_NAME": "Breathing difficult",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10006338",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227038,
+        "CONCEPT_NAME": "Breathlessness",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10006345",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227036,
+        "CONCEPT_NAME": "Breath shortness",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10006332",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227039,
+        "CONCEPT_NAME": "Difficulty breathing",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10012791",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227040,
+        "CONCEPT_NAME": "Dyspnea",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10013963",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227045,
+        "CONCEPT_NAME": "Dyspnoea NOS",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10013972",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227046,
+        "CONCEPT_NAME": "Gasping",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10017745",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227047,
+        "CONCEPT_NAME": "Hunger air",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10020468",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227050,
+        "CONCEPT_NAME": "Increased work of breathing",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10021696",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227051,
+        "CONCEPT_NAME": "Labored breathing",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10023552",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227063,
+        "CONCEPT_NAME": "Labored respiration",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10055564",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227052,
+        "CONCEPT_NAME": "Laboured breathing",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10023556",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227053,
+        "CONCEPT_NAME": "Laboured respiration",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10023557",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227056,
+        "CONCEPT_NAME": "Respiration labored",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10038653",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227057,
+        "CONCEPT_NAME": "Respiration laboured",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10038654",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227060,
+        "CONCEPT_NAME": "Shortness of breath",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10040604",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227059,
+        "CONCEPT_NAME": "Short of breath",
+        "STANDARD_CONCEPT": "C",
+        "INVALID_REASON": "V",
+        "CONCEPT_CODE": "10040596",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Valid",
+        "STANDARD_CONCEPT_CAPTION": "Classification"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    },
+    {
+      "concept": {
+        "CONCEPT_ID": 35227061,
+        "CONCEPT_NAME": "SOB",
+        "STANDARD_CONCEPT": "N",
+        "INVALID_REASON": "D",
+        "CONCEPT_CODE": "10041237",
+        "DOMAIN_ID": "Condition",
+        "VOCABULARY_ID": "MedDRA",
+        "CONCEPT_CLASS_ID": "LLT",
+        "INVALID_REASON_CAPTION": "Invalid",
+        "STANDARD_CONCEPT_CAPTION": "Non-Standard"
+      },
+      "isExcluded": false,
+      "includeDescendants": false,
+      "includeMapped": false
+    }
+  ]
+}

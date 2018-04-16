@@ -43,8 +43,8 @@ def doc():
 def ohdsi_get_conceptset():
     """Get concept set details."""
     if request.method == 'GET':
-        conceptset_id = request.args.get('conceptset_id')
-        conceptset = getConceptSet(conceptset_id)
+        filepath = 'ohdsi/concepts/' + request.args.get('file')
+        conceptset = getConceptSet2(filepath)
         return conceptset
 
     return "Could not retrieve Cohort"
