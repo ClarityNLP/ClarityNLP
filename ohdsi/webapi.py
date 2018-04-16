@@ -77,9 +77,7 @@ def getCohort(cohort_id):
     # Getting the cohort summary
     url = ENDPOINT + '/cohortanalysis/%s/summary' %(cohort_id)
     cohort_details = requests.get(url).json()
-    print (cohort_details['cohortDefinition']['expression'])
-    #print (cohort_details['cohortDefinition'])
-    #cohort_details = json.dumps(json.JSONDecoder().decode(cohort_details))
+    cohort_details['cohortDefinition']['expression'] = json.loads(cohort_details['cohortDefinition']['expression']) #fixing ohdsi JSON structure bug
 
     # Getting list of patients in the cohort
     url = ENDPOINT + '/cohort/%s' %(cohort_id)
