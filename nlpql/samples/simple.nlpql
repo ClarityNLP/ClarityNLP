@@ -14,22 +14,22 @@ include ClarityCore version "1.0" called Clarity;
 include OHDSIHelpers version "1.0" called OHDSI;
 
 // ## Code Systems ##
-codesystem "OMOP": "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
 
 //## Valuesets (also known as concept sets in OHDSI parlance)
 //Using OHDSIHelpers, can reference a URL or can package the conceptset definition in assets folder
-valueset "RigorsConcepts":OHDSI.getConceptSet("assets/RigorsConcepts.json");
-valueset "DyspneaConcepts":OHDSI.getConceptSet("assets/DyspneaConcepts.json");
-valueset "NauseaConcepts":OHDSI.getConceptSet("assets/NauseaConcepts.json");
-valueset "VomitingConcepts":OHDSI.getConceptSet("assets/VomitingConcepts.json");
-valueset "TachycardiaConcepts":OHDSI.getConceptSet("assets/VomitingConcepts.json");
-valueset "HypotensionConcepts":OHDSI.getConceptSet("assets/VomitingConcepts.json");
-valueset "ShockConcepts":OHDSI.getConceptSet("assets/ShockConcepts.json");
+valueset RigorsConcepts:OHDSI.getConceptSet("assets/RigorsConcepts.json");
+valueset DyspneaConcepts:OHDSI.getConceptSet("assets/DyspneaConcepts.json");
+valueset NauseaConcepts:OHDSI.getConceptSet("assets/NauseaConcepts.json");
+valueset VomitingConcepts:OHDSI.getConceptSet("assets/VomitingConcepts.json");
+valueset TachycardiaConcepts:OHDSI.getConceptSet("assets/VomitingConcepts.json");
+valueset HypotensionConcepts:OHDSI.getConceptSet("assets/VomitingConcepts.json");
+valueset ShockConcepts:OHDSI.getConceptSet("assets/ShockConcepts.json");
 
 // #Manual Term sets#
 // simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
 // can add expansion of structured concepts from terminologies as well with OMOPHelpers
-termset "RigorsTerms": ["Rigors",
+termset RigorsTerms: ["Rigors",
 "Rigoring",
 "Rigours",
 "Rigouring",
@@ -39,7 +39,7 @@ termset "RigorsTerms": ["Rigors",
 "Shivering",
 "Teeth chattering"];
 
-termset "DyspneaTerms": [
+termset DyspneaTerms: [
 "Labored respiration",
 "Shortness of breath",
 "Short of breath",
@@ -60,13 +60,13 @@ termset "DyspneaTerms": [
 "Breath shortness",
 "Air hunger"];
 
-termset "NauseaTerms": [
+termset NauseaTerms: [
 "Nausea",
 "Nauseated",
 "Nauseous",
 "Queasy"];
 
-termset "VomitingTerms": [
+termset VomitingTerms: [
 "Vomiting",
 "Vomited",
 "Vomit",
@@ -74,14 +74,14 @@ termset "VomitingTerms": [
 "Hyperemesis",
 "N/V"];
 
-termset "TachycardiaTerms": [
+termset TachycardiaTerms: [
 "Tachycardia",
 "Tachycardic",
 "Rapid HR",
 "Tachy"
 ];
 
-termset "HypotensionTerms": [
+termset HypotensionTerms: [
 "Hypotensive",
 "Hypotension",
 "Low Blood Pressure",
@@ -90,23 +90,23 @@ termset "HypotensionTerms": [
 "Preshock"
 ];
 
-termset "ShockTerms": [
+termset ShockTerms: [
 "Shock"
 ];
 
 
 // # Document sets## Uses Simple Document Ontology
-documentset "ProviderNotes":
+documentset ProviderNotes:
     Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
 
 // #Population
 //## Cohorts
 
 //cohort "RBC Transfusion Patients":OHDSI.getCohortByName('RBC New Exposures')
-cohort "RBC Transfusion Patients":OHDSI.createCohort("assets/RBC_new_exposures.json");
+cohort RBCTransfusionPatients:OHDSI.createCohort("assets/RBC_new_exposures.json");
 
 //default population to run analyses
-//default population "RBC Transfusion Patients"
+//default population RBCTransfusionPatients
 
 //CDS logical Context (Patient, Document)
 context Patient;
