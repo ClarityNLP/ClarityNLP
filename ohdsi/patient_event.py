@@ -87,27 +87,3 @@ def getPatientEvent(cohort_id, domain, conceptset, conn_string):
         return json.dumps(output)
     else:
         return "No patient events for given criteria"
-
-
-
-
-
-
-# For testing only
-# TODO: remove once stable
-if __name__=='__main__':
-    config = configparser.RawConfigParser()
-    config.read('../project.cfg')
-    conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (os.environ.get('NLP_PG_HOSTNAME', config.get('pg2', 'host')),
-                                                                             os.environ.get('NLP_PG_DATABASE', config.get('pg2', 'dbname')),
-                                                                             os.environ.get('NLP_PG_USER', config.get('pg2', 'user')),
-                                                                             os.environ.get('NLP_PG_PASSWORD', config.get('pg2', 'password')),
-                                                                             str(os.environ.get('NLP_PG_CONTAINER_PORT', config.get('pg2', 'port'))))
-    print (conn_string)
-    #getPatientEvent(10,"Drugs",(919345,1717327), conn_string)
-    #getPatientEvent(20,"Conditions",(132797,40481816), conn_string)
-    #getPatientEvent(30,"Procedures",(2514413,2514409), conn_string)
-    #getPatientEvent(40,"Observations",(441054,4015724), conn_string)
-    output = getPatientEvent(50,"Measurements",(3023103,3037278), conn_string)
-    #output = getPatientEvent(60,"Visits",(9203,), conn_string)
-    print (output)

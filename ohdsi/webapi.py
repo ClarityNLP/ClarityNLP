@@ -94,12 +94,3 @@ def createCohort(filepath):
 
     response = requests.post(url, headers=headers, data=data)
     return response.text
-
-# For testing purposes
-# # TODO: remove once stable
-if __name__ == '__main__':
-    # m = getCohort(6)
-    #m = getCohortByName("text")
-    #m = getConceptSet2('data/test_concept.json')
-    m = createCohort('data/test_cohort.json')
-    print (m)
