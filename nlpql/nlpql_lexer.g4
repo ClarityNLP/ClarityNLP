@@ -77,7 +77,7 @@ STRING:     '"' (~["\\\r\n] | EscapeSequence)* '"';
 WS:                 [ \t\r\n\u000C]+ -> channel(HIDDEN);
 COMMENT:            '/*' .*? '*/'    -> channel(HIDDEN);
 LINE_COMMENT:       '//' ~[\r\n]*    -> channel(HIDDEN);
-IDENTIFIER:         Letter LetterOrDigit*;
+IDENTIFIER:         LetterOrDigit LetterOrDigit*;
 
 fragment ExponentPart
     : [eE] [+-]? Digits
@@ -102,7 +102,5 @@ fragment LetterOrDigit
     | [0-9]
     ;
 fragment Letter
-    : [a-zA-Z$_]
-    | ~[\u0000-\u007F\uD800-\uDBFF]
-    | [\uD800-\uDBFF] [\uDC00-\uDFFF]
+    : [A-Za-z$_]
     ;

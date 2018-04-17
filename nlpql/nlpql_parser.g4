@@ -49,7 +49,7 @@ include:
     ;
 
 codeSystem:
-    CODE_SYSTEM pair
+    CODE_SYSTEM identifierPair
     ;
 
 valueSet:
@@ -62,7 +62,7 @@ documentSet:
 
 
 termSet:
-    TERM_SET pairStringArray
+    TERM_SET pairArray
     ;
 
 cohort:
@@ -70,7 +70,7 @@ cohort:
     ;
 
 population:
-    DEFAULT? POPULATION STRING
+    DEFAULT? POPULATION IDENTIFIER
     ;
 
 context:
@@ -138,13 +138,14 @@ methodCall:
 dotIdentifier:
     DOT IDENTIFIER
     ;
+
     
 pairMethod:
-    STRING COLON methodCall
+    IDENTIFIER COLON methodCall
     ;
 
-pairStringArray:
-    STRING COLON (array|STRING)
+pairArray:
+    IDENTIFIER COLON (array|STRING)
 ;
 
 
@@ -157,8 +158,13 @@ obj: L_CURLY pair (COMMA pair)* R_CURLY
    | L_CURLY R_CURLY
    ;
 
-pair: (STRING | named) COLON value
+pair:
+    (STRING | named) COLON value
    ;
+
+identifierPair:
+    (IDENTIFIER | OMOP) COLON value
+    ;
 
 named:
     CODE_SYSTEM |
