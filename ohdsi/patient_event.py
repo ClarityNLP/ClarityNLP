@@ -1,11 +1,8 @@
 import requests
 import json
 import string
-import configparser
 import psycopg2
 import psycopg2.extras
-import re
-import os
 import datetime
 
 # Function to identify query based on domain

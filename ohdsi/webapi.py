@@ -7,7 +7,7 @@ import json
 
 ENDPOINT = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI'
 
-def getConceptSet2(filepath):
+def getConceptSet(filepath):
     url = ENDPOINT + '/vocabulary/OHDSI-CDMV5/resolveConceptSetExpression'
     #url = 'http://api.ohdsi.org/WebAPI/vocabulary/1PCT/resolveConceptSetExpression'
     headers = {
@@ -24,7 +24,7 @@ def getConceptSet2(filepath):
 
     return response.text
 
-
+"""
 # Getting concept set information
 def getConceptSet(conceptset_id):
     # Getting conceptset metainfo
@@ -45,7 +45,7 @@ def getConceptSet(conceptset_id):
 
     conceptset = {"Meta":meta, "Expression":json.dumps(expression), "GenerationInfo":generationinfo, "Items":items}
     return json.dumps(conceptset)
-
+"""
 
 
 # Getting Cohort information based on Cohort Name
@@ -92,5 +92,18 @@ def createCohort(filepath):
     data = file.read() # Don't parse to JSON. Weird OHDSI standard
     #data = json.loads(file.read())
 
+    # Getting ID for new cohort
     response = requests.post(url, headers=headers, data=data)
-    return response.text
+    if response.status_code != 200:
+        return "Cohort could not be created. Reason: check JSON file"
+    cohort_id = response.json()['id']
+
+    # Triggering cohort creation job
+    url = ENDPOINT + '/cohortdefinition/%s/generate/OHDSI-CDMV5' %(cohort_id)
+    response = requests.get(url)
+
+    # Checking if cohort creation job has been triggered
+    if response.status_code == 200:
+        return "Cohort creation job has been triggered."
+    else:
+        return "Cohort could not be created."

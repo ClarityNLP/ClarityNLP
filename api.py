@@ -68,7 +68,7 @@ def ohdsi_get_conceptset():
     """Get concept set details."""
     if request.method == 'GET':
         filepath = 'ohdsi/data/' + request.args.get('file')
-        conceptset = getConceptSet2(filepath)
+        conceptset = getConceptSet(filepath)
         return conceptset
 
     return "Could not retrieve Concept Set"
