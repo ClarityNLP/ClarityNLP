@@ -11,35 +11,35 @@ import datetime
 # Function to identify query based on domain
 def get_query(name):
     if name == "Drugs":
-        query = """ SELECT DISTINCT person_id, drug_concept_id, drug_era_start_date, drug_era_end_date FROM mimic_v5.drug_era a
-                    INNER JOIN (SELECT subject_id FROM mimic_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
+        query = """ SELECT DISTINCT person_id, drug_concept_id, drug_era_start_date, drug_era_end_date FROM omop_v5.drug_era a
+                    INNER JOIN (SELECT subject_id FROM omop_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
                     WHERE a.drug_concept_id IN %s
                 """
 
     elif name == "Conditions":
-        query = """ SELECT DISTINCT person_id, condition_concept_id, condition_era_start_date, condition_era_end_date FROM mimic_v5.condition_era a
-                    INNER JOIN (SELECT subject_id FROM mimic_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
+        query = """ SELECT DISTINCT person_id, condition_concept_id, condition_era_start_date, condition_era_end_date FROM omop_v5.condition_era a
+                    INNER JOIN (SELECT subject_id FROM omop_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
                     WHERE a.condition_concept_id IN %s
                 """
 
     elif name == "Procedures":
-        query = """ SELECT DISTINCT person_id, procedure_concept_id, procedure_date FROM mimic_v5.procedure_occurrence a
-                    INNER JOIN (SELECT subject_id FROM mimic_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
+        query = """ SELECT DISTINCT person_id, procedure_concept_id, procedure_date FROM omop_v5.procedure_occurrence a
+                    INNER JOIN (SELECT subject_id FROM omop_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
                     WHERE a.procedure_concept_id IN %s
                 """
     elif name == "Observations":
-        query = """ SELECT DISTINCT person_id, observation_concept_id, observation_date FROM mimic_v5.observation a
-                    INNER JOIN (SELECT subject_id FROM mimic_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
+        query = """ SELECT DISTINCT person_id, observation_concept_id, observation_date FROM omop_v5.observation a
+                    INNER JOIN (SELECT subject_id FROM omop_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
                     WHERE a.observation_concept_id IN %s
                 """
     elif name == "Visits":
-        query = """ SELECT DISTINCT person_id, visit_concept_id, visit_start_date, visit_end_date FROM mimic_v5.visit_occurrence a
-                    INNER JOIN (SELECT subject_id FROM mimic_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
+        query = """ SELECT DISTINCT person_id, visit_concept_id, visit_start_date, visit_end_date FROM omop_v5.visit_occurrence a
+                    INNER JOIN (SELECT subject_id FROM omop_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
                     WHERE a.visit_concept_id IN %s
                 """
     elif name == "Measurements":
-        query = """ SELECT DISTINCT person_id, measurement_concept_id, measurement_date FROM mimic_v5.measurement a
-                    INNER JOIN (SELECT subject_id FROM mimic_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
+        query = """ SELECT DISTINCT person_id, measurement_concept_id, measurement_date FROM omop_v5.measurement a
+                    INNER JOIN (SELECT subject_id FROM omop_v5.cohort WHERE cohort_definition_id = %s) b ON a.person_id = b.subject_id
                     WHERE a.measurement_concept_id IN %s
                 """
     else:
