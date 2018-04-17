@@ -8,10 +8,6 @@ import re
 import os
 import datetime
 
-def json_serialize(i):
-    if isinstance(i, datetime.datetime):
-        return i.__str__()
-
 # Function to identify query based on domain
 def get_query(name):
     if name == "Drugs":
@@ -57,9 +53,9 @@ def construct_output(result):
     output = []
     for i in result:
         if len(i) == 4:
-            output.append({'person_id': i[0], 'concept_id': i[1], 'start_date': i[2], 'end_date': i[3]})
+            output.append({'person_id': i[0], 'concept_id': i[1], 'start_date': str(i[2]), 'end_date': str(i[3])})
         else:
-            output.append({'person_id': i[0], 'concept_id': i[1], 'start_date': i[2], 'end_date': 'null'})
+            output.append({'person_id': i[0], 'concept_id': i[1], 'start_date': str(i[2]), 'end_date': None})
 
     return output
 
@@ -71,6 +67,7 @@ def getPatientEvent(cohort_id, domain, conceptset, conn_string):
     cursor = conn.cursor()
 
     # Querying DB
+    output = []
     try:
         query = get_query(domain)
         if query == -1:
@@ -78,6 +75,7 @@ def getPatientEvent(cohort_id, domain, conceptset, conn_string):
 
         cursor.execute(query,(cohort_id, conceptset))
         result = cursor.fetchall()
+        output = construct_output(result)
 
 
     except Exception as ex:
@@ -85,8 +83,10 @@ def getPatientEvent(cohort_id, domain, conceptset, conn_string):
         print (ex)
 
     # Constructing output
-    output = construct_output(result)
-    return json.dumps(output, default = json_serialize)
+    if len(output) > 0:
+        return json.dumps(output)
+    else:
+        return "No patient events for given criteria"
 
 
 

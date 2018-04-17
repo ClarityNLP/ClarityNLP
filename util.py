@@ -26,6 +26,12 @@ conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (read_pr
                                                                          read_property('NLP_PG_PASSWORD', ('pg', 'password')),
                                                                          str(read_property('NLP_PG_CONTAINER_PORT', ('pg', 'port'))))
 
+conn_string_2 = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (read_property('NLP_PG_HOSTNAME', ('pg2', 'host')),
+                                                                         read_property('NLP_PG_DATABASE', ('pg2', 'dbname')),
+                                                                         read_property('NLP_PG_USER', ('pg2', 'user')),
+                                                                         read_property('NLP_PG_PASSWORD', ('pg2', 'password')),
+                                                                         str(read_property('NLP_PG_CONTAINER_PORT', ('pg2', 'port'))))
+
 mongo_host = read_property('NLP_MONGO_HOSTNAME', ('mongo', 'host'))
 mongo_port = int(read_property('NLP_MONGO_CONTAINER_PORT', ('mongo', 'port')))
 mongo_db = read_property('NLP_MONGO_DATABASE', ('mongo', 'db'))
