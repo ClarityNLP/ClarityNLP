@@ -38,3 +38,10 @@ find your OS and follow instructions. Go [here](https://docs.docker.com/compose/
 5. Build images and run containers `docker-compose up --build`
 
 Now you can run `docker ps` to confirm the project's containers are running.
+
+### Updating to download latest changes
+From the command line, run:
+```
+git pull
+git submodule update --recursive
+```
