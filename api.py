@@ -45,7 +45,6 @@ def ohdsi_patient_event():
     """Get patient event details."""
     if request.method == 'POST':
         r = request.get_json()
-        print (tuple(r['concepts']))
         patient_event_details = getPatientEvent(r['cohort_id'], r['domain'], tuple(r['concepts']), util.conn_string_2)
 
         return patient_event_details
