@@ -1,37 +1,50 @@
 import configparser
-import os
+from os import getenv, environ, path
 
-SCRIPT_DIR = os.path.dirname(__file__)
+SCRIPT_DIR = path.dirname(__file__)
 config = configparser.RawConfigParser()
-config.read(os.path.join(SCRIPT_DIR, 'project.cfg'))
+config.read(path.join(SCRIPT_DIR, 'project.cfg'))
 
-solr_url = os.environ.get('NLP_SOLR_URL', config.get('solr', 'url'))
 
-conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (os.environ.get('NLP_PG_HOSTNAME', config.get('pg', 'host')),
-                                                                         os.environ.get('NLP_PG_DATABASE', config.get('pg', 'dbname')),
-                                                                         os.environ.get('NLP_PG_USER', config.get('pg', 'user')),
-                                                                         os.environ.get('NLP_PG_PASSWORD', config.get('pg', 'password')),
-                                                                         str(os.environ.get('NLP_PG_CONTAINER_PORT', config.get('pg', 'port'))))
+def read_property(env_name, config_tuple):
+    property_name = ''
+    if getenv(env_name):
+        property_name = environ.get[env_name]
+    else:
+        try:
+            property_name = config.get(config_tuple[0], config_tuple[1])
+        except Exception as ex:
+            print(ex)
+    return property_name
 
-mongo_host = os.environ.get('NLP_MONGO_HOSTNAME', config.get('mongo', 'host'))
-mongo_port = int(os.environ.get('NLP_MONGO_CONTAINER_PORT', config.get('mongo', 'port')))
-mongo_db = os.environ.get('NLP_MONGO_DATABASE', config.get('mongo', 'db'))
-mongo_working_index = os.environ.get('NLP_MONGO_WORKING_INDEX', config.get('mongo', 'working_index'))
-mongo_working_collection = os.environ.get('NLP_MONGO_WORKING_COLLECTION', config.get('mongo', 'working_collection'))
 
-tmp_dir = os.environ.get('NLP_API_TMP_DIR', config.get('tmp', 'dir'))
-log_dir = os.environ.get('NLP_API_LOG_DIR', config.get('log', 'dir'))
+solr_url = read_property('NLP_SOLR_URL', ('solr', 'url'))
 
-luigi_scheduler = os.environ.get('LUIGI_SCHEDULER_URL', config.get('luigi', 'scheduler'))
-luigi_url = os.environ.get('LUIGI_URL', config.get('luigi', 'url'))
-luigi_workers = os.environ.get('LUIGI_WORKERS', config.get('luigi', 'workers'))
+conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (read_property('NLP_PG_HOSTNAME', ('pg', 'host')),
+                                                                         read_property('NLP_PG_DATABASE', ('pg', 'dbname')),
+                                                                         read_property('NLP_PG_USER', ('pg', 'user')),
+                                                                         read_property('NLP_PG_PASSWORD', ('pg', 'password')),
+                                                                         str(read_property('NLP_PG_CONTAINER_PORT', ('pg', 'port'))))
 
-main_url = os.environ.get('NLP_API_URL', config.get('main', 'url'))
+mongo_host = read_property('NLP_MONGO_HOSTNAME', ('mongo', 'host'))
+mongo_port = int(read_property('NLP_MONGO_CONTAINER_PORT', ('mongo', 'port')))
+mongo_db = read_property('NLP_MONGO_DATABASE', ('mongo', 'db'))
+mongo_working_index = read_property('NLP_MONGO_WORKING_INDEX', ('mongo', 'working_index'))
+mongo_working_collection = read_property('NLP_MONGO_WORKING_COLLECTION', ('mongo', 'working_collection'))
+
+tmp_dir = read_property('NLP_API_TMP_DIR', ('tmp', 'dir'))
+log_dir = read_property('NLP_API_LOG_DIR', ('log', 'dir'))
+
+luigi_scheduler = read_property('LUIGI_SCHEDULER_URL', ('luigi', 'scheduler'))
+luigi_url = read_property('LUIGI_URL', ('luigi', 'url'))
+luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'))
+
+main_url = read_property('NLP_API_URL', ('main', 'url'))
 
 row_count = 10
 delimiter = ','
 quote_character = '"'
 
-report_mapper_url = os.environ.get('MAPPER_API_URL', config.get('report_mapper', 'url'))
-report_mapper_key = os.environ.get('MAPPER_API_KEY', config.get('report_mapper', 'key'))
-report_mapper_inst = os.environ.get('MAPPER_API_INSTITUTE', config.get('report_mapper', 'institute'))
+report_mapper_url = read_property('MAPPER_API_URL', ('report_mapper', 'url'))
+report_mapper_key = read_property('MAPPER_API_KEY', ('report_mapper', 'key'))
+report_mapper_inst = read_property('MAPPER_API_INSTITUTE', ('report_mapper', 'institute'))
