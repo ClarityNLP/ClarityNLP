@@ -9,7 +9,7 @@ config.read(path.join(SCRIPT_DIR, 'project.cfg'))
 def read_property(env_name, config_tuple):
     property_name = ''
     if getenv(env_name):
-        property_name = environ.get[env_name]
+        property_name = environ.get(env_name)
     else:
         try:
             property_name = config.get(config_tuple[0], config_tuple[1])
