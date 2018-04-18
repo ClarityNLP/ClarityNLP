@@ -7,123 +7,178 @@ import sys
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3@")
-        buf.write("\u0119\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3F")
+        buf.write("\u017a\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
         buf.write("\t\31\4\32\t\32\4\33\t\33\4\34\t\34\4\35\t\35\4\36\t\36")
-        buf.write("\4\37\t\37\4 \t \4!\t!\4\"\t\"\4#\t#\4$\t$\3\2\7\2J\n")
-        buf.write("\2\f\2\16\2M\13\2\3\2\3\2\3\3\3\3\3\3\3\3\3\3\3\3\3\3")
-        buf.write("\3\3\3\3\3\3\3\3\3\3\5\3]\n\3\3\3\5\3`\n\3\3\3\5\3c\n")
-        buf.write("\3\3\3\3\3\3\4\3\4\3\4\3\5\3\5\3\5\3\6\3\6\3\6\3\7\3\7")
-        buf.write("\3\7\5\7s\n\7\3\7\5\7v\n\7\3\b\3\b\3\b\5\b{\n\b\3\b\5")
-        buf.write("\b~\n\b\3\b\3\b\3\b\3\t\3\t\3\t\3\n\3\n\3\n\3\13\3\13")
-        buf.write("\3\13\3\f\3\f\3\f\3\r\3\r\3\r\3\16\5\16\u0093\n\16\3\16")
-        buf.write("\3\16\3\16\3\17\3\17\3\17\3\20\3\20\5\20\u009d\n\20\3")
-        buf.write("\20\3\20\3\20\3\20\5\20\u00a3\n\20\3\21\3\21\3\22\3\22")
-        buf.write("\3\23\3\23\3\24\5\24\u00ac\n\24\3\24\3\24\3\25\3\25\3")
-        buf.write("\25\3\25\3\25\7\25\u00b5\n\25\f\25\16\25\u00b8\13\25\5")
-        buf.write("\25\u00ba\n\25\3\26\3\26\3\27\3\27\3\30\3\30\3\31\3\31")
-        buf.write("\3\32\3\32\3\32\3\32\3\32\3\32\7\32\u00ca\n\32\f\32\16")
-        buf.write("\32\u00cd\13\32\3\32\3\32\3\33\3\33\3\33\3\34\3\34\3\34")
-        buf.write("\3\34\3\35\3\35\3\35\3\35\5\35\u00dc\n\35\3\36\3\36\3")
-        buf.write("\37\3\37\3\37\3\37\7\37\u00e4\n\37\f\37\16\37\u00e7\13")
-        buf.write("\37\3\37\3\37\3\37\3\37\5\37\u00ed\n\37\3 \3 \5 \u00f1")
-        buf.write("\n \3 \3 \3 \3!\3!\3!\3!\3\"\3\"\3#\3#\3#\3#\7#\u0100")
-        buf.write("\n#\f#\16#\u0103\13#\3#\3#\3#\3#\5#\u0109\n#\3$\3$\3$")
-        buf.write("\3$\3$\3$\3$\3$\3$\3$\5$\u0115\n$\5$\u0117\n$\3$\2\2%")
-        buf.write("\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62")
-        buf.write("\64\668:<>@BDF\2\n\4\2\23\23<<\4\2\24\25<<\3\2\27\30\3")
-        buf.write("\2\35\"\4\2\32\33#(\3\2\3\4\4\2\23\23@@\4\2\b\b\13\20")
-        buf.write("\2\u011d\2K\3\2\2\2\4\\\3\2\2\2\6f\3\2\2\2\bi\3\2\2\2")
-        buf.write("\nl\3\2\2\2\fo\3\2\2\2\16w\3\2\2\2\20\u0082\3\2\2\2\22")
-        buf.write("\u0085\3\2\2\2\24\u0088\3\2\2\2\26\u008b\3\2\2\2\30\u008e")
-        buf.write("\3\2\2\2\32\u0092\3\2\2\2\34\u0097\3\2\2\2\36\u009a\3")
-        buf.write("\2\2\2 \u00a4\3\2\2\2\"\u00a6\3\2\2\2$\u00a8\3\2\2\2&")
-        buf.write("\u00ab\3\2\2\2(\u00b9\3\2\2\2*\u00bb\3\2\2\2,\u00bd\3")
-        buf.write("\2\2\2.\u00bf\3\2\2\2\60\u00c1\3\2\2\2\62\u00c3\3\2\2")
-        buf.write("\2\64\u00d0\3\2\2\2\66\u00d3\3\2\2\28\u00d7\3\2\2\2:\u00dd")
-        buf.write("\3\2\2\2<\u00ec\3\2\2\2>\u00f0\3\2\2\2@\u00f5\3\2\2\2")
-        buf.write("B\u00f9\3\2\2\2D\u0108\3\2\2\2F\u0116\3\2\2\2HJ\5\4\3")
-        buf.write("\2IH\3\2\2\2JM\3\2\2\2KI\3\2\2\2KL\3\2\2\2LN\3\2\2\2M")
-        buf.write("K\3\2\2\2NO\7\2\2\3O\3\3\2\2\2P]\5\b\5\2Q]\5\n\6\2R]\5")
-        buf.write("\f\7\2S]\5\16\b\2T]\5\20\t\2U]\5\22\n\2V]\5\26\f\2W]\5")
-        buf.write("\24\13\2X]\5\30\r\2Y]\5\32\16\2Z]\5\36\20\2[]\5\34\17")
-        buf.write("\2\\P\3\2\2\2\\Q\3\2\2\2\\R\3\2\2\2\\S\3\2\2\2\\T\3\2")
-        buf.write("\2\2\\U\3\2\2\2\\V\3\2\2\2\\W\3\2\2\2\\X\3\2\2\2\\Y\3")
-        buf.write("\2\2\2\\Z\3\2\2\2\\[\3\2\2\2]_\3\2\2\2^`\5\6\4\2_^\3\2")
-        buf.write("\2\2_`\3\2\2\2`b\3\2\2\2ac\5\n\6\2ba\3\2\2\2bc\3\2\2\2")
-        buf.write("cd\3\2\2\2de\7)\2\2e\5\3\2\2\2fg\7\6\2\2gh\7<\2\2h\7\3")
-        buf.write("\2\2\2ij\7\5\2\2jk\7<\2\2k\t\3\2\2\2lm\7\7\2\2mn\7<\2")
-        buf.write("\2n\13\3\2\2\2op\7\b\2\2pr\t\2\2\2qs\7\6\2\2rq\3\2\2\2")
-        buf.write("rs\3\2\2\2su\3\2\2\2tv\7<\2\2ut\3\2\2\2uv\3\2\2\2v\r\3")
-        buf.write("\2\2\2wx\7\t\2\2xz\t\3\2\2y{\7\6\2\2zy\3\2\2\2z{\3\2\2")
-        buf.write("\2{}\3\2\2\2|~\7<\2\2}|\3\2\2\2}~\3\2\2\2~\177\3\2\2\2")
-        buf.write("\177\u0080\7\n\2\2\u0080\u0081\7@\2\2\u0081\17\3\2\2\2")
-        buf.write("\u0082\u0083\7\13\2\2\u0083\u0084\5@!\2\u0084\21\3\2\2")
-        buf.write("\2\u0085\u0086\7\f\2\2\u0086\u0087\5\66\34\2\u0087\23")
-        buf.write("\3\2\2\2\u0088\u0089\7\16\2\2\u0089\u008a\5\66\34\2\u008a")
-        buf.write("\25\3\2\2\2\u008b\u008c\7\r\2\2\u008c\u008d\58\35\2\u008d")
-        buf.write("\27\3\2\2\2\u008e\u008f\7\17\2\2\u008f\u0090\5\66\34\2")
-        buf.write("\u0090\31\3\2\2\2\u0091\u0093\7\3\2\2\u0092\u0091\3\2")
-        buf.write("\2\2\u0092\u0093\3\2\2\2\u0093\u0094\3\2\2\2\u0094\u0095")
-        buf.write("\7\20\2\2\u0095\u0096\7@\2\2\u0096\33\3\2\2\2\u0097\u0098")
-        buf.write("\7\22\2\2\u0098\u0099\t\4\2\2\u0099\35\3\2\2\2\u009a\u009c")
-        buf.write("\7\21\2\2\u009b\u009d\5 \21\2\u009c\u009b\3\2\2\2\u009c")
-        buf.write("\u009d\3\2\2\2\u009d\u009e\3\2\2\2\u009e\u009f\5\"\22")
-        buf.write("\2\u009f\u00a2\7*\2\2\u00a0\u00a3\5$\23\2\u00a1\u00a3")
-        buf.write("\5&\24\2\u00a2\u00a0\3\2\2\2\u00a2\u00a1\3\2\2\2\u00a3")
-        buf.write("\37\3\2\2\2\u00a4\u00a5\7\4\2\2\u00a5!\3\2\2\2\u00a6\u00a7")
-        buf.write("\7@\2\2\u00a7#\3\2\2\2\u00a8\u00a9\5\62\32\2\u00a9%\3")
-        buf.write("\2\2\2\u00aa\u00ac\7\31\2\2\u00ab\u00aa\3\2\2\2\u00ab")
-        buf.write("\u00ac\3\2\2\2\u00ac\u00ad\3\2\2\2\u00ad\u00ae\5(\25\2")
-        buf.write("\u00ae\'\3\2\2\2\u00af\u00ba\5\60\31\2\u00b0\u00b6\5\60")
-        buf.write("\31\2\u00b1\u00b2\5.\30\2\u00b2\u00b3\5\60\31\2\u00b3")
-        buf.write("\u00b5\3\2\2\2\u00b4\u00b1\3\2\2\2\u00b5\u00b8\3\2\2\2")
-        buf.write("\u00b6\u00b4\3\2\2\2\u00b6\u00b7\3\2\2\2\u00b7\u00ba\3")
-        buf.write("\2\2\2\u00b8\u00b6\3\2\2\2\u00b9\u00af\3\2\2\2\u00b9\u00b0")
-        buf.write("\3\2\2\2\u00ba)\3\2\2\2\u00bb\u00bc\7\34\2\2\u00bc+\3")
-        buf.write("\2\2\2\u00bd\u00be\t\5\2\2\u00be-\3\2\2\2\u00bf\u00c0")
-        buf.write("\t\6\2\2\u00c0/\3\2\2\2\u00c1\u00c2\5F$\2\u00c2\61\3\2")
-        buf.write("\2\2\u00c3\u00c4\7@\2\2\u00c4\u00c5\5\64\33\2\u00c5\u00c6")
-        buf.write("\7-\2\2\u00c6\u00cb\5F$\2\u00c7\u00c8\7,\2\2\u00c8\u00ca")
-        buf.write("\5F$\2\u00c9\u00c7\3\2\2\2\u00ca\u00cd\3\2\2\2\u00cb\u00c9")
-        buf.write("\3\2\2\2\u00cb\u00cc\3\2\2\2\u00cc\u00ce\3\2\2\2\u00cd")
-        buf.write("\u00cb\3\2\2\2\u00ce\u00cf\7.\2\2\u00cf\63\3\2\2\2\u00d0")
-        buf.write("\u00d1\7+\2\2\u00d1\u00d2\7@\2\2\u00d2\65\3\2\2\2\u00d3")
-        buf.write("\u00d4\7@\2\2\u00d4\u00d5\7*\2\2\u00d5\u00d6\5\62\32\2")
-        buf.write("\u00d6\67\3\2\2\2\u00d7\u00d8\7@\2\2\u00d8\u00db\7*\2")
-        buf.write("\2\u00d9\u00dc\5D#\2\u00da\u00dc\7<\2\2\u00db\u00d9\3")
-        buf.write("\2\2\2\u00db\u00da\3\2\2\2\u00dc9\3\2\2\2\u00dd\u00de")
-        buf.write("\t\7\2\2\u00de;\3\2\2\2\u00df\u00e0\7\61\2\2\u00e0\u00e5")
-        buf.write("\5> \2\u00e1\u00e2\7,\2\2\u00e2\u00e4\5> \2\u00e3\u00e1")
-        buf.write("\3\2\2\2\u00e4\u00e7\3\2\2\2\u00e5\u00e3\3\2\2\2\u00e5")
-        buf.write("\u00e6\3\2\2\2\u00e6\u00e8\3\2\2\2\u00e7\u00e5\3\2\2\2")
-        buf.write("\u00e8\u00e9\7\62\2\2\u00e9\u00ed\3\2\2\2\u00ea\u00eb")
-        buf.write("\7\61\2\2\u00eb\u00ed\7\62\2\2\u00ec\u00df\3\2\2\2\u00ec")
-        buf.write("\u00ea\3\2\2\2\u00ed=\3\2\2\2\u00ee\u00f1\7<\2\2\u00ef")
-        buf.write("\u00f1\5B\"\2\u00f0\u00ee\3\2\2\2\u00f0\u00ef\3\2\2\2")
-        buf.write("\u00f1\u00f2\3\2\2\2\u00f2\u00f3\7*\2\2\u00f3\u00f4\5")
-        buf.write("F$\2\u00f4?\3\2\2\2\u00f5\u00f6\t\b\2\2\u00f6\u00f7\7")
-        buf.write("*\2\2\u00f7\u00f8\5F$\2\u00f8A\3\2\2\2\u00f9\u00fa\t\t")
-        buf.write("\2\2\u00faC\3\2\2\2\u00fb\u00fc\7/\2\2\u00fc\u0101\5F")
-        buf.write("$\2\u00fd\u00fe\7,\2\2\u00fe\u0100\5F$\2\u00ff\u00fd\3")
-        buf.write("\2\2\2\u0100\u0103\3\2\2\2\u0101\u00ff\3\2\2\2\u0101\u0102")
-        buf.write("\3\2\2\2\u0102\u0104\3\2\2\2\u0103\u0101\3\2\2\2\u0104")
-        buf.write("\u0105\7\60\2\2\u0105\u0109\3\2\2\2\u0106\u0107\7/\2\2")
-        buf.write("\u0107\u0109\7\60\2\2\u0108\u00fb\3\2\2\2\u0108\u0106")
-        buf.write("\3\2\2\2\u0109E\3\2\2\2\u010a\u0117\7<\2\2\u010b\u0117")
-        buf.write("\7\63\2\2\u010c\u0117\5<\37\2\u010d\u0117\5D#\2\u010e")
-        buf.write("\u0117\79\2\2\u010f\u0117\7:\2\2\u0110\u0117\7\26\2\2")
-        buf.write("\u0111\u0117\7@\2\2\u0112\u0114\7@\2\2\u0113\u0115\5\64")
-        buf.write("\33\2\u0114\u0113\3\2\2\2\u0114\u0115\3\2\2\2\u0115\u0117")
-        buf.write("\3\2\2\2\u0116\u010a\3\2\2\2\u0116\u010b\3\2\2\2\u0116")
-        buf.write("\u010c\3\2\2\2\u0116\u010d\3\2\2\2\u0116\u010e\3\2\2\2")
-        buf.write("\u0116\u010f\3\2\2\2\u0116\u0110\3\2\2\2\u0116\u0111\3")
-        buf.write("\2\2\2\u0116\u0112\3\2\2\2\u0117G\3\2\2\2\31K\\_bruz}")
-        buf.write("\u0092\u009c\u00a2\u00ab\u00b6\u00b9\u00cb\u00db\u00e5")
-        buf.write("\u00ec\u00f0\u0101\u0108\u0114\u0116")
+        buf.write("\4\37\t\37\4 \t \4!\t!\4\"\t\"\4#\t#\4$\t$\4%\t%\4&\t")
+        buf.write("&\4\'\t\'\4(\t(\4)\t)\3\2\7\2T\n\2\f\2\16\2W\13\2\3\2")
+        buf.write("\3\2\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\5")
+        buf.write("\3g\n\3\3\3\3\3\3\4\3\4\3\4\3\5\3\5\3\6\3\6\3\6\5\6s\n")
+        buf.write("\6\3\7\3\7\3\7\3\b\3\b\3\b\5\b{\n\b\3\t\3\t\3\t\5\t\u0080")
+        buf.write("\n\t\3\t\5\t\u0083\n\t\3\t\3\t\3\t\3\n\3\n\3\n\3\13\3")
+        buf.write("\13\3\13\3\f\3\f\3\f\3\r\3\r\3\r\3\16\3\16\3\16\3\17\5")
+        buf.write("\17\u0098\n\17\3\17\3\17\3\17\3\20\3\20\3\20\3\21\3\21")
+        buf.write("\5\21\u00a2\n\21\3\21\3\21\3\21\3\21\3\22\3\22\5\22\u00aa")
+        buf.write("\n\22\3\23\3\23\3\24\3\24\3\25\3\25\3\26\5\26\u00b3\n")
+        buf.write("\26\3\26\3\26\3\27\3\27\3\27\3\27\3\27\3\27\5\27\u00bd")
+        buf.write("\n\27\3\27\3\27\3\27\5\27\u00c2\n\27\3\27\3\27\3\27\3")
+        buf.write("\27\7\27\u00c8\n\27\f\27\16\27\u00cb\13\27\3\30\3\30\3")
+        buf.write("\30\3\30\3\30\3\30\3\30\3\30\3\30\5\30\u00d6\n\30\3\30")
+        buf.write("\3\30\3\30\3\30\3\30\3\30\3\30\5\30\u00df\n\30\3\30\3")
+        buf.write("\30\3\30\3\30\3\30\3\30\3\30\3\30\3\30\3\30\5\30\u00eb")
+        buf.write("\n\30\3\30\3\30\3\30\5\30\u00f0\n\30\7\30\u00f2\n\30\f")
+        buf.write("\30\16\30\u00f5\13\30\3\31\5\31\u00f8\n\31\3\31\3\31\3")
+        buf.write("\32\3\32\3\32\3\32\3\32\3\32\3\32\3\32\3\32\7\32\u0105")
+        buf.write("\n\32\f\32\16\32\u0108\13\32\3\32\3\32\5\32\u010c\n\32")
+        buf.write("\3\33\3\33\3\34\3\34\3\35\3\35\3\35\3\35\3\35\3\35\3\35")
+        buf.write("\3\35\3\35\3\35\3\35\3\35\5\35\u011e\n\35\3\36\3\36\3")
+        buf.write("\37\3\37\3\37\3\37\3\37\7\37\u0127\n\37\f\37\16\37\u012a")
+        buf.write("\13\37\3\37\3\37\3 \3 \3 \7 \u0131\n \f \16 \u0134\13")
+        buf.write(" \3!\3!\3!\3!\3\"\3\"\3\"\3\"\5\"\u013e\n\"\3#\3#\3$\3")
+        buf.write("$\3$\3$\7$\u0146\n$\f$\16$\u0149\13$\3$\3$\3$\3$\5$\u014f")
+        buf.write("\n$\3%\3%\5%\u0153\n%\3%\3%\3%\3&\3&\3&\3&\3\'\3\'\3(")
+        buf.write("\3(\3(\3(\7(\u0162\n(\f(\16(\u0165\13(\3(\3(\3(\3(\5(")
+        buf.write("\u016b\n(\3)\3)\3)\3)\3)\3)\3)\3)\3)\3)\3)\5)\u0178\n")
+        buf.write(")\3)\2\4,.*\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"")
+        buf.write("$&(*,.\60\62\64\668:<>@BDFHJLNP\2\n\4\2\23\23AA\4\2\24")
+        buf.write("\25AA\3\2\27\30\4\2\34\34&&\3\2\32\33\3\2\3\4\4\2\23\23")
+        buf.write("EE\4\2\b\b\13\20\2\u0193\2U\3\2\2\2\4f\3\2\2\2\6j\3\2")
+        buf.write("\2\2\bm\3\2\2\2\no\3\2\2\2\ft\3\2\2\2\16w\3\2\2\2\20|")
+        buf.write("\3\2\2\2\22\u0087\3\2\2\2\24\u008a\3\2\2\2\26\u008d\3")
+        buf.write("\2\2\2\30\u0090\3\2\2\2\32\u0093\3\2\2\2\34\u0097\3\2")
+        buf.write("\2\2\36\u009c\3\2\2\2 \u009f\3\2\2\2\"\u00a9\3\2\2\2$")
+        buf.write("\u00ab\3\2\2\2&\u00ad\3\2\2\2(\u00af\3\2\2\2*\u00b2\3")
+        buf.write("\2\2\2,\u00c1\3\2\2\2.\u00cc\3\2\2\2\60\u00f7\3\2\2\2")
+        buf.write("\62\u010b\3\2\2\2\64\u010d\3\2\2\2\66\u010f\3\2\2\28\u011d")
+        buf.write("\3\2\2\2:\u011f\3\2\2\2<\u0121\3\2\2\2>\u012d\3\2\2\2")
+        buf.write("@\u0135\3\2\2\2B\u0139\3\2\2\2D\u013f\3\2\2\2F\u014e\3")
+        buf.write("\2\2\2H\u0152\3\2\2\2J\u0157\3\2\2\2L\u015b\3\2\2\2N\u016a")
+        buf.write("\3\2\2\2P\u0177\3\2\2\2RT\5\4\3\2SR\3\2\2\2TW\3\2\2\2")
+        buf.write("US\3\2\2\2UV\3\2\2\2VX\3\2\2\2WU\3\2\2\2XY\7\2\2\3Y\3")
+        buf.write("\3\2\2\2Zg\5\n\6\2[g\5\f\7\2\\g\5\16\b\2]g\5\20\t\2^g")
+        buf.write("\5\22\n\2_g\5\24\13\2`g\5\30\r\2ag\5\26\f\2bg\5\32\16")
+        buf.write("\2cg\5\34\17\2dg\5 \21\2eg\5\36\20\2fZ\3\2\2\2f[\3\2\2")
+        buf.write("\2f\\\3\2\2\2f]\3\2\2\2f^\3\2\2\2f_\3\2\2\2f`\3\2\2\2")
+        buf.write("fa\3\2\2\2fb\3\2\2\2fc\3\2\2\2fd\3\2\2\2fe\3\2\2\2gh\3")
+        buf.write("\2\2\2hi\7-\2\2i\5\3\2\2\2jk\7\6\2\2kl\5\b\5\2l\7\3\2")
+        buf.write("\2\2mn\7A\2\2n\t\3\2\2\2op\7\5\2\2pr\7A\2\2qs\5\6\4\2")
+        buf.write("rq\3\2\2\2rs\3\2\2\2s\13\3\2\2\2tu\7\7\2\2uv\7A\2\2v\r")
+        buf.write("\3\2\2\2wx\7\b\2\2xz\t\2\2\2y{\5\6\4\2zy\3\2\2\2z{\3\2")
+        buf.write("\2\2{\17\3\2\2\2|}\7\t\2\2}\177\t\3\2\2~\u0080\7\6\2\2")
+        buf.write("\177~\3\2\2\2\177\u0080\3\2\2\2\u0080\u0082\3\2\2\2\u0081")
+        buf.write("\u0083\7A\2\2\u0082\u0081\3\2\2\2\u0082\u0083\3\2\2\2")
+        buf.write("\u0083\u0084\3\2\2\2\u0084\u0085\7\n\2\2\u0085\u0086\7")
+        buf.write("E\2\2\u0086\21\3\2\2\2\u0087\u0088\7\13\2\2\u0088\u0089")
+        buf.write("\5J&\2\u0089\23\3\2\2\2\u008a\u008b\7\f\2\2\u008b\u008c")
+        buf.write("\5@!\2\u008c\25\3\2\2\2\u008d\u008e\7\16\2\2\u008e\u008f")
+        buf.write("\5@!\2\u008f\27\3\2\2\2\u0090\u0091\7\r\2\2\u0091\u0092")
+        buf.write("\5B\"\2\u0092\31\3\2\2\2\u0093\u0094\7\17\2\2\u0094\u0095")
+        buf.write("\5@!\2\u0095\33\3\2\2\2\u0096\u0098\7\3\2\2\u0097\u0096")
+        buf.write("\3\2\2\2\u0097\u0098\3\2\2\2\u0098\u0099\3\2\2\2\u0099")
+        buf.write("\u009a\7\20\2\2\u009a\u009b\7E\2\2\u009b\35\3\2\2\2\u009c")
+        buf.write("\u009d\7\22\2\2\u009d\u009e\t\4\2\2\u009e\37\3\2\2\2\u009f")
+        buf.write("\u00a1\7\21\2\2\u00a0\u00a2\5$\23\2\u00a1\u00a0\3\2\2")
+        buf.write("\2\u00a1\u00a2\3\2\2\2\u00a2\u00a3\3\2\2\2\u00a3\u00a4")
+        buf.write("\5&\24\2\u00a4\u00a5\7.\2\2\u00a5\u00a6\5\"\22\2\u00a6")
+        buf.write("!\3\2\2\2\u00a7\u00aa\5*\26\2\u00a8\u00aa\5(\25\2\u00a9")
+        buf.write("\u00a7\3\2\2\2\u00a9\u00a8\3\2\2\2\u00aa#\3\2\2\2\u00ab")
+        buf.write("\u00ac\7\4\2\2\u00ac%\3\2\2\2\u00ad\u00ae\7E\2\2\u00ae")
+        buf.write("\'\3\2\2\2\u00af\u00b0\5<\37\2\u00b0)\3\2\2\2\u00b1\u00b3")
+        buf.write("\7\31\2\2\u00b2\u00b1\3\2\2\2\u00b2\u00b3\3\2\2\2\u00b3")
+        buf.write("\u00b4\3\2\2\2\u00b4\u00b5\5,\27\2\u00b5+\3\2\2\2\u00b6")
+        buf.write("\u00b7\b\27\1\2\u00b7\u00b8\t\5\2\2\u00b8\u00c2\5,\27")
+        buf.write("\6\u00b9\u00ba\5.\30\2\u00ba\u00bc\7\"\2\2\u00bb\u00bd")
+        buf.write("\7\34\2\2\u00bc\u00bb\3\2\2\2\u00bc\u00bd\3\2\2\2\u00bd")
+        buf.write("\u00be\3\2\2\2\u00be\u00bf\7=\2\2\u00bf\u00c2\3\2\2\2")
+        buf.write("\u00c0\u00c2\5.\30\2\u00c1\u00b6\3\2\2\2\u00c1\u00b9\3")
+        buf.write("\2\2\2\u00c1\u00c0\3\2\2\2\u00c2\u00c9\3\2\2\2\u00c3\u00c4")
+        buf.write("\f\5\2\2\u00c4\u00c5\5\66\34\2\u00c5\u00c6\5,\27\6\u00c6")
+        buf.write("\u00c8\3\2\2\2\u00c7\u00c3\3\2\2\2\u00c8\u00cb\3\2\2\2")
+        buf.write("\u00c9\u00c7\3\2\2\2\u00c9\u00ca\3\2\2\2\u00ca-\3\2\2")
+        buf.write("\2\u00cb\u00c9\3\2\2\2\u00cc\u00cd\b\30\1\2\u00cd\u00ce")
+        buf.write("\5\62\32\2\u00ce\u00f3\3\2\2\2\u00cf\u00d0\f\6\2\2\u00d0")
+        buf.write("\u00d1\58\35\2\u00d1\u00d2\5.\30\7\u00d2\u00f2\3\2\2\2")
+        buf.write("\u00d3\u00d5\f\5\2\2\u00d4\u00d6\7\34\2\2\u00d5\u00d4")
+        buf.write("\3\2\2\2\u00d5\u00d6\3\2\2\2\u00d6\u00d7\3\2\2\2\u00d7")
+        buf.write("\u00d8\7$\2\2\u00d8\u00d9\5.\30\2\u00d9\u00da\7\32\2\2")
+        buf.write("\u00da\u00db\5.\30\6\u00db\u00f2\3\2\2\2\u00dc\u00de\f")
+        buf.write("\b\2\2\u00dd\u00df\7\34\2\2\u00de\u00dd\3\2\2\2\u00de")
+        buf.write("\u00df\3\2\2\2\u00df\u00e0\3\2\2\2\u00e0\u00e1\7?\2\2")
+        buf.write("\u00e1\u00e2\7\61\2\2\u00e2\u00e3\5,\27\2\u00e3\u00e4")
+        buf.write("\7\62\2\2\u00e4\u00f2\3\2\2\2\u00e5\u00e6\f\7\2\2\u00e6")
+        buf.write("\u00e7\7\"\2\2\u00e7\u00f2\5\60\31\2\u00e8\u00ea\f\4\2")
+        buf.write("\2\u00e9\u00eb\7\34\2\2\u00ea\u00e9\3\2\2\2\u00ea\u00eb")
+        buf.write("\3\2\2\2\u00eb\u00ec\3\2\2\2\u00ec\u00ed\7#\2\2\u00ed")
+        buf.write("\u00ef\5.\30\2\u00ee\u00f0\7A\2\2\u00ef\u00ee\3\2\2\2")
+        buf.write("\u00ef\u00f0\3\2\2\2\u00f0\u00f2\3\2\2\2\u00f1\u00cf\3")
+        buf.write("\2\2\2\u00f1\u00d3\3\2\2\2\u00f1\u00dc\3\2\2\2\u00f1\u00e5")
+        buf.write("\3\2\2\2\u00f1\u00e8\3\2\2\2\u00f2\u00f5\3\2\2\2\u00f3")
+        buf.write("\u00f1\3\2\2\2\u00f3\u00f4\3\2\2\2\u00f4/\3\2\2\2\u00f5")
+        buf.write("\u00f3\3\2\2\2\u00f6\u00f8\7\34\2\2\u00f7\u00f6\3\2\2")
+        buf.write("\2\u00f7\u00f8\3\2\2\2\u00f8\u00f9\3\2\2\2\u00f9\u00fa")
+        buf.write("\7>\2\2\u00fa\61\3\2\2\2\u00fb\u010c\5P)\2\u00fc\u010c")
+        buf.write("\5<\37\2\u00fd\u00fe\5\64\33\2\u00fe\u00ff\5\62\32\2\u00ff")
+        buf.write("\u010c\3\2\2\2\u0100\u0101\7\61\2\2\u0101\u0106\5,\27")
+        buf.write("\2\u0102\u0103\7\60\2\2\u0103\u0105\5,\27\2\u0104\u0102")
+        buf.write("\3\2\2\2\u0105\u0108\3\2\2\2\u0106\u0104\3\2\2\2\u0106")
+        buf.write("\u0107\3\2\2\2\u0107\u0109\3\2\2\2\u0108\u0106\3\2\2\2")
+        buf.write("\u0109\u010a\7\62\2\2\u010a\u010c\3\2\2\2\u010b\u00fb")
+        buf.write("\3\2\2\2\u010b\u00fc\3\2\2\2\u010b\u00fd\3\2\2\2\u010b")
+        buf.write("\u0100\3\2\2\2\u010c\63\3\2\2\2\u010d\u010e\7\34\2\2\u010e")
+        buf.write("\65\3\2\2\2\u010f\u0110\t\6\2\2\u0110\67\3\2\2\2\u0111")
+        buf.write("\u011e\7\35\2\2\u0112\u011e\7\36\2\2\u0113\u011e\7 \2")
+        buf.write("\2\u0114\u011e\7\37\2\2\u0115\u011e\7!\2\2\u0116\u0117")
+        buf.write("\7%\2\2\u0117\u011e\7\'\2\2\u0118\u011e\7(\2\2\u0119\u011e")
+        buf.write("\7)\2\2\u011a\u011e\7*\2\2\u011b\u011e\7+\2\2\u011c\u011e")
+        buf.write("\7,\2\2\u011d\u0111\3\2\2\2\u011d\u0112\3\2\2\2\u011d")
+        buf.write("\u0113\3\2\2\2\u011d\u0114\3\2\2\2\u011d\u0115\3\2\2\2")
+        buf.write("\u011d\u0116\3\2\2\2\u011d\u0118\3\2\2\2\u011d\u0119\3")
+        buf.write("\2\2\2\u011d\u011a\3\2\2\2\u011d\u011b\3\2\2\2\u011d\u011c")
+        buf.write("\3\2\2\2\u011e9\3\2\2\2\u011f\u0120\5P)\2\u0120;\3\2\2")
+        buf.write("\2\u0121\u0122\5> \2\u0122\u0123\7\61\2\2\u0123\u0128")
+        buf.write("\5P)\2\u0124\u0125\7\60\2\2\u0125\u0127\5P)\2\u0126\u0124")
+        buf.write("\3\2\2\2\u0127\u012a\3\2\2\2\u0128\u0126\3\2\2\2\u0128")
+        buf.write("\u0129\3\2\2\2\u0129\u012b\3\2\2\2\u012a\u0128\3\2\2\2")
+        buf.write("\u012b\u012c\7\62\2\2\u012c=\3\2\2\2\u012d\u0132\7E\2")
+        buf.write("\2\u012e\u012f\7/\2\2\u012f\u0131\7E\2\2\u0130\u012e\3")
+        buf.write("\2\2\2\u0131\u0134\3\2\2\2\u0132\u0130\3\2\2\2\u0132\u0133")
+        buf.write("\3\2\2\2\u0133?\3\2\2\2\u0134\u0132\3\2\2\2\u0135\u0136")
+        buf.write("\7E\2\2\u0136\u0137\7.\2\2\u0137\u0138\5<\37\2\u0138A")
+        buf.write("\3\2\2\2\u0139\u013a\7E\2\2\u013a\u013d\7.\2\2\u013b\u013e")
+        buf.write("\5N(\2\u013c\u013e\7A\2\2\u013d\u013b\3\2\2\2\u013d\u013c")
+        buf.write("\3\2\2\2\u013eC\3\2\2\2\u013f\u0140\t\7\2\2\u0140E\3\2")
+        buf.write("\2\2\u0141\u0142\7\65\2\2\u0142\u0147\5H%\2\u0143\u0144")
+        buf.write("\7\60\2\2\u0144\u0146\5H%\2\u0145\u0143\3\2\2\2\u0146")
+        buf.write("\u0149\3\2\2\2\u0147\u0145\3\2\2\2\u0147\u0148\3\2\2\2")
+        buf.write("\u0148\u014a\3\2\2\2\u0149\u0147\3\2\2\2\u014a\u014b\7")
+        buf.write("\66\2\2\u014b\u014f\3\2\2\2\u014c\u014d\7\65\2\2\u014d")
+        buf.write("\u014f\7\66\2\2\u014e\u0141\3\2\2\2\u014e\u014c\3\2\2")
+        buf.write("\2\u014fG\3\2\2\2\u0150\u0153\7A\2\2\u0151\u0153\5L\'")
+        buf.write("\2\u0152\u0150\3\2\2\2\u0152\u0151\3\2\2\2\u0153\u0154")
+        buf.write("\3\2\2\2\u0154\u0155\7.\2\2\u0155\u0156\5P)\2\u0156I\3")
+        buf.write("\2\2\2\u0157\u0158\t\b\2\2\u0158\u0159\7.\2\2\u0159\u015a")
+        buf.write("\5P)\2\u015aK\3\2\2\2\u015b\u015c\t\t\2\2\u015cM\3\2\2")
+        buf.write("\2\u015d\u015e\7\63\2\2\u015e\u0163\5P)\2\u015f\u0160")
+        buf.write("\7\60\2\2\u0160\u0162\5P)\2\u0161\u015f\3\2\2\2\u0162")
+        buf.write("\u0165\3\2\2\2\u0163\u0161\3\2\2\2\u0163\u0164\3\2\2\2")
+        buf.write("\u0164\u0166\3\2\2\2\u0165\u0163\3\2\2\2\u0166\u0167\7")
+        buf.write("\64\2\2\u0167\u016b\3\2\2\2\u0168\u0169\7\63\2\2\u0169")
+        buf.write("\u016b\7\64\2\2\u016a\u015d\3\2\2\2\u016a\u0168\3\2\2")
+        buf.write("\2\u016bO\3\2\2\2\u016c\u0178\7A\2\2\u016d\u0178\7\67")
+        buf.write("\2\2\u016e\u0178\7;\2\2\u016f\u0178\5F$\2\u0170\u0178")
+        buf.write("\5N(\2\u0171\u0178\7=\2\2\u0172\u0178\7>\2\2\u0173\u0178")
+        buf.write("\7\26\2\2\u0174\u0178\7E\2\2\u0175\u0178\5> \2\u0176\u0178")
+        buf.write("\7F\2\2\u0177\u016c\3\2\2\2\u0177\u016d\3\2\2\2\u0177")
+        buf.write("\u016e\3\2\2\2\u0177\u016f\3\2\2\2\u0177\u0170\3\2\2\2")
+        buf.write("\u0177\u0171\3\2\2\2\u0177\u0172\3\2\2\2\u0177\u0173\3")
+        buf.write("\2\2\2\u0177\u0174\3\2\2\2\u0177\u0175\3\2\2\2\u0177\u0176")
+        buf.write("\3\2\2\2\u0178Q\3\2\2\2\"Ufrz\177\u0082\u0097\u00a1\u00a9")
+        buf.write("\u00b2\u00bc\u00c1\u00c9\u00d5\u00de\u00ea\u00ef\u00f1")
+        buf.write("\u00f3\u00f7\u0106\u010b\u011d\u0128\u0132\u013d\u0147")
+        buf.write("\u014e\u0152\u0163\u016a\u0177")
         return buf.getvalue()
 
 
@@ -142,12 +197,12 @@ class nlpql_parserParser ( Parser ):
                      "'called'", "'codesystem'", "'valueset'", "'termset'", 
                      "'documentset'", "'cohort'", "'population'", "'define'", 
                      "'context'", "'OMOP'", "'ClarityCore'", "'OHDSIHelpers'", 
-                     "'All'", "'Patient'", "'Document'", "'WHERE'", "'AND'", 
-                     "'OR'", "'NOT'", "'>'", "'<'", "'<='", "'>='", "'=='", 
-                     "'!='", "'+'", "'-'", "'*'", "'/'", "'^'", "'%'", "';'", 
+                     "'All'", "'Patient'", "'Document'", "<INVALID>", "<INVALID>", 
+                     "<INVALID>", "<INVALID>", "'>'", "'<'", "'<='", "'>='", 
+                     "'=='", "<INVALID>", "<INVALID>", "<INVALID>", "'!='", 
+                     "'!'", "'+'", "'-'", "'*'", "'/'", "'^'", "'%'", "';'", 
                      "':'", "'.'", "','", "'('", "')'", "'['", "']'", "'{'", 
-                     "'}'", "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "<INVALID>", "<INVALID>", "'null'" ]
+                     "'}'" ]
 
     symbolicNames = [ "<INVALID>", "DEFAULT", "FINAL", "PHENOTYPE_NAME", 
                       "VERSION", "DESCRIPTION", "DATAMODEL", "INCLUDE", 
@@ -155,58 +210,64 @@ class nlpql_parserParser ( Parser ):
                       "DOCUMENT_SET", "COHORT", "POPULATION", "DEFINE", 
                       "CONTEXT", "OMOP", "CLARITY_CORE", "OHDSI_HELPERS", 
                       "ALL", "PATIENT", "DOCUMENT", "WHERE", "AND", "OR", 
-                      "NOT", "GT", "LT", "LTE", "GTE", "EQUAL", "NOT_EQUAL", 
-                      "PLUS", "MINUS", "MULT", "DIV", "CARET", "MOD", "SEMI", 
-                      "COLON", "DOT", "COMMA", "L_PAREN", "R_PAREN", "L_BRACKET", 
-                      "R_BRACKET", "L_CURLY", "R_CURLY", "DECIMAL", "HEX", 
-                      "OCT", "BINARY", "FLOAT", "HEX_FLOAT", "BOOL", "NULL", 
-                      "CHAR", "STRING", "WS", "COMMENT", "LINE_COMMENT", 
-                      "IDENTIFIER" ]
+                      "NOT", "GT", "LT", "LTE", "GTE", "EQUAL", "IS", "LIKE", 
+                      "BETWEEN", "NOT_EQUAL", "BANG", "PLUS", "MINUS", "MULT", 
+                      "DIV", "CARET", "MOD", "SEMI", "COLON", "DOT", "COMMA", 
+                      "L_PAREN", "R_PAREN", "L_BRACKET", "R_BRACKET", "L_CURLY", 
+                      "R_CURLY", "DECIMAL", "HEX", "OCT", "BINARY", "FLOAT", 
+                      "HEX_FLOAT", "BOOL", "NULL", "IN", "CHAR", "STRING", 
+                      "WS", "COMMENT", "LINE_COMMENT", "IDENTIFIER", "TIME" ]
 
     RULE_validExpression = 0
     RULE_statement = 1
     RULE_version = 2
-    RULE_phenotypeName = 3
-    RULE_description = 4
-    RULE_dataModel = 5
-    RULE_include = 6
-    RULE_codeSystem = 7
-    RULE_valueSet = 8
-    RULE_documentSet = 9
-    RULE_termSet = 10
-    RULE_cohort = 11
-    RULE_population = 12
-    RULE_context = 13
-    RULE_define = 14
-    RULE_finalModifier = 15
-    RULE_defineName = 16
-    RULE_dataEntity = 17
-    RULE_operation = 18
-    RULE_expression = 19
-    RULE_unaryOperator = 20
-    RULE_comparisonOperator = 21
-    RULE_binaryOperator = 22
-    RULE_operand = 23
-    RULE_methodCall = 24
-    RULE_dotIdentifier = 25
-    RULE_pairMethod = 26
-    RULE_pairArray = 27
-    RULE_modifiers = 28
-    RULE_obj = 29
-    RULE_pair = 30
-    RULE_identifierPair = 31
-    RULE_named = 32
-    RULE_array = 33
-    RULE_value = 34
+    RULE_versionValue = 3
+    RULE_phenotypeName = 4
+    RULE_description = 5
+    RULE_dataModel = 6
+    RULE_include = 7
+    RULE_codeSystem = 8
+    RULE_valueSet = 9
+    RULE_documentSet = 10
+    RULE_termSet = 11
+    RULE_cohort = 12
+    RULE_population = 13
+    RULE_context = 14
+    RULE_define = 15
+    RULE_defineSubject = 16
+    RULE_finalModifier = 17
+    RULE_defineName = 18
+    RULE_dataEntity = 19
+    RULE_operation = 20
+    RULE_expression = 21
+    RULE_predicate = 22
+    RULE_nullNotnull = 23
+    RULE_expressionAtom = 24
+    RULE_unaryOperator = 25
+    RULE_logicalOperator = 26
+    RULE_comparisonOperator = 27
+    RULE_operand = 28
+    RULE_methodCall = 29
+    RULE_qualifiedName = 30
+    RULE_pairMethod = 31
+    RULE_pairArray = 32
+    RULE_modifiers = 33
+    RULE_obj = 34
+    RULE_pair = 35
+    RULE_identifierPair = 36
+    RULE_named = 37
+    RULE_array = 38
+    RULE_value = 39
 
-    ruleNames =  [ "validExpression", "statement", "version", "phenotypeName", 
-                   "description", "dataModel", "include", "codeSystem", 
-                   "valueSet", "documentSet", "termSet", "cohort", "population", 
-                   "context", "define", "finalModifier", "defineName", "dataEntity", 
-                   "operation", "expression", "unaryOperator", "comparisonOperator", 
-                   "binaryOperator", "operand", "methodCall", "dotIdentifier", 
-                   "pairMethod", "pairArray", "modifiers", "obj", "pair", 
-                   "identifierPair", "named", "array", "value" ]
+    ruleNames =  [ "validExpression", "statement", "version", "versionValue", 
+                   "phenotypeName", "description", "dataModel", "include", 
+                   "codeSystem", "valueSet", "documentSet", "termSet", "cohort", 
+                   "population", "context", "define", "defineSubject", "finalModifier", 
+                   "defineName", "dataEntity", "operation", "expression", 
+                   "predicate", "nullNotnull", "expressionAtom", "unaryOperator", 
+                   "logicalOperator", "comparisonOperator", "operand", "methodCall", 
+                   "qualifiedName", "pairMethod", "pairArray", "modifiers", 
+                   "obj", "pair", "identifierPair", "named", "array", "value" ]
 
     EOF = Token.EOF
     DEFAULT=1
@@ -240,37 +301,43 @@ class nlpql_parserParser ( Parser ):
     LTE=29
     GTE=30
     EQUAL=31
-    NOT_EQUAL=32
-    PLUS=33
-    MINUS=34
-    MULT=35
-    DIV=36
-    CARET=37
-    MOD=38
-    SEMI=39
-    COLON=40
-    DOT=41
-    COMMA=42
-    L_PAREN=43
-    R_PAREN=44
-    L_BRACKET=45
-    R_BRACKET=46
-    L_CURLY=47
-    R_CURLY=48
-    DECIMAL=49
-    HEX=50
-    OCT=51
-    BINARY=52
-    FLOAT=53
-    HEX_FLOAT=54
-    BOOL=55
-    NULL=56
-    CHAR=57
-    STRING=58
-    WS=59
-    COMMENT=60
-    LINE_COMMENT=61
-    IDENTIFIER=62
+    IS=32
+    LIKE=33
+    BETWEEN=34
+    NOT_EQUAL=35
+    BANG=36
+    PLUS=37
+    MINUS=38
+    MULT=39
+    DIV=40
+    CARET=41
+    MOD=42
+    SEMI=43
+    COLON=44
+    DOT=45
+    COMMA=46
+    L_PAREN=47
+    R_PAREN=48
+    L_BRACKET=49
+    R_BRACKET=50
+    L_CURLY=51
+    R_CURLY=52
+    DECIMAL=53
+    HEX=54
+    OCT=55
+    BINARY=56
+    FLOAT=57
+    HEX_FLOAT=58
+    BOOL=59
+    NULL=60
+    IN=61
+    CHAR=62
+    STRING=63
+    WS=64
+    COMMENT=65
+    LINE_COMMENT=66
+    IDENTIFIER=67
+    TIME=68
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -309,17 +376,17 @@ class nlpql_parserParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 73
+            self.state = 83
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << nlpql_parserParser.DEFAULT) | (1 << nlpql_parserParser.PHENOTYPE_NAME) | (1 << nlpql_parserParser.DESCRIPTION) | (1 << nlpql_parserParser.DATAMODEL) | (1 << nlpql_parserParser.INCLUDE) | (1 << nlpql_parserParser.CODE_SYSTEM) | (1 << nlpql_parserParser.VALUE_SET) | (1 << nlpql_parserParser.TERM_SET) | (1 << nlpql_parserParser.DOCUMENT_SET) | (1 << nlpql_parserParser.COHORT) | (1 << nlpql_parserParser.POPULATION) | (1 << nlpql_parserParser.DEFINE) | (1 << nlpql_parserParser.CONTEXT))) != 0):
-                self.state = 70
+                self.state = 80
                 self.statement()
-                self.state = 75
+                self.state = 85
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 76
+            self.state = 86
             self.match(nlpql_parserParser.EOF)
         except RecognitionException as re:
             localctx.exception = re
@@ -342,11 +409,8 @@ class nlpql_parserParser ( Parser ):
             return self.getTypedRuleContext(nlpql_parserParser.PhenotypeNameContext,0)
 
 
-        def description(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(nlpql_parserParser.DescriptionContext)
-            else:
-                return self.getTypedRuleContext(nlpql_parserParser.DescriptionContext,i)
+        def description(self):
+            return self.getTypedRuleContext(nlpql_parserParser.DescriptionContext,0)
 
 
         def dataModel(self):
@@ -389,10 +453,6 @@ class nlpql_parserParser ( Parser ):
             return self.getTypedRuleContext(nlpql_parserParser.ContextContext,0)
 
 
-        def version(self):
-            return self.getTypedRuleContext(nlpql_parserParser.VersionContext,0)
-
-
         def getRuleIndex(self):
             return nlpql_parserParser.RULE_statement
 
@@ -403,80 +463,63 @@ class nlpql_parserParser ( Parser ):
 
         localctx = nlpql_parserParser.StatementContext(self, self._ctx, self.state)
         self.enterRule(localctx, 2, self.RULE_statement)
-        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 90
+            self.state = 100
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [nlpql_parserParser.PHENOTYPE_NAME]:
-                self.state = 78
+                self.state = 88
                 self.phenotypeName()
                 pass
             elif token in [nlpql_parserParser.DESCRIPTION]:
-                self.state = 79
+                self.state = 89
                 self.description()
                 pass
             elif token in [nlpql_parserParser.DATAMODEL]:
-                self.state = 80
+                self.state = 90
                 self.dataModel()
                 pass
             elif token in [nlpql_parserParser.INCLUDE]:
-                self.state = 81
+                self.state = 91
                 self.include()
                 pass
             elif token in [nlpql_parserParser.CODE_SYSTEM]:
-                self.state = 82
+                self.state = 92
                 self.codeSystem()
                 pass
             elif token in [nlpql_parserParser.VALUE_SET]:
-                self.state = 83
+                self.state = 93
                 self.valueSet()
                 pass
             elif token in [nlpql_parserParser.TERM_SET]:
-                self.state = 84
+                self.state = 94
                 self.termSet()
                 pass
             elif token in [nlpql_parserParser.DOCUMENT_SET]:
-                self.state = 85
+                self.state = 95
                 self.documentSet()
                 pass
             elif token in [nlpql_parserParser.COHORT]:
-                self.state = 86
+                self.state = 96
                 self.cohort()
                 pass
             elif token in [nlpql_parserParser.DEFAULT, nlpql_parserParser.POPULATION]:
-                self.state = 87
+                self.state = 97
                 self.population()
                 pass
             elif token in [nlpql_parserParser.DEFINE]:
-                self.state = 88
+                self.state = 98
                 self.define()
                 pass
             elif token in [nlpql_parserParser.CONTEXT]:
-                self.state = 89
+                self.state = 99
                 self.context()
                 pass
             else:
                 raise NoViableAltException(self)
 
-            self.state = 93
-            self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if _la==nlpql_parserParser.VERSION:
-                self.state = 92
-                self.version()
-
-
-            self.state = 96
-            self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if _la==nlpql_parserParser.DESCRIPTION:
-                self.state = 95
-                self.description()
-
-
-            self.state = 98
+            self.state = 102
             self.match(nlpql_parserParser.SEMI)
         except RecognitionException as re:
             localctx.exception = re
@@ -495,8 +538,9 @@ class nlpql_parserParser ( Parser ):
         def VERSION(self):
             return self.getToken(nlpql_parserParser.VERSION, 0)
 
-        def STRING(self):
-            return self.getToken(nlpql_parserParser.STRING, 0)
+        def versionValue(self):
+            return self.getTypedRuleContext(nlpql_parserParser.VersionValueContext,0)
+
 
         def getRuleIndex(self):
             return nlpql_parserParser.RULE_version
@@ -510,9 +554,40 @@ class nlpql_parserParser ( Parser ):
         self.enterRule(localctx, 4, self.RULE_version)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 100
+            self.state = 104
             self.match(nlpql_parserParser.VERSION)
-            self.state = 101
+            self.state = 105
+            self.versionValue()
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+    class VersionValueContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def STRING(self):
+            return self.getToken(nlpql_parserParser.STRING, 0)
+
+        def getRuleIndex(self):
+            return nlpql_parserParser.RULE_versionValue
+
+
+
+
+    def versionValue(self):
+
+        localctx = nlpql_parserParser.VersionValueContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 6, self.RULE_versionValue)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 107
             self.match(nlpql_parserParser.STRING)
         except RecognitionException as re:
             localctx.exception = re
@@ -534,6 +609,10 @@ class nlpql_parserParser ( Parser ):
         def STRING(self):
             return self.getToken(nlpql_parserParser.STRING, 0)
 
+        def version(self):
+            return self.getTypedRuleContext(nlpql_parserParser.VersionContext,0)
+
+
         def getRuleIndex(self):
             return nlpql_parserParser.RULE_phenotypeName
 
@@ -543,13 +622,22 @@ class nlpql_parserParser ( Parser ):
     def phenotypeName(self):
 
         localctx = nlpql_parserParser.PhenotypeNameContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 6, self.RULE_phenotypeName)
+        self.enterRule(localctx, 8, self.RULE_phenotypeName)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 103
+            self.state = 109
             self.match(nlpql_parserParser.PHENOTYPE_NAME)
-            self.state = 104
+            self.state = 110
             self.match(nlpql_parserParser.STRING)
+            self.state = 112
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==nlpql_parserParser.VERSION:
+                self.state = 111
+                self.version()
+
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -579,12 +667,12 @@ class nlpql_parserParser ( Parser ):
     def description(self):
 
         localctx = nlpql_parserParser.DescriptionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 8, self.RULE_description)
+        self.enterRule(localctx, 10, self.RULE_description)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 106
+            self.state = 114
             self.match(nlpql_parserParser.DESCRIPTION)
-            self.state = 107
+            self.state = 115
             self.match(nlpql_parserParser.STRING)
         except RecognitionException as re:
             localctx.exception = re
@@ -606,14 +694,12 @@ class nlpql_parserParser ( Parser ):
         def OMOP(self):
             return self.getToken(nlpql_parserParser.OMOP, 0)
 
-        def STRING(self, i:int=None):
-            if i is None:
-                return self.getTokens(nlpql_parserParser.STRING)
-            else:
-                return self.getToken(nlpql_parserParser.STRING, i)
+        def STRING(self):
+            return self.getToken(nlpql_parserParser.STRING, 0)
 
-        def VERSION(self):
-            return self.getToken(nlpql_parserParser.VERSION, 0)
+        def version(self):
+            return self.getTypedRuleContext(nlpql_parserParser.VersionContext,0)
+
 
         def getRuleIndex(self):
             return nlpql_parserParser.RULE_dataModel
@@ -624,33 +710,25 @@ class nlpql_parserParser ( Parser ):
     def dataModel(self):
 
         localctx = nlpql_parserParser.DataModelContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 10, self.RULE_dataModel)
+        self.enterRule(localctx, 12, self.RULE_dataModel)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 109
+            self.state = 117
             self.match(nlpql_parserParser.DATAMODEL)
-            self.state = 110
+            self.state = 118
             _la = self._input.LA(1)
             if not(_la==nlpql_parserParser.OMOP or _la==nlpql_parserParser.STRING):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 112
-            self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,4,self._ctx)
-            if la_ == 1:
-                self.state = 111
-                self.match(nlpql_parserParser.VERSION)
-
-
-            self.state = 115
+            self.state = 120
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==nlpql_parserParser.STRING:
-                self.state = 114
-                self.match(nlpql_parserParser.STRING)
+            if _la==nlpql_parserParser.VERSION:
+                self.state = 119
+                self.version()
 
 
         except RecognitionException as re:
@@ -700,38 +778,38 @@ class nlpql_parserParser ( Parser ):
     def include(self):
 
         localctx = nlpql_parserParser.IncludeContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 12, self.RULE_include)
+        self.enterRule(localctx, 14, self.RULE_include)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 117
+            self.state = 122
             self.match(nlpql_parserParser.INCLUDE)
-            self.state = 118
+            self.state = 123
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << nlpql_parserParser.CLARITY_CORE) | (1 << nlpql_parserParser.OHDSI_HELPERS) | (1 << nlpql_parserParser.STRING))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 120
+            self.state = 125
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==nlpql_parserParser.VERSION:
-                self.state = 119
+                self.state = 124
                 self.match(nlpql_parserParser.VERSION)
 
 
-            self.state = 123
+            self.state = 128
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==nlpql_parserParser.STRING:
-                self.state = 122
+                self.state = 127
                 self.match(nlpql_parserParser.STRING)
 
 
-            self.state = 125
+            self.state = 130
             self.match(nlpql_parserParser.CALLED)
-            self.state = 126
+            self.state = 131
             self.match(nlpql_parserParser.IDENTIFIER)
         except RecognitionException as re:
             localctx.exception = re
@@ -763,12 +841,12 @@ class nlpql_parserParser ( Parser ):
     def codeSystem(self):
 
         localctx = nlpql_parserParser.CodeSystemContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 14, self.RULE_codeSystem)
+        self.enterRule(localctx, 16, self.RULE_codeSystem)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 128
+            self.state = 133
             self.match(nlpql_parserParser.CODE_SYSTEM)
-            self.state = 129
+            self.state = 134
             self.identifierPair()
         except RecognitionException as re:
             localctx.exception = re
@@ -800,12 +878,12 @@ class nlpql_parserParser ( Parser ):
     def valueSet(self):
 
         localctx = nlpql_parserParser.ValueSetContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 16, self.RULE_valueSet)
+        self.enterRule(localctx, 18, self.RULE_valueSet)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 131
+            self.state = 136
             self.match(nlpql_parserParser.VALUE_SET)
-            self.state = 132
+            self.state = 137
             self.pairMethod()
         except RecognitionException as re:
             localctx.exception = re
@@ -837,12 +915,12 @@ class nlpql_parserParser ( Parser ):
     def documentSet(self):
 
         localctx = nlpql_parserParser.DocumentSetContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 18, self.RULE_documentSet)
+        self.enterRule(localctx, 20, self.RULE_documentSet)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 134
+            self.state = 139
             self.match(nlpql_parserParser.DOCUMENT_SET)
-            self.state = 135
+            self.state = 140
             self.pairMethod()
         except RecognitionException as re:
             localctx.exception = re
@@ -874,12 +952,12 @@ class nlpql_parserParser ( Parser ):
     def termSet(self):
 
         localctx = nlpql_parserParser.TermSetContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 20, self.RULE_termSet)
+        self.enterRule(localctx, 22, self.RULE_termSet)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 137
+            self.state = 142
             self.match(nlpql_parserParser.TERM_SET)
-            self.state = 138
+            self.state = 143
             self.pairArray()
         except RecognitionException as re:
             localctx.exception = re
@@ -911,12 +989,12 @@ class nlpql_parserParser ( Parser ):
     def cohort(self):
 
         localctx = nlpql_parserParser.CohortContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 22, self.RULE_cohort)
+        self.enterRule(localctx, 24, self.RULE_cohort)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 140
+            self.state = 145
             self.match(nlpql_parserParser.COHORT)
-            self.state = 141
+            self.state = 146
             self.pairMethod()
         except RecognitionException as re:
             localctx.exception = re
@@ -950,21 +1028,21 @@ class nlpql_parserParser ( Parser ):
     def population(self):
 
         localctx = nlpql_parserParser.PopulationContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 24, self.RULE_population)
+        self.enterRule(localctx, 26, self.RULE_population)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 144
+            self.state = 149
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==nlpql_parserParser.DEFAULT:
-                self.state = 143
+                self.state = 148
                 self.match(nlpql_parserParser.DEFAULT)
 
 
-            self.state = 146
+            self.state = 151
             self.match(nlpql_parserParser.POPULATION)
-            self.state = 147
+            self.state = 152
             self.match(nlpql_parserParser.IDENTIFIER)
         except RecognitionException as re:
             localctx.exception = re
@@ -998,13 +1076,13 @@ class nlpql_parserParser ( Parser ):
     def context(self):
 
         localctx = nlpql_parserParser.ContextContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 26, self.RULE_context)
+        self.enterRule(localctx, 28, self.RULE_context)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 149
+            self.state = 154
             self.match(nlpql_parserParser.CONTEXT)
-            self.state = 150
+            self.state = 155
             _la = self._input.LA(1)
             if not(_la==nlpql_parserParser.PATIENT or _la==nlpql_parserParser.DOCUMENT):
                 self._errHandler.recoverInline(self)
@@ -1035,12 +1113,8 @@ class nlpql_parserParser ( Parser ):
         def COLON(self):
             return self.getToken(nlpql_parserParser.COLON, 0)
 
-        def dataEntity(self):
-            return self.getTypedRuleContext(nlpql_parserParser.DataEntityContext,0)
-
-
-        def operation(self):
-            return self.getTypedRuleContext(nlpql_parserParser.OperationContext,0)
+        def defineSubject(self):
+            return self.getTypedRuleContext(nlpql_parserParser.DefineSubjectContext,0)
 
 
         def finalModifier(self):
@@ -1056,35 +1130,72 @@ class nlpql_parserParser ( Parser ):
     def define(self):
 
         localctx = nlpql_parserParser.DefineContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 28, self.RULE_define)
+        self.enterRule(localctx, 30, self.RULE_define)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 152
+            self.state = 157
             self.match(nlpql_parserParser.DEFINE)
-            self.state = 154
+            self.state = 159
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==nlpql_parserParser.FINAL:
-                self.state = 153
+                self.state = 158
                 self.finalModifier()
 
 
-            self.state = 156
+            self.state = 161
             self.defineName()
-            self.state = 157
+            self.state = 162
             self.match(nlpql_parserParser.COLON)
-            self.state = 160
+            self.state = 163
+            self.defineSubject()
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+    class DefineSubjectContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def operation(self):
+            return self.getTypedRuleContext(nlpql_parserParser.OperationContext,0)
+
+
+        def dataEntity(self):
+            return self.getTypedRuleContext(nlpql_parserParser.DataEntityContext,0)
+
+
+        def getRuleIndex(self):
+            return nlpql_parserParser.RULE_defineSubject
+
+
+
+
+    def defineSubject(self):
+
+        localctx = nlpql_parserParser.DefineSubjectContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 32, self.RULE_defineSubject)
+        try:
+            self.state = 167
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,10,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,8,self._ctx)
             if la_ == 1:
-                self.state = 158
-                self.dataEntity()
+                self.enterOuterAlt(localctx, 1)
+                self.state = 165
+                self.operation()
                 pass
 
             elif la_ == 2:
-                self.state = 159
-                self.operation()
+                self.enterOuterAlt(localctx, 2)
+                self.state = 166
+                self.dataEntity()
                 pass
 
 
@@ -1114,10 +1225,10 @@ class nlpql_parserParser ( Parser ):
     def finalModifier(self):
 
         localctx = nlpql_parserParser.FinalModifierContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 30, self.RULE_finalModifier)
+        self.enterRule(localctx, 34, self.RULE_finalModifier)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 162
+            self.state = 169
             self.match(nlpql_parserParser.FINAL)
         except RecognitionException as re:
             localctx.exception = re
@@ -1145,10 +1256,10 @@ class nlpql_parserParser ( Parser ):
     def defineName(self):
 
         localctx = nlpql_parserParser.DefineNameContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 32, self.RULE_defineName)
+        self.enterRule(localctx, 36, self.RULE_defineName)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 164
+            self.state = 171
             self.match(nlpql_parserParser.IDENTIFIER)
         except RecognitionException as re:
             localctx.exception = re
@@ -1177,10 +1288,10 @@ class nlpql_parserParser ( Parser ):
     def dataEntity(self):
 
         localctx = nlpql_parserParser.DataEntityContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 34, self.RULE_dataEntity)
+        self.enterRule(localctx, 38, self.RULE_dataEntity)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 166
+            self.state = 173
             self.methodCall()
         except RecognitionException as re:
             localctx.exception = re
@@ -1212,20 +1323,20 @@ class nlpql_parserParser ( Parser ):
     def operation(self):
 
         localctx = nlpql_parserParser.OperationContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 36, self.RULE_operation)
+        self.enterRule(localctx, 40, self.RULE_operation)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 169
+            self.state = 176
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==nlpql_parserParser.WHERE:
-                self.state = 168
+                self.state = 175
                 self.match(nlpql_parserParser.WHERE)
 
 
-            self.state = 171
-            self.expression()
+            self.state = 178
+            self.expression(0)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1239,19 +1350,33 @@ class nlpql_parserParser ( Parser ):
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
+            self.notOperator = None # Token
 
-        def operand(self, i:int=None):
+        def expression(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(nlpql_parserParser.OperandContext)
+                return self.getTypedRuleContexts(nlpql_parserParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(nlpql_parserParser.OperandContext,i)
+                return self.getTypedRuleContext(nlpql_parserParser.ExpressionContext,i)
 
 
-        def binaryOperator(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(nlpql_parserParser.BinaryOperatorContext)
-            else:
-                return self.getTypedRuleContext(nlpql_parserParser.BinaryOperatorContext,i)
+        def NOT(self):
+            return self.getToken(nlpql_parserParser.NOT, 0)
+
+        def BANG(self):
+            return self.getToken(nlpql_parserParser.BANG, 0)
+
+        def predicate(self):
+            return self.getTypedRuleContext(nlpql_parserParser.PredicateContext,0)
+
+
+        def IS(self):
+            return self.getToken(nlpql_parserParser.IS, 0)
+
+        def BOOL(self):
+            return self.getToken(nlpql_parserParser.BOOL, 0)
+
+        def logicalOperator(self):
+            return self.getTypedRuleContext(nlpql_parserParser.LogicalOperatorContext,0)
 
 
         def getRuleIndex(self):
@@ -1259,38 +1384,432 @@ class nlpql_parserParser ( Parser ):
 
 
 
-
-    def expression(self):
-
-        localctx = nlpql_parserParser.ExpressionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 38, self.RULE_expression)
+    def expression(self, _p:int=0):
+        _parentctx = self._ctx
+        _parentState = self.state
+        localctx = nlpql_parserParser.ExpressionContext(self, self._ctx, _parentState)
+        _prevctx = localctx
+        _startState = 42
+        self.enterRecursionRule(localctx, 42, self.RULE_expression, _p)
         self._la = 0 # Token type
         try:
-            self.state = 183
+            self.enterOuterAlt(localctx, 1)
+            self.state = 191
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,13,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,11,self._ctx)
+            if la_ == 1:
+                self.state = 181
+                localctx.notOperator = self._input.LT(1)
+                _la = self._input.LA(1)
+                if not(_la==nlpql_parserParser.NOT or _la==nlpql_parserParser.BANG):
+                    localctx.notOperator = self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 182
+                self.expression(4)
+                pass
+
+            elif la_ == 2:
+                self.state = 183
+                self.predicate(0)
+                self.state = 184
+                self.match(nlpql_parserParser.IS)
+                self.state = 186
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if _la==nlpql_parserParser.NOT:
+                    self.state = 185
+                    self.match(nlpql_parserParser.NOT)
+
+
+                self.state = 188
+                self.match(nlpql_parserParser.BOOL)
+                pass
+
+            elif la_ == 3:
+                self.state = 190
+                self.predicate(0)
+                pass
+
+
+            self._ctx.stop = self._input.LT(-1)
+            self.state = 199
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,12,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    if self._parseListeners is not None:
+                        self.triggerExitRuleEvent()
+                    _prevctx = localctx
+                    localctx = nlpql_parserParser.ExpressionContext(self, _parentctx, _parentState)
+                    self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                    self.state = 193
+                    if not self.precpred(self._ctx, 3):
+                        from antlr4.error.Errors import FailedPredicateException
+                        raise FailedPredicateException(self, "self.precpred(self._ctx, 3)")
+                    self.state = 194
+                    self.logicalOperator()
+                    self.state = 195
+                    self.expression(4) 
+                self.state = 201
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,12,self._ctx)
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.unrollRecursionContexts(_parentctx)
+        return localctx
+
+    class PredicateContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+            self.left = None # PredicateContext
+            self.right = None # PredicateContext
+
+        def expressionAtom(self):
+            return self.getTypedRuleContext(nlpql_parserParser.ExpressionAtomContext,0)
+
+
+        def comparisonOperator(self):
+            return self.getTypedRuleContext(nlpql_parserParser.ComparisonOperatorContext,0)
+
+
+        def predicate(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(nlpql_parserParser.PredicateContext)
+            else:
+                return self.getTypedRuleContext(nlpql_parserParser.PredicateContext,i)
+
+
+        def BETWEEN(self):
+            return self.getToken(nlpql_parserParser.BETWEEN, 0)
+
+        def AND(self):
+            return self.getToken(nlpql_parserParser.AND, 0)
+
+        def NOT(self):
+            return self.getToken(nlpql_parserParser.NOT, 0)
+
+        def IN(self):
+            return self.getToken(nlpql_parserParser.IN, 0)
+
+        def L_PAREN(self):
+            return self.getToken(nlpql_parserParser.L_PAREN, 0)
+
+        def R_PAREN(self):
+            return self.getToken(nlpql_parserParser.R_PAREN, 0)
+
+        def expression(self):
+            return self.getTypedRuleContext(nlpql_parserParser.ExpressionContext,0)
+
+
+        def IS(self):
+            return self.getToken(nlpql_parserParser.IS, 0)
+
+        def nullNotnull(self):
+            return self.getTypedRuleContext(nlpql_parserParser.NullNotnullContext,0)
+
+
+        def LIKE(self):
+            return self.getToken(nlpql_parserParser.LIKE, 0)
+
+        def STRING(self):
+            return self.getToken(nlpql_parserParser.STRING, 0)
+
+        def getRuleIndex(self):
+            return nlpql_parserParser.RULE_predicate
+
+
+
+    def predicate(self, _p:int=0):
+        _parentctx = self._ctx
+        _parentState = self.state
+        localctx = nlpql_parserParser.PredicateContext(self, self._ctx, _parentState)
+        _prevctx = localctx
+        _startState = 44
+        self.enterRecursionRule(localctx, 44, self.RULE_predicate, _p)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 203
+            self.expressionAtom()
+            self._ctx.stop = self._input.LT(-1)
+            self.state = 241
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,18,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    if self._parseListeners is not None:
+                        self.triggerExitRuleEvent()
+                    _prevctx = localctx
+                    self.state = 239
+                    self._errHandler.sync(self)
+                    la_ = self._interp.adaptivePredict(self._input,17,self._ctx)
+                    if la_ == 1:
+                        localctx = nlpql_parserParser.PredicateContext(self, _parentctx, _parentState)
+                        localctx.left = _prevctx
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_predicate)
+                        self.state = 205
+                        if not self.precpred(self._ctx, 4):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 4)")
+                        self.state = 206
+                        self.comparisonOperator()
+                        self.state = 207
+                        localctx.right = self.predicate(5)
+                        pass
+
+                    elif la_ == 2:
+                        localctx = nlpql_parserParser.PredicateContext(self, _parentctx, _parentState)
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_predicate)
+                        self.state = 209
+                        if not self.precpred(self._ctx, 3):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 3)")
+                        self.state = 211
+                        self._errHandler.sync(self)
+                        _la = self._input.LA(1)
+                        if _la==nlpql_parserParser.NOT:
+                            self.state = 210
+                            self.match(nlpql_parserParser.NOT)
+
+
+                        self.state = 213
+                        self.match(nlpql_parserParser.BETWEEN)
+                        self.state = 214
+                        self.predicate(0)
+                        self.state = 215
+                        self.match(nlpql_parserParser.AND)
+                        self.state = 216
+                        self.predicate(4)
+                        pass
+
+                    elif la_ == 3:
+                        localctx = nlpql_parserParser.PredicateContext(self, _parentctx, _parentState)
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_predicate)
+                        self.state = 218
+                        if not self.precpred(self._ctx, 6):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 6)")
+                        self.state = 220
+                        self._errHandler.sync(self)
+                        _la = self._input.LA(1)
+                        if _la==nlpql_parserParser.NOT:
+                            self.state = 219
+                            self.match(nlpql_parserParser.NOT)
+
+
+                        self.state = 222
+                        self.match(nlpql_parserParser.IN)
+                        self.state = 223
+                        self.match(nlpql_parserParser.L_PAREN)
+
+                        self.state = 224
+                        self.expression(0)
+                        self.state = 225
+                        self.match(nlpql_parserParser.R_PAREN)
+                        pass
+
+                    elif la_ == 4:
+                        localctx = nlpql_parserParser.PredicateContext(self, _parentctx, _parentState)
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_predicate)
+                        self.state = 227
+                        if not self.precpred(self._ctx, 5):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
+                        self.state = 228
+                        self.match(nlpql_parserParser.IS)
+                        self.state = 229
+                        self.nullNotnull()
+                        pass
+
+                    elif la_ == 5:
+                        localctx = nlpql_parserParser.PredicateContext(self, _parentctx, _parentState)
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_predicate)
+                        self.state = 230
+                        if not self.precpred(self._ctx, 2):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 2)")
+                        self.state = 232
+                        self._errHandler.sync(self)
+                        _la = self._input.LA(1)
+                        if _la==nlpql_parserParser.NOT:
+                            self.state = 231
+                            self.match(nlpql_parserParser.NOT)
+
+
+                        self.state = 234
+                        self.match(nlpql_parserParser.LIKE)
+                        self.state = 235
+                        self.predicate(0)
+                        self.state = 237
+                        self._errHandler.sync(self)
+                        la_ = self._interp.adaptivePredict(self._input,16,self._ctx)
+                        if la_ == 1:
+                            self.state = 236
+                            self.match(nlpql_parserParser.STRING)
+
+
+                        pass
+
+             
+                self.state = 243
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,18,self._ctx)
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.unrollRecursionContexts(_parentctx)
+        return localctx
+
+    class NullNotnullContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def NULL(self):
+            return self.getToken(nlpql_parserParser.NULL, 0)
+
+        def NOT(self):
+            return self.getToken(nlpql_parserParser.NOT, 0)
+
+        def getRuleIndex(self):
+            return nlpql_parserParser.RULE_nullNotnull
+
+
+
+
+    def nullNotnull(self):
+
+        localctx = nlpql_parserParser.NullNotnullContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 46, self.RULE_nullNotnull)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 245
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==nlpql_parserParser.NOT:
+                self.state = 244
+                self.match(nlpql_parserParser.NOT)
+
+
+            self.state = 247
+            self.match(nlpql_parserParser.NULL)
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+    class ExpressionAtomContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def value(self):
+            return self.getTypedRuleContext(nlpql_parserParser.ValueContext,0)
+
+
+        def methodCall(self):
+            return self.getTypedRuleContext(nlpql_parserParser.MethodCallContext,0)
+
+
+        def unaryOperator(self):
+            return self.getTypedRuleContext(nlpql_parserParser.UnaryOperatorContext,0)
+
+
+        def expressionAtom(self):
+            return self.getTypedRuleContext(nlpql_parserParser.ExpressionAtomContext,0)
+
+
+        def L_PAREN(self):
+            return self.getToken(nlpql_parserParser.L_PAREN, 0)
+
+        def expression(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(nlpql_parserParser.ExpressionContext)
+            else:
+                return self.getTypedRuleContext(nlpql_parserParser.ExpressionContext,i)
+
+
+        def R_PAREN(self):
+            return self.getToken(nlpql_parserParser.R_PAREN, 0)
+
+        def COMMA(self, i:int=None):
+            if i is None:
+                return self.getTokens(nlpql_parserParser.COMMA)
+            else:
+                return self.getToken(nlpql_parserParser.COMMA, i)
+
+        def getRuleIndex(self):
+            return nlpql_parserParser.RULE_expressionAtom
+
+
+
+
+    def expressionAtom(self):
+
+        localctx = nlpql_parserParser.ExpressionAtomContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 48, self.RULE_expressionAtom)
+        self._la = 0 # Token type
+        try:
+            self.state = 265
+            self._errHandler.sync(self)
+            la_ = self._interp.adaptivePredict(self._input,21,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 173
-                self.operand()
+                self.state = 249
+                self.value()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 174
-                self.operand()
-                self.state = 180
+                self.state = 250
+                self.methodCall()
+                pass
+
+            elif la_ == 3:
+                self.enterOuterAlt(localctx, 3)
+                self.state = 251
+                self.unaryOperator()
+                self.state = 252
+                self.expressionAtom()
+                pass
+
+            elif la_ == 4:
+                self.enterOuterAlt(localctx, 4)
+                self.state = 254
+                self.match(nlpql_parserParser.L_PAREN)
+                self.state = 255
+                self.expression(0)
+                self.state = 260
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << nlpql_parserParser.AND) | (1 << nlpql_parserParser.OR) | (1 << nlpql_parserParser.PLUS) | (1 << nlpql_parserParser.MINUS) | (1 << nlpql_parserParser.MULT) | (1 << nlpql_parserParser.DIV) | (1 << nlpql_parserParser.CARET) | (1 << nlpql_parserParser.MOD))) != 0):
-                    self.state = 175
-                    self.binaryOperator()
-                    self.state = 176
-                    self.operand()
-                    self.state = 182
+                while _la==nlpql_parserParser.COMMA:
+                    self.state = 256
+                    self.match(nlpql_parserParser.COMMA)
+                    self.state = 257
+                    self.expression(0)
+                    self.state = 262
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
+                self.state = 263
+                self.match(nlpql_parserParser.R_PAREN)
                 pass
 
 
@@ -1320,11 +1839,51 @@ class nlpql_parserParser ( Parser ):
     def unaryOperator(self):
 
         localctx = nlpql_parserParser.UnaryOperatorContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 40, self.RULE_unaryOperator)
+        self.enterRule(localctx, 50, self.RULE_unaryOperator)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 185
+            self.state = 267
             self.match(nlpql_parserParser.NOT)
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+    class LogicalOperatorContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def AND(self):
+            return self.getToken(nlpql_parserParser.AND, 0)
+
+        def OR(self):
+            return self.getToken(nlpql_parserParser.OR, 0)
+
+        def getRuleIndex(self):
+            return nlpql_parserParser.RULE_logicalOperator
+
+
+
+
+    def logicalOperator(self):
+
+        localctx = nlpql_parserParser.LogicalOperatorContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 52, self.RULE_logicalOperator)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 269
+            _la = self._input.LA(1)
+            if not(_la==nlpql_parserParser.AND or _la==nlpql_parserParser.OR):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1357,46 +1916,6 @@ class nlpql_parserParser ( Parser ):
         def NOT_EQUAL(self):
             return self.getToken(nlpql_parserParser.NOT_EQUAL, 0)
 
-        def getRuleIndex(self):
-            return nlpql_parserParser.RULE_comparisonOperator
-
-
-
-
-    def comparisonOperator(self):
-
-        localctx = nlpql_parserParser.ComparisonOperatorContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 42, self.RULE_comparisonOperator)
-        self._la = 0 # Token type
-        try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 187
-            _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << nlpql_parserParser.GT) | (1 << nlpql_parserParser.LT) | (1 << nlpql_parserParser.LTE) | (1 << nlpql_parserParser.GTE) | (1 << nlpql_parserParser.EQUAL) | (1 << nlpql_parserParser.NOT_EQUAL))) != 0)):
-                self._errHandler.recoverInline(self)
-            else:
-                self._errHandler.reportMatch(self)
-                self.consume()
-        except RecognitionException as re:
-            localctx.exception = re
-            self._errHandler.reportError(self, re)
-            self._errHandler.recover(self, re)
-        finally:
-            self.exitRule()
-        return localctx
-
-    class BinaryOperatorContext(ParserRuleContext):
-
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
-            super().__init__(parent, invokingState)
-            self.parser = parser
-
-        def AND(self):
-            return self.getToken(nlpql_parserParser.AND, 0)
-
-        def OR(self):
-            return self.getToken(nlpql_parserParser.OR, 0)
-
         def PLUS(self):
             return self.getToken(nlpql_parserParser.PLUS, 0)
 
@@ -1416,25 +1935,79 @@ class nlpql_parserParser ( Parser ):
             return self.getToken(nlpql_parserParser.MOD, 0)
 
         def getRuleIndex(self):
-            return nlpql_parserParser.RULE_binaryOperator
+            return nlpql_parserParser.RULE_comparisonOperator
 
 
 
 
-    def binaryOperator(self):
+    def comparisonOperator(self):
 
-        localctx = nlpql_parserParser.BinaryOperatorContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 44, self.RULE_binaryOperator)
-        self._la = 0 # Token type
+        localctx = nlpql_parserParser.ComparisonOperatorContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 54, self.RULE_comparisonOperator)
         try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 189
-            _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << nlpql_parserParser.AND) | (1 << nlpql_parserParser.OR) | (1 << nlpql_parserParser.PLUS) | (1 << nlpql_parserParser.MINUS) | (1 << nlpql_parserParser.MULT) | (1 << nlpql_parserParser.DIV) | (1 << nlpql_parserParser.CARET) | (1 << nlpql_parserParser.MOD))) != 0)):
-                self._errHandler.recoverInline(self)
+            self.state = 283
+            self._errHandler.sync(self)
+            token = self._input.LA(1)
+            if token in [nlpql_parserParser.GT]:
+                self.enterOuterAlt(localctx, 1)
+                self.state = 271
+                self.match(nlpql_parserParser.GT)
+                pass
+            elif token in [nlpql_parserParser.LT]:
+                self.enterOuterAlt(localctx, 2)
+                self.state = 272
+                self.match(nlpql_parserParser.LT)
+                pass
+            elif token in [nlpql_parserParser.GTE]:
+                self.enterOuterAlt(localctx, 3)
+                self.state = 273
+                self.match(nlpql_parserParser.GTE)
+                pass
+            elif token in [nlpql_parserParser.LTE]:
+                self.enterOuterAlt(localctx, 4)
+                self.state = 274
+                self.match(nlpql_parserParser.LTE)
+                pass
+            elif token in [nlpql_parserParser.EQUAL]:
+                self.enterOuterAlt(localctx, 5)
+                self.state = 275
+                self.match(nlpql_parserParser.EQUAL)
+                pass
+            elif token in [nlpql_parserParser.NOT_EQUAL]:
+                self.enterOuterAlt(localctx, 6)
+                self.state = 276
+                self.match(nlpql_parserParser.NOT_EQUAL)
+                self.state = 277
+                self.match(nlpql_parserParser.PLUS)
+                pass
+            elif token in [nlpql_parserParser.MINUS]:
+                self.enterOuterAlt(localctx, 7)
+                self.state = 278
+                self.match(nlpql_parserParser.MINUS)
+                pass
+            elif token in [nlpql_parserParser.MULT]:
+                self.enterOuterAlt(localctx, 8)
+                self.state = 279
+                self.match(nlpql_parserParser.MULT)
+                pass
+            elif token in [nlpql_parserParser.DIV]:
+                self.enterOuterAlt(localctx, 9)
+                self.state = 280
+                self.match(nlpql_parserParser.DIV)
+                pass
+            elif token in [nlpql_parserParser.CARET]:
+                self.enterOuterAlt(localctx, 10)
+                self.state = 281
+                self.match(nlpql_parserParser.CARET)
+                pass
+            elif token in [nlpql_parserParser.MOD]:
+                self.enterOuterAlt(localctx, 11)
+                self.state = 282
+                self.match(nlpql_parserParser.MOD)
+                pass
             else:
-                self._errHandler.reportMatch(self)
-                self.consume()
+                raise NoViableAltException(self)
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1462,10 +2035,10 @@ class nlpql_parserParser ( Parser ):
     def operand(self):
 
         localctx = nlpql_parserParser.OperandContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 46, self.RULE_operand)
+        self.enterRule(localctx, 56, self.RULE_operand)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 191
+            self.state = 285
             self.value()
         except RecognitionException as re:
             localctx.exception = re
@@ -1481,11 +2054,8 @@ class nlpql_parserParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def IDENTIFIER(self):
-            return self.getToken(nlpql_parserParser.IDENTIFIER, 0)
-
-        def dotIdentifier(self):
-            return self.getTypedRuleContext(nlpql_parserParser.DotIdentifierContext,0)
+        def qualifiedName(self):
+            return self.getTypedRuleContext(nlpql_parserParser.QualifiedNameContext,0)
 
 
         def L_PAREN(self):
@@ -1516,31 +2086,29 @@ class nlpql_parserParser ( Parser ):
     def methodCall(self):
 
         localctx = nlpql_parserParser.MethodCallContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 48, self.RULE_methodCall)
+        self.enterRule(localctx, 58, self.RULE_methodCall)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 193
-            self.match(nlpql_parserParser.IDENTIFIER)
-            self.state = 194
-            self.dotIdentifier()
-            self.state = 195
+            self.state = 287
+            self.qualifiedName()
+            self.state = 288
             self.match(nlpql_parserParser.L_PAREN)
-            self.state = 196
+            self.state = 289
             self.value()
-            self.state = 201
+            self.state = 294
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==nlpql_parserParser.COMMA:
-                self.state = 197
+                self.state = 290
                 self.match(nlpql_parserParser.COMMA)
-                self.state = 198
+                self.state = 291
                 self.value()
-                self.state = 203
+                self.state = 296
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 204
+            self.state = 297
             self.match(nlpql_parserParser.R_PAREN)
         except RecognitionException as re:
             localctx.exception = re
@@ -1550,34 +2118,51 @@ class nlpql_parserParser ( Parser ):
             self.exitRule()
         return localctx
 
-    class DotIdentifierContext(ParserRuleContext):
+    class QualifiedNameContext(ParserRuleContext):
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def DOT(self):
-            return self.getToken(nlpql_parserParser.DOT, 0)
+        def IDENTIFIER(self, i:int=None):
+            if i is None:
+                return self.getTokens(nlpql_parserParser.IDENTIFIER)
+            else:
+                return self.getToken(nlpql_parserParser.IDENTIFIER, i)
 
-        def IDENTIFIER(self):
-            return self.getToken(nlpql_parserParser.IDENTIFIER, 0)
+        def DOT(self, i:int=None):
+            if i is None:
+                return self.getTokens(nlpql_parserParser.DOT)
+            else:
+                return self.getToken(nlpql_parserParser.DOT, i)
 
         def getRuleIndex(self):
-            return nlpql_parserParser.RULE_dotIdentifier
+            return nlpql_parserParser.RULE_qualifiedName
 
 
 
 
-    def dotIdentifier(self):
+    def qualifiedName(self):
 
-        localctx = nlpql_parserParser.DotIdentifierContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 50, self.RULE_dotIdentifier)
+        localctx = nlpql_parserParser.QualifiedNameContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 60, self.RULE_qualifiedName)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 206
-            self.match(nlpql_parserParser.DOT)
-            self.state = 207
+            self.state = 299
             self.match(nlpql_parserParser.IDENTIFIER)
+            self.state = 304
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,24,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    self.state = 300
+                    self.match(nlpql_parserParser.DOT)
+                    self.state = 301
+                    self.match(nlpql_parserParser.IDENTIFIER) 
+                self.state = 306
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,24,self._ctx)
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1611,14 +2196,14 @@ class nlpql_parserParser ( Parser ):
     def pairMethod(self):
 
         localctx = nlpql_parserParser.PairMethodContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 52, self.RULE_pairMethod)
+        self.enterRule(localctx, 62, self.RULE_pairMethod)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 209
+            self.state = 307
             self.match(nlpql_parserParser.IDENTIFIER)
-            self.state = 210
+            self.state = 308
             self.match(nlpql_parserParser.COLON)
-            self.state = 211
+            self.state = 309
             self.methodCall()
         except RecognitionException as re:
             localctx.exception = re
@@ -1656,22 +2241,22 @@ class nlpql_parserParser ( Parser ):
     def pairArray(self):
 
         localctx = nlpql_parserParser.PairArrayContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 54, self.RULE_pairArray)
+        self.enterRule(localctx, 64, self.RULE_pairArray)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 213
+            self.state = 311
             self.match(nlpql_parserParser.IDENTIFIER)
-            self.state = 214
+            self.state = 312
             self.match(nlpql_parserParser.COLON)
-            self.state = 217
+            self.state = 315
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [nlpql_parserParser.L_BRACKET]:
-                self.state = 215
+                self.state = 313
                 self.array()
                 pass
             elif token in [nlpql_parserParser.STRING]:
-                self.state = 216
+                self.state = 314
                 self.match(nlpql_parserParser.STRING)
                 pass
             else:
@@ -1706,11 +2291,11 @@ class nlpql_parserParser ( Parser ):
     def modifiers(self):
 
         localctx = nlpql_parserParser.ModifiersContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 56, self.RULE_modifiers)
+        self.enterRule(localctx, 66, self.RULE_modifiers)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 219
+            self.state = 317
             _la = self._input.LA(1)
             if not(_la==nlpql_parserParser.DEFAULT or _la==nlpql_parserParser.FINAL):
                 self._errHandler.recoverInline(self)
@@ -1759,39 +2344,39 @@ class nlpql_parserParser ( Parser ):
     def obj(self):
 
         localctx = nlpql_parserParser.ObjContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 58, self.RULE_obj)
+        self.enterRule(localctx, 68, self.RULE_obj)
         self._la = 0 # Token type
         try:
-            self.state = 234
+            self.state = 332
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,17,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,27,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 221
+                self.state = 319
                 self.match(nlpql_parserParser.L_CURLY)
-                self.state = 222
+                self.state = 320
                 self.pair()
-                self.state = 227
+                self.state = 325
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==nlpql_parserParser.COMMA:
-                    self.state = 223
+                    self.state = 321
                     self.match(nlpql_parserParser.COMMA)
-                    self.state = 224
+                    self.state = 322
                     self.pair()
-                    self.state = 229
+                    self.state = 327
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
-                self.state = 230
+                self.state = 328
                 self.match(nlpql_parserParser.R_CURLY)
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 232
+                self.state = 330
                 self.match(nlpql_parserParser.L_CURLY)
-                self.state = 233
+                self.state = 331
                 self.match(nlpql_parserParser.R_CURLY)
                 pass
 
@@ -1833,26 +2418,26 @@ class nlpql_parserParser ( Parser ):
     def pair(self):
 
         localctx = nlpql_parserParser.PairContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 60, self.RULE_pair)
+        self.enterRule(localctx, 70, self.RULE_pair)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 238
+            self.state = 336
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [nlpql_parserParser.STRING]:
-                self.state = 236
+                self.state = 334
                 self.match(nlpql_parserParser.STRING)
                 pass
             elif token in [nlpql_parserParser.DATAMODEL, nlpql_parserParser.CODE_SYSTEM, nlpql_parserParser.VALUE_SET, nlpql_parserParser.TERM_SET, nlpql_parserParser.DOCUMENT_SET, nlpql_parserParser.COHORT, nlpql_parserParser.POPULATION]:
-                self.state = 237
+                self.state = 335
                 self.named()
                 pass
             else:
                 raise NoViableAltException(self)
 
-            self.state = 240
+            self.state = 338
             self.match(nlpql_parserParser.COLON)
-            self.state = 241
+            self.state = 339
             self.value()
         except RecognitionException as re:
             localctx.exception = re
@@ -1890,20 +2475,20 @@ class nlpql_parserParser ( Parser ):
     def identifierPair(self):
 
         localctx = nlpql_parserParser.IdentifierPairContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 62, self.RULE_identifierPair)
+        self.enterRule(localctx, 72, self.RULE_identifierPair)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 243
+            self.state = 341
             _la = self._input.LA(1)
             if not(_la==nlpql_parserParser.OMOP or _la==nlpql_parserParser.IDENTIFIER):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 244
+            self.state = 342
             self.match(nlpql_parserParser.COLON)
-            self.state = 245
+            self.state = 343
             self.value()
         except RecognitionException as re:
             localctx.exception = re
@@ -1949,11 +2534,11 @@ class nlpql_parserParser ( Parser ):
     def named(self):
 
         localctx = nlpql_parserParser.NamedContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 64, self.RULE_named)
+        self.enterRule(localctx, 74, self.RULE_named)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 247
+            self.state = 345
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << nlpql_parserParser.DATAMODEL) | (1 << nlpql_parserParser.CODE_SYSTEM) | (1 << nlpql_parserParser.VALUE_SET) | (1 << nlpql_parserParser.TERM_SET) | (1 << nlpql_parserParser.DOCUMENT_SET) | (1 << nlpql_parserParser.COHORT) | (1 << nlpql_parserParser.POPULATION))) != 0)):
                 self._errHandler.recoverInline(self)
@@ -2002,39 +2587,39 @@ class nlpql_parserParser ( Parser ):
     def array(self):
 
         localctx = nlpql_parserParser.ArrayContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 66, self.RULE_array)
+        self.enterRule(localctx, 76, self.RULE_array)
         self._la = 0 # Token type
         try:
-            self.state = 262
+            self.state = 360
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,20,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,30,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 249
+                self.state = 347
                 self.match(nlpql_parserParser.L_BRACKET)
-                self.state = 250
+                self.state = 348
                 self.value()
-                self.state = 255
+                self.state = 353
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==nlpql_parserParser.COMMA:
-                    self.state = 251
+                    self.state = 349
                     self.match(nlpql_parserParser.COMMA)
-                    self.state = 252
+                    self.state = 350
                     self.value()
-                    self.state = 257
+                    self.state = 355
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
-                self.state = 258
+                self.state = 356
                 self.match(nlpql_parserParser.R_BRACKET)
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 260
+                self.state = 358
                 self.match(nlpql_parserParser.L_BRACKET)
-                self.state = 261
+                self.state = 359
                 self.match(nlpql_parserParser.R_BRACKET)
                 pass
 
@@ -2059,6 +2644,9 @@ class nlpql_parserParser ( Parser ):
         def DECIMAL(self):
             return self.getToken(nlpql_parserParser.DECIMAL, 0)
 
+        def FLOAT(self):
+            return self.getToken(nlpql_parserParser.FLOAT, 0)
+
         def obj(self):
             return self.getTypedRuleContext(nlpql_parserParser.ObjContext,0)
 
@@ -2079,9 +2667,12 @@ class nlpql_parserParser ( Parser ):
         def IDENTIFIER(self):
             return self.getToken(nlpql_parserParser.IDENTIFIER, 0)
 
-        def dotIdentifier(self):
-            return self.getTypedRuleContext(nlpql_parserParser.DotIdentifierContext,0)
+        def qualifiedName(self):
+            return self.getTypedRuleContext(nlpql_parserParser.QualifiedNameContext,0)
 
+
+        def TIME(self):
+            return self.getToken(nlpql_parserParser.TIME, 0)
 
         def getRuleIndex(self):
             return nlpql_parserParser.RULE_value
@@ -2092,72 +2683,75 @@ class nlpql_parserParser ( Parser ):
     def value(self):
 
         localctx = nlpql_parserParser.ValueContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 68, self.RULE_value)
-        self._la = 0 # Token type
+        self.enterRule(localctx, 78, self.RULE_value)
         try:
-            self.state = 276
+            self.state = 373
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,22,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,31,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 264
+                self.state = 362
                 self.match(nlpql_parserParser.STRING)
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 265
+                self.state = 363
                 self.match(nlpql_parserParser.DECIMAL)
                 pass
 
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 266
-                self.obj()
+                self.state = 364
+                self.match(nlpql_parserParser.FLOAT)
                 pass
 
             elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 267
-                self.array()
+                self.state = 365
+                self.obj()
                 pass
 
             elif la_ == 5:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 268
-                self.match(nlpql_parserParser.BOOL)
+                self.state = 366
+                self.array()
                 pass
 
             elif la_ == 6:
                 self.enterOuterAlt(localctx, 6)
-                self.state = 269
-                self.match(nlpql_parserParser.NULL)
+                self.state = 367
+                self.match(nlpql_parserParser.BOOL)
                 pass
 
             elif la_ == 7:
                 self.enterOuterAlt(localctx, 7)
-                self.state = 270
-                self.match(nlpql_parserParser.ALL)
+                self.state = 368
+                self.match(nlpql_parserParser.NULL)
                 pass
 
             elif la_ == 8:
                 self.enterOuterAlt(localctx, 8)
-                self.state = 271
-                self.match(nlpql_parserParser.IDENTIFIER)
+                self.state = 369
+                self.match(nlpql_parserParser.ALL)
                 pass
 
             elif la_ == 9:
                 self.enterOuterAlt(localctx, 9)
-                self.state = 272
+                self.state = 370
                 self.match(nlpql_parserParser.IDENTIFIER)
-                self.state = 274
-                self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                if _la==nlpql_parserParser.DOT:
-                    self.state = 273
-                    self.dotIdentifier()
+                pass
 
+            elif la_ == 10:
+                self.enterOuterAlt(localctx, 10)
+                self.state = 371
+                self.qualifiedName()
+                pass
 
+            elif la_ == 11:
+                self.enterOuterAlt(localctx, 11)
+                self.state = 372
+                self.match(nlpql_parserParser.TIME)
                 pass
 
 
@@ -2169,6 +2763,44 @@ class nlpql_parserParser ( Parser ):
             self.exitRule()
         return localctx
 
+
+
+    def sempred(self, localctx:RuleContext, ruleIndex:int, predIndex:int):
+        if self._predicates == None:
+            self._predicates = dict()
+        self._predicates[21] = self.expression_sempred
+        self._predicates[22] = self.predicate_sempred
+        pred = self._predicates.get(ruleIndex, None)
+        if pred is None:
+            raise Exception("No predicate with index:" + str(ruleIndex))
+        else:
+            return pred(localctx, predIndex)
+
+    def expression_sempred(self, localctx:ExpressionContext, predIndex:int):
+            if predIndex == 0:
+                return self.precpred(self._ctx, 3)
+         
+
+    def predicate_sempred(self, localctx:PredicateContext, predIndex:int):
+            if predIndex == 1:
+                return self.precpred(self._ctx, 4)
+         
+
+            if predIndex == 2:
+                return self.precpred(self._ctx, 3)
+         
+
+            if predIndex == 3:
+                return self.precpred(self._ctx, 6)
+         
+
+            if predIndex == 4:
+                return self.precpred(self._ctx, 5)
+         
+
+            if predIndex == 5:
+                return self.precpred(self._ctx, 2)
+         
 
 
 

@@ -159,7 +159,7 @@ define BloodPressure:
 define hasFever:
   where Temperature >= 100.4
 
-define hasTemperatureIncrease
+//define hasTemperatureIncrease
   //TBD
 
 define hasTachycardia:
