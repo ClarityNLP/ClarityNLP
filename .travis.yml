@@ -5,3 +5,4 @@ install:
   - pip install -r requirements.txt
   - python -m spacy download en
 script: python3 -m pytest tests/
+cache: pip
