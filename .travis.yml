@@ -8,3 +8,7 @@ before_script:
   - cp example.cfg project.cfg
 script: python3 -m pytest tests/
 cache: pip
+ notifications:
+  slack:
+    rooms:
+      - hdap-team:kU41dKwGiEWGNRyHERIyMOFb#clarity-repo
