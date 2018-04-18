@@ -102,7 +102,6 @@ documentset ProviderNotes:
 // #Population
 //## Cohorts
 
-//cohort "RBC Transfusion Patients":OHDSI.getCohortByName('RBC New Exposures')
 cohort RBCTransfusionPatients:OHDSI.createCohort("assets/RBC_new_exposures.json");
 
 //default population to run analyses
@@ -112,38 +111,59 @@ cohort RBCTransfusionPatients:OHDSI.createCohort("assets/RBC_new_exposures.json"
 context Patient;
 
 
-define final Tester:
-  where hasFever AND hasRigors;
+
+define hasFever:
+where Temperature >= 100.4;
+
+define hasTachycardia:
+  where HeartRate >= 100;
+
+define hasHypotension:
+  where BloodPressure.SBP <= 90
+  OR BloodPressure.MAP <= 70;
+
+
+//CDS logical Context (Patient, Document)
+context Patient;
+
+define final hasSepsis:
+  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasHypotension OR hasTachycardia);
+
+define final SepsisTransfusionReaction:
+    where hasSepsis AND (Sepsis.EventTime-transfusionEvent.EventTime)<24H;
+
+
+
 
 // #phenotype features
 define hasRigors:
   Clarity.ProviderAssertion({
-    valueset: ["RigorsTerms"],
+    valueset: [RigorsTerms],
     documentset: [ProviderNotes]
     });
 
 define hasDyspnea:
   Clarity.ProviderAssertion({
-      valueset: ["DyspneaTerms"],
+      valueset: [DyspneaTerms],
       documentset: [ProviderNotes]
     })
 ;
 
 define hasNausea:
   Clarity.ProviderAssertion({
-    valueset: ["NauseaTerms"],
+    valueset: [NauseaTerms],
     documentset: [ProviderNotes]
   });
 
 define hasVomiting:
   Clarity.ProviderAssertion({
-    valueset: ["VomitingTerms"],
+    valueset: [VomitingTerms],
     documentset: [ProviderNotes]
   });
 
 define hasShock:
   Clarity.ProviderAssertion({
-    valueset: ["ShockTerms"],
+    valueset: [ShockTerms],
     documentset: [ProviderNotes]
   });
 
@@ -162,5 +182,6 @@ define BloodPressure:
   Clarity.GetBloodPressure({
     documentset: [All]
   });
+
 
 

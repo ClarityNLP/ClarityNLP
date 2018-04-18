@@ -40,7 +40,7 @@ class PhenotypeOperations(dict):
 class PhenotypeModel(BaseModel):
 
     # versions maps to 'using'
-    def __init__(self, owner: str, description: str = '', context: str = 'Patient', population: str = 'All',
+    def __init__(self, description: str = '', owner: str = '', context: str = 'Patient', population: str = 'All',
                  phenotype: PhenotypeEntity = None, versions: list = list(),
                  includes: list = list(), code_systems: list = list(),
                  value_sets: list = list(), term_sets: list = list(),
@@ -156,7 +156,7 @@ def query_phenotype(phenotype_id: int, connection_string: str):
 
 
 def get_sample_phenotype():
-    lib = PhenotypeDefine('Sepsis', 'library', version='1')
+    ptype = PhenotypeDefine('Sepsis', 'phenotype', version='1')
     using_omop = PhenotypeDefine('OMOP', 'datamodel', version='5.3')
     clarity_core = PhenotypeDefine('ClarityCore', 'include', version='1.0', alias='Clarity')
     ohdsi_helpers = PhenotypeDefine('OHDSIHelpers', 'include', version='1.0', alias='OHDSI')
@@ -230,7 +230,7 @@ def get_sample_phenotype():
     #                                             ],
     #                                             final=True)
     sepsisPhenotype = PhenotypeModel('jduke',
-                                     phenotype=lib,
+                                     phenotype=ptype,
                                      description='Sepsis definition derived from Murff HJ, FitzHenry F, Matheny ME, et al. Automated identification of postoperative complications within an electronic medical record using natural language processing. JAMA. 2011;306(8):848-855.',
                                      versions=[using_omop],
                                      includes=[clarity_core, ohdsi_helpers],

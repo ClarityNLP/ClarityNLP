@@ -31,16 +31,20 @@ PATIENT: 'Patient';
 DOCUMENT: 'Document';
 
 //  Operators
-WHERE: 'WHERE';
-AND: 'AND';
-OR: 'OR';
-NOT: 'NOT';
+WHERE: 'WHERE' | 'where';
+AND: 'AND' | 'and';
+OR: 'OR' | 'or';
+NOT: 'NOT' | 'not';
 GT: '>';
 LT: '<';
 LTE:    '<=';
 GTE: '>=';
-EQUAL: '==';
+EQUAL: '==' ;
+IS: 'is' | 'IS';
+LIKE: 'like' | 'LIKE';
+BETWEEN: 'between' | 'BETWEEN';
 NOT_EQUAL: '!=';
+BANG: '!';
 PLUS:   '+';
 MINUS: '-';
 MULT: '*';
@@ -67,10 +71,11 @@ FLOAT:      (Digits '.' Digits? | '.' Digits) ExponentPart? [fFdD]?
              |       Digits (ExponentPart [fFdD]? | [fFdD])
              ;
 HEX_FLOAT:  '0' [xX] (HexDigits '.'? | HexDigits? '.' HexDigits) [pP] [+-]? Digits [fFdD]?;
-BOOL:       'true'
-            |       'false'
+BOOL:       'true' | 'TRUE'
+            |       'false' | 'FALSE'
             ;
-NULL:       'null';
+NULL:       'null' | 'NULL' | 'None' | 'none';
+IN:         'IN' | 'in';
 CHAR:       '\'' (~['\\\r\n] | EscapeSequence) '\'';
 STRING:     '"' (~["\\\r\n] | EscapeSequence)* '"';
 
@@ -78,6 +83,7 @@ WS:                 [ \t\r\n\u000C]+ -> channel(HIDDEN);
 COMMENT:            '/*' .*? '*/'    -> channel(HIDDEN);
 LINE_COMMENT:       '//' ~[\r\n]*    -> channel(HIDDEN);
 IDENTIFIER:         LetterOrDigit LetterOrDigit*;
+TIME: DECIMAL TimeUnit;
 
 fragment ExponentPart
     : [eE] [+-]? Digits
@@ -103,4 +109,8 @@ fragment LetterOrDigit
     ;
 fragment Letter
     : [A-Za-z$_]
+    ;
+
+fragment TimeUnit:
+    'H' | 'D' | 'M' | 'Y'
     ;

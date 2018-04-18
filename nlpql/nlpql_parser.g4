@@ -2,8 +2,6 @@ grammar nlpql_parser;
 
 options { tokenVocab=nlpql_lexer; }
 
-// TODO no strings on names
-
 validExpression:
     statement*
     EOF
@@ -23,17 +21,19 @@ statement:
     define |
     context
     )
-    version?
-    description?
     SEMI
     ;
 
 version:
-    VERSION STRING
+    VERSION versionValue
+    ;
+
+versionValue:
+    STRING
     ;
 
 phenotypeName:
-    PHENOTYPE_NAME STRING
+    PHENOTYPE_NAME STRING version?
     ;
 
 description:
@@ -41,7 +41,7 @@ description:
     ;
 
 dataModel:
-    DATAMODEL (OMOP|STRING) VERSION? STRING?
+    DATAMODEL (OMOP|STRING) version?
     ;
 
 include:
@@ -78,7 +78,12 @@ context:
     ;
 
 define:
-    DEFINE finalModifier? defineName COLON (dataEntity | operation)
+    DEFINE finalModifier? defineName COLON defineSubject
+    ;
+
+defineSubject:
+    operation |
+    dataEntity
     ;
 
 finalModifier:
@@ -97,13 +102,40 @@ operation:
     WHERE? expression
     ;
 
-expression:
-    operand |
-    operand (binaryOperator operand)*
+expression
+    : notOperator=(NOT | BANG) expression
+    | expression logicalOperator expression
+    | predicate IS NOT? BOOL
+    | predicate
+    ;
+
+predicate:
+    predicate NOT? IN L_PAREN (expression) R_PAREN
+    | predicate IS nullNotnull
+    | left=predicate comparisonOperator right=predicate
+    | predicate NOT? BETWEEN predicate AND predicate
+    | predicate NOT? LIKE predicate (STRING)?
+    | expressionAtom
+    ;
+
+nullNotnull
+    : NOT? (NULL)
+    ;
+
+expressionAtom
+    : value
+    | methodCall
+    | unaryOperator expressionAtom
+    | L_PAREN expression (COMMA expression)* R_PAREN
     ;
 
 unaryOperator:
     NOT
+    ;
+
+logicalOperator:
+    AND |
+    OR
     ;
 
 comparisonOperator:
@@ -113,11 +145,6 @@ comparisonOperator:
     LTE |
     EQUAL |
     NOT_EQUAL
-;
-
-binaryOperator:
-    AND |
-    OR |
     PLUS |
     MINUS |
     MULT |
@@ -132,11 +159,11 @@ operand:
 
 
 methodCall:
-    IDENTIFIER dotIdentifier L_PAREN value (COMMA value)* R_PAREN
+    qualifiedName L_PAREN value (COMMA value)* R_PAREN
     ;
 
-dotIdentifier:
-    DOT IDENTIFIER
+qualifiedName:
+    IDENTIFIER (DOT IDENTIFIER)*
     ;
 
     
@@ -179,14 +206,17 @@ array: L_BRACKET value (COMMA value)* R_BRACKET
    | L_BRACKET R_BRACKET
    ;
 
-value: STRING
+value:
+    STRING
    | DECIMAL
+   | FLOAT
    | obj
    | array
    | BOOL
    | NULL
    | ALL
    | IDENTIFIER
-   | IDENTIFIER dotIdentifier?
+   | qualifiedName
+   | TIME
    ;
 
