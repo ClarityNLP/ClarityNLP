@@ -45,3 +45,6 @@ From the command line, run:
 git pull
 git submodule update --recursive
 ```
+
+### Submodule documentation
+* [Health NLP API](https://github.com/ClarityNLP/health-nlp/)
