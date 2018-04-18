@@ -4,5 +4,7 @@ python:
 install:
   - pip install -r requirements.txt
   - python -m spacy download en
+before_script:
+  - cp example.cfg project.cfg
 script: python3 -m pytest tests/
 cache: pip
