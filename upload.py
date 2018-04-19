@@ -10,12 +10,12 @@ import re
 def upload_file(solr_url, filepath):
 
     if filepath.endswith(".csv"):
-        url = solr_url + '/update/csv'
+        url = solr_url + '/update?commit=true'
         headers = {
         'Content-type': 'application/csv',
         }
     elif filepath.endswith(".json"):
-        url = solr_url + '/update/json'
+        url = solr_url + '/update?commit=true'
         headers = {
         'Content-type': 'application/json',
         }

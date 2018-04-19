@@ -103,7 +103,7 @@ def upload():
 
     elif request.method == 'POST':
         f = request.files['file']
-        filepath = os.path.join(util.tmp_dir, secure_filename(f.filename))
+        filepath = os.path.join('tmp', secure_filename(f.filename))
         f.save(filepath)
         msg = upload_file(util.solr_url, filepath)
         os.remove(filepath)
