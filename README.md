@@ -9,13 +9,13 @@ This is the core suite of Clarity tools for NLP, Solr and Clinical Phenotyping.
 ### Python Version
 This library uses Python 3.4+.
 
-It is recommended to run with the [Clarity](https://github.com/ClarityNLP/clarity) Docker config. To setup locally, see [Setup Documentation](documentation/setup.md).
+It is recommended to run with the [Clarity](https://github.com/ClarityNLP/clarity) Docker config. To setup locally, see [Setup Documentation](docs/setup.md).
 
 #### Tests
-See [documentation](documentation/test.md).
+See [documentation](docs/test.md).
 
 ## Pipelines
-See [Pipeline documentation](documentation/pipelines.md).
+See [Pipeline documentation](docs/pipelines.md).
 
 ## API Usage
 
@@ -23,8 +23,8 @@ See [Pipeline documentation](documentation/pipelines.md).
 * Running pipelines
     * Pipeline types
 * NLPQL
-* [n-gram Generator](documentation/apis/n-gram.md)
-* [Vocabulary](documentation/apis/vocabulary.md)
+* [n-gram Generator](docs/apis/n-gram.md)
+* [Vocabulary](docs/apis/vocabulary.md)
 * Measurement Finder
 * Value Extraction
 * Term Finder
@@ -34,11 +34,11 @@ See [Pipeline documentation](documentation/pipelines.md).
 * Job Status
 
 ## Data Ingestion
-* [File Ingestion](documentation/ingest/file_ingestion.md)
-* [Ingesting from AACT Database](documentation/ingest/aact.md)
+* [File Ingestion](docs/ingest/file_ingestion.md)
+* [Ingesting from AACT Database](docs/ingest/aact.md)
 
 ## NLPQL
-See [documentation](documentation/nlpql.md).
+See [documentation](docs/nlpql.md).
 
 ## Sample source files
 See [samples](samples).
