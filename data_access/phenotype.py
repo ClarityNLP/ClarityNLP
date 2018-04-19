@@ -39,9 +39,9 @@ class PhenotypeOperations(dict):
 
 class PhenotypeModel(BaseModel):
 
-    # versions maps to 'using'
+    # data_models maps to 'using'
     def __init__(self, description: str = '', owner: str = '', context: str = 'Patient', population: str = 'All',
-                 phenotype: PhenotypeEntity = None, versions: list = list(),
+                 phenotype: PhenotypeEntity = None, data_models: list = list(),
                  includes: list = list(), code_systems: list = list(),
                  value_sets: list = list(), term_sets: list = list(),
                  document_sets: list = list(), data_entities: list = list(),
@@ -50,7 +50,7 @@ class PhenotypeModel(BaseModel):
         self.description = description
         self.population = population
         self.context = context
-        self.versions = versions
+        self.data_models = data_models
         self.phenotype = phenotype
         self.includes = includes
         self.code_systems = code_systems
@@ -229,10 +229,10 @@ def get_sample_phenotype():
     #                                                                     )
     #                                             ],
     #                                             final=True)
-    sepsisPhenotype = PhenotypeModel('jduke',
+    sepsisPhenotype = PhenotypeModel(owner='jduke',
                                      phenotype=ptype,
                                      description='Sepsis definition derived from Murff HJ, FitzHenry F, Matheny ME, et al. Automated identification of postoperative complications within an electronic medical record using natural language processing. JAMA. 2011;306(8):848-855.',
-                                     versions=[using_omop],
+                                     data_models=[using_omop],
                                      includes=[clarity_core, ohdsi_helpers],
                                      code_systems=[omop, isbt],
                                      value_sets=[],
