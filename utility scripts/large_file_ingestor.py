@@ -18,7 +18,7 @@ count = 0
 
 # Keeping track of chunk statistics
 chunk = 0
-chunk_size = 1000
+chunk_size = 10000
 num_chunk_failed = 0
 
 try:
@@ -26,7 +26,7 @@ try:
     csvfile = open(file, 'r')
     reader = csv.DictReader(csvfile)
     # Uploading file in chunks to server
-    set = []
+    s = []
     for row in reader:
 
         # Map your csv column names to the appropriate key present.
@@ -45,22 +45,22 @@ try:
             'admission_id': row['HADM_ID'],
             'report_date': row['CHARTDATE']
             }
-        set.append(d)
+        s.append(d)
 
         # Chunking
         count += 1
         if count == chunk_size:
-            data = json.dumps(set)
+            data = json.dumps(s)
             response = requests.post(url, headers=headers, data=data)
             chunk += 1
             print ("\n\nChunk " + str(chunk) + " " + str(response.status_code))
             if response.status_code != 200:
                 num_chunk_failed += 1
-            set.clear()
+            s.clear()
             count = 0
 
     # Upload any remnant rows
-    if len(set) > 0:
+    if len(s) > 0:
         response = requests.post(url, headers=headers, data=data)
         chunk += 1
         print ("\n\nChunk " + str(chunk) + " " + str(response.status_code))
