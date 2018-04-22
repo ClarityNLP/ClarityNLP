@@ -6,6 +6,7 @@ from data_access import *
 import luigi_runner, luigi_pipeline
 from flask_autodoc import Autodoc
 from nlp import *
+from nlpql import *
 from upload import upload_file, upload_from_db, aact_db_upload
 from ohdsi import *
 import json
@@ -103,7 +104,7 @@ def upload():
 
     elif request.method == 'POST':
         f = request.files['file']
-        filepath = os.path.join(util.tmp_dir, secure_filename(f.filename))
+        filepath = os.path.join('tmp', secure_filename(f.filename))
         f.save(filepath)
         msg = upload_file(util.solr_url, filepath)
         os.remove(filepath)
@@ -360,6 +361,20 @@ def tnm_stage():
 
         return json.dumps(res, indent=4)
     return "Please POST a valid JSON object text"
+
+
+@app.route("/nlpql_tester", methods=["POST"])
+@auto.doc()
+def nlpql_tester():
+    """POST to test NLPQL parsing"""
+    if request.method == 'POST' and request.data:
+        nlpql_results = run_nlpql_parser(request.data.decode("utf-8"))
+        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+            return json.dumps(nlpql_results)
+        else:
+            return nlpql_results['phenotype'].to_json()
+
+    return "Please POST text containing NLPQL."
 
 
 @app.route("/report_type_mappings", methods=["GET"])
