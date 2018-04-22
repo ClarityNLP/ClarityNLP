@@ -1,5 +1,5 @@
 // Phenotype library name
-phenotype "Septic Transfusion Reaction" version "1";
+phenotype "Septic Transfusion Reaction" version "2";
 
 /* Phenotype library description */
 //Fever >=38°C with a rise a rise of >=1°C PLUS any of: rigors, dyspnea, nausea/vomiting, tachycardia, hypotension, shock
@@ -16,15 +16,6 @@ include OHDSIHelpers version "1.0" called OHDSI;
 // ## Code Systems ##
 codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
 
-//## Valuesets (also known as concept sets in OHDSI parlance)
-//Using OHDSIHelpers, can reference a URL or can package the conceptset definition in assets folder
-valueset RigorsConcepts:OHDSI.getConceptSet("assets/RigorsConcepts.json");
-valueset DyspneaConcepts:OHDSI.getConceptSet("assets/DyspneaConcepts.json");
-valueset NauseaConcepts:OHDSI.getConceptSet("assets/NauseaConcepts.json");
-valueset VomitingConcepts:OHDSI.getConceptSet("assets/VomitingConcepts.json");
-valueset TachycardiaConcepts:OHDSI.getConceptSet("assets/VomitingConcepts.json");
-valueset HypotensionConcepts:OHDSI.getConceptSet("assets/VomitingConcepts.json");
-valueset ShockConcepts:OHDSI.getConceptSet("assets/ShockConcepts.json");
 
 // #Manual Term sets#
 // simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
@@ -99,16 +90,6 @@ termset ShockTerms: [
 documentset ProviderNotes:
     Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
 
-// #Population
-//## Cohorts
-
-cohort RBCTransfusionPatients:OHDSI.createCohort("assets/RBC_new_exposures.json");
-
-//default population to run analyses
-//default population RBCTransfusionPatients
-
-
-
 // #phenotype features
 define hasRigors:
   Clarity.ProviderAssertion({
@@ -116,77 +97,28 @@ define hasRigors:
     documentset: [ProviderNotes]
     });
 
-define hasDyspnea:
-  Clarity.ProviderAssertion({
-      valueset: [DyspneaTerms],
-      documentset: [ProviderNotes]
-    })
-;
-
-define hasNausea:
-  Clarity.ProviderAssertion({
-    valueset: [NauseaTerms],
-    documentset: [ProviderNotes]
-  });
-
-define hasVomiting:
-  Clarity.ProviderAssertion({
-    valueset: [VomitingTerms],
-    documentset: [ProviderNotes]
-  });
-
-define hasShock:
-  Clarity.ProviderAssertion({
-    valueset: [ShockTerms],
-    documentset: [ProviderNotes]
-  });
 
 //Quantitative metrics
 define Temperature:
-  Clarity.GetTemperature({
-    documentset: [All]
-  });
-
-define HeartRate:
-  Clarity.GetHeartRate({
-    documentset: [All]
-  });
-
-define BloodPressure:
-  Clarity.GetBloodPressure({
-    documentset: [All]
-  });
-
+  Clarity.ValueExtraction({
+    termset:[
+        "temp",
+        "temperature",
+        "t"
+        ],
+    minimum_value: "96",
+    maximum_value: "106"
+    });
 
 
 //CDS logical Context (Patient, Document)
 context Patient;
 
-define tester:
-where (hasTachycardia OR hasHypotension) AND hasFever;
-
-
-
 define hasFever:
-where Temperature >= 100.4;
+    where Temperature.value >= 100.4;
 
 define hasTachycardia:
-  where HeartRate >= 100;
-
-define hasHypotension:
-  where BloodPressure.SBP <= 90
-  OR BloodPressure.MAP <= 70;
-
-
+        where HeartRate.value >= 120;
 
 define final hasSepsis:
-  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasHypotension OR hasTachycardia);
-
-define final SepsisTransfusionReaction:
-    where hasSepsis AND (Sepsis.EventTime-transfusionEvent.EventTime)<24H;
-
-define final hasSepsis:
-  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasHypotension OR hasTachycardia);
-
-define final SepsisTransfusionReaction:
-    where (hasSepsis.dateTime - RBCTransfusionPatients.getCohortIndexDateTime) < 24H;
+  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasTachycardia);

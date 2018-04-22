@@ -20,7 +20,8 @@ COHORT: 'cohort';
 POPULATION: 'population';
 DEFINE: 'define';
 CONTEXT: 'context';
-
+MIN_VALUE: 'minimum_value';
+MAX_VALUE: 'maximum_value';
 
 // Custom Clarity Features
 OMOP: 'OMOP';
