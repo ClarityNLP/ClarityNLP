@@ -99,14 +99,22 @@ dataEntity:
     ;
 
 operation:
-    WHERE? expression
+    WHERE expression
     ;
 
 expression
-    : notOperator=(NOT | BANG) expression
+    : notOperator expression
     | expression logicalOperator expression
-    | predicate IS NOT? BOOL
+    | predicateBoolean
     | predicate
+    ;
+
+notOperator:
+    NOT | BANG
+    ;
+
+predicateBoolean:
+    predicate IS NOT? BOOL
     ;
 
 predicate:

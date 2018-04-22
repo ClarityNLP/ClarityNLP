@@ -1,6 +1,7 @@
 import antlr4
+import json
 
-from data_access import PhenotypeModel, PhenotypeDefine
+from data_access import PhenotypeModel, PhenotypeDefine, PhenotypeEntity, PhenotypeOperations
 
 if __name__ is not None and "." in __name__:
     from .nlpql_parserParser import *
@@ -14,10 +15,37 @@ def get_value_context(value_context: nlpql_parserParser.ValueContext):
     value = None
 
     if len(value_context.children) == 1:
-        value = value_context.getText().strip('"')
-    # TODO other data types...
+        child = value_context.getChild(0)
+        txt = value_context.getText().strip('"')
+        if type(child) == nlpql_parserParser.ArrayContext:
+            value = get_array_context(child)
+        elif type(child) == nlpql_parserParser.ObjContext:
+            value = dict()
+            for c in child.getChildren():
+                if type(c) == nlpql_parserParser.PairContext:
+                    pair = get_pair_context(c)
+                    c_name = pair["name"]
+                    c_value = pair["value"]
+                    value[c_name] = c_value
+        else:
+            value = txt
+    else:
+        value = list()
+        for c in value_context.getChildren():
+            if type(c) == nlpql_parserParser.ArrayContext:
+                value.append(get_value_context(c))
+        # TODO still need to clean this up some.
 
     return value
+
+
+def get_array_context(array_context: nlpql_parserParser.ArrayContext):
+    ary = list()
+    for c in array_context.getChildren():
+        if type(c) == nlpql_parserParser.ValueContext:
+            ary.append(get_value_context(c))
+
+    return ary
 
 
 def get_qualified_name(qualified_name: nlpql_parserParser.QualifiedNameContext):
@@ -29,14 +57,34 @@ def get_method_call(method_call: nlpql_parserParser.MethodCallContext):
     library = full_name[0]
     function_name = full_name[1]
     arguments = list()
+    num__value_children = 0
+    named_arguments = None
+    last_value_type = None
     for c in method_call.getChildren():
         if type(c) == nlpql_parserParser.ValueContext:
-            arguments.append(get_value_context(c))
+            num__value_children += 1
+            value = get_value_context(c)
+            arguments.append(value)
+            last_value_type = type(value)
+
+    if num__value_children == 1 and last_value_type == dict:
+        named_arguments = arguments[0]
+        arguments = None
 
     return {
         "library": library,
         "funct": function_name,
-        "arguments": arguments
+        "arguments": arguments,
+        "named_arguments": named_arguments
+    }
+
+
+def get_pair_context(pair_context: nlpql_parserParser.PairContext):
+    c_name = pair_context.getChild(0).getText().strip('"')
+    c_value = get_value_context(pair_context.getChild(2))
+    return {
+        "name": c_name,
+        "value": c_value
     }
 
 
@@ -46,6 +94,15 @@ def get_pair_method(pair_context: nlpql_parserParser.PairMethodContext):
     return {
         "name": name,
         "method": method_info
+    }
+
+
+def get_pair_array(pair_context: nlpql_parserParser.PairArrayContext):
+    name = pair_context.getChild(0).getText()
+    array = get_array_context(pair_context.getChild(2))
+    return {
+        "name": name,
+        "array": array
     }
 
 
@@ -170,29 +227,66 @@ def handle_value_set(context, phenotype: PhenotypeModel):
 
 def handle_term_set(context, phenotype: PhenotypeModel):
     print('term set')
-    return {}
+    # termset RigorsTerms: ["Rigors",
+    # "Rigoring",
+    # "Rigours",
+    # "Rigouring",
+    # "Chill",
+    # "Chills",
+    # "Shivers",
+    # "Shivering",
+    # "Teeth chattering"];
+    # Sepsis = PhenotypeDefine("Sepsis", "termset", values=['Sepsis', 'Systemic infection'])
+    ts = get_pair_array(context.getChild(1))
+    pd = PhenotypeDefine(ts["name"], "termset", values=ts["array"])
+
+    if not phenotype.term_sets:
+        phenotype.term_sets = list()
+    phenotype.term_sets.append(pd)
 
 
 def handle_document_set(context, phenotype: PhenotypeModel):
     print('document set')
-    return {}
+    # documentset ProviderNotes: Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
+
+    call = get_pair_method(context.getChild(1))
+    name = call["name"]
+    library = call["method"]["library"]
+    funct = call["method"]["funct"]
+    arguments = call["method"]["arguments"]
+
+    phenotype_def = PhenotypeDefine(name, 'documentset', library=library,
+                                    funct=funct, arguments=arguments)
+
+    if not phenotype.document_sets:
+        phenotype.document_sets = list()
+    phenotype.document_sets.append(phenotype_def)
 
 
 def handle_cohort(context, phenotype: PhenotypeModel):
     print('cohort')
-    return {}
+    call = get_pair_method(context.getChild(1))
+    name = call["name"]
+    library = call["method"]["library"]
+    funct = call["method"]["funct"]
+    arguments = call["method"]["arguments"]
+
+    phenotype_def = PhenotypeDefine(name, 'cohort', library=library,
+                                    funct=funct, arguments=arguments)
+
+    if not phenotype.cohorts:
+        phenotype.cohorts = list()
+    phenotype.cohorts.append(phenotype_def)
 
 
 def handle_context(context, phenotype: PhenotypeModel):
-    print('context')
-    return {}
+    phenotype.context = context.getChild(1).getText()
 
 
 def handle_define(context, phenotype: PhenotypeModel):
     print('define')
     final = False
     define_name = ''
-    found = list()
     children = context.getChildren()
     for child in children:
         if not child == antlr4.tree.Tree.TerminalNodeImpl:
@@ -201,31 +295,169 @@ def handle_define(context, phenotype: PhenotypeModel):
             elif type(child) == nlpql_parserParser.DefineNameContext:
                 define_name = child.getText()
             elif type(child) == nlpql_parserParser.DefineSubjectContext:
-                found.extend(handle_define_subject(child, phenotype))
+                handle_define_subject(child, phenotype, define_name, final)
 
 
-def handle_define_subject(context, phenotype: PhenotypeModel):
+def handle_define_subject(context, phenotype: PhenotypeModel,  define_name, final):
     children = context.getChildren()
-    matches = list()
     for child in children:
-        if not child == antlr4.tree.Tree.TerminalNodeImpl:
-            if type(child) == nlpql_parserParser.OperationContext:
-                matches.append(handle_operation(child, phenotype))
-            elif type(child) == nlpql_parserParser.DataEntityContext:
-                matches.append(handle_data_entity(child, phenotype))
-    return matches
+        if type(child) == nlpql_parserParser.OperationContext:
+            handle_operation(child, phenotype, define_name, final)
+        elif type(child) == nlpql_parserParser.DataEntityContext:
+            handle_data_entity(child, phenotype,  define_name, final)
 
 
-def handle_data_entity(context, phenotype: PhenotypeModel):
+def handle_data_entity(context, phenotype: PhenotypeModel, define_name, final):
     print('data entity')
-    print(context)
-    return {}
+    pe = PhenotypeEntity(define_name, 'define', final=final)
+    call = get_method_call(context.getChild(0))
+    # hasSepsis = PhenotypeEntity('hasSepsis', 'define',
+    #                             library='Clarity',
+    #                             funct='ProviderAssertion',
+    #                             named_arguments={
+    #                                 "termsets": ['Sepsis'],
+    #                                 "documentsets": [
+    #                                     'ProviderNotes',
+    #                                     "Radiology"
+    #                                 ]
+    #                             })
+    pe["funct"] = call["funct"]
+    pe["library"] = call["library"]
+    named_args = call["named_arguments"]
+    args = call["arguments"]
+    if named_args:
+        pe["named_arguments"] = named_args
+    if args and len(args) > 0:
+        pe["arguments"] = args
+    if not phenotype.data_entities:
+        phenotype.data_entities = list()
+
+    phenotype.data_entities.append(pe)
 
 
-def handle_operation(context, phenotype: PhenotypeModel):
-    print(context)
+def is_operator(c):
+    return type(c) == nlpql_parserParser.ComparisonOperatorContext or type(c) == nlpql_parserParser.LogicalOperatorContext or type(c) == nlpql_parserParser.UnaryOperatorContext
+
+
+def get_atomic_expression(context: nlpql_parserParser.ExpressionAtomContext):
+    atomic = None
+    #     : value
+    # | methodCall
+    # | unaryOperator expressionAtom
+    # | L_PAREN expression (COMMA expression)* R_PAREN
+    num_childen = len(context.children)
+    first = context.getChild(0)
+    main_type = type(first)
+    if num_childen == 1:
+        if type(first) == nlpql_parserParser.ValueContext:
+            atomic = get_value_context(first)
+        elif type(first) == nlpql_parserParser.MethodCallContext:
+            atomic = get_method_call(first)
+    else:
+        for c in context.getChildren():
+            print('TODO')
+            print(c)
+    return {
+        "atomic_value": atomic,
+        "main_type": main_type
+
+    }
+
+
+def get_predicate_context(context: nlpql_parserParser.PredicateContext):
+
+    #     left=predicate comparisonOperator right=predicate
+    # | expressionAtom
+    predicates = list()
+    for c in context.getChildren():
+        txt = c.getText()
+        print(txt)
+
+        if type(c) == nlpql_parserParser.ExpressionAtomContext:
+            expression_atom = get_atomic_expression(c)
+            atom_value = expression_atom["atomic_value"]
+            if atom_value:
+                if type(atom_value) == list:
+                    predicates.extend(atom_value)
+                else:
+                    predicates.append(atom_value)
+        # TODO
+
+    return predicates
+
+
+def get_not_expression(expression: nlpql_parserParser.ExpressionContext, define_name, final):
+    print(expression)
+    entities = list()
+    operator = ""
+
+    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    return op
+
+
+def get_logical_expression(expression: nlpql_parserParser.ExpressionContext, define_name, final):
+    print(expression)
+    entities = list()
+    operator = ""
+
+    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    return op
+
+
+def get_predicate_expression(expression: nlpql_parserParser.PredicateContext, define_name, final):
+    print(expression)
+    entities = list()
+    operator = ""
+    for c in expression.getChildren():
+        if is_operator(c):
+            operator = c.getText().strip('"')
+        elif type(c) == nlpql_parserParser.PredicateContext:
+            pc = get_predicate_context(c)
+            if pc:
+                if type(pc) == list:
+                    entities.extend(pc)
+                else:
+                    entities.append(pc)
+
+    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    return op
+
+
+def get_predicate_boolean(expression: nlpql_parserParser.PredicateBooleanContext, define_name, final):
+    print(expression)
+    operator = ""
+    entities = list()
+
+    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    return op
+
+
+def handle_operation(context, phenotype: PhenotypeModel, define_name, final):
     print('operation')
-    return {}
+
+    # SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'], final=True)
+
+    # : notOperator=(NOT | BANG) expression
+    # | expression logicalOperator expression
+    # | predicate IS NOT? BOOL
+    expression_context = context.getChild(1)
+    first = expression_context.getChild(0)
+
+    res = None
+    if type(first) == nlpql_parserParser.NotOperatorContext:
+        res = get_not_expression(expression_context, define_name, final)
+    elif type(first) == nlpql_parserParser.ExpressionContext:
+        res = get_logical_expression(expression_context, define_name, final)
+    elif type(first) == nlpql_parserParser.PredicateBooleanContext:
+        res = get_predicate_boolean(expression_context, define_name, final)
+    elif type(first) == nlpql_parserParser.PredicateContext:
+        res = get_predicate_expression(expression_context.getChild(0), define_name, final)
+
+    if not phenotype.operations:
+        phenotype.operations = list()
+
+    if res:
+        phenotype.operations.append(res)
 
 
 handlers = {
@@ -263,6 +495,7 @@ def handle_expression(expr):
                             handlers[stmt_type](stmt, p)
                         except Exception as ex:
                             has_errors = True
+                            print(ex)
                             errors.append(ex)
                     else:
                         has_warnings = True
@@ -278,20 +511,23 @@ def handle_expression(expr):
     }
 
 
-def run_parser(nlpql_txt: str):
+def run_nlpql_parser(nlpql_txt: str):
     lexer = nlpql_lexer(antlr4.InputStream(nlpql_txt))
     stream = antlr4.CommonTokenStream(lexer)
     parser = nlpql_parserParser(stream)
     tree = parser.validExpression()
-    results = handle_expression(tree)
-    if results['has_errors'] or results['has_warnings']:
-        print(results)
-    else:
-        print('NLPQL parsed successfully')
-        print(results['phenotype'].to_json())
+    res = handle_expression(tree)
+    if res['has_errors'] or res['has_warnings']:
+        res["phenotype"] = {}
+    return res
 
 
 if __name__ == '__main__':
     with open('samples/simple.nlpql') as f:
         nlpql_txt = f.read()
-        run_parser(nlpql_txt)
+        results = run_nlpql_parser(nlpql_txt)
+        if results['has_errors'] or results['has_warnings']:
+            print(results)
+        else:
+            print('NLPQL parsed successfully')
+            print(results['phenotype'].to_json())

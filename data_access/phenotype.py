@@ -44,7 +44,7 @@ class PhenotypeModel(BaseModel):
                  phenotype: PhenotypeEntity = None, data_models: list = list(),
                  includes: list = list(), code_systems: list = list(),
                  value_sets: list = list(), term_sets: list = list(),
-                 document_sets: list = list(), data_entities: list = list(),
+                 document_sets: list = list(), data_entities: list = list(), cohorts: list = list(),
                  operations: list = list(), debug=False):
         self.owner = owner
         self.description = description
@@ -58,6 +58,7 @@ class PhenotypeModel(BaseModel):
         self.term_sets = term_sets
         self.document_sets = document_sets
         self.data_entities = data_entities
+        self.cohorts = cohorts
         self.operations = operations
         self.debug = debug
 

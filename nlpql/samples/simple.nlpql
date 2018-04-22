@@ -107,32 +107,6 @@ cohort RBCTransfusionPatients:OHDSI.createCohort("assets/RBC_new_exposures.json"
 //default population to run analyses
 //default population RBCTransfusionPatients
 
-//CDS logical Context (Patient, Document)
-context Patient;
-
-
-
-define hasFever:
-where Temperature >= 100.4;
-
-define hasTachycardia:
-  where HeartRate >= 100;
-
-define hasHypotension:
-  where BloodPressure.SBP <= 90
-  OR BloodPressure.MAP <= 70;
-
-
-//CDS logical Context (Patient, Document)
-context Patient;
-
-define final hasSepsis:
-  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasHypotension OR hasTachycardia);
-
-define final SepsisTransfusionReaction:
-    where hasSepsis AND (Sepsis.EventTime-transfusionEvent.EventTime)<24H;
-
-
 
 
 // #phenotype features
@@ -185,3 +159,34 @@ define BloodPressure:
 
 
 
+//CDS logical Context (Patient, Document)
+context Patient;
+
+define tester:
+where (hasTachycardia OR hasHypotension) AND hasFever;
+
+
+
+define hasFever:
+where Temperature >= 100.4;
+
+define hasTachycardia:
+  where HeartRate >= 100;
+
+define hasHypotension:
+  where BloodPressure.SBP <= 90
+  OR BloodPressure.MAP <= 70;
+
+
+
+define final hasSepsis:
+  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasHypotension OR hasTachycardia);
+
+define final SepsisTransfusionReaction:
+    where hasSepsis AND (Sepsis.EventTime-transfusionEvent.EventTime)<24H;
+
+define final hasSepsis:
+  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasHypotension OR hasTachycardia);
+
+define final SepsisTransfusionReaction:
+    where (hasSepsis.dateTime - RBCTransfusionPatients.getCohortIndexDateTime) < 24H;
