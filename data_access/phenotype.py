@@ -40,8 +40,8 @@ class PhenotypeOperations(dict):
 class PhenotypeModel(BaseModel):
 
     # data_models maps to 'using'
-    def __init__(self, description: str = '', owner: str = '', context: str = 'Patient', population: str = 'All',
-                 phenotype: PhenotypeEntity = None, data_models: list = list(),
+    def __init__(self, description: str = '', owner: str = 'clarity', context: str = 'Patient', population: str = 'All',
+                 phenotype = None, data_models: list = list(),
                  includes: list = list(), code_systems: list = list(),
                  value_sets: list = list(), term_sets: list = list(),
                  document_sets: list = list(), data_entities: list = list(), cohorts: list = list(),

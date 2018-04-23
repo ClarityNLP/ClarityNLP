@@ -1,6 +1,9 @@
 /** References from https://github.com/antlr/grammars-v4 */
 lexer grammar nlpql_lexer;
 
+// debug
+DEBUG: 'debug';
+
 // modifiers
 DEFAULT: 'default';
 FINAL: 'final';

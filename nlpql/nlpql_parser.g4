@@ -19,9 +19,14 @@ statement:
     cohort |
     population |
     define |
-    context
+    context |
+    debugger
     )
     SEMI
+    ;
+
+debugger:
+    DEBUG
     ;
 
 version:

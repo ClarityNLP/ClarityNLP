@@ -1,6 +1,5 @@
-from nlp.segmentation import *
-
 from data_access import Measurement
+from nlp.segmentation import *
 from nlp.value_extraction.value_extractor import extract_value, clean_sentence
 
 print('Initializing models for value extractor...')
@@ -42,9 +41,8 @@ def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_c
 
 
 if __name__ == '__main__':
-    res = run_value_extractor_full(["bp", "blood pressure"],
-                                "BP was between 100/60 and 120/80 then BP range: 105/75 - 120/70. "
-                                "Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.",
-                                20, 250, False)
+    res = run_value_extractor_full(["temperature", "temp", "T"],
+                                   "Temp was 99-101",
+                                   96, 106, False)
 
     [print(str(t.to_json())) for t in res]

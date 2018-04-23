@@ -167,6 +167,7 @@ def phenotype():
         return json.dumps(output, indent=4)
 
     except Exception as ex:
+        print(ex)
         return 'Failed to load and insert phenotype. ' + str(ex), 400
 
 

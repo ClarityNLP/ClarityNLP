@@ -55,19 +55,20 @@ def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
     pipeline_id = -1
 
     try:
-        pipeline_json = pipeline.to_json()
-        cursor.execute("""
-                      INSERT INTO
-                      nlp.pipeline_config(owner, config, pipeline_type, name, description, date_created)
-                      VALUES(%s, %s, %s, %s, %s, current_timestamp) RETURNING pipeline_id
-                      """, (pipeline.owner, pipeline_json, pipeline.config_type, pipeline.name, pipeline.description))
+        if pipeline:
+            pipeline_json = pipeline.to_json()
+            cursor.execute("""
+                          INSERT INTO
+                          nlp.pipeline_config(owner, config, pipeline_type, name, description, date_created)
+                          VALUES(%s, %s, %s, %s, %s, current_timestamp) RETURNING pipeline_id
+                          """, (pipeline.owner, pipeline_json, pipeline.config_type, pipeline.name, pipeline.description))
 
-        pipeline_id = cursor.fetchone()[0]
-        conn.commit()
+            pipeline_id = cursor.fetchone()[0]
+            conn.commit()
 
     except Exception as ex:
         print('failed to insert pipeline')
-        print(str(ex))
+        print(ex)
     finally:
         conn.close()
 

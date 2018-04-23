@@ -12,6 +12,7 @@ SECTIONS_FILTER = "sections"
 
 def mongo_writer(client, pipeline, job, batch, pipeline_config, meas: Measurement, doc, type):
     db = client[util.mongo_db]
+    value = meas['X']
 
     inserted = db.pipeline_results.insert_one({
         "pipeline_type": type,
@@ -30,6 +31,7 @@ def mongo_writer(client, pipeline, job, batch, pipeline_config, meas: Measuremen
         "concept_code": pipeline_config.concept_code,
         "text": meas.text,
         "start": meas.start,
+        "value": value,
         "end": meas.end,
         "term": meas.subject,
         "dimension_X": meas.X,

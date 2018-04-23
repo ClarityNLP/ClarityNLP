@@ -1,3 +1,4 @@
+debug;
 // Phenotype library name
 phenotype "Septic Transfusion Reaction" version "2";
 
@@ -85,15 +86,26 @@ termset ShockTerms: [
 "Shock"
 ];
 
+termset TempTerms: [
+
+        "temp",
+        "temperature",
+        "t"
+        ];
 
 // # Document sets## Uses Simple Document Ontology
 documentset ProviderNotes:
-    Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
+    // Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
+    Clarity.createReportTagList([
+    "Physician",
+    "Nurse",
+    "Note",
+    "Discharge Summary"]);
 
 // #phenotype features
 define hasRigors:
   Clarity.ProviderAssertion({
-    valueset: [RigorsTerms],
+    termset: [RigorsTerms],
     documentset: [ProviderNotes]
     });
 
@@ -101,11 +113,7 @@ define hasRigors:
 //Quantitative metrics
 define Temperature:
   Clarity.ValueExtraction({
-    termset:[
-        "temp",
-        "temperature",
-        "t"
-        ],
+    termset:[TempTerms],
     minimum_value: "96",
     maximum_value: "106"
     });
@@ -117,8 +125,9 @@ context Patient;
 define hasFever:
     where Temperature.value >= 100.4;
 
-define hasTachycardia:
-        where HeartRate.value >= 120;
+
+define hasSepsisSymptoms:
+    where hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasTachycardia;
 
 define final hasSepsis:
-  where hasFever AND (hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasTachycardia);
+  where hasFever AND hasSepsisSymptoms;

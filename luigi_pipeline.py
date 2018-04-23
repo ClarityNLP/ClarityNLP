@@ -5,10 +5,16 @@ from nlp import get_related_terms
 
 luigi_pipeline_types = {
     "TermFinder": TermFinderBatchTask,
+    "Finder": TermFinderBatchTask,
+    "Assertion": ProviderAssertionBatchTask,
     "ProviderAssertion": ProviderAssertionBatchTask,
     "MeasurementFinder": MeasurementFinderTask,
+    "MeasurementExtractor": MeasurementFinderTask,
+    "MeasurementExtraction": MeasurementFinderTask,
     "ValueExtractor": ValueExtractorTask,
+    "ValueExtraction": ValueExtractorTask,
     "NamedEntityRecognition": NERTask,
+    "NER": NERTask,
     "POSTagger": POSTaggerTask
 }
 

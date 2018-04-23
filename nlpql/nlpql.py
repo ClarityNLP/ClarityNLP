@@ -116,6 +116,11 @@ def get_identifier_pair(identifier: nlpql_parserParser.IdentifierPairContext):
     }
 
 
+# by existing, this sets debug to True
+def handle_debug(context, phenotype: PhenotypeModel):
+    phenotype.debug = True
+
+
 def handle_phenotype_name(context, phenotype: PhenotypeModel):
     print('phenotype_name')
     previous = ''
@@ -471,7 +476,8 @@ handlers = {
     nlpql_parserParser.DefineContext: handle_define,
     nlpql_parserParser.ContextContext: handle_context,
     nlpql_parserParser.CohortContext: handle_cohort,
-    nlpql_parserParser.DescriptionContext: handle_description
+    nlpql_parserParser.DescriptionContext: handle_description,
+    nlpql_parserParser.DebuggerContext: handle_debug
 }
 
 

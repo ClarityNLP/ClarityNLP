@@ -4,9 +4,7 @@ from functools import reduce
 import pandas as pd
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity
-
-valid_operations = ["AND", "OR", "NOT", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL",
-                    "LESS_THAN_OR_EQUAL", "SUBTRACT", "ADD", "MULTIPLY", "DIVIDE", "MODULO"]
+pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
 
 
 def get_terms(model: PhenotypeModel):
@@ -36,7 +34,11 @@ def get_report_tags(model):
     if model.document_sets:
         for d in model.document_sets:
             if d['library'] == "Clarity" and d['funct'] == "createReportTagList":
-                types[d['name']] = d['arguments']
+                args = d['arguments']
+                if len(args) == 1 and type(args[0]) == list:
+                    types[d['name']] = args[0]
+                else:
+                    types[d['name']] = args
     return types
 
 
@@ -47,7 +49,18 @@ def get_report_tags_by_keys(report_tag_dict, keys: list):
     return tags
 
 
+def map_arguments(pipeline: PipelineConfig, e):
+    for k in e.keys():
+        if not (k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms"):
+            if k in pipeline_keys:
+                try:
+                    pipeline[k] = e[k]
+                except Exception as ex:
+                    print(ex)
+
+
 def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug):
+
     if e['named_arguments'] is None:
         e['named_arguments'] = dict()
     if 'value_sets' not in e['named_arguments']:
@@ -57,18 +70,34 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
 
     if e['library'] == "Clarity":
         # config_type, name, description, terms
-        tags = get_report_tags_by_keys(report_tags, e['named_arguments']['documentsets'])
+
+        if 'documentsets' in e['named_arguments']:
+            doc_sets = e['named_arguments']['documentsets']
+        elif 'documentset' in e['named_arguments']:
+            doc_sets = e['named_arguments']['documentset']
+        else:
+            doc_sets = list()
+
+        tags = get_report_tags_by_keys(report_tags, doc_sets)
         if debug:
-            limit = 1000
+            limit = 500
         else:
             limit = 0
+        if 'termset' in e['named_arguments']:
+            terms = e['named_arguments']["termset"]
+        elif 'termsets' in e['named_arguments']:
+            terms = e['named_arguments']["termsets"]
+        else:
+            terms = list()
         pipeline = PipelineConfig(e['funct'], e['name'],
-                                  get_terms_by_keys(all_terms, e['named_arguments']['termsets'],
+                                  get_terms_by_keys(all_terms, terms,
                                                     e['named_arguments']['value_sets']
                                                     ),
                                   owner=owner,
                                   limit=limit,
                                   report_tags=tags)
+        map_arguments(pipeline, e)
+        map_arguments(pipeline, e['named_arguments'])
         return pipeline
     else:
         raise ValueError("External pipelines not yet supported")
