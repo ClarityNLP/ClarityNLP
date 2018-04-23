@@ -38,6 +38,8 @@ The set of JSON fields in the output includes:
             matchingTerm     the query term associated with this value
             x                matching value
             y                matching value
+            minValue         minimum value of x and y, if neither is EMPTY_FIELD
+            maxValue         maximum value of x and y, if neither is EMPTY_FIELD
 
 
 
