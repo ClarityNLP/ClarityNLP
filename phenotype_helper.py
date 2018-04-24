@@ -5,7 +5,7 @@ import pandas as pd
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity
 
-DEBUG_LIMIT = 25
+DEBUG_LIMIT = 1000
 
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
 numeric_comp_operators = ['==', '='
@@ -154,6 +154,7 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
 
         ops = sorted(phenotype.operations, key=lambda o: o['final'])
         # TODO make sure all ops are in the right order
+
         for c in ops:
             operation_name = c['name']
 
@@ -168,6 +169,7 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                 data_entities = c['data_entities']
 
                 dfs = []
+                output = None
                 ret = None
                 if action == 'AND' or action == 'OR' or action == 'NOT':
                     if action == 'OR':
@@ -194,7 +196,7 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                         ret['result_name'] = operation_name
                         ret['final'] = c['final']
 
-                        db.phenotype_results.insert_many(ret.to_dict('records'))
+                        output = ret.to_dict('records')
 
                 if action in numeric_comp_operators:
                     print(action)
@@ -222,6 +224,10 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                     ret['result_name'] = operation_name
                     ret['final'] = c['final']
 
-                    db.phenotype_results.insert_many(ret.to_dict('records'))
+                    output = ret.to_dict('records')
+
+                if output and len(output) > 0:
+                    db.phenotype_results.insert_many(output)
+
             else:
                 print('nothing to do for ' + operation_name)
