@@ -1,6 +1,8 @@
 import copy
 from tasks import *
 from nlp import get_related_terms
+import sys
+import traceback
 
 
 luigi_pipeline_types = {
@@ -55,13 +57,19 @@ class PipelineTask(luigi.Task):
     pipelinetype = luigi.Parameter()
 
     def requires(self):
-        solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job, self
-                                                                                      .owner)
-        task = luigi_pipeline_types[str(self.pipelinetype)]
-        matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n)
-                   for n in ranges]
+        try:
+            solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job, self
+                                                                                          .owner)
 
-        return matches
+            task = luigi_pipeline_types[str(self.pipelinetype)]
+            matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n)
+                       for n in ranges]
+
+            return matches
+        except Exception as ex:
+            traceback.print_exc(file=sys.stdout)
+            print(ex)
+        return list()
 
     def run(self):
         jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % self

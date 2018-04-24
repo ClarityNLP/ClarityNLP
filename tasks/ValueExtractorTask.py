@@ -6,6 +6,8 @@ from data_access import jobs
 from pymongo import MongoClient
 import util
 from .MeasurementFinderTask import mongo_writer
+import sys
+import traceback
 
 SECTIONS_FILTER = "sections"
 
@@ -21,6 +23,7 @@ class ValueExtractorTask(luigi.Task):
     def run(self):
         client = MongoClient(util.mongo_host, util.mongo_port)
 
+        current_doc =None
         try:
             jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                    "Running ValueExtractor Batch %s" %
@@ -42,6 +45,7 @@ class ValueExtractorTask(luigi.Task):
                                        "Finding terms with ValueExtractor")
                 # TODO incorporate sections and filters
                 for doc in docs:
+                    current_doc = doc
                     result = run_value_extractor_full(pipeline_config.terms, doc["report_text"], float(pipeline_config.
                                                                                                        minimum_value),
                                                       float(pipeline_config.maximum_value), pipeline_config.
@@ -55,9 +59,15 @@ class ValueExtractorTask(luigi.Task):
                             outfile.write('\n')
                     else:
                         outfile.write("no matches!\n")
+        except AssertionError as a:
+            traceback.print_exc(file=sys.stdout)
+            print(a)
+            print(current_doc)
         except Exception as ex:
+            traceback.print_exc(file=sys.stdout)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
             print(ex)
+            print(current_doc)
         finally:
             client.close()
 

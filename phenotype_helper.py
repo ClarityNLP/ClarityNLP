@@ -1,11 +1,12 @@
 import datetime
 from functools import reduce
-
+import sys
+import traceback
 import pandas as pd
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity
 
-DEBUG_LIMIT = 1000
+DEBUG_LIMIT = 5000
 
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
 numeric_comp_operators = ['==', '='
@@ -64,6 +65,7 @@ def map_arguments(pipeline: PipelineConfig, e):
                 try:
                     pipeline[k] = e[k]
                 except Exception as ex:
+                    traceback.print_exc(file=sys.stdout)
                     print(ex)
 
 
@@ -171,13 +173,8 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                 dfs = []
                 output = None
                 ret = None
-                if action == 'AND' or action == 'OR' or action == 'NOT':
-                    if action == 'OR':
-                        how = "outer"
-                    elif action == 'AND':
-                        how = "inner"
-                    else:
-                        how = "left"
+                if action == 'AND':
+                    how = 'inner'
 
                     for de in data_entities:
                         ent, attr = get_data_entity_split(de)
@@ -193,12 +190,26 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                         ret['job_date'] = datetime.datetime.now()
                         ret['context_type'] = on
                         ret['raw_definition_text'] = c['raw_text']
+                        ret['source_nlpql_feature'] = ret['nlpql_feature']
                         ret['result_name'] = operation_name
+                        ret['nlpql_feature'] = operation_name
                         ret['final'] = c['final']
 
                         output = ret.to_dict('records')
-
-                if action in numeric_comp_operators:
+                elif action == 'OR':
+                    q = '| '.join([("(nlpql_feature == '%s')" % x) for x in data_entities])
+                    ret = df.query(q)
+                    ret['job_id'] = job
+                    ret['phenotype_id'] = phenotype_id
+                    ret['owner'] = phenotype_owner
+                    ret['job_date'] = datetime.datetime.now()
+                    ret['context_type'] = on
+                    ret['raw_definition_text'] = c['raw_text']
+                    ret['source_nlpql_feature'] = ret['nlpql_feature']
+                    ret['result_name'] = operation_name
+                    ret['nlpql_feature'] = operation_name
+                    ret['final'] = c['final']
+                elif action in numeric_comp_operators:
                     print(action)
                     value_comp = ''
                     ent = ''
@@ -221,7 +232,9 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                     ret['job_date'] = datetime.datetime.now()
                     ret['context_type'] = on
                     ret['raw_definition_text'] = c['raw_text']
+                    ret['source_nlpql_feature'] = ret['nlpql_feature']
                     ret['result_name'] = operation_name
+                    ret['nlpql_feature'] = operation_name
                     ret['final'] = c['final']
 
                     output = ret.to_dict('records')
