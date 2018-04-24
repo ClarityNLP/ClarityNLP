@@ -1,223 +1,349 @@
 {
-    "phenotype": {
-        "version": "1",
-        "named_arguments": {},
-        "arguments": [],
-        "alias": "",
-        "funct": "",
-        "values": [],
-        "library": "",
-        "concept": "",
-        "declaration": "library",
-        "description": "",
-        "name": "Sepsis"
-    },
-    "population": "RBC Transfusion Patients",
-    "versions": [
+    "data_entities": [
         {
-            "version": "5.3",
+            "named_arguments": {
+                "documentset": [
+                    "ProviderNotes"
+                ],
+                "termset": [
+                    "RigorsTerms"
+                ]
+            },
+            "arguments": [],
+            "final": false,
+            "description": "",
+            "funct": "ProviderAssertion",
+            "library": "Clarity",
+            "concept": "",
+            "raw_text": "",
+            "alias": "",
+            "declaration": "define",
+            "version": "",
+            "values": [],
+            "name": "hasRigors"
+        },
+        {
+            "named_arguments": {
+                "maximum_value": "106",
+                "termset": [
+                    "TempTerms"
+                ],
+                "minimum_value": "96"
+            },
+            "arguments": [],
+            "final": false,
+            "description": "",
+            "funct": "ValueExtraction",
+            "library": "Clarity",
+            "concept": "",
+            "raw_text": "",
+            "alias": "",
+            "declaration": "define",
+            "version": "",
+            "values": [],
+            "name": "Temperature"
+        }
+    ],
+    "population": "All",
+    "operations": [
+        {
+            "final": false,
+            "data_entities": [
+                "Temperature.value",
+                "100.4"
+            ],
+            "raw_text": "Temperature.value>=100.4",
+            "name": "hasFever",
+            "action": ">="
+        },
+        {
+            "final": false,
+            "data_entities": [
+                "hasRigors",
+                "hasDyspnea",
+                "hasVomiting",
+                "hasNausea",
+                "hasShock",
+                "hasTachycardia"
+            ],
+            "raw_text": "hasRigorsORhasDyspneaORhasVomitingORhasNauseaORhasShockORhasTachycardia",
+            "name": "hasSepsisSymptoms",
+            "action": "OR"
+        },
+        {
+            "final": true,
+            "data_entities": [
+                "hasFever",
+                "hasSepsisSymptoms"
+            ],
+            "raw_text": "hasFeverANDhasSepsisSymptoms",
+            "name": "hasSepsis",
+            "action": "AND"
+        }
+    ],
+    "description": "\"Septic Transfusion Reaction AABB definition listed in Hong H, Xiao W, Lazarus HM, Good CE, Maitta RW, Jacobs MR. Detection of septic transfusion reactions to platelet transfusions by active and passive surveillance. Blood. 2016 Jan 28;127(4):496-502.\"",
+    "data_models": [
+        {
             "named_arguments": {},
             "arguments": [],
-            "alias": "",
-            "funct": "",
-            "values": [],
-            "library": "",
-            "concept": "",
             "declaration": "datamodel",
             "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "5.3",
+            "values": [],
             "name": "OMOP"
         }
     ],
-    "owner": "jduke",
+    "debug": true,
     "document_sets": [
         {
-            "version": "",
             "named_arguments": {},
             "arguments": [
-                "Physician",
-                "Nurse",
-                "Note",
-                "Discharge Summary"
+                [
+                    "Physician",
+                    "Nurse",
+                    "Note",
+                    "Discharge Summary"
+                ]
             ],
-            "alias": "",
-            "funct": "createReportTagList",
-            "values": [],
-            "library": "Clarity",
-            "concept": "",
             "declaration": "documentset",
             "description": "",
+            "funct": "createReportTagList",
+            "library": "Clarity",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [],
             "name": "ProviderNotes"
-        },
-        {
-            "version": "",
-            "named_arguments": {},
-            "arguments": [
-                "Radiology"
-            ],
-            "alias": "",
-            "funct": "createReportTagList",
-            "values": [],
-            "library": "Clarity",
-            "concept": "",
-            "declaration": "documentset",
-            "description": "",
-            "name": "Radiology"
         }
     ],
-    "operations": [
+    "term_sets": [
         {
-            "action": "OR",
-            "raw_text": "",
-            "name": "SepsisState",
-            "final": true,
-            "data_entities": [
-                "onVentilator",
-                "hasSepsis"
-            ]
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Rigors",
+                "Rigoring",
+                "Rigours",
+                "Rigouring",
+                "Chill",
+                "Chills",
+                "Shivers",
+                "Shivering",
+                "Teeth chattering"
+            ],
+            "name": "RigorsTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Labored respiration",
+                "Shortness of breath",
+                "Short of breath",
+                "SOB",
+                "Respiration laboured",
+                "Respiration labored",
+                "Laboured respiration",
+                "Laboured breathing",
+                "Labored breathing",
+                "Increased work of breathing",
+                "Hunger air",
+                "Gasping",
+                "Dyspnoea",
+                "Dyspnea",
+                "Difficulty breathing",
+                "Breathlessness",
+                "Breathing difficult",
+                "Breath shortness",
+                "Air hunger"
+            ],
+            "name": "DyspneaTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Nausea",
+                "Nauseated",
+                "Nauseous",
+                "Queasy"
+            ],
+            "name": "NauseaTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Vomiting",
+                "Vomited",
+                "Vomit",
+                "Emesis",
+                "Hyperemesis",
+                "N/V"
+            ],
+            "name": "VomitingTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Tachycardia",
+                "Tachycardic",
+                "Rapid HR",
+                "Tachy"
+            ],
+            "name": "TachycardiaTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Hypotensive",
+                "Hypotension",
+                "Low Blood Pressure",
+                "Blood Pressure Low",
+                "Low BP",
+                "Preshock"
+            ],
+            "name": "HypotensionTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Shock"
+            ],
+            "name": "ShockTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "temp",
+                "temperature",
+                "t"
+            ],
+            "name": "TempTerms"
+        }
+    ],
+    "context": "Patient",
+    "owner": "clarity",
+    "phenotype": {
+        "named_arguments": {},
+        "arguments": [],
+        "declaration": "phenotype",
+        "description": "",
+        "funct": "",
+        "library": "",
+        "concept": "",
+        "alias": "",
+        "version": "2",
+        "values": [],
+        "name": "\"Septic Transfusion Reaction\""
+    },
+    "includes": [
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "include",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "Clarity",
+            "version": "1.0",
+            "values": [],
+            "name": "ClarityCore"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "include",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "OHDSI",
+            "version": "1.0",
+            "values": [],
+            "name": "OHDSIHelpers"
         }
     ],
     "code_systems": [
         {
-            "version": "",
             "named_arguments": {},
             "arguments": [],
-            "alias": "",
+            "declaration": "codesystem",
+            "description": "",
             "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
             "values": [
                 "http://omop.org"
             ],
-            "library": "",
-            "concept": "",
-            "declaration": "codesystem",
-            "description": "",
             "name": "OMOP"
-        },
-        {
-            "version": "",
-            "named_arguments": {},
-            "arguments": [],
-            "alias": "",
-            "funct": "",
-            "values": [
-                "https://www.iccbba.org"
-            ],
-            "library": "",
-            "concept": "",
-            "declaration": "codesystem",
-            "description": "",
-            "name": "ISBT"
-        }
-    ],
-    "includes": [
-        {
-            "version": "1.0",
-            "named_arguments": {},
-            "arguments": [],
-            "alias": "Clarity",
-            "funct": "",
-            "values": [],
-            "library": "",
-            "concept": "",
-            "declaration": "include",
-            "description": "",
-            "name": "ClarityCore"
-        },
-        {
-            "version": "1.0",
-            "named_arguments": {},
-            "arguments": [],
-            "alias": "OHDSI",
-            "funct": "",
-            "values": [],
-            "library": "",
-            "concept": "",
-            "declaration": "include",
-            "description": "",
-            "name": "OHDSIHelpers"
-        }
-    ],
-    "debug": true,
-    "context": "Patient",
-    "data_entities": [
-        {
-            "version": "",
-            "named_arguments": {
-                "termsets": [
-                    "Ventilator"
-                ],
-                "documentsets": [
-                    "ProviderNotes"
-                ]
-            },
-            "raw_text": "",
-            "arguments": [],
-            "alias": "",
-            "funct": "TermFinder",
-            "values": [],
-            "library": "Clarity",
-            "concept": "",
-            "declaration": "define",
-            "description": "",
-            "name": "onVentilator",
-            "final": false
-        },
-        {
-            "version": "",
-            "named_arguments": {
-                "termsets": [
-                    "Sepsis"
-                ],
-                "documentsets": [
-                    "ProviderNotes",
-                    "Radiology"
-                ]
-            },
-            "raw_text": "",
-            "arguments": [],
-            "alias": "",
-            "funct": "ProviderAssertion",
-            "values": [],
-            "library": "Clarity",
-            "concept": "",
-            "declaration": "define",
-            "description": "",
-            "name": "hasSepsis",
-            "final": false
-        }
-    ],
-    "description": "Sepsis definition derived from Murff HJ, FitzHenry F, Matheny ME, et al. Automated identification of postoperative complications within an electronic medical record using natural language processing. JAMA. 2011;306(8):848-855.",
-    "term_sets": [
-        {
-            "version": "",
-            "named_arguments": {},
-            "arguments": [],
-            "alias": "",
-            "funct": "",
-            "values": [
-                "ventilator",
-                "vent"
-            ],
-            "library": "",
-            "concept": "",
-            "declaration": "termset",
-            "description": "",
-            "name": "Ventilator"
-        },
-        {
-            "version": "",
-            "named_arguments": {},
-            "arguments": [],
-            "alias": "",
-            "funct": "",
-            "values": [
-                "Sepsis",
-                "Systemic infection"
-            ],
-            "library": "",
-            "concept": "",
-            "declaration": "termset",
-            "description": "",
-            "name": "Sepsis"
         }
     ]
 }

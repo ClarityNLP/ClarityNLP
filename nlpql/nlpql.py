@@ -391,6 +391,25 @@ def get_predicate_context(context: nlpql_parserParser.PredicateContext):
     return predicates
 
 
+def get_generic_expression(expression: nlpql_parserParser.ExpressionContext, entities: list(), operator: list()):
+    txt = expression.getText()
+    if expression.getChildCount() == 1:
+        child = expression.getChild(0)
+        if type(child) == nlpql_parserParser.LogicalOperatorContext:
+            operator.append(txt)
+        else:
+            entities.append(txt)
+    else:
+        for exp in expression.getChildren():
+            txt = exp.getText()
+            if type(exp) == nlpql_parserParser.LogicalOperatorContext:
+                operator.append(txt)
+            else:
+                get_generic_expression(exp, entities, operator)
+
+    return entities, operator
+
+
 def get_not_expression(expression: nlpql_parserParser.ExpressionContext, define_name, final):
     print(expression)
     entities = list()
@@ -403,9 +422,16 @@ def get_not_expression(expression: nlpql_parserParser.ExpressionContext, define_
 def get_logical_expression(expression: nlpql_parserParser.ExpressionContext, define_name, final):
     print(expression)
     entities = list()
-    operator = ""
+    operator = list()
 
-    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    for c in expression.getChildren():
+        if type(c) == nlpql_parserParser.ExpressionContext:
+            get_generic_expression(c, entities, operator)
+
+        elif type(c) == nlpql_parserParser.LogicalOperatorContext:
+            operator.append(c.getText())
+
+    op = PhenotypeOperations(define_name, operator[0], entities, final=final, raw_text=expression.getText())
     return op
 
 
