@@ -1019,7 +1019,7 @@ regexes = [
     regex_xx,  # 7
     regex_x_vol,  # 8
     regex_x,  # 9
-    regex_listEnd  # 10
+#    regex_listEnd  # 10
 ]
 
 # associates a regex index with its measurement tokenizer function
@@ -1033,7 +1033,8 @@ tokenizer_map = {0: tokenize_xyz4,
                  7: tokenize_xx,
                  8: tokenize_xvol,
                  9: tokenize_x,
-                 10: tokenize_list}
+#                 10: tokenize_list
+}
 
 LIST_TOKENIZER_FUNCTION_NAME = 'tokenize_list'
 
