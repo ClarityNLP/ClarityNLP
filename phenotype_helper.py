@@ -4,7 +4,15 @@ from functools import reduce
 import pandas as pd
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity
+
+DEBUG_LIMIT = 25
+
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
+numeric_comp_operators = ['==', '='
+                                '>',
+                          '<',
+                          '<=',
+                          '>=']
 
 
 def get_terms(model: PhenotypeModel):
@@ -60,7 +68,6 @@ def map_arguments(pipeline: PipelineConfig, e):
 
 
 def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug):
-
     if e['named_arguments'] is None:
         e['named_arguments'] = dict()
     if 'value_sets' not in e['named_arguments']:
@@ -80,7 +87,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
 
         tags = get_report_tags_by_keys(report_tags, doc_sets)
         if debug:
-            limit = 500
+            limit = DEBUG_LIMIT
         else:
             limit = 0
         if 'termset' in e['named_arguments']:
@@ -113,12 +120,41 @@ def get_pipelines_from_phenotype(model: PhenotypeModel):
     return pipelines
 
 
+def get_data_entity_split(de):
+    spl = de.split('.', 1)
+    entity = spl[0]
+    if len(spl) > 1:
+        attr = spl[1]
+    else:
+        attr = ''
+    return entity, attr
+
+
+def is_value(test: str):
+    if test.isdigit():
+        return True
+
+    try:
+        float(test)
+        return True
+    except ValueError:
+        return False
+
+
+def get_numeric_comparison_df(action, df, ent, attr, value_comp):
+    value_comp = float(value_comp)
+    new_df = df.query("(nlpql_feature == '%s') & (%s %s %d)" % (ent, attr, action, value_comp))
+    return new_df
+
+
 def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
     if phenotype.operations:
         cursor = db.pipeline_results.find({"job_id": int(job)})
         df = pd.DataFrame(list(cursor))
 
-        for c in phenotype.operations:
+        ops = sorted(phenotype.operations, key=lambda o: o['final'])
+        # TODO make sure all ops are in the right order
+        for c in ops:
             operation_name = c['name']
 
             if phenotype.context == 'Document':
@@ -127,36 +163,65 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                 on = 'subject'
             col_list = ["_id", "nlpql_feature", "report_date", 'report_id', 'subject', 'sentence']
 
-            if c['final']:
-                if 'data_entities' in c:
-                    action = c['action']
-                    data_entities = c['data_entities']
+            if 'data_entities' in c:
+                action = c['action']
+                data_entities = c['data_entities']
 
-                    dfs = []
-                    if action == 'AND' or action == 'OR' or action == 'NOT':
-                        if action == 'OR':
-                            how = "outer"
-                        elif action == 'AND':
-                            how = "inner"
+                dfs = []
+                ret = None
+                if action == 'AND' or action == 'OR' or action == 'NOT':
+                    if action == 'OR':
+                        how = "outer"
+                    elif action == 'AND':
+                        how = "inner"
+                    else:
+                        how = "left"
+
+                    for de in data_entities:
+                        ent, attr = get_data_entity_split(de)
+                        new_df = df.loc[df['nlpql_feature'] == ent]
+                        new_df = new_df[col_list]
+                        dfs.append(new_df)
+
+                    if len(dfs) > 0:
+                        ret = reduce(lambda x, y: pd.merge(x, y, on=on, how=how), dfs)
+                        ret['job_id'] = job
+                        ret['phenotype_id'] = phenotype_id
+                        ret['owner'] = phenotype_owner
+                        ret['job_date'] = datetime.datetime.now()
+                        ret['context_type'] = on
+                        ret['raw_definition_text'] = c['raw_text']
+                        ret['result_name'] = operation_name
+                        ret['final'] = c['final']
+
+                        db.phenotype_results.insert_many(ret.to_dict('records'))
+
+                if action in numeric_comp_operators:
+                    print(action)
+                    value_comp = ''
+                    ent = ''
+                    attr = ''
+                    if not len(data_entities) == 2:
+                        raise ValueError("Only 2 data entities for comparisons")
+                    for de in data_entities:
+                        if is_value(de):
+                            value_comp = de
                         else:
-                            how = "left"
+                            e, a = get_data_entity_split(de)
+                            ent = e
+                            attr = a
 
-                        for de in data_entities:
-                            new_df = df.loc[df['nlpql_feature'] == de]
-                            new_df = new_df[col_list]
-                            dfs.append(new_df)
+                    ret = get_numeric_comparison_df(action, df, ent, attr, value_comp)
 
-                        if len(dfs) > 0:
-                            ret = reduce(lambda x, y: pd.merge(x, y, on=on, how=how), dfs)
-                            ret['job_id'] = job
-                            ret['phenotype_id'] = phenotype_id
-                            ret['owner'] = phenotype_owner
-                            ret['job_date'] = datetime.datetime.now()
-                            ret['context_type'] = on
-                            ret['raw_definition_text'] = c['raw_text']
-                            ret['result_name'] = operation_name
+                    ret['job_id'] = job
+                    ret['phenotype_id'] = phenotype_id
+                    ret['owner'] = phenotype_owner
+                    ret['job_date'] = datetime.datetime.now()
+                    ret['context_type'] = on
+                    ret['raw_definition_text'] = c['raw_text']
+                    ret['result_name'] = operation_name
+                    ret['final'] = c['final']
 
-                            db.phenotype_results.insert_many(ret.to_dict('records'))
-
+                    db.phenotype_results.insert_many(ret.to_dict('records'))
             else:
                 print('nothing to do for ' + operation_name)

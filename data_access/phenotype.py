@@ -253,8 +253,10 @@ def get_sample_phenotype():
 
 
 if __name__ == "__main__":
+    p = get_sample_phenotype()
+    sorted(p.operations, key=lambda o: o['final'])
+    json = p.to_json()
 
-    json = get_sample_phenotype().to_json()
     print(json)
 
 
