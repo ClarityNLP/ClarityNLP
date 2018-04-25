@@ -38,7 +38,7 @@ The set of JSON fields in the output includes:
             matchingTerm     the query term associated with this value
             x                matching value
             y                matching value
-            minValue         minimum value of x and y, if neither is EMPTY_FIELD
+            minValue         mininum value of x and y, if neither is EMPTY_FIELD
             maxValue         maximum value of x and y, if neither is EMPTY_FIELD
 
 
@@ -820,6 +820,11 @@ if __name__ == '__main__':
         'Sputum cultures positive for gram positive cocci in pairs as well as gram negative diplococci.',
         'She completed a 7 day course of Vancomycin and Zosyn for the BAL '     +\
         'which grew gram positive and negative rods.',
+
+        # reported problems
+
+        # problem with list recognition in size_measurement_finder.py: recognizes '2 and 5cm' as end-of-list
+        'Saturations remain 100% on 40% fio2 and 5cm PEEP',
     ]
 
     optparser = optparse.OptionParser(add_help_option=False)
