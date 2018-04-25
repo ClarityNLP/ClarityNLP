@@ -3,10 +3,12 @@ from functools import reduce
 import sys
 import traceback
 import pandas as pd
+import sys
+import traceback
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity
 
-DEBUG_LIMIT = 5000
+DEBUG_LIMIT = 100
 
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
 numeric_comp_operators = ['==', '='
@@ -60,7 +62,7 @@ def get_report_tags_by_keys(report_tag_dict, keys: list):
 
 def map_arguments(pipeline: PipelineConfig, e):
     for k in e.keys():
-        if not (k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms"):
+        if not (k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or k == "cohort"):
             if k in pipeline_keys:
                 try:
                     pipeline[k] = e[k]
@@ -69,7 +71,20 @@ def map_arguments(pipeline: PipelineConfig, e):
                     print(ex)
 
 
-def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug):
+def get_cohort_items(cohort_name, cohort_source):
+    cohorts = list()
+    if type(cohort_name) == str:
+        if cohort_name in cohort_source:
+            cohorts.append(cohort_source[cohort_name])
+    elif type(cohort_name) == list:
+        for name in cohort_name:
+            if name in cohort_source:
+                cohorts.extend(cohort_source[name])
+
+    return cohorts
+
+
+def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug, cohorts):
     if e['named_arguments'] is None:
         e['named_arguments'] = dict()
     if 'value_sets' not in e['named_arguments']:
@@ -92,18 +107,28 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
             limit = DEBUG_LIMIT
         else:
             limit = 0
+
         if 'termset' in e['named_arguments']:
             terms = e['named_arguments']["termset"]
         elif 'termsets' in e['named_arguments']:
             terms = e['named_arguments']["termsets"]
         else:
             terms = list()
+
+        if 'cohort' in e['named_arguments']:
+            cohort = get_cohort_items(e['named_arguments']['cohort'], cohorts)
+        elif 'cohorts' in e['named_arguments']:
+            cohort = get_cohort_items(e['named_arguments']['cohorts'], cohorts)
+        else:
+            cohort = list()
+
         pipeline = PipelineConfig(e['funct'], e['name'],
                                   get_terms_by_keys(all_terms, terms,
                                                     e['named_arguments']['value_sets']
                                                     ),
                                   owner=owner,
                                   limit=limit,
+                                  cohort=cohort,
                                   report_tags=tags)
         map_arguments(pipeline, e)
         map_arguments(pipeline, e['named_arguments'])
@@ -112,13 +137,29 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         raise ValueError("External pipelines not yet supported")
 
 
+def get_cohorts(model: PhenotypeModel):
+    cohorts = dict()
+    if model.cohorts:
+        for c in model.cohorts:
+            try:
+                c_name = c['name']
+                if c['library'] == 'OHDSI' and c['funct'] == 'getCohort' and len(c['arguments']) > 0:
+                    cohorts[c_name] = c['arguments'][0]
+
+            except Exception as ex:
+                print(ex)
+                traceback.print_exc(file = sys.stderr)
+    return cohorts
+
+
 def get_pipelines_from_phenotype(model: PhenotypeModel):
     pipelines = list()
     if model and model.data_entities and len(model.data_entities) > 0:
         all_terms = get_terms(model)
         report_tags = get_report_tags(model)
+        cohorts = get_cohorts(model)
         for e in model.data_entities:
-            pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug))
+            pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts))
     return pipelines
 
 
@@ -150,6 +191,7 @@ def get_numeric_comparison_df(action, df, ent, attr, value_comp):
 
 
 def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
+    pd.options.mode.chained_assignment = None
     if phenotype.operations:
         cursor = db.pipeline_results.find({"job_id": int(job)})
         df = pd.DataFrame(list(cursor))

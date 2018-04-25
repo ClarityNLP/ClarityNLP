@@ -121,7 +121,8 @@ class ProviderAssertionBatchTask(luigi.Task):
             jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
             docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start, solr_url=util.solr_url,
                                    tags=pipeline_config.report_tags, report_type_query=pipeline_config.report_type_query, mapper_inst=util.report_mapper_inst,
-                                   mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key)
+                                   mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key,
+                                   cohort_ids=pipeline_config.cohort)
             term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
                                       .include_descendants, pipeline_config.include_ancestors, pipeline_config
                                       .vocabulary)

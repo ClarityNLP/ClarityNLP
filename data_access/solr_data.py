@@ -2,7 +2,17 @@ import sys
 from urllib import request
 from urllib.parse import quote
 import simplejson
+import requests
 import util
+from ohdsi import getCohort
+import traceback
+import sys
+import json
+
+
+HEADERS = {
+        'Content-Type': 'application/json',
+    }
 
 
 def normalize_tag(tag):
@@ -29,6 +39,7 @@ def get_report_type_mappings(url, inst, key):
                             tag_lookup_dict[lookup_tag] = list()
                         tag_lookup_dict[lookup_tag].append(rep['name'])
     except Exception as ex:
+        traceback.print_exc(file=sys.stderr)
         print(ex)
 
     return tag_lookup_dict
@@ -46,14 +57,26 @@ def make_url(qry, fq, sort, start, rows, solr_url):
     return url
 
 
-def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query):
+def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids):
     new_fq = fq
 
     mapped_items = get_report_type_mappings(mapper_url, mapper_inst, mapper_key)
 
     if len(report_type_query) > 0:
-        report_types = 'report_type: ("' + report_type_query + '")'
+        report_types = 'report_type: (' + report_type_query + ')'
         new_fq += report_types
+
+    if len(cohort_ids) > 0:
+        subjects = list()
+        for c in cohort_ids:
+            patients = getCohort(c)['Patients']
+            subjects.extend([str(x['subjectId']) for x in patients])
+            del patients
+        if len(subjects) > 0:
+            if len(new_fq) > 0:
+                new_fq += ' AND '
+            subject_fq = 'subject: (' + ' OR '.join(subjects) + ')'
+            new_fq += subject_fq
 
     if len(tags) > 0:
         if len(new_fq) > 0:
@@ -64,6 +87,7 @@ def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query):
                 lookup_tag = normalize_tag(tag)
                 matched_reports.extend(mapped_items[lookup_tag])
             except Exception as e:
+                traceback.print_exc(file=sys.stderr)
                 print("Unable to map tag %s" % tag)
         if len(matched_reports) > 0:
             match_report_clause = '" OR "'.join(matched_reports)
@@ -73,31 +97,66 @@ def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query):
     return new_fq
 
 
+def get_headers():
+    return HEADERS
+
+
+def make_post_body(qry, fq, sort, start, rows):
+    data = dict()
+    data['query'] = qry
+    if fq and len(fq) > 0:
+        data['filter'] = fq
+    if sort and len(sort) > 0:
+        data['sort'] = sort
+    data['offset'] = start
+    data['limit'] = rows
+    data['params'] = {
+        'wt': 'json'
+    }
+    return data
+
+
 def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='', sort='', start=0, rows=10,
+          cohort_ids: list = list(),
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
-    url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query), sort, start, rows, solr_url)
+    url = solr_url + '/select'
+    fq = make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
+    data = make_post_body(qry, fq, sort, start, rows)
 
     print("Querying " + url)
-    connection = request.urlopen(url)
-    response = simplejson.load(connection)
+    post_data = json.dumps(data)
+
+    # Getting ID for new cohort
+    response = requests.post(url, headers=get_headers(), data=post_data)
 
     # print(response['response']['numFound'], "documents found.")
 
     # for document in response['response']['docs']:
     #     print ("  Report id =", document['report_id'])
 
-    return response['response']['docs']
+    if response.status_code != 200:
+        return list()
+
+    return response.json()['response']['docs']
 
 
 def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), fq='', sort='', start=0, rows=10,
+                   cohort_ids: list = list(),
                    report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
-    url = make_url(qry, make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query), sort, start, rows, solr_url)
+
+    url = solr_url + '/select'
+    fq = make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
+    data = make_post_body(qry, fq, sort, start, rows)
 
     print("Querying " + url)
-    connection = request.urlopen(url)
-    response = simplejson.load(connection)
+    post_data = json.dumps(data)
 
-    return int(response['response']['numFound'])
+    # Getting ID for new cohort
+    response = requests.post(url, headers=get_headers(), data=post_data)
+    if response.status_code != 200:
+        return 0
+
+    return int(response.json()['response']['numFound'])
 
 
 if __name__ == '__main__':

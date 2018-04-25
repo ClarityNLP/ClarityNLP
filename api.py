@@ -74,16 +74,18 @@ def ohdsi_get_conceptset():
 
     return "Could not retrieve Concept Set"
 
+
 @app.route('/ohdsi_get_cohort', methods=['GET'])
 @auto.doc()
 def ohdsi_get_cohort():
     """Get cohort details from OHDSI."""
     if request.method == 'GET':
         cohort_id = request.args.get('cohort_id')
-        cohort = getCohort(cohort_id)
+        cohort = json.dumps(getCohort(cohort_id))
         return cohort
 
     return "Could not retrieve Cohort"
+
 
 @app.route('/ohdsi_get_cohort_by_name', methods=['GET'])
 @auto.doc()

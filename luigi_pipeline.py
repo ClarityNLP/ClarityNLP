@@ -42,7 +42,8 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
     total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
                                           mapper_url=util.report_mapper_url,
                                           mapper_key=util.report_mapper_key, solr_url=util.solr_url,
-                                          tags=pipeline_config.report_tags, report_type_query=pipeline_config.report_type_query)
+                                          tags=pipeline_config.report_tags, report_type_query=pipeline_config.report_type_query,
+                                          cohort_ids=pipeline_config.cohort)
     doc_limit = config.get_limit(total_docs, pipeline_config)
     ranges = range(0, (doc_limit + util.row_count), util.row_count)
     jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
@@ -97,4 +98,4 @@ def run_value_extraction_pipeline(pipeline_id, job_id, owner):
 
 
 if __name__ == "__main__":
-    run_value_extraction_pipeline(str(223), str(222), 'test')
+    run_value_extraction_pipeline(str(293), str(343), 'test')
