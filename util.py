@@ -41,10 +41,12 @@ luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'))
 
 main_url = read_property('NLP_API_URL', ('main', 'url'))
 
-row_count = 10
+row_count = 25
 delimiter = ','
 quote_character = '"'
 
 report_mapper_url = read_property('MAPPER_API_URL', ('report_mapper', 'url'))
 report_mapper_key = read_property('MAPPER_API_KEY', ('report_mapper', 'key'))
 report_mapper_inst = read_property('MAPPER_API_INSTITUTE', ('report_mapper', 'institute'))
+
+ohdsi_url = read_property('OHDSI_WEBAPI_URL', ('ohdsi', 'webapi'))

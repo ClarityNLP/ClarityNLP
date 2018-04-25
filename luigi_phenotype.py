@@ -1,4 +1,6 @@
 import datetime
+import sys
+import traceback
 
 import luigi
 from pymongo import MongoClient
@@ -7,8 +9,6 @@ import data_access
 import phenotype_helper
 import util
 from luigi_pipeline import PipelineTask
-import sys
-import traceback
 
 
 class PhenotypeTask(luigi.Task):
@@ -53,8 +53,9 @@ class PhenotypeTask(luigi.Task):
                 outfile.write("DONE!")
                 outfile.write('\n')
         except Exception as ex:
-            traceback.print_exc(file=sys.stdout)
-            data_access.update_job_status(str(self.job), util.conn_string, data_access.FAILURE, str(ex))
+            traceback.print_exc(file=sys.stderr)
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.FAILURE,
+                                          ''.join(traceback.format_stack()))
             print(ex)
         finally:
             client.close()

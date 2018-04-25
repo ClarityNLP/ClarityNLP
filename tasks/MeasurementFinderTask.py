@@ -6,6 +6,8 @@ from data_access import jobs
 from pymongo import MongoClient
 import datetime
 import util
+import traceback
+import sys
 
 SECTIONS_FILTER = "sections"
 
@@ -80,14 +82,17 @@ class MeasurementFinderTask(luigi.Task):
                                        "Finding terms with MeasurementFinder")
                 # TODO incorporate sections and filters
                 for doc in docs:
-                    res = run_measurement_finder_full(doc["report_text"], pipeline_config.terms)
-                    for meas in res:
+                    meas_results = run_measurement_finder_full(doc["report_text"], pipeline_config.terms)
+                    for meas in meas_results:
                         inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, meas, doc,
                                                 "MeasurementFinder")
                         outfile.write(str(inserted))
                         outfile.write('\n')
+                    del meas_results
+            del docs
         except Exception as ex:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
         finally:
             client.close()

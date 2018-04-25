@@ -3,9 +3,12 @@ OHDSI Helpers
 """
 import requests
 import json
+import util
 
 
-ENDPOINT = 'https://apps.hdap.gatech.edu/ohdsi/WebAPI'
+ENDPOINT = util.ohdsi_url
+if len(ENDPOINT) == 0:
+    ENDPOINT = 'http://api.ohdsi.org/WebAPI/'
 
 def getConceptSet(filepath):
     url = ENDPOINT + '/vocabulary/OHDSI-CDMV5/resolveConceptSetExpression'

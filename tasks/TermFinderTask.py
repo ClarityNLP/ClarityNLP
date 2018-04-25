@@ -6,6 +6,8 @@ from data_access import jobs
 from pymongo import MongoClient
 import datetime
 import util
+import traceback
+import sys
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],
@@ -82,8 +84,11 @@ class TermFinderBatchTask(luigi.Task):
                                                 "TermFinder")
                         outfile.write(str(inserted))
                         outfile.write('\n')
+                    del terms_found
+            del docs
         except Exception as ex:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
         finally:
             client.close()
@@ -134,8 +139,11 @@ class ProviderAssertionBatchTask(luigi.Task):
                                                 "ProviderAssertion")
                         outfile.write(str(inserted))
                         outfile.write('\n')
+                    del terms_found
+            del docs
         except Exception as ex:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
         finally:
             client.close()

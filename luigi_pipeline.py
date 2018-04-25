@@ -67,7 +67,8 @@ class PipelineTask(luigi.Task):
 
             return matches
         except Exception as ex:
-            traceback.print_exc(file=sys.stdout)
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
         return list()
 
@@ -77,7 +78,7 @@ class PipelineTask(luigi.Task):
 
     def complete(self):
         status = jobs.get_job_status(str(self.job), util.conn_string)
-        return status['status'] == jobs.COMPLETED
+        return status['status'] == jobs.COMPLETED or status['status'] == jobs.WARNING
 
 
 def run_ner_pipeline(pipeline_id, job_id, owner):

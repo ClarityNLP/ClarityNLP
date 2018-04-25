@@ -6,6 +6,8 @@ from data_access import jobs
 from pymongo import MongoClient
 import datetime
 import util
+import traceback
+import sys
 
 SECTIONS_FILTER = "sections"
 
@@ -81,8 +83,11 @@ class POSTaggerTask(luigi.Task):
                                                 "POSTagger")
                         outfile.write(str(inserted))
                         outfile.write('\n')
+                    del res
+            del docs
         except Exception as ex:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
         finally:
             client.close()

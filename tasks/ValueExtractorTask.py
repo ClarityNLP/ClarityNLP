@@ -1,13 +1,15 @@
-import luigi
-from data_access import solr_data
-from data_access import pipeline_config as config
-from nlp import *
-from data_access import jobs
-from pymongo import MongoClient
-import util
-from .MeasurementFinderTask import mongo_writer
 import sys
 import traceback
+
+import luigi
+from pymongo import MongoClient
+
+import util
+from data_access import jobs
+from data_access import pipeline_config as config
+from data_access import solr_data
+from nlp import *
+from .MeasurementFinderTask import mongo_writer
 
 SECTIONS_FILTER = "sections"
 
@@ -23,7 +25,7 @@ class ValueExtractorTask(luigi.Task):
     def run(self):
         client = MongoClient(util.mongo_host, util.mongo_port)
 
-        current_doc =None
+        current_doc = None
         try:
             jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                    "Running ValueExtractor Batch %s" %
@@ -57,17 +59,20 @@ class ValueExtractorTask(luigi.Task):
                                                     "ValueExtractor")
                             outfile.write(str(inserted))
                             outfile.write('\n')
+                        del result
                     else:
                         outfile.write("no matches!\n")
+            del docs
         except AssertionError as a:
-            traceback.print_exc(file=sys.stdout)
             print(a)
             print(current_doc)
         except Exception as ex:
-            traceback.print_exc(file=sys.stdout)
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.FAILURE, str(ex))
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING,
+                                   'Report ID: ' + current_doc['report_id'] + '\n'
+                                                                              ''.join(traceback.format_stack()))
             print(ex)
-            print(current_doc)
+            # print(current_doc)
         finally:
             client.close()
 

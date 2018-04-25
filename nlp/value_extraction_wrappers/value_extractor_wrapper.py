@@ -1,6 +1,10 @@
+from itertools import product
+
+import regex as re
+
 from data_access import Measurement
 from nlp.segmentation import *
-from nlp.value_extraction.value_extractor import extract_value, clean_sentence
+from nlp.value_extraction.value_extractor import extract_value
 
 print('Initializing models for value extractor...')
 segmentor = Segmentation()
@@ -27,15 +31,20 @@ def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_c
 
     sentence_list = segmentor.parse_sentences(text)
     process_results = []
-    for s in sentence_list:
-        s = clean_sentence(s, is_case_sensitive_text)
-
-        for term in term_list:
-            value_results = extract_value(term, s, minval, maxval)
+    matchers = [re.compile(r"\b%s\b" % t, re.IGNORECASE) for t in term_list]
+    vals = product(sentence_list, matchers)
+    for v in vals:
+        sentence = v[0]
+        matcher = v[1]
+        match = matcher.search(sentence)
+        if match:
+            term = match.group(0)
+            value_results = extract_value(term, sentence, minval, maxval)
             if len(value_results) > 0:
                 for x in value_results:
-                    process_results.append(Measurement(sentence=s, text=s[x.start:x.end], start=x.start, end=x.end,
-                                                       condition=x.cond, X=x.num1, Y=x.num2))
+                    process_results.append(
+                        Measurement(sentence=sentence, text=sentence[x.start:x.end], start=x.start, end=x.end,
+                                    condition=x.cond, X=x.num1, Y=x.num2))
 
     return process_results
 

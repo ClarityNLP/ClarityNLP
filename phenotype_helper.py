@@ -172,7 +172,6 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
 
                 dfs = []
                 output = None
-                ret = None
                 if action == 'AND':
                     how = 'inner'
 
@@ -190,12 +189,15 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                         ret['job_date'] = datetime.datetime.now()
                         ret['context_type'] = on
                         ret['raw_definition_text'] = c['raw_text']
-                        ret['source_nlpql_feature'] = ret['nlpql_feature']
                         ret['result_name'] = operation_name
                         ret['nlpql_feature'] = operation_name
                         ret['final'] = c['final']
 
+                        for d in dfs:
+                            del d
+
                         output = ret.to_dict('records')
+                        del ret
                 elif action == 'OR':
                     q = '| '.join([("(nlpql_feature == '%s')" % x) for x in data_entities])
                     ret = df.query(q)
@@ -209,6 +211,9 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                     ret['result_name'] = operation_name
                     ret['nlpql_feature'] = operation_name
                     ret['final'] = c['final']
+
+                    output = ret.to_dict('records')
+                    del ret
                 elif action in numeric_comp_operators:
                     print(action)
                     value_comp = ''
@@ -225,7 +230,6 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                             attr = a
 
                     ret = get_numeric_comparison_df(action, df, ent, attr, value_comp)
-
                     ret['job_id'] = job
                     ret['phenotype_id'] = phenotype_id
                     ret['owner'] = phenotype_owner
@@ -238,9 +242,12 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
                     ret['final'] = c['final']
 
                     output = ret.to_dict('records')
+                    del ret
 
                 if output and len(output) > 0:
                     db.phenotype_results.insert_many(output)
+                    del output
 
             else:
                 print('nothing to do for ' + operation_name)
+        del df
