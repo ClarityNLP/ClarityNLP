@@ -41,15 +41,18 @@ The set of JSON fields present in the output for each measurement includes:
         z              numeric value of third number
         values         JSON array of all numeric values in list
 
-        x_view         view specification for x value
-        y_view         view specification for y value
-        z_view         view specification for z value
+        xView         view specification for x value
+        yView         view specification for y value
+        zView         view specification for z value
+
+        minValue      either min([x, y, z]) or min(values)
+        maxValue      either max([x, y, z]) or max(values)
 
 All JSON results will have an identical number of fields.
 
-Fields that are not applicable to a given measurement will have a value of
+Fields that are not applicable to a given measurement will have a value of 
 EMPTY_FIELD.
-
+        
 All string matching is case-insensitive. JSON results are written to stdout.
 
 
@@ -83,8 +86,8 @@ To access the fields in each measurement:
 ACKNOWLEDGEMENTS:
 
 
-Acknowledgement is made to the authors of the article listed below. Some of the
-regular expressions provided in this reference were used as the starting point
+Acknowledgement is made to the authors of the article listed below. Some of the 
+regular expressions provided in this reference were used as the starting point 
 for this code.
 
 Reference: Natural Language Processing Techniques for Extracting and
@@ -105,7 +108,7 @@ from enum import Enum, unique
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 3
 
 # set to True to enable debug output
 TRACE = False
@@ -113,9 +116,13 @@ TRACE = False
 # namedtuple used for serialization
 EMPTY_FIELD = -1
 SIZE_MEASUREMENT_FIELDS = ['text', 'start', 'end', 'temporality', 'units',
-                           'condition', 'x', 'y', 'z', 'values', 'x_view',
-                           'y_view', 'z_view']
+                           'condition', 'x', 'y', 'z', 'values', 'xView',
+                           'yView', 'zView', 'minValue', 'maxValue']
 SizeMeasurement = namedtuple('SizeMeasurement', SIZE_MEASUREMENT_FIELDS)
+
+# values for the temporality field
+STR_CURRENT  = 'CURRENT'
+STR_PREVIOUS = 'PREVIOUS'
 
 # The regex for finding numeric values is called 'x'. The negative lookbehind
 # prevents matching the rightmost portion of a BP measurement, such as 120/80.
@@ -145,10 +152,10 @@ regex_units = re.compile(r'\A' + strUnits + r'\Z')
 str_is_area_unit = r'(square|sq\.?|mm2|cm2|in2)'
 regex_is_area_unit = re.compile(str_is_area_unit)
 
-str_is_vol_unit = r'(cubic|cu\.?|mm3|cm3|in3|cc)'
+str_is_vol_unit  = r'(cubic|cu\.?|mm3|cm3|in3|cc)'
 regex_is_vol_unit = re.compile(str_is_vol_unit)
 
-str_x_cm = x + cm
+str_x_cm  = x + cm
 str_x_vol_cm = x + vol + cm
 str_x_to_x_cm = x + to + x + cm
 str_x_by_x_cm = x + by + x + cm
@@ -160,28 +167,31 @@ str_xyz3 = x + cm + by + x + cm + by + x + cm
 str_xyz4 = x + cm + view + by + x + cm + view + by + x + cm + view
 
 str_m = r'(' + str_xyz4 + r'|' + str_xyz3 + r'|' + str_xyz2 + r'|' + str_xyz1 + \
-        r'|' + str_xy3 + r'|' + str_xy2 + r'|' + str_x_by_x_cm + \
+        r'|' + str_xy3 + r'|' + str_xy2 + r'|' + str_x_by_x_cm +                \
         r'|' + str_x_to_x_cm + r'|' + str_x_vol_cm + r'|' + str_x_cm + r')'
 
-regex_x = re.compile(str_x_cm)
+regex_x     = re.compile(str_x_cm)
 regex_x_vol = re.compile(str_x_vol_cm)
-regex_xx = re.compile(str_x_to_x_cm)
-regex_xy1 = re.compile(str_x_by_x_cm)
-regex_xy2 = re.compile(str_xy2)
-regex_xy3 = re.compile(str_xy3)
-regex_xyz1 = re.compile(str_xyz1)
-regex_xyz2 = re.compile(str_xyz2)
-regex_xyz3 = re.compile(str_xyz3)
-regex_xyz4 = re.compile(str_xyz4)
+regex_xx    = re.compile(str_x_to_x_cm)
+regex_xy1   = re.compile(str_x_by_x_cm)
+regex_xy2   = re.compile(str_xy2)
+regex_xy3   = re.compile(str_xy3)
+regex_xyz1  = re.compile(str_xyz1)
+regex_xyz2  = re.compile(str_xyz2)
+regex_xyz3  = re.compile(str_xyz3)
+regex_xyz4  = re.compile(str_xyz4)
 
-seen = r'(observed|identified|seen|appreciated|noted|confirmed|demonstrated|present)'
+seen   = r'(observed|identified|seen|appreciated|noted|confirmed|demonstrated|present)'
 approx = r'((approximately|about|up to|at least|at most|in aggregate)\\s+)?'
 
 strNumber = r'([\.\d]+)'
 regex_number = re.compile(r'\A' + strNumber + r'\Z')
 
-strListEnd = strNumber + r'(\s*[,\-]?\s*and\s+)' + strNumber + r'[\-]?\s*' + cm
+# end-of-list must begin with a space or comma, to prevent the digit in terms
+# such as 'fio2' from being recognized as a list element
+strListEnd = r'[,\s]' + strNumber + r'(\s*[,\-]?\s*and\s+)' + strNumber + r'[\-]?\s*' + cm
 regex_listEnd = re.compile(strListEnd)
+
 
 prev1 = r'previously\s*measur(ed|ing)\s*' + approx + str_m
 prev2 = r'(previously\s*)?' + seen + approx + r'(as\s*)?' + str_m
@@ -202,57 +212,51 @@ str_previous = r'(' + prev1 + r'|' + prev2 + r'|' + prev3 + r'|' + prev4 + r'|' 
 
 regex_previous = re.compile(str_previous);
 
-STR_CURRENT = 'CURRENT'
-STR_PREVIOUS = 'PREVIOUS'
-
 # match (), {}, and []
 str_brackets = r'[(){}\[\]]'
 regex_brackets = re.compile(str_brackets)
 
-
 @unique
 class TokenLabel(Enum):
-    DIM1 = 1,
-    DIM2 = 2,
-    DIM3 = 3,
-    AREA = 4,
-    VOLUME = 5,
-    VIEW1 = 6,
-    VIEW2 = 7,
-    VIEW3 = 8
-    RANGE1 = 9,
-    RANGE2 = 10,
+    DIM1    = 1,
+    DIM2    = 2,
+    DIM3    = 3,
+    AREA    = 4,
+    VOLUME  = 5,
+    VIEW1   = 6,
+    VIEW2   = 7,
+    VIEW3   = 8
+    RANGE1  = 9,
+    RANGE2  = 10,
     LISTNUM = 11,
-    UNITS = 12,
-    UNITS2 = 13,
-    UNITS3 = 14
-
+    UNITS   = 12,
+    UNITS2  = 13,
+    UNITS3  = 14
 
 TOKEN_VALUE_NONE = -1
-
+    
 # A token is a component of a measurement.
 # The 'value' is the numeric value, if any.
 Token = namedtuple('Token', 'text label value')
 
 # convert from cm to mm
-CM_TO_MM = 10.0
+CM_TO_MM    = 10.0
 CM_TO_MM_SQ = CM_TO_MM * CM_TO_MM
 
 # convert from inches to mm
-IN_TO_MM = 25.4
+IN_TO_MM    = 25.4
 IN_TO_MM_SQ = IN_TO_MM * IN_TO_MM
 
 CHAR_SPACE = ' '
 CHAR_COMMA = ','
 
 # acceptable chars in a list of numbers (digits, '.', "and", ',', space, dash)
-VALID_LIST_CHARS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                    '.', 'a', 'n', 'd', ',', ' ', '-']
+VALID_LIST_CHARS =  ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                     '.', 'a', 'n', 'd', ',', ' ', '-']
 
 # namedtuple objects found by this code - internal use only
 Measurement = namedtuple('Measurement',
                          'text start end temporality subject location token_list')
-
 
 ###############################################################################
 def to_json(measurement_list):
@@ -318,12 +322,12 @@ def to_json(measurement_list):
 
         # give all fields values for ease of serialization
         m_dict['values'] = EMPTY_FIELD
-        m_dict['x'] = EMPTY_FIELD
-        m_dict['y'] = EMPTY_FIELD
-        m_dict['z'] = EMPTY_FIELD
-        m_dict['x_view'] = EMPTY_FIELD
-        m_dict['y_view'] = EMPTY_FIELD
-        m_dict['z_view'] = EMPTY_FIELD
+        m_dict['x']      = EMPTY_FIELD
+        m_dict['y']      = EMPTY_FIELD
+        m_dict['z']      = EMPTY_FIELD
+        m_dict['xView']  = EMPTY_FIELD
+        m_dict['yView']  = EMPTY_FIELD
+        m_dict['zView']  = EMPTY_FIELD
 
         if is_list:
             m_dict['values'] = []
@@ -339,23 +343,41 @@ def to_json(measurement_list):
                 m_dict['z'] = t.value
                 dim_count -= 1
             elif TokenLabel.VIEW1 == t.label:
-                m_dict['x_view'] = t.text
+                m_dict['xView'] = t.text
             elif TokenLabel.VIEW2 == t.label:
-                m_dict['y_view'] = t.text
+                m_dict['yView'] = t.text
             elif TokenLabel.VIEW3 == t.label:
-                m_dict['z_view'] = t.text
+                m_dict['zView'] = t.text
             elif TokenLabel.LISTNUM == t.label:
                 m_dict['values'].append(t.value)
                 dim_count -= 1
 
         assert 0 == dim_count
 
+        # compute minValue and maxValue
+        if is_list:
+            minValue = min(m_dict['values'])
+            maxValue = max(m_dict['values'])
+        else:
+            # compute min and max values of [x, y, z]
+            data = []
+            if EMPTY_FIELD != m_dict['x']:
+                data.append(m_dict['x'])
+            if EMPTY_FIELD != m_dict['y']:
+                data.append(m_dict['y'])
+            if EMPTY_FIELD != m_dict['z']:
+                data.append(m_dict['z'])
+            minValue = min(data)
+            maxValue = max(data)
+            
+        m_dict['minValue'] = minValue
+        m_dict['maxValue'] = maxValue
+        
         # this measurement has now been converted
         dict_list.append(m_dict)
 
     # serialize the entire list of dicts
     return json.dumps(dict_list, indent=4)
-
 
 ###############################################################################
 def print_tokens(token_list):
@@ -370,7 +392,6 @@ def print_tokens(token_list):
         print('\t[{0:2}]: {1:16} {2:6.2f} {3}'.format(index, token.label, token.value, token.text))
         index += 1
 
-
 ###############################################################################
 def num_to_float(num_str):
     """
@@ -381,7 +402,6 @@ def num_to_float(num_str):
     # replace any embedded spaces with the empty string
     str_no_spaces = re.sub('\s', '', num_str)
     return float(str_no_spaces)
-
 
 ###############################################################################
 def is_area_unit(units_text):
@@ -396,7 +416,6 @@ def is_area_unit(units_text):
     else:
         return False
 
-
 ###############################################################################
 def is_vol_unit(units_text):
     """
@@ -409,8 +428,7 @@ def is_vol_unit(units_text):
         return True
     else:
         return False
-
-
+    
 ###############################################################################
 def convert_units(value, units, is_area_measurement, is_vol_measurement):
     """
@@ -418,17 +436,17 @@ def convert_units(value, units, is_area_measurement, is_vol_measurement):
     the new value.
     """
 
-    convert_cm = units.startswith('cm') or \
+    convert_cm = units.startswith('cm') or    \
                  units.startswith('centi') or \
                  units.startswith('cc')
     convert_in = units.startswith('in')
-    is_area = is_area_measurement or is_area_unit(units)
-    is_volume = is_vol_measurement or is_vol_unit(units)
+    is_area    = is_area_measurement or is_area_unit(units)
+    is_volume  = is_vol_measurement or is_vol_unit(units)
 
     if TRACE:
         print('convert_units::is_area: {0}'.format(is_area))
         print('convert_units::is_volume: {0}'.format(is_volume))
-
+    
     if convert_cm:
         # convert from cm to mm
         value = value * CM_TO_MM
@@ -446,28 +464,27 @@ def convert_units(value, units, is_area_measurement, is_vol_measurement):
 
     return value
 
-
 ###############################################################################
 def get_list_start(sentence, match_start):
     """
     Scan backwards from the end-of-list match and find the first number in
     the list. Return the character offset to the caller.
     """
-
+    
     pos = match_start - 1;
 
     # get the char at offset 'pos', which must either be a space or comma
-    ch = sentence[pos:pos + 1]
+    ch = sentence[pos:pos+1]
     if TRACE:
         print('Initial char at pos: ->{0}<-'.format(ch))
     assert CHAR_SPACE == ch or CHAR_COMMA == ch
 
     while pos >= 0:
-        c = sentence[pos:pos + 1]
+        c = sentence[pos:pos+1]
         if c in VALID_LIST_CHARS:
             # first text char encountered must be a 'd' (for word "and")
             if 'd' == c and pos >= 2:
-                if 'n' == sentence[pos - 1:pos] and 'a' == sentence[pos - 2:pos - 1]:
+                if 'n' == sentence[pos-1:pos] and 'a' == sentence[pos-2:pos-1]:
                     # skip word "and"
                     pos -= 3;
                 else:
@@ -482,10 +499,10 @@ def get_list_start(sentence, match_start):
     pos = pos + 1
 
     # skip leading whitespace
-    c = sentence[pos:pos + 1]
+    c = sentence[pos:pos+1]
     while CHAR_SPACE == c:
         pos = pos + 1
-        c = sentence[pos:pos + 1]
+        c = sentence[pos:pos+1]
 
     return pos;
 
@@ -505,17 +522,17 @@ def tokenize_complete_list(sentence, list_text, list_start):
 
     # find the position immediately prior to the units string
     pos = len(list_text) - 1
-    c = list_text[pos:pos + 1]
+    c = list_text[pos:pos+1]
     while CHAR_SPACE != c:
         pos -= 1
         if pos < 0:
             break;
-        c = list_text[pos:pos + 1]
+        c = list_text[pos:pos+1]
 
     if pos < 0:
         # no units, invalid list
         return []
-
+        
     # remove the units from the end and keep the list part
     list_text_no_units = list_text[0:pos]
 
@@ -526,7 +543,7 @@ def tokenize_complete_list(sentence, list_text, list_start):
     items = list_text_no_units.split(',')
 
     tokens = []
-
+    
     prev_index = list_start
     for item in items:
         if TRACE:
@@ -536,10 +553,10 @@ def tokenize_complete_list(sentence, list_text, list_start):
         if match:
             # skip initial space chars, if any
             item_offset = 0
-            c = item[item_offset:item_offset + 1]
+            c = item[item_offset:item_offset+1]
             while CHAR_SPACE == c:
                 item_offset += 1
-                c = item[item_offset:item_offset + 1]
+                c = item[item_offset:item_offset+1]
 
             # find offset of this string in the sentence
             number_text = item[item_offset:].strip()
@@ -548,27 +565,27 @@ def tokenize_complete_list(sentence, list_text, list_start):
             # convert to floating point value
             value = num_to_float(number_text)
 
-            tokens.append(Token(number_text, TokenLabel.LISTNUM, value))
+            tokens.append( Token(number_text, TokenLabel.LISTNUM, value))
             prev_index = offset + 1
-
+            
             if TRACE:
                 print('\tFound list numeric token: ->{0}<-'.format(number_text))
 
     # tokenize the units string
-    match = regex_units.search(list_text[pos + 1:])
+    match = regex_units.search(list_text[pos+1:])
     if match:
         units_text = match.group()
 
         is_area = is_area_unit(units_text)
-        is_vol = is_vol_unit(units_text)
+        is_vol  = is_vol_unit(units_text)
 
         units_label = TokenLabel.UNITS
         if is_area:
             units_label = TokenLabel.UNITS2
         elif is_vol:
             units_label = TokenLabel.UNITS3
-
-        tokens.append(Token(units_text, units_label, TOKEN_VALUE_NONE))
+        
+        tokens.append( Token(units_text, units_label, TOKEN_VALUE_NONE))
 
     # convert the units of the list items and set all listnumbers to label DIM1
     for i in range(len(tokens)):
@@ -578,8 +595,8 @@ def tokenize_complete_list(sentence, list_text, list_start):
             tokens[i] = Token(token.text, TokenLabel.LISTNUM, value)
 
     return tokens
-
-
+    
+        
 ###############################################################################
 def tokenize_xyz4(match):
     """
@@ -587,11 +604,11 @@ def tokenize_xyz4(match):
 
             1.5 cm craniocaudal x 1.8 cm transverse x 2.1 cm anterior
     """
-
+    
     assert 11 == len(match.groups())
 
     tokens = []
-
+    
     # group 1 is the first number
     num = num_to_float(match.group(1))
 
@@ -600,9 +617,9 @@ def tokenize_xyz4(match):
 
     # group 3 is the view
 
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value))
-    tokens.append(Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-    tokens.append(Token(match.group(3), TokenLabel.VIEW1, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value))
+    tokens.append( Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(3), TokenLabel.VIEW1, TOKEN_VALUE_NONE))
 
     # group 4 is the 'by' token (ignore)
 
@@ -614,11 +631,11 @@ def tokenize_xyz4(match):
 
     # group 7 is the second view
 
-    tokens.append(Token(match.group(5), TokenLabel.DIM2, value))
-    tokens.append(Token(match.group(6), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-    tokens.append(Token(match.group(7), TokenLabel.VIEW2, TOKEN_VALUE_NONE))
-
-    # group 8 is the second 'by' token (ignore)
+    tokens.append( Token(match.group(5), TokenLabel.DIM2, value))
+    tokens.append( Token(match.group(6), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(7), TokenLabel.VIEW2, TOKEN_VALUE_NONE))
+    
+    #group 8 is the second 'by' token (ignore)
 
     # group 9 is the third number
     num = num_to_float(match.group(9))
@@ -627,33 +644,32 @@ def tokenize_xyz4(match):
     value = convert_units(num, match.group(10), False, False)
 
     # group 11 is the third view
-
-    tokens.append(Token(match.group(9), TokenLabel.DIM3, value))
-    tokens.append(Token(match.group(10), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-    tokens.append(Token(match.group(11), TokenLabel.VIEW3, TOKEN_VALUE_NONE))
-
+    
+    tokens.append( Token(match.group(9), TokenLabel.DIM3, value))
+    tokens.append( Token(match.group(10), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(11), TokenLabel.VIEW3, TOKEN_VALUE_NONE))
+    
     return tokens
-
 
 ###############################################################################
 def tokenize_xyz3(match):
     """
-    Tokenizes measurements of the form:
+    Tokenizes measurements of the form: 
 
             1.5cm x 1.8cm x 2.1cm
     """
     assert 8 == len(match.groups())
 
     tokens = []
-
+    
     # group 1 is the first number
     num = num_to_float(match.group(1))
 
     # group 2 is the units of the first number
     value = convert_units(num, match.group(2), False, False)
 
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value))
-    tokens.append(Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value))
+    tokens.append( Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
 
     # group 3 is the 'by' token (ignore)
 
@@ -663,9 +679,9 @@ def tokenize_xyz3(match):
     # group 5 is the units of the second number
     value = convert_units(num, match.group(5), False, False)
 
-    tokens.append(Token(match.group(4), TokenLabel.DIM2, value))
-    tokens.append(Token(match.group(5), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-
+    tokens.append( Token(match.group(4), TokenLabel.DIM2, value))
+    tokens.append( Token(match.group(5), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    
     # group 6 is the second 'by' token (ignore)
 
     # group 7 is the third number
@@ -674,11 +690,10 @@ def tokenize_xyz3(match):
     # group 8 is the units of the third number
     value = convert_units(num, match.group(8), False, False)
 
-    tokens.append(Token(match.group(7), TokenLabel.DIM3, value))
-    tokens.append(Token(match.group(8), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-
+    tokens.append( Token(match.group(7), TokenLabel.DIM3, value))
+    tokens.append( Token(match.group(8), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    
     return tokens
-
 
 ###############################################################################
 def tokenize_xyz2(match):
@@ -704,9 +719,9 @@ def tokenize_xyz2(match):
     value1 = convert_units(num1, match.group(4), False, False)
     value2 = convert_units(num2, match.group(4), False, False)
 
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value1))
-    tokens.append(Token(match.group(3), TokenLabel.DIM2, value2))
-    tokens.append(Token(match.group(4), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value1))
+    tokens.append( Token(match.group(3), TokenLabel.DIM2, value2))
+    tokens.append( Token(match.group(4), TokenLabel.UNITS, TOKEN_VALUE_NONE))
 
     # group 5 is the second 'by' token (ignore)
 
@@ -716,11 +731,10 @@ def tokenize_xyz2(match):
     # group 7 is the units of the third number
     value3 = convert_units(num3, match.group(7), False, False)
 
-    tokens.append(Token(match.group(6), TokenLabel.DIM3, value3))
-    tokens.append(Token(match.group(7), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(6), TokenLabel.DIM3, value3))
+    tokens.append( Token(match.group(7), TokenLabel.UNITS, TOKEN_VALUE_NONE))
 
     return tokens
-
 
 ###############################################################################
 def tokenize_xyz1(match):
@@ -743,7 +757,7 @@ def tokenize_xyz1(match):
     num2 = num_to_float(match.group(3))
 
     # group 4 is the second 'by' token (ignore)
-
+    
     # group 5 is the third number
     num3 = num_to_float(match.group(5))
 
@@ -752,13 +766,12 @@ def tokenize_xyz1(match):
     value2 = convert_units(num2, match.group(6), False, False)
     value3 = convert_units(num3, match.group(6), False, False)
 
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value1))
-    tokens.append(Token(match.group(3), TokenLabel.DIM2, value2))
-    tokens.append(Token(match.group(5), TokenLabel.DIM3, value3))
-    tokens.append(Token(match.group(6), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value1))
+    tokens.append( Token(match.group(3), TokenLabel.DIM2, value2))
+    tokens.append( Token(match.group(5), TokenLabel.DIM3, value3))
+    tokens.append( Token(match.group(6), TokenLabel.UNITS, TOKEN_VALUE_NONE))
 
     return tokens
-
 
 ###############################################################################
 def tokenize_xy3(match):
@@ -768,11 +781,11 @@ def tokenize_xy3(match):
             1.5 cm craniocaudal by 1.8 cm transverse
 
     """
-
+    
     assert 7 == len(match.groups())
 
     tokens = []
-
+    
     # group 1 is the first number
     num = num_to_float(match.group(1))
 
@@ -781,9 +794,9 @@ def tokenize_xy3(match):
 
     # group 3 is the view
 
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value))
-    tokens.append(Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-    tokens.append(Token(match.group(3), TokenLabel.VIEW1, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value))
+    tokens.append( Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(3), TokenLabel.VIEW1, TOKEN_VALUE_NONE))
 
     # group 4 is the 'by' token (ignore)
 
@@ -795,32 +808,31 @@ def tokenize_xy3(match):
 
     # group 7 is the second view
 
-    tokens.append(Token(match.group(5), TokenLabel.DIM2, value))
-    tokens.append(Token(match.group(6), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-    tokens.append(Token(match.group(7), TokenLabel.VIEW2, TOKEN_VALUE_NONE))
-
+    tokens.append( Token(match.group(5), TokenLabel.DIM2, value))
+    tokens.append( Token(match.group(6), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(7), TokenLabel.VIEW2, TOKEN_VALUE_NONE))
+    
     return tokens
-
 
 ###############################################################################
 def tokenize_xy2(match):
     """
-    Tokenizes measurements of the form:
+    Tokenizes measurements of the form: 
 
             1.5cm x 1.8cm
     """
     assert 5 == len(match.groups())
 
     tokens = []
-
+    
     # group 1 is the first number
     num = num_to_float(match.group(1))
 
     # group 2 is the units of the first number
     value = convert_units(num, match.group(2), False, False)
 
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value))
-    tokens.append(Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value))
+    tokens.append( Token(match.group(2), TokenLabel.UNITS, TOKEN_VALUE_NONE))
 
     # group 3 is the 'by' token (ignore)
 
@@ -830,11 +842,10 @@ def tokenize_xy2(match):
     # group 5 is the units of the second number
     value = convert_units(num, match.group(5), False, False)
 
-    tokens.append(Token(match.group(4), TokenLabel.DIM2, value))
-    tokens.append(Token(match.group(5), TokenLabel.UNITS, TOKEN_VALUE_NONE))
-
+    tokens.append( Token(match.group(4), TokenLabel.DIM2, value))
+    tokens.append( Token(match.group(5), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    
     return tokens
-
 
 ###############################################################################
 def tokenize_xy1(match):
@@ -852,7 +863,7 @@ def tokenize_xy1(match):
     num1 = num_to_float(match.group(1))
 
     # group 2 is the 'by' token (ignore)
-
+    
     # group 3 is the second number
     num2 = num_to_float(match.group(3))
 
@@ -860,12 +871,11 @@ def tokenize_xy1(match):
     value1 = convert_units(num1, match.group(4), False, False)
     value2 = convert_units(num2, match.group(4), False, False)
 
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value1))
-    tokens.append(Token(match.group(3), TokenLabel.DIM2, value2))
-    tokens.append(Token(match.group(4), TokenLabel.UNITS, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value1))
+    tokens.append( Token(match.group(3), TokenLabel.DIM2, value2))
+    tokens.append( Token(match.group(4), TokenLabel.UNITS, TOKEN_VALUE_NONE))
 
     return tokens
-
 
 ###############################################################################
 def tokenize_xx(match):
@@ -883,7 +893,7 @@ def tokenize_xx(match):
     num1 = num_to_float(match.group(1))
 
     # group 2 is the 'to' token (ignore)
-
+    
     # group 3 is the second number
     num2 = num_to_float(match.group(3))
 
@@ -892,7 +902,7 @@ def tokenize_xx(match):
 
     # check for area or volume units
     is_area = is_area_unit(units_text)
-    is_vol = is_vol_unit(units_text)
+    is_vol  = is_vol_unit(units_text)
 
     # can't have both
     if is_area or is_vol:
@@ -903,13 +913,13 @@ def tokenize_xx(match):
         units_label = TokenLabel.UNITS2
     if is_vol:
         units_label = TokenLabel.UNITS3
-
+        
     value1 = convert_units(num1, units_text, is_area, is_vol)
     value2 = convert_units(num2, units_text, is_area, is_vol)
 
-    tokens.append(Token(match.group(1), TokenLabel.RANGE1, value1))
-    tokens.append(Token(match.group(3), TokenLabel.RANGE2, value2))
-    tokens.append(Token(match.group(4), units_label, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(1), TokenLabel.RANGE1, value1))
+    tokens.append( Token(match.group(3), TokenLabel.RANGE2, value2))
+    tokens.append( Token(match.group(4), units_label, TOKEN_VALUE_NONE))
 
     return tokens
 
@@ -935,11 +945,11 @@ def tokenize_xvol(match):
     vol_text = match.group(2)
 
     is_area = is_area_unit(vol_text)
-    is_vol = is_vol_unit(vol_text)
+    is_vol  = is_vol_unit(vol_text)
 
     # is_area and is_vol cannot both simultaneously be true
     assert is_area ^ is_vol
-
+    
     # group 3 is the units
     value1 = convert_units(num1, match.group(3), is_area, is_vol)
 
@@ -948,13 +958,12 @@ def tokenize_xvol(match):
         units_label = TokenLabel.UNITS2
     else:
         units_label = TokenLabel.UNITS3
-
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value1))
-    tokens.append(Token(match.group(2), TokenLabel.VOLUME, TOKEN_VALUE_NONE))
-    tokens.append(Token(match.group(3), units_label, TOKEN_VALUE_NONE))
+    
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value1))
+    tokens.append( Token(match.group(2), TokenLabel.VOLUME, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(3), units_label, TOKEN_VALUE_NONE))
 
     return tokens
-
 
 ###############################################################################
 def tokenize_x(match):
@@ -976,19 +985,18 @@ def tokenize_x(match):
     value1 = convert_units(num1, units_text, False, False)
 
     is_area = is_area_unit(units_text)
-    is_vol = is_vol_unit(units_text)
+    is_vol  = is_vol_unit(units_text)
 
     units_label = TokenLabel.UNITS
     if is_area:
         units_label = TokenLabel.UNITS2
     elif is_vol:
         units_label = TokenLabel.UNITS3
-
-    tokens.append(Token(match.group(1), TokenLabel.DIM1, value1))
-    tokens.append(Token(match.group(2), units_label, TOKEN_VALUE_NONE))
+    
+    tokens.append( Token(match.group(1), TokenLabel.DIM1, value1))
+    tokens.append( Token(match.group(2), units_label, TOKEN_VALUE_NONE))
 
     return tokens
-
 
 ###############################################################################
 def tokenize_list(match, sentence):
@@ -1009,36 +1017,35 @@ def tokenize_list(match, sentence):
 
 
 regexes = [
-    regex_xyz4,  # 0
-    regex_xyz3,  # 1
-    regex_xyz2,  # 2
-    regex_xyz1,  # 3
-    regex_xy3,  # 4
-    regex_xy2,  # 5
-    regex_xy1,  # 6
-    regex_xx,  # 7
+    regex_xyz4,   # 0
+    regex_xyz3,   # 1
+    regex_xyz2,   # 2
+    regex_xyz1,   # 3
+    regex_xy3,    # 4
+    regex_xy2,    # 5
+    regex_xy1,    # 6
+    regex_xx,     # 7
     regex_x_vol,  # 8
-    regex_x,  # 9
-#    regex_listEnd  # 10
+    regex_x,      # 9
+#    regex_listEnd # 10
 ]
 
 # associates a regex index with its measurement tokenizer function
-tokenizer_map = {0: tokenize_xyz4,
-                 1: tokenize_xyz3,
-                 2: tokenize_xyz2,
-                 3: tokenize_xyz1,
-                 4: tokenize_xy3,
-                 5: tokenize_xy2,
-                 6: tokenize_xy1,
-                 7: tokenize_xx,
-                 8: tokenize_xvol,
-                 9: tokenize_x,
-#                 10: tokenize_list
+tokenizer_map = {0:tokenize_xyz4,
+                 1:tokenize_xyz3,
+                 2:tokenize_xyz2,
+                 3:tokenize_xyz1,
+                 4:tokenize_xy3,
+                 5:tokenize_xy2,
+                 6:tokenize_xy1,
+                 7:tokenize_xx,
+                 8:tokenize_xvol,
+                 9:tokenize_x,
+#                 10:tokenize_list
 }
 
 LIST_TOKENIZER_FUNCTION_NAME = 'tokenize_list'
-
-
+        
 ###############################################################################
 def range_overlap(start1, end1, start2, end2):
     """
@@ -1055,7 +1062,6 @@ def range_overlap(start1, end1, start2, end2):
     else:
         return True
 
-
 ###############################################################################
 def clean_sentence(sentence):
     """
@@ -1070,25 +1076,24 @@ def clean_sentence(sentence):
 
     return sentence
 
-
 ###############################################################################
 def run(sentence):
     """
 
     Search the sentence for size measurements and construct a Measurement
     namedtuple for each measurement found. Returns a JSON string.
-
-    """
+    
+    """    
 
     original_sentence = sentence
     sentence = clean_sentence(sentence)
-
+    
     measurements = []
-
+    
     # current sentence fragment, which is the entire sentence to start
     s = sentence
-
-    prev_end = 0
+    
+    prev_end=0
     more_to_go = True
 
     while more_to_go:
@@ -1100,7 +1105,7 @@ def run(sentence):
         best_match_text = ''
         match_start = 9999999
         match_end = 0
-
+        
         for i in range(len(regexes)):
             match = regexes[i].search(s)
             if match:
@@ -1109,7 +1114,7 @@ def run(sentence):
                 end = match.end()
 
                 # if not contained within an existing measurement
-                if (start < match_start) or ((start == match_start) and (end > match_end)):
+                if (start < match_start) or ( (start == match_start) and (end > match_end)):
                     best_matcher = match
                     best_regex_index = i
                     best_match_text = match_text
@@ -1117,8 +1122,8 @@ def run(sentence):
                     match_end = end
 
         if TRACE:
-            print('best regex index: {0}'.format(best_regex_index))
-
+            print('best regex index: {0}'.format(best_regex_index)) 
+                    
         if -1 != best_regex_index:
             # attempt to match a 'previous' form
             prev_match_text = ''
@@ -1153,13 +1158,13 @@ def run(sentence):
             if TRACE:
                 print_tokens(tokens)
 
-            measurement = Measurement(text=best_match_text,
-                                      start=prev_end + match_start,
-                                      end=prev_end + match_end,
-                                      temporality=str_temporal,
-                                      subject='',
-                                      location='',
-                                      token_list=deepcopy(tokens))
+            measurement = Measurement(text = best_match_text,
+                                      start = prev_end + match_start,
+                                      end = prev_end + match_end,
+                                      temporality = str_temporal,
+                                      subject = '',
+                                      location = '',
+                                      token_list = deepcopy(tokens))
             measurements.append(measurement)
 
             prev_end += match_end
@@ -1173,12 +1178,10 @@ def run(sentence):
     # convert list to JSON
     return to_json(measurements)
 
-
 ###############################################################################
 def get_version():
     return 'size_measurement_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
-
-
+        
 ###############################################################################
 def show_help():
     print(get_version())
@@ -1196,7 +1199,6 @@ def show_help():
         -z, --test                      Run internal tests and print results.
 
     """)
-
 
 ###############################################################################
 if __name__ == '__main__':
@@ -1262,14 +1264,14 @@ if __name__ == '__main__':
         "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation.",
         "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation.",
         "The result is .1cm x .2cm x .3 mm in my estimation.",
-
+        
         # x cm view by x cm view by x cm view (xyz4)
         "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation.",
         "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation.",
         "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation.",
         "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation.",
         "The result is 1.5 in craniocaudal x 1 .8in transverse x 2.1 in anterior in my estimation.",
-
+                                        
         # list end (needed to find lists such as 1.0, 1.1, 1.2, and 1.3 cm)
         "The result is 1.5 and 1.8 cm in my estimation.",
         "The result is 1.5- and 1.8-cm in my estimation.",
@@ -1302,11 +1304,11 @@ if __name__ == '__main__':
         "leaflets, and there was\n" \
         "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
         "mercury and a\nmean gradient of 52 millimeters of mercury.",
-
+        
         # newline in measurement
-        "Additional lesions include a 6\n" \
-        "mm ring-enhancing mass within the left lentiform nucleus, a 10\n" \
-        "mm peripherally based mass within the anterior left frontal lobe\n" \
+        "Additional lesions include a 6\n"                                      \
+        "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
+        "mm peripherally based mass within the anterior left frontal lobe\n"    \
         "as well as a more confluent plaque-like mass with a broad base along " \
         "the tentorial surface measuring approximately 2\n" +
         "cm in greatest dimension.",
@@ -1320,11 +1322,11 @@ if __name__ == '__main__':
     ]
 
     optparser = optparse.OptionParser(add_help_option=False)
-    optparser.add_option('-s', '--sentence', action='store', dest='sentence')
-    optparser.add_option('-v', '--version', action='store_true', dest='get_version')
-    optparser.add_option('-z', '--test', action='store_true', dest='run_tests', default=False)
-    optparser.add_option('-h', '--help', action='store_true', dest='show_help', default=False)
-
+    optparser.add_option('-s', '--sentence', action='store',      dest='sentence')                        
+    optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
+    optparser.add_option('-z', '--test',     action='store_true', dest='run_tests', default=False)
+    optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
+    
     if 1 == len(sys.argv):
         show_help()
         sys.exit(0)
