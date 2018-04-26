@@ -94,7 +94,12 @@ def generic_results(job: str, job_type: str):
             header_written = False
             header_values = []
             length = 0
-            results = db[job_type + "_results"].find({"job_id": int(job)})
+            if job_type == 'phenotype':
+                query = {"job_id": int(job), "final": True}
+            else:
+                query = {"job_id": int(job)}
+
+            results = db[job_type + "_results"].find(query)
             for res in results:
                 keys = list(res.keys())
                 if not header_written:
