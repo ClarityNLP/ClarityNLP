@@ -1,6 +1,5 @@
 import antlr4
-import json
-
+import traceback
 from data_access import PhenotypeModel, PhenotypeDefine, PhenotypeEntity, PhenotypeOperations
 
 if __name__ is not None and "." in __name__:
@@ -528,11 +527,13 @@ def handle_expression(expr):
                         except Exception as ex:
                             has_errors = True
                             print(ex)
-                            errors.append(ex)
+                            traceback.print_exc(file=sys.stderr)
+                            error = ''.join(traceback.format_stack())
+                            errors.append(error)
                     else:
                         has_warnings = True
                         unknown.append(child)
-                        print('UNKNOWN: ' + child.getText())
+                        print('UNKNOWN child: ' + child.getText())
 
     return {
         "has_warnings": has_warnings,
@@ -550,7 +551,7 @@ def run_nlpql_parser(nlpql_txt: str):
     tree = parser.validExpression()
     res = handle_expression(tree)
     if res['has_errors'] or res['has_warnings']:
-        res["phenotype"] = {}
+        del res["phenotype"]
     return res
 
 

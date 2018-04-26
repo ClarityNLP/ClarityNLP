@@ -2,7 +2,6 @@ import datetime
 import sys
 import traceback
 from functools import reduce
-
 import pandas as pd
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
@@ -322,3 +321,26 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
             process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c)
         for c in final_ops:
             process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final=True)
+
+
+def validate_phenotype(p_cfg: PhenotypeModel):
+    # TODO a lot more checks need to be done
+    error = None
+
+    try:
+        if not error:
+            if not p_cfg:
+                error = "Empty phenotype object"
+
+        if not error and len(p_cfg.data_entities) == 0:
+            error = "Must have at least one data entity (define)"
+        if not error and len(p_cfg.operations) > 0 and len(p_cfg.data_entities) == 0:
+            error = "Operations (define) require at least one data entity (define)"
+    except Exception as ex:
+        print(ex)
+        error = ''.join(traceback.format_stack())
+
+    if not error:
+        return {"success": True}
+    else:
+        return {"success": False, "error": error}

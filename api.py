@@ -1,15 +1,18 @@
-from flask import Flask, request, send_file, render_template
-from werkzeug import secure_filename
-import simplejson
 import datetime
-from data_access import *
-import luigi_runner, luigi_pipeline
+
+import simplejson
+from flask import Flask, request, send_file, render_template
 from flask_autodoc import Autodoc
+from werkzeug import secure_filename
+
+import luigi_pipeline
+import luigi_runner
+import phenotype_helper
+from data_access import *
 from nlp import *
 from nlpql import *
-from upload import upload_file, upload_from_db, aact_db_upload
 from ohdsi import *
-import json
+from upload import upload_file, upload_from_db, aact_db_upload
 
 app = Flask(__name__)
 auto = Autodoc(app)
@@ -40,6 +43,7 @@ def home():
 def doc():
     return auto.html()
 
+
 @app.route('/ohdsi_patient_event', methods=['POST'])
 @auto.doc()
 def ohdsi_patient_event():
@@ -52,6 +56,7 @@ def ohdsi_patient_event():
 
     return "Could not retrieve patient event details"
 
+
 @app.route('/ohdsi_create_cohort', methods=['GET'])
 @auto.doc()
 def ohdsi_create_cohort():
@@ -62,6 +67,7 @@ def ohdsi_create_cohort():
         return cohort
 
     return "Could not retrieve Cohort"
+
 
 @app.route('/ohdsi_get_conceptset', methods=['GET'])
 @auto.doc()
@@ -137,6 +143,41 @@ def aact_upload():
     return "Couldn't migrate data."
 
 
+def post_phenotype(p_cfg: PhenotypeModel):
+    validated = phenotype_helper.validate_phenotype(p_cfg)
+    if not validated['success']:
+        return validated
+
+    init()
+    p_id = insert_phenotype_model(p_cfg, util.conn_string)
+    if p_id == -1:
+        return {"success": False,
+                "error": "Failed to insert phenotype"}
+
+    job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
+                                             owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
+                                             phenotype_id=p_id, pipeline_id=-1,
+                                             date_started=datetime.datetime.now(),
+                                             job_type='PHENOTYPE'), util.conn_string)
+
+    pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id)
+    pipeline_urls = ["%s/pipeline_id/%s" % (util.main_url, str(pid)) for pid in pipeline_ids]
+
+    output = dict()
+    output["job_id"] = str(job_id)
+    output["phenotype_id"] = str(p_id)
+    output['phenotype_config'] = "%s/phenotype_id/%s" % (util.main_url, str(p_id))
+    output['pipeline_ids'] = pipeline_ids
+    output['pipeline_configs'] = pipeline_urls
+    output["status_endpoint"] = "%s/status/%s" % (util.main_url, str(job_id))
+    output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
+        util.luigi_url, str(job_id))
+    output["pipeline_results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id), 'pipeline')
+    output["main_results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id), 'phenotype')
+
+    return output
+
+
 @app.route('/phenotype', methods=['POST'])
 @auto.doc()
 def phenotype():
@@ -144,33 +185,26 @@ def phenotype():
     if not request.data:
         return 'POST a JSON phenotype config to execute or an id to GET. Body should be phenotype JSON'
     try:
-        init()
         p_cfg = PhenotypeModel.from_dict(request.get_json())
-        p_id = insert_phenotype_model(p_cfg, util.conn_string)
-        if p_id == -1:
-            return '{ "success", false }'
-        job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
-                                                 owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
-                                                 phenotype_id=p_id, pipeline_id=-1,
-                                                 date_started=datetime.datetime.now(),
-                                                 job_type='PHENOTYPE'), util.conn_string)
-
-        pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id)
-
-        output = dict()
-        output["phenotype_id"] = str(p_id)
-        output["job_id"] = str(job_id)
-        output['pipelines'] = pipeline_ids
-        output["status_endpoint"] = "%s/status?job=%s" % (util.main_url, str(job_id))
-        output["main_results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'phenotype')
-        output["pipeline_results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'pipeline')
-        output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (util.luigi_url, str(job_id))
-
-        return json.dumps(output, indent=4)
-
+        return json.dumps(post_phenotype(p_cfg), indent=4)
     except Exception as ex:
         print(ex)
         return 'Failed to load and insert phenotype. ' + str(ex), 400
+
+
+@app.route("/nlpql", methods=["POST"])
+@auto.doc()
+def nlpql():
+    """POST to run NLPQL phenotype"""
+    if request.method == 'POST' and request.data:
+        nlpql_results = run_nlpql_parser(request.data.decode("utf-8"))
+        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+            return json.dumps(nlpql_results)
+        else:
+            p_cfg = nlpql_results['phenotype']
+            return json.dumps(post_phenotype(p_cfg), indent=4)
+
+    return "Please POST text containing NLPQL."
 
 
 @app.route('/pipeline', methods=['POST'])
@@ -196,10 +230,10 @@ def pipeline():
         output = dict()
         output["pipeline_id"] = str(p_id)
         output["job_id"] = str(job_id)
-        output["status_endpoint"] = "%s/status?job=%s" % (util.main_url, str(job_id))
-        output["results_endpoint"] = "%s/job_results?job=%s&type=%s" % (util.main_url, str(job_id), 'pipeline')
         output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
-        util.luigi_url, str(job_id))
+            util.luigi_url, str(job_id))
+        output["status_endpoint"] = "%s/status/%s" % (util.main_url, str(job_id))
+        output["results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id), 'pipeline')
 
         return json.dumps(output, indent=4)
 
@@ -207,15 +241,28 @@ def pipeline():
         return 'Failed to load and insert pipeline. ' + str(e), 400
 
 
-@app.route('/pipeline_id', methods=['GET'])
+@app.route('/pipeline_id/<int:pipeline_id>', methods=['GET'])
 @auto.doc()
-def pipeline_id():
-    """GET a pipeline JSON based on the pipeline_id, PARAMETERS: id=pipeline id"""
+def pipeline_id(pipeline_id: int):
+    """GET a pipeline JSON based on the pipeline_id"""
     try:
-        pid = request.args.get('id')
-        return json.dumps(get_pipeline_config(pid, util.conn_string), indent=4)
-    except Exception as e:
-        return "Failed to extract pipeline id parameter" + str(e)
+        p = get_pipeline_config(pipeline_id, util.conn_string)
+        return p.to_json()
+    except Exception as ex:
+        traceback.print_exc(file=sys.stderr)
+        return "Failed to eval pipeline" + str(ex)
+
+
+@app.route('/phenotype_id/<int:phenotype_id>', methods=['GET'])
+@auto.doc()
+def phenotype_id(phenotype_id: int):
+    """GET a pipeline JSON based on the phenotype_id"""
+    try:
+        p = query_phenotype(phenotype_id, util.conn_string)
+        return p.to_json()
+    except Exception as ex:
+        traceback.print_exc(file=sys.stderr)
+        return "Failed to eval phenotype" + str(ex)
 
 
 @app.route('/pipeline_types', methods=['GET'])
@@ -228,25 +275,22 @@ def pipeline_types():
         return "Failed to get pipeline types" + str(e)
 
 
-@app.route('/status', methods=['GET'])
+@app.route('/status/<int:job_id>', methods=['GET'])
 @auto.doc()
-def get_job_status():
-    """GET current job status, PARAMETERS: job=job id"""
+def get_job_status(job_id: int):
+    """GET current job status"""
     try:
-        job = request.args.get('job')
-        status = jobs.get_job_status(int(job), util.conn_string)
+        status = jobs.get_job_status(job_id, util.conn_string)
         return json.dumps(status, indent=4)
     except Exception as e:
         return "Failed to get job status" + str(e)
 
 
-@app.route('/job_results', methods=['GET'])
-def get_job_results():
-    """GET job results as CSV, PARAMETERS: job=job id, type=job type"""
+@app.route('/job_results/<int:job_id>/<string:job_type>', methods=['GET'])
+def get_job_results(job_id: int, job_type: str):
+    """GET job results as CSV"""
     try:
-        job = request.args.get('job')
-        job_type = request.args.get('type')
-        job_output = job_results(job_type, job)
+        job_output = job_results(job_type, str(job_id))
         return send_file(job_output)
     except Exception as ex:
         return "Failed to get job results" + str(ex)
