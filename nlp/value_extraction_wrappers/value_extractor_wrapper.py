@@ -11,7 +11,7 @@ segmentor = Segmentation()
 print('Done initializing models for value extractor...')
 
 
-def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_case_sensitive_text=False):
+def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_case_sensitive_text=False, denom_only=False):
     # convert terms to lowercase unless doing a case-sensitive match
     if not is_case_sensitive_text:
         term_list = [term.lower() for term in term_list]
@@ -39,11 +39,11 @@ def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_c
         match = matcher.search(sentence)
         if match:
             term = match.group(0)
-            value_results = extract_value(term, sentence, minval, maxval)
+            value_results = extract_value(term, sentence, minval, maxval, denom_only=denom_only)
             if len(value_results) > 0:
                 for x in value_results:
                     process_results.append(
-                        Measurement(sentence=sentence, text=sentence[x.start:x.end], start=x.start, end=x.end,
+                        Measurement(sentence=sentence, text=x.matching_term, start=x.start, end=x.end,
                                     condition=x.cond, X=x.num1, Y=x.num2))
 
     return process_results
