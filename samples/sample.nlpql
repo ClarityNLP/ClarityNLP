@@ -1,4 +1,5 @@
 debug;
+
 // Phenotype library name
 phenotype "Septic Transfusion Reaction" version "2";
 
@@ -87,7 +88,6 @@ termset ShockTerms: [
 ];
 
 termset TempTerms: [
-
         "temp",
         "temperature",
         "t"
@@ -95,24 +95,51 @@ termset TempTerms: [
 
 // # Document sets## Uses Simple Document Ontology
 documentset ProviderNotes:
-    // Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
-    Clarity.createReportTagList([
-    "Physician",
-    "Nurse",
-    "Note",
-    "Discharge Summary"]);
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
+
+//## Cohorts
+cohort PlateletTransfusionPatients:OHDSI.getCohort(190);
 
 // #phenotype features
 define hasRigors:
   Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
     termset: [RigorsTerms],
     documentset: [ProviderNotes]
     });
 
+define hasDyspnea:
+  Clarity.ProviderAssertion({
+      cohort:PlateletTransfusionPatients,
+      termset: [DyspneaTerms],
+      documentset: [ProviderNotes]eravaed
+    });
+fdsfa "hel"
+define hasNausea:
+  Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
+    termset: [NauseaTerms],
+    documentset: [ProviderNotes]
+  });
+
+define hasVomiting:
+  Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
+    termset: [VomitingTerms],
+    documentset: [ProviderNotes]
+  });
+
+define hasShock:
+  Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
+    termset: [ShockTerms],
+    documentset: [ProviderNotes]
+  });
 
 //Quantitative metrics
 define Temperature:
   Clarity.ValueExtraction({
+    cohort:PlateletTransfusionPatients,
     termset:[TempTerms],
     minimum_value: "96",
     maximum_value: "106"
@@ -124,7 +151,6 @@ context Patient;
 
 define hasFever:
     where Temperature.value >= 100.4;
-
 
 define hasSepsisSymptoms:
     where hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasTachycardia;

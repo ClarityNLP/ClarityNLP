@@ -1,3 +1,5 @@
+debug;
+
 // Phenotype library name
 phenotype "Septic Transfusion Reaction" version "2";
 
