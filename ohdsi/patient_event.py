@@ -4,6 +4,7 @@ import string
 import psycopg2
 import psycopg2.extras
 import datetime
+import util
 
 # Function to identify query based on domain
 def get_query(name):
@@ -72,15 +73,11 @@ def getPatientEvent(cohort_id, domain, conceptset, conn_string):
 
         cursor.execute(query,(cohort_id, conceptset))
         result = cursor.fetchall()
-        output = construct_output(result)
+        output = construct_output(result) # Constructing output
 
 
     except Exception as ex:
         print ("Failed to extract data from DB")
         print (ex)
 
-    # Constructing output
-    if len(output) > 0:
-        return json.dumps(output)
-    else:
-        return "No patient events for given criteria"
+    return output

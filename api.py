@@ -52,7 +52,7 @@ def ohdsi_patient_event():
         r = request.get_json()
         patient_event_details = getPatientEvent(r['cohort_id'], r['domain'], tuple(r['concepts']), util.conn_string)
 
-        return patient_event_details
+        return json.dumps(patient_event_details)
 
     return "Could not retrieve patient event details"
 
