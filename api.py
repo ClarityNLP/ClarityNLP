@@ -63,8 +63,8 @@ def ohdsi_create_cohort():
     """Get concept set details."""
     if request.method == 'GET':
         filepath = 'ohdsi/data/' + request.args.get('file')
-        cohort = createCohort(filepath)
-        return cohort
+        msg = createCohort(filepath)
+        return msg
 
     return "Could not retrieve Cohort"
 
@@ -99,7 +99,7 @@ def ohdsi_get_cohort_by_name():
     """Get cohort details from OHDSI by giving Cohort name."""
     if request.method == 'GET':
         cohort_name = request.args.get('cohort_name')
-        cohort = getCohortByName(cohort_name)
+        cohort = json.dumps(getCohortByName(cohort_name))
         return cohort
 
     return "Could not retrieve Cohort"

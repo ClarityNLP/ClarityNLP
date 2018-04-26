@@ -24,7 +24,7 @@ def getConceptSet(filepath):
 
     url = ENDPOINT + '/vocabulary/OHDSI-CDMV5/lookup/identifiers'
     response = requests.post(url, headers=headers, data=data)
-
+    
     return response.text
 
 """
@@ -68,7 +68,7 @@ def getCohortByName(cohort_name):
     if cohort_id is not None:
         return getCohort(cohort_id)
     else:
-        return json.dumps({})
+        return {}
 
 
 # Getting Cohort information based on Cohort ID
