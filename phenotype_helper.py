@@ -1,14 +1,14 @@
 import datetime
+import sys
+import traceback
 from functools import reduce
-import sys
-import traceback
-import pandas as pd
-import sys
-import traceback
 
-from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity
+import pandas as pd
+
+from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
 
 DEBUG_LIMIT = 100
+COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
 
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
 numeric_comp_operators = ['==', '='
@@ -62,7 +62,8 @@ def get_report_tags_by_keys(report_tag_dict, keys: list):
 
 def map_arguments(pipeline: PipelineConfig, e):
     for k in e.keys():
-        if not (k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or k == "cohort"):
+        if not (
+                k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or k == "cohort"):
             if k in pipeline_keys:
                 try:
                     pipeline[k] = e[k]
@@ -148,7 +149,7 @@ def get_cohorts(model: PhenotypeModel):
 
             except Exception as ex:
                 print(ex)
-                traceback.print_exc(file = sys.stderr)
+                traceback.print_exc(file=sys.stderr)
     return cohorts
 
 
@@ -190,106 +191,134 @@ def get_numeric_comparison_df(action, df, ent, attr, value_comp):
     return new_df
 
 
+def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
+                       final=False):
+    operation_name = c['name']
+
+    if phenotype.context == 'Document':
+        on = 'report_id'
+    else:
+        on = 'subject'
+
+    if final:
+        lookup_key = "result_name"
+    else:
+        lookup_key = "nlpql_feature"
+
+    col_list = COL_LIST
+    col_list.append(lookup_key)
+
+    if 'data_entities' in c:
+        action = c['action']
+        data_entities = c['data_entities']
+        entity_features = list()
+
+        for de in data_entities:
+            if not is_value(de):
+                e, a = get_data_entity_split(de)
+                entity_features.append(e)
+
+        query = {"job_id": int(job), lookup_key: {"$in": entity_features}}
+        if final:
+            cursor = db.phenotype_results.find(query)
+        else:
+            cursor = db.pipeline_results.find(query)
+        df = pd.DataFrame(list(cursor))
+
+        if len(df) == 0:
+            print('Empty dataframe!')
+            return
+
+        dfs = []
+        output = None
+        if action == 'AND':
+            how = 'inner'
+
+            for de in data_entities:
+                ent, attr = get_data_entity_split(de)
+                new_df = df[df[lookup_key] == ent]
+                new_df = new_df[col_list]
+                dfs.append(new_df.copy())
+                del new_df
+
+            if len(dfs) > 0:
+                ret = reduce(lambda x, y: pd.merge(x, y, on=on, how=how), dfs)
+                ret['job_id'] = job
+                ret['phenotype_id'] = phenotype_id
+                ret['owner'] = phenotype_owner
+                ret['job_date'] = datetime.datetime.now()
+                ret['context_type'] = on
+                ret['raw_definition_text'] = c['raw_text']
+                ret['result_name'] = operation_name
+                ret['final'] = c['final']
+
+                for d in dfs:
+                    del d
+
+                output = ret.to_dict('records')
+                del ret
+        elif action == 'OR':
+            q = '| '.join([("(%s == '%s')" % (lookup_key, x)) for x in data_entities])
+            ret = df.query(q)
+            ret['job_id'] = job
+            ret['phenotype_id'] = phenotype_id
+            ret['owner'] = phenotype_owner
+            ret['job_date'] = datetime.datetime.now()
+            ret['context_type'] = on
+            ret['raw_definition_text'] = c['raw_text']
+            ret['result_name'] = operation_name
+            ret['final'] = c['final']
+
+            output = ret.to_dict('records')
+            del ret
+        elif action in numeric_comp_operators:
+            print(action)
+            value_comp = ''
+            ent = ''
+            attr = ''
+            if not len(data_entities) == 2:
+                raise ValueError("Only 2 data entities for comparisons")
+            for de in data_entities:
+                if is_value(de):
+                    value_comp = de
+                else:
+                    e, a = get_data_entity_split(de)
+                    ent = e
+                    attr = a
+
+            ret = get_numeric_comparison_df(action, df, ent, attr, value_comp)
+            ret['job_id'] = job
+            ret['phenotype_id'] = phenotype_id
+            ret['owner'] = phenotype_owner
+            ret['job_date'] = datetime.datetime.now()
+            ret['context_type'] = on
+            ret['raw_definition_text'] = c['raw_text']
+            ret['result_name'] = operation_name
+            ret['final'] = c['final']
+
+            output = ret.to_dict('records')
+            del ret
+
+        if output and len(output) > 0:
+            db.phenotype_results.insert_many(output)
+            del output
+
+
 def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
     pd.options.mode.chained_assignment = None
     if phenotype.operations:
-        cursor = db.pipeline_results.find({"job_id": int(job)})
-        df = pd.DataFrame(list(cursor))
 
-        ops = sorted(phenotype.operations, key=lambda o: o['final'])
-        # TODO make sure all ops are in the right order
+        final_ops = list()
+        regular_ops = list()
 
-        for c in ops:
-            operation_name = c['name']
-
-            if phenotype.context == 'Document':
-                on = 'report_id'
+        for c in phenotype.operations:
+            # TODO make sure all ops are in the right order
+            if c['final']:
+                final_ops.append(c)
             else:
-                on = 'subject'
-            col_list = ["_id", "nlpql_feature", "report_date", 'report_id', 'subject', 'sentence']
+                regular_ops.append(c)
 
-            if 'data_entities' in c:
-                action = c['action']
-                data_entities = c['data_entities']
-
-                dfs = []
-                output = None
-                if action == 'AND':
-                    how = 'inner'
-
-                    for de in data_entities:
-                        ent, attr = get_data_entity_split(de)
-                        new_df = df.loc[df['nlpql_feature'] == ent]
-                        new_df = new_df[col_list]
-                        dfs.append(new_df)
-
-                    if len(dfs) > 0:
-                        ret = reduce(lambda x, y: pd.merge(x, y, on=on, how=how), dfs)
-                        ret['job_id'] = job
-                        ret['phenotype_id'] = phenotype_id
-                        ret['owner'] = phenotype_owner
-                        ret['job_date'] = datetime.datetime.now()
-                        ret['context_type'] = on
-                        ret['raw_definition_text'] = c['raw_text']
-                        ret['result_name'] = operation_name
-                        ret['nlpql_feature'] = operation_name
-                        ret['final'] = c['final']
-
-                        for d in dfs:
-                            del d
-
-                        output = ret.to_dict('records')
-                        del ret
-                elif action == 'OR':
-                    q = '| '.join([("(nlpql_feature == '%s')" % x) for x in data_entities])
-                    ret = df.query(q)
-                    ret['job_id'] = job
-                    ret['phenotype_id'] = phenotype_id
-                    ret['owner'] = phenotype_owner
-                    ret['job_date'] = datetime.datetime.now()
-                    ret['context_type'] = on
-                    ret['raw_definition_text'] = c['raw_text']
-                    ret['source_nlpql_feature'] = ret['nlpql_feature']
-                    ret['result_name'] = operation_name
-                    ret['nlpql_feature'] = operation_name
-                    ret['final'] = c['final']
-
-                    output = ret.to_dict('records')
-                    del ret
-                elif action in numeric_comp_operators:
-                    print(action)
-                    value_comp = ''
-                    ent = ''
-                    attr = ''
-                    if not len(data_entities) == 2:
-                        raise ValueError("Only 2 data entities for comparisons")
-                    for de in data_entities:
-                        if is_value(de):
-                            value_comp = de
-                        else:
-                            e, a = get_data_entity_split(de)
-                            ent = e
-                            attr = a
-
-                    ret = get_numeric_comparison_df(action, df, ent, attr, value_comp)
-                    ret['job_id'] = job
-                    ret['phenotype_id'] = phenotype_id
-                    ret['owner'] = phenotype_owner
-                    ret['job_date'] = datetime.datetime.now()
-                    ret['context_type'] = on
-                    ret['raw_definition_text'] = c['raw_text']
-                    ret['source_nlpql_feature'] = ret['nlpql_feature']
-                    ret['result_name'] = operation_name
-                    ret['nlpql_feature'] = operation_name
-                    ret['final'] = c['final']
-
-                    output = ret.to_dict('records')
-                    del ret
-
-                if output and len(output) > 0:
-                    db.phenotype_results.insert_many(output)
-                    del output
-
-            else:
-                print('nothing to do for ' + operation_name)
-        del df
+        for c in regular_ops:
+            process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c)
+        for c in final_ops:
+            process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final=True)
