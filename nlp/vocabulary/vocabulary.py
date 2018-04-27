@@ -9,6 +9,8 @@ Vocabulary Expansion
 import re
 import psycopg2
 import psycopg2.extras
+import requests
+import json
 
 
 # Function to get synonyms for given concept
@@ -128,3 +130,35 @@ def get_related_terms(conn_string, concept, vocabulary, get_synonyms_bool=True, 
         return list(set(escaped))
     else:
         return list(set(related_terms))
+
+def get_related_terms_ohdsi(ohdsi_url, concept_id, vocabulary, get_synonyms_bool=True, get_descendants_bool=False, get_ancestors_bool=False, escape=True):
+    url = ohdsi_url + '/vocabulary/OHDSI-CDMV5/concept/%s/related' %(concept_id)
+    data = requests.get(url).json()
+
+    related_terms = []
+    escaped = []
+
+    for i in data:
+        if i["VOCABULARY_ID"] == vocabulary:
+            if get_descendants_bool:
+                for j in i["RELATIONSHIPS"]:
+                    if 'descendant' in j["RELATIONSHIP_NAME"]:
+                        related_terms.append(i["CONCEPT_NAME"])
+                        escaped.append(re.escape(i["CONCEPT_NAME"]))
+            elif get_ancestors_bool:
+                for j in i["RELATIONSHIPS"]:
+                    if 'ancestor' in j["RELATIONSHIP_NAME"]:
+                        related_terms.append(i["CONCEPT_NAME"])
+                        escaped.append(re.escape(i["CONCEPT_NAME"]))
+
+            # Add case for synonyms
+
+    if escape:
+        return list(set(escaped))
+    else:
+        return list(set(related_terms))
+
+# For testing purposes. Remove in code cleanup.
+if __name__=='__main__':
+    r = get_related_terms_ohdsi('https://gt-apps.hdap.gatech.edu/ohdsi/WebAPI', 376337, 'SNOMED', False, False, True, False )
+    print (r)
