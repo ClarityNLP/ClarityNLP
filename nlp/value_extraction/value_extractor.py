@@ -108,7 +108,7 @@ from nlp.finder.size_measurement_finder import run as run_size_measurement, Size
 
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 5
+VERSION_MINOR = 6
 
 # set to True to enable debug output
 TRACE = False
@@ -159,9 +159,17 @@ str_range     = r'(?P<num1>' + str_num + r')(\'?s)?' + str_range_sep + \
 str_bf     = r'\b(between|from)\s*'
 str_bf_sep = r'\s*(-|to|and)\s*'
 
+# range with optional 's, to capture "90's to 100's", etc.
 str_bf_range = str_bf + \
                r'(?P<num1>' + str_num + r')(\'?s)?' + str_bf_sep + \
                r'(?P<num2>' + str_num + r')(\'?s)?'
+
+str_units_range = r'(' + str_bf + r')?'                  +\
+                  r'(?P<num1>' + str_num + r')' + r'\s*' +\
+                  r'(?P<units1>' + str_text_word + r')'  +\
+                  str_bf_sep                             +\
+                  r'(?P<num2>' + str_num + r')' +r'\s*'  +\
+                  r'(?P<units2>' + str_text_word + r')'
 
 # two integers separated by '/'
 str_fraction  = r'\d+\s*/\s*\d+'
@@ -172,6 +180,10 @@ str_fraction_range  = r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_range_sep
 str_bf_fraction_range = str_bf + \
                         r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_bf_sep + \
                         r'(?P<frac2>' + str_fraction + r')(\'?s)?'
+
+# common punctuation
+str_punct = r'[.;,?\'\"!$%~]'
+regex_punct = re.compile(str_punct)
 
 regex_num      = re.compile(str_num)
 regex_fraction = re.compile(str_fraction)
@@ -396,6 +408,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # two numbers with a range separator inbetween
     str_range_query = str_start + str_cond + str_range
     str_bf_range_query = str_start + str_cond + str_bf_range
+    str_units_range_query = str_start + str_cond + str_units_range
 
     # <query> <words> <value>
     str_wds_val_query = str_start + str_val
@@ -461,6 +474,22 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
             cond = cond_to_string(words, cond_words)
             update_match_results(match, spans, results, x, EMPTY_FIELD, cond, query_term)
 
+    # check for units range query
+    iterator = re.finditer(str_units_range_query, sentence)
+    for match in iterator:
+        units1 = match.group('units1').strip().lower()
+        units2 = match.group('units2').strip().lower()
+        # strip punctuation
+        units1 = regex_punct.sub('', units1)
+        units2 = regex_punct.sub('', units2)
+        if units1 == units2:
+            num1 = float(match.group('num1'))
+            num2 = float(match.group('num2'))
+            # accept a numeric range if both numbers are contained in [minval, maxval]
+            if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
+                cond = STR_RANGE
+                update_match_results(match, spans, results, num1, num2, cond, query_term)
+            
     # check for bf numeric ranges
     iterator = re.finditer(str_bf_range_query, sentence)
     for match in iterator:
@@ -763,6 +792,7 @@ if __name__ == '__main__':
         'RR varied from 22 to 42, RR includes all values in the range 22 to 42, RR values were 22-42',
         'RR: 22-42, RR 22-42, RR=22-42, RR ~= 22-42, RR ~= 22 to 42, RR is approx. = 22-42, RR- 22-42',
         'RR= 22    -42, RR between 22 and 42, RR ranging from 22 to 42',
+        'FVC value for this patient is 500ml to 600ml.',
 
         # more BP
         'BP < 120/80, BP = 110/70, BP >= 100/70, BP <= 110/70, BP lt. or eq 110/70',
