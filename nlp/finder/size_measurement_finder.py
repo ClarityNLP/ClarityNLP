@@ -108,7 +108,7 @@ from enum import Enum, unique
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 3
+VERSION_MINOR = 4
 
 # set to True to enable debug output
 TRACE = False
@@ -158,6 +158,7 @@ regex_is_vol_unit = re.compile(str_is_vol_unit)
 str_x_cm  = x + cm
 str_x_vol_cm = x + vol + cm
 str_x_to_x_cm = x + to + x + cm
+str_x_cm_to_x_cm = x + cm + to + x + cm
 str_x_by_x_cm = x + by + x + cm
 str_xy2 = x + cm + by + x + cm
 str_xy3 = x + cm + view + by + x + cm + view
@@ -172,7 +173,8 @@ str_m = r'(' + str_xyz4 + r'|' + str_xyz3 + r'|' + str_xyz2 + r'|' + str_xyz1 + 
 
 regex_x     = re.compile(str_x_cm)
 regex_x_vol = re.compile(str_x_vol_cm)
-regex_xx    = re.compile(str_x_to_x_cm)
+regex_xx1   = re.compile(str_x_to_x_cm)
+regex_xx2   = re.compile(str_x_cm_to_x_cm)
 regex_xy1   = re.compile(str_x_by_x_cm)
 regex_xy2   = re.compile(str_xy2)
 regex_xy3   = re.compile(str_xy3)
@@ -878,7 +880,7 @@ def tokenize_xy1(match):
     return tokens
 
 ###############################################################################
-def tokenize_xx(match):
+def tokenize_xx1(match):
     """
     Tokenizes measurements of the form:
 
@@ -920,6 +922,71 @@ def tokenize_xx(match):
     tokens.append( Token(match.group(1), TokenLabel.RANGE1, value1))
     tokens.append( Token(match.group(3), TokenLabel.RANGE2, value2))
     tokens.append( Token(match.group(4), units_label, TOKEN_VALUE_NONE))
+
+    return tokens
+
+###############################################################################
+def tokenize_xx2(match):
+    """
+    Tokenizes measurements of the form:
+
+            1.5 cm to 1.8 cm
+    """
+
+    assert 5 == len(match.groups())
+
+    tokens = []
+
+    # group 1 is the first number
+    num1 = num_to_float(match.group(1))
+
+    # group 2 is the first units token
+    units_text = match.group(2)
+
+    # check for area or volume units
+    is_area = is_area_unit(units_text)
+    is_vol  = is_vol_unit(units_text)
+
+    # can't have both
+    if is_area or is_vol:
+        assert is_area ^ is_vol
+
+    units1_label = TokenLabel.UNITS
+    if is_area:
+        units1_label = TokenLabel.UNITS2
+    if is_vol:
+        units1_label = tokenLabel.UNITS3
+
+    value1 = convert_units(num1, units_text, is_area, is_vol)
+
+    # group 3 is the 'to' token (ignore)
+
+    # group 4 is the second number
+    num2 = num_to_float(match.group(4))
+
+    # group 5 is the second units token
+    units_text = match.group(5)
+
+    # check for area or volume units
+    is_area = is_area_unit(units_text)
+    is_vol  = is_vol_unit(units_text)
+
+    # can't have both
+    if is_area or is_vol:
+        assert is_area ^ is_vol
+
+    units2_label = TokenLabel.UNITS
+    if is_area:
+        units2_label = TokenLabel.UNITS2
+    if is_vol:
+        units2_label = TokenLabel.UNITS3
+
+    value2 = convert_units(num2, units_text, is_area, is_vol)
+
+    tokens.append( Token(match.group(1), TokenLabel.RANGE1, value1))
+    tokens.append( Token(match.group(2), units1_label, TOKEN_VALUE_NONE))
+    tokens.append( Token(match.group(4), TokenLabel.RANGE2, value2))
+    tokens.append( Token(match.group(5), units2_label, TOKEN_VALUE_NONE))
 
     return tokens
 
@@ -1024,10 +1091,11 @@ regexes = [
     regex_xy3,    # 4
     regex_xy2,    # 5
     regex_xy1,    # 6
-    regex_xx,     # 7
-    regex_x_vol,  # 8
-    regex_x,      # 9
-#    regex_listEnd # 10
+    regex_xx1,    # 7
+    regex_xx2,    # 8
+    regex_x_vol,  # 9
+    regex_x,      # 10
+#    regex_listEnd # 11
 ]
 
 # associates a regex index with its measurement tokenizer function
@@ -1038,10 +1106,11 @@ tokenizer_map = {0:tokenize_xyz4,
                  4:tokenize_xy3,
                  5:tokenize_xy2,
                  6:tokenize_xy1,
-                 7:tokenize_xx,
-                 8:tokenize_xvol,
-                 9:tokenize_x,
-#                 10:tokenize_list
+                 7:tokenize_xx1,
+                 8:tokenize_xx2,
+                 9:tokenize_xvol,
+                10:tokenize_x,
+#                 11:tokenize_list
 }
 
 LIST_TOKENIZER_FUNCTION_NAME = 'tokenize_list'
@@ -1219,12 +1288,19 @@ if __name__ == '__main__':
         "The result is 1.5 cu. cm in my estimation.",
         "The result is 1.6 square centimeters in my estimation.",
 
-        # str_x_to_x_cm (xx, ranges)
+        # str_x_to_x_cm (xx1, ranges)
         "The result is 1.5 to 1.8 cm in my estimation.",
         "The result is 1.5 - 1.8 cm in my estimation.",
         "The result is 1.5-1.8cm in my estimation.",
         "The result is 1 .5-1. 8cm in my estimation.",
         "The result is 1.5-1.8 cm2 in my estimation.",
+
+        # str_x_cm_to_x_cm (xx2, ranges)
+        "The result is 1.5 cm to 1.8 cm in my estimation.",
+        "The result is 1.5cm - 1.8 cm in my estimation.",
+        "The result is 1.5mm-1.8cm in my estimation.",
+        "The result is 1 .5 cm -1. 8cm in my estimation.",
+        "The result is 1.5cm2-1.8 cm2 in my estimation.",
 
         # str x_by_x_cm (xy1)
         "The result is 1.5 x 1.8 cm in my estimation.",

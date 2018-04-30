@@ -108,7 +108,7 @@ from nlp.finder.size_measurement_finder import run as run_size_measurement, Size
 
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 5
+VERSION_MINOR = 7
 
 # set to True to enable debug output
 TRACE = False
@@ -155,13 +155,38 @@ str_range_sep = r'\s*(-|to(\s+the)?)\s*'
 str_range     = r'(?P<num1>' + str_num + r')(\'?s)?' + str_range_sep + \
                 r'(?P<num2>' + str_num + r')(\'?s)?'
 
+# from http://ebmcalc.com/Basic.htm, an online medical unit conversion tool
+str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
+            r'breaths/min|centimeters|cm|cents|cmH20|cmHg|cm^2|cm2|days|'    +\
+            r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
+            r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
+            r'gm/sqcm|gm|hrs|hr|inches|index|inH2O|inHg|in|IU/L|kcal/day|'   +\
+            r'kg/m2|kg/m^2|kg/sqm|kg|kilograms|km/hr|km/sec|km/s|knots|kPa|' +\
+            r'L/24H|L/day|L/min|L/sec|lb|Liter|litresO2|logit|L|m/sec|mbar|' +\
+            r'mcg/dL|mcg/kg|mcg/mL|mcgm/mL|mEq/L/hr|meq/L|mEq/L|mEq|meters|' +\
+            r'METs|mg%|mg/day|mg/dL|mg/g|mg/kg|mg/mL|mg|micm|miles/hr|'      +\
+            r'miles/sec|miles/s|mph|mins|min|mIU/mL|mL/24H|mL/day|mL/dL|'    +\
+            r'mL/hr|mL/L|mL/min|mL/sec|mL/sqm|mL|mm/Hr|mmHg|mmol/L|mm|'      +\
+            r'months|mOsm/dl|mOsm/kg|mosm/kg|mo|m|ng/kg/min|ng/mL|nm|'       +\
+            r'number|Pascal|percent|pg|ph|points|pounds|psi|rate|ratio|'     +\
+            r'score|secs|sec|seq|sqcm/sqm|sqcm|sqm|sqrcm|sqrm|torr|u/L|U/L|' +\
+            r'Vol%|weeks|yd|years|yr)'
+
 # 'between' and 'from' often denote ranges, such as 'between 10 and 20'
 str_bf     = r'\b(between|from)\s*'
 str_bf_sep = r'\s*(-|to|and)\s*'
 
+# range with optional 's, to capture "90's to 100's", etc.
 str_bf_range = str_bf + \
                r'(?P<num1>' + str_num + r')(\'?s)?' + str_bf_sep + \
                r'(?P<num2>' + str_num + r')(\'?s)?'
+
+str_units_range = r'(' + str_bf + r')?'                  +\
+                  r'(?P<num1>' + str_num + r')' + r'\s*' +\
+                  r'(?P<units1>' + str_text_word + r')'  +\
+                  str_bf_sep                             +\
+                  r'(?P<num2>' + str_num + r')' +r'\s*'  +\
+                  r'(?P<units2>' + str_text_word + r')'
 
 # two integers separated by '/'
 str_fraction  = r'\d+\s*/\s*\d+'
@@ -172,6 +197,10 @@ str_fraction_range  = r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_range_sep
 str_bf_fraction_range = str_bf + \
                         r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_bf_sep + \
                         r'(?P<frac2>' + str_fraction + r')(\'?s)?'
+
+# common punctuation
+str_punct = r'[.;,?\'\"!$%~]'
+regex_punct = re.compile(str_punct)
 
 regex_num      = re.compile(str_num)
 regex_fraction = re.compile(str_fraction)
@@ -375,10 +404,16 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     [minval, maxval], determine relationship between query term and value
     (i.e. less than, greater than, etc.), and return results.
     """
+
+    if TRACE:
+        print('calling extract_value...')
+        print('\tSENTENCE: {0}'.format(sentence))
     
     # no values to extract if the sentence contains no digits
     match = regex_digits.search(sentence)
     if not match:
+        if TRACE:
+            print('\tno digits found in sentence: {0}'.format(sentence))
         return []
 
     str_start = get_query_start(query_term)
@@ -396,6 +431,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # two numbers with a range separator inbetween
     str_range_query = str_start + str_cond + str_range
     str_bf_range_query = str_start + str_cond + str_bf_range
+    str_units_range_query = str_start + str_cond + str_units_range
 
     # <query> <words> <value>
     str_wds_val_query = str_start + str_val
@@ -406,6 +442,8 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for bf fraction ranges first
     iterator = re.finditer(str_bf_fraction_range_query, sentence)
     for match in iterator:
+        if TRACE:
+            print('\tmatched bf_fraction_range_query: {0}'.match.group())
         (n1, d1) = get_num_and_denom(match.group('frac1'))
         (n2, d2) = get_num_and_denom(match.group('frac2'))
 
@@ -429,6 +467,8 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for other fraction ranges
     iterator = re.finditer(str_fraction_range_query, sentence)
     for match in iterator:
+        if TRACE:
+            print('\tmatched fraction_range_query: {0}'.format(match.group()))
         (n1, d1) = get_num_and_denom(match.group('frac1'))
         (n2, d2) = get_num_and_denom(match.group('frac2'))
 
@@ -447,6 +487,8 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for fractions
     iterator = re.finditer(str_fraction_query, sentence)
     for match in iterator:
+        if TRACE:
+            print('\tmatched fraction_query: {0}'.format(match.group()))
         (n, d) = get_num_and_denom(match.group('frac'))
 
         # keep either numerator or denom, according to user preference
@@ -461,9 +503,29 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
             cond = cond_to_string(words, cond_words)
             update_match_results(match, spans, results, x, EMPTY_FIELD, cond, query_term)
 
+    # check for units range query
+    iterator = re.finditer(str_units_range_query, sentence)
+    for match in iterator:
+        if TRACE:
+            print('\tmatched units_range_query: {0}'.format(match.group()))
+        units1 = match.group('units1').strip().lower()
+        units2 = match.group('units2').strip().lower()
+        # strip punctuation
+        units1 = regex_punct.sub('', units1)
+        units2 = regex_punct.sub('', units2)
+        if units1 == units2:
+            num1 = float(match.group('num1'))
+            num2 = float(match.group('num2'))
+            # accept a numeric range if both numbers are contained in [minval, maxval]
+            if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
+                cond = STR_RANGE
+                update_match_results(match, spans, results, num1, num2, cond, query_term)
+            
     # check for bf numeric ranges
     iterator = re.finditer(str_bf_range_query, sentence)
     for match in iterator:
+        if TRACE:
+            print('\tmatched bf_range_query: {0}'.format(match.group()))
         num1 = float(match.group('num1'))
         num2 = float(match.group('num2'))
         # accept a numeric range if both numbers are contained in [minval, maxval]
@@ -474,6 +536,8 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for numeric ranges
     iterator = re.finditer(str_range_query, sentence)
     for match in iterator:
+        if TRACE:
+            print('\tmatched range query: {0}'.format(match.group()))
         num1 = float(match.group('num1'))
         num2 = float(match.group('num2'))
         # accept a numeric range if both numbers are contained in [minval, maxval]
@@ -484,6 +548,8 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for op-value matches
     iterator = re.finditer(str_op_val_query, sentence)
     for match in iterator:
+        if TRACE:
+            print('\tmatched op_val_query: {0}'.format(match.group()))
         val = float(match.group('val'))
         if val >= minval and val <= maxval:
             words = match.group('words')
@@ -494,6 +560,8 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for wds-value matches
     iterator = re.finditer(str_wds_val_query, sentence)
     for match in iterator:
+        if TRACE:
+            print('\tmatched wds_val_query: {0}'.format(match.group()))
         val = float(match.group('val'))
         if val >= minval and val <= maxval:
             update_match_results(match, spans, results, val, EMPTY_FIELD, EMPTY_FIELD, query_term)
@@ -534,7 +602,11 @@ def clean_sentence(sentence, is_case_sensitive):
     for date in dates:
         start = int(date.start)
         end   = int(date.end)
-        sentence = erase(sentence, start, end)
+
+        # erase date if not simply isolated digits, such as 1500, which
+        # could be a measurement (i.e. 1500 ml)
+        if not regex_digits.match(date.text):
+            sentence = erase(sentence, start, end)
 
     # find size measurements in the sentence
     json_string = run_size_measurement(sentence)
@@ -763,6 +835,7 @@ if __name__ == '__main__':
         'RR varied from 22 to 42, RR includes all values in the range 22 to 42, RR values were 22-42',
         'RR: 22-42, RR 22-42, RR=22-42, RR ~= 22-42, RR ~= 22 to 42, RR is approx. = 22-42, RR- 22-42',
         'RR= 22    -42, RR between 22 and 42, RR ranging from 22 to 42',
+        'FVC value for this patient is 500ml to 600ml.',
 
         # more BP
         'BP < 120/80, BP = 110/70, BP >= 100/70, BP <= 110/70, BP lt. or eq 110/70',
@@ -817,7 +890,8 @@ if __name__ == '__main__':
         'coli from\nthe 22nd.',
         'The patient was admitted directly to the ICU with hypotension '        +\
         'secondary to septic shock with a gram negative rod septicemia.',
-        'Sputum cultures positive for gram positive cocci in pairs as well as gram negative diplococci.',
+        'Sputum cultures positive for gram positive cocci in pairs as well as ' +\
+        'gram negative diplococci.',
         'She completed a 7 day course of Vancomycin and Zosyn for the BAL '     +\
         'which grew gram positive and negative rods.',
 
@@ -825,6 +899,9 @@ if __name__ == '__main__':
 
         # problem with list recognition in size_measurement_finder.py: recognizes '2 and 5cm' as end-of-list
         'Saturations remain 100% on 40% fio2 and 5cm PEEP',
+
+        'FVC is 1500ml',
+        'FVC is 1500 ml',
     ]
 
     optparser = optparse.OptionParser(add_help_option=False)
