@@ -45,6 +45,8 @@ services:
       - docker-entrypoint.sh
       - solr-precreate
       - ${NLP_CORE_NAME}
+    environment:
+      - SOLR_HEAP=8192m
     env_file:
       - .env
 
