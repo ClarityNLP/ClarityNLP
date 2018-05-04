@@ -49,7 +49,7 @@ create table nlp.nlp_job_status
 create unique index nlp_job_status_nlp_job_status_id_uindex
 	on nlp.nlp_job_status (nlp_job_status_id)
 ;
-create table phenotype
+create table nlp.phenotype
 (
 	phenotype_id bigserial not null
 		constraint phenotype_pkey
@@ -64,15 +64,15 @@ create table phenotype
 ;
 
 create unique index phenotype_phenotype_id_uindex
-	on phenotype (phenotype_id)
+	on nlp.phenotype (phenotype_id)
 ;
 
 create index phenotype_name_index
-	on phenotype (name)
+	on nlp.phenotype (name)
 ;
 
 
-create table phenotype_mapping
+create table nlp.phenotype_mapping
 (
 	phenotype_id bigint not null,
 	pipeline_id bigint not null
@@ -80,7 +80,5 @@ create table phenotype_mapping
 ;
 
 create index phenotype_mapping_phenotype_id_index
-	on phenotype_mapping (phenotype_id)
+	on nlp.phenotype_mapping (phenotype_id)
 ;
-
-
