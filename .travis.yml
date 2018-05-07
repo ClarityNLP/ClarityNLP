@@ -2,8 +2,9 @@ language: python
 python:
   - "3.6"
 install:
-  - pip install -r requirements.txt
+  - python -m spacy download en_core_web_sm
   - python -m spacy download en
+  - pip install -r requirements.txt
 before_script:
   - cp example.cfg project.cfg
 script: python3 -m pytest tests/
