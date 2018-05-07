@@ -7,7 +7,7 @@ This is the core suite of Clarity tools for NLP, Solr and Clinical Phenotyping.
 ## Setup
 
 ### Python Version
-This library uses Python 3.4+.
+This library uses Python 3.6+.
 
 It is recommended to run with the [Clarity](https://github.com/ClarityNLP/clarity) Docker config. To setup locally, see [Setup Documentation](docs/setup.md).
 
