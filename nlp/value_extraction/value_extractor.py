@@ -106,9 +106,8 @@ from collections import namedtuple
 from nlp.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
 from nlp.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
 
-
 VERSION_MAJOR = 0
-VERSION_MINOR = 7
+VERSION_MINOR = 9
 
 # set to True to enable debug output
 TRACE = False
@@ -155,22 +154,22 @@ str_range_sep = r'\s*(-|to(\s+the)?)\s*'
 str_range     = r'(?P<num1>' + str_num + r')(\'?s)?' + str_range_sep + \
                 r'(?P<num2>' + str_num + r')(\'?s)?'
 
-# from http://ebmcalc.com/Basic.htm, an online medical unit conversion tool
-str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
-            r'breaths/min|centimeters|cm|cents|cmH20|cmHg|cm^2|cm2|days|'    +\
-            r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
-            r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
-            r'gm/sqcm|gm|hrs|hr|inches|index|inH2O|inHg|in|IU/L|kcal/day|'   +\
-            r'kg/m2|kg/m^2|kg/sqm|kg|kilograms|km/hr|km/sec|km/s|knots|kPa|' +\
-            r'L/24H|L/day|L/min|L/sec|lb|Liter|litresO2|logit|L|m/sec|mbar|' +\
-            r'mcg/dL|mcg/kg|mcg/mL|mcgm/mL|mEq/L/hr|meq/L|mEq/L|mEq|meters|' +\
-            r'METs|mg%|mg/day|mg/dL|mg/g|mg/kg|mg/mL|mg|micm|miles/hr|'      +\
-            r'miles/sec|miles/s|mph|mins|min|mIU/mL|mL/24H|mL/day|mL/dL|'    +\
-            r'mL/hr|mL/L|mL/min|mL/sec|mL/sqm|mL|mm/Hr|mmHg|mmol/L|mm|'      +\
-            r'months|mOsm/dl|mOsm/kg|mosm/kg|mo|m|ng/kg/min|ng/mL|nm|'       +\
-            r'number|Pascal|percent|pg|ph|points|pounds|psi|rate|ratio|'     +\
-            r'score|secs|sec|seq|sqcm/sqm|sqcm|sqm|sqrcm|sqrm|torr|u/L|U/L|' +\
-            r'Vol%|weeks|yd|years|yr)'
+# # from http://ebmcalc.com/Basic.htm, an online medical unit conversion tool
+# str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
+#             r'breaths/min|centimeters|cm|cents|cmH20|cmHg|cm^2|cm2|days|'    +\
+#             r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
+#             r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
+#             r'gm/sqcm|gm|hrs|hr|inches|index|inH2O|inHg|in|IU/L|kcal/day|'   +\
+#             r'kg/m2|kg/m^2|kg/sqm|kg|kilograms|km/hr|km/sec|km/s|knots|kPa|' +\
+#             r'L/24H|L/day|L/min|L/sec|lb|Liter|litresO2|logit|L|m/sec|mbar|' +\
+#             r'mcg/dL|mcg/kg|mcg/mL|mcgm/mL|mEq/L/hr|meq/L|mEq/L|mEq|meters|' +\
+#             r'METs|mg%|mg/day|mg/dL|mg/g|mg/kg|mg/mL|mg|micm|miles/hr|'      +\
+#             r'miles/sec|miles/s|mph|mins|min|mIU/mL|mL/24H|mL/day|mL/dL|'    +\
+#             r'mL/hr|mL/L|mL/min|mL/sec|mL/sqm|mL|mm/Hr|mmHg|mmol/L|mm|'      +\
+#             r'months|mOsm/dl|mOsm/kg|mosm/kg|mo|m|ng/kg/min|ng/mL|nm|'       +\
+#             r'number|Pascal|percent|pg|ph|points|pounds|psi|rate|ratio|'     +\
+#             r'score|secs|sec|seq|sqcm/sqm|sqcm|sqm|sqrcm|sqrm|torr|u/L|U/L|' +\
+#             r'Vol%|weeks|yd|years|yr)'
 
 # 'between' and 'from' often denote ranges, such as 'between 10 and 20'
 str_bf     = r'\b(between|from)\s*'
@@ -520,7 +519,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
             if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
                 cond = STR_RANGE
                 update_match_results(match, spans, results, num1, num2, cond, query_term)
-            
+
     # check for bf numeric ranges
     iterator = re.finditer(str_bf_range_query, sentence)
     for match in iterator:
@@ -566,7 +565,111 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
         if val >= minval and val <= maxval:
             update_match_results(match, spans, results, val, EMPTY_FIELD, EMPTY_FIELD, query_term)
 
+    results = remove_hypotheticals(sentence, results)
     return results
+
+###############################################################################
+def remove_hypotheticals(sentence, results):
+    """
+    Use a simplified version of the ConText algorithm of Harkema et. al. to 
+    identify and remove values used in hypothetical phrases.
+    """
+
+    # number of words influenced by a hypothetical start term
+    WINDOW = 6
+
+    if TRACE:
+        print('calling remove_hypotheticals...')
+
+    sentence_lc = sentence.lower()
+
+    str_split = r'[,;\s]+'
+    words = re.split(str_split, sentence_lc)
+
+    word_count = len(words)
+
+    # find matching text of each result in the words list
+    result_spans = []
+    for r in results:
+        r_words = re.split(str_split, r.text.lower())
+        r_word_count = len(r_words)
+
+        for i in range(word_count - (r_word_count - 1)):
+            j = 0
+            while j < r_word_count:
+                if words[i+j].startswith(r_words[j]):
+                    j += 1
+                else:
+                    break
+            if j == len(r_words):
+                # found the 'r_words' string in 'words'
+                result_spans.append( (i, i+r_word_count, r))
+                break
+
+    if TRACE:
+        print('\tresult word spans: ')
+        for span in result_spans:
+            print('\t\twords [{0},{1})'.format(span[0], span[1]))
+
+    # scan the word list looking for these hypothetical trigger words:
+    #     'call for'
+    #     'if': only if not preceded by 'know' and not followed by 'negative'
+    #     'in case'
+    #     'should'
+    triggers = []
+    for i in range(word_count):
+        trigger = None
+        word_offset = 0
+        if 'call' == words[i] and i < word_count-1 and 'for' == words[i+1]:
+            trigger = 'call for'
+            word_offset = 1
+        elif 'if' == words[i]:
+            if i > 0 and 'know' == words[i-1]:
+                continue
+            elif i < word_count-1 and 'negative' == words[i+1]:
+                continue
+            else:
+                trigger = 'if'
+        elif 'in' == words[i] and i < word_count-2 and 'case' == words[i+1]:
+            trigger = 'in case'
+            word_offset = 1
+        elif 'should' == words[i]:
+            trigger = 'should'
+        else:
+            continue
+
+        assert trigger is not None
+
+        # hypothetical window starts at the end of the trigger phrase,
+        # which is set by the word offset
+        triggers.append( (i+word_offset, trigger))
+
+    if TRACE:
+        print('\ttriggers: ')
+        print('\t\t{0}'.format(triggers))
+
+    omit_results = set()
+        
+    # for each trigger, find the next value result that starts within WINDOW words\
+    for hw in triggers:
+        h_start = hw[0]
+        for rs in result_spans:
+            rs_start = rs[0]
+            if rs_start < h_start:
+                continue
+            if rs_start - h_start < WINDOW:
+                if TRACE:
+                    print('Trigger {0} influences {1}'.
+                          format(hw[1], words[rs_start]))
+                omit_results.add(rs[2])
+                continue
+    
+    new_results = []
+    for r in results:
+        if not r in omit_results:
+            new_results.append(r)
+            
+    return new_results
 
 ###############################################################################
 def erase(sentence, start, end):
@@ -583,7 +686,10 @@ def clean_sentence(sentence, is_case_sensitive):
     """
     Do some preliminary processing on the sentence prior to value extraction.
     """
-    
+
+    if TRACE:
+        print('calling clean_sentence...')
+
     # erase [], {}, or () from the sentence
     sentence = regex_brackets.sub(' ', sentence)
 
@@ -606,6 +712,8 @@ def clean_sentence(sentence, is_case_sensitive):
         # erase date if not simply isolated digits, such as 1500, which
         # could be a measurement (i.e. 1500 ml)
         if not regex_digits.match(date.text):
+            if TRACE:
+                print("\terasing date '{0}'".format(date.text))
             sentence = erase(sentence, start, end)
 
     # find size measurements in the sentence
@@ -615,12 +723,17 @@ def clean_sentence(sentence, is_case_sensitive):
     # unpack JSON result into a list of SizeMeasurement namedtuples
     measurements = [SizeMeasurement(**m) for m in json_data]
 
-    # erase each measurement from the sentence
+    # erase each measurement from the sentence except for those in cc's
     for m in measurements:
+        if 'CUBIC_MILLIMETERS' == m.units:
+            if -1 != m.text.find('cc'):
+                continue
         start = int(m.start)
         end   = int(m.end)
+        if TRACE:
+            print("\terasing size measurement '{0}'".format(m.text))
         sentence = erase(sentence, start, end)
-        
+
     return sentence
 
 ###############################################################################
@@ -895,11 +1008,17 @@ if __name__ == '__main__':
         'She completed a 7 day course of Vancomycin and Zosyn for the BAL '     +\
         'which grew gram positive and negative rods.',
 
+        # hypotheticals
+        'If the FVC is 1500 ml, you should set the temp to 100.',
+        'The FVC is 1500 ml, so you should set the temp to 100.',
+        'The FVC is 1500 ml, so set the temp to 100.',
+        'Call for instructions when temp > 101.',
+        'Call in case temp > 101.'
+
         # reported problems
 
         # problem with list recognition in size_measurement_finder.py: recognizes '2 and 5cm' as end-of-list
         'Saturations remain 100% on 40% fio2 and 5cm PEEP',
-
         'FVC is 1500ml',
         'FVC is 1500 ml',
     ]
