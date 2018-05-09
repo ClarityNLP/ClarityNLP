@@ -1,7 +1,11 @@
-### Local Setup
+## Docker Setup
+This is the recommended setup as it configures Solr, Postgres, Mongo and the entire Clarity ecosystem.
+See the [Clarity](https://github.com/ClarityNLP/clarity) repository to get going.
+
+## Local Flask Setup
 
 
-Note: These instructions are only needed if you are not install via Docker through clarity. In that case, you can skip past this setup.
+Note: These instructions are only needed if you are not install via Docker through Clarity. In that case, you can skip past this setup.
 
 #### Installing Requirements
 ```
@@ -17,7 +21,7 @@ If you want to use conda, you can setup the environment using `spec-file.txt`
 python3 install_models.py
 ```
 
-### Vocabulary
+#### Vocabulary
 OMOP Vocabulary should be loaded (TODO)
 
 #### Properties
@@ -29,10 +33,10 @@ TODO
 #### Postgres
 Setup with DDL in `scripts/ddl.sql`
 
-### Temp directory
+#### Temp directory
 Setup a temporary directory on your system, make sure it's writable by the user running the application, and set the value in tmp.dir in project.cfg
 
-## Running
+#### Running Locally
 
 #### Running the Luigi Central Scheduler
 luigid --background --pidfile <PATH_TO_PIDFILE> --logdir <PATH_TO_LOGDIR> --state-path <PATH_TO_STATEFILE>
@@ -42,7 +46,7 @@ luigid --background --pidfile <PATH_TO_PIDFILE> --logdir <PATH_TO_LOGDIR> --stat
 FLASK_APP=api.py flask run
 ```
 
-## Docker
+### Local Docker
 
 #### Building Image
 ```docker build -t health-nlp-sample:latest . ```

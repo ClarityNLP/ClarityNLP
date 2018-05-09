@@ -1,5 +1,6 @@
 antlr4-python3-runtime==4.7.1
 celery==4.1.0
+commonmark==0.5.4
 flask==0.12.2
 flask-autodoc==0.1.2
 flask-cors==3.0.3
@@ -13,10 +14,13 @@ pandas==0.21.1
 psycopg2==2.7.3.2
 pymongo==3.6.0
 pytest==3.3.2
+recommonmark==0.4.0
 requests==2.18.4
 requests-file==1.4.2
 requests-oauthlib==0.8.0
 simplejson==3.13.2
 spacy==2.0.9
+sphinx==1.7.4
+sphinx-autobuild==0.7.1
 typing==3.6.2
 werkzeug==0.14.1
