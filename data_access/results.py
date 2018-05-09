@@ -27,6 +27,8 @@ def job_results(job_type: str, job: str):
         return pipeline_results(job)
     elif job_type == 'phenotype':
         return phenotype_results(job)
+    elif job_type == 'phenotype_intermediate':
+        return phenotype_intermediate_results(job)
     else:
         return generic_results(job, job_type)
 
@@ -78,10 +80,14 @@ def pipeline_results(job: str):
 
 
 def phenotype_results(job: str):
-    return generic_results(job, 'phenotype')
+    return generic_results(job, 'phenotype', True)
 
 
-def generic_results(job: str, job_type: str):
+def phenotype_intermediate_results(job: str):
+    return generic_results(job, 'phenotype', False)
+
+
+def generic_results(job: str, job_type: str, phenotype_final: bool = False):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
@@ -95,7 +101,7 @@ def generic_results(job: str, job_type: str):
             header_values = []
             length = 0
             if job_type == 'phenotype':
-                query = {"job_id": int(job), "final": True}
+                query = {"job_id": int(job), "phenotype_final": phenotype_final}
             else:
                 query = {"job_id": int(job)}
 

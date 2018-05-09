@@ -172,7 +172,8 @@ def post_phenotype(p_cfg: PhenotypeModel):
     output["status_endpoint"] = "%s/status/%s" % (util.main_url, str(job_id))
     output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
         util.luigi_url, str(job_id))
-    output["pipeline_results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id), 'pipeline')
+    output["intermediate_results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id),
+                                                                        'phenotype_intermediate')
     output["main_results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id), 'phenotype')
 
     return output

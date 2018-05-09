@@ -2,6 +2,7 @@ import datetime
 
 import luigi
 from pymongo import MongoClient
+from pymongo.errors import BulkWriteError
 
 import data_access
 import phenotype_helper
@@ -52,6 +53,9 @@ class PhenotypeTask(luigi.Task):
 
                 outfile.write("DONE!")
                 outfile.write('\n')
+        except BulkWriteError as bwe:
+            print(bwe.details)
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.WARNING, str(bwe.details))
         except Exception as ex:
             traceback.print_exc(file=sys.stdout)
             data_access.update_job_status(str(self.job), util.conn_string, data_access.FAILURE, str(ex))
@@ -65,7 +69,7 @@ class PhenotypeTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "70"
+    p_id = "120"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,
