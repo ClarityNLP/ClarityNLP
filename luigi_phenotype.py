@@ -50,7 +50,8 @@ class PhenotypeTask(luigi.Task):
 
             with self.output().open('w') as outfile:
                 phenotype_helper.write_phenotype_results(db, self.job, phenotype, self.phenotype, self.phenotype)
-
+                data_access.update_job_status(str(self.job), util.conn_string, data_access.COMPLETED,
+                                              "Job completed successfully")
                 outfile.write("DONE!")
                 outfile.write('\n')
         except BulkWriteError as bwe:
