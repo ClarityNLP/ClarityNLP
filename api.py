@@ -92,6 +92,17 @@ def ohdsi_get_cohort():
 
     return "Could not retrieve Cohort"
 
+@app.route('/ohdsi_cohort_status', methods=['GET'])
+@auto.doc()
+def ohdsi_cohort_status():
+    """Get status of OHDSI cohort creation"""
+    if request.method == 'GET':
+        cohort_id = request.args.get('cohort_id')
+        status = getCohortStatus(cohort_id)
+        return status
+
+    return "Could not retrieve cohort status"
+
 
 @app.route('/ohdsi_get_cohort_by_name', methods=['GET'])
 @auto.doc()
