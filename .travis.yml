@@ -7,11 +7,8 @@ install:
   - python -m spacy download en
 before_script:
   - cp example.cfg project.cfg
-  - export FLASK_APP="$TRAVIS_BUILD_DIR/api.py"
-  - export FLASK_DEBUG=1
 script: 
-  - script: python3 -m pytest tests/
-  - flask test
+  - python3 -m pytest tests/
 cache: pip
 notifications:
   slack:
