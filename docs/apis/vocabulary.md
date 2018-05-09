@@ -1,4 +1,4 @@
-### Vocabulary Explosion
+### Vocabulary Expansion
 
 **About:** 
 
