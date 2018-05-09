@@ -12,10 +12,10 @@ import sys
 SECTIONS_FILTER = "sections"
 
 
-def mongo_writer(client, pipeline, job, batch, pipeline_config, val, doc, type):
+def mongo_writer(client, pipeline, job, batch, pipeline_config: config.PipelineConfig, val, doc, type):
     db = client[util.mongo_db]
 
-    inserted = db.pipeline_results.insert_one({
+    obj = {
         "pipeline_type": type,
         "pipeline_id": pipeline,
         "job_id": job,
@@ -35,8 +35,11 @@ def mongo_writer(client, pipeline, job, batch, pipeline_config, val, doc, type):
         "start": val.start,
         "end": val.end,
         "label": val.label,
-        "description": val.description
-    })
+        "description": val.description,
+        "phenotype_final": False
+    }
+
+    inserted = config.insert_pipeline_results(pipeline_config, db, obj)
 
     return inserted
 

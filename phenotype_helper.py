@@ -129,7 +129,8 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   owner=owner,
                                   limit=limit,
                                   cohort=cohort,
-                                  report_tags=tags)
+                                  report_tags=tags,
+                                  is_phenotype=True)
         map_arguments(pipeline, e)
         map_arguments(pipeline, e['named_arguments'])
         return pipeline
@@ -199,10 +200,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     else:
         on = 'subject'
 
-    if final:
-        lookup_key = "result_name"
-    else:
-        lookup_key = "nlpql_feature"
+    lookup_key = "nlpql_feature"
 
     col_list = COL_LIST
     col_list.append(lookup_key)
@@ -218,10 +216,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
                 entity_features.append(e)
 
         query = {"job_id": int(job), lookup_key: {"$in": entity_features}}
-        if final:
-            cursor = db.phenotype_results.find(query)
-        else:
-            cursor = db.pipeline_results.find(query)
+        cursor = db.phenotype_results.find(query)
         df = pd.DataFrame(list(cursor))
 
         if len(df) == 0:
@@ -248,11 +243,15 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
                 ret['job_date'] = datetime.datetime.now()
                 ret['context_type'] = on
                 ret['raw_definition_text'] = c['raw_text']
-                ret['result_name'] = operation_name
-                ret['final'] = c['final']
+                ret['nlpql_feature'] = operation_name
+                ret['phenotype_final'] = c['final']
 
                 for d in dfs:
                     del d
+
+                if '_id' in ret.columns:
+                    ret['orig_id'] = ret['_id']
+                    ret = ret.drop(columns=['_id'])
 
                 output = ret.to_dict('records')
                 del ret
@@ -265,8 +264,11 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
             ret['job_date'] = datetime.datetime.now()
             ret['context_type'] = on
             ret['raw_definition_text'] = c['raw_text']
-            ret['result_name'] = operation_name
-            ret['final'] = c['final']
+            ret['nlpql_feature'] = operation_name
+            ret['phenotype_final'] = c['final']
+            if '_id' in ret.columns:
+                ret['orig_id'] = ret['_id']
+                ret = ret.drop(columns=['_id'])
 
             output = ret.to_dict('records')
             del ret
@@ -292,8 +294,11 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
             ret['job_date'] = datetime.datetime.now()
             ret['context_type'] = on
             ret['raw_definition_text'] = c['raw_text']
-            ret['result_name'] = operation_name
-            ret['final'] = c['final']
+            ret['nlpql_feature'] = operation_name
+            ret['phenotype_final'] = c['final']
+            if '_id' in ret.columns:
+                ret['orig_id'] = ret['_id']
+                ret = ret.drop(columns=['_id'])
 
             output = ret.to_dict('records')
             del ret
