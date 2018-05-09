@@ -43,20 +43,6 @@ def home():
 def doc():
     return auto.html()
 
-
-@app.route('/ohdsi_patient_event', methods=['POST'])
-@auto.doc()
-def ohdsi_patient_event():
-    """Get patient event details."""
-    if request.method == 'POST':
-        r = request.get_json()
-        patient_event_details = getPatientEvent(r['cohort_id'], r['domain'], tuple(r['concepts']), util.conn_string)
-
-        return json.dumps(patient_event_details)
-
-    return "Could not retrieve patient event details"
-
-
 @app.route('/ohdsi_create_cohort', methods=['GET'])
 @auto.doc()
 def ohdsi_create_cohort():
