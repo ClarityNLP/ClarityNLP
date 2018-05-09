@@ -1,0 +1,61 @@
+// Phenotype library name
+phenotype "Opioid and Death" version "1";
+
+/* Phenotype library description */
+//Fever >=38°C with a rise a rise of >=1°C PLUS any of: rigors, dyspnea, nausea/vomiting, tachycardia, hypotension, shock
+description "Test";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+// The ClarityCore library provides common functions for simplifying NLP pipeline creation
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
+
+
+// #Manual Term sets#
+// simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
+// can add expansion of structured concepts from terminologies as well with OMOPHelpers
+termset OpioidTerms: ["fentanyl",
+"duragesic",
+"oxycodone",
+"morphine",
+"percocet"];
+
+termset NaloxoneTerms: [
+"narcan",
+"naloxone"];
+
+
+// # Document sets## Uses Simple Document Ontology
+documentset ProviderNotes:
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
+
+//## Cohorts
+cohort DeathPatients:OHDSI.getCohort(194);
+
+// #phenotype features
+define tookOpioids:
+  Clarity.ProviderAssertion({
+    cohort:DeathPatients,
+    termset: [OpioidTerms],
+    documentset: [ProviderNotes]
+    });
+
+define gotRescueMed:
+  Clarity.ProviderAssertion({
+    cohort:DeathPatients,
+    termset: [NaloxoneTerms],
+    documentset: [ProviderNotes]
+    });
+
+
+//CDS logical Context (Patient, Document)
+context Patient;
+
+define final hasOpioidDeathWithRescue:
+  where tookOpioids AND gotRescueMed;
