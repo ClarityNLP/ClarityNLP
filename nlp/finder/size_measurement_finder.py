@@ -12,7 +12,7 @@ or 3D expression involving lengths, such as:
         3 mm                                    (1D measurement)
         1.2 cm x 3.6 cm                         (2D measurement)
         2 by 3 by 4 mm                          (3D measurement)
-        1.1, 2.3. 8.5, and 12.6 cm              (list of lengths)
+        1.1, 2.3, 8.5, and 12.6 cm              (list of lengths)
         1.5 cm2, 4.3 mm3                        (area and volume)
         2.3 - 4.5 cm                            (range)
         1.5 cm craniocaudal x 2.2 cm transverse (measurement with views)
