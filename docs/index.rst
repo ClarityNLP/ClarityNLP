@@ -11,6 +11,11 @@ This is the home for clinical NLP phenotyping, algorithms, and related APIs with
 .. image:: https://travis-ci.org/ClarityNLP/health-nlp.svg?branch=master
     :target: https://travis-ci.org/ClarityNLP/health-nlp
 
+Repository
+----------
+`GitHub
+<https://github.com/ClarityNLP/health-nlp>`_
+
 Setup
 -----
 This library uses Python 3.4+.
