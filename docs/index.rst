@@ -62,6 +62,17 @@ Phenotypes
    pipelines
    nlpql
 
+Algorithms
+----------
+
+.. toctree::
+   :maxdepth: 2
+
+   algorithms/size_measurement_finder
+   algorithms/tnm_stage_finder
+   algorithms/value_extraction
+   algorithms/measurement_subject_resolution
+   algorithms/section_tagger
 
 Everything else...
 ------------------
