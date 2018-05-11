@@ -155,5 +155,5 @@ References
 
 .. [1] | M. Sevenster, J. Buurman, P. Liu, J.F. Peters, P.J. Chang
        | **Natural Language Processing Techniques for Extracting and Categorizing**
-       | **Finding Measurements in Narrative Radiology Reports.**
+       | **Finding Measurements in Narrative Radiology Reports**
        | *Appl. Clin. Inform.*, 6(3) 600-610, 2015.
