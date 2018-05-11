@@ -17,10 +17,11 @@ Example                                Meaning
 1.5 cm2                                area measurement
 4.3 mm3                                volume measurement
 2.3 - 4.5 cm                           range of lengths
+1.1, 2.3, 8.5, and 12.6 cm             list of lengths
 1.5cm craniocaudal x 2.2cm transverse  measurement with views
 =====================================  =======================
 
-Clarity scans report text for size measurements, extracts the numeric values
+Clarity scans sentences for size measurements, extracts the numeric values
 for each dimension, normalizes each to a common set of units (performing unit
 conversions if necessary), and provides output in JSON format to other pipeline
 components.
@@ -29,18 +30,18 @@ Source Code
 ============
 
 The source code for the size measurement finder module is located in
-`finder/size_measurement_finder.py`.
+``nlp/finder/size_measurement_finder.py``.
 
 
 Inputs
 ------
 
-A single string, the sentence to be processed.
+A single string, the sentence to be scanned for size measurements.
 
 Outputs
 -------
 
-A JSON array containing these fields for each size measurement:
+A JSON array containing these fields for each size measurement found:
 
 ===========  ==============================================================
 Field Name   Explanation
@@ -48,7 +49,7 @@ Field Name   Explanation
 text         text of the complete measurement
 start        offset of the first character in the matching text
 end          offset of the final character in the matching text plus 1
-temporality  indication of when the measurement occurred
+temporality  CURRENT or PREVIOUS, indicating when the measurement occurred
 units        either mm, mm2, or mm3
 condition    either 'RANGE' for numeric ranges, or 'EQUAL' for all others
 x            numeric value of first number
@@ -58,8 +59,8 @@ values       for lists, a JSON array of all values in the list
 xView        view specification for the first axis
 yView        view specification for the second axis
 zView        view specification for the third axis
-minValue     either min([x, y, z]) or min(values)
-maxValue     either max([x, y, z]) or max(values)
+minValue     either ``min([x, y, z])`` or ``min(values)``
+maxValue     either ``max([x, y, z])`` or ``max(values)``
 ===========  ==============================================================
 
 All JSON measurement results contain an identical number of fields. Any fields
@@ -75,12 +76,13 @@ Algorithm
 Clarity uses a set of regular expressions to recognize size measurements. It
 scans a sentence with each regex, keeps track of any matches, and finds the
 longest match among the matching set. The longest matching text string is then
-tokenized, values are extracted, units are converted, and JSON is generated.
-This process is repeated until no more measurements are found, at which point
-the JSON arrary of measurements is returned to the
+tokenized, values are extracted, units are converted, and a python namedtuple
+representing the measurement is generated. This process is repeated until no
+more measurements are found, at which point the array of measurement
+namedtuples is converted to JSON and returned to the caller.
 
-Recognized Measurement Formats
-------------------------------
+Measurement Formats
+-------------------
 
 Clarity is able to recognize size measurements in a number of different formats.
 Using notation similar to that of [1]_, we define the following quantities:
@@ -115,16 +117,15 @@ x cm view by y cm view by z cm view  3 cm craniocaudal by 5cm transverse by 7 cm
 ===================================  ======================================================
 
 Clarity can also find size measurements with nonuniform spacing between the
-numeric values and the unit specification, as several of the examples above
-demonstrate. Newlines can also be present within a measurement. Floating
-point numbers can include a space either before or after the decimal point,
-such as `1. 5 cm`. Inconsistent spacing such as this appears frequently in
-electronic health records.
+various components, as several of the examples above demonstrate. Newlines can
+also be present within a measurement. Floating point numbers can include a
+space either before or after the decimal point, such as `1. 5 cm`. Inconsistent
+spacing such as this appears frequently in electronic health records.
 
 Details
 -------
 
-These are the measurement units supported by Clarity:
+These medically-relevant measurement units are supported:
 
 ============= =============================
 Units         Textual Forms
@@ -134,11 +135,12 @@ centimeters    cm, centimeter, centimeters
 inches         in, inch, inches
 ============= =============================
 
-Clarity tries to distinguish uses of the word 'in' as a preposition from
-its use as a unit of length. **It cannot correctly identify all such instances**,
-so 'in' may sometimes generate false positive results.
+Clarity tries to distinguish uses of the word 'in' as a preposition vs.
+its use as a unit of length. **It cannot correctly identify all such instances.**
+Hence the word 'in' preceded by a numeric value may sometimes generate false
+positive results.
 
-Numeric values can be integers (sequence of digits), or floating point values
+Numeric values can be integers (sequence of digits) or floating point values
 with optional whitespace either before or after the decimal point.  The digit
 before the decimal point is optional. Some examples:
 
@@ -147,9 +149,11 @@ before the decimal point is optional. Some examples:
 * .314, 0.314
 
 
+
 References
 ==========
 
-.. [1] Natural Language Processing Techniques for Extracting and Categorizing Finding Measurements in Narrative Radiology Reports, M. Sevenster, J. Buurman, Pl. Liu, J. F. Peters, and P. J. Chang, Applied Clinical Informatics 2015 (6) 600-610.
-
-
+.. [1] | M. Sevenster, J. Buurman, P. Liu, J.F. Peters, P.J. Chang
+       | **Natural Language Processing Techniques for Extracting and Categorizing**
+       | **Finding Measurements in Narrative Radiology Reports.**
+       | *Appl. Clin. Inform.*, 6(3) 600-610, 2015.
