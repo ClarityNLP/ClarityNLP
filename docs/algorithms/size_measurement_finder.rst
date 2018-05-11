@@ -119,7 +119,7 @@ x cm view by y cm view by z cm view  3 cm craniocaudal by 5cm transverse by 7 cm
 Clarity can also find size measurements with nonuniform spacing between the
 various components, as several of the examples above demonstrate. Newlines can
 also be present within a measurement. Floating point numbers can include a
-space either before or after the decimal point, such as `1. 5 cm`. Inconsistent
+space either before or after the decimal point, such as ``1. 5 cm``. Inconsistent
 spacing such as this appears frequently in electronic health records.
 
 Details
