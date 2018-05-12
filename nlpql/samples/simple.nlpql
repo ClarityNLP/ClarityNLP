@@ -1,5 +1,4 @@
 debug;
-
 // Phenotype library name
 phenotype "Septic Transfusion Reaction" version "2";
 
@@ -21,7 +20,7 @@ codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/
 
 // #Manual Term sets#
 // simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
-// can add expansion of structured concepts from terminologies as well with OMOPHelpers
+// can add expansion of structured concepts from terminologies as well with OHDSIHelpers
 termset RigorsTerms: ["Rigors",
 "Rigoring",
 "Rigours",
@@ -53,19 +52,6 @@ termset DyspneaTerms: [
 "Breath shortness",
 "Air hunger"];
 
-termset NauseaTerms: [
-"Nausea",
-"Nauseated",
-"Nauseous",
-"Queasy"];
-
-termset VomitingTerms: [
-"Vomiting",
-"Vomited",
-"Vomit",
-"Emesis",
-"Hyperemesis",
-"N/V"];
 
 termset TachycardiaTerms: [
 "Tachycardia",
@@ -98,7 +84,7 @@ documentset ProviderNotes:
     Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
 
 //## Cohorts
-cohort PlateletTransfusionPatients:OHDSI.getCohort(190);
+cohort PlateletTransfusionPatients:OHDSI.getCohort(194);
 
 // #phenotype features
 define hasRigors:
@@ -112,22 +98,8 @@ define hasDyspnea:
   Clarity.ProviderAssertion({
       cohort:PlateletTransfusionPatients,
       termset: [DyspneaTerms],
-      documentset: [ProviderNotes]eravaed
+      documentset: [ProviderNotes]
     });
-fdsfa "hel"
-define hasNausea:
-  Clarity.ProviderAssertion({
-    cohort:PlateletTransfusionPatients,
-    termset: [NauseaTerms],
-    documentset: [ProviderNotes]
-  });
-
-define hasVomiting:
-  Clarity.ProviderAssertion({
-    cohort:PlateletTransfusionPatients,
-    termset: [VomitingTerms],
-    documentset: [ProviderNotes]
-  });
 
 define hasShock:
   Clarity.ProviderAssertion({
@@ -135,6 +107,20 @@ define hasShock:
     termset: [ShockTerms],
     documentset: [ProviderNotes]
   });
+
+define hasTachycardia:
+  Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
+    termset: [TachycardiaTerms],
+    documentset: [ProviderNotes]
+  });
+
+  define hasHypotension:
+    Clarity.ProviderAssertion({
+      cohort:PlateletTransfusionPatients,
+      termset: [HypotensionTerms],
+      documentset: [ProviderNotes]
+    });
 
 //Quantitative metrics
 define Temperature:
@@ -153,7 +139,10 @@ define hasFever:
     where Temperature.value >= 100.4;
 
 define hasSepsisSymptoms:
-    where hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasTachycardia;
+    where hasRigors OR hasDyspnea OR hasShock OR hasTachycardia;
 
 define final hasSepsis:
-  where hasFever AND hasSepsisSymptoms;
+  where Clarity.dateDiff(
+      PlateletTransfusionPatients.cohortStartDate,
+      hasSepsisSymptoms.report_date,
+      d)<=1;

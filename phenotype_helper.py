@@ -3,6 +3,9 @@ import sys
 import traceback
 from functools import reduce
 import pandas as pd
+import util
+
+from ohdsi import getCohort
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
 
@@ -191,6 +194,108 @@ def get_numeric_comparison_df(action, df, ent, attr, value_comp):
     return new_df
 
 
+def string_to_datetime(stringdt):
+    # "2196-05-06T00:00:00Z",
+    return datetime.datetime.strptime(stringdt, "%Y-%m-%dT%H:%M:%SZ")
+
+
+def long_to_datetime(longdt):
+    return datetime.datetime.fromtimestamp(float(longdt/1000))
+
+
+def get_ohdsi_cohort(ent: str, attr: str, phenotype: PhenotypeModel):
+    if len(phenotype['cohorts']) > 0:
+        for c in phenotype['cohorts']:
+            if c['name'] == ent and c['library'] == 'OHDSI' and c['funct'] == 'getCohort' and len(c['arguments']) > 0:
+                cohort = getCohort(c['arguments'][0])['Patients']
+                df = pd.DataFrame.from_records(cohort)
+                df['cohortStartDate'] = df['cohortStartDate'].apply(long_to_datetime)
+                df['cohortEndDate'] = df['cohortEndDate'].apply(long_to_datetime)
+                df['subject'] = df['subjectId'].astype(int)
+                return df
+
+    return pd.DataFrame({'nothing': []})
+
+
+def convert_days_to_years(days):
+    days *= 1.0
+    years = days / 365.0
+    return years
+
+
+def convert_days_to_months(days):
+    days *= 1.0
+    months = days / 30.4167
+    return months
+
+
+def nlpql_results_to_dataframe(db, job, lookup_key, entity_features, final):
+    query = {"job_id": int(job), lookup_key: {"$in": entity_features}}
+    cursor = db.phenotype_results.find(query)
+    df = pd.DataFrame(list(cursor))
+    if not df.empty:
+        df['subject'] = df['subject'].astype(int)
+    return df
+
+
+def process_date_diff(pe: PhenotypeEntity, db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, final=False):
+    args = pe['arguments']
+    nlpql_name = pe['name']
+    if not len(args) == 3:
+        raise ValueError("dateDiff only accepts 3 arguments")
+    ent1, attr1 = get_data_entity_split(args[0])
+    ent2, attr2 = get_data_entity_split(args[1])
+    time_unit = args[2]
+
+    df1 = get_ohdsi_cohort(ent1, attr1, phenotype)
+    df2 = get_ohdsi_cohort(ent2, attr2, phenotype)
+    empty = False
+    if df1.empty:
+        df1 = nlpql_results_to_dataframe(db, job, 'nlpql_feature', [ent1], final)
+        if not df1.empty:
+            df1[attr1] = df1[attr1].apply(string_to_datetime)
+        else:
+            empty = True
+    if df2.empty:
+        df2 = nlpql_results_to_dataframe(db, job, 'nlpql_feature', [ent2], final)
+        if not df2.empty:
+            df2[attr2] = df2[attr2].apply(string_to_datetime)
+        else:
+            empty = True
+    if not empty:
+        merged = pd.merge(df1, df2, on='subject', how='inner')
+        if not merged.empty:
+            merged['nlpql_name'] = nlpql_name
+            merged['phenotype_id'] = phenotype_id
+            merged['phenotype_owner'] = phenotype_owner
+            if attr1 == attr2:
+                attr1 += '_x'
+                attr2 += '_y'
+            merged['timedelta'] = merged[attr1] - merged[attr2]
+            # todo work if not y|m|d
+            merged['value'] = merged['timedelta'].days
+            if time_unit == 'y':
+                merged['value'] = merged.apply(convert_days_to_years)
+            elif time_unit == 'm':
+                merged['value'] = merged.apply(convert_days_to_months)
+
+            if '_id' in merged.columns:
+                merged['orig_id'] = merged['_id']
+                merged = merged.drop(columns=['_id'])
+
+            output = merged.to_dict('records')
+            del merged
+            db.phenotype_results.insert_many(output)
+            del output
+
+
+def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner):
+    if de['library'] == "Clarity":
+        if de['funct'] == "dateDiff":
+            de["name"] = new_de_name
+            process_date_diff(de, db, job, phenotype, phenotype_id, phenotype_owner)
+
+
 def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
                        final=False):
     operation_name = c['name']
@@ -201,6 +306,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
         on = 'subject'
 
     lookup_key = "nlpql_feature"
+    name = c["name"]
 
     col_list = COL_LIST
     col_list.append(lookup_key)
@@ -210,10 +316,24 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
         data_entities = c['data_entities']
         entity_features = list()
 
+        i = 0
+        nested = False
+        de_names = list()
         for de in data_entities:
-            if not is_value(de):
+            if type(de) == dict:
+                # this is a function type
+                if "arguments" in de:
+                    new_name = name + "_" + "inner" + str(i)
+                    entity_features.append(new_name)
+                    nested = True
+                    process_nested_data_entity(de, new_name, db, job, phenotype, phenotype_id, phenotype_owner)
+                # TODO an operation type
+
+            elif not is_value(de):
+                de_names.append(de)
                 e, a = get_data_entity_split(de)
                 entity_features.append(e)
+            i += 1
 
         query = {"job_id": int(job), lookup_key: {"$in": entity_features}}
         cursor = db.phenotype_results.find(query)
@@ -308,24 +428,45 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
             del output
 
 
+def get_dependencies(po, deps: list):
+    for de in po['data_entities']:
+        if type(de) == dict:
+            get_dependencies(de, deps)
+        if "arguments" in de:
+            for arg in de["arguments"]:
+                e, a = get_data_entity_split(arg)
+                deps.append(e)
+        if is_value(de):
+            continue
+        else:
+            e, a = get_data_entity_split(de)
+            deps.append(e)
+
+
+def compare_phenotype(x: PhenotypeOperations, y: PhenotypeOperations):
+    x_deps = list()
+    y_deps = list()
+    x_name = x["name"]
+    y_name = y["name"]
+    get_dependencies(x, x_deps)
+    get_dependencies(y, y_deps)
+
+    if x_name in x_deps:
+        return -1
+    elif y_name in y_deps:
+        return 1
+    else:
+        return 0
+
+
 def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
     pd.options.mode.chained_assignment = None
+
     if phenotype.operations:
-
-        final_ops = list()
-        regular_ops = list()
-
+        # TODO implement sort
+        # for c in phenotype.operations.sort(key=util.cmp_2_key(lambda a, b: compare_phenotype(a,b))):
         for c in phenotype.operations:
-            # TODO make sure all ops are in the right order
-            if c['final']:
-                final_ops.append(c)
-            else:
-                regular_ops.append(c)
-
-        for c in regular_ops:
-            process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c)
-        for c in final_ops:
-            process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final=True)
+            process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final=c["final"])
 
 
 def validate_phenotype(p_cfg: PhenotypeModel):
