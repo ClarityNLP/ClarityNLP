@@ -70,6 +70,7 @@ Format                             Example
 No space                           ``T98.6``
 Whitespace                         ``T 98.6``, ``T    98.6``
 Dash                               ``T-98.6``, ``T- 98.6``
+Colon                              ``T:98.6``, ``T  :98.6``
 Equality                           ``T=98.6``, ``T = 98.6``, ``T  =98.6``, ``T is 98.6``
 Approximations                     ``T ~ 98.6``, ``T approx. 98.6``, ``T is ~98.6``
 Greater Than or Less Than          ``T > 98.6``, ``T<=98.6``, ``T .lt. 98.6``, ``T gt 98.6``
