@@ -50,3 +50,14 @@ report_mapper_key = read_property('MAPPER_API_KEY', ('report_mapper', 'key'))
 report_mapper_inst = read_property('MAPPER_API_INSTITUTE', ('report_mapper', 'institute'))
 
 ohdsi_url = read_property('OHDSI_WEBAPI_URL', ('ohdsi', 'webapi'))
+
+
+def cmp_2_key(mycmp):
+    # https://bytes.com/topic/python/answers/844614-python-3-sorting-comparison-function
+    class K:
+        def __init__(self, obj, *args):
+            self.obj = obj
+
+        def __cmp__(self, other):
+            return mycmp(self.obj, other.obj)
+    return K
