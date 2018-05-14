@@ -46,7 +46,7 @@ def doc():
 @app.route('/ohdsi_create_cohort', methods=['GET'])
 @auto.doc()
 def ohdsi_create_cohort():
-    """Get concept set details."""
+    """Creating Cohorts"""
     if request.method == 'GET':
         filepath = 'ohdsi/data/' + request.args.get('file')
         msg = createCohort(filepath)
