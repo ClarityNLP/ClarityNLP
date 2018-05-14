@@ -265,7 +265,7 @@ def process_date_diff(pe: PhenotypeEntity, db, job, phenotype: PhenotypeModel, p
     if not empty:
         merged = pd.merge(df1, df2, on='subject', how='inner')
         if not merged.empty:
-            merged['nlpql_name'] = nlpql_name
+            merged['nlpql_feature'] = nlpql_name
             merged['phenotype_id'] = phenotype_id
             merged['phenotype_owner'] = phenotype_owner
             if attr1 == attr2:
@@ -273,15 +273,18 @@ def process_date_diff(pe: PhenotypeEntity, db, job, phenotype: PhenotypeModel, p
                 attr2 += '_y'
             merged['timedelta'] = merged[attr1] - merged[attr2]
             # todo work if not y|m|d
-            merged['value'] = merged['timedelta'].days
+            merged['value'] = merged['timedelta'].apply(lambda x: x.days)
             if time_unit == 'y':
-                merged['value'] = merged.apply(convert_days_to_years)
+                merged['value'] = merged['value'].apply(convert_days_to_years)
             elif time_unit == 'm':
-                merged['value'] = merged.apply(convert_days_to_months)
+                merged['value'] = merged['value'].apply(convert_days_to_months)
 
             if '_id' in merged.columns:
                 merged['orig_id'] = merged['_id']
                 merged = merged.drop(columns=['_id'])
+
+            # delete timedelta
+            merged = merged.drop(columns=['timedelta'])
 
             output = merged.to_dict('records')
             del merged
@@ -318,22 +321,27 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
 
         i = 0
         nested = False
-        de_names = list()
+        flat_data_entities = list()
         for de in data_entities:
             if type(de) == dict:
                 # this is a function type
                 if "arguments" in de:
                     new_name = name + "_" + "inner" + str(i)
                     entity_features.append(new_name)
-                    nested = True
                     process_nested_data_entity(de, new_name, db, job, phenotype, phenotype_id, phenotype_owner)
-                # TODO an operation type
-
+                    new_data_entity = new_name + '.value'
+                    flat_data_entities.append(new_data_entity)
+                nested = True
             elif not is_value(de):
-                de_names.append(de)
                 e, a = get_data_entity_split(de)
                 entity_features.append(e)
+                flat_data_entities.append(e)
+            else:
+                flat_data_entities.append(de)
             i += 1
+
+        if nested:
+            data_entities = flat_data_entities
 
         query = {"job_id": int(job), lookup_key: {"$in": entity_features}}
         cursor = db.phenotype_results.find(query)
