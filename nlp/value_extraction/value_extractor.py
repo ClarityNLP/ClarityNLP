@@ -107,7 +107,7 @@ from nlp.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIEL
 from nlp.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 9
+VERSION_MINOR = 10
 
 # set to True to enable debug output
 TRACE = False
@@ -365,32 +365,76 @@ def get_query_start(query_term):
     return str_start
 
 ###############################################################################
-def extract_enumlist_value(query_term, sentence, filter_words):
+def extract_enumlist_values(query_terms, sentence, filter_words):
     """
     Extract a word to match the query term, and accept if that word
     appears in the result filter.
     """
 
-    results = []
+    if TRACE:
+        print('calling extract_enumlist_values...')
     
-    str_start = get_query_start(query_term)
-    str_word_query = str_start + r'(?P<word>' + str_enumlist_value + r')'
+    # find each query term in the sentence and record their positions
+    boundaries = []
+    for query_term in query_terms:
+        str_word_query = r'\b' + query_term + r'\b'
+        iterator = re.finditer(str_word_query, sentence)
+        for match in iterator:
+            boundaries.append(match.start())
 
-    found_it = False
-    iterator = re.finditer(str_word_query, sentence)
-    for match in iterator:
-        word = match.group('word')
+    # return if no query terms were found
+    if 0 == len(boundaries):
+        return []
 
-        # check word against all filter words, keep if found
-        for fw in filter_words:
-            if word == fw:
-                found_it = True
-                break
+    # sort by increasing char position
+    boundaries = sorted(boundaries)
+    num_boundaries = len(boundaries)
 
-    if found_it:
-        meas = ValueMeasurement(word, match.start(), match.end(),
-                                word, EMPTY_FIELD, STR_EQUAL, query_term)
-        results.append(meas)
+    if TRACE:
+        print('\tboundaries: {0}'.format(boundaries))
+
+    results = []
+    for query_term in query_terms:
+        str_word_query = r'\b' + query_term + r'\b'                    +\
+                         r'(?P<words>'                                 +\
+                         r'\s*(' + str_enumlist_value + r'\s*){0,8}'   +\
+                         r')'
+
+        found_it = False
+        iterator = re.finditer(str_word_query, sentence)
+        for match in iterator:
+            if TRACE:
+                print("\tmatch '{0}' start: {1}".format(match.group(), match.start()))
+            start = match.start()
+
+            # this start offset must occur in the boundaries list
+            try:
+                index = boundaries.index(start)
+            except ValueError:
+                # skip this term for now - need to log this - TBD
+                if TRACE:
+                    print('\t***ERROR***: start offset not found in boundaries list.')
+                continue
+
+            # don't cross into the next query term match region
+            end = match.end()
+            if index < num_boundaries-1:
+                if match.end() > boundaries[index+1]:
+                    end = boundaries[index+1]
+
+            words = match.group('words')
+            words_start = match.start('words')
+            for fw in filter_words:
+                pos = words.find(fw)
+                if -1 != pos and words_start + pos < end:
+                    found_it = True
+                    word = fw
+                    break
+
+        if found_it:
+            meas = ValueMeasurement(word, start, end,
+                                    word, EMPTY_FIELD, STR_EQUAL, query_term)
+            results.append(meas)
 
     return results
 
@@ -834,14 +878,13 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
     sentence = clean_sentence(sentence, is_case_sensitive)
 
     results = []
-    for term in terms:
-        if enumlist:
-            # extract a single enumlist value
-            values = extract_enumlist_value(term, sentence, filter_terms)
-        else:
+    if enumlist:
+        results = extract_enumlist_values(terms, sentence, filter_terms)
+    else:
+        for term in terms:
             # extract a single numeric value
             values = extract_value(term, sentence, minval, maxval, is_denom_only)
-        results.extend(values)
+            results.extend(values)
 
     # order results by their starting character offset
     results = sorted(results, key=lambda x: x.start)
@@ -1007,6 +1050,9 @@ if __name__ == '__main__':
         'gram negative diplococci.',
         'She completed a 7 day course of Vancomycin and Zosyn for the BAL '     +\
         'which grew gram positive and negative rods.',
+
+        'She was HCV negative HBV was positive, IgM Titer-1:80, IgG +'
+        #--enum "negative, positive, +, 1:80"
 
         # hypotheticals
         'If the FVC is 1500 ml, you should set the temp to 100.',
