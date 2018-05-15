@@ -12,7 +12,6 @@ negative_window = 4
 all_terms = dict()
 inited = False
 
-
 def load_terms(key):
     try:
         path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
@@ -130,14 +129,20 @@ def run_individual_context(sentence: str, target_phrase: str, key: str, rules, p
             rule_builder_regex = re.compile(r"\b(%s)\b" % rule_text, re.IGNORECASE | re.MULTILINE)
             all_matched = re.finditer(rule_builder_regex, eval_sentence)
             if all_matched:
+                prev_end = 0
+                new_eval_sentence = ''
                 for matched in all_matched:
+                    start = matched.start()
+                    end   = matched.end()
                     tokens = rule_tokens[1].strip().split("[")
                     match_text = str(matched.group(0)).strip().replace(" ", "_")
                     repl = "[%s%s[/%s" % (tokens[1], match_text, tokens[1])
-                    repl_sent = "%s%s%s" % (eval_sentence[0:matched.start()], repl, eval_sentence[matched.end():len(
-                        eval_sentence)])
-                    eval_sentence = repl_sent
                     rule_match += 1
+                    new_eval_sentence += eval_sentence[prev_end:start]
+                    new_eval_sentence += repl
+                    prev_end = end
+                new_eval_sentence += eval_sentence[prev_end:]
+                eval_sentence = new_eval_sentence
 
             if rule_match > 0:
                 eval_sentence = eval_sentence.replace("_", " ")
@@ -191,6 +196,27 @@ def run_individual_context(sentence: str, target_phrase: str, key: str, rules, p
 
     return found
 
+def replace_dash_as_negation(expected_term, sentence):
+
+    str_negated_term = r'\s-\s*' + expected_term + r'\b'
+    regex_negated_term = re.compile(str_negated_term, re.IGNORECASE)
+
+    prev_end = 0
+    new_sentence = ''
+    iterator = regex_negated_term.finditer(sentence)
+    for match in iterator:
+        start = match.start()
+        end   = match.end()
+        new_text  = ' no ' + expected_term
+        new_sentence += sentence[prev_end:start]
+        new_sentence += new_text
+        prev_end = end
+
+    if 0 == prev_end:
+        return sentence
+    else:
+        new_sentence += sentence[prev_end:]
+        return new_sentence
 
 class Context(object):
 
@@ -199,6 +225,10 @@ class Context(object):
         self.terms = context_init()
 
     def run_context(self, expected_term, sentence):
+
+        original_sentence = sentence
+        sentence = replace_dash_as_negation(expected_term, sentence)
+
         features = []
         phrase_regex = re.compile(r"(\b|\]\[)%s(\b|\]\[)" % expected_term, re.IGNORECASE)
         for key, terms in self.terms.items():
@@ -219,7 +249,7 @@ class Context(object):
                 elif isinstance(mapped_feature, Experiencer):
                     experiencer = mapped_feature
 
-        return ContextResult(expected_term, sentence, temporality, experiencer, negation)
+        return ContextResult(expected_term, original_sentence, temporality, experiencer, negation)
 
 
 if __name__ == '__main__':
@@ -239,6 +269,9 @@ if __name__ == '__main__':
     m9 = ctxt.run_context("nausea", "He has had signs of nausea and vomiting for the past 2 weeks")
     m10 = ctxt.run_context("heart attack", "FAMILY HISTORY: grandmother recently suffered heart attack")
     m11 = ctxt.run_context("heart attack", "Pt with three children and 1 grandaughter, pt voiced concerns over grandaughter and son (pt son 36 y/o had heart attack in FL).")
+    m12 = ctxt.run_context("fevers", "Patient condition: -fevers, - chills, - Weight Loss, alert")
+    m13 = ctxt.run_context("chills", "Patient condition: -fevers, - chills, - Weight Loss, alert")
+    m14 = ctxt.run_context("weight loss", "Patient condition: -fevers, - chills, - Weight Loss, alert")
 
     print(m1)
     print(m2)
@@ -251,3 +284,6 @@ if __name__ == '__main__':
     print(m9)
     print(m10)
     print(m11)
+    print(m12)
+    print(m13)
+    print(m14)
