@@ -231,16 +231,23 @@ def replace_future_occurrence_as_negation(expected_term, sentence):
     regex_instructions = re.compile(str_instructions, re.IGNORECASE)
     sentence = replace_all_matches(regex_instructions, expected_term, sentence)
 
-    str_if_occurs = r'\b(if|should\s+the|should)\s+' + expected_term +\
-                    r'\s+(should\s+)?'                                             +\
-                    r'\b(appear|arise|begin|crop\s+up|commence|come\s+to\s+light|' +\
-                    r'come\s+into\s+being|develop|emanate|emerge|ensue|exhibit|'   +\
-                    r'happen|occur|originate|result|set\s+in|start|take\s+place)' 
-    regex_if_occurs = re.compile(str_if_occurs, re.IGNORECASE)
-    sentence = replace_all_matches(regex_if_occurs, expected_term, sentence)
+    # no trailing r'\b' to handle plurals
+    str_if_1 = r'\b(if|should)\s+' + words_0_to_n + expected_term              +\
+               r'\s+(should\s+)?'                                              +\
+               r'\b(appear|arise|begin|crop\s+up|commence|come\s+to\s+light|'  +\
+               r'come\s+into\s+being|develop|emanate|emerge|ensue|exhibit|'    +\
+               r'happen|occur|originate|result|set\s+in|start|take\s+place)'
+    regex_if_1 = re.compile(str_if_1, re.IGNORECASE)
+    sentence = replace_all_matches(regex_if_1, expected_term, sentence)
 
-    str_in_case_of = r'\b(in\s+case\s+of|should\s+there\s+be)\s+' + words_0_to_n +\
-                     expected_term + r'\b'
+    str_if_2 = r'\b(if|should)\s+' + words_0_to_n                               +\
+               r'\b(commences?|develops?|exhibits?|presents?|results?(\s+in)?|' +\
+               r'starts?)\s+' + words_0_to_n + expected_term
+    regex_if_2 = re.compile(str_if_2, re.IGNORECASE)
+    sentence = replace_all_matches(regex_if_2, expected_term, sentence)
+
+    str_in_case_of = r'\b(in\s+case\s+of|should\s+there\s+be|(look|watch)\s+(out\s+)?for)\s+' +\
+                     words_0_to_n + expected_term
     regex_in_case_of = re.compile(str_in_case_of, re.IGNORECASE)
     sentence = replace_all_matches(regex_in_case_of, expected_term, sentence)
 
@@ -303,9 +310,12 @@ if __name__ == '__main__':
     m14 = ctxt.run_context("weight loss", "Patient condition: -fevers, - chills, - Weight Loss, alert")
     m15 = ctxt.run_context("chills", "Instructions to patient: take Tylenol for chills.")
     m16 = ctxt.run_context("fever", "Should fever appear, take Tylenol as indicated.")
-    m17 = ctxt.run_context("chills", "Take as prescribed; should there be chills or fever do this.")
-    m18 = ctxt.run_context("fever", "Take as prescribed; should there be chills or fever do this.")
-    m19 = ctxt.run_context("shortness of breath", "In case of severe shortness of breath, lie down.")
+    m17 = ctxt.run_context("chills", "Take as prescribed; should there be chills or fever do as instructed.")
+    m18 = ctxt.run_context("fever", "Take as prescribed; should there be chills or fever do as instructed.")
+    m19 = ctxt.run_context("shortness of breath", "In case of severe shortness of breath do as instructed.")
+    m20 = ctxt.run_context("problem", "If a problem appears, follow the instructions.")
+    m21 = ctxt.run_context("problem", "Look out for problems with the patient's breathing.")
+    m22 = ctxt.run_context("shortness of breath", "If the patient develops shortness of breath, do as instructed.")
 
     print(m1)
     print(m2)
@@ -326,3 +336,6 @@ if __name__ == '__main__':
     print(m17)
     print(m18)
     print(m19)
+    print(m20)
+    print(m21)
+    print(m22)
