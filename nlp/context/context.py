@@ -218,6 +218,32 @@ def replace_dash_as_negation(expected_term, sentence):
         new_sentence += sentence[prev_end:]
         return new_sentence
 
+def replace_instructions_as_negation(expected_term, sentence):
+
+    word = r'\b[a-zA-Z]+\b\s*'
+    words_ng = r'(' + word + r')+?'
+    str_instructions = r'\b(give|take|prescribe|rx)\s+' + words_ng +\
+                       r'\b(for|in\s+case\s+of|if)\s+' + expected_term + r'\b'
+    regex_instructions = re.compile(str_instructions, re.IGNORECASE)
+
+    prev_end = 0
+    new_sentence = ''
+    iterator = regex_instructions.finditer(sentence)
+    for match in iterator:
+        start = match.start()
+        end   = match.end()
+        new_text  = ' no ' + expected_term
+        new_sentence += sentence[prev_end:start]
+        new_sentence += new_text
+        prev_end = end
+
+    if 0 == prev_end:
+        return sentence
+    else:
+        new_sentence += sentence[prev_end:]
+        return new_sentence
+
+    
 class Context(object):
 
     def __init__(self):
@@ -228,6 +254,7 @@ class Context(object):
 
         original_sentence = sentence
         sentence = replace_dash_as_negation(expected_term, sentence)
+        sentence = replace_instructions_as_negation(expected_term, sentence)
 
         features = []
         phrase_regex = re.compile(r"(\b|\]\[)%s(\b|\]\[)" % expected_term, re.IGNORECASE)
@@ -272,6 +299,7 @@ if __name__ == '__main__':
     m12 = ctxt.run_context("fevers", "Patient condition: -fevers, - chills, - Weight Loss, alert")
     m13 = ctxt.run_context("chills", "Patient condition: -fevers, - chills, - Weight Loss, alert")
     m14 = ctxt.run_context("weight loss", "Patient condition: -fevers, - chills, - Weight Loss, alert")
+    m15 = ctxt.run_context("chills", "Instructions to patient: take tylenol for chills.")
 
     print(m1)
     print(m2)
@@ -287,3 +315,4 @@ if __name__ == '__main__':
     print(m12)
     print(m13)
     print(m14)
+    print(m15)
