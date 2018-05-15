@@ -196,54 +196,56 @@ def run_individual_context(sentence: str, target_phrase: str, key: str, rules, p
 
     return found
 
+def replace_all_matches(regex, expected_term, sentence):
+    prev_end = 0
+    new_sentence = ''
+    iterator = regex.finditer(sentence)
+    for match in iterator:
+        start = match.start()
+        end   = match.end()
+        new_text  = ' no ' + expected_term
+        new_sentence += sentence[prev_end:start]
+        new_sentence += new_text
+        prev_end = end
+
+    if 0 == prev_end:
+        return sentence
+    else:
+        new_sentence += sentence[prev_end:]
+        return new_sentence
+
 def replace_dash_as_negation(expected_term, sentence):
 
     str_negated_term = r'\s-\s*' + expected_term + r'\b'
     regex_negated_term = re.compile(str_negated_term, re.IGNORECASE)
+    return replace_all_matches(regex_negated_term, expected_term, sentence)
 
-    prev_end = 0
-    new_sentence = ''
-    iterator = regex_negated_term.finditer(sentence)
-    for match in iterator:
-        start = match.start()
-        end   = match.end()
-        new_text  = ' no ' + expected_term
-        new_sentence += sentence[prev_end:start]
-        new_sentence += new_text
-        prev_end = end
+def replace_future_occurrence_as_negation(expected_term, sentence):
 
-    if 0 == prev_end:
-        return sentence
-    else:
-        new_sentence += sentence[prev_end:]
-        return new_sentence
+    word = r'\b[a-z]+\b\s*'
+    words = r'(' + word + r')+?'        # nongreedy
+    words_0_to_n = r'(' + word + r')*?' # nongreedy
 
-def replace_instructions_as_negation(expected_term, sentence):
-
-    word = r'\b[a-zA-Z]+\b\s*'
-    words_ng = r'(' + word + r')+?'
-    str_instructions = r'\b(give|take|prescribe|rx)\s+' + words_ng +\
-                       r'\b(for|in\s+case\s+of|if)\s+' + expected_term + r'\b'
+    str_instructions = r'\b(give|take|prescribe|rx)\s+' + words +\
+                       r'\b(for|in\s+case\s+of)\s+' + expected_term + r'\b'
     regex_instructions = re.compile(str_instructions, re.IGNORECASE)
+    sentence = replace_all_matches(regex_instructions, expected_term, sentence)
 
-    prev_end = 0
-    new_sentence = ''
-    iterator = regex_instructions.finditer(sentence)
-    for match in iterator:
-        start = match.start()
-        end   = match.end()
-        new_text  = ' no ' + expected_term
-        new_sentence += sentence[prev_end:start]
-        new_sentence += new_text
-        prev_end = end
+    str_if_occurs = r'\b(if|should\s+the|should)\s+' + expected_term +\
+                    r'\s+(should\s+)?'                                             +\
+                    r'\b(appear|arise|begin|crop\s+up|commence|come\s+to\s+light|' +\
+                    r'come\s+into\s+being|develop|emanate|emerge|ensue|exhibit|'   +\
+                    r'happen|occur|originate|result|set\s+in|start|take\s+place)' 
+    regex_if_occurs = re.compile(str_if_occurs, re.IGNORECASE)
+    sentence = replace_all_matches(regex_if_occurs, expected_term, sentence)
 
-    if 0 == prev_end:
-        return sentence
-    else:
-        new_sentence += sentence[prev_end:]
-        return new_sentence
+    str_in_case_of = r'\b(in\s+case\s+of|should\s+there\s+be)\s+' + words_0_to_n +\
+                     expected_term + r'\b'
+    regex_in_case_of = re.compile(str_in_case_of, re.IGNORECASE)
+    sentence = replace_all_matches(regex_in_case_of, expected_term, sentence)
 
-    
+    return sentence
+
 class Context(object):
 
     def __init__(self):
@@ -254,7 +256,7 @@ class Context(object):
 
         original_sentence = sentence
         sentence = replace_dash_as_negation(expected_term, sentence)
-        sentence = replace_instructions_as_negation(expected_term, sentence)
+        sentence = replace_future_occurrence_as_negation(expected_term, sentence)
 
         features = []
         phrase_regex = re.compile(r"(\b|\]\[)%s(\b|\]\[)" % expected_term, re.IGNORECASE)
@@ -299,7 +301,11 @@ if __name__ == '__main__':
     m12 = ctxt.run_context("fevers", "Patient condition: -fevers, - chills, - Weight Loss, alert")
     m13 = ctxt.run_context("chills", "Patient condition: -fevers, - chills, - Weight Loss, alert")
     m14 = ctxt.run_context("weight loss", "Patient condition: -fevers, - chills, - Weight Loss, alert")
-    m15 = ctxt.run_context("chills", "Instructions to patient: take tylenol for chills.")
+    m15 = ctxt.run_context("chills", "Instructions to patient: take Tylenol for chills.")
+    m16 = ctxt.run_context("fever", "Should fever appear, take Tylenol as indicated.")
+    m17 = ctxt.run_context("chills", "Take as prescribed; should there be chills or fever do this.")
+    m18 = ctxt.run_context("fever", "Take as prescribed; should there be chills or fever do this.")
+    m19 = ctxt.run_context("shortness of breath", "In case of severe shortness of breath, lie down.")
 
     print(m1)
     print(m2)
@@ -316,3 +322,7 @@ if __name__ == '__main__':
     print(m13)
     print(m14)
     print(m15)
+    print(m16)
+    print(m17)
+    print(m18)
+    print(m19)
