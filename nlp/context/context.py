@@ -233,7 +233,7 @@ def replace_future_occurrence_as_current_negation(expected_term, sentence):
     regex_instructions = re.compile(str_instructions, re.IGNORECASE)
     sentence = replace_all_matches(regex_instructions, expected_term, sentence)
 
-    # no trailing r'\b' to handle plurals
+    # no trailing r'\b' to handle plural forms of final word
     str_if_1 = r'\b(if|should)\s+' + words_0_to_n + expected_term              +\
                r'\s+(should\s+)?'                                              +\
                r'\b(appear|arise|begin|crop\s+up|commence|come\s+to\s+light|'  +\
@@ -245,13 +245,13 @@ def replace_future_occurrence_as_current_negation(expected_term, sentence):
     str_if_2 = r'\b(if|should)\s+' + words_0_to_n                        +\
                r'\b(commences?|develops?|exhibits?|happens?|presents?|'  +\
                r'results?(\s+in)?|sets?\s+in|starts?|takes?\s+place)\s+' +\
-               words_0_to_n + expected_term
+               words_0_to_n + expected_term + r'\b'
     regex_if_2 = re.compile(str_if_2, re.IGNORECASE)
     sentence = replace_all_matches(regex_if_2, expected_term, sentence)
 
     str_in_case_of = r'\b(in\s+case\s+of|should\s+there\s+be|should|' +\
                      r'(look|watch)\s+(out\s+)?for)\s+'               +\
-                     words_0_to_n + expected_term
+                     words_0_to_n + expected_term + r'\b'
     regex_in_case_of = re.compile(str_in_case_of, re.IGNORECASE)
     sentence = replace_all_matches(regex_in_case_of, expected_term, sentence)
 
@@ -317,8 +317,8 @@ if __name__ == '__main__':
     m17 = ctxt.run_context("chills", "Take as prescribed; should there be chills or fever do as instructed.")
     m18 = ctxt.run_context("fever", "Take as prescribed; should there be chills or fever do as instructed.")
     m19 = ctxt.run_context("shortness of breath", "In case of severe shortness of breath do as instructed.")
-    m20 = ctxt.run_context("problem", "If a problem appears, follow the instructions.")
-    m21 = ctxt.run_context("problem", "Look out for problems with the patient's breathing.")
+    m20 = ctxt.run_context("problem", "If a problem arises, follow the instructions.")
+    m21 = ctxt.run_context("problems", "In case of problems with the patient's breathing do as instructed.")
     m22 = ctxt.run_context("shortness of breath", "If the patient develops shortness of breath, do as instructed.")
 
     print(m1)
