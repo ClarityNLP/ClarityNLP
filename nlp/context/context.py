@@ -216,18 +216,20 @@ def replace_all_matches(regex, expected_term, sentence):
 
 def replace_dash_as_negation(expected_term, sentence):
 
+    # match a dash that precedes a word only if whitespace precedes the dash
     str_negated_term = r'\s-\s*' + expected_term + r'\b'
     regex_negated_term = re.compile(str_negated_term, re.IGNORECASE)
     return replace_all_matches(regex_negated_term, expected_term, sentence)
 
-def replace_future_occurrence_as_negation(expected_term, sentence):
+def replace_future_occurrence_as_current_negation(expected_term, sentence):
 
     word = r'\b[a-z]+\b\s*'
     words = r'(' + word + r')+?'        # nongreedy
     words_0_to_n = r'(' + word + r')*?' # nongreedy
 
     str_instructions = r'\b(give|take|prescribe|rx)\s+' + words +\
-                       r'\b(for|in\s+case\s+of)\s+' + expected_term + r'\b'
+                       r'\b(for|in\s+case\s+of|if|when)\s+'     +\
+                       expected_term + r'\b'
     regex_instructions = re.compile(str_instructions, re.IGNORECASE)
     sentence = replace_all_matches(regex_instructions, expected_term, sentence)
 
@@ -240,13 +242,15 @@ def replace_future_occurrence_as_negation(expected_term, sentence):
     regex_if_1 = re.compile(str_if_1, re.IGNORECASE)
     sentence = replace_all_matches(regex_if_1, expected_term, sentence)
 
-    str_if_2 = r'\b(if|should)\s+' + words_0_to_n                               +\
-               r'\b(commences?|develops?|exhibits?|presents?|results?(\s+in)?|' +\
-               r'starts?)\s+' + words_0_to_n + expected_term
+    str_if_2 = r'\b(if|should)\s+' + words_0_to_n                        +\
+               r'\b(commences?|develops?|exhibits?|happens?|presents?|'  +\
+               r'results?(\s+in)?|sets?\s+in|starts?|takes?\s+place)\s+' +\
+               words_0_to_n + expected_term
     regex_if_2 = re.compile(str_if_2, re.IGNORECASE)
     sentence = replace_all_matches(regex_if_2, expected_term, sentence)
 
-    str_in_case_of = r'\b(in\s+case\s+of|should\s+there\s+be|(look|watch)\s+(out\s+)?for)\s+' +\
+    str_in_case_of = r'\b(in\s+case\s+of|should\s+there\s+be|should|' +\
+                     r'(look|watch)\s+(out\s+)?for)\s+'               +\
                      words_0_to_n + expected_term
     regex_in_case_of = re.compile(str_in_case_of, re.IGNORECASE)
     sentence = replace_all_matches(regex_in_case_of, expected_term, sentence)
@@ -263,7 +267,7 @@ class Context(object):
 
         original_sentence = sentence
         sentence = replace_dash_as_negation(expected_term, sentence)
-        sentence = replace_future_occurrence_as_negation(expected_term, sentence)
+        sentence = replace_future_occurrence_as_current_negation(expected_term, sentence)
 
         features = []
         phrase_regex = re.compile(r"(\b|\]\[)%s(\b|\]\[)" % expected_term, re.IGNORECASE)
