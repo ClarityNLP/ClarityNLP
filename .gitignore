@@ -1,3 +1,9 @@
 .cache/
 .env
 prod.env
+.idea/codeStyles/Project.xml
+.idea/vcs.xml
+.idea/
+_build/
+_static/
+_templates/

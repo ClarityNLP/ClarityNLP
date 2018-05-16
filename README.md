@@ -1,5 +1,9 @@
 ## Docker Compose Clarity NLP Application
 
+### Clarity Documentation
+[Read the Docs](http://clarity.readthedocs.io/en/latest/)
+
+
 ### Docker Compose (Development) Architecture Diagram
 
 ![Alt text](/docker-compose.png?raw=true "Docker Compose Dev Diagram")
@@ -21,7 +25,7 @@ find your OS and follow instructions. Go [here](https://docs.docker.com/compose/
 
 5. Build images and run containers `docker-compose -f docker-compose.prod.yml up --build -d`
 
-### Running Locally
+### Local Deployment
 
 1. Install [Docker for Mac](https://www.docker.com/docker-mac) or [Docker for Windows](https://www.docker.com/docker-windows)
 
@@ -39,12 +43,4 @@ find your OS and follow instructions. Go [here](https://docs.docker.com/compose/
 
 Now you can run `docker ps` to confirm the project's containers are running.
 
-### Updating to download latest changes
-From the command line, run:
-```
-git pull
-git submodule update --recursive
-```
 
-### Submodule documentation
-* [Health NLP API](https://github.com/ClarityNLP/health-nlp/)
