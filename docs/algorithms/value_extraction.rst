@@ -92,7 +92,7 @@ The denominator can be returned instead by use of a runtime argument.
 Hypotheticals
 -------------
 
-The value extractor attempts to identify hypothetical phrases and ignore any
+The value extractor attempts to identify hypothetical phrases and to ignore any
 values found therein. It uses a simplified version of the *ConText* algorithm
 of [1]_ to recognize hypothetical phrases. The "trigger" terms that denote
 the start of a hypothetical phrase are: ``in case``, ``call for``, ``should``,
