@@ -196,5 +196,45 @@ with the common noun ``car``:
 This is the correct result: ``car`` is tagged as a NOUN and ``measures`` is
 tagged a verb.
 
+One can imagine the extent to which obscure medical jargon could completely
+confuse spaCy. In the absence of a version of spaCy trained on medical corpora,
+Clarity attempts to overcome such problems by replacing medical terms with
+common English nouns. The resulting sentence **does not** have to make sense.
+All it needs to do is help spaCy produce the correct dependency parse of
+the sentence and correctly resolve the relationships between the various
+phrases. The substitution process is not foolproof either, but we observe
+consistently better results with the ngram substitutions than without them.
+
+.. _special case tokenization rules: https://spacy.io/usage/linguistic-features#special-cases
+
+To further help spaCy's decision processes, spaCy provides a mechanism to
+introduce `special case tokenization rules`_. Clarity takes advantage of this by
+introducing four special case rules for ``measure`` and related verbs. The next
+code block shows how Clarity accomplishes this:
+
+.. code-block:: python
+    :linenos:
+
+    # 'measures' is a 3rd person singular present verb
+    special_case = [{ORTH: u'measures', LEMMA: u'measure', TAG: u'VBZ', POS: u'VERB'}]
+    nlp.tokenizer.add_special_case(u'measures', special_case)
+
+    # 'measure' is a non 3rd person singular present verb
+    special_case = [{ORTH: u'measure', LEMMA: u'measure', TAG: u'VBP', POS: u'VERB'}]
+    nlp.tokenizer.add_special_case(u'measure', special_case)
+
+    # 'measured' is a verb, past participle
+    special_case = [{ORTH: u'measured', LEMMA: u'measure', TAG: u'VBN', POS: u'VERB'}]
+    nlp.tokenizer.add_special_case(u'measured', special_case)
+
+    # 'measuring' is a verb form, either a gerund or present participle
+    special_case = [{ORTH: u'measuring', LEMMA: u'measure', TAG: u'VBG', POS: u'VERB'}]
+    nlp.tokenizer.add_special_case(u'measuring', special_case)
+
+
+Algorithm
+=========
+
+
 
 
