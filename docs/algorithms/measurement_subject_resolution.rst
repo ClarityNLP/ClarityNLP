@@ -156,7 +156,7 @@ parent-child relationship actually is. For the "girl-The" arrow, the ``det``
 label on the arrow indicates that the word ``The`` is a determiner that
 modifies ``girl``.
 
-Continuing with the analysis, the subject of the verb ``has`` is the word
+Continuing with the example, the subject of the verb ``has`` is the word
 ``girl``, as indicated by the ``nsubj`` label on the second arrow. The direct
 object of the verb is the noun ``flower``, as the arrow labeled ``dobj`` shows.
 The direct object has a DET modifer ``a``, similarly to the DET modifier for
@@ -176,8 +176,8 @@ Dependency Parse Errors
 
 Sometimes spaCy generates an incorrect dependency parse. This happens often
 in sentences that contain medical terminology, especially when medical terms
-are used in different contexts than those in which they occurred in the
-training corpora. For instance, the simple sentence
+are used in different contexts than those in which they might have occurred
+in the training corpora. For instance, the simple sentence
 
     ``The spleen measures 7.5 cm.``
 
@@ -188,8 +188,8 @@ generates this dependency parse:
 Here we see that the verb ``measures`` was tagged as a NOUN, in the sense of
 "weights and measures". The word ``spleen`` was also tagged as an adjective.
 This is obviously incorrect. The problem, though, lies with the word
-``spleen`` instead of ``measures``. Observe what happens if ``spleen`` is replaced
-with the common noun ``car``:
+``spleen`` instead of ``measures``. Observe what happens if ``spleen`` is
+replaced by the common noun ``car``:
 
 .. image:: images/displacy_car_correct.png
 
@@ -207,10 +207,10 @@ consistently better results with the ngram substitutions than without them.
 
 .. _special case tokenization rules: https://spacy.io/usage/linguistic-features#special-cases
 
-To further help spaCy's decision processes, spaCy provides a mechanism to
-introduce `special case tokenization rules`_. Clarity takes advantage of this by
-introducing four special case rules for ``measure`` and related verbs. The next
-code block shows how Clarity accomplishes this:
+To further help spaCy's decision processes, spaCy provides a mechanism for
+introducing `special case tokenization rules`_. Clarity takes advantage of
+this by introducing four special case rules for ``measure`` and related verbs.
+The next code block shows how Clarity accomplishes this:
 
 .. code-block:: python
     :linenos:
@@ -231,6 +231,15 @@ code block shows how Clarity accomplishes this:
     special_case = [{ORTH: u'measuring', LEMMA: u'measure', TAG: u'VBG', POS: u'VERB'}]
     nlp.tokenizer.add_special_case(u'measuring', special_case)
 
+These rules guarantee that the words ``measures``, ``measure``, ``measured``,
+and ``measuring`` will always be tagged as verbs.
+
+The words that Clarity substitutes for medical ngrams are:
+
+|    ``car, city, year, news, math, hall, poet, fact,``
+|    ``idea, oven, poem, dirt, tale, world, hotel``
+
+These are all common English words that only occur as nouns.
 
 Algorithm
 =========
