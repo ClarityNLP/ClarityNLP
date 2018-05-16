@@ -1,3 +1,5 @@
+.. _size-measurement-finder:
+
 Finding Size Measurements
 *************************
 

@@ -113,7 +113,7 @@ The entry point to the value extractor is the ``run`` function:
 .. code-block:: python
    :linenos:
 
-   def run(term_string,              # comma-separated list of query terms
+   def run(term_string,              # string, comma-separated list of query terms
            sentence,                 # string, the sentence to be processed
            str_minval=None,          # minimum numeric value
            str_maxval=None,          # maximum numeric value
