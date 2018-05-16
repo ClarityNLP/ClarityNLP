@@ -12,7 +12,6 @@ negative_window = 4
 all_terms = dict()
 inited = False
 
-
 def load_terms(key):
     try:
         path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
@@ -130,14 +129,20 @@ def run_individual_context(sentence: str, target_phrase: str, key: str, rules, p
             rule_builder_regex = re.compile(r"\b(%s)\b" % rule_text, re.IGNORECASE | re.MULTILINE)
             all_matched = re.finditer(rule_builder_regex, eval_sentence)
             if all_matched:
+                prev_end = 0
+                new_eval_sentence = ''
                 for matched in all_matched:
+                    start = matched.start()
+                    end   = matched.end()
                     tokens = rule_tokens[1].strip().split("[")
                     match_text = str(matched.group(0)).strip().replace(" ", "_")
                     repl = "[%s%s[/%s" % (tokens[1], match_text, tokens[1])
-                    repl_sent = "%s%s%s" % (eval_sentence[0:matched.start()], repl, eval_sentence[matched.end():len(
-                        eval_sentence)])
-                    eval_sentence = repl_sent
                     rule_match += 1
+                    new_eval_sentence += eval_sentence[prev_end:start]
+                    new_eval_sentence += repl
+                    prev_end = end
+                new_eval_sentence += eval_sentence[prev_end:]
+                eval_sentence = new_eval_sentence
 
             if rule_match > 0:
                 eval_sentence = eval_sentence.replace("_", " ")
@@ -191,6 +196,66 @@ def run_individual_context(sentence: str, target_phrase: str, key: str, rules, p
 
     return found
 
+def replace_all_matches(regex, expected_term, sentence):
+    prev_end = 0
+    new_sentence = ''
+    iterator = regex.finditer(sentence)
+    for match in iterator:
+        start = match.start()
+        end   = match.end()
+        new_text  = ' no ' + expected_term
+        new_sentence += sentence[prev_end:start]
+        new_sentence += new_text
+        prev_end = end
+
+    if 0 == prev_end:
+        return sentence
+    else:
+        new_sentence += sentence[prev_end:]
+        return new_sentence
+
+def replace_dash_as_negation(expected_term, sentence):
+
+    # match a dash that precedes a word only if whitespace precedes the dash
+    str_negated_term = r'\s-\s*' + expected_term + r'\b'
+    regex_negated_term = re.compile(str_negated_term, re.IGNORECASE)
+    return replace_all_matches(regex_negated_term, expected_term, sentence)
+
+def replace_future_occurrence_as_current_negation(expected_term, sentence):
+
+    word = r'\b[a-z]+\b\s*'
+    words = r'(' + word + r')+?'        # nongreedy
+    words_0_to_n = r'(' + word + r')*?' # nongreedy
+
+    str_instructions = r'\b(give|take|prescribe|rx)\s+' + words +\
+                       r'\b(for|in\s+case\s+of|if|when)\s+'     +\
+                       expected_term + r'\b'
+    regex_instructions = re.compile(str_instructions, re.IGNORECASE)
+    sentence = replace_all_matches(regex_instructions, expected_term, sentence)
+
+    # no trailing r'\b' to handle plural forms of final word
+    str_if_1 = r'\b(if|should)\s+' + words_0_to_n + expected_term              +\
+               r'\s+(should\s+)?'                                              +\
+               r'\b(appear|arise|begin|crop\s+up|commence|come\s+to\s+light|'  +\
+               r'come\s+into\s+being|develop|emanate|emerge|ensue|exhibit|'    +\
+               r'happen|occur|originate|result|set\s+in|start|take\s+place)'
+    regex_if_1 = re.compile(str_if_1, re.IGNORECASE)
+    sentence = replace_all_matches(regex_if_1, expected_term, sentence)
+
+    str_if_2 = r'\b(if|should)\s+' + words_0_to_n                        +\
+               r'\b(commences?|develops?|exhibits?|happens?|presents?|'  +\
+               r'results?(\s+in)?|sets?\s+in|starts?|takes?\s+place)\s+' +\
+               words_0_to_n + expected_term + r'\b'
+    regex_if_2 = re.compile(str_if_2, re.IGNORECASE)
+    sentence = replace_all_matches(regex_if_2, expected_term, sentence)
+
+    str_in_case_of = r'\b(in\s+case\s+of|should\s+there\s+be|should|' +\
+                     r'(look|watch)\s+(out\s+)?for)\s+'               +\
+                     words_0_to_n + expected_term + r'\b'
+    regex_in_case_of = re.compile(str_in_case_of, re.IGNORECASE)
+    sentence = replace_all_matches(regex_in_case_of, expected_term, sentence)
+
+    return sentence
 
 class Context(object):
 
@@ -199,6 +264,11 @@ class Context(object):
         self.terms = context_init()
 
     def run_context(self, expected_term, sentence):
+
+        original_sentence = sentence
+        sentence = replace_dash_as_negation(expected_term, sentence)
+        sentence = replace_future_occurrence_as_current_negation(expected_term, sentence)
+
         features = []
         phrase_regex = re.compile(r"(\b|\]\[)%s(\b|\]\[)" % expected_term, re.IGNORECASE)
         for key, terms in self.terms.items():
@@ -219,7 +289,7 @@ class Context(object):
                 elif isinstance(mapped_feature, Experiencer):
                     experiencer = mapped_feature
 
-        return ContextResult(expected_term, sentence, temporality, experiencer, negation)
+        return ContextResult(expected_term, original_sentence, temporality, experiencer, negation)
 
 
 if __name__ == '__main__':
@@ -239,6 +309,17 @@ if __name__ == '__main__':
     m9 = ctxt.run_context("nausea", "He has had signs of nausea and vomiting for the past 2 weeks")
     m10 = ctxt.run_context("heart attack", "FAMILY HISTORY: grandmother recently suffered heart attack")
     m11 = ctxt.run_context("heart attack", "Pt with three children and 1 grandaughter, pt voiced concerns over grandaughter and son (pt son 36 y/o had heart attack in FL).")
+    m12 = ctxt.run_context("fevers", "Patient condition: -fevers, - chills, - Weight Loss, alert")
+    m13 = ctxt.run_context("chills", "Patient condition: -fevers, - chills, - Weight Loss, alert")
+    m14 = ctxt.run_context("weight loss", "Patient condition: -fevers, - chills, - Weight Loss, alert")
+    m15 = ctxt.run_context("chills", "Instructions to patient: take Tylenol for chills.")
+    m16 = ctxt.run_context("fever", "Should fever appear, take Tylenol as indicated.")
+    m17 = ctxt.run_context("chills", "Take as prescribed; should there be chills or fever do as instructed.")
+    m18 = ctxt.run_context("fever", "Take as prescribed; should there be chills or fever do as instructed.")
+    m19 = ctxt.run_context("shortness of breath", "In case of severe shortness of breath do as instructed.")
+    m20 = ctxt.run_context("problem", "If a problem arises, follow the instructions.")
+    m21 = ctxt.run_context("problems", "In case of problems with the patient's breathing do as instructed.")
+    m22 = ctxt.run_context("shortness of breath", "If the patient develops shortness of breath, do as instructed.")
 
     print(m1)
     print(m2)
@@ -251,3 +332,14 @@ if __name__ == '__main__':
     print(m9)
     print(m10)
     print(m11)
+    print(m12)
+    print(m13)
+    print(m14)
+    print(m15)
+    print(m16)
+    print(m17)
+    print(m18)
+    print(m19)
+    print(m20)
+    print(m21)
+    print(m22)
