@@ -208,7 +208,7 @@ from spacy import displacy
 nlp = spacy.load('en')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 2
+VERSION_MINOR = 3
 
 # set to True to enable debug output
 TRACE = False
@@ -1030,19 +1030,18 @@ def undo_substitutions(text):
     Undo any word substitutions in the given text and return the restored text.
     """
 
+    if 0 == len(replacements):
+        return text
+
     # remove punctuation
     text = regex_punctuation.sub(' ', text)    
-    
-    # undo substitutions
-    if len(replacements) > 0:
-        words = text.split()
-        
-        for new_text, old_text in replacements.items():
-            for i in range(len(words)):
-                if words[i] == new_text:
-                    words[i] = old_text
-        new_text= ' '.join(words)
-    
+
+    words = text.split()
+    for new_text, old_text in replacements.items():
+        for i in range(len(words)):
+            if words[i] == new_text:
+                words[i] = old_text
+    new_text= ' '.join(words)
     return new_text
     
 ###############################################################################
