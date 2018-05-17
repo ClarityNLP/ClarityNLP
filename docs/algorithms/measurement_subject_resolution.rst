@@ -132,9 +132,10 @@ uncommon in standard English text, such as the text corpora that spaCy's
 English models were trained on. By replacing uncommon domain-specific terms
 with more common nouns from everyday English discourse, we have found that we
 can get substantial improvement in spaCy's ability to analyze medical texts.
+We have illustrations of this substitution process below.
 
-spaCy
------
+The spaCy Dependency Parse
+--------------------------
 
 The Clarity subject finder module uses spaCy to generate a *dependency parse*
 of each input sentence. A dependency parse provides part of speech tags
@@ -144,7 +145,10 @@ form. To illustrate, here is a diagram of a dependency parse of the sentence
 
 .. image:: images/displacy_girl_flower.png
 
-This image shows the part of speech tags underneath each word. In addition to
+.. _displacy: https://spacy.io/usage/visualizers
+
+This image was generated with spaCy's display tool `displacy`_. The part of
+speech tags appear underneath each word. In addition to
 NOUN, VERB, and ADJ, we also see DET (determiner) and ADP (preposition).
 
 The arrows represent a child-parent relationship, with the child being at the
@@ -156,9 +160,9 @@ parent-child relationship actually is. For the "girl-The" arrow, the ``det``
 label on the arrow indicates that the word ``The`` is a determiner that
 modifies ``girl``.
 
-Continuing with the example, the subject of the verb ``has`` is the word
-``girl``, as indicated by the ``nsubj`` label on the second arrow. The direct
-object of the verb is the noun ``flower``, as the arrow labeled ``dobj`` shows.
+The subject of the verb ``has`` is the word ``girl``, as indicated by the
+``nsubj`` label on the second arrow. The direct object of the verb is the
+noun ``flower``, as the arrow labeled ``dobj`` shows.
 The direct object has a DET modifer ``a``, similarly to the DET modifier for
 the word ``girl``.
 
@@ -176,8 +180,8 @@ Dependency Parse Errors
 
 Sometimes spaCy generates an incorrect dependency parse. This happens often
 in sentences that contain medical terminology, especially when medical terms
-are used in different contexts than those in which they might have occurred
-in the training corpora. For instance, the simple sentence
+are used in different contexts from those of the training corpora.
+For instance, the simple sentence
 
     ``The spleen measures 7.5 cm.``
 
@@ -197,13 +201,14 @@ This is the correct result: ``car`` is tagged as a NOUN and ``measures`` is
 tagged a verb.
 
 One can imagine the extent to which obscure medical jargon could completely
-confuse spaCy. In the absence of a version of spaCy trained on medical corpora,
-Clarity attempts to overcome such problems by replacing medical terms with
-common English nouns. The resulting sentence **does not** have to make sense.
+confuse spaCy. In the absence of a version of spaCy trained on medical texts,
+Clarity attempts to overcome such problems by replacing medical ngrams with
+common English nouns. The resulting sentence **does not** have to "make sense".
 All it needs to do is help spaCy produce the correct dependency parse of
 the sentence and correctly resolve the relationships between the various
 phrases. The substitution process is not foolproof either, but we observe
-consistently better results with the ngram substitutions than without them.
+consistently better results on medical texts with the ngram substitutions
+than without them.
 
 .. _special case tokenization rules: https://spacy.io/usage/linguistic-features#special-cases
 
@@ -235,14 +240,14 @@ The next code block shows how Clarity accomplishes this:
 
 .. _spaCy's notation: https://spacy.io/api/annotation#pos-tagging
 
-Here ``ORTH`` refers to orthography, or the actual text that invokes the
-special case rules. ``LEMMA`` is the canonical form of the verb, identical in
-all cases. The ``TAG`` entry refers to the part of speech tag using
-`Penn Treebank Notation`_ for such tags. Finally, the ``POS`` entry is
-`spaCy's notation`_ for the same tag.
+Here ``ORTH`` refers to orthography, the actual sequence of letters appearing
+in the text. ``LEMMA`` is the canonical or "dictionary" form of the verb,
+identical in all cases. The ``TAG`` entry refers to the part of speech tag using
+`Penn Treebank Notation`_. The ``POS`` entry is `spaCy's notation`_
+for the same part of speech tag.
     
-These rules guarantee that the words ``measures``, ``measure``, ``measured``,
-and ``measuring`` will always be tagged as verbs.
+These rules guarantee that spaCy will interpret the words ``measures``,
+``measure``, ``measured``, and ``measuring`` as verbs.
 
 The words that Clarity substitutes for medical ngrams are:
 
@@ -251,8 +256,8 @@ The words that Clarity substitutes for medical ngrams are:
 
 These are all common English words that only occur as nouns.
 
-One additional illustration can help to make this process clear. Consider this
-sentence:
+One additional illustration can help to make this process more clear.
+Consider this sentence:
 
 ``There is a fusiform infrarenal abdominal aortic aneurysm measuring M.``
 
@@ -263,21 +268,26 @@ is:
 
 The most obvious problem here is that the word ``aneurysm``, which is a noun,
 has been tagged with ``ADP``, indicating either a conjunction or preposition.
-The ngram ``abdominal aortic aneurysm`` is in the Clarity ngram list, so
+The adjective ``fusiform`` was also not deduced to be a modifier of ``aneurysm``.
+
+Since the ngram ``abdominal aortic aneurysm`` is in the Clarity ngram list,
 substituting ``car`` for ``abdominal aortic aneurysm`` results in this
 sentence:
 
-``There is a fusiform infrarenal car measuring M.``
+    ``There is a fusiform infrarenal car measuring M.``
 
 The dependency parse for this new sentence is:
 
 .. image:: images/displacy_fusiform_correct.png
 
-Here we see that the word ``car``, a very common word, has been correctly
-tagged as a noun, leading to a correct dependency parse.  Even though
-the sentence doesn't make sense, the purpose of the substitutions is to help
-spaCy generate a correct dependency parse, allowing the proper relationships
-among the various sentence components to be determined.
+Here we see that the word ``car``, a very common English word, has been
+correctly tagged as a noun. The adjective ``fusiform`` now modifies car,
+as it should. The ngram substitution has thus helped spaCy produce a correct
+dependency parse.  Even though the sentence doesn't make sense, the purpose
+of the substitutions is not to preserve the meaning of the sentence.
+Substitutions help spaCy generate a **correct dependency parse**, allowing
+the proper relationships among the various sentence components to be
+determined.
 
 
 Algorithm
