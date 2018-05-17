@@ -58,7 +58,9 @@ if [[ ! -d $coredir ]]; then
                "class":"solr.WhitespaceTokenizerFactory" },
             "filters":[{
                "class":"solr.WordDelimiterFilterFactory",
-               "preserveOriginal":"0" }]}}
+               "preserveOriginal":"0" },
+               {"class": "solr.LowerCaseFilterFactory"
+               }]}}
     }' http://localhost:8983/solr/$CORE/schema
 
     curl -X POST -H 'Content-type:application/json' --data-binary '{
