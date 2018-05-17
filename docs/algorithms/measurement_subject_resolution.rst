@@ -231,6 +231,16 @@ The next code block shows how Clarity accomplishes this:
     special_case = [{ORTH: u'measuring', LEMMA: u'measure', TAG: u'VBG', POS: u'VERB'}]
     nlp.tokenizer.add_special_case(u'measuring', special_case)
 
+.. _Penn Treebank Notation: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
+
+.. _spaCy's notation: https://spacy.io/api/annotation#pos-tagging
+
+Here ``ORTH`` refers to orthography, or the actual text that invokes the
+special case rules. ``LEMMA`` is the canonical form of the verb, identical in
+all cases. The ``TAG`` entry refers to the part of speech tag using
+`Penn Treebank Notation`_ for such tags. Finally, the ``POS`` entry is
+`spaCy's notation`_ for the same tag.
+    
 These rules guarantee that the words ``measures``, ``measure``, ``measured``,
 and ``measuring`` will always be tagged as verbs.
 
@@ -240,6 +250,35 @@ The words that Clarity substitutes for medical ngrams are:
 |    ``idea, oven, poem, dirt, tale, world, hotel``
 
 These are all common English words that only occur as nouns.
+
+One additional illustration can help to make this process clear. Consider this
+sentence:
+
+``There is a fusiform infrarenal abdominal aortic aneurysm measuring M.``
+
+The dependency parse for this sentence, using the special tokenization rules,
+is:
+
+.. image:: images/displacy_fusiform_error.png
+
+The most obvious problem here is that the word ``aneurysm``, which is a noun,
+has been tagged with ``ADP``, indicating either a conjunction or preposition.
+The ngram ``abdominal aortic aneurysm`` is in the Clarity ngram list, so
+substituting ``car`` for ``abdominal aortic aneurysm`` results in this
+sentence:
+
+``There is a fusiform infrarenal car measuring M.``
+
+The dependency parse for this new sentence is:
+
+.. image:: images/displacy_fusiform_correct.png
+
+Here we see that the word ``car``, a very common word, has been correctly
+tagged as a noun, leading to a correct dependency parse.  Even though
+the sentence doesn't make sense, the purpose of the substitutions is to help
+spaCy generate a correct dependency parse, allowing the proper relationships
+among the various sentence components to be determined.
+
 
 Algorithm
 =========
