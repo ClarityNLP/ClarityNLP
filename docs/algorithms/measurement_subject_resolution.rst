@@ -147,32 +147,37 @@ form. To illustrate, here is a diagram of a dependency parse of the sentence
 
 .. _displacy: https://spacy.io/usage/visualizers
 
+.. _here: https://spacy.io/api/annotation
+
 This diagram was generated with spaCy's display tool `displacy`_. The part of
 speech tags appear underneath each word. In addition to
 NOUN, VERB, and ADJ, we also see DET (determiner) and ADP (preposition).
+Documentation on spaCy's annotation scheme can be found `here`_.
 
 The arrows represent a child-parent relationship, with the child being at the
 "arrow" or "head" end and the the parent at the tail end. The word at the
-child or "arrow" end modifies the word at the parent or "tail" end. Thus the
-word ``The`` modifies ``girl``, since the first arrow starts at the word ``girl``
-and points to the word ``The``. The label on the arrow indicates the nature of
+arrow end modifies the word at the tail end. Thus the word ``The`` modifies
+``girl``, since the first arrow starts at the word ``girl`` and points to
+the word ``The``. The label on the arrow indicates the nature of
 the parent-child relationship. For the "girl-The" arrow, the ``det``
 label on the arrow indicates that the word ``The`` is a determiner that
 modifies ``girl``.
 
 The subject of the verb ``has`` is the word ``girl``, as indicated by the
-``nsubj`` label on the second arrow. The direct object of the verb is the
-noun ``flower``, as the arrow labeled ``dobj`` shows.
+``nsubj`` (nominal subject) label on the second arrow. The direct object of
+the verb is the noun ``flower``, as the arrow labeled ``dobj`` shows.
 The direct object has a DET modifer ``a``, similarly to the DET modifier for
 the word ``girl``.
 
-A prepositional phrase ``in her hair`` follows the direct object, as the two
-arrows labeled ``prep`` and ``pobj`` indicate. The object of the preposition ``in``
-is the noun ``hair``, which has a possessive adjectival modifier ``her``.
+A prepositional phrase ``in her hair`` follows the direct object, as the
+two arrows labeled ``prep`` (prepositional modifier) and ``pobj``
+(object of preposition) indicate. The object of the preposition
+``in`` is the noun ``hair``, which has a possession modifier
+``her``.
 
 Thus a dependency parse allows one to determine the nature of the
 relationships between the various components of a sentence. Clarity uses the
-dependency parse information, along with a set of custom rules and heuristics
+dependency parse information, along with a set of custom rules and heuristics,
 to determine the subjects of each size measurement.
 
 Dependency Parse Errors
@@ -189,7 +194,7 @@ has this dependency parse:
 
 .. image:: images/displacy_spleen_incorrect.png
 
-Here we see that the verb ``measures`` was tagged as a NOUN, in the sense of
+Here we see that the verb ``measures`` was tagged as a noun, in the sense of
 "weights and measures". The word ``spleen`` was also tagged as an adjective.
 This is obviously incorrect. The problem, though, lies with the word
 ``spleen`` instead of ``measures``. Observe what happens to the dependency
@@ -197,8 +202,8 @@ parse if ``spleen`` is replaced by the common noun ``car``:
 
 .. image:: images/displacy_car_correct.png
 
-This is the correct result: ``car`` is tagged as a NOUN and ``measures`` is
-tagged a verb.
+This is the correct result: ``car`` is tagged as a noun, ``measures`` is
+tagged a verb, and the nominal subject of the sentence is ``car``.
 
 One can imagine the extent to which obscure medical jargon could completely
 confuse spaCy. In the absence of a version of spaCy trained on medical texts,
@@ -256,7 +261,7 @@ The words that Clarity substitutes for medical ngrams are:
 
 These are all common English words that only occur as nouns.
 
-One additional illustration can help to make this process more clear.
+One additional illustration can help to make this process clearer.
 Consider this sentence:
 
 ``There is a fusiform infrarenal abdominal aortic aneurysm measuring M.``
@@ -271,7 +276,7 @@ has been tagged with ``ADP``, indicating either a conjunction or preposition.
 The adjective ``fusiform`` was also not deduced to be a modifier of ``aneurysm``.
 
 Since the ngram ``abdominal aortic aneurysm`` is in the Clarity ngram list,
-substituting ``car`` for ``abdominal aortic aneurysm`` results in this
+substituting ``car`` for ``abdominal aortic aneurysm`` produces this
 sentence:
 
     ``There is a fusiform infrarenal car measuring M.``
