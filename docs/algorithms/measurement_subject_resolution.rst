@@ -10,7 +10,7 @@ in the sentence
 
     ``The spleen measures 7.5 cm.``
 
-the measurement ``7.5 cm`` is associated with ``spleen``. The term
+the measurement ``7.5 cm`` is associated with ``spleen``. The word
 ``spleen`` is said to be the *subject* of the measurement ``7.5 cm``. In this
 example the subject of the measurement also happens to be the subject of the
 sentence. This is not always the case, as the next sentence illustrates:
@@ -102,7 +102,7 @@ Dependencies
 ------------
 
 The measurement subject finder has a dependency on Clarity's size measurement
-finder module, documentation for which can be found here:
+finder module, whose documentation can be found here:
 :ref:`size-measurement-finder`.
 
 .. _spaCy: https://spacy.io/
@@ -132,7 +132,7 @@ uncommon in standard English text, such as the text corpora that spaCy's
 English models were trained on. By replacing uncommon domain-specific terms
 with more common nouns from everyday English discourse, we have found that we
 can get substantial improvement in spaCy's ability to analyze medical texts.
-We have illustrations of this substitution process below.
+Several examples below illustrate this substitution process.
 
 The spaCy Dependency Parse
 --------------------------
@@ -147,7 +147,7 @@ form. To illustrate, here is a diagram of a dependency parse of the sentence
 
 .. _displacy: https://spacy.io/usage/visualizers
 
-This image was generated with spaCy's display tool `displacy`_. The part of
+This diagram was generated with spaCy's display tool `displacy`_. The part of
 speech tags appear underneath each word. In addition to
 NOUN, VERB, and ADJ, we also see DET (determiner) and ADP (preposition).
 
@@ -155,8 +155,8 @@ The arrows represent a child-parent relationship, with the child being at the
 "arrow" or "head" end and the the parent at the tail end. The word at the
 child or "arrow" end modifies the word at the parent or "tail" end. Thus the
 word ``The`` modifies ``girl``, since the first arrow starts at the word ``girl``
-and points to the word ``The``. The label on the arrow indicates what the
-parent-child relationship actually is. For the "girl-The" arrow, the ``det``
+and points to the word ``The``. The label on the arrow indicates the nature of
+the parent-child relationship. For the "girl-The" arrow, the ``det``
 label on the arrow indicates that the word ``The`` is a determiner that
 modifies ``girl``.
 
@@ -185,15 +185,15 @@ For instance, the simple sentence
 
     ``The spleen measures 7.5 cm.``
 
-generates this dependency parse:
+has this dependency parse:
 
 .. image:: images/displacy_spleen_incorrect.png
 
 Here we see that the verb ``measures`` was tagged as a NOUN, in the sense of
 "weights and measures". The word ``spleen`` was also tagged as an adjective.
 This is obviously incorrect. The problem, though, lies with the word
-``spleen`` instead of ``measures``. Observe what happens if ``spleen`` is
-replaced by the common noun ``car``:
+``spleen`` instead of ``measures``. Observe what happens to the dependency
+parse if ``spleen`` is replaced by the common noun ``car``:
 
 .. image:: images/displacy_car_correct.png
 
@@ -293,6 +293,78 @@ determined.
 Algorithm
 =========
 
+Clarity uses several stages of processing in its attempt to resolve the
+subject of each size measurement. These processing stages are:
+
+* Sentence cleanup and ngram substitution
+* Sentence template determination
+* Dependency parse analysis and selection of candidate subjects
+* Subject resolution and location determination
+* Ngram replacement and JSON conversion
+
+Sentence Cleanup and NGram Substitution
+---------------------------------------
+
+The cleanup stage attempts to simplify the sentence as
+much as possible. A shorter sentence is more likely to be parsed correctly
+than a needlessly verbose sentence. Thus Clarity removes all extraneous
+text from the sentence that has no bearing on the measurement-subject
+resolution problem. Thse removals include:
+
+* Removing image annotations, such as ``(image 302:33), (782b:49)``
+* Removing anything in square or curly brackets, such as anonymized dates
+* Removing excess verbosity, such as "for example", "in addition",
+  "no evidence of", etc.
+* Replacing verbose forms with less verbose forms:
+
+|  ``measuring upwards of  =>  measuring``
+|  ``is seen to contain    =>  contains``
+|  ``is seen in            =>  in``
+|  etc.
+
+* Replacing roman numerals with decimal numbers
+* Replacing semicolons with whitespace (misplaced semicolons can have a
+  deleterious effect on the dependency parse)
+* Substituting simple nouns for medical ngrams
+* Collapsing repeated whitespace into a single space
+* Finding size measurements and replacing the measurement text with ``M``
+
+The final item deserves some explanation. The sentence
+
+    ``The spleen measures 7.5 cm.``
+
+is transformed by the measurement replacement operation to this:
+
+    ``The spleen measures M.``
+
+The reason for the M-replacement is to facilitate the recognition of sentence
+patterns in the text. We call these sentence patterns "sentence templates".
+Sentences that fit a common template pattern can be analyzed in identical ways.
+For instance, size measurements in medical texts are often reported as
+
+    ``{Something} measures {size_measurement}``.
+
+Some examples:
+
+|     ``The spleen is unremarkable measuring 8.6 cm.``
+|     ``The cyst in the upper pole of the kidney measures 1.2 cm.``
+|     ``The duct tapers smoothly to the head of the pancreas,``
+|     ``where it measures approximately 5 mm.``
+
+After M-replacement, these sentences become:
+
+|     ``The spleen is unremarkable measuring M.``
+|     ``The cyst in the upper pole of the kidney measures M.``
+|     ``The duct tapers smoothly to the head of the pancreas,``
+|     ``where it measures approximately M.``
+
+A regular expression designed to find a capital M preceded by a measurement
+verb could easily identify all of these sentences as belonging to the same
+underlying template. Custom rules for this sentence template could be applied
+to each to sentence to resolve the subject of the measurement designated by M.
+Clarity uses this approach for this template and others described below.
 
 
+Sentence Template Determination
+-------------------------------
 
