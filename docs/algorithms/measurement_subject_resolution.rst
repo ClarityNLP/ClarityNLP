@@ -373,3 +373,73 @@ Clarity uses this approach for this template and others described below.
 Sentence Template Determination
 -------------------------------
 
+Clarity uses a set of sentence patterns or templates to help it resolve
+measurements and their subjects. These templates were determined by manually
+examining hundreds of electronic health records. During the
+examination process it became apparent that different reports tended to share
+common forms of expression. These forms were extracted into a set of regular
+expressions that classify sentences into the various patterns. This set of
+sentence patterns will likely expand as development of Clarity continues.
+
+For the discussion below, it is helpful to define a few terms:
+
+===================  =======================================================
+Abbreviation         Examples
+===================  =======================================================
+MEAS_VERB            measure, measures, measured, measuring
+WORD                 a word or number, with optional punctuation and spaces
+||                   string concatenation
+\*                   zero or more of the previous item
+\+                   one or more of the previous item
+\*?, +?              nongreedy version of \* or \+
+M                    size measurement
+QUAL                 measurement qualifiers: "all", "approximately",
+                     "currently", "mainly", etc.
+DET                  determiners: "a", "an", "the"
+TERMINATOR           "a", "an", or MEAS_VERB
+===================  =======================================================
+
+Clarity uses the following set of templates:
+
+1. **Subject Measures M**
+
+| Pattern: WORD+ || MEAS_VERB || WORD* || M
+   
+This template, illustrated above, recognizes sentences or sentence fragments
+containing an explicit measurement verb. The subject of the measurement M
+is generally in the first set of words preceding MEAS_VERB.
+   
+2. **A Words M**
+
+| Nongreedy pattern: DET || WORD+ || QUAL* || M || WORD+? || TERMINATOR
+|    Greedy pattern: DET || WORD+ || QUAL* || M || WORD+
+
+This template recognizes sentences or sentence fragments containing
+measurements stated in declarative form without an explicit measurement
+verb. For instance:
+
+| An unchanged 2cm hyperechoic focus...
+| ...and has a simple 1.2 x 2.9 x 2.9 cm cyst...
+   
+3. **A M Words**
+
+| Nongreedy pattern: DET || QUAL* || M || WORD+? || TERMINATOR
+|    Greedy pattern: DET || QUAL* || M || WORD+
+
+Same as #2, but with the words in a different order. Examples:
+
+| A 3cm node in the right low paratracheal station...
+| The approximately 1 cm cyst in the upper pole of the left kidney...
+
+   
+4. **Ranging in Size**
+
+5. **Now vs. Then**
+
+6. **Before and After**
+
+7. **M and M**
+
+8. **Carina**
+
+
