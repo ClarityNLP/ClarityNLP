@@ -498,6 +498,107 @@ and distances relative to the carina. An example sentence:
 "Endotracheal tube is in standard position about 5 cm above the carina."
 
 
+Template Matching
+^^^^^^^^^^^^^^^^^
+
+Clarity counts the number of M's in the sentence after the cleanup phase and
+attempts template matching on fragments containing either one or two M's.
+Seitences or fragments matching a template are sent to the next stage of
+processing, dependency parse analysis, described below. If no templates match,
+Clarity attempts a dependency parse analysis without having the benefit of
+knowing the sentence structure via a template match. Clarity will attempt
+measurement-subject resolution on sentences containing as many as three
+measurements.
+
+
 Dependency Parse Analysis
 -------------------------
 
+After the template matching phase completes, Clarity uses spaCy to analyze the
+sentence or fragment that matched the template. If no templates matched, SpaCy
+analyzes the complete sentence. Clarity uses the dependency parse and a set of
+custom rules to navigate the parse tree looking for the measurement subject.
+The result of the spaCy analysis is a spaCy "document", which contains a list
+of tokens and the complete dependency parse tree.
+
+Finding the Starting Token
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Clarity begins its examination of the spaCy document by searching for the token
+with text "M". If this token is not its own parent, meaning that it is a child
+node of another token, Clarity starts its processing with the parent of the M
+node. If the M node *is* its own parent, Clarity looks for the verb token
+nearest the M token as its starting point. If a verb cannot be found, Clarity
+looks for a dependency of ``nsubj`` or ``compound`` and takes whichever it
+can find. If none of these can be found, Clarity gives up on finding a starting
+token and returns an empty subject.
+
+Navigating the Parse Tree
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After finding a starting token, Clarity then begins to navigate the parse
+tree, searching for a measurement subject. Both the part of speech tag
+and the dependency relationship contribute to Clarity's decision at each node.
+
+The first determination Clarity makes is whether it has arrived at the root
+node or not. If it happens to be at the root node, it can go no further in
+the tree, so it looks for a measurement subject amongst the children of the
+root node, if any.
+
+If a verb is encountered when navigating the parse tree, a check is made on
+the dependency for the verb token. If it is "nsubj", meaning the nominal
+subject of the sentence, experimentation suggests that the part of speech
+tag was probably incorrectly set to VERB instead of NOUN. The token is saved
+and used as a candidate subject. If the verb is a measurement verb, the parent
+token is selected as a candidate subject.
+
+If a noun is encountered, Clarity's decision depends on the dependency label
+for the token. Some dependency relationships are ignorable, which means that
+the parent node linked to a child with an ignorable dependency cannot be the
+measurement subject. These ignorable dependency relationships are:
+
+======================= =======================================================
+spaCy Dependency Label  Meaning
+======================= =======================================================
+acomp                   aaa
+attr                    bbb
+conj                    ccc
+dobj                    ddd
+pcomp                   eee
+pobj                    fff
+prep                    ggg
+======================= =======================================================
+
+Any noun token linked to its parent via an ignorable dependency is ignored, and
+Clarity moves up one level in the tree to the parent node.
+
+Clarity applies several other empirically determined rules for handling special
+cases, such as when it encounters the preposition "with".  Normally
+prepositions are ignored during tree navigation by continuing on to their
+parent node. The word "with" deserves special handling, because sometimes it
+is used as a conjunction to link two clauses that could have been independent
+sentences. To illustrate, consider these sentences taken from the MIMIC
+corpus:
+
+"Extensive, pronounced cervical lymphadenopathy throughout levels II through
+IV, with lymph nodes measuring up to 2 cm."
+
+"Additional lesions include a 6 mm ring-enhancing mass within the left
+lentiform nucleus, a 10 mm peripherally based mass within the anterior left
+frontal lobe as well as a more confluent plaque-like mass with a broad base
+along the tentorial surface measuring approximately 2 cm in greatest
+dimension."
+
+In the first example, the preposition "with" separates two independent
+clauses and is used essentially as a conjuction. The subject of the 2 cm
+measurement is "lymph nodes", which happens to be the object of the preposition
+"with". In this case the objects of the preposition "with" cannot be ignored.
+
+In the second example, the preposition "with" has an object that can be
+ignored. The subject of the 2 cm measurement, "mass", is not part of the
+prepositional phrase associated with the word "with".
+
+Clarity does not have an unambiguous method for distinguishing between these
+two cases in all instances. So whenever it encounters the preposition "with",
+it saves the object of that preposition as a candidate measurement subject and
+continues navigating the tree.
