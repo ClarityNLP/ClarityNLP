@@ -374,72 +374,135 @@ Sentence Template Determination
 -------------------------------
 
 Clarity uses a set of sentence patterns or templates to help it resolve
-measurements and their subjects. These templates were determined by manually
-examining hundreds of electronic health records. During the
-examination process it became apparent that different reports tended to share
-common forms of expression. These forms were extracted into a set of regular
-expressions that classify sentences into the various patterns. This set of
-sentence patterns will likely expand as development of Clarity continues.
+measurements and their subjects. These templates were determined by examining
+a large number of electronic health records and noting common forms of
+expression for reporting size measurements. A set of regular expressions
+was developed for classifying sentences into the various patterns. This set
+of regexes and sentence patterns will likely expand as development of
+Clarity continues.
 
-For the discussion below, it is helpful to define a few terms:
+For the discussion below, it is helpful to define a few items, using a
+notation similar to that for regular expressions:
 
 ===================  =======================================================
 Abbreviation         Examples
 ===================  =======================================================
-MEAS_VERB            measure, measures, measured, measuring
+MEAS                 "measure", "measures", "measured", "measuring"
 WORD                 a word or number, with optional punctuation and spaces
 ||                   string concatenation
 \*                   zero or more of the previous item
 \+                   one or more of the previous item
 \*?, +?              nongreedy version of \* or \+
 M                    size measurement
-QUAL                 measurement qualifiers: "all", "approximately",
+Q                    measurement qualifiers: "all", "approximately",
                      "currently", "mainly", etc.
 DET                  determiners: "a", "an", "the"
-TERMINATOR           "a", "an", or MEAS_VERB
+TERMINATOR           "a", "an", or MEAS
 ===================  =======================================================
 
-Clarity uses the following set of templates:
+The templates used by Clarity are:
 
-1. **Subject Measures M**
+**1. Subject Measures M**
 
-| Pattern: WORD+ || MEAS_VERB || WORD* || M
+Pattern:
    
+| WORD+ || MEAS || WORD* || M
+
 This template, illustrated above, recognizes sentences or sentence fragments
 containing an explicit measurement verb. The subject of the measurement M
-is generally in the first set of words preceding MEAS_VERB.
+is generally in the first set of words preceding MEAS.
    
-2. **A Words M**
+**2. DET Words M**
 
-| Nongreedy pattern: DET || WORD+ || QUAL* || M || WORD+? || TERMINATOR
-|    Greedy pattern: DET || WORD+ || QUAL* || M || WORD+
+Greedy and nongreedy patterns:
 
-This template recognizes sentences or sentence fragments containing
-measurements stated in declarative form without an explicit measurement
-verb. For instance:
+| DET || WORD+ || Q* || M || WORD+
+| DET || WORD+ || Q* || M || WORD+? || TERMINATOR
 
-| An unchanged 2cm hyperechoic focus...
-| ...and has a simple 1.2 x 2.9 x 2.9 cm cyst...
+This template recognizes sentences or sentence fragments that omit an
+explicit measurement verb. For instance:
+
+| "An unchanged 2cm hyperechoic focus..."
+| "...and has a simple 1.2 x 2.9 x 2.9 cm cyst..."
    
-3. **A M Words**
+**3. DET M Words**
 
-| Nongreedy pattern: DET || QUAL* || M || WORD+? || TERMINATOR
-|    Greedy pattern: DET || QUAL* || M || WORD+
+Greedy and nongreedy patterns:
+
+| DET || Q* || M || WORD+
+| DET || Q* || M || WORD+? || TERMINATOR
 
 Same as #2, but with the words in a different order. Examples:
 
-| A 3cm node in the right low paratracheal station...
-| The approximately 1 cm cyst in the upper pole of the left kidney...
+| "A 3cm node in the right low paratracheal station..."
+| "The approximately 1 cm cyst in the upper pole of the left kidney..."
 
+**4. Ranging in Size**
+
+The phrase "ranging in size" occurs frequently in diagnostic medical reports,
+especially radiology reports. Clarity substitutes the verb "measuring" for
+"ranging in size" and then applies the *Subject Measures M* template to
+the sentence. An example:
+
+| "Distended gallbladder with multiple stones ranging in size from
+| a few millimeters to 1 cm in diameter."
+
+**5. Now vs. Then**
+
+This template recognizes sentences that compare the measurements of an object
+taken on two different dates. For instance:
+
+| "The lesion currently measures 1.3 cm and previously measured 1.2 cm."
+| "A left adrenal nodule measures 1.2 cm as compared to 1.0 cm previously."
+
+Clarity uses a set of seven regexes in its attempts to find such sentences.
+The first regex is used to match the first measurement of the pair, and the
+others are used to match the second measurement.
+
+**6. Before and After**
+
+Pattern:
+
+| DET || WORDS+ | MEAS || Q* || M || WORD* || DET || M || WORDS+
    
-4. **Ranging in Size**
+This template recognizes sentences and sentence fragments that have measurement
+subjects occurring before and after each measurement in the sentence. For
+example:
 
-5. **Now vs. Then**
+| "The left kidney measures 8.5 cm and contains an 8 mm x 8 mm anechoic
+| rounded focus along the lateral edge, which is most likely a simple
+| renal cyst."
 
-6. **Before and After**
+Clarity searches for measurement subjects in each WORDS+ group captured by the
+associated regex.
 
-7. **M and M**
+**7. M and M**
 
-8. **Carina**
+Pattern 1:
 
+| WORD* || MEAS || Q* || M || WORD* || and || WORD*
+
+Pattern 2:
+
+| WORD+ || MEAS || Q* || M || WORD* || and || WORD+ || to || Q* || M || WORD+
+
+This template recognizes sentences that compare two similar objects, two
+views of an object, or an object and features inside it.  For instance:
+
+| "The lower trachea measures 14 x 8 mm on expiratory imaging and
+| 16 x 17 mm on inspiratory imaging."
+|
+| "The largest porta hepatis lymph node measures 1.6 cm in short axis and
+| 2.6 cm in long axis."
+
+**8. Carina**
+
+This is a special case template for sentences involving endotracheal tubes
+and distances relative to the carina. An example sentence:
+
+| "Endotracheal tube is in standard position about 5 cm above the carina."
+
+
+Dependency Parse Analysis
+-------------------------
 
