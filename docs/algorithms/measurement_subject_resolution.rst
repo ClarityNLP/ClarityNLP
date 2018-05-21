@@ -344,8 +344,9 @@ is transformed by the measurement replacement operation to this:
 
 The reason for the M-replacement is to facilitate the recognition of sentence
 patterns in the text. We call these sentence patterns "sentence templates".
-Sentences that fit a common template pattern can be analyzed in identical ways.
-For instance, size measurements in medical texts are often reported as
+Sentences that fit a common template pattern provide clues about the sentence
+structure and can be analyzed in identical ways. For instance, size
+measurements in medical texts are often reported as
 
     ``{Something} measures {size_measurement}``.
 
@@ -405,7 +406,7 @@ The templates used by Clarity are:
 
 This template, illustrated above, recognizes sentences or sentence fragments
 containing an explicit measurement verb. The subject of the measurement M
-is generally in the first set of words preceding MEAS.
+is generally in the set of words preceding MEAS.
 
 Pattern:
    
@@ -550,8 +551,8 @@ and the dependency relationship contribute to Clarity's decision at each node.
 
 The first determination Clarity makes is whether it has arrived at the root
 node or not. If it happens to be at the root node, it can go no further in
-the tree, so it looks for a measurement subject amongst the children of the
-root node, if any.
+the tree, so it looks for a measurement subject (noun) amongst the children
+of the root node, if any.
 
 If a verb is encountered when navigating the parse tree, a check is made on
 the dependency for the verb token. If it is "nsubj", meaning the nominal
@@ -577,7 +578,7 @@ pobj        object of preposition
 prep        preposition
 =========== ==========================
 
-Any noun token linked to its parent via an ignorable dependency is ignored, and
+Any noun token linked to its parent via an ignorable dependency is skipped, and
 Clarity moves up one level in the tree to the parent node.
 
 Clarity applies several other empirically determined rules for handling special
@@ -612,5 +613,44 @@ navigating the tree.
 Subject Resolution and Location Determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The preceding phase of processing results in a list of candidate subjects.
+If the list is empty, Clarity was unable to find a subject. If the list
+is nonempty, any duplicates are removed. If only one subject remains it
+is chosen as the subject.
 
+If multiple candidate subjects remain, the noun chunks obtained from spaCy's
+analysis of the sentence helps to select the best candidate. The chunks
+containing each candidate subject are found, and the distance (in words) from
+the measurement verb (if any) and the associated measurement are computed.
+Clarity then chooses the candidate that is either within the same noun chunk as
+the measurement, or which is the closest candidate to that particular chunk.
+
+Clarity also attempts to find the anatomical location for each measurement
+subject. To do so, it uses information from the template match to identify
+the most likely sentence fragment that could contain the location. A set of
+location-finding regexes then attempts to match the fragment and identify
+the location. Various special-case rules are applied to any matches found,
+to remove any matches that happen to not actually be locations, and to remove
+extraneous words. Any remaining text then becomes the location for the
+measurement.
+
+If location matching fails for all sentence fragments, or if the sentence
+failed to match a template altogether, Clarity makes one final attempt to
+determine a location on the sentence as a whole, using the location-finding
+regexes and the process described above.
+
+
+Ngram replacement and JSON conversion
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The final stage of processing adds additional modifiers to the chosen subject.
+Clarity performs a recursive depth-first search through the parse tree to
+capture all modifiers of the subject, any modifiers of the modifiers, etc.
+A depth-first search is needed to keep the modifiers in the proper word order
+as they are discovered.
+
+After all modifiers of the subject have been found, the ngram substitution
+process is reversed, restoring the original words of the sentence. The
+list of measurements, along with their subjects and locations, is converted
+to JSON and return as the result.
 
