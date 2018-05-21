@@ -3,7 +3,6 @@ version: '3'
 volumes:
   mapper-pgdata:
   mapper-redisdata:
-  # auto-mapper-pgdata:
   nlp-solrdata:
   nlp-pgdata:
   nlp-mongodata:
@@ -14,7 +13,7 @@ services:
     container_name: 'NLP_API'
     hostname: ${NLP_API_HOSTNAME}
     build:
-      context: ./nlp-api
+      context: ./nlp
       dockerfile: Dockerfile.prod
     ports:
       - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
@@ -35,7 +34,7 @@ services:
     container_name: 'NLP_SOLR'
     hostname: ${NLP_SOLR_HOSTNAME}
     build:
-      context: ./nlp-solr
+      context: ./utilities/nlp-solr
       dockerfile: Dockerfile.prod
     ports:
       - "${NLP_SOLR_HOST_PORT}:${NLP_SOLR_CONTAINER_PORT}"
@@ -54,7 +53,7 @@ services:
     container_name: 'NLP_MONGO'
     hostname: ${NLP_MONGO_HOSTNAME}
     build:
-      context: ./nlp-mongo
+      context: ./utilities/nlp-mongo
       dockerfile: Dockerfile.prod
     environment:
       - MONGO_DATA_DIR=/data/db
@@ -71,7 +70,7 @@ services:
     container_name: 'NLP_POSTGRES'
     hostname: ${NLP_PG_HOSTNAME}
     build:
-      context: ./nlp-postgres
+      context: ./utilities/nlp-postgres
       dockerfile: Dockerfile.prod
     environment:
       POSTGRES_USER: ${NLP_PG_USER}
@@ -87,7 +86,7 @@ services:
   mapper-api:
     container_name: MAPPER_API
     hostname: ${MAPPER_API_HOSTNAME}
-    build: ./mapper-api
+    build: ./utilities/mapper-api
     ports:
       - "${MAPPER_API_HOST_PORT}:${MAPPER_API_CONTAINER_PORT}"
     depends_on:
@@ -99,15 +98,6 @@ services:
     env_file:
       - .env
 
-  # mapper-client:
-  #   container_name: MAPPER_CLIENT
-  #   hostname: ${MAPPER_CLIENT_HOSTNAME}
-  #   build:
-  #     context: ./mapper-client
-  #     dockerfile: Dockerfile.prod
-  #   ports:
-  #     - "${MAPPER_CLIENT_HOST_PORT}:${MAPPER_CLIENT_CONTAINER_PORT}"
-  #
   mapper-pg:
     container_name: 'MAPPER_POSTGRES'
     hostname: ${MAPPER_PG_HOSTNAME}
@@ -144,27 +134,3 @@ services:
       - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
     env_file:
       - .env
-
-  # auto-mapper-api:
-  #   container_name: AUTO_MAPPER_API
-  #   build:
-  #     context: ./auto-mapper
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "5001:5001"
-  #   depends_on:
-  #     - auto-mapper-pg
-  #   volumes:
-  #     - ./auto-mapper:/api
-  #
-  # auto-mapper-pg:
-  #   image: postgres
-  #   container_name: 'AUTO_MAPPER_PG'
-  #   environment:
-  #     POSTGRES_PASSWORD: pg
-  #     POSTGRES_USER: pg
-  #     POSTGRES_DB: postgres
-  #   ports:
-  #     - "5433:5433"
-  #   volumes:
-  #     - 'auto-mapper-pgdata:/var/lib/postgresql/data/'
