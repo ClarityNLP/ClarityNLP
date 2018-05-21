@@ -1,9 +1,3 @@
-[submodule "mapper-api"]
-	path = mapper-api
-	url = https://github.com/ClarityNLP/report-type-mapper-api.git
-[submodule "mapper-client"]
-	path = mapper-client
-	url = https://github.com/ClarityNLP/report-type-mapper-client.git
 [submodule "validation"]
 	path = validation
 	url = https://github.com/ClarityNLP/validation-framework.git
