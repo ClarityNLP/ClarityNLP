@@ -10,3 +10,9 @@
 [submodule "nlp-api"]
 	path = nlp-api
 	url = https://github.com/ClarityNLP/health-nlp.git
+[submodule "utilities/mapper-api"]
+	path = utilities/mapper-api
+	url = https://github.com/ClarityNLP/report-type-mapper-api.git
+[submodule "utilities/mapper-client"]
+	path = utilities/mapper-client
+	url = https://github.com/ClarityNLP/report-type-mapper-client.git
