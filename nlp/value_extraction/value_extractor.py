@@ -107,7 +107,7 @@ from nlp.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIEL
 from nlp.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 10
+VERSION_MINOR = 11
 
 # set to True to enable debug output
 TRACE = False
@@ -767,10 +767,14 @@ def clean_sentence(sentence, is_case_sensitive):
     # unpack JSON result into a list of SizeMeasurement namedtuples
     measurements = [SizeMeasurement(**m) for m in json_data]
 
-    # erase each measurement from the sentence except for those in cc's
+    # erase each size measurement from the sentence except for those in
+    # units of cc's and inches
     for m in measurements:
         if 'CUBIC_MILLIMETERS' == m.units:
             if -1 != m.text.find('cc'):
+                continue
+        if 'MILLIMETERS' == m.units:
+            if -1 != m.text.find('in'):
                 continue
         start = int(m.start)
         end   = int(m.end)
@@ -1067,6 +1071,12 @@ if __name__ == '__main__':
         'Saturations remain 100% on 40% fio2 and 5cm PEEP',
         'FVC is 1500ml',
         'FVC is 1500 ml',
+
+        # was treating '56 in' as a size measurement
+        'obstructive lung disease (FEV1/FVC 56 in [**10-21**]), and s/p' +\
+        'recent right TKR on [**3165-1-26**] who',
+        'with history of treated MAC, obstructive lung disease' +\
+        '(FEV1/FVC 56 in [**10-21**]), and',
     ]
 
     optparser = optparse.OptionParser(add_help_option=False)
