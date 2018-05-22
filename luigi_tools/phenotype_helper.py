@@ -3,10 +3,8 @@ import sys
 import traceback
 from functools import reduce
 import pandas as pd
-import util
 
 from ohdsi import getCohort
-
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
 
 DEBUG_LIMIT = 100

@@ -4,9 +4,7 @@ import simplejson
 from flask import Flask, request, send_file
 from flask_autodoc import Autodoc
 
-import luigi_pipeline
-import luigi_runner
-import phenotype_helper
+from luigi_tools import luigi_pipeline, luigi_runner, phenotype_helper
 from data_access import *
 from nlp import *
 from nlpql import *

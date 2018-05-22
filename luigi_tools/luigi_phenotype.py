@@ -5,9 +5,9 @@ from pymongo import MongoClient
 from pymongo.errors import BulkWriteError
 
 import data_access
-import phenotype_helper
+from luigi_tools import phenotype_helper
 import util
-from luigi_pipeline import PipelineTask
+from luigi_tools.luigi_pipeline import PipelineTask
 import sys
 import traceback
 
