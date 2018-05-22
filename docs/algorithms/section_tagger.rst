@@ -8,8 +8,9 @@ The section tagger ingests clinical documents and uses textual clues to
 partition the documents into sections. Sections consist of groups of
 sentences sharing a common purpose such as "History of Present Illness",
 "Medications", or "Discharge Instructions". Effective section tagging 
-reduces the amount of text that must be processed to perform a given task.
-This document describes the Clarity section tagger and how it works.
+can reduce the amount of text that must be processed to perform a given
+natural language processing task. This document describes the Clarity section
+tagger and how it works.
 
 The starting point for the section tagger is the open-source SecTag database
 of Denny and colleagues [1]_.
@@ -68,13 +69,15 @@ password 'sectag' when prompted:
 Concepts and Synonyms
 ---------------------
 
-The section tagger operates by recognizing keywords that happen to be synonyms
-for an underlying set of concepts. The synonyms in the text are converted to
-the underlying concepts and the document sections tagged with the concepts. The
-SecTag database provides the list of concepts and an initial set of synonyms.
-To illustrate, concept 158 ``history_present_illness`` has synonyms
-``indication, clinical indication, clinical presentation, history``, among
-others.  Basically the synonyms represent the various forms in which the
+The section tagger operates by scanning the report text and recognizing
+synonyms for an underlying set of concepts. The synonyms recognized in the text
+are mapped to their associated concepts and the document sections are tagged
+with the concepts. The SecTag database provides an initial set of concepts and
+synonyms which Clarity expands upon.
+
+For example, concept 158 "history_present_illness" has synonyms
+"indication", "clinical indication", and "clinical presentation", among
+others.  The synonyms represent the various orthographic forms by which the
 concept could appear in a clinical note.
 
 The code in ``sec_tag_db_extract.py`` extracts the concepts and synonyms from
@@ -85,28 +88,33 @@ the ``nlp/sec_tag/data`` folder. Run the extraction code with this command:
     ``python3 ./sec_tag_db_extract.py``
 
 Each concept has a "treecode", which is a string consisting of integers
-separated by periods, such as ``6.41.149.234.160.165``, the treecode for the
-concept ``chest_xray``. The numbers encode a path through the
-concept graph from a small set of general concepts to a much larger number of
-specific concept leaf nodes. The code 6 represents the concept
-"objective_data". The code 6.41 represents the concept
-"laboratory_and_radiology_data", which is more specific than "objective_data".
-The code 6.41.149 represents the concept "radiographic_studies", which is even
-more specific. The concepts become more specific as the code strings increase
+separated by periods, such as ``6.41.149.234.160.165`` (the treecode for the
+concept "chest_xray"). The numbers encode a path through the
+concept graph from a small set of general concepts to a much larger set of
+very specific leaf node concepts. The code 6 represents the concept
+"objective_data", which is very general and broad in scope. The code 6.41
+represents the concept "laboratory_and_radiology_data", which is a form of
+"objective_data", but more specific. The code 6.41.149 represents the concept
+"radiographic_studies", which is an even more specific form of objective data.
+The concepts increase in specificity as the code strings increase
 in length. Each node in the concept graph has a unique code that represents a
-unique path from the highest-level concepts to it.
-    
+path through the graph from the highest-level concepts to it.
+
+SecTag Errors
+-------------
+
 As for errors in the SecTag database, two concepts are misspelled. These are
-concept 127, ``principal_diagnosis``, misspelled as ``principle_diagnosis``,
-and concept 695, ``level_of_consciousness``, misspelled as
-``level_of_cousciousness``. Clarity's db extraction code corrects both of these
+concept 127, "principal_diagnosis", misspelled as "principle_diagnosis",
+and concept 695, "level_of_consciousness", misspelled as
+"level_of_cousciousness". Clarity's db extraction code corrects both of these
 misspellings.
 
-Concept 308, ``sleep_habits``, has ``sleep_habits,_sleep`` for the concept
-text. The extraction program converts this to ``sleep_habits``.
+Concept 308, "sleep_habits", has as concept text "sleep_habits,_sleep", which
+is obviously an error. The extraction program converts this to just
+"sleep_habits".
 
-Concept 2921, ``preoperative_medications`` is missing a treecode. A closely
-related concept, number 441 ``postoperative_medications`` has treecode
+Concept 2921, "preoperative_medications" is missing a treecode. A closely
+related concept, number 441 "postoperative_medications" has treecode
 ``5.37.106.127`` and no children. This concept hierarchy resolves to:
 
 |    ``patient_history:          5``
@@ -115,16 +123,17 @@ related concept, number 441 ``postoperative_medications`` has treecode
 |    ``preoperative_medications: 5.37.106.127``
 
 The extraction program assigns the treecode ``5.37.106.500`` to the concept
-``preoperative_medications``.
+"preoperative_medications".
 
 The final error that the extraction program corrects is for concept 745,
 'appearance'.  This entry has an invalid treecode and is an isolated concept
 at level 10. This strange entry is skipped entirely and is not written to the
 output files.
 
-Each synonym has a unique integer identifier. The values of these identifiers
-are less than 6000. The new synonyms added by the extraction program begin
-numbering at 6000.
+Each concept and synonym has a unique integer identifier. The values of these
+identifiers are all less than 500 for concepts and 6000 for synonyms. The new
+concepts added by the extraction program begin numbering at 500 and the new
+synonyms at 6000.
 
 The concepts added by Clarity are:
 
