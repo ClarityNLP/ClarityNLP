@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-    sectag-extract.py
+    sec_tag_db_extract.py
 
     Extract section tags and related data from the SecTag_Terminology MySQL database.
 
-        Usage: python3 sectag-extract.py
+        Usage: python3 sec_tag_db_extract.py
 
     To create the SecTag_Terminology database, download the sec_tag.zip file from
     Josh Denny's site at Vanderbilt:
