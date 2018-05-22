@@ -112,6 +112,7 @@ def createCohort(filepath):
     else:
         return "Cohort could not be created."
 
+
 def getCohortStatus(cohort_id):
     # Getting cohort details
     url = ENDPOINT + '/cohortdefinition/%s/info' %(cohort_id)
