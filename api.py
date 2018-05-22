@@ -1,9 +1,8 @@
 import datetime
 
 import simplejson
-from flask import Flask, request, send_file, render_template
+from flask import Flask, request, send_file
 from flask_autodoc import Autodoc
-from werkzeug import secure_filename
 
 import luigi_pipeline
 import luigi_runner
@@ -12,7 +11,6 @@ from data_access import *
 from nlp import *
 from nlpql import *
 from ohdsi import *
-from upload import upload_file, upload_from_db, aact_db_upload
 
 app = Flask(__name__)
 auto = Autodoc(app)
@@ -42,6 +40,7 @@ def home():
 @app.route('/documentation')
 def doc():
     return auto.html()
+
 
 @app.route('/ohdsi_create_cohort', methods=['GET'])
 @auto.doc()
@@ -78,6 +77,7 @@ def ohdsi_get_cohort():
 
     return "Could not retrieve Cohort"
 
+
 @app.route('/ohdsi_cohort_status', methods=['GET'])
 @auto.doc()
 def ohdsi_cohort_status():
@@ -100,44 +100,6 @@ def ohdsi_get_cohort_by_name():
         return cohort
 
     return "Could not retrieve Cohort"
-
-
-@app.route('/upload', methods=['POST', 'GET'])
-def upload():
-    if request.method == 'GET':
-        return render_template('solr_upload.html')
-
-    elif request.method == 'POST':
-        f = request.files['file']
-        filepath = os.path.join('tmp', secure_filename(f.filename))
-        f.save(filepath)
-        msg = upload_file(util.solr_url, filepath)
-        os.remove(filepath)
-        return render_template('solr_upload.html', result=msg)
-
-    return "ERROR. Contact Admin and try again later."
-
-
-@app.route('/upload_from_db', methods=['GET'])
-@auto.doc()
-def db_to_solr():
-    """Migrate data from DB to Solr."""
-    if request.method == 'GET':
-        msg = upload_from_db(util.conn_string2, util.solr_url)
-        return msg
-
-    return "Couldn't migrate data."
-
-
-@app.route('/upload_from_aact', methods=['GET'])
-@auto.doc()
-def aact_upload():
-    """Migrate data from aact DB to Solr."""
-    if request.method == 'GET':
-        msg = aact_db_upload(util.solr_url)
-        return msg
-
-    return "Couldn't migrate data."
 
 
 def post_phenotype(p_cfg: PhenotypeModel):
