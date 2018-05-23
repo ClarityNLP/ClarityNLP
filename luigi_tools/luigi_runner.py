@@ -1,6 +1,7 @@
 from subprocess import call
 from data_access import *
 from luigi_tools.phenotype_helper import *
+import luigi
 
 
 def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
@@ -8,7 +9,7 @@ def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
 
     scheduler = util.luigi_scheduler
     print("running job %s on pipeline %s; logging here %s" % (str(job_id), str(pipeline_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_pipeline %s  --pipeline %s --job %s --owner %s --pipelinetype %s --scheduler-url %s > %s 2>&1 &" % (
+    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s  --pipeline %s --job %s --owner %s --pipelinetype %s --scheduler-url %s > %s 2>&1 &" % (
         str(util.luigi_workers), "PipelineTask", pipeline_id, str(job_id), owner, pipeline_type, scheduler, luigi_log)
     try:
         call(func, shell=True)
@@ -22,7 +23,7 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
 
     scheduler = util.luigi_scheduler
     print("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_phenotype %s --phenotype %s --job %s --owner %s --scheduler-url %s > %s 2>&1 &" % (
+    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s --scheduler-url %s > %s 2>&1 &" % (
         str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id), owner, scheduler, luigi_log)
     try:
         call(func, shell=True)
@@ -42,6 +43,21 @@ def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: in
 
         run_phenotype_job(phenotype_id, str(job_id), phenotype_model.owner)
     return pipeline_ids
+
+
+def run_ner_pipeline(pipeline_id, job_id, owner):
+    luigi.run(['PipelineTask', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--pipelinetype',
+               'TermFinder'])
+
+
+def run_provider_assertion_pipeline(pipeline_id, job_id, owner):
+    luigi.run(['PipelineTask', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--pipelinetype',
+               'ProviderAssertion'])
+
+
+def run_value_extraction_pipeline(pipeline_id, job_id, owner):
+    luigi.run(['PipelineTask', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--pipelinetype',
+               'ValueExtractor'])
 
 
 if __name__ == "__main__":

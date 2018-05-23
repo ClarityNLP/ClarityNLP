@@ -1,7 +1,7 @@
 import datetime
 
 from flask import request, Blueprint
-from luigi_tools import luigi_runner, phenotype_helper
+from luigi_tools import phenotype_helper, luigi_runner
 from data_access import *
 from nlp import *
 from nlpql import *
