@@ -78,11 +78,6 @@ services:
     ports:
       - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
     volumes:
-      - './utilities/nlp-postgres/ddl/ddl.sql:/docker-entrypoint-initdb.d/10-ddl.sql'
-      - './utilities/nlp-postgres/ddl/omop_vocab.sql:/docker-entrypoint-initdb.d/20-omop_vocab.sql'
-      - './utilities/nlp-postgres/dml/load_vocab.sh:/docker-entrypoint-initdb.d/30-load_vocab.sh'
-      - './utilities/nlp-postgres/dml/copy_vocab.sql:/docker-entrypoint-initdb.d/40-copy_vocab.sql'
-      - './utilities/nlp-postgres/ddl/omop_indexes.sql:/docker-entrypoint-initdb.d/50-omop_indexes.sql'
       - 'nlp-pgdata:/var/lib/postgresql/data/'
     env_file:
       - .env
