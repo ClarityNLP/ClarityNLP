@@ -8,8 +8,8 @@ The section tagger ingests clinical documents and uses textual clues to
 partition the documents into sections. Sections consist of groups of
 sentences sharing a common purpose such as "History of Present Illness",
 "Medications", or "Discharge Instructions". Effective section tagging 
-can reduce the amount of text that must be processed to perform a given
-natural language processing task. This document describes the Clarity section
+can reduce the amount of text to be processed for natural language
+processing tasks. This document describes the Clarity section
 tagger and how it works.
 
 The starting point for the section tagger is the open-source SecTag database
@@ -34,11 +34,12 @@ application writes results (input file with tag annotations) to stdout.
 SecTag Database
 ---------------
 
-The section tagger requires two input files for its operation, both of which
+The section tagger requires three input files for its operation, all of which
 can be found in the ``nlp/sec_tag/data`` folder. These files are
 ``concepts_and_synonyms.txt``, a list of clinical concepts and associated
-synonyms, and ``graph.txt``, a list of graph vertices and associated codes
-for the concept graph.
+synonyms; ``graph.txt``, a list of graph vertices and associated codes
+for the concept graph, and ``normalize.py``, which contains a map of
+frequently-encountered synonyms and their "normalized" forms [2]_.
 
 Generation of these files requires an installation of the SecTag database. The
 SecTag SQL files were originally written for MySQL, so that database server
@@ -179,6 +180,78 @@ extremities_mra                  6.41.500.1.1.2.5
 Algorithm
 =========
 
+Initialization and Sentence Tokenization
+----------------------------------------
+
+The section tagger begins its operation with an initialization phase in which
+it loads the data files mentioned above and creates various data structures.
+One data structure is a mapping of synonyms to concepts, used for fast text
+lookups. This is a one-to-many mapping since a given synonym
+can be associated with multiple concepts.
+
+After initialization completes, the
+section tagger reads the report text and runs the NLTK [3]_ sentence tokenizer
+to partition the text into individual sentences. For narrative sections
+of text the sentence tokenizer performs well. For sections of text containing
+vital signs, lab results, and extensive numerical data the tokenizer
+performance is substantially worse. Under these conditions a "sentence" often
+comprises large chunks of report text spanning multiple sentences and sentence
+fragments.
+
+Synonym Matching
+----------------
+
+The section tagger scans each sentence and looks for strings indicating the
+start of a new section. Clinical note sections tend to be delimited by one
+or more keywords followed by a termination character. The terminator is
+usually a colon ":", but dashes and double-dashes also appear as delimeters.
+The section tagger employs various regular expressions that attempt to
+match all of these possibilities. The winning match is the longest string of
+characters among all matches. Any overlapping matches are merged, if possible,
+prior to deciding the winning match. Each match represents the possible start
+of a new report section.
+
+For each match, the section tagger extracts the matching text and performs a
+series of validity checks on it. Dash-terminated matches are checked to see
+that they do not end in the middle of a hyphenated word. They are also checked
+for lab results stated with a hyphen, such as ``SODIUM-135``, the serum sodium
+level. Any such matches are discarded.
+
+If any matches survive these checks, the terminating characters and possible
+leading newlines are stripped from the matching text, and any bracketed data
+(such as anonymized dates) is removed. The remaining text then gets converted
+to lowercase and searched for concept synonyms and thus candidate headers.
+
+The candidate header discovery processes proceeds first by trying an exact
+match to the candidate text string. The text itself (after lowercasing) becomes
+the lookup key for the synonym map built during initialization. If an exact
+match is found, the associated concept(s) are looked up and inserted into the
+list of candidate concepts for this portion of report text.
+
+If the exact match fails, the section tagger splits the text into individual
+words and tries to match the longest sequence of words, if any, to a known
+synonym. It proceeds to do this by removing words from each end of the
+word list. It first tries a match anchored to the right, removing words
+one-by-one from the left. Any matches found are resolved into concepts and
+added to the candidate concept list. If no matches are found, section tagger
+tries again, this time with the matches anchored from the left, and words
+removed one-by-one from the right. If still no matches are found, the word
+list is pruned of stop words and the remaining words replaced by their
+"normalized" forms. The sequence of match attempts repeats on this new word
+list, first with an exact match, then one anchored right, then one anchored
+left. If all of these match attempts fail, section tagger gives up and
+concludes that the text does not represent the start of a new section. If at
+least one match attempt succeeds, the synonyms are resolved into concepts via
+map lookup and returned as candidate concepts for a new section label. If there
+is only one candidate concept as the result of this process, that concept
+becomes the header for the next section of text. If two or more candidate
+concepts remain, the section tagger employs an ambiguity resolution process
+to decide on the winning concept.
+
+Concept Ambiguity Resolution
+----------------------------
+
+
 
 References
 ==========
@@ -192,4 +265,7 @@ References
 .. [2] | J. Denny, R. Miller, K. Johnson, A. Spickard
        | **Development and Evaluation of a Clinical Note Section Header Terminology**
        | *AMIA Annual Symposium Proceedings* 2008, Nov 6:156-160.
+
+.. [3] | **Natural Language Toolkit**
+       | https://www.nltk.org/
 
