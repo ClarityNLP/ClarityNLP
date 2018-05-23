@@ -248,11 +248,49 @@ becomes the header for the next section of text. If two or more candidate
 concepts remain, the section tagger employs an ambiguity resolution process
 to decide on the winning concept.
 
+The Concept Stack
+-----------------
+
+The sections in a clinincal note tend to be arranged as flattened hierarchies
+extending over several sections. For instance, in a discharge report one
+might encounter a section labeled GENERAL_EXAM, followed by a section labeled
+HEAD_AND_NECK_EXAM, which represents a more specific type of exam. This section
+could be followed by a section labeled EYE_EXAM, which is an even more
+specific type of exam. Although these sections would be listed sequentially in
+the report, they naturally form a hierarchy of EXAMINATION concepts proceeding
+from general to specific. Other section groups in the report exhibit the same
+characteristics.
+
+A data structure for managing hierarchies such as this is a stack. The section
+tagger manages a "concept stack" as it processes the report text. It uses
+the stack to identify these natural concept groups and to resolve ambiguities
+as described in the previous section.
+
+The specificity of a concept is determined by its graph treecode. The longer
+the treecode, the more specific the concept. Two concepts with identical length
+treecodes have the same degree of specificity.
+
+Each time the section tagger recognizes a concept C it updates the stack
+according to this set of empirically-determined rules:
+
+Let T be the concept at the top of the stack.
+
+* If C is a more specific concept than T, push C onto the stack.
+  In other words keep pushing concepts as they get more specific.
+* If C has the same specificity as T, pop T from the stack and push C.
+* If C is more general than T, pop all concepts from the stack that have
+  specificity >= C. In other words, pop all concepts more specific than C,
+  since C could represent the start of a new concept hierarchy.
+
+Thus the section tagger pushes concepts onto the stack as they get more
+specific. It pops concepts from the stack if more specific than the most
+recently recognized concept.
+
 Concept Ambiguity Resolution
 ----------------------------
 
 
-
+  
 References
 ==========
 
