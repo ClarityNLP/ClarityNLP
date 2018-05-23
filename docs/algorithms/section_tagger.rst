@@ -252,19 +252,19 @@ The Concept Stack
 -----------------
 
 The sections in a clinincal note tend to be arranged as flattened hierarchies
-extending over several sections. For instance, in a discharge report one
-might encounter a section labeled GENERAL_EXAM, followed by a section labeled
-HEAD_AND_NECK_EXAM, which represents a more specific type of exam. This section
-could be followed by a section labeled EYE_EXAM, which is an even more
-specific type of exam. Although these sections would be listed sequentially in
-the report, they naturally form a hierarchy of EXAMINATION concepts proceeding
-from general to specific. Other section groups in the report exhibit the same
-characteristics.
+extending over several consecutive sections. For instance, in a discharge
+report one might encounter a section labeled GENERAL_EXAM, followed by a
+section labeled HEAD_AND_NECK_EXAM, which represents a more specific type of
+general exam. This section could be followed by a section labeled EYE_EXAM,
+which is an even more specific type of head and neck exam. Although these
+sections would be listed sequentially in the report, they naturally form a
+hierarchy of EXAM concepts proceeding from general to specific. Other
+section groups in the report exhibit the same characteristics.
 
 A data structure for managing hierarchies such as this is a stack. The section
 tagger manages a "concept stack" as it processes the report text. It uses
-the stack to identify these natural concept groups and to resolve ambiguities
-as described in the previous section.
+the stack to identify these natural concept groups, to keep track of the scope
+of each, and to resolve ambiguities as described in the previous section.
 
 The specificity of a concept is determined by its graph treecode. The longer
 the treecode, the more specific the concept. Two concepts with identical length
@@ -278,6 +278,8 @@ Let T be the concept at the top of the stack.
 * If C is a more specific concept than T, push C onto the stack.
   In other words keep pushing concepts as they get more specific.
 * If C has the same specificity as T, pop T from the stack and push C.
+  If two concepts have the same specificity, there is no *a priori* reason
+  to prefer one vs. the other, so take the most recent one.
 * If C is more general than T, pop all concepts from the stack that have
   specificity >= C. In other words, pop all concepts more specific than C,
   since C could represent the start of a new concept hierarchy.
@@ -289,8 +291,66 @@ recently recognized concept.
 Concept Ambiguity Resolution
 ----------------------------
 
+The section tagger uses the concept stack to select a single concept from
+a list of candidates, such the candidate concepts produced by the synonym
+matching process described above. The basic idea is that a concept should
+be preferred as a section label if it posesses the nearest common ancestor
+among all concepts in the concept stack. A concept is preferable as a section
+label if it is "closer" to those in the concept stack than all other
+candidates. Here the distance metric is the number of hops between the two
+concept nodes in the concept graph.
 
-  
+The concept ambiguity resolution process proceeds as follows. Let L be a list
+of concepts and let S be the concept stack. For each concept C in stack S,
+starting with the concept at the stack top:
+
+* For all candidate concepts in L, find the nearest common ancestor to C.
+
+  * If there is a single ancestor A closer than all others, choose A.
+
+  * If multiple ancestors are closer than the others, save these as
+    *best_candidates*. Move one level deeper in the stack and try again.
+
+  * If all ancestors are at the same level in the concept graph (have the
+    same specificity), there is no clear winner. Move one element deeper
+    in the stack and try again.
+
+If one winner among the candidates in L emerges from this procedure, it is
+declared the winning concept and it is used for the section label.
+
+If there is no single winning concept:
+
+* If there are any *best_candidate* concepts:
+
+  * Select the most general concept from among these as the winner.
+
+  * If all *best_candidate* concepts have the same specificity, select the
+    first of the best candidates as the winner.
+
+* Otherwise, take the highest level concept from those in L, if any.
+
+* Otherwise, declare failure for the ambiguity resolution process.
+
+
+Example
+-------
+
+An example may help to clarify all of this. Consider this (reformatted) snippet
+of text from one of the anonymized MIMIC discharge notes:
+
+|    ``Admission Date: [\**3183-5-31\**]``
+|    ``Discharge Date: [\**3183-6-7\**]``
+|    ``Date of Birth:  [\**3114-8-24\**]``
+|    ``Sex:   M``
+|    ``Service: MEDICINE``
+|    ``Allergies: Benzodiazepines / Augmentin``
+|    ``Attending:[\**First Name3 (LF) 30\**]``
+|    ``Chief Complaint: Abdominal pain``
+
+
+
+
+
 References
 ==========
 
