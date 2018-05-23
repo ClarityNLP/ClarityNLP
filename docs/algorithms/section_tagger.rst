@@ -306,9 +306,12 @@ starting with the concept at the stack top:
 
 * For all candidate concepts in L, find the nearest common ancestor to C.
 
-  * If there is a single ancestor A closer than all others, choose A.
+  * If there is a single ancestor A closer than all others, choose A as
+    the current winner. Save A in the *best_candidates* list. Move one
+    level deeper in the stack and try again.
 
   * If multiple ancestors are closer than the others, save these as
+    *best_candidates* if they are closer than those already present in
     *best_candidates*. Move one level deeper in the stack and try again.
 
   * If all ancestors are at the same level in the concept graph (have the
@@ -338,18 +341,56 @@ Example
 An example may help to clarify all of this. Consider this (reformatted) snippet
 of text from one of the anonymized MIMIC discharge notes:
 
-|    ``Admission Date: [\**3183-5-31\**]``
-|    ``Discharge Date: [\**3183-6-7\**]``
-|    ``Date of Birth:  [\**3114-8-24\**]``
-|    ``Sex:   M``
-|    ``Service: MEDICINE``
-|    ``Allergies: Benzodiazepines / Augmentin``
-|    ``Attending:[\**First Name3 (LF) 30\**]``
-|    ``Chief Complaint: Abdominal pain``
+|    ``Physical Exam:``
+|    ``On admission:``
+|    ``Vital Signs: in ED afebrile, VSS``
+|    ``General: sitting up, drooling, unable to speak``
+|    ``OP: severely swollen tongue with superior displacement``
 
 
+As the section tagger scans this text it finds a regex match for the text
+``General:``. As described above, it removes the terminating colon and converts
+the text to lowercase, producing ``general``.  It then checks the synonym map
+for any concepts associated with the text ``general``. It tries an exact match
+first, which succeeds and produces the following list of candidate concepts
+and their treecodes (the list L above):
 
+|    ``L[0]  GENERAL_REVIEW [5.39.113]``
+|    ``L[1]  GENERAL_EXAM   [6.40.135]``
+|    ``L[2]  GENERAL_PLAN   [13.51.157.281]``
 
+These are the candidate concepts in list L. The concept stack S at this
+point is:
+
+|    ``S[0]  VITAL_SIGNS          [6.40.136]``
+|    ``S[1]  PHYSICAL_EXAMINATION [6.40]``
+
+How does the section tagger use S to choose the best concept from those in L?
+
+To begin, the ambiguity resolution process selects the concept at the top of
+the stack, ``VITAL_SIGNS``. It proceeds to compute the nearest common ancestor
+with this concept and each concept in L.
+
+The nearest common ancestor can be computed from the treecodes. If two
+treecodes have no digits in common, they have no common ancestor. Otherwise,
+the nearest common ancestor is that node with the longest shared string of
+treecode digits.
+
+Since the treecode for VITAL_SIGNS is 6.40.136, we can see that the only
+concept in L with which it shares a common ancestor is L[1] GENERAL EXAM.
+This nearest common ancestor has a treecode of 6.40, which is the longest
+shared string of treecode digits shared between 6.40.136 and 6.40.135.
+So concept L[1] is saved in the best_candidates list.
+
+Next the section tagger moves one level deeper in the stack and finds the
+concept ``PHYSICAL_EXAMINATION``, which has a treecode of 6.40. It repeats
+the nearest common ancestor calculation and finds L[1] to be the winner.
+The best_candidates array is not updated since it already contains L[1].
+
+All elements of the concept stack have been examined at this point, and there
+is is a single best candidate concept, L[1] ``GENERAL_EXAM``. The section
+tagger declares this concept to be the winner and labels the section with
+this concept.
 
 References
 ==========
