@@ -13,7 +13,7 @@ natural language processing task. This document describes the Clarity section
 tagger and how it works.
 
 The starting point for the section tagger is the open-source SecTag database
-of Denny and colleagues [1]_.
+of J. Denny and colleagues [1]_.
 
 Source Code
 ===========
@@ -29,7 +29,7 @@ The section tagger can also run interactively from a command line and process
 a file of health records in JSON format. The file ``sec_tag_file.py`` provides
 a command-line interface to the section tagger. Help can be obtained by running
 the file with this command:  ``python3 ./sec_tag_file.py``. This interactive
-appliation writes results (input file with tag annotations) to stdout.
+application writes results (input file with tag annotations) to stdout.
 
 SecTag Database
 ---------------
@@ -40,12 +40,14 @@ can be found in the ``nlp/sec_tag/data`` folder. These files are
 synonyms, and ``graph.txt``, a list of graph vertices and associated codes
 for the concept graph.
 
-Generation of these files requires population of the SecTag database. The
+Generation of these files requires an installation of the SecTag database. The
 SecTag SQL files were originally written for MySQL, so that database server
-will be assumed here.
+will be assumed here. These files do not need to be generated again unless
+new concepts and/or synonyms are added to the SecTag database.
 
-Install MySQL and create a root account. Start the MySQL server, log in as
-root and enter these commands:
+To populate the database, install MySQL and create a root account. Start the
+MySQL server, log in as root and enter these commands, which creates a user
+named "sectag" with a password of "sectag":
 
 .. code-block:: sql
     :linenos:
@@ -55,6 +57,9 @@ root and enter these commands:
        GRANT ALL ON SecTag_Terminology.* TO 'sectag'@'localhost';
        GRANT FILE ON *.* TO 'sectag'@'localhost';
 
+The user name and the password can be changed, but the database connection
+string at the end of ``sec_tag_db_extract.py`` will need to be updated to
+match.
 
 After running these commands, log out as the MySQL root user.
        
@@ -65,6 +70,9 @@ Populate the database as the sectag user with this command, entering the
 password 'sectag' when prompted:
 
     ``mysql -p -u sectag SecTag_Terminology < SecTag_Terminology.sql``
+
+The SecTag database name is "SecTag_Terminology". Additional information on
+the contents of the database can be found in [1]_ and [2]_.
 
 Concepts and Synonyms
 ---------------------
@@ -95,23 +103,23 @@ very specific leaf node concepts. The code 6 represents the concept
 "objective_data", which is very general and broad in scope. The code 6.41
 represents the concept "laboratory_and_radiology_data", which is a form of
 "objective_data", but more specific. The code 6.41.149 represents the concept
-"radiographic_studies", which is an even more specific form of objective data.
-The concepts increase in specificity as the code strings increase
-in length. Each node in the concept graph has a unique code that represents a
-path through the graph from the highest-level concepts to it.
+"radiographic_studies", which is a more specific form of
+"laboratory_and_radiology_data". The concepts increase in specificity as the
+code strings increase in length. Each node in the concept graph has a unique
+code that represents a path through the graph from the highest-level concepts
+to it.
 
 SecTag Errors
 -------------
 
-As for errors in the SecTag database, two concepts are misspelled. These are
-concept 127, "principal_diagnosis", misspelled as "principle_diagnosis",
-and concept 695, "level_of_consciousness", misspelled as
+There are a few errors in the SecTag database. Two concepts are misspelled.
+These are concept 127, "principal_diagnosis", misspelled as
+"principle_diagnosis", and concept 695, "level_of_consciousness", misspelled as
 "level_of_cousciousness". Clarity's db extraction code corrects both of these
 misspellings.
 
-Concept 308, "sleep_habits", has as concept text "sleep_habits,_sleep", which
-is obviously an error. The extraction program converts this to just
-"sleep_habits".
+Concept 308, "sleep_habits", has as concept text "sleep_habits,_sleep". The
+extraction program converts this to just "sleep_habits".
 
 Concept 2921, "preoperative_medications" is missing a treecode. A closely
 related concept, number 441 "postoperative_medications" has treecode
@@ -180,3 +188,8 @@ References
        | **in Clinical Documents**
        | *J Am Med Inform Assoc.* 16:806-815, 2009.
        | https://www.vumc.org/cpm/sectag-tagging-clinical-note-section-headers
+
+.. [2] | J. Denny, R. Miller, K. Johnson, A. Spickard
+       | **Development and Evaluation of a Clinical Note Section Header Terminology**
+       | *AMIA Annual Symposium Proceedings* 2008, Nov 6:156-160.
+
