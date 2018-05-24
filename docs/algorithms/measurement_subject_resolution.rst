@@ -652,5 +652,5 @@ as they are discovered.
 After all modifiers of the subject have been found, the ngram substitution
 process is reversed, restoring the original words of the sentence. The
 list of measurements, along with their subjects and locations, is converted
-to JSON and return as the result.
+to JSON and returned as the result.
 

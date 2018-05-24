@@ -8,9 +8,8 @@ The section tagger ingests clinical documents and uses textual clues to
 partition the documents into sections. Sections consist of groups of
 sentences sharing a common purpose such as "History of Present Illness",
 "Medications", or "Discharge Instructions". Effective section tagging 
-can reduce the amount of text to be processed for natural language
-processing tasks. This document describes the Clarity section
-tagger and how it works.
+can reduce the amount of text to be processed for NLP tasks. This
+document describes the Clarity section tagger and how it works.
 
 The starting point for the section tagger is the open-source SecTag database
 of J. Denny and colleagues [1]_.
