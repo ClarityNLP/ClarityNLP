@@ -1,0 +1,6 @@
+{
+	"terms" : ["vital signs", "vs", "bp", "blood pressure"],
+	"text": "S: Intubated, eyes closed\nO:Pt seen to address goals\nVital Signs: 6.3>32.0<214\nVent: SIMV/PS 5, TV 600ml, 50%FiO2\nVital Signs: 130/70, 96%, 67, 16 pre-rx\n145/73, 97%, 76, 17 post-rx\nPulmonary: BS coarse t/o anterior and posterior lung fields\nRx: Chest PT consisting of percusssion and vibration to bilateral lower lobes in right and left sidelying and to anterior lobes in supine.  Pt instilled and suctioned for minimal yellowish secretions by respiratory therapist following above.\nA: Pt's vital signs remained stable with chest PT treatment although only minimal secretions post-rx.\nP: Continue to follow to assist with secretion clearance/mobility as appropriate",
+	"min_value": "0",
+	"max_value": "300"
+}

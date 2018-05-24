@@ -1,0 +1,349 @@
+{
+    "data_entities": [
+        {
+            "named_arguments": {
+                "documentset": [
+                    "ProviderNotes"
+                ],
+                "termset": [
+                    "RigorsTerms"
+                ]
+            },
+            "arguments": [],
+            "final": false,
+            "description": "",
+            "funct": "ProviderAssertion",
+            "library": "Clarity",
+            "concept": "",
+            "raw_text": "",
+            "alias": "",
+            "declaration": "define",
+            "version": "",
+            "values": [],
+            "name": "hasRigors"
+        },
+        {
+            "named_arguments": {
+                "maximum_value": "106",
+                "termset": [
+                    "TempTerms"
+                ],
+                "minimum_value": "96"
+            },
+            "arguments": [],
+            "final": false,
+            "description": "",
+            "funct": "ValueExtraction",
+            "library": "Clarity",
+            "concept": "",
+            "raw_text": "",
+            "alias": "",
+            "declaration": "define",
+            "version": "",
+            "values": [],
+            "name": "Temperature"
+        }
+    ],
+    "population": "All",
+    "operations": [
+        {
+            "final": false,
+            "data_entities": [
+                "Temperature.value",
+                "100.4"
+            ],
+            "raw_text": "Temperature.value>=100.4",
+            "name": "hasFever",
+            "action": ">="
+        },
+        {
+            "final": false,
+            "data_entities": [
+                "hasRigors",
+                "hasDyspnea",
+                "hasVomiting",
+                "hasNausea",
+                "hasShock",
+                "hasTachycardia"
+            ],
+            "raw_text": "hasRigorsORhasDyspneaORhasVomitingORhasNauseaORhasShockORhasTachycardia",
+            "name": "hasSepsisSymptoms",
+            "action": "OR"
+        },
+        {
+            "final": true,
+            "data_entities": [
+                "hasFever",
+                "hasSepsisSymptoms"
+            ],
+            "raw_text": "hasFeverANDhasSepsisSymptoms",
+            "name": "hasSepsis",
+            "action": "AND"
+        }
+    ],
+    "description": "\"Septic Transfusion Reaction AABB definition listed in Hong H, Xiao W, Lazarus HM, Good CE, Maitta RW, Jacobs MR. Detection of septic transfusion reactions to platelet transfusions by active and passive surveillance. Blood. 2016 Jan 28;127(4):496-502.\"",
+    "data_models": [
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "datamodel",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "5.3",
+            "values": [],
+            "name": "OMOP"
+        }
+    ],
+    "debug": true,
+    "document_sets": [
+        {
+            "named_arguments": {},
+            "arguments": [
+                [
+                    "Physician",
+                    "Nurse",
+                    "Note",
+                    "Discharge Summary"
+                ]
+            ],
+            "declaration": "documentset",
+            "description": "",
+            "funct": "createReportTagList",
+            "library": "Clarity",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [],
+            "name": "ProviderNotes"
+        }
+    ],
+    "term_sets": [
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Rigors",
+                "Rigoring",
+                "Rigours",
+                "Rigouring",
+                "Chill",
+                "Chills",
+                "Shivers",
+                "Shivering",
+                "Teeth chattering"
+            ],
+            "name": "RigorsTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Labored respiration",
+                "Shortness of breath",
+                "Short of breath",
+                "SOB",
+                "Respiration laboured",
+                "Respiration labored",
+                "Laboured respiration",
+                "Laboured breathing",
+                "Labored breathing",
+                "Increased work of breathing",
+                "Hunger air",
+                "Gasping",
+                "Dyspnoea",
+                "Dyspnea",
+                "Difficulty breathing",
+                "Breathlessness",
+                "Breathing difficult",
+                "Breath shortness",
+                "Air hunger"
+            ],
+            "name": "DyspneaTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Nausea",
+                "Nauseated",
+                "Nauseous",
+                "Queasy"
+            ],
+            "name": "NauseaTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Vomiting",
+                "Vomited",
+                "Vomit",
+                "Emesis",
+                "Hyperemesis",
+                "N/V"
+            ],
+            "name": "VomitingTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Tachycardia",
+                "Tachycardic",
+                "Rapid HR",
+                "Tachy"
+            ],
+            "name": "TachycardiaTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Hypotensive",
+                "Hypotension",
+                "Low Blood Pressure",
+                "Blood Pressure Low",
+                "Low BP",
+                "Preshock"
+            ],
+            "name": "HypotensionTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "Shock"
+            ],
+            "name": "ShockTerms"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "termset",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "temp",
+                "temperature",
+                "t"
+            ],
+            "name": "TempTerms"
+        }
+    ],
+    "context": "Patient",
+    "owner": "clarity",
+    "phenotype": {
+        "named_arguments": {},
+        "arguments": [],
+        "declaration": "phenotype",
+        "description": "",
+        "funct": "",
+        "library": "",
+        "concept": "",
+        "alias": "",
+        "version": "2",
+        "values": [],
+        "name": "\"Septic Transfusion Reaction\""
+    },
+    "includes": [
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "include",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "Clarity",
+            "version": "1.0",
+            "values": [],
+            "name": "ClarityCore"
+        },
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "include",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "OHDSI",
+            "version": "1.0",
+            "values": [],
+            "name": "OHDSIHelpers"
+        }
+    ],
+    "code_systems": [
+        {
+            "named_arguments": {},
+            "arguments": [],
+            "declaration": "codesystem",
+            "description": "",
+            "funct": "",
+            "library": "",
+            "concept": "",
+            "alias": "",
+            "version": "",
+            "values": [
+                "http://omop.org"
+            ],
+            "name": "OMOP"
+        }
+    ]
+}

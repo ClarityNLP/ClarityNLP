@@ -1,0 +1,574 @@
+documentsSize 10
+documents
+reportId 1207442
+source MIMIC Notes
+subject 68435
+reportDate 5827608000000
+snippet
+reportText [**3213-11-11**] 11:56 AM
+ LUMBAR SP,SINGLE FILM IN O.R.                                   Clip # [**Clip Number (Radiology) 23697**]
+ Reason: L2-L5
+ Admitting Diagnosis: SCOLIOSIS/SDA
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ INDICATION:  L2 through L5 fusion.
+
+ COMPARISON:  None available.
+
+ Three views of the lateral lumbar spine are obtained. Two post-processing
+ techniques used.
+
+ Assuming the lowermost lumbar-type vertebral body to be L5, the initial two
+ views indicate a marker position at the L4/L5 interspace.  Disc spaces are
+ decreased at L4/5 and L5/1. The third view shows disc fusion devices and
+ screws at L2/3, L3/4, L4/5 and L5/S1.  For further details, please consult the
+ operative note from the online medical record with the same date.
+reportId 1207610
+source MIMIC Notes
+subject 68435
+reportDate 5827694400000
+snippet
+reportText [**3213-11-12**] 1:08 PM
+ L-SPINE (AP & LAT) IN O.R.                                      Clip # [**Clip Number (Radiology) 23885**]
+ Reason: POST. L2-5 FUSION
+ Admitting Diagnosis: SCOLIOSIS/SDA
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ HISTORY:  Spinal fusion.
+
+ Three intraoperative cross-table lateral prone radiographs of the LS spine are
+ obtained during placement of posterior pedicle screws at all levels from L2
+ through S1.  Since intraoperative exam one day previous the patient has
+ undergone fusion of the corresponding anterior spine with placement of
+ interbody carbon fiber fusion material as well as screws at multiple levels.
+reportId 245480
+source MIMIC Notes
+subject 68435
+reportDate 5828126400000
+snippet
+reportText Normal sinus rhythm.  Right bundle-branch block.  No previous tracing available
+for comparison.
+reportId 1208317
+source MIMIC Notes
+subject 68435
+reportDate 5828126400000
+snippet
+reportText [**3213-11-17**] 1:30 PM
+ CHEST (PORTABLE AP)                                             Clip # [**Clip Number (Radiology) 23873**]
+ Reason: ? pna
+ Admitting Diagnosis: SCOLIOSIS/SDA
+ ______________________________________________________________________________
+ UNDERLYING MEDICAL CONDITION:
+  66 year old man with delerium
+ REASON FOR THIS EXAMINATION:
+  ? pna
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ AP CHEST, 1:59 P.M., [**11-17**].
+
+ HISTORY:  Delirium, suspect pneumonia.
+
+ IMPRESSION:  AP chest reviewed in the absence of any prior chest imaging:
+
+ The sharp margin of the region of consolidation in the infrahilar left lower
+ lobe suggests this is atelectasis rather than pneumonia, but does not really
+ exclude infection.  There are no other regions of lung which are suspicious
+ for pneumonia.  There is no pleural effusion and the heart is normal size.
+ The mediastinum is probably widened at the level of the aortic arch, but it is
+ difficult to separate the edge of the mediastinal soft tissues from large
+ thoracic vertebral osteophytes deviating the paraspinal line.  When feasible,
+ upright conventional views should be obtained to see if there is really
+ mediastinal adenopathy.
+reportId 42139
+source MIMIC Notes
+subject 68435
+reportDate 5828472000000
+snippet
+reportText Admission Date:  [**3213-11-11**]              Discharge Date:   [**3213-11-21**]
+
+Date of Birth:  [**3147-7-24**]             Sex:   M
+
+Service: MEDICINE
+
+Allergies:
+No Known Allergies / Adverse Drug Reactions
+
+Attending:[**First Name3 (LF) 102**]
+Chief Complaint:
+Back pain
+
+Major Surgical or Invasive Procedure:
+Anterior/posterior lumbar fusion with instrumentation L3-S1
+
+History of Present Illness:
+66 yo M w/ h/o HTN, T2DM, PTSD, low back pain and disk
+degeneration presented for elective anterior fusion on [**11-13**], on [**11-16**] c/b DTs in setting of ETOH withdrawal transferred to MICU.
+
+.
+Pt is a artist from the berskires drinks 5-6 drinks per night
+(per OMR). Floor team confirmed w/ wife, that pt drinks vodka w/
+his iced tea. Per report he does not have h/o ETOH withdrawal and seizures. He is s/p elective anterior approach L3-S1 circumferential fusion (Partial vertebrectomy of L3, L4 and L5, Fusion L2 to S1, Anterior spacers x4, using autograft, bone morphogenic protein and allograft) on [**11-12**]. Post-op, he was treated w/ ms contin 30mg [**Hospital1 **], total of 50mg oxycodone po from prn dosing, 1mg iv dilaudid, and 12mg po dilaudid. On post-op day 3, [**11-16**], pt was noted to have tremulousness w/ incomprehensible speech and noted for visual hallucinations. His ETOH history was taken and he was started on ativan per CIWA. He
+received a total of 12mg ativan. On [**11-17**], medicine consult was called and patient was switched to diazepam 10mg iv. He has received 40mg diazepam q1hr for ciwa's 13-15. .
+His labs have been notable for hct of 24-30, most recent labs:
+wbc 6.1, hct 28.4, plt 205, cr 0.9 (cr on admission 1.4), na
+134, k 4.2, alt/ast 17/23, t bili 0.7, ca 8.5, mg 1.9. UA: nitr
+neg, leuk neg, wbc 2, bact neg.
+
+Past Medical History:
+Hypertension, osteoarthritis, Type 2 diabetes, obesity, gout,
+degenerative disc disease
+Social History:
+Lives in the Berkshires with his wife. Was a pentagon-attached
+photographer during [**Country 1391**] War and subsequently developed PTSD. Worked as an art-director in advertising and is now an artist
+(nicknick.com). Surruptitiously drinks > [**5-31**] drinks per night.
+Quit tobacco 30 years ago. No other drugs.
+
+
+Family History:
+N/C
+
+Physical Exam:
+A&O X 3; NAD
+RRR
+CTA B
+Abd soft NT/ND
+BUE- good strength at deltoid, biceps, triceps, wrist
+flexion/extension, finger flexion/extension and intrinics; sensation intact C5-T1 dermatomes; - [**Doctor Last Name 485**], reflexes symmetric at biceps, triceps and brachioradialis BLE- good strength at hip flexion/extension, knee
+flexion/extension; [**4-30**] ankle dorsiflexion on the left, [**Last Name (un) 45**]/FHL; sensation intact L1-S1 dermatomes; - clonus, reflexes symmetric at quads and Achilles; + sicatica .
+Discharge
+vitals 98.6, 137/71, 82, 18 Gen: pleasant, but complains of pain
+HEENT: EOMI, anicteric, MMM
+COR: RRR no MRG
+LUNGS: CTAB
+ABD: NTND, incision is CDI
+Neuro: AOx3, no tremor
+
+Pertinent Results:
+[**3213-11-15**] 09:25AM BLOOD WBC-5.5 RBC-2.92* Hgb-8.7* Hct-25.7*
+MCV-88 MCH-29.8 MCHC-33.8 RDW-13.5 Plt Ct-155
+[**3213-11-13**] 04:50AM BLOOD WBC-5.2 RBC-2.90* Hgb-8.7* Hct-25.5*
+MCV-88 MCH-29.9 MCHC-33.9 RDW-14.2 Plt Ct-114*
+[**3213-11-12**] 05:35PM BLOOD WBC-5.3 RBC-3.06* Hgb-9.3* Hct-27.0*
+MCV-88 MCH-30.5 MCHC-34.6 RDW-14.0 Plt Ct-145*
+[**3213-11-11**] 02:59PM BLOOD WBC-7.9 RBC-3.47* Hgb-10.8* Hct-30.7*
+MCV-88 MCH-31.1 MCHC-35.2* RDW-13.8 Plt Ct-186
+[**3213-11-13**] 04:50AM BLOOD Glucose-175* UreaN-24* Creat-1.3* Na-142
+K-4.3 Cl-109* HCO3-25 AnGap-12
+[**3213-11-11**] 02:59PM BLOOD Glucose-210* UreaN-19 Creat-1.4* Na-139
+K-4.5 Cl-105 HCO3-23 AnGap-16
+[**3213-11-13**] 04:50AM BLOOD Calcium-8.0* Phos-3.2 Mg-1.8
+[**3213-11-12**] 05:36PM BLOOD Glucose-200* Lactate-2.3* Na-136 K-4.4
+Cl-103
+[**3213-11-12**] 03:08PM BLOOD Glucose-193* Lactate-3.1* Na-137 K-4.2
+Cl-103
+.
+Spine
+Three intraoperative cross-table lateral prone radiographs of
+the LS spine are obtained during placement of posterior pedicle screws at all levels from L2 through S1. Since intraoperative exam one day previous the patient has undergone fusion of the corresponding anterior spine with placement of interbody carbon fiber fusion material as well as screws at multiple levels. .
+CXR
+IMPRESSION: AP chest reviewed in the absence of any prior chest
+imaging: The sharp margin of the region of consolidation in the infrahilar left lower lobe suggests this is atelectasis rather than pneumonia, but does not really exclude infection. There are no other regions of lung which are suspicious for pneumonia. There is no pleural effusion and the heart is normal size.  The
+mediastinum is probably widened at the level of the aortic arch, but it is difficult to separate the edge of the mediastinal soft tissues from large thoracic vertebral osteophytes deviating the paraspinal line. When feasible, upright conventional views should be obtained to see if there is really mediastinal adenopathy.
+[**3213-11-21**] 06:17AM BLOOD WBC-7.1 RBC-3.13* Hgb-8.9* Hct-27.8*
+MCV-89 MCH-28.5 MCHC-32.2 RDW-14.0 Plt Ct-362
+[**3213-11-21**] 01:10PM BLOOD Glucose-283* UreaN-22* Creat-0.9 Na-131*
+K-4.5 Cl-96 HCO3-26 AnGap-14
+[**3213-11-17**] 10:10AM BLOOD ALT-17 AST-23 LD(LDH)-296* AlkPhos-69
+Amylase-19 TotBili-0.7
+[**3213-11-21**] 06:17AM BLOOD Calcium-8.6 Phos-3.8 Mg-1.9
+
+Brief Hospital Course:
+Pt is 66 year old male with PMH of hypertension, alcohol abuse,
+diabetes and DJD admitted for L3-S1 fusion hospital course complicated by alcohol withdrawal requiring brief MICU course for hypertensive urgency and frequent CIWA.
+Surgery Course:
+
+Mr. [**Known patient lastname 15772**] was admitted to the [**Hospital1 4**] Spine Surgery Service on
+[**3213-11-11**] and taken to the Operating Room for L3-S1 interbody
+fusion through an anterior approach. Please refer to the dictated operative note for further details. The surgery was without complication and the patient was transferred to the PACU in a stable condition. TEDs/pnemoboots were used for postoperative DVT prophylaxis. Intravenous antibiotics were given per standard protocol. Initial postop pain was controlled with a PCA. On HD#2 he returned to the operating room for a scheduled L3-S1 decompression with PSIF as part of a staged 2-part procedure. Please refer to the dictated operative note
+for further details. The second surgery was also without complication and the patient was transferred to the PACU in a stable condition. Postoperative HCT was stable. A bupivicaine epidural pain catheter placed at the time of the posterior surgery remained in place until postop check when it was removed due to a LLE motor block. He was kept NPO until bowel function returned then diet was advanced as tolerated. The patient was transitioned to oral pain medication when tolerating PO diet. Foley was removed on POD#2 from the second procedure. He was
+fitted with a lumbar warm-n-form brace for comfort. .
+On post-op day 3, [**11-16**], pt was noted to have tremulousness w/
+incomprehensible seech.  His ETOH history was taken, and he endorsed drinking [**5-31**] alcoholic drinks (typically vodka and tea) nightly.  There was concern that he was withdrawing from EtOH and he was started on ativan per CIWA.  He became delirious with hallucinations, concerning for DTs.  He was transferred to MICU for stabilization and close monitoring.
+He was discharged on oxycodone 5-10 mg PO every 4 hr as needed
+for pain in addition to oxycodone SR 20 mg PO twice daily. He will need further pain control optimization. .
+#EtOH withdrawal.  In the MICU, he was continued on IV ativan
+CIWA scale.  He became hypertensive and was started on IV
+labetolol for BP control.  By POD#5, he had been off benzodiazepines for 24 hours and his mental status was at his baseline.  He was weaned off IV labetolol and restarted on his home BP meds, and transferred to the floor.  Of note, pt did not experience any seizures during withdrawal.  He reports that he has nver been hospitalized for EtOH withdrawal in the past. .
+On the floor, his CIWA score did not necessitate further
+benzodiazepine treatment.  He continued to have pain, and was treated with IV opioids and then transitioned to a PO regimen consisting of standing oxycontin q12h with oxycodone PRN for breakthrough pain.  He was seen and evaluated by physical therapy, who [**Hospital 8694**] rehab. .
+#Hypertension: pt initially hypertensive during initial
+withdrawal symptoms but on floor pt was normotensive and discharged on his home medication regimen. .
+#Gout: While in the MICU pt had gout flare in Left great toe.
+He was given one dose of 1.2mg colchicine and was thence
+continued on colchicine 0.6mg daily.  At time of discharge his pain had improved but joint was still inflammed. .
+#Diabetes: pt was hyperglycemic to 300's while on floor.  He was
+managed on ISS and sugars improved.  When hyperglycemic his anion gap remained normal but was found to be hyponatremic and mildly hyperkalemic, which was attributed to osmotic diuresis. Pt's potassium normalized with BG control, although was still
+mildly hyponatremic.  He was d/ced on home regimen of metformin in addition to sliding scale insulin.
+He will need further insulin regimen titration.
+.
+Hyponatremia: Pt was slightly hyponatremic on day of discharge
+with Na of 131.  Likely secondary to osmotic diuresis.  Pt does appear euvolemic so could also be secondary to ADH release in setting of significant pain and as side effect of opiates.
+He will need safety labs (chem 7) drawn on [**3213-11-24**] to be
+reviewed by his rehab MD. .
+Normocytic Anemia: has not been worked up in past, MCV is normal
+and no evidence of pan-cytopenia so less likely it's from EtOH toxicity.  Anemia could be secondary to blood loss from surgery.  No signs of active bleeding during this admission.  Will be
+followed as outpatient. .
+Hyperlipidemia: pt was switched to rosuvastatin 20mg daily
+because of concern for interaction with treatment doses of colchicine.  Will need outpt management to adjust dose accordingly. .
+*********Incidental finding*************
+Hilar adenopathy on CXR: will need repeat chest xr and f/u as
+outpatient .
+Transitional:
+- outpt workup for anemia
+- needs counseling for EtOH abuse
+- Likely needs to be on insulin for diabetes
+- needs repeat chem 7 to make sure sodium normalizes
+- follow up for hilar adenopathy
+- PCP follow up for hyperlipidemia management
+
+Medications on Admission:
+1. docusate sodium 100 mg Capsule Sig: One (1) Capsule PO BID (2
+times a day). 2. sertraline 50 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).
+
+3. hydrochlorothiazide 12.5 mg Capsule Sig: 0.5 Capsule PO DAILY
+(Daily).
+4. metformin 500 mg Tablet Sig: One (1) Tablet PO TID (3 times a
+day). 5. losartan 50 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).
+6. rosuvastatin 20 mg Tablet Sig: One (1) Tablet PO DAILY
+(Daily).
+7. insulin regular human 100 unit/mL Solution Sig: One (1)
+syringe Injection ASDIR (AS DIRECTED). 8. omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1)
+Capsule, Delayed Release(E.C.) PO DAILY (Daily).
+9. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a
+day) as needed for constipation. 10. bisacodyl 5 mg Tablet, Delayed Release (E.C.) Sig: Two (2)
+Tablet, Delayed Release (E.C.) PO DAILY (Daily
+
+
+Discharge Medications:
+1. docusate sodium 100 mg Capsule Sig: One (1) Capsule PO BID (2
+times a day). 2. sertraline 50 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).
+
+3. metformin 500 mg Tablet Sig: One (1) Tablet PO TID (3 times a
+day). 4. losartan 50 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).
+5. rosuvastatin 20 mg Tablet Sig: One (1) Tablet PO DAILY
+(Daily).
+6. omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1)
+Capsule, Delayed Release(E.C.) PO DAILY (Daily).
+7. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a
+day) as needed for constipation. 8. oxycodone 20 mg Tablet Extended Release 12 hr Sig: One (1)
+Tablet Extended Release 12 hr PO Q12H (every 12 hours) for 1
+weeks: hold for RR<12 and sedation. Disp:*14 Tablet Extended Release 12 hr(s)* Refills:*0*
+9. colchicine 0.6 mg Tablet Sig: One (1) Tablet PO DAILY
+(Daily).
+10. oxycodone 5 mg Tablet Sig: 1-2 Tablets PO Q4H (every 4
+hours) as needed for pain for 7 days: hold for sedation and rr<12. Disp:*60 Tablet(s)* Refills:*0*
+11. folic acid 1 mg Tablet Sig: One (1) Tablet PO DAILY (Daily).
+
+12. clonidine 0.1 mg/24 hr Patch Weekly Sig: One (1) Patch
+Weekly Transdermal QSUN (every Sunday).
+13. thiamine HCl 100 mg Tablet Sig: One (1) Tablet PO DAILY
+(Daily).
+14. B12  Sig: 1000  mcg Injection once a month: next shot:
+[**3213-11-26**].
+15. Aspir-81 81 mg Tablet, Delayed Release (E.C.) Sig: One (1)
+Tablet, Delayed Release (E.C.) PO once a day.
+16. Vitamin C 100 mg Tablet Sig: One (1) Tablet PO once a day.
+17. Vitamin D 1,000 unit Capsule Sig: One (1) Capsule PO once a
+day. 18. vitamin E 400 unit Capsule Sig: One (1) Capsule PO once a
+day. 19. Fish Oil 300 mg Capsule Sig: Two (2) Capsule PO once a day.
+
+20. Co Q-10 200 mg Capsule Sig: One (1) Capsule PO once a day.
+21. multivitamin     Tablet Sig: One (1) Tablet PO once a day.
+22. Outpatient Lab Work
+Please check chem 10 panel to monitor BUN/Cr, K, and Na on
+[**3213-11-24**]. To be reviewed by rehab MD
+23. insulin lispro 100 unit/mL Solution Sig: as directed
+Subcutaneous ASDIR (AS DIRECTED): Fingerstick QACHSInsulin SC
+Sliding Scale
+  Breakfast Lunch Dinner Bedtime
+Humalog Humalog Humalog Humalog
+Glucose Insulin Dose Insulin Dose Insulin Dose Insulin Dose
+0-70   mg/dL Proceed with hypoglycemia protocol Proceed with
+hypoglycemia protocol Proceed with hypoglycemia protocol Proceed with hypoglycemia protocol 71-100   mg/dL 0   Units 0   Units 0   Units 0   Units
+101-150   mg/dL 2   Units 2   Units 2   Units 0   Units
+151-200   mg/dL 4   Units 4   Units 4   Units 3   Units
+201-250   mg/dL 6   Units 6   Units 6   Units 6   Units
+251-300   mg/dL 8   Units 8   Units 8   Units 8   Units
+301-350   mg/dL 10   Units 10   Units 10   Units 10   Units
+351-400   mg/dL 12   Units 12   Units 12   Units 12   Units
+
+.
+
+
+Discharge Disposition:
+Extended Care
+
+Facility:
+Newbridge on the [**Doctor Last Name 304**] - [**Location (un) 1263**]
+
+Discharge Diagnosis:
+Primary: Lumbar spondylosis and disc degeneration, alcohol
+withdrawal, gout flare, hypertensive urgency, acute renal failure, acute anemia from post-operative blood loss
+
+Discharge Condition:
+Mental Status: Clear and coherent.
+Level of Consciousness: Alert and interactive.
+Activity Status: Out of Bed with assistance to chair or
+wheelchair.
+
+Discharge Instructions:
+Dear Mr. [**Known patient lastname 15772**],
+
+It was a pleasure taking care of you. You were to the hospital
+for the following operation: ANTERIOR/POSTERIOR Lumbar Decompression With Fusion.  The surgery did not have any
+complications, but after spending several days in the hospital you went into alcohol withdrawal causing delirium.  We admitted you to the ICU for this condition and treated you with medications.  After several days, your condition improved. However, it is important that you abstain from alcohol and
+enroll with supportive services such as alcoholics anonymous. We now believe that you are safe to go to rehabilitation to get
+stronger.
+We have made the following changes to your home medications:
+STOP Hydrochlorothiazide
+STOP your home pain medication and START oxycodone 5 mg every 4
+hours as needed for pain and oxycodone 20 mg ER by mouth twice daily for baseline pain CHANGE crestor from 40 mg to 20 mg daily
+START colchicine 0.6 mg daily for GOUT FLARE and gout
+maintenance START senna and colace for constipation while taking pain
+medications START folic acid, thiamine, vitamin B12 for nutrition
+START clonidine for blood pressure
+START insulin in addition to your metformin for blood sugar
+control.
+After the operation:
+-Activity: You should not lift anything greater than 10 lbs for
+2 weeks. You will be more comfortable if you do not sit or stand
+more than ~45 minutes without getting up and walking around.
+-Rehabilitation/ Physical Therapy:
+2-3 times a day you should go for a walk for 15-30 minutes as
+part of your recovery. You can walk as much as you can tolerate.
+
+-Limit any kind of lifting.
+
+-Diet: Eat a normal healthy diet. You may have some constipation
+after surgery. You have been given medication to help with this issue.
+-Brace: You have been given a brace. This brace is to be worn
+for comfort when you are walking. You may take it off when sitting in a chair or while lying in bed.
+-Wound Care: Remove the dressing in 2 days. If the incision is
+draining cover it with a new sterile dressing. If it is dry then you can leave the incision open to the air. Once the incision is completely dry (usually 2-3 days after the operation) you may take a shower. Do not soak the incision in a bath or pool. If the incision starts draining at anytime after surgery, do not get the incision wet. Cover it with a sterile dressing. Call the office.
+-You should resume taking your normal home medications. No
+NSAIDs.
+
+-You have also been given Additional Medications to control your
+pain. Please allow 72 hours for refill of narcotic prescriptions, so please plan ahead. You can either have them mailed to your home or pick them up at the clinic located on [**Hospital Ward Name 60**] 2. We are not allowed to call in or fax narcotic
+prescriptions (oxycontin, oxycodone, percocet) to your pharmacy. In addition, we are only allowed to write for pain medications
+for 90 days from the date of surgery.
+Please call the office if you have a fever>101.5 degrees
+Fahrenheit and/or drainage from your wound.
+
+Followup Instructions:
+With Dr. [**Last Name (STitle) **] in 10 days, please call to arrange.
+Please call the clinic ([**Telephone/Fax (1) 2643**]) to confirm your
+appointment that has been scheduled.
+Please follow-up with your primary care doctor after you are
+discharged from rehab: [**First Name9 (NamePattern2) 15773**] [**First Name4 (NamePattern1) **] [**Last Name (NamePattern1) **] MD
+Undo [**Street Address(2) 15774**]
+[**Location (un) 4323**], [**Numeric Identifier 15775**]
+([**Telephone/Fax (1) 15776**]
+reportId 245479
+source MIMIC Notes
+subject 68435
+reportDate 5828472000000
+snippet
+reportText Sinus rhythm.  Occasional premature atrial contractions.  Right bundle-branch
+block.  Compared to the previous tracing of [**3213-11-17**] atrial ectopy is new.
+reportId 1209279
+source MIMIC Notes
+subject 68435
+reportDate 5828817600000
+snippet
+reportText [**3213-11-25**] 9:56 AM
+ L-SPINE (AP & LAT)                                              Clip # [**Clip Number (Radiology) 23874**]
+ Reason: s/p ant post fusi L2-5, assess for healing
+ ______________________________________________________________________________
+ UNDERLYING MEDICAL CONDITION:
+  spondylosis stenosis and scoliosis
+ REASON FOR THIS EXAMINATION:
+  s/p ant post fusi L2-5
+  assess for healing
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ LUMBAR SPINE [**3213-11-25**]
+
+ CLINICAL INFORMATION:  Anterior and posterior fusion L2 through L5, assess
+ healing.
+
+ FINDINGS:
+
+ Two views of the lumbar spine demonstrate anterior and posterior fusion from
+ L2 through L5 with interbody fusion devices, anterior screws, and pedicle
+ screws and posterior fixation rods.  Lumbar vertebral body height and
+ alignment are maintained.  Endplate sclerosis at L2-3 with osteophytosis.  Of
+ note, there has been interval fracture of the posterior superior aspect of the
+ L2 vertebral body best seen on the lateral radiograph.  Fracture may involve
+ the pedicle as well.  This is not well appreciated on the frontal radiograph
+ as this is obscured by bowel gas and abdominal contents.
+
+ IMPRESSION:
+
+ 1.  Anterior and posterior fusion, with interval fracture of posterior
+ superior endplate of L2, possible extension to the pedicle.
+
+ An e-mail regarding the findings was sent to Dr. [**First Name8 (NamePattern2) 1237**] [**Last Name (NamePattern1) **] at the time of
+ dictation.
+reportId 1209509
+source MIMIC Notes
+subject 68435
+reportDate 5828904000000
+snippet
+reportText [**3213-11-26**] 3:19 PM
+ CT L-SPINE W/O CONTRAST                                         Clip # [**Clip Number (Radiology) 23875**]
+ Reason: Assess for L2 fracture
+ ______________________________________________________________________________
+                                 FINAL ADDENDUM
+ Dr. [**Last Name (STitle) 576**] (radiology resident) discussed the findings by phone with Dr.
+ [**Last Name (STitle) **] at 9:25 am on [**3213-11-27**].
+
+
+
+ [**3213-11-26**] 3:19 PM
+ CT L-SPINE W/O CONTRAST                                         Clip # [**Clip Number (Radiology) 23875**]
+ Reason: Assess for L2 fracture
+ ______________________________________________________________________________
+ UNDERLYING MEDICAL CONDITION:
+  [**Last Name (un) 23876**] pain
+ REASON FOR THIS EXAMINATION:
+  Assess for L2 fracture
+ No contraindications for IV contrast
+ ______________________________________________________________________________
+ WET READ: IPf TUE [**3213-11-26**] 6:37 PM
+  1.  L2 superior posterior endplate corner fracture extending in the pedicle
+  bilaterally.  Lucent line vertically through L2 vertebral body concerning for
+  extension into L2 vertebral body.
+  2.  L4 superior posterior endplate corner fracture.
+  3.  L5 vertebral body fracture.
+  4.  Question of hyperdense material in the spinal canal at level L2 could be
+  small hematoma; however, evaluation is suboptimal due to artifact.
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ HISTORY:  Pain. Assess L2 fracture.
+
+ TECHNIQUE:  CT lumbar spine without IV contrast.  Coronal and sagittal
+ reformatted images provided.
+
+ COMPARISON:  L-spine radiograph [**3213-11-25**] and L-spine radiograph
+ [**3213-11-12**].
+
+ FINDINGS:
+
+ The alignment of the lumbar spine is preserved.  The patient is status post
+ laminectomy at L2 through L4, status post L2 through S1  anterior and
+ posterior osteometallic  fusion.  There are multilevel degenerative changes in
+ the spine.
+
+ There is a L2 superior posterior endplate corner fracture, as described on the
+ [**3213-11-25**] radiograph.  The fracture extends in the pedicles bilaterally (7:35,
+ 8:25, 8:39), with slight distraction of the upper portion of the pedicles and
+ posterior elements.  In addition, there is a vertical lucent line through L2
+ vertebral body (8:38) which could suggest vertical extension through the
+ posterior vertebral body of L2.
+
+ There is a focal divot along the superior endplate of L3 (8:38), without
+ definite fracture.
+
+ A faintly seen lucent line along the posterosuperior corner of the L3
+ vertebral (8:32, 39) likely also represents a nondisplaced fracture.
+
+ There is deformity through the L5 vertebral body, which is likely also
+ indicative of fracture,
+
+ There is a question of a hyperdense material in the spinal canal at level L2
+ anteriorly, could be a small hematoma; however, evaluation is suboptimal due
+                                                             (Over)
+
+ [**3213-11-26**] 3:19 PM
+ CT L-SPINE W/O CONTRAST                                         Clip # [**Clip Number (Radiology) 23875**]
+ Reason: Assess for L2 fracture
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ (Cont)
+ to limitations of CT technique and due to artifact (3:25).
+
+ IMPRESSION:
+ 1.  L2 superior posterior endplate corner fracture extending in the pedicles
+ bilaterally, with slight distraction.  Lucent line vertically through L2
+ vertebral body may represent extension into L2 vertebral body.
+ 2.  L4 nondisplaced superior posterior endplate corner fracture.
+ 3.  L5 vertebral body fracture.
+ 4.  Divot along superior endplate of L3 - ? schmorls node; no definite
+ fracture.  This could be correlated with any previous (outside)
+ cross-sectional studies.
+ 5.  Question of hyperdense material in the spinal canal at level L2 could be
+ small hematoma; however, evaluation is suboptimal due to artifact.
+
+ A voice mail was left for Dr. [**Last Name (STitle) **] to communicate the finding at 5:15 p.m.
+ on [**3213-11-26**] and also e-mail was sent to Dr. [**Last Name (STitle) **] at the same time.
+
+ Findings were entered in the radiology communication dashboard.
+reportId 1214596
+source MIMIC Notes
+subject 68435
+reportDate 5832187200000
+snippet
+reportText [**3214-1-3**] 9:04 AM
+ L-SPINE (AP & LAT)                                              Clip # [**Clip Number (Radiology) 23886**]
+ Reason: S/p post fusi L2-5 assess for healing
+ ______________________________________________________________________________
+ UNDERLYING MEDICAL CONDITION:
+  Spondylosis
+ REASON FOR THIS EXAMINATION:
+  S/p post fusi L2-5 assess for healing
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ HISTORY:  Fusion.
+
+ FINDINGS:  In comparison with study of [**11-25**], there is little overall change
+ in the appearance of the extensive fusion procedure extending posteriorly from
+ L2 through S1 and anteriorly from L3 through S1 with interbody spacers in
+ place.  No evidence of hardware-related complication.
+reportId 1237462
+source MIMIC Notes
+subject 68435
+reportDate 5847307200000
+snippet
+reportText [**3214-6-27**] 12:51 PM
+ L-SPINE (AP & LAT)                                              Clip # [**Clip Number (Radiology) 23877**]
+ Reason: s/p post fusion L2-5, assess for healing
+ ______________________________________________________________________________
+ UNDERLYING MEDICAL CONDITION:
+  lumbar spondylosis and stenosis and scoliosis
+ REASON FOR THIS EXAMINATION:
+  s/p post fusion L2-5
+  assess for healing
+ ______________________________________________________________________________
+                                 FINAL REPORT
+ LUMBAR SPINE RADIOGRAPHS
+
+ HISTORY:  Lumbar spondylosis and stenosis status post L2 through L5 fusion.
+
+ COMPARISONS:  [**3214-1-3**].
+
+ TECHNIQUE:  Lumbar spine, AP and lateral.
+
+ FINDINGS:  The patient is status post posterior lumbar fusion extending from
+ L2 through S1 with a similar appearance including interbody fusion devices
+ from L2-L3 through L5-S1.  Bone graft material is present along associated
+ posterior elements.  On the prior postoperative radiograph, there was a defect
+ through the posterior superior part of the L2 vertebral body which shows
+ interval bony healing and there is less lucency about pedicle screws within
+ the L2 vertebral body.  Subchondral sclerosis about L1-L2, with
+ moderate-to-severe narrowing, however, appears greater suggesting sequelae of
+ healing and possibly increasing superimposed degenerative change above the
+ level of the fusion.  Likewise, increasing right lateral bridging osteophyte
+ is associated with these changes spanning the right L1-L2 level, where is
+ increased kyphotic angulation.
+
+ IMPRESSION:  Healing lucency along the superior posterior margin of L2.
+ Increasing degenerative changes and slight kyphotic angulation, however, at
+ L1-L2.
+subjectFacets
+68435 10

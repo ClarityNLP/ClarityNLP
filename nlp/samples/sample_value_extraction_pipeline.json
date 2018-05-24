@@ -1,0 +1,19 @@
+{
+    "name": "value extractor terms",
+    "minimum_value": "10",
+    "maximum_value": "300",
+    "terms": [
+        "bp",
+        "blood pressure"
+    ],
+    "concept_code": -1,
+    "vocabulary": "SNOMED",
+    "limit": 1000,
+    "owner": "test",
+    "include_synonyms": false,
+    "config_type": "ValueExtractor",
+    "description": "demo",
+    "include_ancestors": false,
+    "case_sensitive": false,
+    "include_descendants": false
+}

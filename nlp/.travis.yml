@@ -1,0 +1,16 @@
+language: python
+python:
+  - "3.6"
+install:
+  - pip install -r requirements.txt
+  - python -m spacy download en_core_web_sm
+  - python -m spacy download en
+before_script:
+  - cp example.cfg project.cfg
+script: 
+  - python3 -m pytest tests/
+cache: pip
+notifications:
+  slack:
+    rooms:
+      - hdap-team:kU41dKwGiEWGNRyHERIyMOFb#clarity-repo

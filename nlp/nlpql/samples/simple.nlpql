@@ -1,0 +1,148 @@
+debug;
+// Phenotype library name
+phenotype "Septic Transfusion Reaction" version "2";
+
+/* Phenotype library description */
+//Fever >=38°C with a rise a rise of >=1°C PLUS any of: rigors, dyspnea, nausea/vomiting, tachycardia, hypotension, shock
+description "Septic Transfusion Reaction AABB definition listed in Hong H, Xiao W, Lazarus HM, Good CE, Maitta RW, Jacobs MR. Detection of septic transfusion reactions to platelet transfusions by active and passive surveillance. Blood. 2016 Jan 28;127(4):496-502.";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+// The ClarityCore library provides common functions for simplifying NLP pipeline creation
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
+
+
+// #Manual Term sets#
+// simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
+// can add expansion of structured concepts from terminologies as well with OHDSIHelpers
+termset RigorsTerms: ["Rigors",
+"Rigoring",
+"Rigours",
+"Rigouring",
+"Chill",
+"Chills",
+"Shivers",
+"Shivering",
+"Teeth chattering"];
+
+termset DyspneaTerms: [
+"Labored respiration",
+"Shortness of breath",
+"Short of breath",
+"SOB",
+"Respiration laboured",
+"Respiration labored",
+"Laboured respiration",
+"Laboured breathing",
+"Labored breathing",
+"Increased work of breathing",
+"Hunger air",
+"Gasping",
+"Dyspnoea",
+"Dyspnea",
+"Difficulty breathing",
+"Breathlessness",
+"Breathing difficult",
+"Breath shortness",
+"Air hunger"];
+
+
+termset TachycardiaTerms: [
+"Tachycardia",
+"Tachycardic",
+"Rapid HR",
+"Tachy"
+];
+
+termset HypotensionTerms: [
+"Hypotensive",
+"Hypotension",
+"Low Blood Pressure",
+"Blood Pressure Low",
+"Low BP",
+"Preshock"
+];
+
+termset ShockTerms: [
+"Shock"
+];
+
+termset TempTerms: [
+        "temp",
+        "temperature",
+        "t"
+        ];
+
+// # Document sets## Uses Simple Document Ontology
+documentset ProviderNotes:
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
+
+//## Cohorts
+cohort PlateletTransfusionPatients:OHDSI.getCohort(194);
+
+// #phenotype features
+define hasRigors:
+  Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
+    termset: [RigorsTerms],
+    documentset: [ProviderNotes]
+    });
+
+define hasDyspnea:
+  Clarity.ProviderAssertion({
+      cohort:PlateletTransfusionPatients,
+      termset: [DyspneaTerms],
+      documentset: [ProviderNotes]
+    });
+
+define hasShock:
+  Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
+    termset: [ShockTerms],
+    documentset: [ProviderNotes]
+  });
+
+define hasTachycardia:
+  Clarity.ProviderAssertion({
+    cohort:PlateletTransfusionPatients,
+    termset: [TachycardiaTerms],
+    documentset: [ProviderNotes]
+  });
+
+  define hasHypotension:
+    Clarity.ProviderAssertion({
+      cohort:PlateletTransfusionPatients,
+      termset: [HypotensionTerms],
+      documentset: [ProviderNotes]
+    });
+
+//Quantitative metrics
+define Temperature:
+  Clarity.ValueExtraction({
+    cohort:PlateletTransfusionPatients,
+    termset:[TempTerms],
+    minimum_value: "96",
+    maximum_value: "106"
+    });
+
+
+//CDS logical Context (Patient, Document)
+context Patient;
+
+define hasFever:
+    where Temperature.value >= 100.4;
+
+define hasSepsisSymptoms:
+    where hasRigors OR hasDyspnea OR hasShock OR hasTachycardia;
+
+define final hasSepsis:
+  where Clarity.dateDiff(
+      PlateletTransfusionPatients.cohortStartDate,
+      hasSepsisSymptoms.report_date,
+      d)<=1;
