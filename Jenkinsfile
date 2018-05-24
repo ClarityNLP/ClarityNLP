@@ -14,6 +14,8 @@ pipeline{
                 //as the latest version.
                 script{
                     docker.withRegistry('https://build.hdap.gatech.edu'){
+                        def nlpApiImage = docker.build("nlp-api:1.0", "-f ./nlp/Dockerfile.prod ./nlp")
+                        nlpApiImage.push('latest')//TODO
                         def rtmApiImage = docker.build("rtm-api:1.0", "-f ./utilities/mapper-api/Dockerfile ./utilities/mapper-api")
                         rtmApiImage.push('latest')
                         def rtmClientImage = docker.build("rtm-client:1.0", "-f ./utilities/mapper-client/Dockerfile.prod ./utilities/mapper-client")
