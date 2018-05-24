@@ -233,20 +233,20 @@ words and tries to match the longest sequence of words, if any, to a known
 synonym. It proceeds to do this by removing words from each end of the
 word list. It first tries a match anchored to the right, removing words
 one-by-one from the left. Any matches found are resolved into concepts and
-added to the candidate concept list. If no matches are found, section tagger
-tries again, this time with the matches anchored from the left, and words
-removed one-by-one from the right. If still no matches are found, the word
-list is pruned of stop words and the remaining words replaced by their
-"normalized" forms. The sequence of match attempts repeats on this new word
-list, first with an exact match, then one anchored right, then one anchored
-left. If all of these match attempts fail, section tagger gives up and
-concludes that the text does not represent the start of a new section. If at
-least one match attempt succeeds, the synonyms are resolved into concepts via
-map lookup and returned as candidate concepts for a new section label. If there
-is only one candidate concept as the result of this process, that concept
-becomes the header for the next section of text. If two or more candidate
-concepts remain, the section tagger employs an ambiguity resolution process
-to decide on the winning concept.
+added to the candidate concept list. If no matches are found, the section
+tagger tries again, this time with the matches anchored from the left, and
+words removed one-by-one from the right. If still no matches are found,
+the word list is pruned of stop words and the remaining words replaced by
+their "normalized" forms. The sequence of match attempts repeats on this
+new word list, first with an exact match, then one anchored right, then one
+anchored left. If all of these match attempts fail, section tagger gives up
+and concludes that the text does not represent the start of a new section.
+If at least one match attempt succeeds, the synonyms are resolved into
+concepts via map lookup and returned as candidate concepts for a new section
+label. If there is only one candidate concept as the result of this process,
+that concept becomes the header for the next section of text. If two or more
+candidate concepts remain, the section tagger employs an ambiguity resolution
+process to decide on the winning concept.
 
 The Concept Stack
 -----------------
@@ -285,8 +285,8 @@ Let T be the concept at the top of the stack.
   since C could represent the start of a new concept hierarchy.
 
 Thus the section tagger pushes concepts onto the stack as they get more
-specific. It pops concepts from the stack if more specific than the most
-recently recognized concept.
+specific. It pops concepts from the stack if they are more specific than
+the most recently recognized concept.
 
 Concept Ambiguity Resolution
 ----------------------------
@@ -318,6 +318,7 @@ starting with the concept at the stack top:
     same specificity), there is no clear winner. Move one element deeper
     in the stack and try again.
 
+This process continues until all elements in the stack have been examined.
 If one winner among the candidates in L emerges from this procedure, it is
 declared the winning concept and it is used for the section label.
 
@@ -338,59 +339,86 @@ If there is no single winning concept:
 Example
 -------
 
-An example may help to clarify all of this. Consider this (reformatted) snippet
+An example may help to clarify all of this. Consider this snippet
 of text from one of the anonymized MIMIC discharge notes:
 
-|    ``Physical Exam:``
-|    ``On admission:``
-|    ``Vital Signs: in ED afebrile, VSS``
-|    ``General: sitting up, drooling, unable to speak``
-|    ``OP: severely swollen tongue with superior displacement``
-
+|  ``...CV:  The patient's vital signs were routinely monitored, and``
+|  ``was put on vasopressin, norepinephrine and epinephrine during her``
+|  ``stay to maintain appropriate hemodynamics. Pulmonary:  Vital``
+|  ``signs were routinely monitored. She was intubated and sedated``
+|  ``throughout her admission, and her ventilation settings were``
+|  ``adjusted based on ABG values...``
 
 As the section tagger scans this text it finds a regex match for the text
-``General:``. As described above, it removes the terminating colon and converts
-the text to lowercase, producing ``general``.  It then checks the synonym map
-for any concepts associated with the text ``general``. It tries an exact match
-first, which succeeds and produces the following list of candidate concepts
-and their treecodes (the list L above):
+``Pulmonary:``. As described above, it removes the terminating colon and
+converts the text to lowercase, producing ``pulmonary``.  It then checks
+the synonym map for any concepts associated with the text ``pulmonary``.
+It tries an exact match first, which succeeds and produces the following list
+of candidate concepts and their treecodes (the list L above):
 
-|    ``L[0]  GENERAL_REVIEW [5.39.113]``
-|    ``L[1]  GENERAL_EXAM   [6.40.135]``
-|    ``L[2]  GENERAL_PLAN   [13.51.157.281]``
+|    ``L[0]  PULMONARY_COURSE         [5.32.77.87]``
+|    ``L[1]  PULMONARY_FAMILY_HISTORY [5.34.79.103.71]``
+|    ``L[2]  PULMONARY_REVIEW         [5.39.132]``
+|    ``L[3]  PULMONARY_EXAM           [6.40.139.195.128]``
+|    ``L[4]  PULMONARY_PLAN           [13.51.157.296]``
 
 These are the candidate concepts in list L. The concept stack S at this
 point is:
 
-|    ``S[0]  VITAL_SIGNS          [6.40.136]``
-|    ``S[1]  PHYSICAL_EXAMINATION [6.40]``
+|    ``S[0]  CARDIOVASCULAR_COURSE  [5.32.77.75]``
+|    ``S[1]  HOSPITAL_COURSE        [5.32]``
 
-How does the section tagger use S to choose the best concept from those in L?
+How does the section tagger use S to choose the "best" section tag from
+concepts in L?
 
-To begin, the ambiguity resolution process selects the concept at the top of
-the stack, ``VITAL_SIGNS``. It proceeds to compute the nearest common ancestor
-with this concept and each concept in L.
+To begin, the ambiguity resolution process starts with the concept at the
+top of the stack, ``CARDIOVASCULAR_COURSE``. It proceeds to compute the
+ancestors shared by this concept and each concept in L. It hopes to find a
+single most-specific ancestor concept shared between elements of L and S.
+This is the nearest common ancestor concept for those in L and S.
 
 The nearest common ancestor can be computed from the treecodes. If two
-treecodes have no digits in common, they have no common ancestor. Otherwise,
-the nearest common ancestor is that node with the longest shared string of
-treecode digits.
+treecodes share a common initial digit sequence they have a common ancestor.
+The treecode of the nearest common ancestor is the **longest shared**
+**treecode prefix string**. If two treecodes have no common prefix string
+they have no common ancestor. The nearest common ancestor for concept A
+with treecode 6.40.37 and concept B with treecode
+6.40.21 is that unique concept with treecode 6.40, since 6.40 is the longest
+shared prefix string for concepts A and B.
 
-Since the treecode for VITAL_SIGNS is 6.40.136, we can see that the only
-concept in L with which it shares a common ancestor is L[1] GENERAL EXAM.
-This nearest common ancestor has a treecode of 6.40, which is the longest
-shared string of treecode digits shared between 6.40.136 and 6.40.135.
-So concept L[1] is saved in the best_candidates list.
+Computing the common ancestors of the concept at the top of the stack,
+``CARDIOVASCULAR_COURSE [5.32.77.75]``, and each concept in L gives:
 
-Next the section tagger moves one level deeper in the stack and finds the
-concept ``PHYSICAL_EXAMINATION``, which has a treecode of 6.40. It repeats
-the nearest common ancestor calculation and finds L[1] to be the winner.
-The best_candidates array is not updated since it already contains L[1].
+|  ``S[0] & L[0]: [5.32.77]``
+|  ``S[0] & L[1]: [5]``
+|  ``S[0] & L[2]: [5]``
+|  ``S[0] & L[3]: [ ]``
+|  ``S[0] & L[4]: [ ]``
+
+Concepts ``S[0]`` and ``L[0]`` share the longest prefix string. The
+section tagger declares concept ``L[0] PULMONARY_COURSE``, to be the winner
+of this round. It then proceeds to the next level in the stack and repeats
+the procedure, generating these results:
+
+|  ``S[1] & L[0]: [5.32]``
+|  ``S[1] & L[1]: [5]``
+|  ``S[1] & L[2]: [5]``
+|  ``S[1] & L[3]: [ ]``
+|  ``S[1] & L[4]: [ ]``
+
+The winner of this round is also ``L[0]``, indicating that the node with
+treecode ``6.40`` is the nearest common ancestor for concepts
+``S[1] HOSPITAL_COURSE`` and ``L[0] PULMONARY_COURSE``. This common ancestor
+has a shorter treecode than that found in the initial round, indicating that
+it is located at a greater distance in the concept graph, so the results of
+this round are discarded.
 
 All elements of the concept stack have been examined at this point, and there
-is is a single best candidate concept, L[1] ``GENERAL_EXAM``. The section
+is is a single best candidate concept, ``L[0] PULMONARY_COURSE``. The section
 tagger declares this concept to be the winner and labels the section with
-this concept.
+the tag ``PULMONARY_COURSE``. Thefore concept ``L[0] PULMONARY_COURSE`` is
+the nearest common ancestor concept for those concepts in S and L, and it is
+the most appropriate concept with which to label the ``Pulmonary:`` section.
 
 References
 ==========
