@@ -8,11 +8,11 @@ The section tagger ingests clinical documents and uses textual clues to
 partition the documents into sections. Sections consist of groups of
 sentences sharing a common purpose such as "History of Present Illness",
 "Medications", or "Discharge Instructions". Effective section tagging 
-can reduce the amount of text to be processed for NLP tasks. This
+can reduce the amount of text processed for NLP tasks. This
 document describes the Clarity section tagger and how it works.
 
-The starting point for the section tagger is the open-source SecTag database
-of J. Denny and colleagues [1]_.
+The starting point for the section tagger is the open-source *SecTag*
+database of J. Denny and colleagues [1]_.
 
 Source Code
 ===========
@@ -42,8 +42,8 @@ frequently-encountered synonyms and their "normalized" forms [2]_.
 
 Generation of these files requires an installation of the SecTag database. The
 SecTag SQL files were originally written for MySQL, so that database server
-will be assumed here. These files do not need to be generated again unless
-new concepts and/or synonyms are added to the SecTag database.
+will be assumed here. **These files do not need to be generated again unless**
+**new concepts and/or synonyms are added to the SecTag database.**
 
 To populate the database, install MySQL and create a root account. Start the
 MySQL server, log in as root and enter these commands, which creates a user
@@ -63,8 +63,8 @@ match.
 
 After running these commands, log out as the MySQL root user.
        
-Next, download the sec_tag.zip file from Joshua Denny's website at Vanderbilt
-using the link in [1]_. Unzip the file and find ``SecTag_Terminology.sql``.
+Next, download the sec_tag.zip file from the link in [1]_. Unzip the file
+and find ``SecTag_Terminology.sql``.
 
 Populate the database as the sectag user with this command, entering the
 password 'sectag' when prompted:
@@ -105,7 +105,7 @@ represents the concept "laboratory_and_radiology_data", which is a form of
 "objective_data", but more specific. The code 6.41.149 represents the concept
 "radiographic_studies", which is a more specific form of
 "laboratory_and_radiology_data". The concepts increase in specificity as the
-code strings increase in length. Each node in the concept graph has a unique
+treecodes increase in length. Each node in the concept graph has a unique
 code that represents a path through the graph from the highest-level concepts
 to it.
 
@@ -130,11 +130,11 @@ related concept, number 441 "postoperative_medications" has treecode
 |    ``medications_by_situation: 5.37.106``
 |    ``preoperative_medications: 5.37.106.127``
 
-The extraction program assigns the treecode ``5.37.106.500`` to the concept
-"preoperative_medications".
+Using this hierarchy as a guide, the extraction program assigns the
+treecode ``5.37.106.500`` to the concept "preoperative_medications".
 
 The final error that the extraction program corrects is for concept 745,
-'appearance'.  This entry has an invalid treecode and is an isolated concept
+"appearance".  This entry has an invalid treecode and is an isolated concept
 at level 10. This strange entry is skipped entirely and is not written to the
 output files.
 
@@ -210,11 +210,13 @@ characters among all matches. Any overlapping matches are merged, if possible,
 prior to deciding the winning match. Each match represents the possible start
 of a new report section.
 
-For each match, the section tagger extracts the matching text and performs a
-series of validity checks on it. Dash-terminated matches are checked to see
+For each match, which consists of one or more words followed by a terminator,
+the section tagger extracts the matching text and performs a
+series of validity checks on it. Dash-terminated matches are checked to verify
 that they do not end in the middle of a hyphenated word. They are also checked
-for lab results stated with a hyphen, such as ``SODIUM-135``, the serum sodium
-level. Any such matches are discarded.
+to ensure that they do not terminate within a hyphenated lab result, such as
+``SODIUM-135``. Any such matches are discarded. Several other tests are
+performed as well.
 
 If any matches survive these checks, the terminating characters and possible
 leading newlines are stripped from the matching text, and any bracketed data
@@ -240,12 +242,14 @@ their "normalized" forms. The sequence of match attempts repeats on this
 new word list, first with an exact match, then one anchored right, then one
 anchored left. If all of these match attempts fail, section tagger gives up
 and concludes that the text does not represent the start of a new section.
+
 If at least one match attempt succeeds, the synonyms are resolved into
 concepts via map lookup and returned as candidate concepts for a new section
 label. If there is only one candidate concept as the result of this process,
 that concept becomes the header for the next section of text. If two or more
 candidate concepts remain, the section tagger employs an ambiguity resolution
-process to decide on the winning concept.
+process to decide on the winning concept. The ambiguity resolver uses a
+concept stack to guide its decisions, which we describe next.
 
 The Concept Stack
 -----------------
@@ -283,9 +287,10 @@ Let T be the concept at the top of the stack.
   specificity >= C. In other words, pop all concepts more specific than C,
   since C could represent the start of a new concept hierarchy.
 
-Thus the section tagger pushes concepts onto the stack as they get more
-specific. It pops concepts from the stack if they are more specific than
-the most recently recognized concept.
+Thus the section tagger pushes concept C onto the stack if it is more specific
+than concept T. It pops concepts from the stack until concept T is at the
+same level of specificity (or less specific) than C. The concepts in the stack
+represent the full set of open concept scopes at any stage of processing.
 
 Concept Ambiguity Resolution
 ----------------------------
@@ -296,8 +301,8 @@ matching process described above. The basic idea is that a concept should
 be preferred as a section label if it posesses the nearest common ancestor
 among all concepts in the concept stack. A concept is preferable as a section
 label if it is "closer" to those in the concept stack than all other
-candidates. Here the distance metric is the number of hops between the two
-concept nodes in the concept graph.
+candidates. Here the distance metric is the shortest path between the
+two concept nodes in the concept graph.
 
 The concept ambiguity resolution process proceeds as follows. Let L be a list
 of concepts and let S be the concept stack. For each concept C in stack S,
@@ -330,7 +335,7 @@ If there is no single winning concept:
   * If all *best_candidate* concepts have the same specificity, select the
     first of the best candidates as the winner.
 
-* Otherwise, take the highest level concept from those in L, if any.
+* Otherwise, take the most general concept from those in L, if any.
 
 * Otherwise, declare failure for the ambiguity resolution process.
 
@@ -339,7 +344,7 @@ Example
 -------
 
 An example may help to clarify all of this. Consider this snippet
-of text from one of the anonymized MIMIC discharge notes:
+of text from one of the MIMIC discharge notes:
 
 |  ``...CV:  The patient's vital signs were routinely monitored, and``
 |  ``was put on vasopressin, norepinephrine and epinephrine during her``
@@ -349,11 +354,13 @@ of text from one of the anonymized MIMIC discharge notes:
 |  ``adjusted based on ABG values...``
 
 As the section tagger scans this text it finds a regex match for the text
-``Pulmonary:``. As described above, it removes the terminating colon and
-converts the text to lowercase, producing ``pulmonary``.  It then checks
-the synonym map for any concepts associated with the text ``pulmonary``.
-It tries an exact match first, which succeeds and produces the following list
-of candidate concepts and their treecodes (the list L above):
+``Pulmonary:``. No additional words match at this point, since this text
+starts a new sentence. As described above, the section tagger removes the
+terminating colon and converts the text to lowercase, producing
+``pulmonary``.  It then checks the synonym map for any concepts associated
+with the text ``pulmonary``. It tries an exact match first, which succeeds
+and produces the following list of candidate concepts and their treecodes
+(the list L above):
 
 |    ``L[0]  PULMONARY_COURSE         [5.32.77.87]``
 |    ``L[1]  PULMONARY_FAMILY_HISTORY [5.34.79.103.71]``
@@ -394,10 +401,13 @@ Computing the common ancestors of the concept at the top of the stack,
 |  ``S[0] & L[3]: [ ]``
 |  ``S[0] & L[4]: [ ]``
 
-Concepts ``S[0]`` and ``L[0]`` share the longest prefix string. The
-section tagger declares concept ``L[0] PULMONARY_COURSE``, to be the winner
-of this round. It then proceeds to the next level in the stack and repeats
-the procedure, generating these results:
+Concepts ``S[0]`` and ``L[0]`` share the longest prefix string. Concepts
+``L[3]`` and ``L[4]`` share no common ancestor with concept ``S[0]``, as the
+empty brackets indicate. The section tagger declares concept
+``L[0] PULMONARY_COURSE`` to be the winner of this round, since it has the
+longest shared prefix string with concept ``S[0]``, indicating that it is
+closer to ``S[0]`` than all other candidate concepts. It then proceeds to the
+next level in the stack and repeats the procedure, generating these results:
 
 |  ``S[1] & L[0]: [5.32]``
 |  ``S[1] & L[1]: [5]``
@@ -406,7 +416,7 @@ the procedure, generating these results:
 |  ``S[1] & L[4]: [ ]``
 
 The winner of this round is also ``L[0]``, indicating that the node with
-treecode ``6.40`` is the nearest common ancestor for concepts
+treecode ``5.32`` is the nearest common ancestor for concepts
 ``S[1] HOSPITAL_COURSE`` and ``L[0] PULMONARY_COURSE``. This common ancestor
 has a shorter treecode than that found in the initial round, indicating that
 it is located at a greater distance in the concept graph, so the results of
@@ -415,9 +425,23 @@ this round are discarded.
 All elements of the concept stack have been examined at this point, and there
 is is a single best candidate concept, ``L[0] PULMONARY_COURSE``. The section
 tagger declares this concept to be the winner and labels the section with
-the tag ``PULMONARY_COURSE``. Thefore concept ``L[0] PULMONARY_COURSE`` is
-the nearest common ancestor concept for those concepts in S and L, and it is
-the most appropriate concept with which to label the ``Pulmonary:`` section.
+the tag ``PULMONARY_COURSE``. Thefore concept ``L[0] PULMONARY_COURSE``
+shares the nearest common ancestor with those in S, and it is the most
+appropriate concept with which to label the ``Pulmonary:`` section.
+
+At this point concept C, which is the most recently-recognized concept,
+becomes ``PULMONARY_COURSE [5.32.77.87]``. The concept T at the top of the
+stack is ``CARDIOVASCULAR_COURSE  [5.32.77.75]``. Since concepts C and T
+have identical treecode lengths, they have the same specificity. Following
+the stack manipulation rules described above, the section tagger pops the
+stack and pushes C, which yields this result for the concept stack:
+
+|    ``S[0]  PULMONARY_COURSE  [5.32.77.87]``
+|    ``S[1]  HOSPITAL_COURSE   [5.32]``
+
+After these stack adjustments the section tagger resumes scanning and the
+process continues.
+
 
 References
 ==========
