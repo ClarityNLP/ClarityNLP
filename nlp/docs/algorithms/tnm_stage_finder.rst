@@ -144,7 +144,63 @@ are denoted with suffixes ``a``, ``b``, ``c``, or ``d``, e.g. ``T2a``.
 Recurrence in the area of a primary tumor is denoted with the ``+``
 suffix.
 
+N Group
+-------
 
+The ``N`` group describes the extent of regional lymph node involvement and
+has the values in the next table:
+
+==============  =====================================================
+N Code          Meaning
+==============  =====================================================
+NX              reginal lymph node involvement cannot be assessed
+N0              no regional lymph node metastasis
+N1, N2, N3      increasing involvement of regional lymph nodes
+==============  =====================================================
+
+Anatomical subsites are denoted with suffixes ``a``, ``b``, ``c``, or
+``d`, e.g. ``N1b``. With only micrometastasis (smaller than 0.2 cm),
+the suffix ``(mi)`` should be used, e.g. ``pN1(mi)``.
+
+Suffix ``(sn)`` indicates sentinal lymph node involvement.
+
+Examination for isolated tumor cells (ITC) is indicated with the suffixes
+in parentheses (e.g. ``pN0(i-)``) using values in the next table:
+
+==============  =====================================================
+ITC Suffix      Meaning
+==============  =====================================================
+(i-)            no histologic regional node matastasis,
+                negative morphological findings for ITC
+(i+)            no histologic regional node metastasis,
+                positive morphological findings for ITC
+(mol-)          no histologic regional node metastasis,
+                negative non-morphological findings for ITC
+(mol+)          no histologic regional node metastasis,
+                positive non-morphological findings for ITC
+==============  =====================================================
+
+Examination for ITC in sentinel lymph nodes uses the suffixes in the
+next table:
+
+==============  =====================================================
+ITC(sn) Suffix  Meaning
+==============  =====================================================
+(i-)(sn)        no histologic sentinel node matastasis,
+                negative morphological findings for ITC
+(i+)(sn)        no histologic sentinel node metastasis,
+                positive morphological findings for ITC
+(mol-)(sn)      no histologic sentinel node metastasis,
+                negative non-morphological findings for ITC
+(mol+)(sn)      no histologic sentinel node metastasis,
+                positive non-morphological findings for ITC
+==============  =====================================================
+
+The TNM supplement [2]_ chapter 1, p. 8 recommends adding the number
+of involved and examined regional lymph nodes to the ``pN``
+classification (pathological classification), e.g. ``pN1b(3/15)``.
+This notation means that 15 regional lymph nodes were examined and
+three were found to be involved.
 
 References
 ==========
