@@ -1,11 +1,7 @@
-## Docker Setup
-This is the recommended setup as it configures Solr, Postgres, Mongo and the entire Clarity ecosystem.
-See the [Clarity](https://github.com/ClarityNLP/clarity) repository to get going.
-
-## Local Flask Setup
+## Local NLP Flask Setup
 
 
-Note: These instructions are only needed if you are not install via Docker through Clarity. In that case, you can skip past this setup.
+Note: These instructions are only needed if you are not install via Docker through ClarityNLP. In that case, you can skip past this setup.
 
 #### Installing Requirements
 ```

@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=ClarityDocker
+set SPHINXPROJ=ClarityNLP
 
 if "%1" == "" goto help
 

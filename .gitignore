@@ -5,5 +5,4 @@ prod.env
 .idea/vcs.xml
 .idea/
 _build/
-_static/
 _templates/

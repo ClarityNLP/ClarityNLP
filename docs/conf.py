@@ -1,4 +1,3 @@
-from recommonmark.parser import CommonMarkParser
 # -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
@@ -20,7 +19,7 @@ from recommonmark.parser import CommonMarkParser
 
 # -- Project information -----------------------------------------------------
 
-project = u'Clarity Docker'
+project = u'Clarity NLP'
 copyright = u'2018, Georgia Tech Research Institute'
 author = u'Georgia Tech Research Institute'
 
@@ -40,6 +39,12 @@ release = u''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.githubpages',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -48,11 +53,14 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
+# source_suffix = ['.rst', '.md']
+from recommonmark.parser import CommonMarkParser
+
 source_parsers = {
     '.md': CommonMarkParser,
 }
+
 source_suffix = ['.rst', '.md']
-#source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -78,8 +86,25 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = "classic"
+html_theme_options = {
+     "footerbgcolor": '#1c3b5e',
+     "sidebarbgcolor": '#eeeeee',
+    'sidebarlinkcolor': '#004f9f',
+    'sidebartextcolor': '#07284f',
+     'linkcolor': '#004f9f',
+     'relbarbgcolor': '#d1d3d5',
+    'relbarlinkcolor': '#00254c',
+    'relbartextcolor': '#00254c',
+    'bgcolor': '#fefefe',
+    'headbgcolor': '#fefefe',
+    'headfont': 'Georgia, Times, "Times New Roman", serif',
+    'bodyfont': 'Tahoma, Verdana, Segoe, sans-serif',
+    'codebgcolor': '#eff0f1',
+    'codetextcolor' : '#252729'
 
+
+}
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
@@ -105,7 +130,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'ClarityDockerdoc'
+htmlhelp_basename = 'ClarityNLPdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -130,9 +155,9 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
+#  author, documentclass [howto, manual, or own sclass]).
 latex_documents = [
-    (master_doc, 'ClarityDocker.tex', u'Clarity Docker Documentation',
+    (master_doc, 'ClarityNLP.tex', u'Clarity NLP Documentation',
      u'Georgia Tech Research Institute', 'manual'),
 ]
 
@@ -142,7 +167,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'claritydocker', u'Clarity Docker Documentation',
+    (master_doc, 'claritynlp', u'Clarity NLP Documentation',
      [author], 1)
 ]
 
@@ -153,7 +178,20 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'ClarityDocker', u'Clarity Docker Documentation',
-     author, 'ClarityDocker', 'One line description of project.',
+    (master_doc, 'ClarityNLP', u'Clarity NLP Documentation',
+     author, 'ClarityNLP', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+# -- Extension configuration -------------------------------------------------
+
+# -- Options for intersphinx extension ---------------------------------------
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'https://docs.python.org/': None}
+
+# -- Options for todo extension ----------------------------------------------
+
+# If true, `todo` and `todoList` produce output, else they produce nothing.
+todo_include_todos = True
