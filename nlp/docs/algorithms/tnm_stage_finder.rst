@@ -198,9 +198,82 @@ ITC(sn) Suffix  Meaning
 
 The TNM supplement [2]_ chapter 1, p. 8 recommends adding the number
 of involved and examined regional lymph nodes to the ``pN``
-classification (pathological classification), e.g. ``pN1b(3/15)``.
-This notation means that 15 regional lymph nodes were examined and
-three were found to be involved.
+classification (pathological classification), e.g. ``pN1b(2/11)``.
+This notation means that 11 regional lymph nodes were examined and
+two were found to be involved.
+
+M Group
+-------
+
+The ``M`` group describes the extent of distant metastasis and has the values
+in the next table:
+
+==============  ==========================================================
+M Code          Meaning
+==============  ==========================================================
+MX              metastasis cannot be assessed; considered inappropriate if
+                metastasis can be evaluated based on physical exam alone;
+                see [1]_ p. 24, [2]_ pp. 10-11.
+M0              no distant metastasis
+M1              distant metastasis
+pMX             invalid category ([2]_, p. 10)
+pM0             only to be used after autopsy ([2]_, p. 10)
+pM1             distant metastasis microscopically confirmed
+==============  ==========================================================
+
+The ``M1`` and ``pM1`` subcategories may be extended by these optional
+suffixes, indicating the location of the distant metastasis:
+
+===============  ============
+Location Suffix  Meaning
+===============  ============
+PUL              pulmonary
+OSS              osseous
+HEP              hepatic
+BRA              brain
+LYM              lymph nodes
+MAR              bone marrow
+PLE              pleura
+PER              peritoneum
+ADR              adrenals
+SKI              skin
+OTH              other
+===============  ============
+
+Anatomical subsites are denoted with suffixes ``a``, ``b``, ``c``, and ``d``.
+The suffix ``(cy+)`` is valid for ``M1`` codes under certain conditions
+(see [2]_ p. 11).
+
+For isolated tumor cells (ITC) found in bone marrow ([2]_ p. 11), these
+suffixes can be used:
+
+======  ============================================
+Suffix  Meaning
+======  ============================================
+(i+)    positive morphological findings for ITC
+(mol+)  positive non-morphological findings for ITC
+======  ============================================
+
+R Group
+-------
+
+G Group
+-------
+
+L Group
+-------
+
+V Group
+-------
+
+Pn Group
+--------
+
+Serum Group
+-----------
+
+Staging
+-------
 
 References
 ==========
