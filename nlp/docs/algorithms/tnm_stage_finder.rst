@@ -88,6 +88,9 @@ and to decode the individual subgroups. A TNM code consists of mandatory
 ``T``, ``N``, and ``M`` groups, as well as optional ``G``, ``L``, ``R``,
 ``PN``, ``S``, and ``V`` groups.
 
+Prefixes
+--------
+
 The set of prefixes used for the groups is found in the next table:
 
 ==============  ===============================================================
@@ -101,6 +104,9 @@ r               recurrent tumor
 rp              recurrence after a disease-free interval, designated at autopsy
 a               classification determined at autopsy
 ==============  ===============================================================
+
+Certainty Factor
+----------------
 
 The ``T``, ``N``, and ``M`` groups can have an optional certainty factor,
 which indicates the degree of confidence in the designation.  This certainty
@@ -116,6 +122,27 @@ C3                evidence from surgical exploration, including biopsy and cytol
 C4                evidence from definitive surgery and pathological examination
 C5                evidence from autopsy
 ================  =================================================================
+
+T Group
+-------
+
+The ``T`` group describes the extent of the primary tumor and has the
+values in the next table:
+
+==============  =====================================================
+T Code          Meaning
+==============  =====================================================
+TX              primary tumor cannot be assessed
+T0              no evidence of primary tumor
+Tis             carcinoma *in situ*
+T1, T2, T3, T4  increasing size and/or local extent of primary tumor
+==============  =====================================================
+
+For multiple tumors, the multiplicity appears in parentheses after
+the T group code, e.g. ``T1(m)`` or ``T1(3)``. Anatomical subsites
+are denoted with suffixes ``a``, ``b``, ``c``, or ``d``, e.g. ``T2a``.
+Recurrence in the area of a primary tumor is denoted with the ``+``
+suffix.
 
 
 
