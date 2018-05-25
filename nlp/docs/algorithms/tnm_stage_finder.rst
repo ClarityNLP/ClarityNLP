@@ -34,9 +34,9 @@ Outputs
 
 A JSON array containing these fields for each code found:
 
-==========================  ==============================================================
+==========================  ===================================================
 Field Name                  Explanation
-==========================  ==============================================================
+==========================  ===================================================
 text                        text of the complete code
 start                       offset of first char in the matching text
 end                         offset of final char in the matching text + 1
@@ -72,11 +72,52 @@ r_locations                 string array indicating location(s) of metastases
 stage_prefix                see prefix table below
 stage_number                integer value of numeric stage
 stage_letter                supplementary staging information
-==========================  ==============================================================
+==========================  ===================================================
+
+All JSON measurement results contain an indentical number of fields. Any fields
+that are not valid for a given measurement will have a value of EMPTY_FIELD and
+should be ignored.
+
 
 
 Algorithm
 =========
+
+Clarity uses a set of regular expressions to recognize TNM codes as a whole
+and to decode the individual subgroups. A TNM code consists of mandatory
+``T``, ``N``, and ``M`` groups, as well as optional ``G``, ``L``, ``R``,
+``PN``, ``S``, and ``V`` groups.
+
+The set of prefixes used for the groups is found in the next table:
+
+==============  ===============================================================
+Prefix Letter   Meaning
+==============  ===============================================================
+c               clinical classification
+p               pathological classification
+yc              clinical classification performed during multimodal therapy
+yp              pathological classification performed during multimodal therapy
+r               recurrent tumor
+rp              recurrence after a disease-free interval, designated at autopsy
+a               classification determined at autopsy
+==============  ===============================================================
+
+The ``T``, ``N``, and ``M`` groups can have an optional certainty factor,
+which indicates the degree of confidence in the designation.  This certainty
+factor was present in the 4th through 7th editions of the TNM guide, but it
+has been removed from the 8th edition [1]_.
+
+================  =================================================================
+Certainty Factor  Meaning
+================  =================================================================
+C1                evidence from standard diagnostic means (inspection, palpitation)
+C2                evidence from special diagnostic means (CT, MRI, ultrasound)
+C3                evidence from surgical exploration, including biopsy and cytology
+C4                evidence from definitive surgery and pathological examination
+C5                evidence from autopsy
+================  =================================================================
+
+
 
 References
 ==========
