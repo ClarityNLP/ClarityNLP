@@ -15,6 +15,8 @@ ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and ot
 3. Clarity has been pre-loaded with documents from the FDA Drug Labels data set, but you can get an idea on how to load more documents [here](http://clarity-nlp.readthedocs.io/en/latest/index.html#document-ingestion).
 
 4. Now we can test some NLPQL. See some sample NLPQL [here](https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql) and learn more about NLPQL [here](http://clarity-nlp.readthedocs.io/en/latest/nlpql.html). Let's try on creating a simple NLPQL to find drug allergies in this text.
+Using Postman, we'll POST the NLPQL below as plain text to [http://localhost:5000/nlpql](http://localhost:5000/nlpql).
+
 <details><summary>Sample NLPQL</summary>
 <p>
 
@@ -92,10 +94,8 @@ define final hasSepsis:
 
 ```
 
-</p>
-</details>
 
-Using Postman, we'll POST the NLPQL above as plain text to [http://localhost:5000/nlpql](http://localhost:5000/nlpql).
+
 
 5. We should receive a response that tells a few things but the most important thing is the link to access results.
 <details><summary>Sample Results</summary>
@@ -121,12 +121,13 @@ Using Postman, we'll POST the NLPQL above as plain text to [http://localhost:500
 }
 ```
 
+</p>
+</details>
+
 6. Now, we should be able to download results using the `main_results_endpoint` as soon as the job is *COMPLETED*.
 We can check if the job is *COMPLETED* via the `status_endpoint`.
 
 
-</p>
-</details>
 
 
 ### Full ClarityNLP Documentation
