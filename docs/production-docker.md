@@ -6,7 +6,7 @@
 1. Install both Docker and Docker-Compose on your machine. Go [here](https://docs.docker.com/install/#server) to install Docker, <br/>
 find your OS and follow instructions. Go [here](https://docs.docker.com/compose/install/) to install Docker Compose.
 
-2. Run `git clone [this-project-url] [folder-name]`
+2. Run `git clone https://github.com/ClarityNLP/ClarityNLP [folder-name]`
 
 3. Initialize submodules `git submodule update --init --recursive`
 

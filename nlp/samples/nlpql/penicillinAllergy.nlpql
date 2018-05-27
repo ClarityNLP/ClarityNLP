@@ -4,7 +4,7 @@ debug;
 phenotype "Drug Allergy" version "1";
 
 /* Phenotype library description */
-description "Sample NLPQL to find drug allergies."
+description "Sample NLPQL to find drug allergies.";
 
 // # Structured Data Model #
 datamodel OMOP version "5.3";
@@ -29,7 +29,7 @@ termset PenicillinTerms: [
 "Amoxicillin",
 "Ampicillin",
 "Dicloxacillin",
-"Nafcillin
+"Nafcillin",
 "Oxacillin",
 "Penicillin G",
 "Penicillin V",
@@ -52,14 +52,12 @@ termset AllergyTerms: [
 
 define isPenicillin:
   Clarity.ProviderAssertion({
-    cohort:PlateletTransfusionPatients,
     termset: [PenicillinTerms],
     documentset: [ProviderNotes]
   });
 
 define hasAllergy:
   Clarity.ProviderAssertion({
-    cohort:PlateletTransfusionPatients,
     termset: [AllergyTerms],
     documentset: [ProviderNotes]
   });

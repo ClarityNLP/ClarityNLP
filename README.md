@@ -1,46 +1,134 @@
-## Docker Compose Clarity NLP Application
+## ClarityNLP
 
-### Clarity Documentation
-[Read the Docs](http://clarity.readthedocs.io/en/latest/)
+ClarityNLP is a clinical NLP platform developed for the purpose of analyzing and aggregating clinical text to extract complex, computed phenotypes. 
+ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, to identify patients and their clinical observations, extracted from text. 
+ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write you own definitions to find the patients and features that are relevant to your project.  
+
+ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and other NLP libraries. We have provided a Docker Compose configuration to integrate all the services ClarityNLP uses, or you can run standalone. To begin exploring ClarityNLP, follow the Quick Start guide below or read the full documentation [here](http://clarity-nlp.readthedocs.io/en/latest/).
+
+### ClarityNLP Quick Start
+
+1. [Install ClarityNLP with Docker](http://clarity-nlp.readthedocs.io/en/latest/local-docker.html)
+
+2. You should now be running all the services ClarityNLP needs. The main NLP service will be running at [http://localhost:5000](http://localhost:5000). You'll need to a tool like [Postman](https://www.getpostman.com/apps) to interact with ClarityNLP.
+
+3. Clarity has been pre-loaded with documents from the FDA Drug Labels data set, but you can get an idea on how to load more documents [here](http://clarity-nlp.readthedocs.io/en/latest/index.html#document-ingestion).
+
+4. Now we can test some NLPQL. See some sample NLPQL [here](https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql) and learn more about NLPQL [here](http://clarity-nlp.readthedocs.io/en/latest/nlpql.html). Let's try on creating a simple NLPQL to find drug allergies in this text.
+<details><summary>Sample NLPQL</summary>
+<p>
+
+```
+debug;
+
+// Phenotype library name
+phenotype "Drug Allergy" version "1";
+
+/* Phenotype library description */
+description "Sample NLPQL to find drug allergies.";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+// The ClarityCore library provides common functions for simplifying NLP pipeline creation
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
 
 
-### Docker Compose (Development) Architecture Diagram
+// #Manual Term sets#
+// simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
+// can add expansion of structured concepts from terminologies as well with OMOPHelpers
 
-![Alt text](/docker-compose.png?raw=true "Docker Compose Dev Diagram")
+documentset ProviderNotes:
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
 
-### Production Deployment
+termset PenicillinTerms: [
+"Amoxicillin",
+"Ampicillin",
+"Dicloxacillin",
+"Nafcillin",
+"Oxacillin",
+"Penicillin G",
+"Penicillin V",
+"Piperacillin",
+"Ticarcillin"];
 
-1. Install both Docker and Docker-Compose on your machine. Go [here](https://docs.docker.com/install/#server) to install Docker, <br/>
-find your OS and follow instructions. Go [here](https://docs.docker.com/compose/install/) to install Docker Compose.
+termset AllergyTerms: [
+"allergy",
+"Skin rash",
+"Hives",
+"Itching",
+"Fever",
+"Swelling",
+"Shortness of breath",
+"Wheezing",
+"Runny nose",
+"Itchy eyes",
+"watery eyes",
+"Anaphylaxis"];
 
-2. Run `git clone [this-project-url] [folder-name]`
+define isPenicillin:
+  Clarity.ProviderAssertion({
+    termset: [PenicillinTerms],
+    documentset: [ProviderNotes]
+  });
 
-3. Initialize submodules `git submodule update --init --recursive`
+define hasAllergy:
+  Clarity.ProviderAssertion({
+    termset: [AllergyTerms],
+    documentset: [ProviderNotes]
+  });
 
-4. Add .env file, use .env.example as a start:
-```cd [folder-name]
-   touch .env
-   cat .env.example >> .env
+
+//CDS logical Context (Patient, Document)
+context Patient;
+
+define final hasSepsis:
+  where isPenicillin AND hasAllergy;
+
 ```
 
-5. Build images and run containers `docker-compose -f docker-compose.prod.yml up --build -d`
+</p>
+</details>
 
-### Local Deployment
+Using Postman, we'll POST the NLPQL above as plain text to [http://localhost:5000/nlpql](http://localhost:5000/nlpql).
 
-1. Install [Docker for Mac](https://www.docker.com/docker-mac) or [Docker for Windows](https://www.docker.com/docker-windows)
+5. We should receive a response that tells a few things but the most important thing is the link to access results.
+<details><summary>Sample Results</summary>
+<p>
 
-2. Run `git clone [this-project-url] [folder-name]`
-
-3. Initialize submodules `git submodule update --init --recursive`
-
-4. Add .env file, use .env.example as a start:
-```cd [folder-name]
-   touch .env
-   cat .env.example >> .env
+```
+{
+    "job_id": "1",
+    "phenotype_id": "1",
+    "phenotype_config": "http://localhost:5000/phenotype_id/1",
+    "pipeline_ids": [
+        1,
+        2
+    ],
+    "pipeline_configs": [
+        "http://localhost:5000/pipeline_id/1",
+        "http://localhost:5000/pipeline_id/2"
+    ],
+    "status_endpoint": "http://localhost:5000/status/1",
+    "luigi_task_monitoring": "http://localhost:8082/static/visualiser/index.html#search__search=job=1",
+    "intermediate_results_endpoint": "http://localhost:5000/job_results/1/phenotype_intermediate",
+    "main_results_endpoint": "http://localhost:5000/job_results/1/phenotype"
+}
 ```
 
-5. Build images and run containers `docker-compose up --build`
+6. Now, we should be able to download results using the `main_results_endpoint` as soon as the job is *COMPLETED*.
+We can check if the job is *COMPLETED* via the `status_endpoint`.
 
-Now you can run `docker ps` to confirm the project's containers are running.
+
+</p>
+</details>
 
 
+### Full ClarityNLP Documentation
+You can read the full ClarityNLP documentation here: 
+[Read the Docs](http://clarity-nlp.readthedocs.io/en/latest/).

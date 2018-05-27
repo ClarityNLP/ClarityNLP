@@ -89,9 +89,9 @@ pygments_style = 'sphinx'
 html_theme = "classic"
 html_theme_options = {
      "footerbgcolor": '#1c3b5e',
-     "sidebarbgcolor": '#eeeeee',
-    'sidebarlinkcolor': '#004f9f',
-    'sidebartextcolor': '#07284f',
+     "sidebarbgcolor": '#07284f',
+    'sidebarlinkcolor': '#ccc',
+    'sidebartextcolor': '#eeeeee',
      'linkcolor': '#004f9f',
      'relbarbgcolor': '#d1d3d5',
     'relbarlinkcolor': '#00254c',

@@ -1,5 +1,0 @@
-sphinx==1.7.4
-sphinx-autobuild==0.7.1
-recommonmark==0.4.0
-commonmark==0.5.4
-sphinxjp.themes.dotted==0.1.2

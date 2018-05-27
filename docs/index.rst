@@ -89,7 +89,7 @@ Everything else...
 Sample files
 ------------
 See `samples
-<https://github.com/ClarityNLP/health-nlp/tree/master/samples/>`_.
+<https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/>`_.
 
 License
 -------
