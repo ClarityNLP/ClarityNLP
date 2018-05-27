@@ -93,7 +93,8 @@ define final hasSepsis:
   where isPenicillin AND hasAllergy;
 
 ```
-
+</p>
+</details>
 
 
 
