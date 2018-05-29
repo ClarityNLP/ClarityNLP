@@ -23,7 +23,7 @@ variants are acceptable forms of English expression:
 The *value-follows-query* form is dominant in the text of medical records.
 To constrain the scope of the problem and to reduce the chances of error:
 
-    **Clarity assumes that the value FOLLOWS the query terms.**
+    **ClarityNLP assumes that the value FOLLOWS the query terms.**
 
 This assumption does **not** imply anything about the distance between the
 query and the value. Sometimes the value immediately follows the term, as
@@ -36,13 +36,13 @@ query term and value:
 
     ``The temperature recorded for the patient at the exam was 98.6F.``
 
-Clarity is able to understand these situations and correctly associate the
+ClarityNLP is able to understand these situations and correctly associate the
 value 98.6 with "temperature".
 
 Value Types
 -----------
 
-Clarity's value extractor can recognize several different value types:
+ClarityNLP's value extractor can recognize several different value types:
 
 =================================  ===========================
 Value Type                         Example
@@ -62,7 +62,7 @@ the digit before the decimal point is optional.
 Value Relationships
 -------------------
 
-Clarity can associate queries and values expressed in many different formats:
+ClarityNLP can associate queries and values expressed in many different formats:
 
 =================================  ==========================================================
 Format                             Example
@@ -82,7 +82,7 @@ In general, the amount of whitespace between query and value is arbitrary.
 Result Filters
 --------------
 
-Clarity filters numerical results by user-specified min and max values.
+ClarityNLP filters numerical results by user-specified min and max values.
 Any results that fall outside of the interval ``[min, max]`` are discarded.
 Any numeric value is accepted if these limits are not specified.
 
@@ -120,7 +120,7 @@ The entry point to the value extractor is the ``run`` function:
            is_case_sensitive=False,  # set to True to preserve case
            is_denom_only=False)      # set to True to return denoms
 
-If the ``str_minval`` and ``str_maxval`` arguments are omitted, Clarity accepts
+If the ``str_minval`` and ``str_maxval`` arguments are omitted, ClarityNLP accepts
 any numeric value that it finds for a given query. The other arguments should be
 self-explanatory.
 
@@ -172,7 +172,7 @@ extraction operations.
 In the preprocessing stage, the term list is split on commas, whitespace is
 removed, and the terms and sentence are converted to lowercase for
 case-insensitive matches. The input string is scanned for size measurements
-and date expressions; any that are found are erased, since Clarity provides
+and date expressions; any that are found are erased, since ClarityNLP provides
 other modules for extracting these. A few other string cleanup operations are
 also performed in the preprocessing stage.
 

@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'Clarity NLP'
+project = u'ClarityNLP'
 copyright = u'2018, Georgia Tech Research Institute'
 author = u'Georgia Tech Research Institute'
 
@@ -157,7 +157,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own sclass]).
 latex_documents = [
-    (master_doc, 'ClarityNLP.tex', u'Clarity NLP Documentation',
+    (master_doc, 'ClarityNLP.tex', u'ClarityNLP Documentation',
      u'Georgia Tech Research Institute', 'manual'),
 ]
 
@@ -167,7 +167,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'claritynlp', u'Clarity NLP Documentation',
+    (master_doc, 'claritynlp', u'ClarityNLP NLP Documentation',
      [author], 1)
 ]
 
@@ -178,7 +178,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'ClarityNLP', u'Clarity NLP Documentation',
+    (master_doc, 'ClarityNLP', u'ClarityNLP Documentation',
      author, 'ClarityNLP', 'One line description of project.',
      'Miscellaneous'),
 ]

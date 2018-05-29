@@ -102,7 +102,7 @@ import json
 import optparse
 from collections import namedtuple
 
-# imports from clarity core
+# imports from ClarityNLP core
 from nlp.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
 from nlp.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
 

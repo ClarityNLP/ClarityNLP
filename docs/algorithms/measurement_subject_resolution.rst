@@ -22,7 +22,7 @@ sentence. This is not always the case, as the next sentence illustrates:
 Here the subject of the sentence is ``liver``, but the subject of the
 ``1.2 cm`` measurement is ``cysts``.
 
-In this document we describe how Clarity analyzes sentences and attempts to
+In this document we describe how ClarityNLP analyzes sentences and attempts to
 resolve subjects and measurements.
 
 Source Code
@@ -101,7 +101,7 @@ ignored.
 Dependencies
 ------------
 
-The measurement subject finder has a dependency on Clarity's size measurement
+The measurement subject finder has a dependency on ClarityNLP's size measurement
 finder module, whose documentation can be found here:
 :ref:`size-measurement-finder`.
 
@@ -137,7 +137,7 @@ Several examples below illustrate this substitution process.
 The spaCy Dependency Parse
 --------------------------
 
-The Clarity subject finder module uses spaCy to generate a *dependency parse*
+The ClarityNLP subject finder module uses spaCy to generate a *dependency parse*
 of each input sentence. A dependency parse provides part of speech tags
 for each word as well as dependency information encoded in tree
 form. To illustrate, here is a diagram of a dependency parse of the sentence
@@ -176,7 +176,7 @@ two arrows labeled ``prep`` (prepositional modifier) and ``pobj``
 ``her``.
 
 Thus a dependency parse allows one to determine the nature of the
-relationships between the various components of a sentence. Clarity uses the
+relationships between the various components of a sentence. ClarityNLP uses the
 dependency parse information, along with a set of custom rules and heuristics,
 to determine the subjects of each size measurement.
 
@@ -207,7 +207,7 @@ tagged a verb, and the nominal subject of the sentence is ``car``.
 
 One can imagine the extent to which obscure medical jargon could completely
 confuse spaCy. In the absence of a version of spaCy trained on medical texts,
-Clarity attempts to overcome such problems by replacing medical ngrams with
+ClarityNLP attempts to overcome such problems by replacing medical ngrams with
 common English nouns. The resulting sentence **does not** have to "make sense".
 All it needs to do is help spaCy produce the correct dependency parse of
 the sentence and correctly resolve the relationships between the various
@@ -218,9 +218,9 @@ than without them.
 .. _special case tokenization rules: https://spacy.io/usage/linguistic-features#special-cases
 
 To further help spaCy's decision processes, spaCy provides a mechanism for
-introducing `special case tokenization rules`_. Clarity takes advantage of
+introducing `special case tokenization rules`_. ClarityNLP takes advantage of
 this by introducing four special case rules for ``measure`` and related verbs.
-The next code block shows how Clarity accomplishes this:
+The next code block shows how ClarityNLP accomplishes this:
 
 .. code-block:: python
     :linenos:
@@ -254,7 +254,7 @@ for the same part of speech tag.
 These rules guarantee that spaCy will interpret the words ``measures``,
 ``measure``, ``measured``, and ``measuring`` as verbs.
 
-The words that Clarity substitutes for medical ngrams are:
+The words that ClarityNLP substitutes for medical ngrams are:
 
 |    ``car, city, year, news, math, hall, poet, fact,``
 |    ``idea, oven, poem, dirt, tale, world, hotel``
@@ -275,7 +275,7 @@ The most obvious problem here is that the word ``aneurysm``, which is a noun,
 has been tagged with ``ADP``, indicating either a conjunction or preposition.
 The adjective ``fusiform`` was also not deduced to be a modifier of ``aneurysm``.
 
-Since the ngram ``abdominal aortic aneurysm`` is in the Clarity ngram list,
+Since the ngram ``abdominal aortic aneurysm`` is in the ClarityNLP ngram list,
 substituting ``car`` for ``abdominal aortic aneurysm`` produces this
 sentence:
 
@@ -298,7 +298,7 @@ determined.
 Algorithm
 =========
 
-Clarity uses several stages of processing in its attempt to resolve the
+ClarityNLP uses several stages of processing in its attempt to resolve the
 subject of each size measurement. These processing stages are:
 
 * Sentence cleanup and ngram substitution
@@ -312,7 +312,7 @@ Sentence Cleanup and NGram Substitution
 
 The cleanup stage attempts to simplify the sentence as
 much as possible. A shorter sentence is more likely to be parsed correctly
-than a needlessly verbose sentence. Thus Clarity removes all extraneous
+than a needlessly verbose sentence. Thus ClarityNLP removes all extraneous
 text from the sentence that has no bearing on the measurement-subject
 resolution problem. Thse removals include:
 
@@ -367,19 +367,19 @@ After M-replacement, these sentences become:
 A regular expression designed to find a capital M preceded by a measurement
 verb could easily identify all of these sentences as belonging to the same
 underlying template. Custom rules for each matching sentence could be applied
-to resolve the object having measurement M. Clarity uses this approach for
+to resolve the object having measurement M. ClarityNLP uses this approach for
 this template and the others described below.
 
 
 Sentence Template Determination
 -------------------------------
 
-Clarity uses a set of sentence patterns or templates to help it resolve
+ClarityNLP uses a set of sentence patterns or templates to help it resolve
 measurements and their subjects. These templates were determined by examining
 a large number of electronic health records and noting common forms of
 expression. A set of regular expressions was developed for classifying
 sentences into the various patterns. This set of regexes and sentence
-patterns will likely expand as Clarity evolves.
+patterns will likely expand as ClarityNLP evolves.
 
 For the discussion below, it is helpful to define a few items, using a
 notation similar to that for regular expressions:
@@ -400,7 +400,7 @@ DET                  determiners: "a", "an", "the"
 TERMINATOR           "a", "an", or MEAS
 ===================  =======================================================
 
-The templates used by Clarity are:
+The templates used by ClarityNLP are:
 
 **1. Subject Measures M**
 
@@ -440,7 +440,7 @@ Greedy and nongreedy patterns:
 **4. Ranging in Size**
  
 The phrase "ranging in size" occurs frequently in diagnostic medical reports.
-Clarity substitutes the verb "measuring" for
+ClarityNLP substitutes the verb "measuring" for
 "ranging in size" and then applies the *Subject Measures M* template to
 the sentence. An example:
 
@@ -454,7 +454,7 @@ different dates. For instance:
 | "The lesion currently measures 1.3 cm and previously measured 1.2 cm."
 | "A left adrenal nodule measures 1.2 cm as compared to 1.0 cm previously."
 
-Clarity uses a set of seven regexes in its attempts to find such sentences.
+ClarityNLP uses a set of seven regexes in its attempts to find such sentences.
 The first regex is used to match the first measurement of the pair, and the
 others are used to match the second measurement.
 
@@ -471,7 +471,7 @@ Pattern:
 
 | DET || WORDS+ | MEAS || Q* || M || WORD* || DET || M || WORDS+
    
-Clarity searches for measurement subjects in each WORDS+ group captured by the
+ClarityNLP searches for measurement subjects in each WORDS+ group captured by the
 associated regex.
 
 **7. M and M**
@@ -502,12 +502,12 @@ and distances relative to the carina. An example sentence:
 Template Matching
 ^^^^^^^^^^^^^^^^^
 
-Clarity counts the number of M's in the sentence after the cleanup phase and
+ClarityNLP counts the number of M's in the sentence after the cleanup phase and
 attempts template matching on fragments containing either one or two M's.
 Sentences or fragments matching a template are sent to the next stage of
 processing, dependency parse analysis, described below. If no templates match,
-Clarity attempts a dependency parse analysis without having the benefit of
-knowing the sentence structure via a template match. Clarity will attempt
+ClarityNLP attempts a dependency parse analysis without having the benefit of
+knowing the sentence structure via a template match. ClarityNLP will attempt
 measurement-subject resolution on sentences containing as many as three
 measurements.
 
@@ -515,13 +515,13 @@ measurements.
 Dependency Parse Analysis
 -------------------------
 
-After the template matching phase completes, Clarity uses spaCy to generate
+After the template matching phase completes, ClarityNLP uses spaCy to generate
 a dependency parse of the sentence or fragment that matched the template.
-Clarity uses the dependency parse information and a set of custom rules to
+ClarityNLP uses the dependency parse information and a set of custom rules to
 navigate the parse tree looking for the measurement subject. This is typically
 the noun modified by the measurement itself. For simple sentences this noun is
 relatively easy to find, since it is often the subject of the sentence. For
-more complex sentences, Clarity must navigate the (sometimes incorrect) parse
+more complex sentences, ClarityNLP must navigate the (sometimes incorrect) parse
 tree using a set of heuristics, custom rules, and corrective actions in an
 attempt to find the subject. The actual algorithm itself is complex and
 involves handling of many specal cases, many of which were developed to
@@ -532,24 +532,24 @@ function ``get_meas_subject`` in the file ``nlp/finder/subject_finder.py``.
 Finding the Starting Token
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Clarity begins its examination of the parse tree by searching for the token
+ClarityNLP begins its examination of the parse tree by searching for the token
 with text "M" (which has replaced the measurement(s)). If this token is not
 its own parent, meaning that it is a child node of another token, Clarity
 starts its processing with the parent of the M node. If the M node *is* its
-own parent, Clarity looks for the verb token nearest the M token as its
-starting point. If a verb cannot be found, Clarity looks for a dependency of
+own parent, ClarityNLP looks for the verb token nearest the M token as its
+starting point. If a verb cannot be found, ClarityNLP looks for a dependency of
 ``nsubj`` or ``compound`` and takes whichever it can find. If none of these
-can be found, Clarity gives up on finding a starting token and returns an
+can be found, ClarityNLP gives up on finding a starting token and returns an
 empty subject.
 
 Navigating the Parse Tree
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After finding a starting token, Clarity then begins to navigate the parse
+After finding a starting token, ClarityNLP then begins to navigate the parse
 tree, searching for a measurement subject. Both the part of speech tag
-and the dependency relationship contribute to Clarity's decision at each node.
+and the dependency relationship contribute to ClarityNLP's decision at each node.
 
-The first determination Clarity makes is whether it has arrived at the root
+The first determination ClarityNLP makes is whether it has arrived at the root
 node or not. If it happens to be at the root node, it can go no further in
 the tree, so it looks for a measurement subject (noun) amongst the children
 of the root node, if any.
@@ -561,7 +561,7 @@ tag was probably incorrectly set to VERB instead of NOUN. The token is saved
 and used as a candidate subject. If the verb is a measurement verb, the parent
 token is selected as a candidate subject.
 
-If a noun is encountered, Clarity's decision depends on the dependency label
+If a noun is encountered, ClarityNLP's decision depends on the dependency label
 for the token. Some dependency relationships are ignorable, which means that
 the parent node linked to a child with an ignorable dependency cannot be the
 measurement subject. These ignorable dependency relationships are:
@@ -579,9 +579,9 @@ prep        preposition
 =========== ==========================
 
 Any noun token linked to its parent via an ignorable dependency is skipped, and
-Clarity moves up one level in the tree to the parent node.
+ClarityNLP moves up one level in the tree to the parent node.
 
-Clarity applies several other empirically determined rules for handling special
+ClarityNLP applies several other empirically determined rules for handling special
 cases, such as when it encounters the preposition "with".  Normally
 prepositions are ignored during tree navigation by continuing on to their
 parent node. The word "with" deserves special handling, because sometimes it
@@ -604,7 +604,7 @@ In the second example, the preposition "with" has an object that can be
 ignored. The subject of the 2 cm measurement, "mass", is not part of the
 prepositional phrase associated with the word "with".
 
-Clarity is not always able to resolve these two usages of "with" in all
+ClarityNLP is not always able to resolve these two usages of "with" in all
 instances. So whenever it encounters the preposition "with", it saves the
 object of that preposition as a candidate measurement subject and continues
 navigating the tree.
@@ -614,7 +614,7 @@ Subject Resolution and Location Determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The preceding phase of processing results in a list of candidate subjects.
-If the list is empty, Clarity was unable to find a subject. If the list
+If the list is empty, ClarityNLP was unable to find a subject. If the list
 is nonempty, any duplicates are removed. If only one subject remains it
 is chosen as the subject.
 
@@ -622,10 +622,10 @@ If multiple candidate subjects remain, the noun chunks obtained from spaCy's
 analysis of the sentence helps to select the best candidate. The chunks
 containing each candidate subject are found, and the distance (in words) from
 the measurement verb (if any) and the associated measurement are computed.
-Clarity then chooses the candidate that is either within the same noun chunk as
+ClarityNLP then chooses the candidate that is either within the same noun chunk as
 the measurement, or which is the closest candidate to that particular chunk.
 
-Clarity also attempts to find the anatomical location for each measurement
+ClarityNLP also attempts to find the anatomical location for each measurement
 subject. To do so, it uses information from the template match to identify
 the most likely sentence fragment that could contain the location. A set of
 location-finding regexes then attempts to match the fragment and identify
@@ -635,7 +635,7 @@ extraneous words. Any remaining text then becomes the location for the
 measurement.
 
 If location matching fails for all sentence fragments, or if the sentence
-failed to match a template altogether, Clarity makes one final attempt to
+failed to match a template altogether, ClarityNLP makes one final attempt to
 determine a location on the sentence as a whole, using the location-finding
 regexes and the process described above.
 
@@ -644,7 +644,7 @@ Ngram replacement and JSON conversion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The final stage of processing adds additional modifiers to the chosen subject.
-Clarity performs a recursive depth-first search through the parse tree to
+ClarityNLP performs a recursive depth-first search through the parse tree to
 capture all modifiers of the subject, any modifiers of the modifiers, etc.
 A depth-first search is needed to keep the modifiers in the proper word order
 as they are discovered.

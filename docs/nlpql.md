@@ -13,17 +13,17 @@ Prior computable phenotyping efforts have been focused on _structured data_ (eg 
 No. The ClarityNLP platform can ingest unstructured data from any format and run NLPQL.
 
 ### What NLP functions can I use in NLPQL Phenotypes?
-See the Clarity Module documentation section for built-in NLP functions and how to incorporate your own NLP modules.
+See the ClarityNLP Module documentation section for built-in NLP functions and how to incorporate your own NLP modules.
 
 ## Basic Syntax
 ### Basis in CQL
 ### Basic Rules
 ### Naming and Aliasing Conventions
 
-## Clarity Document Sets
+## ClarityNLP Document Sets
 ### createReportTagList
 
-## Clarity Data Entities
+## ClarityNLP Data Entities
 ### TermFinder
 ### ProviderAssertion
 ### ValueExtraction

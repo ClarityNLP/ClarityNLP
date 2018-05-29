@@ -10,7 +10,7 @@ assigned an alphanumeric code (the TNM code) that describes the extent of
 the tumor, lymph node involvement, whether it has metastasized, and several
 other descriptive factors. The code also includes staging information.
 ClarityNLP can locate these codes in medical reports and decode them. This
-document describes the TNM system and the information that Clarity provides
+document describes the TNM system and the information that ClarityNLP provides
 on decode.
 
 Information on the TNM system was taken from the reference document [1]_ and
@@ -83,7 +83,7 @@ should be ignored.
 Algorithm
 =========
 
-Clarity uses a set of regular expressions to recognize TNM codes as a whole
+ClarityNLP uses a set of regular expressions to recognize TNM codes as a whole
 and to decode the individual subgroups. A TNM code consists of mandatory
 ``T``, ``N``, and ``M`` groups, as well as optional ``G``, ``L``, ``R``,
 ``PN``, ``S``, and ``V`` groups.

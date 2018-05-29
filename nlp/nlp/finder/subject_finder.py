@@ -98,7 +98,7 @@ import list in the importing module:
         import spacy
         import subject_finder as sf
 
-Before processing any sentences, call init with the path to the Clarity 
+Before processing any sentences, call init with the path to the ClarityNLP
 ngram file:
 
         sf.init('path/to/clarity_ngrams.txt')

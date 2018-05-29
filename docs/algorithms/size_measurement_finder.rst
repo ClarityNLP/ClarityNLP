@@ -23,7 +23,7 @@ Example                                Meaning
 1.5cm craniocaudal x 2.2cm transverse  measurement with views
 =====================================  =======================
 
-Clarity scans sentences for size measurements, extracts the numeric values
+ClarityNLP scans sentences for size measurements, extracts the numeric values
 for each dimension, normalizes each to a common set of units (performing unit
 conversions if necessary), and provides output in JSON format to other pipeline
 components.
@@ -75,7 +75,7 @@ All string operations of the size measurement finder are case-insensitive.
 Algorithm
 =========
 
-Clarity uses a set of regular expressions to recognize size measurements. It
+ClarityNLP uses a set of regular expressions to recognize size measurements. It
 scans a sentence with each regex, keeps track of any matches, and finds the
 longest match among the matching set. The longest matching text string is then
 tokenized, values are extracted, units are converted, and a python namedtuple
@@ -86,7 +86,7 @@ namedtuples is converted to JSON and returned to the caller.
 Measurement Formats
 -------------------
 
-Clarity is able to recognize size measurements in a number of different formats.
+ClarityNLP is able to recognize size measurements in a number of different formats.
 Using notation similar to that of [1]_, we define the following quantities:
 
 =========  ===============================================================================
@@ -100,7 +100,7 @@ vol        Dimensional modifier, either 'square', 'cubic', 'sq', 'sq.', 'cu', 'c
 view       View specification, any word will match
 =========  ===============================================================================
 
-With these definitions, the measurement formats that Clarity recognizes are:
+With these definitions, the measurement formats that ClarityNLP recognizes are:
 
 ===================================  ======================================================
 Regex Form                           Examples
@@ -118,7 +118,7 @@ x cm by y cm by z cm                 3 mm x 5 mm x 7 mm
 x cm view by y cm view by z cm view  3 cm craniocaudal by 5cm transverse by 7 cm anterior
 ===================================  ======================================================
 
-Clarity can also find size measurements with nonuniform spacing between the
+ClarityNLP can also find size measurements with nonuniform spacing between the
 various components, as several of the examples above demonstrate. Newlines can
 also be present within a measurement. Floating point numbers can include a
 space either before or after the decimal point, such as ``1. 5 cm``. Inconsistent
@@ -137,7 +137,7 @@ centimeters    cm, centimeter, centimeters
 inches         in, inch, inches
 ============= =============================
 
-Clarity tries to distinguish uses of the word 'in' as a preposition vs.
+ClarityNLP tries to distinguish uses of the word 'in' as a preposition vs.
 its use as a unit of length. **It cannot correctly identify all such instances.**
 Hence the word 'in' preceded by a numeric value may sometimes generate false
 positive results.

@@ -9,7 +9,7 @@ partition the documents into sections. Sections consist of groups of
 sentences sharing a common purpose such as "History of Present Illness",
 "Medications", or "Discharge Instructions". Effective section tagging 
 can reduce the amount of text processed for NLP tasks. This
-document describes the Clarity section tagger and how it works.
+document describes the ClarityNLP section tagger and how it works.
 
 The starting point for the section tagger is the open-source *SecTag*
 database of J. Denny and colleagues [1]_.
@@ -81,7 +81,7 @@ The section tagger operates by scanning the report text and recognizing
 synonyms for an underlying set of concepts. The synonyms recognized in the text
 are mapped to their associated concepts and the document sections are tagged
 with the concepts. The SecTag database provides an initial set of concepts and
-synonyms which Clarity expands upon.
+synonyms which ClarityNLP expands upon.
 
 For example, concept 158 "history_present_illness" has synonyms
 "indication", "clinical indication", and "clinical presentation", among
@@ -115,7 +115,7 @@ SecTag Errors
 There are a few errors in the SecTag database. Two concepts are misspelled.
 These are concept 127, "principal_diagnosis", misspelled as
 "principle_diagnosis", and concept 695, "level_of_consciousness", misspelled as
-"level_of_cousciousness". Clarity's db extraction code corrects both of these
+"level_of_cousciousness". ClarityNLP's db extraction code corrects both of these
 misspellings.
 
 Concept 308, "sleep_habits", has as concept text "sleep_habits,_sleep". The
@@ -143,7 +143,7 @@ identifiers are all less than 500 for concepts and 6000 for synonyms. The new
 concepts added by the extraction program begin numbering at 500 and the new
 synonyms at 6000.
 
-The concepts added by Clarity are:
+The concepts added by ClarityNLP are:
 
 ================================ ===========================
 Concept Name                     Treecode

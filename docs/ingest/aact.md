@@ -1,4 +1,4 @@
-### Migrating data from AACT Database to Clarity's Solr Instance
+### Migrating data from AACT Database to ClarityNLP's Solr Instance
 
 **Parameters:** None
 

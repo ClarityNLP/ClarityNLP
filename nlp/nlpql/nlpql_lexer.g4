@@ -26,7 +26,7 @@ CONTEXT: 'context';
 MIN_VALUE: 'minimum_value';
 MAX_VALUE: 'maximum_value';
 
-// Custom Clarity Features
+// Custom ClarityNLP Features
 OMOP: 'OMOP';
 CLARITY_CORE: 'ClarityCore';
 OHDSI_HELPERS: 'OHDSIHelpers';

@@ -159,7 +159,7 @@ def query_phenotype(phenotype_id: int, connection_string: str):
 def get_sample_phenotype():
     ptype = PhenotypeDefine('Sepsis', 'phenotype', version='1')
     using_omop = PhenotypeDefine('OMOP', 'datamodel', version='5.3')
-    clarity_core = PhenotypeDefine('ClarityCore', 'include', version='1.0', alias='Clarity')
+    clarity_core = PhenotypeDefine('ClarityCore', 'include', version='1.0', alias='ClarityNLP')
     ohdsi_helpers = PhenotypeDefine('OHDSIHelpers', 'include', version='1.0', alias='OHDSI')
     omop = PhenotypeDefine('OMOP', 'codesystem', values=['http://omop.org'])
     isbt = PhenotypeDefine('ISBT', 'codesystem', values=['https://www.iccbba.org'])
@@ -187,7 +187,7 @@ def get_sample_phenotype():
                                              arguments=['RBC New Exposures'])
 
     onVentilator = PhenotypeEntity('onVentilator', 'define',
-                                   library='Clarity',
+                                   library='ClarityNLP',
                                    funct='TermFinder',
                                    named_arguments={
                                        "termsets": ['Ventilator'],
@@ -195,7 +195,7 @@ def get_sample_phenotype():
                                    })
 
     hasSepsis = PhenotypeEntity('hasSepsis', 'define',
-                                library='Clarity',
+                                library='ClarityNLP',
                                 funct='ProviderAssertion',
                                 named_arguments={
                                     "termsets": ['Sepsis'],

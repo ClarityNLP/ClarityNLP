@@ -316,7 +316,7 @@ def handle_data_entity(context, phenotype: PhenotypeModel, define_name, final):
     pe = PhenotypeEntity(define_name, 'define', final=final)
     call = get_method_call(context.getChild(0))
     # hasSepsis = PhenotypeEntity('hasSepsis', 'define',
-    #                             library='Clarity',
+    #                             library='ClarityNLP',
     #                             funct='ProviderAssertion',
     #                             named_arguments={
     #                                 "termsets": ['Sepsis'],
