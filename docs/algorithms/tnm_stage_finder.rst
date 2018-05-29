@@ -11,7 +11,7 @@ the tumor, lymph node involvement, whether it has metastasized, and several
 other descriptive factors. The code also includes staging information.
 ClarityNLP can locate these codes in medical reports and decode them. This
 document describes the TNM system and the information that ClarityNLP provides
-on decode.
+with each decode.
 
 Information on the TNM system was taken from the reference document [1]_ and
 the explanatory supplement [2]_. Information on serum marker values was
@@ -85,8 +85,8 @@ Algorithm
 
 ClarityNLP uses a set of regular expressions to recognize TNM codes as a whole
 and to decode the individual subgroups. A TNM code consists of mandatory
-``T``, ``N``, and ``M`` groups, as well as optional ``G``, ``L``, ``R``,
-``PN``, ``S``, and ``V`` groups.
+T, N, and M groups, as well as optional G, L, R, Pn, S, and V groups.
+A staging designation may also be present.
 
 Prefixes
 --------
@@ -108,7 +108,7 @@ a               classification determined at autopsy
 Certainty Factor
 ----------------
 
-The ``T``, ``N``, and ``M`` groups can have an optional certainty factor,
+The T, N, and M groups can have an optional certainty factor,
 which indicates the degree of confidence in the designation.  This certainty
 factor was present in the 4th through 7th editions of the TNM guide, but it
 has been removed from the 8th edition [1]_.
@@ -126,8 +126,7 @@ C5                evidence from autopsy
 T Group
 -------
 
-The ``T`` group describes the extent of the primary tumor and has the
-values in the next table:
+The T group describes the extent of the primary tumor:
 
 ==============  =====================================================
 T Code          Meaning
@@ -147,8 +146,7 @@ suffix.
 N Group
 -------
 
-The ``N`` group describes the extent of regional lymph node involvement and
-has the values in the next table:
+The N group describes the extent of regional lymph node involvement:
 
 ==============  =====================================================
 N Code          Meaning
@@ -159,13 +157,13 @@ N1, N2, N3      increasing involvement of regional lymph nodes
 ==============  =====================================================
 
 Anatomical subsites are denoted with suffixes ``a``, ``b``, ``c``, or
-``d`, e.g. ``N1b``. With only micrometastasis (smaller than 0.2 cm),
+``d``, e.g. ``N1b``. With only micrometastasis (smaller than 0.2 cm),
 the suffix ``(mi)`` should be used, e.g. ``pN1(mi)``.
 
 Suffix ``(sn)`` indicates sentinal lymph node involvement.
 
 Examination for isolated tumor cells (ITC) is indicated with the suffixes
-in parentheses (e.g. ``pN0(i-)``) using values in the next table:
+in parentheses (e.g. ``pN0(i-)``):
 
 ==============  =====================================================
 ITC Suffix      Meaning
@@ -180,8 +178,7 @@ ITC Suffix      Meaning
                 positive non-morphological findings for ITC
 ==============  =====================================================
 
-Examination for ITC in sentinel lymph nodes uses the suffixes in the
-next table:
+Examination for ITC in sentinel lymph nodes uses these suffixes:
 
 ==============  =====================================================
 ITC(sn) Suffix  Meaning
@@ -199,14 +196,13 @@ ITC(sn) Suffix  Meaning
 The TNM supplement [2]_ chapter 1, p. 8 recommends adding the number
 of involved and examined regional lymph nodes to the ``pN``
 classification (pathological classification), e.g. ``pN1b(2/11)``.
-This notation means that 11 regional lymph nodes were examined and
+This example says that 11 regional lymph nodes were examined and
 two were found to be involved.
 
 M Group
 -------
 
-The ``M`` group describes the extent of distant metastasis and has the values
-in the next table:
+The M group describes the extent of distant metastasis:
 
 ==============  ==========================================================
 M Code          Meaning
@@ -257,23 +253,109 @@ Suffix  Meaning
 R Group
 -------
 
+The R group describes the extent of residual metastases:
+
+============= ===========================================================
+R Code        Meaning
+============= ===========================================================
+RX            presence of residual tumor cannot be assessed
+R0 (location) residual tumor cannot be detected by any diagnostic means
+R1 (location) microscopic residual tumor at indicated location
+R2 (location) macroscopic residual tumor at indicated location
+============= ===========================================================
+
+The TNM supplement ([2]_, p. 14) recommends annotating R with the location in
+parentheses, e.g. ``R1 (liver)``. There can also be multiple R designations
+if residual tumors exist in more than one location.
+
+The presence of noninvasive carcinoma at the resection margin should be
+indicated by the suffix ``(is)`` (see [2]_, p. 15).
+
+The suffix ``(cy+)`` for R1 is valid under certain conditions ([2]_, p. 16).
+
 G Group
 -------
+
+The G group discribes the histopathological grading score and has these
+values:
+
+====== =============================================
+G Code Meaning
+====== =============================================
+GX     grade of differentiation cannot be assessed
+G1     well differentiated
+G2     moderately differentiated
+G3     poorly differentiated
+G4     undifferentiated
+====== =============================================
+
+| ``G1`` and ``G2`` may be grouped together as ``G1-2`` ([2]_, p. 23).
+| ``G3`` and ``G4`` may be grouped together as ``G3-4`` ([2]_, p. 23).
 
 L Group
 -------
 
+The L group indicates whether lymphatic invasion has occurred:
+
+
+====== ======================================
+L Code Meaning
+====== ======================================
+LX     lymphatic invasion cannot be assessed
+L0     no lymphatic invasion
+L1     lymphatic invasion
+====== ======================================
+
 V Group
 -------
+
+The V group indicates whether venous invasion has occurred:
+
+====== ======================================
+V Code Meaning
+====== ======================================
+VX     venous invasion cannot be assessed
+V0     no venous invasion
+V1     microscopic venous invasion
+V2     macroscopic venous invasion
+====== ======================================
 
 Pn Group
 --------
 
+The Pn group indicates whether perineural invasion has occurred:
+
+======= ======================================
+Pn Code Meaning
+======= ======================================
+PnX     perineural invasion cannot be assessed
+Pn0     no perinerual invasion
+Pn1     perineural invasion
+======= ======================================
+
 Serum Group
 -----------
 
+The S group indicates the status of serum tumor markers:
+
+====== ======================================
+S Code Meaning
+====== ======================================
+SX     marker studies not available or not performed
+S0     marker study levels within normal limits
+S1     markers are slightly raised
+S2     markers are moderately raised
+S3     markers are very high
+====== ======================================
+
 Staging
 -------
+
+The staging value indicates the severity of the tumor. A staging assignment
+depends on the tumor type and is indicated either with digits or roman
+numerals, and optionally with subscript ``a``, ``b``, ``c``, or ``d``.
+The stage designation can also have a ``y`` or ``yp`` prefix as well
+([2]_, p. 18).
 
 References
 ==========
