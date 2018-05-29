@@ -51,6 +51,8 @@ report_mapper_inst = read_property('MAPPER_API_INSTITUTE', ('report_mapper', 'in
 
 ohdsi_url = read_property('OHDSI_WEBAPI_URL', ('ohdsi', 'webapi'))
 
+debug_mode = read_property('NLP_API_DEBUG_MODE', ('local', 'debug'))
+
 
 def cmp_2_key(mycmp):
     # https://bytes.com/topic/python/answers/844614-python-3-sorting-comparison-function
