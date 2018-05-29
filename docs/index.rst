@@ -59,9 +59,9 @@ Phenotypes
 .. toctree::
    :maxdepth: 1
 
-   intro_to_phenotypes
-   pipelines
    nlpql
+   pipelines
+
 
 Algorithms
 ----------
@@ -69,11 +69,13 @@ Algorithms
 .. toctree::
    :maxdepth: 1
 
+   algorithms/term-finder
    algorithms/size_measurement_finder
    algorithms/tnm_stage_finder
    algorithms/value_extraction
    algorithms/measurement_subject_resolution
    algorithms/section_tagger
+   algorithms/context
 
 Everything else...
 ------------------

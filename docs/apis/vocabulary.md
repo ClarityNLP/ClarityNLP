@@ -16,7 +16,7 @@ This API is responsible for vocabulary explosion for a given concept. API accept
 **Example usage:**
 
 ```
-~/vocabExpansion?type=1&concept=Inactive
+http://nlp-api:5000/vocabExpansion?type=1&concept=Inactive
 
-~/vocabExpansion?type=1&concept=Inactive&vocab=SNOMED
+http://nlp-api:5000/vocabExpansion?type=1&concept=Inactive&vocab=SNOMED
 ```

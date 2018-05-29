@@ -1,5 +1,8 @@
 ### n-gram Generator
 
+*GET* `http://nlp-api:5000/ngram`
+
+
 **About:** 
 
 Generating n-grams of the Report Text for a particular Cohort. API has to accept the Cohort ID, the _n_ in n-gram, and frequency (the minimum occurrence of a particular n-gram). The API also accepts a keyword. If given the keyword, only n-grams which contain that keyword are returned. 

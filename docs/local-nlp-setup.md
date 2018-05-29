@@ -1,7 +1,7 @@
 ## Local NLP Flask Setup
 
 
-Note: These instructions are only needed if you are not install via Docker through ClarityNLP. In that case, you can skip past this setup.
+Note: These instructions are only needed if you are not installing via Docker (which is recommended). In that case, you can skip past this setup.
 
 #### Installing Requirements
 ```

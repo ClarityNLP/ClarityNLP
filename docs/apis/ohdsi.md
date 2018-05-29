@@ -15,7 +15,7 @@
 
 - Usage:
   ```
-  ~/ohdsi_create_cohort?file=<FILE NAME>
+  http://nlp-api:5000/ohdsi_create_cohort?file=<FILE NAME>
   ```
 
 ## Getting Cohort Information
@@ -29,7 +29,7 @@
 
 - Usage:
   ```
-  ~/ohdsi_get_cohort?cohort_id=<COHORT ID>
+  http://nlp-api:5000/ohdsi_get_cohort?cohort_id=<COHORT ID>
   ```
 
 
@@ -44,7 +44,7 @@
 
 - Usage:
   ```
-  ~/ohdsi_get_cohort_by_name?cohort_name=<COHORT NAME>
+  http://nlp-api:5000/ohdsi_get_cohort_by_name?cohort_name=<COHORT NAME>
   ```
 
 ## Getting Concept Sets
@@ -62,7 +62,7 @@
 
 - Usage:
   ```
-  ~/ohdsi_get_conceptset?file=<FILE NAME>
+  http://nlp-api:5000/ohdsi_get_conceptset?file=<FILE NAME>
   ```
 
 ## Getting Cohort Creation Status
@@ -76,5 +76,5 @@
 
 - Usage:
   ```
-  ~/ohdsi_cohort_status?cohort_id=<COHORT ID>
+  http://nlp-api:5000/ohdsi_cohort_status?cohort_id=<COHORT ID>
   ```

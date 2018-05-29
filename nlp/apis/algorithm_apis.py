@@ -46,7 +46,7 @@ def measurement_finder():
 
 
 @algorithm_app.route('/term_finder', methods=['POST'])
-@auto.doc()
+@auto.doc(groups=['public', 'private'])
 def term_finder():
     """POST to extract terms, context, negex, sections from text, See samples/sample_term_finder.json"""
     if request.method == 'POST' and request.data:
@@ -60,7 +60,7 @@ def term_finder():
 
 
 @algorithm_app.route('/value_extractor', methods=['POST'])
-@auto.doc()
+@auto.doc(groups=['public', 'private'])
 def value_extractor():
     """POST to extract values such as BP, LVEF, Vital Signs etc. (See samples/sample_value_extractor.json)"""
     if request.method == 'POST' and request.data:
@@ -73,7 +73,7 @@ def value_extractor():
 
 
 @algorithm_app.route('/named_entity_recognition', methods=['POST'])
-@auto.doc()
+@auto.doc(groups=['public', 'private'])
 def named_entity_recognition():
     """POST to extract standard named entities. (See samples/sample_ner.json)"""
     if request.method == 'POST' and request.data:
@@ -86,7 +86,7 @@ def named_entity_recognition():
 
 
 @algorithm_app.route('/pos_tagger', methods=['POST'])
-@auto.doc()
+@auto.doc(groups=['public', 'private'])
 def pos_tagger():
     """POST to extract Tags. (See samples/sample_pos_tag_text.json)"""
     if request.method == 'POST' and request.data:
@@ -99,7 +99,7 @@ def pos_tagger():
 
 
 @algorithm_app.route("/tnm_stage", methods=["POST"])
-@auto.doc()
+@auto.doc(groups=['public', 'private'])
 def tnm_stage():
     """POST to extract TNM cancer stage (See samples/sample_tnm_stage.json)"""
     if request.method == 'POST' and request.data:
