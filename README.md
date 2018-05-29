@@ -2,7 +2,7 @@
 
 ClarityNLP is a clinical NLP platform developed for the purpose of analyzing and aggregating clinical text to extract complex, computed phenotypes. 
 ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, to identify patients and their clinical observations, extracted from text. 
-ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write you own definitions to find the patients and features that are relevant to your project.  
+ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write your own definitions to find the patients and features that are relevant to your project.  
 
 ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and other NLP libraries. We have provided a Docker Compose configuration to integrate all the services ClarityNLP uses, or you can run standalone. To begin exploring ClarityNLP, follow the Quick Start guide below or read the full documentation [here](http://clarity-nlp.readthedocs.io/en/latest/).
 
@@ -10,7 +10,7 @@ ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and ot
 
 1. [Install ClarityNLP with Docker](http://clarity-nlp.readthedocs.io/en/latest/local-docker.html)
 
-2. You should now be running all the services ClarityNLP needs. The main NLP service will be running at [http://localhost:5000](http://localhost:5000). You'll need to a tool like [Postman](https://www.getpostman.com/apps) to interact with ClarityNLP.
+2. You should now be running all the services ClarityNLP needs. The main NLP service will be running at [http://localhost:5000](http://localhost:5000). You'll need to use a tool like [Postman](https://www.getpostman.com/apps) to interact with ClarityNLP.
 
 3. ClarityNLP has been pre-loaded with documents from the FDA Drug Labels data set, but you can get an idea on how to load more documents [here](http://clarity-nlp.readthedocs.io/en/latest/index.html#document-ingestion).
 
