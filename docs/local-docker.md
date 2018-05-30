@@ -20,6 +20,9 @@ This is the best setup for getting started with ClarityNLP.
    cat .env.example >> .env
 ```
 
+5. Build images and run containers `docker-compose up --build`
+
+6. Use `docker ps` to verify containers are runnning.
 
 ### Updating to download latest changes
 From the command line, run:
