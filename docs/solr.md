@@ -27,7 +27,7 @@ Additional fields can be added to store additional metadata. The following field
 * `*_section` (seachText); e.g. `past_medical_history_section` (for indexing specific sections of notes)
 * `*_id` (long) e.g.`doctor_id` (any other id you wish to store) 
 * `*_ids` (long, multiValued) e.g. `medication_ids` (any other id as an array)
-* `*_system` (string) e.g. `code_system` (noting any system values 
+* `*_system` (string) e.g. `code_system` (noting any system values)
 * `*_attr` (string) e.g.`clinic_name_attr` (any single value custom attribute) 
 * `*_attrs` (string, multiValued) e.g. `insurer_names` (any multi valued custom attribute) 
 
