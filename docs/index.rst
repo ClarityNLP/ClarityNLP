@@ -61,6 +61,7 @@ Phenotypes
 
    nlpql
    pipelines
+   phenotypes
 
 
 Algorithms
