@@ -6,8 +6,6 @@
 
 ### Spacy
 
-### Solr
-
 ### Luigi
 
 ### Postgres

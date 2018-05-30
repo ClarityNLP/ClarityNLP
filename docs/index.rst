@@ -25,6 +25,7 @@ This library uses Python 3.4+.
    local-nlp-setup
    production-docker
    technologies
+   solr
 
 
 
@@ -36,6 +37,7 @@ To begin interacting with ClarityNLP, make sure you have ingested documents into
 .. toctree::
    :maxdepth: 1
 
+   ingest/generic_ingestion
    ingest/aact
    ingest/file_ingestion
 
