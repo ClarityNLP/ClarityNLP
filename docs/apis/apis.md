@@ -70,6 +70,7 @@ POST JSON to extract TNM staging from text. Sample input JSON [here](https://git
 
 ## Named Entity Recognition
 *POST* `http://nlp-api:5000/named_entity_recognition`
+
 POST JSON to run spaCy's NER. Sample input JSON [here](https://github.com/ClarityNLP/ClarityNLP/blob/master/nlp/samples//library_inputs/sample_ner.json).
 
 ## Part of Speech Tagger
