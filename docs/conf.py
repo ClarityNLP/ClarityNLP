@@ -86,25 +86,39 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "classic"
+html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-     "footerbgcolor": '#1c3b5e',
-     "sidebarbgcolor": '#07284f',
-    'sidebarlinkcolor': '#ccc',
-    'sidebartextcolor': '#eeeeee',
-     'linkcolor': '#004f9f',
-     'relbarbgcolor': '#d1d3d5',
-    'relbarlinkcolor': '#00254c',
-    'relbartextcolor': '#00254c',
-    'bgcolor': '#fefefe',
-    'headbgcolor': '#fefefe',
-    'headfont': 'Georgia, Times, "Times New Roman", serif',
-    'bodyfont': 'Tahoma, Verdana, Segoe, sans-serif',
-    'codebgcolor': '#eff0f1',
-    'codetextcolor' : '#252729'
+    #  "footerbgcolor": '#1c3b5e',
+    #  "sidebarbgcolor": '#07284f',
+    # 'sidebarlinkcolor': '#ccc',
+    # 'sidebartextcolor': '#eeeeee',
+    #  'linkcolor': '#004f9f',
+    #  'relbarbgcolor': '#d1d3d5',
+    # 'relbarlinkcolor': '#00254c',
+    # 'relbartextcolor': '#00254c',
+    # 'bgcolor': '#fefefe',
+    # 'headbgcolor': '#fefefe',
+    # 'headfont': 'Georgia, Times, "Times New Roman", serif',
+    # 'bodyfont': 'Tahoma, Verdana, Segoe, sans-serif',
+    # 'codebgcolor': '#eff0f1',
+    # 'codetextcolor' : '#252729'
+    'canonical_url': '',
+    'analytics_id': '',
+    'logo_only': False,
+    'display_version': True,
+    'prev_next_buttons_location': 'bottom',
+    'style_external_links': False,
+    # Toc options
+    'collapse_navigation': True,
+    'sticky_navigation': True,
+    'navigation_depth': 4,
+    'includehidden': True,
+    'titles_only': False
 
 
 }
+
+html_logo = 'gtri.png'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
