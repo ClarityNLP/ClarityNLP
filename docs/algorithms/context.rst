@@ -27,11 +27,11 @@ Negation
 
 Source Code
 ===========
-The source code is found in ``nlp/context/context.py``.
+The source code is found in ``nlp/algorithms/context/context.py``.
 
 Concepts
 --------
-ConText has a pre-defined set of concepts for each ConText type. They can be found at ``nlp/context/data``.
+ConText has a pre-defined set of concepts for each ConText type. They can be found at ``nlp/algorithms/context/data``.
 Each ConText keyword has a category which either indicates it as a candidate for a ConText type, a pseudo-candidate (which would be excluded), or a term that indicates a change in the sentence phrase, such as a conjunction (which would close a ConText window).
 
 
