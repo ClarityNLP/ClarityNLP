@@ -1,7 +1,7 @@
 from flask import request, Blueprint, render_template, session,abort
 
 from data_access import *
-from nlp import *
+from algorithms import *
 from ohdsi import *
 from .docs import auto
 

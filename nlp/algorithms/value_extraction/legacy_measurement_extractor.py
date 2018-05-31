@@ -5,7 +5,7 @@ import string
 from itertools import product
 from subprocess import Popen, PIPE, STDOUT
 from data_access import Measurement
-from nlp.segmentation import *
+from algorithms.segmentation import *
 
 print('Initializing models for measurement finder...')
 segmentor = Segmentation()

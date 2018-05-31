@@ -1,7 +1,7 @@
-from nlp.segmentation import *
+from algorithms.segmentation import *
 
 import json
-from nlp.value_extraction.tnm_stage_extractor import run as run_tnm_stager
+from algorithms.value_extraction.tnm_stage_extractor import run as run_tnm_stager
 
 segmentor = Segmentation()
 

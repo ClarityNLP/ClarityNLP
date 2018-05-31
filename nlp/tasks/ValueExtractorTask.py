@@ -8,7 +8,7 @@ import util
 from data_access import jobs
 from data_access import pipeline_config as config
 from data_access import solr_data
-from nlp import *
+from algorithms import *
 from .MeasurementFinderTask import mongo_writer
 
 SECTIONS_FILTER = "sections"

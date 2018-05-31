@@ -4,7 +4,7 @@ import data_access
 from luigi_tools import phenotype_helper
 import copy
 from tasks import *
-from nlp import get_related_terms
+from algorithms import get_related_terms
 import sys
 import traceback
 
@@ -144,3 +144,14 @@ class PipelineTask(luigi.Task):
     def complete(self):
         status = jobs.get_job_status(str(self.job), util.conn_string)
         return status['status'] == jobs.COMPLETED or status['status'] == jobs.WARNING
+
+
+if __name__ == "__main__":
+    owner = "tester"
+    p_id = "10028"
+    the_job_id = data_access.create_new_job(
+        data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
+                           owner=owner, status=data_access.STARTED, date_ended=None,
+                           phenotype_id=int(p_id), pipeline_id=-1, date_started=datetime.datetime.now(),
+                           job_type='PHENOTYPE'), util.conn_string)
+    luigi.run(['PhenotypeTask', '--phenotype', p_id, '--job', str(the_job_id), '--owner', 'tester'])

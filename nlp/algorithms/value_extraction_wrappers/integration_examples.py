@@ -11,12 +11,12 @@ This code illustrates the use of these modules:
 """
 
 import json
-from nlp.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-from nlp.value_extraction.value_extractor import run as run_value_extractor, ValueResult, Value, \
+from algorithms.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+from algorithms.value_extraction.value_extractor import run as run_value_extractor, ValueResult, Value, \
     EMPTY_FIELD as EMPTY_VALUE_FIELD
-from nlp.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, \
+from algorithms.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, \
     EMPTY_FIELD as EMPTY_SMF_FIELD
-from nlp.value_extraction.tnm_stage_extractor import run as run_tnm_stager, TNM_FIELDS, TnmCode, \
+from algorithms.value_extraction.tnm_stage_extractor import run as run_tnm_stager, TNM_FIELDS, TnmCode, \
     EMPTY_FIELD as EMPTY_TNM_FIELD
 
 

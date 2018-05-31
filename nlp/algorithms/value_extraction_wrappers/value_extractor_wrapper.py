@@ -3,8 +3,8 @@ from itertools import product
 import regex as re
 
 from data_access import Measurement
-from nlp.segmentation import *
-from nlp.value_extraction.value_extractor import extract_value
+from algorithms.segmentation import *
+from algorithms.value_extraction.value_extractor import extract_value
 
 print('Initializing models for value extractor...')
 segmentor = Segmentation()

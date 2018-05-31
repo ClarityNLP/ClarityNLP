@@ -1,7 +1,7 @@
 import luigi
 from data_access import solr_data
 from data_access import pipeline_config as config
-from nlp import get_standard_entities, segmentation
+from algorithms import get_standard_entities, segmentation
 from data_access import jobs
 from pymongo import MongoClient
 import datetime

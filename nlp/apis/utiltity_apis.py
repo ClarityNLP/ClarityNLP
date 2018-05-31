@@ -2,7 +2,7 @@ import simplejson
 from flask import send_file, Blueprint
 
 from data_access import *
-from nlp import *
+from algorithms import *
 from .docs import auto
 import luigi_module
 

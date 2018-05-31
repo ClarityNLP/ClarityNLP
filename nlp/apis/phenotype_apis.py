@@ -3,7 +3,7 @@ import datetime
 from flask import request, Blueprint
 from luigi_tools import phenotype_helper, luigi_runner
 from data_access import *
-from nlp import *
+from algorithms import *
 from nlpql import *
 from .docs import auto
 from apis.api_helpers import init

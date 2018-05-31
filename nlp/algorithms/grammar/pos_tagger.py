@@ -1,7 +1,7 @@
 import en_core_web_sm as english_model
 from data_access import BaseModel
 import time
-from nlp.segmentation import Segmentation
+from algorithms.segmentation import Segmentation
 
 segmentation = Segmentation()
 

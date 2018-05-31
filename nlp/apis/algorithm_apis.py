@@ -2,7 +2,7 @@ from flask import request,  Blueprint
 
 from apis.api_helpers import init
 from data_access import *
-from nlp import *
+from algorithms import *
 from .docs import auto
 
 

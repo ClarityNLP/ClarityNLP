@@ -1,6 +1,6 @@
-from nlp.segmentation import *
+from algorithms.segmentation import *
 from data_access import Measurement
-from nlp import run_subject_finder, subject_finder_init
+from algorithms import run_subject_finder, subject_finder_init
 import json
 
 print('Initializing models for measurement finder...')

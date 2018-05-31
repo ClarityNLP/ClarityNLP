@@ -1,4 +1,4 @@
-from nlp import Context, Temporality, Experiencer, Negation
+from algorithms import Context, Temporality, Experiencer, Negation
 
 ctxt = Context()
 

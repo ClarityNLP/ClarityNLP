@@ -1,4 +1,4 @@
-from nlp import *
+from algorithms import *
 
 init_status = "none"
 

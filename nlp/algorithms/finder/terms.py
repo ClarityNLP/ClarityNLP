@@ -1,10 +1,10 @@
 from data_access import BaseModel
 import itertools
 import util
-from nlp.vocabulary import get_related_terms
-from nlp.context import *
-from nlp.sec_tag import *
-from nlp.segmentation import *
+from algorithms.vocabulary import get_related_terms
+from algorithms.context import *
+from algorithms.sec_tag import *
+from algorithms.segmentation import *
 
 print('Initializing models for term finder...')
 section_tagger_init()
