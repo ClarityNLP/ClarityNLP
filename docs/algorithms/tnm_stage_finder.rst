@@ -22,7 +22,7 @@ Source Code
 ===========
 
 The source code for the TNM stage module is located in
-``nlp/value_extraction/tnm_stage_extractor.py``.
+``nlp/algorithms/value_extraction/tnm_stage_extractor.py``.
 
 Inputs
 ------

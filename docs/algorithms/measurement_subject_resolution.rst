@@ -29,7 +29,7 @@ Source Code
 ===========
 
 The source code for the measurement subject finder is located in
-``nlp/finder/subject_finder.py``.
+``nlp/algorithms/finder/subject_finder.py``.
 
 Inputs
 ------

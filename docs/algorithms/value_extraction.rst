@@ -103,7 +103,7 @@ Source Code
 ===========
 
 The source code for the value extractor module is located in
-``nlp/value_extraction/value_extractor.py``.
+``nlp/algorithms/value_extraction/value_extractor.py``.
 
 Inputs
 ------

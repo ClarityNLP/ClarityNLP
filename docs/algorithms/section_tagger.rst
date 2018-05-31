@@ -17,7 +17,8 @@ database of J. Denny and colleagues [1]_.
 Source Code
 ===========
 
-The source code for the section tagger is located in ``nlp/sec_tag``.
+The source code for the section tagger is located in
+``nlp/algorithms/sec_tag``.
 The file ``sec_tag_db_extract.py`` extracts data from the SecTag database,
 builds the SecTag concept graph (``concept_graph.py``), and generates data
 files required by the section tagger for its operation. These files are written
@@ -34,7 +35,7 @@ SecTag Database
 ---------------
 
 The section tagger requires three input files for its operation, all of which
-can be found in the ``nlp/sec_tag/data`` folder. These files are
+can be found in the ``nlp/algorithms/sec_tag/data`` folder. These files are
 ``concepts_and_synonyms.txt``, a list of clinical concepts and associated
 synonyms; ``graph.txt``, a list of graph vertices and associated codes
 for the concept graph, and ``normalize.py``, which contains a map of
@@ -91,7 +92,8 @@ concept could appear in a clinical note.
 The code in ``sec_tag_db_extract.py`` extracts the concepts and synonyms from
 the SecTag database; adds new synonyms to the list; adds a few new concepts;
 corrects various errors occurring in the SecTag database, and writes output to
-the ``nlp/sec_tag/data`` folder. Run the extraction code with this command:
+the ``nlp/algorithms/sec_tag/data`` folder. Run the extraction code with
+this command:
 
     ``python3 ./sec_tag_db_extract.py``
 

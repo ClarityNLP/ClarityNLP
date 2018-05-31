@@ -32,7 +32,7 @@ Source Code
 ============
 
 The source code for the size measurement finder module is located in
-``nlp/finder/size_measurement_finder.py``.
+``nlp/algorithms/finder/size_measurement_finder.py``.
 
 
 Inputs
