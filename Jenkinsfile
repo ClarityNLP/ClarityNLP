@@ -15,7 +15,13 @@ pipeline{
                 script{
                     docker.withRegistry('https://build.hdap.gatech.edu'){
                         def nlpApiImage = docker.build("nlp-api:1.0", "-f ./nlp/Dockerfile.prod ./nlp")
-                        nlpApiImage.push('latest')//TODO
+                        nlpApiImage.push('latest')
+                        def nlpSolrImage = docker.build("nlp-solr:1.0", "-f ./utilities/nlp-solr/Dockerfile.prod ./utilities/nlp-solr")
+                        nlpSolrImage.push('latest')
+                        def nlpMongoImage = docker.build("nlp-mongo:1.0", "-f ./utilities/nlp-mongo/Dockerfile.prod ./utilities/nlp-mongo")
+                        nlpMongoImage.push('latest')
+                        def nlpPostgresImage = docker.build("nlp-postgres:1.0", "-f ./utilities/nlp-postgres/Dockerfile.prod ./utilities/nlp-postgres")
+                        nlpPostgresImage.push('latest')
                         def rtmApiImage = docker.build("rtm-api:1.0", "-f ./utilities/mapper-api/Dockerfile ./utilities/mapper-api")
                         rtmApiImage.push('latest')
                         def rtmClientImage = docker.build("rtm-client:1.0", "-f ./utilities/mapper-client/Dockerfile.prod ./utilities/mapper-client")
@@ -30,8 +36,16 @@ pipeline{
             steps{
                 //Write a script that notifies the Rancher API that the Docker Image for the application has been updated.
                 script{
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a7', environments: '', image: 'build.hdap.gatech.edu/rtm-api:latest', ports: '', service: 'clarity/rtm-api', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a7', environments: '', image: 'build.hdap.gatech.edu/rtm-client:latest', ports: '', service: 'clarity/rtm-client', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/nlp-api:latest', ports: '', service: 'ClarityNLP/nlp-api', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'axiom/docker-luigi:2.7.1', ports: '', service: 'ClarityNLP/scheduler', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/nlp-solr:latest', ports: '', service: 'ClarityNLP/nlp-solr', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/nlp-mongo:latest', ports: '', service: 'ClarityNLP/nlp-mongo', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/nlp-postgres:latest', ports: '', service: 'ClarityNLP/nlp-postgres', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/rtm-api:latest', ports: '', service: 'ClarityNLP/mapper-api', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'postgres', ports: '', service: 'ClarityNLP/mapper-pg', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/rtm-client:latest', ports: '', service: 'ClarityNLP/mapper-client', timeout: 600
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'http://rancher.hdap.gatech.edu:8080/v2-beta', environmentId: '1a616', environments: '', image: 'redis:3.2.0', ports: '', service: 'ClarityNLP/redis', timeout: 600
+
                 }
             }
         }
