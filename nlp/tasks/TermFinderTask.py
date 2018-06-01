@@ -4,10 +4,10 @@ from data_access import pipeline_config as config
 from algorithms import *
 from data_access import jobs
 from pymongo import MongoClient
-import datetime
 import util
 import traceback
 import sys
+from .task_utilties import pipeline_mongo_writer
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],
@@ -15,38 +15,6 @@ provider_assertion_filters = {
     "experiencer": ["Patient"]
 }
 SECTIONS_FILTER = "sections"
-
-
-def mongo_writer(client, pipeline, job, batch, pipeline_config, term, doc, type):
-    db = client[util.mongo_db]
-
-    obj = {
-        "pipeline_type": type,
-        "pipeline_id": pipeline,
-        "job_id": job,
-        "batch": batch,
-        "owner": pipeline_config.owner,
-        "sentence": term.sentence,
-        "report_type": doc["report_type"],
-        "nlpql_feature": pipeline_config.name,
-        "inserted_date": datetime.datetime.now(),
-        "report_id": doc["report_id"],
-        "subject": doc["subject"],
-        "report_date": doc["report_date"],
-        "section": term.section,
-        "term": term.term,
-        "start": term.start,
-        "end": term.end,
-        "concept_code": pipeline_config.concept_code,
-        "negation": term.negex,
-        "temporality": term.temporality,
-        "experiencer": term.experiencer,
-        "phenotype_final": False
-    }
-
-    inserted = config.insert_pipeline_results(pipeline_config, db, obj)
-
-    return inserted
 
 
 class TermFinderBatchTask(luigi.Task):
@@ -83,8 +51,20 @@ class TermFinderBatchTask(luigi.Task):
                 for doc in docs:
                     terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], filters)
                     for term in terms_found:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc,
-                                                "TermFinder")
+                        obj = {
+                            "sentence": term.sentence,
+                            "section": term.section,
+                            "term": term.term,
+                            "start": term.start,
+                            "end": term.end,
+                            "negation": term.negex,
+                            "temporality": term.temporality,
+                            "experiencer": term.experiencer
+                        }
+
+                        inserted = pipeline_mongo_writer(client, self.pipeline, "TermFinder", self.job, self.batch,
+                                                         pipeline_config, doc, obj)
+
                         outfile.write(str(inserted))
                         outfile.write('\n')
                     del terms_found
@@ -139,8 +119,19 @@ class ProviderAssertionBatchTask(luigi.Task):
                 for doc in docs:
                     terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], pa_filters)
                     for term in terms_found:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, term, doc,
-                                                "ProviderAssertion")
+                        obj = {
+                            "sentence": term.sentence,
+                            "section": term.section,
+                            "term": term.term,
+                            "start": term.start,
+                            "end": term.end,
+                            "negation": term.negex,
+                            "temporality": term.temporality,
+                            "experiencer": term.experiencer
+                        }
+
+                        inserted = pipeline_mongo_writer(client, self.pipeline, "ProviderAssertion", self.job, self.batch,
+                                                         pipeline_config, doc, obj)
                         outfile.write(str(inserted))
                         outfile.write('\n')
                     del terms_found
