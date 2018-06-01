@@ -4,48 +4,12 @@ from data_access import pipeline_config as config
 from algorithms import get_tags, segmentation
 from data_access import jobs
 from pymongo import MongoClient
-import datetime
+from .task_utilties import pipeline_mongo_writer
 import util
 import traceback
 import sys
 
 SECTIONS_FILTER = "sections"
-
-
-def mongo_writer(client, pipeline, job, batch, pipeline_config, val, doc, p_type):
-    db = client[util.mongo_db]
-
-    obj = {
-        "pipeline_type": p_type,
-        "pipeline_id": pipeline,
-        "job_id": job,
-        "batch": batch,
-        "owner": pipeline_config.owner,
-        "sentence": val.sentence,
-        "report_type": doc["report_type"],
-        "nlpql_feature": pipeline_config.name,
-        "inserted_date": datetime.datetime.now(),
-        "report_id": doc["report_id"],
-        "subject": doc["subject"],
-        "report_date": doc["report_date"],
-        "section": "",
-        "concept_code": pipeline_config.concept_code,
-        "term": val.text,
-        "text": val.text,
-        "lemma": val.lemma,
-        "pos": val.pos,
-        "tag": val.tag,
-        "dep": val.dep,
-        "shape": val.shape,
-        "is_alpha": val.is_alpha,
-        "is_stop": val.is_stop,
-        "description": val.description,
-        "phenotype_final": False
-    }
-
-    inserted = config.insert_pipeline_results(pipeline_config, db, obj)
-
-    return inserted
 
 
 class POSTaggerTask(luigi.Task):
@@ -83,8 +47,22 @@ class POSTaggerTask(luigi.Task):
                 for doc in docs:
                     res = get_tags(doc["report_text"])
                     for val in res:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, val, doc,
-                                                "POSTagger")
+                        obj = {
+                            "sentence": val.sentence,
+                            "term": val.text,
+                            "text": val.text,
+                            "lemma": val.lemma,
+                            "pos": val.pos,
+                            "tag": val.tag,
+                            "dep": val.dep,
+                            "shape": val.shape,
+                            "is_alpha": val.is_alpha,
+                            "is_stop": val.is_stop,
+                            "description": val.description
+                        }
+                        inserted = pipeline_mongo_writer(client, self.pipeline, "POSTagger", self.job,
+                                                         self.batch,
+                                                         pipeline_config, doc, obj)
                         outfile.write(str(inserted))
                         outfile.write('\n')
                     del res

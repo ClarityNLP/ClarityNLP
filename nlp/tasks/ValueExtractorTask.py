@@ -1,15 +1,13 @@
 import sys
-import traceback
 
 import luigi
 from pymongo import MongoClient
 
-import util
 from data_access import jobs
 from data_access import pipeline_config as config
 from data_access import solr_data
 from algorithms import *
-from .MeasurementFinderTask import mongo_writer
+from .task_utilties import pipeline_mongo_writer
 
 SECTIONS_FILTER = "sections"
 
@@ -54,10 +52,29 @@ class ValueExtractorTask(luigi.Task):
                                                       float(pipeline_config.maximum_value), pipeline_config.
                                                       case_sensitive)
                     if result:
-                        for val in result:
-                            inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, val,
-                                                    doc,
-                                                    "ValueExtractor")
+                        for meas in result:
+                            value = meas['X']
+
+                            obj = {
+                                "sentence": meas.sentence,
+                                "text": meas.text,
+                                "start": meas.start,
+                                "value": value,
+                                "end": meas.end,
+                                "term": meas.subject,
+                                "dimension_X": meas.X,
+                                "dimension_Y": meas.Y,
+                                "dimension_Z": meas.Z,
+                                "units": meas.units,
+                                "location": meas.location,
+                                "condition": meas.condition,
+                                "value1": meas.value1,
+                                "value2": meas.value2,
+                                "temporality": meas.temporality
+                            }
+                            inserted = pipeline_mongo_writer(client, self.pipeline, "ValueExtractor", self.job,
+                                                             self.batch,
+                                                             pipeline_config, doc, obj)
                             outfile.write(str(inserted))
                             outfile.write('\n')
                         del result

@@ -11,11 +11,7 @@ DEBUG_LIMIT = 100
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
 
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
-numeric_comp_operators = ['==', '='
-                                '>',
-                          '<',
-                          '<=',
-                          '>=']
+numeric_comp_operators = ['==', '=',  '>', '<', '<=', '>=']
 
 
 def get_terms(model: PhenotypeModel):

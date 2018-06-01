@@ -4,53 +4,12 @@ from data_access import pipeline_config as config
 from algorithms import *
 from data_access import jobs
 from pymongo import MongoClient
-import datetime
 import util
 import traceback
 import sys
+from .task_utilties import pipeline_mongo_writer
 
 SECTIONS_FILTER = "sections"
-
-
-def mongo_writer(client, pipeline, job, batch, pipeline_config:config.PipelineConfig, meas: Measurement, doc, type):
-    db = client[util.mongo_db]
-    value = meas['X']
-
-    obj = {
-        "pipeline_type": type,
-        "pipeline_id": pipeline,
-        "job_id": job,
-        "batch": batch,
-        "owner": pipeline_config.owner,
-        "sentence": meas.sentence,
-        "report_type": doc["report_type"],
-        "nlpql_feature": pipeline_config.name,
-        "inserted_date": datetime.datetime.now(),
-        "report_id": doc["report_id"],
-        "subject": doc["subject"],
-        "report_date": doc["report_date"],
-        "section": "",
-        "concept_code": pipeline_config.concept_code,
-        "text": meas.text,
-        "start": meas.start,
-        "value": value,
-        "end": meas.end,
-        "term": meas.subject,
-        "dimension_X": meas.X,
-        "dimension_Y": meas.Y,
-        "dimension_Z": meas.Z,
-        "units": meas.units,
-        "location": meas.location,
-        "condition": meas.condition,
-        "value1": meas.value1,
-        "value2": meas.value2,
-        "temporality": meas.temporality,
-        "phenotype_final": False
-    }
-
-    inserted = config.insert_pipeline_results(pipeline_config, db, obj)
-
-    return inserted
 
 
 class MeasurementFinderTask(luigi.Task):
@@ -88,8 +47,28 @@ class MeasurementFinderTask(luigi.Task):
                 for doc in docs:
                     meas_results = run_measurement_finder_full(doc["report_text"], pipeline_config.terms)
                     for meas in meas_results:
-                        inserted = mongo_writer(client, self.pipeline, self.job, self.batch, pipeline_config, meas, doc,
-                                                "MeasurementFinder")
+                        value = meas['X']
+
+                        obj = {
+                            "sentence": meas.sentence,
+                            "text": meas.text,
+                            "start": meas.start,
+                            "value": value,
+                            "end": meas.end,
+                            "term": meas.subject,
+                            "dimension_X": meas.X,
+                            "dimension_Y": meas.Y,
+                            "dimension_Z": meas.Z,
+                            "units": meas.units,
+                            "location": meas.location,
+                            "condition": meas.condition,
+                            "value1": meas.value1,
+                            "value2": meas.value2,
+                            "temporality": meas.temporality
+                        }
+                        inserted = pipeline_mongo_writer(client, self.pipeline, "MeasurementFinder", self.job,
+                                                         self.batch,
+                                                         pipeline_config, doc, obj)
                         outfile.write(str(inserted))
                         outfile.write('\n')
                     del meas_results
