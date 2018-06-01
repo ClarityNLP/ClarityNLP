@@ -11,7 +11,7 @@ utility_app = Blueprint('utility_app', __name__)
 
 @utility_app.route('/')
 def home():
-    return "Welcome to ClarityNLP!"
+    return "Welcome to ClarityNLP!!"
 
 
 @utility_app.route('/job_results/<int:job_id>/<string:job_type>', methods=['GET'])
