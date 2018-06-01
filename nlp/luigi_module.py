@@ -12,23 +12,6 @@ import traceback
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
 # didn't seem like it was with initial efforts
 
-
-luigi_pipeline_types = {
-    "TermFinder": TermFinderBatchTask,
-    "Finder": TermFinderBatchTask,
-    "Assertion": ProviderAssertionBatchTask,
-    "ProviderAssertion": ProviderAssertionBatchTask,
-    "MeasurementFinder": MeasurementFinderTask,
-    "MeasurementExtractor": MeasurementFinderTask,
-    "MeasurementExtraction": MeasurementFinderTask,
-    "ValueExtractor": ValueExtractorTask,
-    "ValueExtraction": ValueExtractorTask,
-    "NamedEntityRecognition": NERTask,
-    "NER": NERTask,
-    "POSTagger": POSTaggerTask
-}
-
-
 class PhenotypeTask(luigi.Task):
     phenotype = luigi.IntParameter()
     job = luigi.IntParameter()
@@ -126,7 +109,7 @@ class PipelineTask(luigi.Task):
             solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job, self
                                                                                           .owner)
 
-            task = luigi_pipeline_types[str(self.pipelinetype)]
+            task = registered_pipelines[str(self.pipelinetype)]
             matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n)
                        for n in ranges]
 

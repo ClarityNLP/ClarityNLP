@@ -4,7 +4,7 @@ from flask import send_file, Blueprint
 from data_access import *
 from algorithms import *
 from .docs import auto
-import luigi_module
+import tasks
 
 utility_app = Blueprint('utility_app', __name__)
 
@@ -50,7 +50,7 @@ def report_type_mappings():
 def pipeline_types():
     """GET valid pipeline types"""
     try:
-        return repr(list(luigi_module.luigi_pipeline_types.keys()))
+        return repr(list(tasks.registered_pipelines.keys()))
     except Exception as ex:
         return "Failed to get pipeline types" + str(ex)
 
