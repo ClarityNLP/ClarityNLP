@@ -7,7 +7,7 @@ import pandas as pd
 from ohdsi import getCohort
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
 
-DEBUG_LIMIT = 100
+DEBUG_LIMIT = 1000
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
 
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
