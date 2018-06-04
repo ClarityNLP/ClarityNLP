@@ -1,5 +1,6 @@
 debug;
 
+limit 1000;
 
 // Phenotype library name
 phenotype "Drug Allergy" version "1";
