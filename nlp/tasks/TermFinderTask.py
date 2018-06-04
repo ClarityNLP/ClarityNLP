@@ -7,7 +7,7 @@ from pymongo import MongoClient
 import util
 import traceback
 import sys
-from .task_utilties import pipeline_mongo_writer
+from .task_utilities import pipeline_mongo_writer
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],
@@ -88,7 +88,6 @@ class ProviderAssertionBatchTask(luigi.Task):
     batch = luigi.IntParameter()
     solr_query = luigi.Parameter()
     segment = segmentation.Segmentation()
-    client = MongoClient(util.mongo_host, util.mongo_port)
 
     def run(self):
 
@@ -115,7 +114,7 @@ class ProviderAssertionBatchTask(luigi.Task):
 
             with self.output().open('w') as outfile:
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
-                                       "Finding terms with TermFinder")
+                                       "Finding terms with ProviderAssertion")
                 for doc in docs:
                     terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], pa_filters)
                     for term in terms_found:

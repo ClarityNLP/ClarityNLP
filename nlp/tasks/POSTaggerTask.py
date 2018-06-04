@@ -4,7 +4,7 @@ from data_access import pipeline_config as config
 from algorithms import get_tags, segmentation
 from data_access import jobs
 from pymongo import MongoClient
-from .task_utilties import pipeline_mongo_writer
+from .task_utilities import pipeline_mongo_writer
 import util
 import traceback
 import sys

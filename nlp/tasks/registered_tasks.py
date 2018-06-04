@@ -12,5 +12,6 @@ registered_pipelines = {
     "ValueExtraction": ValueExtractorTask,
     "NamedEntityRecognition": NERTask,
     "NER": NERTask,
-    "POSTagger": POSTaggerTask
+    "POSTagger": POSTaggerTask,
+    "TNMStager": TNMStagerTask
 }
