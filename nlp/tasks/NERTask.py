@@ -7,7 +7,7 @@ from pymongo import MongoClient
 import util
 import traceback
 import sys
-from .task_utilties import pipeline_mongo_writer
+from .task_utilities import pipeline_mongo_writer
 
 SECTIONS_FILTER = "sections"
 

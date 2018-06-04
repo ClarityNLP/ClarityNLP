@@ -3,4 +3,7 @@ from .MeasurementFinderTask import *
 from .ValueExtractorTask import *
 from .NERTask import *
 from .POSTaggerTask import *
+from .TNMStagerTask import *
+
 from .registered_tasks import *
+
