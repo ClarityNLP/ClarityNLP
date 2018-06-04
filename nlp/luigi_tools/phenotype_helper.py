@@ -35,6 +35,7 @@ def get_terms_by_keys(term_dict, term_keys: list, concept_keys: list):
     return terms
 
 
+
 def get_report_tags(model):
     types = dict()
     # TODO
@@ -81,7 +82,7 @@ def get_cohort_items(cohort_name, cohort_source):
     return cohorts
 
 
-def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug, cohorts):
+def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug, cohorts, phenotype_limit=0):
     if e['named_arguments'] is None:
         e['named_arguments'] = dict()
     if 'value_sets' not in e['named_arguments']:
@@ -100,7 +101,9 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
             doc_sets = list()
 
         tags = get_report_tags_by_keys(report_tags, doc_sets)
-        if debug:
+        if phenotype_limit > 0:
+            limit = phenotype_limit
+        elif debug:
             limit = DEBUG_LIMIT
         else:
             limit = 0
@@ -157,7 +160,7 @@ def get_pipelines_from_phenotype(model: PhenotypeModel):
         report_tags = get_report_tags(model)
         cohorts = get_cohorts(model)
         for e in model.data_entities:
-            pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts))
+            pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts, model.limit))
     return pipelines
 
 
