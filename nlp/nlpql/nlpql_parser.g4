@@ -20,13 +20,18 @@ statement:
     population |
     define |
     context |
-    debugger
+    debugger |
+    limit
     )
     SEMI
     ;
 
 debugger:
     DEBUG
+    ;
+
+limit:
+    LIMIT DECIMAL
     ;
 
 version:

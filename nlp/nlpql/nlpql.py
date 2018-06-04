@@ -120,6 +120,12 @@ def handle_debug(context, phenotype: PhenotypeModel):
     phenotype.debug = True
 
 
+def handle_limit(context, phenotype: PhenotypeModel):
+    limit = context.getChild(1).getText()
+    if len(limit) > 0:
+        phenotype.limit = int(limit)
+
+
 def handle_phenotype_name(context, phenotype: PhenotypeModel):
     print('phenotype_name')
     previous = ''
@@ -502,7 +508,8 @@ handlers = {
     nlpql_parserParser.ContextContext: handle_context,
     nlpql_parserParser.CohortContext: handle_cohort,
     nlpql_parserParser.DescriptionContext: handle_description,
-    nlpql_parserParser.DebuggerContext: handle_debug
+    nlpql_parserParser.DebuggerContext: handle_debug,
+    nlpql_parserParser.LimitContext: handle_limit
 }
 
 

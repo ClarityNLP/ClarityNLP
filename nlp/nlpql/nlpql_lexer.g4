@@ -25,6 +25,8 @@ DEFINE: 'define';
 CONTEXT: 'context';
 MIN_VALUE: 'minimum_value';
 MAX_VALUE: 'maximum_value';
+LIMIT: 'limit';
+
 
 // Custom ClarityNLP Features
 OMOP: 'OMOP';
