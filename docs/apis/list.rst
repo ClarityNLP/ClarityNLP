@@ -1,5 +1,5 @@
-ClarityNLP API List
-===================
+API Reference
+=============
 .. toctree::
    :maxdepth: 2
 

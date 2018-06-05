@@ -18,16 +18,10 @@ Technical Background
    technical_background/solr
    technical_background/pipelines
    testing
-
-
-Custom Local Setup
-------------------
-Use this setup only when you are not using Docker, and just wish to run the main NLP Flask API standalone. You might do this if you already have a Solr, Postgres and MongoDB hosted elsewhere, or you don't want to host them locally.
-
-.. toctree::
-   :maxdepth: 1
-
    local-nlp-setup
+
+
+
 
 
 
