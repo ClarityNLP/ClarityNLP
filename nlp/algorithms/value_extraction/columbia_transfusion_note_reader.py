@@ -26,7 +26,7 @@ The set of JSON fields in the output includes:
         reaction                yes or no
         bloodProductOrdered     character string
 
-        vitals                     array of vitals records
+        vitals                     set of vitals records
 
             dateTime               YYYY-MM-DD HH:MM:SS (ISO format) at which
                                    these measurements were taken
@@ -51,9 +51,10 @@ The set of JSON fields in the output includes:
             endTidalCO2            units of mm Hg
             fiO2                   percentage
 
-All JSON results will contain an identical number of fields, regardless of whether
-or not all fields are actually valid. Fields that are not valid will have a 
-value of EMPTY_FIELD and should be ignored.
+All JSON results will contain an identical number of fields, regardless of
+whether or not all fields are actually valid. Fields that are not valid will
+have a value of 'None' (the special Python built-in constant) and should be
+ignored.
 
 The field names listed above are available as strings in these lists:
 
@@ -90,14 +91,16 @@ To print the valid fields in each note:
                     if 'vitals' != field:
                         print('{0}: {1}'.format(field, val))
                     else:
-                        # extract vitals into a list of VitalsRecord namedtuples
-                        vitals_list = [VitalsRecord(**record) for record in val]
-                        for v_record in vitals_list:
-                            for v_field in VITALS_FIELDS:
-                                v_val = getattr(v_record, v_field)
-                                if EMPTY_FIELD != v_val:
-                                    print('{0}: {1}'.format(v_field, v_val))
+                        # extract vitals into a VitalsRecord namedtuple
+                        v_record = VitalsRecord(**val)
+                        for v_field in VITALS_FIELDS:
+                            v_val = getattr(v_record, v_field)
+                            if EMPTY_FIELD != v_val:
+                                print('{0}: {1}'.format(v_field, v_val))
 
+Each group of vitals for a given transfusion is returned as a separate
+JSON record. All vitals records for a given transfusion share the fields
+in the TRANSFUSION_NOTE_FIELDS list below.
 
 A working example of this code can be found below at the end of this module.
 
@@ -115,13 +118,13 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 2
+VERSION_MINOR = 3
 
 # The output of this module is a JSON string containing a list of
 # TransfusionNote namedtuples.  The 'vitals' field of each note is a
 # list of VitalsRecord namedtuples.
 
-EMPTY_FIELD = -987654321
+EMPTY_FIELD = None
 TRANSFUSION_NOTE_FIELDS = ['transfusionStart', 'transfusionEnd',
                            'elapsedMinutes', 'reaction',
                            'bloodProductOrdered', 'vitals']
@@ -365,7 +368,8 @@ def elapsed_min(t_start, t_end):
 ###############################################################################
 def to_json(transfusion_note_list):
     """
-    Serialize the transfusion notes to a JSON string.
+    Serialize the transfusion notes to JSON. Make each different vitals
+    measurement for a given note an independent JSON object.
     """
 
     dict_list = []
@@ -402,11 +406,9 @@ def to_json(transfusion_note_list):
         # convert vitals from struct of arrays to array of structs
 
         flowsheet_count = len(note['vitalsFlowsheets'])
-
-        flowsheet_dict_list = []
         for flowsheet in note['vitalsFlowsheets']:
             
-            # first find max len of all the vitals arrays
+            # first find max len of all the vitals arrays for this flowsheet
             max_len = 0
             for array_name in vitals_regexes.values():
                 if array_name in flowsheet:
@@ -416,40 +418,42 @@ def to_json(transfusion_note_list):
 
             # now extract values at identical indices across all arrays
             for i in range(max_len):
-                flowsheet_dict = {}
+                vitals_dict = {}
                 for array_name in vitals_regexes.values():
                     
-                    flowsheet_dict[array_name] = EMPTY_FIELD
+                    vitals_dict[array_name] = EMPTY_FIELD
                     
                     # set values for this particular set of measurements
                     if array_name in flowsheet:
                         array = flowsheet[array_name]
                         if i < len(array):
-                            flowsheet_dict[array_name] = array[i]
+                            vitals_dict[array_name] = array[i]
                         else:
                             # sometimes values are missing
-                            flowsheet_dict[array_name] = EMPTY_FIELD
+                            vitals_dict[array_name] = EMPTY_FIELD
 
                 # compute time delta from transfusion start for these vitals
-                if EMPTY_FIELD != flowsheet_dict['dateTime']:
-                    t_end = to_datetime(flowsheet_dict['dateTime']['year'],
-                                        flowsheet_dict['dateTime']['month'],
-                                        flowsheet_dict['dateTime']['day'],
-                                        flowsheet_dict['dateTime']['hours'],
-                                        flowsheet_dict['dateTime']['minutes'])
+                if EMPTY_FIELD != vitals_dict['dateTime']:
+                    t_end = to_datetime(vitals_dict['dateTime']['year'],
+                                        vitals_dict['dateTime']['month'],
+                                        vitals_dict['dateTime']['day'],
+                                        vitals_dict['dateTime']['hours'],
+                                        vitals_dict['dateTime']['minutes'])
 
-                    flowsheet_dict['timeDeltaMinutes'] = elapsed_min(t_start, t_end)
-                    flowsheet_dict['dateTime'] = to_iso(t_end)
+                    vitals_dict['timeDeltaMinutes'] = elapsed_min(t_start, t_end)
+                    vitals_dict['dateTime'] = to_iso(t_end)
                 else:
-                    flowsheet_dict['timeDeltaMinutes'] = EMPTY_FIELD
-                    flowsheet_dict['dateTime'] = EMPTY_FIELD
+                    vitals_dict['timeDeltaMinutes'] = EMPTY_FIELD
+                    vitals_dict['dateTime'] = EMPTY_FIELD
                             
-                # finished with this vitals flowsheet
-                flowsheet_dict_list.append(flowsheet_dict)
-                
-        # finished with all vitals flowsheets
-        note_dict['vitals'] = flowsheet_dict_list
-        dict_list.append(note_dict)
+                # append these vitals as a new measurement set
+                result_dict = {}
+                for f in TRANSFUSION_NOTE_FIELDS:
+                    if 'vitals' == f:
+                        result_dict[f] = vitals_dict
+                    else:
+                        result_dict[f] = note_dict[f]
+                dict_list.append(result_dict)
         
     return json.dumps(dict_list, indent=4)
 
@@ -538,8 +542,8 @@ def process_note(note_text, results):
                 continue
             elif 'reaction' == regex_name:
                 transfusion_note[regex_name] = match.group('yes_no').lower()
-            elif 'bloodProductOrdered' ==regex_name:
-                transfusion_note[regex_name] = match.group('blood_product').lower()
+            elif 'bloodProductOrdered' == regex_name:
+                transfusion_note[regex_name] = match.group('blood_product').lower().strip()
             elif 'vitalsFlowsheetStart' == regex_name:
                 start = match.end()
                 vitals_text = note_text[start:]
@@ -688,12 +692,11 @@ if __name__ == '__main__':
                     indent = ' '*(maxlen - len(field))
                     print('{0}{1}: {2}'.format(indent, field, val))
                 else:
-                    # extract vitals into a list of VitalsRecord namedtuples
-                    vitals_list = [VitalsRecord(**record) for record in val]
-                    for v_record in vitals_list:
-                        for v_field in VITALS_FIELDS:
-                            v_val = getattr(v_record, v_field)
-                            if EMPTY_FIELD != v_val:
-                                indent = ' '*(maxlen - len(v_field))
-                                print('{0}{1}: {2}'.format(indent, v_field, v_val))
+                    # extract vitals into a VitalsRecord namedtuple
+                    v_record = VitalsRecord(**val)
+                    for v_field in VITALS_FIELDS:
+                        v_val = getattr(v_record, v_field)
+                        if EMPTY_FIELD != v_val:
+                            indent = ' '*(maxlen - len(v_field))
+                            print('{0}{1}: {2}'.format(indent, v_field, v_val))
         print()
