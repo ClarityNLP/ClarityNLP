@@ -8,7 +8,6 @@ ClarityNLP
 
 ClarityNLP is a clinical NLP platform developed for the purpose of analyzing and aggregating clinical text to extract complex, computed phenotypes. ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, to identify patients and their clinical observations, extracted from text. ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write your own definitions to find the patients and features that are relevant to your project.
 
-ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and other NLP libraries. We have provided a Docker Compose configuration to integrate all the services ClarityNLP uses, or you can run standalone. To begin exploring ClarityNLP, follow the Quick Start guide below or read the full documentation here.
 
 
 Documentation
