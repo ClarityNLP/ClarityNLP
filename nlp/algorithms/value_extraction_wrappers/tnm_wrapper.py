@@ -14,6 +14,7 @@ def run_tnm_from_sentence(sentence, term: str = ''):
     json_data = json.loads(json_string)
     for j in json_data:
         j['sentence'] = sentence
+        j['term'] = term
         results.append(j)
     return results
 

@@ -565,6 +565,27 @@ def process_note(note_text, results):
     results.append(transfusion_note)
 
 ###############################################################################
+
+
+def run_note_reader(text):
+    results = []
+    boundaries = []
+    # scan the data and process the notes one by one
+    iterator = regex_note_start.finditer(text)
+    for match in iterator:
+        boundaries.append(match.start())
+        if len(boundaries) > 1:
+            note_text = text[boundaries[-2]:boundaries[-1]]
+            process_note(note_text, results)
+
+    # final note, extends to end of the text string
+    if len(boundaries) > 0:
+        note_text = text[boundaries[-1]:]
+        process_note(note_text, results)
+
+    return to_json(results)
+
+
 def run(filepath):
     """
     Perform the main work of this module.
@@ -599,23 +620,8 @@ def run(filepath):
     if 0 == len(text):
         return EMPTY_JSON
         
-    results = []        
-    boundaries = []
+    return run_note_reader(text)
 
-    # scan the data and process the notes one by one
-    iterator = regex_note_start.finditer(text)
-    for match in iterator:
-        boundaries.append(match.start())
-        if len(boundaries) > 1:
-            note_text = text[boundaries[-2]:boundaries[-1]]
-            process_note(note_text, results)
-
-    # final note, extends to end of the text string
-    if len(boundaries) > 0:
-        note_text = text[boundaries[-1]:]
-        process_note(note_text, results)
-
-    return to_json(results)
     
 ###############################################################################
 def get_version():
