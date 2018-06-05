@@ -1,3 +1,0 @@
-### Current Projects
-
-### Past Projects

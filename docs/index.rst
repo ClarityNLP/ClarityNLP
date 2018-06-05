@@ -6,103 +6,26 @@
 ClarityNLP
 ==========
 
-This is the home for clinical NLP phenotyping, algorithms, and related APIs with ClarityNLP.
+ClarityNLP is a clinical NLP platform developed for the purpose of analyzing and aggregating clinical text to extract complex, computed phenotypes. ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, to identify patients and their clinical observations, extracted from text. ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write your own definitions to find the patients and features that are relevant to your project.
+
+ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and other NLP libraries. We have provided a Docker Compose configuration to integrate all the services ClarityNLP uses, or you can run standalone. To begin exploring ClarityNLP, follow the Quick Start guide below or read the full documentation here.
 
 
-Repository
-----------
-`GitHub
-<https://github.com/ClarityNLP/ClarityNLP>`_
-
-Setup
------
-This library uses Python 3.4+.
-
+Documentation
+-------------
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   local-docker
-   local-nlp-setup
-   production-docker
-   technologies
-   solr
+   setup/index
+   user_guide/index
+   developer_guide/index
+   apis/index
+   about/index
 
-
-
-Document Ingestion
-------------------
-
-To begin interacting with ClarityNLP, make sure you have ingested documents into Solr.
-
-.. toctree::
-   :maxdepth: 1
-
-   ingest/generic_ingestion
-   ingest/aact
-   ingest/file_ingestion
-
-
-
-APIs
-----
-
-.. toctree::
-   :maxdepth: 1
-
-   apis/apis
-   apis/ohdsi
-   apis/ngram
-   apis/vocabulary
-
-
-Phenotypes
-----------
-
-.. toctree::
-   :maxdepth: 1
-
-   nlpql
-   pipelines
-   phenotypes
-
-
-Algorithms
-----------
-
-.. toctree::
-   :maxdepth: 1
-
-   algorithms/term-finder
-   algorithms/size_measurement_finder
-   algorithms/tnm_stage_finder
-   algorithms/value_extraction
-   algorithms/measurement_subject_resolution
-   algorithms/section_tagger
-   algorithms/context
-
-Everything else...
-------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   testing
-   team
-   partners
-   projects
-
-Sample files
-------------
-See `samples
-<https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/>`_.
 
 License
 -------
 This project is licensed under Mozilla Public License 2.0.
 
 
-Search
-------
-
-* :ref:`search`
 

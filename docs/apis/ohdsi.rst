@@ -1,6 +1,8 @@
-# OHDSI WebAPI Utilities
+OHDSI WebAPI Utilities
+======================
 
-## Creating Cohorts
+Creating Cohorts
+----------------
 
 - Description:
   - Creating cohorts using OHDSI web API.
@@ -18,7 +20,8 @@
   http://nlp-api:5000/ohdsi_create_cohort?file=<FILE NAME>
   ```
 
-## Getting Cohort Information
+Getting Cohort Information
+--------------------------
 
 - Description: Get cohort details from OHDSI.
 
@@ -33,8 +36,8 @@
   ```
 
 
-## Getting Cohort Information from Cohort Name
-
+Getting Cohort Information from Cohort Name
+-------------------------------------------
 - Description: Get Cohort details by name
 
 - Method: GET
@@ -47,7 +50,8 @@
   http://nlp-api:5000/ohdsi_get_cohort_by_name?cohort_name=<COHORT NAME>
   ```
 
-## Getting Concept Sets
+Getting Concept Sets
+--------------------
 
 - Description:
   - Getting concept set info using OHDSI web API.
@@ -65,7 +69,8 @@
   http://nlp-api:5000/ohdsi_get_conceptset?file=<FILE NAME>
   ```
 
-## Getting Cohort Creation Status
+Getting Cohort Creation Status
+------------------------------
 
 - Description: Get the status of the triggered cohort creation job.
 

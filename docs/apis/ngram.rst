@@ -1,4 +1,5 @@
-### n-gram Generator
+ngram
+-----
 
 *GET* `http://nlp-api:5000/ngram`
 

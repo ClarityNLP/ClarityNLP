@@ -3,7 +3,7 @@
 This is the best setup for getting started with ClarityNLP.
 
 
-![Alt text](_static/docker-compose.png "Docker Compose Dev Diagram")
+![Alt text](images/docker-compose.png "Docker Compose Dev Diagram")
 
 ### Running Locally
 
