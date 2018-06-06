@@ -208,7 +208,7 @@ from spacy import displacy
 nlp = spacy.load('en')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 3
+VERSION_MINOR = 4
 
 # set to True to enable debug output
 TRACE = False
@@ -1130,7 +1130,7 @@ def find_location(subj_token, doc):
     the same sentence fragment (doc) that contains the subject and measurement.
     """
 
-    if 0 == len(doc):
+    if doc is None or 0 == len(doc):
         return EMPTY_STRING
 
     # collect all text from tokens starting after the subject token
@@ -1240,8 +1240,9 @@ def set_meas_locations(m_count, m_sentence, measurements, doc):
             for token in doc:
                 if 'PUNCT' != token.pos_:
                     doc_strings.append(token.text)
-                else:
+                elif len(doc_strings) > 0:
                     doc_strings[-1] += token.text
+                # else doc[0] is a PUNCT token, so just ignore it
             doc_text = ' '.join(doc_strings)
             
             pos = m_sentence.find(doc_text)
@@ -1698,7 +1699,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
             m.subject = subj_list
 
     # attempt to find any missing locations, one last time...
-    if 1 == m_count:
+    if 1 == m_count and doc is not None:
         set_meas_locations(m_count, m_sentence, measurements, doc)
 
     # add additional modifiers to each subject, now that locations have been found
