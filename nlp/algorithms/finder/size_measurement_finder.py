@@ -955,7 +955,7 @@ def tokenize_xx2(match):
     if is_area:
         units1_label = TokenLabel.UNITS2
     if is_vol:
-        units1_label = tokenLabel.UNITS3
+        units1_label = TokenLabel.UNITS3
 
     value1 = convert_units(num1, units_text, is_area, is_vol)
 
