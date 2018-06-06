@@ -2139,7 +2139,7 @@ def process_1(m_sentence, sentence, measurements):
         texts = [sentence, text]
         for t in texts:
             doc, subjects = tokenize_and_find_subjects(t)
-            if len(subjects) > 0 and len(subjects[0]) > 0:
+            if len(subjects) > 0 and len(subjects[0]) > 0 and m_index < len(measurements):
 
                 # if multiple candiate subjects, prefer 'tube', 'et', or 'endo'
                 # to anything else
@@ -2177,7 +2177,7 @@ def process_1(m_sentence, sentence, measurements):
 
         # subjects is a list of lists
         doc, subjects = tokenize_and_find_subjects(text)
-        if len(subjects) > 0 and len(subjects[0]) > 0:
+        if len(subjects) > 0 and len(subjects[0]) > 0 and m_index < len(measurements):
             # found a subject for this measurement
             for s in subjects[0]:
                 measurements[m_index].subject.append(s)
@@ -2199,7 +2199,7 @@ def process_1(m_sentence, sentence, measurements):
     m_index = m_index_from_context(m_sentence, sentence)
         
     doc, subjects = tokenize_and_find_subjects(sentence)
-    if len(subjects) > 0 and len(subjects[0]) > 0:
+    if len(subjects) > 0 and len(subjects[0]) > 0 and m_index < len(measurements):
         for s in subjects[0]:
             measurements[m_index].subject.append(s)
 
@@ -2252,7 +2252,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
         texts = [matching_text, text]
         for t in texts:
             doc, subjects = tokenize_and_find_subjects(t)
-            if len(subjects) > 0 and len(subjects[0]) > 0:
+            if len(subjects) > 0 and len(subjects[0]) > 0 and m_index < len(measurements):
                 # found a subject for this measurement
                 for s in subjects[0]:
                     measurements[m_index].subject.append(s)
@@ -2339,7 +2339,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
         texts = [matching_text, text]
         for t in texts:
             doc, subjects = tokenize_and_find_subjects(t)
-            if len(subjects) > 0 and len(subjects[0]) > 0:
+            if len(subjects) > 0 and len(subjects[0]) > 0 and m_index < len(measurements):
                 # found a subject for this measurement
                 for s in subjects[0]:
                     measurements[m_index].subject.append(s)
