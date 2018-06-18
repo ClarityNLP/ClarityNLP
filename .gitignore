@@ -1,6 +1,7 @@
 .cache/
 .env
 prod.env
+.bak
 .idea/codeStyles/Project.xml
 .idea/vcs.xml
 .idea/
