@@ -1,0 +1,264 @@
+.. _intro-overview:
+
+======================
+ClarityNLP at a glance
+======================
+
+ClarityNLP is designed to simplify the process of analyzing unstructured data (eg. provider notes, radiology reports, pathology results, etc) to find particular data or patients from electronic medical records.
+
+We refer to the definition of what you are trying to find as a *phenotype*.  Phenotypes are useful for research, clinical, quality, or payment purposes, because they allow a very explicit definition of the criteria that make up a patient of interest.  With ClarityNLP, these criteria can be shared using machine-interpretable code that can be run on any clinical dataset.
+
+How is this accomplished?  ClarityNLP uses a query syntax called **Natural Language Processing Query Language (NLPQL)**, based on the `CQL <http://www.hl7.org/implement/standards/product_brief.cfm?product_id=400>`_ syntax from HL7. The ClarityNLP platform provides mapping tools that allow NLPQL phenotypes to run on any dataset.
+
+Let's take a look at how NLPQL works.
+
+Walk-through of an Example NLPQL Phenotype
+==========================================
+
+Imagine you have a dataset with thousands of clinical documents and would like to extract a particular data element.  You can create an NLPQL file to specify what you would like to extract.
+
+*Here is a basic NLPQL phenotype that extracts Temperature values from Nursing notes.*
+
+.. code-block:: java
+
+     phenotype "Patient Temperatures" version "2";
+
+     include ClarityCore version "1.0" called Clarity;
+
+     documentset NursingNotes:
+        Clarity.createReportTagList(["Nurse"]);
+
+     termset TemperatureTerms:
+        ["temp","temperature","t"];
+
+      define Temperature:
+        Clarity.ValueExtraction({
+          termset:[TemperatureTerms],
+          documentset: [NursingNotes],
+          minimum_value: "96",
+          maximum_value: "106"
+          });
+
+      define final hasFever:
+          where Temperature.value >= 100.4;
+
+Let's break down the NLPQL above.
+
+**Phenotype Name**
+
+.. code-block:: java
+
+     phenotype "Patient Temperatures" version "2";
+
+Every ClarityNLP phenotype definition needs a name.  We give it a name (and optionally a version) using the ``phenotype`` command.  Here, we are just declaring that our phenotype will be called "Patient Temperatures".
+
+**Libraries**
+
+.. code-block:: java
+
+     include ClarityCore version "1.0" called Clarity;
+
+NLPQL is designed to be extensible and make it easy for developers to build new NLP algorithms and run them using the ClarityNLP platform. A common paradigm for making software extensible is the use of libraries.  Using the ``include`` command, we are saying to include the core Clarity library which has lots of handy commands and NLP algorithms built-in. The ``called`` phrase allows us to select a short name to refer to the library in the NLPQL that follows. In this case, we have selected to call it "Clarity".
+
+**Document Sets**
+
+.. code-block:: java
+
+  documentset NursingNotes:
+     Clarity.createReportTagList(["Nurse"]);
+
+`Document sets <topics/document_sets>`_ are a list of document types that you would like ClarityNLP to process.  (If no document sets are created, ClarityNLP will simply analyze all documents in your repository.)  Built into the Clarity core library is the ``createReportTagList`` function, which allows you to enumerate a set of document type tags from the `LOINC document ontology <https://loinc.org/document-ontology/current-version/>`_.  Typically, these tags are assigned to your documents at the time of ingestion through use of the `Report Type Mapper <topics/report_type_mapper>`_.
+
+In this case, we have declared a document set called "Nursing Notes" and included in it all documents with the Nurse tag.  We could have selected another provider type (eg. Physician), a specialty type (eg. Endocrinology), a setting type (eg. Emergency Department), or a combination such as ``["Physician","Emergency Department"]``.
+
+**Term Sets**
+
+.. code-block:: java
+
+  termset TemperatureTerms:
+     ["temp","temperature","t"];
+
+`Term sets <topics/term_sets>`_ are a list of terms or tokens you would like to input into an NLP method.  You can create these lists manually (as shown in this example) or generate them based on ontologies.  Furthermore you can extend termsets with synonyms and lexical variants.
+
+In this case, we have created a term set called "TemperatureTerms" and included 3 common ways temperature is  referenced in a clinical note ("temperature", "temp", and "t").
+
+**Phenotype Features**
+
+`Features <topics/features>`_ are the clinical elements that you wish to find and analyze in order to identify your patients of interest.  Features specify an NLP method you'd like to run as well as optional parameters such as document sets, term sets, patient cohorts, and more.  See the `feature examples <overview/examples>`_ to get a better sense of how different features can be created.
+
+We have two features in our example NLPQL.  Let's take a look at each.
+
+.. code-block:: java
+
+  define Temperature:
+     Clarity.ValueExtraction({
+       termset:[TemperatureTerms],
+       documentset: [NursingNotes],
+       minimum_value: "96",
+       maximum_value: "106"
+       });
+
+Features are specified in NLPQL using the ``define`` keyword followed by a feature name and a function.  In this case, we are assigning the name "Temperature" to the output of a particular NLP method that is included in the Clarity core library called `Value Extraction <http://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/value_extraction.html>`_.  (This could just as easily have been an NLP method from another Python library or an external API using `External NLP Method Integration <http://clarity-nlp.readthedocs.io/en/latest/developer_guide/custom/custom.html>`_.)
+
+In the example, we provide the Value Extraction method with a set of parameters including our document set ("NursingNotes"), term set ("TemperatureTerms"), and min/max values to include in the temperature results. The accuray of this definition for temperature can be evaluated using the ClarityNLP `Vaidation Framework <validation/overview>`_, which we will cover later in the tutorial.
+
+Now on to the second feature in the example:
+
+**Final Features**
+
+.. code-block:: java
+
+  define final hasFever:
+      where Temperature.value >= 100.4;
+
+With this statement, we are creating a new feature called "hasFever" that includes any patients with a temperature value greater than 100.4.  There are two things to note about this syntax.
+
+  - ``final`` A phenotype may involve the creation of numerous intermediate features that are extracted by NLP processes but are not themselves the final result of the analysis.  For example, we may be interested only in patients with a fever, rather than any patient who has a temperature value recorded.  The `final <topics/final>`_ keyword allows us to indicate the final output or outputs of the phenotype definition.
+  - ``value`` Every NLP method returns a result.  The specific format and content of these results will vary by method. As a convenience, ClarityNLP returns a ``value`` parameter for most methods.  The `Value Extraction <http://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/value_extraction.html>`_ method used here also returns several other parameters.   ClarityNLP is flexible in that it can take any parameter you provide and perform operations on it.  However, this will only work if the method being called returns that parameter.  Please consult the documentation for individual methods to see what parameters can be referenced.
+
+==========
+Next Steps
+==========
+
+
+
+`Phenotype features <topics/features>`_ are
+
+  sets are a list of document types that you would like Cla
+
+
+include in their NLPA common coding parseable
+
+Read more about `phenotype <topics/phenotype_name>`_.
+
+If you've got ClarityNLP installed, you can just POST this text to your `NLPQL API`_. If you're just learning about ClarityNLP but don't have an instance available, you can run this sample using our public `NLPQL Launcher`_.
+
+Put this in a text file, name it to something like ``quotes_spider.py``
+and run the spider using the :command:`runspider` command::
+
+    scrapy runspider quotes_spider.py -o quotes.json
+
+The following is a SQL statement.
+
+.. code-block:: sql
+   :linenos:
+
+   SELECT * FROM mytable
+
+When this finishes you will have in the ``quotes.json`` file a list of the
+quotes in JSON format, containing text and author, looking like this (reformatted
+here for better readability)::
+
+    [{
+        "author": "Jane Austen",
+        "text": "\u201cThe person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid.\u201d"
+    },
+    {
+        "author": "Groucho Marx",
+        "text": "\u201cOutside of a dog, a book is man's best friend. Inside of a dog it's too dark to read.\u201d"
+    },
+    {
+        "author": "Steve Martin",
+        "text": "\u201cA day without sunshine is like, you know, night.\u201d"
+    },
+    ...]
+
+`Included Libraries <topics/include_library>`_
+
+What just happened?
+-------------------
+
+When you ran the command ``scrapy runspider quotes_spider.py``, Scrapy looked for a
+Spider definition inside it and ran it through its crawler engine.
+
+The crawl started by making requests to the URLs defined in the ``start_urls``
+attribute (in this case, only the URL for quotes in *humor* category)
+and called the default callback method ``parse``, passing the response object as
+an argument. In the ``parse`` callback, we loop through the quote elements
+using a CSS Selector, yield a Python dict with the extracted quote text and author,
+look for a link to the next page and schedule another request using the same
+``parse`` method as callback.
+
+Here you notice one of the main advantages about Scrapy: requests are
+:ref:`scheduled and processed asynchronously <topics-architecture>`.  This
+means that Scrapy doesn't need to wait for a request to be finished and
+processed, it can send another request or do other things in the meantime. This
+also means that other requests can keep going even if some request fails or an
+error happens while handling it.
+
+While this enables you to do very fast crawls (sending multiple concurrent
+requests at the same time, in a fault-tolerant way) Scrapy also gives you
+control over the politeness of the crawl through :ref:`a few settings
+<topics-settings-ref>`. You can do things like setting a download delay between
+each request, limiting amount of concurrent requests per domain or per IP, and
+even :ref:`using an auto-throttling extension <topics-autothrottle>` that tries
+to figure out these automatically.
+
+.. note::
+
+    This is using :ref:`feed exports <topics-feed-exports>` to generate the
+    JSON file, you can easily change the export format (XML or CSV, for example) or the
+    storage backend (FTP or `Amazon S3`_, for example).  You can also write an
+    :ref:`item pipeline <topics-item-pipeline>` to store the items in a database.
+
+
+.. _topics-whatelse:
+
+What else?
+==========
+
+You've seen how to extract and store items from a website using Scrapy, but
+this is just the surface. Scrapy provides a lot of powerful features for making
+scraping easy and efficient, such as:
+
+* Built-in support for :ref:`selecting and extracting <topics-selectors>` data
+  from HTML/XML sources using extended CSS selectors and XPath expressions,
+  with helper methods to extract using regular expressions.
+
+* An :ref:`interactive shell console <topics-shell>` (IPython aware) for trying
+  out the CSS and XPath expressions to scrape data, very useful when writing or
+  debugging your spiders.
+
+* Built-in support for :ref:`generating feed exports <topics-feed-exports>` in
+  multiple formats (JSON, CSV, XML) and storing them in multiple backends (FTP,
+  S3, local filesystem)
+
+* Robust encoding support and auto-detection, for dealing with foreign,
+  non-standard and broken encoding declarations.
+
+* :ref:`Strong extensibility support <extending-scrapy>`, allowing you to plug
+  in your own functionality using :ref:`signals <topics-signals>` and a
+  well-defined API (middlewares, :ref:`extensions <topics-extensions>`, and
+  :ref:`pipelines <topics-item-pipeline>`).
+
+* Wide range of built-in extensions and middlewares for handling:
+
+  - cookies and session handling
+  - HTTP features like compression, authentication, caching
+  - user-agent spoofing
+  - robots.txt
+  - crawl depth restriction
+  - and more
+
+* A :ref:`Telnet console <topics-telnetconsole>` for hooking into a Python
+  console running inside your Scrapy process, to introspect and debug your
+  crawler
+
+* Plus other goodies like reusable spiders to crawl sites from `Sitemaps`_ and
+  XML/CSV feeds, a media pipeline for :ref:`automatically downloading images
+  <topics-media-pipeline>` (or any other media) associated with the scraped
+  items, a caching DNS resolver, and much more!
+
+What's next?
+============
+
+The next steps for you are to :ref:`install Scrapy <intro-install>`,
+:ref:`follow through the tutorial <intro-tutorial>` to learn how to create
+a full-blown Scrapy project and `join the community`_. Thanks for your
+interest!
+
+.. _NLPQL Launcher: https://scrapy.org/community/
+.. _NLPQL API: https://en.wikipedia.org/wiki/Web_scraping
+.. _Amazon Associates Web Services: https://affiliate-program.amazon.com/gp/advertising/api/detail/main.html
+.. _Amazon S3: https://aws.amazon.com/s3/
+.. _Sitemaps: https://www.sitemaps.org/index.html

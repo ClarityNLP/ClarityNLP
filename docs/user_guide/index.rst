@@ -1,31 +1,47 @@
+==========
 User Guide
 ==========
-
-**This guide is intended for clinical and research users of ClarityNLP.**
 
 Introduction
 ------------
 
-ClarityNLP is designed to simplify the process of creating phenotypes and running queries on unstructured clinical data.  A major emphasis is on `computable phenotypes <nlpql.html#what-is-computable-phenotyping>`_ and creating shareable NLP that can be run on any clinical datasets without modification.
+ClarityNLP is is a natural language processing platform designed to accelerate review of medical charts for a wide variety of purposes, including research, clinical care, quality metrics, and risk adjustment.  This guide is intended for end users of ClarityNLP.
+
+
+First steps
+===========
+
+.. toctree::
+   :caption: First steps
+   :hidden:
+
+   intro/overview
+   intro/install
+   intro/tutorial
+   intro/examples
+
+:doc:`intro/overview`
+    Understand what ClarityNLP is and how it can help you.
+
+:doc:`intro/install`
+    Get ClarityNLP installed in your environment.
+
+:doc:`intro/tutorial`
+    Write your first ClarityNLP phenotype.
+
+:doc:`intro/examples`
+    Learn more by playing with pre-made ClarityNLP phenotypes.
+
+
 
 Document Ingestion
 ------------------
 
-The funda
+
 
 Creating Queries
 ----------------
 
-
-
-Phenotyping and NLPQL
----------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   nlpql
-   phenotypes
 
 
 Use cases
