@@ -4,17 +4,17 @@ ClarityNLP is a clinical NLP platform developed for the purpose of analyzing and
 ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, to identify patients and their clinical observations, extracted from text. 
 ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write your own definitions to find the patients and features that are relevant to your project.  
 
-ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and other NLP libraries. We have provided a Docker Compose configuration to integrate all the services ClarityNLP uses, or you can run standalone. To begin exploring ClarityNLP, follow the Quick Start guide below or read the full documentation [here](http://clarity-nlp.readthedocs.io/en/latest/).
+ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and other NLP libraries. We have provided a Docker Compose configuration to integrate all the services ClarityNLP uses, or you can run standalone. To begin exploring ClarityNLP, follow the Quick Start guide below or read the full documentation [here](http://claritynlp.readthedocs.io/en/latest/index.html).
 
 ### ClarityNLP Quick Start
 
-1. [Install ClarityNLP with Docker](http://clarity-nlp.readthedocs.io/en/latest/local-docker.html)
+1. [Install ClarityNLP with Docker](http://claritynlp.readthedocs.io/en/latest/setup/local-docker.html#running-locally)
 
 2. You should now be running all the services ClarityNLP needs. The main NLP service will be running at [http://localhost:5000](http://localhost:5000). You'll need to use a tool like [Postman](https://www.getpostman.com/apps) to interact with ClarityNLP.
 
-3. ClarityNLP has been pre-loaded with documents from the FDA Drug Labels data set, but you can get an idea on how to load more documents [here](http://clarity-nlp.readthedocs.io/en/latest/index.html#document-ingestion).
+3. ClarityNLP has been pre-loaded with documents from the FDA Drug Labels data set, but you can get an idea on how to load more documents [here](http://claritynlp.readthedocs.io/en/latest/setup/index.html#data-ingestion).
 
-4. Now we can test some NLPQL. See some sample NLPQL [here](https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql) and learn more about NLPQL [here](http://clarity-nlp.readthedocs.io/en/latest/nlpql.html). Let's try on creating a simple NLPQL to find drug allergies in this text.
+4. Now we can test some NLPQL. See some sample NLPQL [here](https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql) and learn more about NLPQL [here](http://claritynlp.readthedocs.io/en/latest/user_guide/intro/overview.html#example-nlpql-phenotype-walkthrough). Let's try on creating a simple NLPQL to find drug allergies in this text.
 Using Postman, we'll POST the NLPQL below as plain text to [http://localhost:5000/nlpql](http://localhost:5000/nlpql).
 
 <details><summary>Sample NLPQL</summary>
@@ -134,4 +134,4 @@ We can check if the job is *COMPLETED* via the `status_endpoint`.
 
 ### Full ClarityNLP Documentation
 You can read the full ClarityNLP documentation here: 
-[Read the Docs](http://clarity-nlp.readthedocs.io/en/latest/).
+[Read the Docs](http://claritynlp.readthedocs.io/en/latest/).
