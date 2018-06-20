@@ -33,5 +33,4 @@ To begin interacting with ClarityNLP, make sure you have ingested documents into
    :maxdepth: 1
 
    ingest/generic_ingestion
-   ingest/aact
    ingest/file_ingestion
