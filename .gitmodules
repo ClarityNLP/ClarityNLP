@@ -7,3 +7,9 @@
 [submodule "evaluation/validation"]
 	path = evaluation/validation
 	url = https://github.com/ClarityNLP/validation-framework.git
+[submodule "utilities/ingest-api"]
+	path = utilities/ingest-api
+	url = https://github.com/ClarityNLP/ingest-api.git
+[submodule "utilities/ingest-client"]
+	path = utilities/ingest-client
+	url = https://github.com/ClarityNLP/ingest-client.git
