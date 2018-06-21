@@ -1,5 +1,5 @@
 from pymongo.errors import BulkWriteError
-
+import luigi
 import data_access
 from luigi_tools import phenotype_helper
 import copy
@@ -8,6 +8,8 @@ from algorithms import get_related_terms
 import sys
 import traceback
 import datetime
+from data_access import pipeline_config as config
+from data_access import solr_data
 
 
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
@@ -20,6 +22,7 @@ class PhenotypeTask(luigi.Task):
     client = MongoClient(util.mongo_host, util.mongo_port)
 
     def requires(self):
+        register_tasks()
         tasks = list()
         pipeline_ids = data_access.query_pipeline_ids(int(self.phenotype), util.conn_string)
         print("getting ready to execute pipelines...")

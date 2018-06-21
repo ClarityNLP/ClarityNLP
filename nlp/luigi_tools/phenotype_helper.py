@@ -35,7 +35,6 @@ def get_terms_by_keys(term_dict, term_keys: list, concept_keys: list):
     return terms
 
 
-
 def get_report_tags(model):
     types = dict()
     # TODO
