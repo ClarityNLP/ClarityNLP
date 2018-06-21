@@ -47,7 +47,7 @@ Also, it's important to be aware with naming that you can overwrite other custom
 
 Running a Custom Task
 ---------------------
-The ClarityNLP engine will automatically create a distributed jobs and assign a set of documents to each worker task. Knowing that, there are just a few things to do to create custom tasks. You'll need to implement the ``run_custom_task`` function in your task.
+The ClarityNLP engine will automatically create a distributed job and assign a set of documents to each worker task. Knowing that, there are just a few things to do to create custom tasks. You'll need to implement the ``run_custom_task`` function in your task.
 That will give you access to the ``self`` parameter which has attributes from the job and the set of documents your algorithm will run on. You don't need to worry about them too much, but know they are accessible in your custom task.
 
 
