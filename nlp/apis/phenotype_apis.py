@@ -7,6 +7,10 @@ from algorithms import *
 from nlpql import *
 from .docs import auto
 from apis.api_helpers import init
+from tasks import register_tasks, registered_pipelines
+
+register_tasks()
+print(registered_pipelines)
 
 
 phenotype_app = Blueprint('phenotype_app', __name__)

@@ -108,3 +108,15 @@ class BaseTask(luigi.Task):
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         print("Implement your custom functionality here ")
+
+    def get_document_text(self, doc):
+        if doc and 'report_text' in doc:
+            return doc['report_text']
+        else:
+            return ''
+
+    def get_document_sentences(self, doc):
+        txt = self.get_document_text(doc)
+        sentence_list = self.segment.parse_sentences(txt)
+        return sentence_list
+
