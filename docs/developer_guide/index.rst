@@ -22,11 +22,18 @@ Technical Background
 
 
 
+Utility Algorithms
+------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   algorithms/section_tagger
+   algorithms/context
 
 
-
-Algorithms
-----------
+Task Algorithms
+---------------
 
 .. toctree::
    :maxdepth: 1
@@ -36,12 +43,10 @@ Algorithms
    algorithms/tnm_stage_finder
    algorithms/value_extraction
    algorithms/measurement_subject_resolution
-   algorithms/section_tagger
-   algorithms/context
 
 
-Building Custom Algorithms
---------------------------
+Building Custom Task Algorithms
+-------------------------------
 
 .. toctree::
    :maxdepth: 1
