@@ -23,7 +23,7 @@ codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/
 // #Manual Term sets#
 // simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
 // can add expansion of structured concepts from terminologies as well with OMOPHelpers
-
+// Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
 documentset ProviderNotes:
     Clarity.createDocumentSet({
             "filter_query": "subject:(55672 OR 77614 OR 31942 OR 67906 OR 30202)",
