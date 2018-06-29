@@ -13,10 +13,10 @@
    Generates two output files:
 
        verb_list.txt      - list of unique verbs found
-       irregular_verbs.py - code to cut and paste into verb_inflector.py
+       irregular_verbs.py - data structures imported by verb_inflector.py
 
-2. Copy the contents of irregular_verbs.py into verb_inflector.py (this has
-   already been done). Put it before the function definitions.
+2. Copy irregular_verbs.py to the directory that contains verb_inflector.py
+   (up one level).
 
 3. Scrape the inflection truth data from Wiktionary for all verbs in
    verb_list.txt:

@@ -39,6 +39,26 @@ url_common = 'https://www.poetrysoup.com/common_words/common_verbs.aspx'
 NONE_TEXT = '(none)'
 
 ###############################################################################
+def get_comment_block():
+    """
+    Generate the comment block to be written into the output python file.
+    """
+
+    return ("# The following dictionary of irregular verbs was constructed with data\n"
+            "# scraped from this link:\n"
+            "#     'https://en.wikipedia.org/wiki/List_of_English_irregular_verbs'\n"
+            "\n"
+            "# Verbs marked as archaic are omitted unless their Wiktionary entry\n"
+            "# indicates that they are actually NOT archaic. There are lots of discrepancies\n"
+            "# between Wiktionary and Wikipedia for these verbs. An attempt at resolving\n"
+            "# these has been performed by the associated scraping code.\n"
+            "#\n"
+            "# Each entry has the form:\n"
+            "#\n"
+            "#     base_form:[ [past tense (preterite) forms], [past participle forms]]\n")
+
+
+###############################################################################
 def split_on_fwdslash(match_text):
     """
     Split word1/word2/.../wordN into ['word1', 'word2', ..., 'wordN'].
@@ -206,6 +226,7 @@ def scrape_irregular_verbs():
 
     saved_verbs = []
     saved_lines = []
+    inverse_map = {}
     
     # write out in dict form, for cut-and-pasting into other code
     for entry in verbs:
@@ -365,17 +386,33 @@ def scrape_irregular_verbs():
             # some forms not archaic
             preterite_forms = ['wreaked', 'wrought']
             past_part_forms = ['wreaked', 'wrought']
-            
+
+        # generate entry for irregular_verbs.py
         line = "'{0}':[{1},{2}],".format(base_form, preterite_forms, past_part_forms)
         saved_lines.append(line)
         prev_base_form = base_form
         saved_verbs.append(base_form)
 
-    # write as code to be cut-and-pasted
+        # update inverse map
+        for v in preterite_forms:
+            inverse_map[v] = base_form
+        for v in past_part_forms:
+            inverse_map[v] = base_form
+        
+    # write out as python data structures
+
+    INDENT = '    '
     outfile = open(OUTPUT_PYTHON_FILE, 'w')
-    outfile.write('IRREGULAR_VERBS = {\n')
+    outfile.write(get_comment_block() + '\n')
+    outfile.write('VERBS = {\n')
     for l in saved_lines:
-        outfile.write(l + '\n')
+        outfile.write(INDENT + l + '\n')
+    outfile.write('}\n')
+    outfile.write('\n')
+
+    outfile.write('INFLECTION_MAP = {\n')
+    for inflected_form, base_form in inverse_map.items():
+        outfile.write(INDENT + "'{0}':'{1}',\n".format(inflected_form, base_form))
     outfile.write('}\n')
     outfile.close()
 
