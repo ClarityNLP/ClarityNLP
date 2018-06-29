@@ -264,9 +264,10 @@ def handle_document_set(context, phenotype: PhenotypeModel):
     library = call["method"]["library"]
     funct = call["method"]["funct"]
     arguments = call["method"]["arguments"]
+    named_arguments = call["method"]["named_arguments"]
 
     phenotype_def = PhenotypeDefine(name, 'documentset', library=library,
-                                    funct=funct, arguments=arguments)
+                                    funct=funct, arguments=arguments, named_arguments=named_arguments)
 
     if not phenotype.document_sets:
         phenotype.document_sets = list()
