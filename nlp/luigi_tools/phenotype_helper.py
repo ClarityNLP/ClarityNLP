@@ -73,6 +73,11 @@ def get_document_set_attributes(model):
                             filter_query[doc_set_name] = named_args["filter_query"]
                         if "query" in named_args:
                             custom_query[doc_set_name] = named_args["query"]
+                elif funct == "createReportTypeList":
+                    if len(args) == 1 and type(args[0]) == list:
+                        types[doc_set_name] = args[0]
+                    else:
+                        types[doc_set_name] = args
 
     return tags, types, custom_query, filter_query
 
