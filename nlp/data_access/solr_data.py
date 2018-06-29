@@ -57,12 +57,20 @@ def make_url(qry, fq, sort, start, rows, solr_url):
     return url
 
 
-def make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids):
+def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids):
     new_fq = fq
 
     mapped_items = get_report_type_mappings(mapper_url, mapper_inst, mapper_key)
 
+    if types and len(types) > 0:
+        if len(new_fq) > 0:
+            new_fq += ' AND '
+        report_type_fq = 'report_type: ("' + '" OR "'.join(types) + '")'
+        new_fq += report_type_fq
+
     if len(report_type_query) > 0:
+        if len(new_fq) > 0:
+            new_fq += ' AND '
         report_types = 'report_type: (' + report_type_query + ')'
         new_fq += report_types
 
@@ -116,15 +124,16 @@ def make_post_body(qry, fq, sort, start, rows):
     return data
 
 
-def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='', sort='', start=0, rows=10,
-          cohort_ids: list = list(),
+def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), sort='', start=0, rows=10,
+          cohort_ids: list = list(), types: list = list(), filter_query='',
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
     url = solr_url + '/select'
-    fq = make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
-    data = make_post_body(qry, fq, sort, start, rows)
+    fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
+    data = make_post_body(qry,  fq, sort, start, rows)
 
     print("Querying " + url)
-    post_data = json.dumps(data)
+    post_data = json.dumps(data, indent=4)
+    print(post_data)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
@@ -140,16 +149,17 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), fq='',
     return response.json()['response']['docs']
 
 
-def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), fq='', sort='', start=0, rows=10,
-                   cohort_ids: list = list(),
+def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), sort='', start=0, rows=10,
+                   cohort_ids: list = list(), types: list = list(), filter_query='',
                    report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
 
     url = solr_url + '/select'
-    fq = make_fq(tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
+    fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
     data = make_post_body(qry, fq, sort, start, rows)
 
-    print("Querying " + url)
+    print("Querying to get counts " + url)
     post_data = json.dumps(data)
+    print(post_data)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)

@@ -89,10 +89,11 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
             added.extend(related_terms)
 
     jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Getting Solr doc size")
-    solr_query = config.get_query(added)
+    solr_query = config.get_query(custom_query=pipeline_config.custom_query, terms=added)
     total_docs = solr_data.query_doc_size(solr_query, mapper_inst=util.report_mapper_inst,
                                           mapper_url=util.report_mapper_url,
                                           mapper_key=util.report_mapper_key, solr_url=util.solr_url,
+                                          types=pipeline_config.report_types, filter_query=pipeline_config.filter_query,
                                           tags=pipeline_config.report_tags, report_type_query=pipeline_config.report_type_query,
                                           cohort_ids=pipeline_config.cohort)
     doc_limit = config.get_limit(total_docs, pipeline_config)

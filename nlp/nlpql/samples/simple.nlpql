@@ -25,7 +25,13 @@ codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/
 // can add expansion of structured concepts from terminologies as well with OMOPHelpers
 
 documentset ProviderNotes:
-    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
+    Clarity.createDocumentSet({
+            "filter_query": "subject:(55672 OR 77614 OR 31942 OR 67906 OR 30202)",
+            "report_types": [
+                "Discharge summary"
+            ],
+            "report_tags": [],
+            "query": "report_text:smok* OR cigar* OR etoh"});
 
 termset PenicillinTerms: [
 "Amoxicillin",
