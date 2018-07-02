@@ -123,7 +123,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from irregular_verbs import VERBS as IRREGULAR_VERBS
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 2
 
 MODULE_NAME = 'verb_inflector.py'
 
@@ -463,9 +463,14 @@ def present_participle(base):
     match = regex_vowel_l_ending.search(base)
     if match:
         if TRACE: print('\tfound vowel-l ending')
-        american = base + 'ing'
-        british = base + 'ling'
-        return [american, british]
+        # if the vowel before the l is an 'i', the rule does not seem to apply
+        # (sail -> sailing, tail -> tailing, etc.)
+        if len(base) >= 2 and 'i' != base[-2]:
+            american = base + 'ing'
+            british = base + 'ling'
+            return [american, british]
+        else:
+            return [base + 'ing']
 
     in_cmu_dict = True
     try:
