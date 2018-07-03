@@ -1,6 +1,7 @@
 from algorithms import get_tags
 from pymongo import MongoClient
 from .task_utilities import BaseTask
+import util
 
 SECTIONS_FILTER = "sections"
 
@@ -13,7 +14,7 @@ class POSTaggerTask(BaseTask):
 
             # TODO incorporate sections and filters
             for doc in self.docs:
-                res = get_tags(doc["report_text"])
+                res = get_tags(doc[util.solr_text_field])
                 for val in res:
                     obj = {
                         "sentence": val.sentence,
@@ -28,6 +29,6 @@ class POSTaggerTask(BaseTask):
                         "is_stop": val.is_stop,
                         "description": val.description
                     }
-                    self.write_result_data(temp_file, mongo_client, obj)
+                    self.write_result_data(temp_file, mongo_client, doc, obj)
 
                 del res

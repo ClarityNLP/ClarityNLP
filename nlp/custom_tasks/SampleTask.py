@@ -1,5 +1,6 @@
 from tasks.task_utilities import BaseTask
 from pymongo import MongoClient
+import util
 
 
 class SampleTask(BaseTask):
@@ -7,7 +8,7 @@ class SampleTask(BaseTask):
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         for doc in self.docs:
-            txt = doc["report_text"]
+            txt = doc[util.solr_text_field]
 
             # My custom stuff here
             length = len(txt)

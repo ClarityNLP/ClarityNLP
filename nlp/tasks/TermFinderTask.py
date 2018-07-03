@@ -1,6 +1,7 @@
 from algorithms import *
 from data_access import jobs
 from .task_utilities import pipeline_mongo_writer, BaseTask
+import util
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],
@@ -26,7 +27,7 @@ class TermFinderBatchTask(BaseTask):
         self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with TermFinder")
 
         for doc in self.docs:
-            terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], filters)
+            terms_found = term_matcher.get_term_full_text_matches(doc[util.solr_text_field], filters)
             for term in terms_found:
                 obj = {
                     "sentence": term.sentence,
@@ -59,7 +60,7 @@ class ProviderAssertionBatchTask(BaseTask):
 
         self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with ProviderAssertion")
         for doc in self.docs:
-            terms_found = term_matcher.get_term_full_text_matches(doc["report_text"], pa_filters)
+            terms_found = term_matcher.get_term_full_text_matches(doc[util.solr_text_field], pa_filters)
             for term in terms_found:
                 obj = {
                     "sentence": term.sentence,

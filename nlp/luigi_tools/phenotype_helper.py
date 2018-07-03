@@ -4,6 +4,7 @@ import traceback
 from functools import reduce
 
 import pandas as pd
+import util
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
 from ohdsi import getCohort

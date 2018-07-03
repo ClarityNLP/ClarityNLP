@@ -1,5 +1,6 @@
 import psycopg2
 import psycopg2.extras
+import util
 
 try:
     from .base_model import BaseModel
@@ -186,7 +187,7 @@ def get_sample_phenotype():
                                             "Discharge summary"
                                         ],
                                         "report_tags": [],
-                                        "query": "report_text:smok* OR cigar* OR etoh"
+                                        "query": "%s:smok* OR cigar* OR etoh" % util.solr_text_field
                                     })
     RadiologyNotes = PhenotypeDefine("Radiology", "documentset",
                                      library="Clarity",

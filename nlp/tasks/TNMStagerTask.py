@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from algorithms import run_tnm_stager_full
 from .task_utilities import BaseTask
-
+import util
 
 class TNMStagerTask(BaseTask):
 
@@ -9,7 +9,7 @@ class TNMStagerTask(BaseTask):
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
             for doc in self.docs:
-                results = run_tnm_stager_full(doc["report_text"], term_list=self.pipeline_config.terms)
+                results = run_tnm_stager_full(doc[util.solr_text_field], term_list=self.pipeline_config.terms)
                 for obj in results:
                     self.write_result_data(temp_file, mongo_client, doc, obj)
 

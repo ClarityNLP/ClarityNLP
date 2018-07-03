@@ -174,8 +174,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         q = sys.argv[1]
     else:
-        q = "report_text:*"
-    query(q, solr_url=solr)
+        q = "%s:*" % util.solr_text_field
+    res = query(q, solr_url=solr)
+    print(simplejson.dumps(res, indent=4*' '))
 
     report_mapper_url = util.report_mapper_url
     report_mapper_key = util.report_mapper_key
@@ -183,4 +184,5 @@ if __name__ == '__main__':
     mappings = get_report_type_mappings(report_mapper_url, report_mapper_inst, report_mapper_key)
 
     print(simplejson.dumps(mappings, indent=4*' '))
+
     sys.exit(1)

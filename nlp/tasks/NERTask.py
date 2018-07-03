@@ -1,6 +1,7 @@
 from algorithms import get_standard_entities
 from pymongo import MongoClient
 from .task_utilities import BaseTask
+import util
 
 SECTIONS_FILTER = "sections"
 
@@ -17,7 +18,7 @@ class NERTask(BaseTask):
 
         # TODO incorporate sections and filters
         for doc in self.docs:
-            res = get_standard_entities(doc["report_text"])
+            res = get_standard_entities(doc[util.solr_text_field])
             for val in res:
                 obj = {
                     "term": val.text,

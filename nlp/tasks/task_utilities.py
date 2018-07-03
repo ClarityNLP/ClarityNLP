@@ -23,9 +23,9 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     data_fields["owner"] = p_config.owner
     data_fields["nlpql_feature"] = p_config.name
     data_fields["inserted_date"] = datetime.datetime.now()
-    data_fields["report_id"] = doc["report_id"]
-    data_fields["subject"] = doc["subject"]
-    data_fields["report_date"] = doc["report_date"]
+    data_fields["report_id"] = doc[util.solr_report_id_field]
+    data_fields["subject"] = doc[util.solr_subject_field]
+    data_fields["report_date"] = doc[util.solr_report_date_field]
     data_fields["concept_code"] = p_config.concept_code
     data_fields["phenotype_final"] = False
 
@@ -112,8 +112,8 @@ class BaseTask(luigi.Task):
         print("Implement your custom functionality here ")
 
     def get_document_text(self, doc):
-        if doc and 'report_text' in doc:
-            return doc['report_text']
+        if doc and util.solr_text_field in doc:
+            return doc[util.solr_text_field]
         else:
             return ''
 
