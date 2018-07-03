@@ -87,6 +87,17 @@ def phenotype_intermediate_results(job: str):
     return generic_results(job, 'phenotype', False)
 
 
+def get_columns(db, job: str, job_type: str):
+    types = db[job_type + "_results"].distinct("pipeline_type", {"job_id": int(job)})
+    cols = list()
+    for j in types:
+        query = {"job_id": int(job), "pipeline_type": j}
+        results = db[job_type + "_results"].find_one(query)
+        keys = list(results.keys())
+        cols.extend(keys)
+    return list(set(cols))
+
+
 def generic_results(job: str, job_type: str, phenotype_final: bool = False):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -98,7 +109,6 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
                                     quoting=csv.QUOTE_MINIMAL)
 
             header_written = False
-            header_values = []
             length = 0
             if job_type == 'phenotype':
                 query = {"job_id": int(job), "phenotype_final": phenotype_final}
@@ -106,20 +116,22 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
                 query = {"job_id": int(job)}
 
             results = db[job_type + "_results"].find(query)
+            columns = sorted(get_columns(db, job, job_type))
             for res in results:
                 keys = list(res.keys())
                 if not header_written:
-                    length = len(keys)
-                    header_values = sorted(keys)
-                    csv_writer.writerow(header_values)
+                    length = len(columns)
+                    csv_writer.writerow(columns)
                     header_written = True
 
                 output = [''] * length
                 i = 0
-                for key in header_values:
+                for key in columns:
                     if key in keys:
                         val = res[key]
                         output[i] = val
+                    else:
+                        output[i] = ''
                     i += 1
                 csv_writer.writerow(output)
 

@@ -1,4 +1,4 @@
 from .SampleTask import SampleTask
-from .APITask import APITask
-
+from .SampleAPITask import SampleAPITask
+from .SampleParameterTask import SampleParameterTask
 

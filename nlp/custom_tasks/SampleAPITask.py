@@ -3,8 +3,15 @@ from pymongo import MongoClient
 import requests
 
 
-class APITask(BaseTask):
+class SampleAPITask(BaseTask):
     task_name = "ChuckNorrisJokeTask"
+
+    # NLPQL
+
+    # define sampleTask:
+    # Clarity.ChuckNorrisJokeTask({
+    #   documentset: [ProviderNotes]
+    # });
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         for doc in self.docs:
