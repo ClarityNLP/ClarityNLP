@@ -8,7 +8,7 @@ class SampleParameterTask(BaseTask):
 
     # NLPQL
 
-    # definewithParams:
+    # define withParams:
     #     Clarity.ParameterTask({
     #         documentset: [ProviderNotes],
     #         "greeting": "hello",
