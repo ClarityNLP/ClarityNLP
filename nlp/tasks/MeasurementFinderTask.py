@@ -1,6 +1,7 @@
 from algorithms import *
 from pymongo import MongoClient
 from .task_utilities import BaseTask
+import util
 
 SECTIONS_FILTER = "sections"
 
@@ -14,7 +15,7 @@ class MeasurementFinderTask(BaseTask):
             filters[SECTIONS_FILTER] = self.pipeline_config.sections
 
         for doc in self.docs:
-            meas_results = run_measurement_finder_full(doc["report_text"], self.pipeline_config.terms)
+            meas_results = run_measurement_finder_full(doc[util.solr_text_field], self.pipeline_config.terms)
             for meas in meas_results:
                 value = meas['X']
 

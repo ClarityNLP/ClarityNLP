@@ -116,7 +116,7 @@ def get_query(custom_query='', terms: list = list()):
     if custom_query and len(custom_query) > 0:
         return custom_query
     elif terms is not None and len(terms) > 0:
-        return 'report_text:("' + '" OR "'.join(terms) + '")'
+        return util.solr_text_field + ':("' + '" OR "'.join(terms) + '")'
     else:
         return '*'
 
