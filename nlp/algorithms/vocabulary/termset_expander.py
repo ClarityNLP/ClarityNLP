@@ -126,7 +126,7 @@ from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 2
+VERSION_MINOR = 3
 
 MODULE_NAME = 'termset_expander.py'
 
@@ -832,35 +832,10 @@ def expand_nlpql(nlpql_text):
 
     
 ###############################################################################
-def run(filepath):
+def run(nlpql_text):
     """
     Perform the main work of this module.
     """
-
-    if not filepath:
-        raise ValueError('input file not specified')
-    
-    # make sure the input file exists
-    if not os.path.isfile(filepath):
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filepath)
-
-    # load the file contents into a string
-    try:
-        infile = open(filepath, 'r')
-    except (OSError, IOError) as e:
-        return EMPTY_STRING
-    except Exception as e:
-        return EMPTY_STRING
-
-    with infile:
-        try:
-            nlpql_text = infile.read()
-        except UnicodeDecodeError as e:
-            return EMPTY_STRING
-        except (OSError, IOError) as e:
-            return EMPTY_STRING
-        except Exception as e:
-            return EMPTY_STRING
 
     if 0 == len(nlpql_text):
         return EMPTY_STRING
@@ -946,6 +921,41 @@ def run(filepath):
     restored_text += expanded_nlpql[prev_end:]
     
     return restored_text
+
+
+###############################################################################
+def run_from_file(filepath):
+    """
+    Load the input file, read the data into a string, and perform macro
+    expansion on the string.
+    """
+
+    if not filepath:
+        raise ValueError('input file not specified')
+
+    # make sure the input file exists
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filepath)
+
+    # load the file contents into a string
+    try:
+        infile = open(filepath, 'r')
+    except (OSError, IOError) as e:
+        return EMPTY_STRING
+    except Exception as e:
+        return EMPTY_STRING
+
+    with infile:
+        try:
+            nlpql_text = infile.read()
+        except UnicodeDecodeError as e:
+            return EMPTY_STRING
+        except (OSError, IOError) as e:
+            return EMPTY_STRING
+        except Exception as e:
+            return EMPTY_STRING
+
+    return run(nlpql_text)
 
 
 ###############################################################################
@@ -1094,7 +1104,7 @@ if __name__ == '__main__':
         run_tests()
         sys.exit(0)
 
-    expanded_nlpql = run(opts.filepath)
+    expanded_nlpql = run_from_file(opts.filepath)
 
     # write results to stdout
     print(expanded_nlpql)
