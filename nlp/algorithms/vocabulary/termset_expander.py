@@ -126,10 +126,11 @@ from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 2
 
 MODULE_NAME = 'termset_expander.py'
 
+global DEBUG
 DEBUG = False
 
 # load Spacy's English model
@@ -1044,7 +1045,7 @@ def get_version():
 def show_help():
     print(get_version())
     print("""
-    USAGE: python3 ./{0} -f <filename> [-t termset_names] [-hv]
+    USAGE: python3 ./{0} -f <filename> [-hvsd]
 
     OPTIONS:
 
@@ -1055,6 +1056,7 @@ def show_help():
         -h, --help           Print this information and exit.
         -v, --version        Print version information and exit.
         -s, --selftest       Run self-tests and exit.
+        -d, --debug          Run in debug mode.
 
     """.format(MODULE_NAME))
 
@@ -1071,6 +1073,8 @@ if __name__ == '__main__':
                          dest='show_help', default=False)
     optparser.add_option('-s', '--selftest', action='store_true',
                          dest='selftest')
+    optparser.add_option('-d', '--debug', action='store_true',
+                         dest='debug')
 
     opts, other = optparser.parse_args(sys.argv)
 
@@ -1082,6 +1086,9 @@ if __name__ == '__main__':
     if opts.get_version:
         print(get_version())
         sys.exit(0)
+
+    if opts.debug:
+        DEBUG = True
 
     if opts.selftest:
         run_tests()
