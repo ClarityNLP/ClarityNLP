@@ -151,3 +151,17 @@ def nlpql_tester():
             return nlpql_results['phenotype'].to_json()
 
     return "Please POST text containing NLPQL."
+
+@phenotype_app.route("/nlpql_expander", methods=["POST"])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def nlpql_expander():
+    """POST to expand NLPQL termset macros"""
+    if request.method == 'POST' and request.data:
+        nlpql_results = expand_nlpql_macros(request.data.decode("utf-8"))
+        # if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+        #     return json.dumps(nlpql_results)
+        # else:
+        #     return nlpql_results['phenotype']
+        return nlpql_results
+
+    return "Please POST text containing NLPQL."
