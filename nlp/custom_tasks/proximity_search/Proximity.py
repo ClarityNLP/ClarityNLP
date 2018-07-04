@@ -19,9 +19,9 @@ class Proximity(BaseTask):
                 else:
                     pipeline_config['order']= True
                 obj = dict()
-                if get_proximity_txt(txt,self.pipeline_config['word1'], self.pipeline_config['word2'], int(self.pipeline_config['number']), self.pipeline_config['order']):
+                if get_proximity_txt(txt,self.pipeline_config.custom_arguments['word1'], self.pipeline_config.custom_arguments['word2'], int(self.pipeline_config.custom_arguments['number']), self.pipeline_config.custom_arguments['order']):
                     obj['doc'] = txt
-                    phrase = get_proximity_phrase(txt,self.pipeline_config['word1'], self.pipeline_config['word2'], int(self.pipeline_config['number']), self.pipeline_config['order'])
+                    phrase = get_proximity_phrase(txt,self.pipeline_config.custom_arguments['word1'], self.pipeline_config.custom_arguments['word2'], int(self.pipeline_config.custom_arguments['number']), self.pipeline_config.custom_arguments['order'])
                     obj['phrase'] = phrase
 
 
