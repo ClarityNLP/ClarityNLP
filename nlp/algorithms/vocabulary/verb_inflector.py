@@ -120,7 +120,11 @@ import optparse
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
 from nltk.stem.wordnet import WordNetLemmatizer
-from irregular_verbs import VERBS as IRREGULAR_VERBS
+try:
+    from .irregular_verbs import VERBS as IRREGULAR_VERBS
+except Exception as e:
+    print(e)
+    from irregular_verbs import VERBS as IRREGULAR_VERBS
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 2

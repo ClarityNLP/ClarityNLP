@@ -117,13 +117,19 @@ import sys
 import spacy
 import errno
 import optparse
-import pluralize
-import vocabulary
-import verb_inflector
-import irregular_verbs
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
+
+try:
+    from .pluralize import plural
+    from .verb_inflector import get_inflections
+    from .irregular_verbs import INFLECTION_MAP
+except Exception as e:
+    print(e)
+    from pluralize import plural
+    from verb_inflector import get_inflections
+    from irregular_verbs import INFLECTION_MAP
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 3
@@ -338,8 +344,8 @@ def get_verb_base_form(word):
     verb = word.lower()
 
     # Is this a known irregular verb form?
-    if verb in irregular_verbs.INFLECTION_MAP:
-        return irregular_verbs.INFLECTION_MAP[verb]
+    if verb in INFLECTION_MAP:
+        return INFLECTION_MAP[verb]
 
     trial = verb
 
@@ -556,7 +562,7 @@ def get_plurals(namespace, term_list, return_type=RETURN_TYPE_STRING):
     for t in term_list:
         # include the original term also
         new_terms.append(t)
-        plural_terms = pluralize.plural(t.lower())
+        plural_terms = plural(t.lower())
         new_terms.extend(plural_terms)
     term_list = new_terms
 
@@ -589,7 +595,7 @@ def get_single_verb_inflections(term):
 
     verb = term.lower()
     base_form = get_verb_base_form(verb)
-    inflections = verb_inflector.get_inflections(base_form)
+    inflections = get_inflections(base_form)
     # remove duplicates in the inflections
     verbs = unique_inflections(inflections)
     return verbs

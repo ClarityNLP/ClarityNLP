@@ -110,6 +110,12 @@ def map_arguments(pipeline: PipelineConfig, e):
                 except Exception as ex:
                     traceback.print_exc(file=sys.stdout)
                     print(ex)
+            else:
+                try:
+                    pipeline.custom_arguments[k] = e[k]
+                except Exception as ex:
+                    traceback.print_exc(file=sys.stdout)
+                    print(ex)
 
 
 def get_cohort_items(cohort_name, cohort_source):

@@ -13,7 +13,11 @@ else:
 def get_value_context(value_context: nlpql_parserParser.ValueContext):
     value = None
 
-    if len(value_context.children) == 1:
+    children_count = value_context.getChildCount()
+
+    if children_count == 0:
+        value = value_context.getText()
+    elif children_count == 1:
         child = value_context.getChild(0)
         txt = value_context.getText().strip('"')
         if type(child) == nlpql_parserParser.ArrayContext:
@@ -81,6 +85,17 @@ def get_method_call(method_call: nlpql_parserParser.MethodCallContext):
 def get_pair_context(pair_context: nlpql_parserParser.PairContext):
     c_name = pair_context.getChild(0).getText().strip('"')
     c_value = get_value_context(pair_context.getChild(2))
+
+    if type(c_value) == str:
+        l_val = c_value.lower()
+        if l_val == "true":
+            c_value = True
+        elif l_val == "false":
+            c_value = False
+        elif l_val.isdigit():
+            c_value = int(l_val)
+        elif l_val.replace('.', '', 1).isdigit():
+            c_value = float(l_val)
     return {
         "name": c_name,
         "value": c_value
