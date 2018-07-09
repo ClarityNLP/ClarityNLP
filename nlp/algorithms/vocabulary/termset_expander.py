@@ -9,7 +9,7 @@ OVERVIEW:
 
     This module expands macros in NLPQL termsets. The supported macros are:
 
-        Clarity.Synonyms          (WordNet synonyms)
+        Clarity.Synonyms          (WordNet synonyms for NOUN, ADJ, ADV)
         Clarity.Plurals
         Clarity.VerbInflections
         Clarity.LexicalVariants   (verb inflections followed by plurals)
@@ -42,7 +42,7 @@ SYNTAX:
         Clarity.Synonyms(["term1"])
         Clarity.Synonyms(["term1", "term2", "term3"])
 
-    The first example shows the use of a single term argument. The next example
+    The first example shows the use of a single-term argument. The next example
     shows the use of a single-term array, and the third example shows the use
     of a multi-term array.
 
@@ -61,9 +61,9 @@ SYNTAX:
         Clarity.Synonyms(["term1", "multi word term2"])
 
     This macro would return synonyms for "term1", as well as for
-    "multi word term2" as a whole. It would then find all nouns inside of
-    "multi word term2", find synonyms for each noun, and return the Cartesian
-    product of all possibilities.
+    "multi word term2" as a whole. It would then find all nouns, adjectives,
+    and adverbs inside of "multi word term2", find synonyms for each, and
+    return the Cartesian product of all possibilities.
 
     To illustrate, consider the termset
 
@@ -132,7 +132,7 @@ except Exception as e:
     from irregular_verbs import INFLECTION_MAP
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 3
+VERSION_MINOR = 4
 
 MODULE_NAME = 'termset_expander.py'
 
@@ -434,16 +434,18 @@ def get_verb_base_form(word):
 
 
 ###############################################################################
-def get_single_noun_synonyms(namespace, noun):
+def get_single_word_synonyms(namespace, word, pos):
     """
-    Return a list of synonyms for the given noun.
+    Return a list of synonyms for the given word with part of speech 'pos'.
     """
+
+    assert pos==wordnet.NOUN or pos==wordnet.ADJ or pos==wordnet.ADV
 
     synonyms = []
     
     if NAMESPACE_CLARITY == namespace:
-        # get all sets of synonyms for which the term is a noun
-        synsets = wordnet.synsets(noun.lower(), pos=wordnet.NOUN)
+        # get all sets of synonyms from Wordnet
+        synsets = wordnet.synsets(word.lower(), pos)
         for s in synsets:
             # the 'lemmas' for each set are the synonyms
             synonyms.extend(s.lemma_names())
@@ -452,11 +454,11 @@ def get_single_noun_synonyms(namespace, noun):
         synonyms = [s.lower() for s in synonyms]
         uniques = sorted(list(set(synonyms)))
     else:
-        uniques = [noun]
+        uniques = [word]
 
-    # rearrange so that the given noun comes first
+    # rearrange so that the given word comes first
     if len(uniques) > 1:
-        swap_index = uniques.index(noun)
+        swap_index = uniques.index(word)
         uniques[0], uniques[swap_index] = uniques[swap_index], uniques[0]
 
     return uniques
@@ -470,15 +472,16 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
         return to_string(term_list, debug_suffix)
 
     synonyms = []
-    # assume the terms are nouns and get all synonyms
     for t in term_list:
 
         # if t contains a space, assume multiword term
         is_multiword = -1 != t.find(CHAR_SPACE)
 
         # get synonyms for term as a whole, whether multiword or not
-        new_syns = get_single_noun_synonyms(namespace, t)
-        synonyms.extend(new_syns)
+        pos = [wordnet.NOUN, wordnet.ADJ, wordnet.ADV]
+        for p in pos:
+            new_syns = get_single_word_synonyms(namespace, t, p)
+            synonyms.extend(new_syns)
 
         if is_multiword:
             # get parts of speech and find nouns
@@ -490,10 +493,13 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
             index_map = {}
             for token in doc:
                 if 'NOUN' == token.pos_:
-                    index_map[token.i] = token.text
-                    #print('this is a noun: {0}'.format(token))
+                    index_map[token.i] = (token.text, wordnet.NOUN)
+                elif 'ADJ' == token.pos_:
+                    index_map[token.i] = (token.text, wordnet.ADJ)
+                elif 'ADV' == token.pos_:
+                    index_map[token.i] = (token.text, wordnet.ADV)
 
-            # if no nouns, nothing to do
+            # if no entries, nothing to do
             if not index_map:
                 continue
             else:
@@ -502,9 +508,9 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
 
                 # update indices in case spacy did not fully tokenize
                 ok = True
-                for index, token in index_map.items():
+                for index, token_and_pos in index_map.items():
                     if index < len(words):
-                        token = index_map[index]
+                        token = token_and_pos[0]
                         if words[index] == token:
                             continue
 
@@ -512,7 +518,7 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
                     for j in len(words):
                         if words[j] == token:
                             del index_map[index]
-                            index_map[j] = token
+                            index_map[j] = token_and_pos
                         else:
                             # not found
                             ok = False
@@ -526,8 +532,10 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
                     continue
 
             # rebuild the index map with all synonyms
-            for index, token in index_map.items():
-                syns = get_single_noun_synonyms(namespace, token)
+            for index, token_and_pos in index_map.items():
+                token = token_and_pos[0]
+                pos   = token_and_pos[1]
+                syns = get_single_word_synonyms(namespace, token, pos)
                 index_map[index] = syns
                 
             # do the expansion
@@ -1044,7 +1052,8 @@ def run_tests():
         print('\t[{0}]: {1}'.format(i, sentences[i]))
 
     # synonyms
-    sentences = ['the food tastes good', 'the man owns a vehicle']
+    sentences = ['the food tastes great', 'the man owns a vehicle',
+                 'the large vehicle', 'the sweetly singing bird']
     for s in sentences:
         new_phrases = get_synonyms(NAMESPACE_CLARITY, [s], RETURN_TYPE_LIST)
         print('\nOriginal: {0}'.format(s))
