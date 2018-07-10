@@ -117,6 +117,7 @@ import sys
 import spacy
 import errno
 import optparse
+import vocabulary
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
@@ -130,6 +131,10 @@ except Exception as e:
     from pluralize import plural
     from verb_inflector import get_inflections
     from irregular_verbs import INFLECTION_MAP
+
+# temporary
+import util
+
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 4
@@ -449,6 +454,9 @@ def get_single_word_synonyms(namespace, word, pos):
         for s in synsets:
             # the 'lemmas' for each set are the synonyms
             synonyms.extend(s.lemma_names())
+    elif NAMESPACE_OHDSI == namespace:
+        # get OHDSI synonyms from Postgres database
+        synonyms = vocabulary.get_synonyms(util.conn_string, word.lower(), None)
 
     if len(synonyms) > 0:
         synonyms = [s.lower() for s in synonyms]
@@ -484,7 +492,7 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
             synonyms.extend(new_syns)
 
         if is_multiword:
-            # get parts of speech and find nouns
+            # get parts of speech
             doc = nlp(t)
             if 1 == len(doc):
                 continue
@@ -616,79 +624,78 @@ def get_verb_inflections(namespace, term_list, return_type=RETURN_TYPE_STRING):
         debug_suffix = '_' + namespace + '_vi'
         return to_string(term_list, debug_suffix)
 
-    if NAMESPACE_CLARITY == namespace:
-        new_terms = []
-        for t in term_list:
+    new_terms = []
+    for t in term_list:
 
-            # if t contains a space, assume multiword term
-            is_multiword = -1 != t.find(CHAR_SPACE)
+        # if t contains a space, assume multiword term
+        is_multiword = -1 != t.find(CHAR_SPACE)
 
-            # assume verb if single word
-            if not is_multiword:
+        # assume verb if single word
+        if not is_multiword:
+            verbs = get_single_verb_inflections(t)
+            new_terms.extend(verbs)
+        else:
+            # get parts of speech and find verbs
+            doc = nlp(t)
+            if 1 == len(doc):
                 verbs = get_single_verb_inflections(t)
                 new_terms.extend(verbs)
+                continue
+
+            # multi-word
+            index_map = {}
+            for token in doc:
+                if 'VERB' == token.pos_:
+                    index_map[token.i] = token.text
+
+            # if no verbs, no inflections to compute
+            if not index_map:
+                verbs = get_single_verb_inflections(t)
+                new_terms.extend(verbs)
+                continue
             else:
-                # get parts of speech and find verbs
-                doc = nlp(t)
-                if 1 == len(doc):
-                    verbs = get_single_verb_inflections(t)
-                    new_terms.extend(verbs)
-                    continue
+                # split into individual words
+                words = t.split()
 
-                # multi-word
-                index_map = {}
-                for token in doc:
-                    if 'VERB' == token.pos_:
-                        index_map[token.i] = token.text
+                # update indices in case spacy did not fully tokenize
+                ok = True
+                for index, token in index_map.items():
+                    if index < len(words):
+                        token = index_map[index]
+                        if words[index] == token:
+                            continue
 
-                # if no verbs, no inflections to compute
-                if not index_map:
-                    verbs = get_single_verb_inflections(t)
-                    new_terms.extend(verbs)
-                    continue
-                else:
-                    # split into individual words
-                    words = t.split()
-
-                    # update indices in case spacy did not fully tokenize
-                    ok = True
-                    for index, token in index_map.items():
-                        if index < len(words):
-                            token = index_map[index]
-                            if words[index] == token:
-                                continue
-
-                        # spacy tokenization is different from t.split()
-                        for j in len(words):
-                            if words[j] == token:
-                                del index_map[index]
-                                index_map[j] = token
-                            else:
-                                # not found
-                                ok = False
-                                break
-
-                        if not ok:
-                            # treat as single word
-                            verbs = get_single_verb_inflections(t)
-                            new_terms.extend(verbs)
+                    # spacy tokenization is different from t.split()
+                    for j in len(words):
+                        if words[j] == token:
+                            del index_map[index]
+                            index_map[j] = token
+                        else:
+                            # not found
+                            ok = False
                             break
 
                     if not ok:
-                        continue
+                        # treat as single word
+                        verbs = get_single_verb_inflections(t)
+                        new_terms.extend(verbs)
+                        break
 
-                # rebuild the index map with all inflections
-                for index, token in index_map.items():
-                    verbs = get_single_verb_inflections(token)
-                    index_map[index] = verbs
+                if not ok:
+                    continue
 
-                # do the expansion
-                new_phrases = expand(t, index_map)
-                new_terms.extend(new_phrases)
+            # rebuild the index map with all inflections
+            for index, token in index_map.items():
+                verbs = get_single_verb_inflections(token)
+                index_map[index] = verbs
 
-        # remove duplicates
-        if len(new_terms) > 0:
-            term_list = sorted(list(set(new_terms)))
+            # do the expansion
+            new_phrases = expand(t, index_map)
+            new_terms.extend(new_phrases)
+
+    # remove duplicates
+    if len(new_terms) > 0:
+        term_list = sorted(list(set(new_terms)))
 
     if RETURN_TYPE_LIST == return_type:
         return term_list
@@ -715,23 +722,51 @@ def get_lexical_variants(namespace, term_list):
 
 
 ###############################################################################
-def get_descendants(namespace, term_list):
+def get_descendants(namespace, term_list, return_type=RETURN_TYPE_STRING):
 
     if DEBUG:
         debug_suffix = '_' + namespace + '_d'
         return to_string(term_list, debug_suffix)
 
-    return to_string(term_list)
+    descendants = []
+    if NAMESPACE_OHDSI == namespace:
+        for t in term_list:
+            term_descendants = vocabulary.get_descendants(util.conn_string, t.lower(), None)
+            descendants.extend(term_descendants)
+
+    # remove duplicates
+    if len(descendants) > 0:
+        descendants = [d.lower() for d in descendants]
+        term_list = sorted(list(set(descendants)))
+
+    if RETURN_TYPE_LIST == return_type:
+        return term_list
+    else:
+        return to_string(term_list)
 
 
 ###############################################################################
-def get_ancestors(namespace, term_list):
+def get_ancestors(namespace, term_list, return_type=RETURN_TYPE_STRING):
 
     if DEBUG:
         debug_suffix = '_' + namespace + '_a'
         return to_string(term_list, debug_suffix)
 
-    return to_string(term_list)
+    ancestors = []
+    if NAMESPACE_OHDSI == namespace:
+        for t in term_list:
+            term_ancestors = vocabulary.get_ancestors(util.conn_string, t.lower(), None)
+            ancestors.extend(term_ancestors)
+
+    # remove duplicates
+    if len(ancestors) > 0:
+        ancestors = [a.lower() for a in ancestors]
+        term_list = sorted(list(set(ancestors)))
+
+    if RETURN_TYPE_LIST == return_type:
+        return term_list
+    else:
+        return to_string(term_list)
 
 
 ###############################################################################
