@@ -118,7 +118,6 @@ import spacy
 import errno
 import optparse
 import vocabulary
-from pathlib import Path
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
@@ -127,21 +126,20 @@ try:
     from .pluralize import plural
     from .verb_inflector import get_inflections
     from .irregular_verbs import INFLECTION_MAP
-
-    # We need to import 'util.py', which lives in the nlp directory, two
-    # levels up. This is a brittle hack. Really need a better solution...
-    module_dir = Path(sys.path[0])
-    nlp_dir = str(module_dir.parents[1]) # [0] is parent, [1] is grandparent
-    sys.path.append(nlp_dir)
-    import util
-
 except Exception as e:
     print(e)
     from pluralize import plural
     from verb_inflector import get_inflections
     from irregular_verbs import INFLECTION_MAP
-    import util
 
+# We need to import 'util.py', which lives in the nlp directory.
+# This is hack, and we really need a better solution...
+module_dir = sys.path[0]
+pos = module_dir.find('/nlp')
+if -1 != pos:
+    nlp_dir = module_dir[:pos+4]
+    sys.path.append(nlp_dir)
+import util
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 5
@@ -161,7 +159,7 @@ cmu_dict = cmudict.dict()
 
 # line comment - match everything from // upto but NOT including a newline
 # also, don't match the // in a URL
-str_line_comment = r'(?<!http:)//.*(?=\n)'
+str_line_comment = r'(?<!http:)(?<!https:)//.*(?=\n)'
 regex_line_comment = re.compile(str_line_comment, re.IGNORECASE)
 
 # multiline comment
