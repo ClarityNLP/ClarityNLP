@@ -118,6 +118,7 @@ import spacy
 import errno
 import optparse
 import vocabulary
+from pathlib import Path
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
@@ -126,18 +127,24 @@ try:
     from .pluralize import plural
     from .verb_inflector import get_inflections
     from .irregular_verbs import INFLECTION_MAP
+
+    # We need to import 'util.py', which lives in the nlp directory, two
+    # levels up. This is a brittle hack. Really need a better solution...
+    module_dir = Path(sys.path[0])
+    nlp_dir = str(module_dir.parents[1]) # [0] is parent, [1] is grandparent
+    sys.path.append(nlp_dir)
+    import util
+
 except Exception as e:
     print(e)
     from pluralize import plural
     from verb_inflector import get_inflections
     from irregular_verbs import INFLECTION_MAP
-
-# temporary
-import util
+    import util
 
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 4
+VERSION_MINOR = 5
 
 MODULE_NAME = 'termset_expander.py'
 
