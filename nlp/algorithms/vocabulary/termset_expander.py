@@ -231,6 +231,9 @@ def to_string(term_list, suffix=''):
     macro expansion.
     """
 
+    if 0 == len(term_list):
+        return None
+
     terms = ['"' + t + suffix + '"' for t in term_list]
     term_string = ','.join(terms)
 
@@ -460,8 +463,10 @@ def get_single_word_synonyms(namespace, word, pos):
             # the 'lemmas' for each set are the synonyms
             synonyms.extend(s.lemma_names())
     elif NAMESPACE_OHDSI == namespace:
-        # get OHDSI synonyms from Postgres database
-        synonyms = vocabulary.get_synonyms(util.conn_string, word.lower(), None)
+        # get OHDSI synonyms from Postgres database (returns list of tuples)
+        tuple_list = vocabulary.get_synonyms(util.conn_string, word.lower(), None)
+        for t in tuple_list:
+            synonyms.append(t[0])
 
     if len(synonyms) > 0:
         synonyms = [s.lower() for s in synonyms]
@@ -737,7 +742,10 @@ def get_descendants(namespace, term_list, return_type=RETURN_TYPE_STRING):
     if NAMESPACE_OHDSI == namespace:
         for t in term_list:
             term_descendants = vocabulary.get_descendants(util.conn_string, t.lower(), None)
-            descendants.extend(term_descendants)
+
+            # term_descendants is a list of tuples, so convert to list
+            for td in term_descendants:
+                descendants.append(td[0])
 
     # remove duplicates
     if len(descendants) > 0:
@@ -761,7 +769,10 @@ def get_ancestors(namespace, term_list, return_type=RETURN_TYPE_STRING):
     if NAMESPACE_OHDSI == namespace:
         for t in term_list:
             term_ancestors = vocabulary.get_ancestors(util.conn_string, t.lower(), None)
-            ancestors.extend(term_ancestors)
+
+            # term_ancestors is a list of tuples, so convert to list
+            for ta in term_ancestors:
+                ancestors.append(ta[0])
 
     # remove duplicates
     if len(ancestors) > 0:
