@@ -132,11 +132,12 @@ except Exception as e:
     from verb_inflector import get_inflections
     from irregular_verbs import INFLECTION_MAP
 
-# We need to import 'util.py', which lives in the nlp directory.
-# This is hack, and we really need a better solution...
+# Need to import 'util.py', which lives in the nlp directory two levels up.
+# This is a hack, and we really need a better solution...
 module_dir = sys.path[0]
 pos = module_dir.find('/nlp')
 if -1 != pos:
+    # get path to nlp directory and append to sys.path
     nlp_dir = module_dir[:pos+4]
     sys.path.append(nlp_dir)
 import util
@@ -157,7 +158,7 @@ cmu_dict = cmudict.dict()
 
 # regexes for locating termsets in NLPQL files
 
-# line comment - match everything from // upto but NOT including a newline
+# line comment - match everything from // up to but NOT including the newline
 # also, don't match the // in a URL
 str_line_comment = r'(?<!http:)(?<!https:)//.*(?=\n)'
 regex_line_comment = re.compile(str_line_comment, re.IGNORECASE)
@@ -172,7 +173,7 @@ str_term = r'\"[^"]+\"'
 
 # a term list is a final term, preceded by 0 or more terms, each
 # of which is followed by a comma and optional whitespace
-str_term_list = r'(' + str_term + r',\s*)*' + str_term
+str_term_list = r'(' + str_term + r'\s*,\s*)*' + str_term
 
 # nongreedy match up until final \*]; sequence
 str_termset = r'\b(?P<termset>termset\s+(?P<termset_name>[^:]+)\s*:\s*' +\
@@ -191,7 +192,10 @@ str_macro_args = r'\s*\((\s*\[)?' +\
                  r'(?P<args>' + str_term_list + r')' +\
                  r'(\s*\])?\s*\)'
 
-str_macro = str_macro_name + str_macro_args
+# comma following macro, if any
+str_macro_comma = r'\s*(?P<comma>,?)'
+
+str_macro = str_macro_name + str_macro_args + str_macro_comma
 regex_macro = re.compile(str_macro, re.IGNORECASE)
 
 # for finding comments that have been erased
@@ -315,7 +319,6 @@ def expand(sentence, index_map):
 
     # list of indices in which to make substitutions in word_list
     indices = [*index_map]
-    #print('indices: {0}'.format(indices))
 
     # generate initial set of new sentences using substitutions[0] for all
     index = indices[0]
@@ -750,12 +753,12 @@ def get_descendants(namespace, term_list, return_type=RETURN_TYPE_STRING):
     # remove duplicates
     if len(descendants) > 0:
         descendants = [d.lower() for d in descendants]
-        term_list = sorted(list(set(descendants)))
+        descendants = sorted(list(set(descendants)))
 
     if RETURN_TYPE_LIST == return_type:
-        return term_list
+        return descendants
     else:
-        return to_string(term_list)
+        return to_string(descendants)
 
 
 ###############################################################################
@@ -802,8 +805,16 @@ def expand_macros(str_termlist):
         for match in iterator:
             matched_it = True
             matching_text = match.group()
+
+            has_comma = False
+            if match.group('comma') is not None:
+                has_comma = True
+                comma_group = match.group('comma')
+
             start = match.start()
             end   = match.end()
+            if has_comma:
+                end = end - len(comma_group)
             args = match.group('args').split(',')
             terms = [t.strip().strip('"') for t in args]
 
@@ -830,15 +841,25 @@ def expand_macros(str_termlist):
             elif -1 != macro_op.find(OP_STRING_ANCESTORS):
                 expansion_string = get_ancestors(namespace, terms)
 
-            # invalid macros are not recognized and are igored; the
+            # invalid macros are not recognized and are ignored; the
             # syntax checker will eventually catch them
 
-            # replace the macro with the expansion results
+            # replace the macro with the expansion results, if any
             if expansion_string is not None:
+                # found macro, expanded to a nonempty string
                 new_text += text[prev_end:start]
                 new_text += expansion_string
-                prev_end = end
+                if has_comma:
+                    new_text += comma_group
+                    end += len(comma_group)
+            else:
+                # found a macro, but it expanded to nothing, erase macro text
+                new_text += text[prev_end:start]
+                if has_comma:
+                    end += len(comma_group)
+            prev_end = end
 
+        # append remaining text after the last macro
         new_text += text[prev_end:]
         text = new_text
 
