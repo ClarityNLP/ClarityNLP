@@ -113,7 +113,6 @@ import sys
 import spacy
 import errno
 import optparse
-import vocabulary
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
@@ -122,11 +121,17 @@ try:
     from .pluralize import plural
     from .verb_inflector import get_inflections
     from .irregular_verbs import INFLECTION_MAP
+    from .vocabulary import get_synonyms as ohdsi_get_synonyms
+    from .vocabulary import get_ancestors as ohdsi_get_ancestors
+    from .vocabulary import get_descendants as ohdsi_get_descendants
 except Exception as e:
     print(e)
     from pluralize import plural
     from verb_inflector import get_inflections
     from irregular_verbs import INFLECTION_MAP
+    from vocabulary import get_synonyms as ohdsi_get_synonyms
+    from vocabulary import get_ancestors as ohdsi_get_ancestors
+    from vocabulary import get_descendants as ohdsi_get_descendants
 
 # Need to import 'util.py', which lives in the nlp directory two levels up.
 # This is a hack, and we really need a better solution...
@@ -463,7 +468,7 @@ def get_single_word_synonyms(namespace, word, pos):
             synonyms.extend(s.lemma_names())
     elif NAMESPACE_OHDSI == namespace:
         # get OHDSI synonyms from Postgres database (returns list of tuples)
-        tuple_list = vocabulary.get_synonyms(util.conn_string, word.lower(), None)
+        tuple_list = ohdsi_get_synonyms(util.conn_string, word.lower(), None)
         for t in tuple_list:
             synonyms.append(t[0])
 
@@ -740,7 +745,7 @@ def get_descendants(namespace, term_list, return_type=RETURN_TYPE_STRING):
     descendants = []
     if NAMESPACE_OHDSI == namespace:
         for t in term_list:
-            term_descendants = vocabulary.get_descendants(util.conn_string, t.lower(), None)
+            term_descendants = ohdsi_get_descendants(util.conn_string, t.lower(), None)
 
             # term_descendants is a list of tuples, so convert to list
             for td in term_descendants:
@@ -767,7 +772,7 @@ def get_ancestors(namespace, term_list, return_type=RETURN_TYPE_STRING):
     ancestors = []
     if NAMESPACE_OHDSI == namespace:
         for t in term_list:
-            term_ancestors = vocabulary.get_ancestors(util.conn_string, t.lower(), None)
+            term_ancestors = ohdsi_get_ancestors(util.conn_string, t.lower(), None)
 
             # term_ancestors is a list of tuples, so convert to list
             for ta in term_ancestors:
