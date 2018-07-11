@@ -13,10 +13,6 @@ OVERVIEW:
         Clarity.Plurals
         Clarity.VerbInflections
         Clarity.LexicalVariants   (verb inflections followed by plurals)
-
-
-    Additional macros are anticipated to be added in the future, such as:
-
         OHDSI.Synonyms
         OHDSI.Ancestors
         OHDSI.Descendants
@@ -968,19 +964,6 @@ def run(nlpql_text):
 
     # do the macro expansion
     expanded_nlpql = expand_nlpql(nlpql_no_comments)
-
-    # iterator = regex_erased_comment.finditer(expanded_nlpql)
-    # erased_spans = []
-    # for match in iterator:
-    #     erased_spans.append( (match.start(), match.end()) )
-
-    # assert len(comment_spans) == len(erased_spans)
-    # for i in range(len(comment_spans)):
-    #     cs = comment_spans[i]
-    #     es = erased_spans[i]
-    #     cs_len = cs[1] - cs[0]
-    #     es_len = es[1] - es[0]
-    #     assert cs_len == es_len
 
     # restore the comment strings
     i = 0
