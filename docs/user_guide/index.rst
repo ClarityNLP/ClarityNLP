@@ -7,47 +7,56 @@ Introduction
 
 ClarityNLP is is a natural language processing platform designed to accelerate review of medical charts for a wide variety of purposes, including research, clinical care, quality metrics, and risk adjustment.  This guide is intended for end users of ClarityNLP.
 
-
-First steps
-===========
+Getting Started
+---------------
 
 .. toctree::
+   :maxdepth: 3
+
    :caption: First steps
    :hidden:
-
    intro/overview
-   intro/install
-   intro/tutorial
-   intro/examples
-
-:doc:`intro/overview`
-    Understand what ClarityNLP is and how it can help you.
-
-:doc:`intro/install`
-    Get ClarityNLP installed in your environment.
-
-:doc:`intro/tutorial`
-    Write your first ClarityNLP phenotype.
-
-:doc:`intro/examples`
-    Learn more by playing with pre-made ClarityNLP phenotypes.
 
 
+Ingesting Documents
+===================
+.. toctree::
+   :maxdepth: 2
 
-Document Ingestion
-------------------
-
-
-
-Creating Queries
-----------------
+   ingestion/overview
 
 
+Mapping Report Types
+====================
+.. toctree::
+   :maxdepth: 2
 
-Use cases
----------
+   ingestion/mapping
 
+Basic Phenotype Examples
+========================
+.. toctree::
+   :maxdepth: 2
 
+   nlpql/basic_examples
 
-Results
--------
+Advanced Phenotype Examples
+===========================
+.. toctree::
+   :maxdepth: 2
+
+   nlpql/advanced_examples
+
+Running Queries
+===============
+.. toctree::
+   :maxdepth: 2
+
+   nlpql/running
+
+Reviewing Results
+=================
+.. toctree::
+   :maxdepth: 2
+
+   nlpql/validation

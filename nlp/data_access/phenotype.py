@@ -1,5 +1,7 @@
 import psycopg2
 import psycopg2.extras
+import util
+
 try:
     from .base_model import BaseModel
     from .pipeline_config import PipelineConfig
@@ -11,7 +13,7 @@ except Exception as e:
 
 class PhenotypeDefine(dict):
 
-    def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = '',
+    def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = 'ClarityNLP',
                  named_arguments: dict = dict(),
                  arguments: list = list(), funct: str = '', values: list = list(), description: str = '',
                  concept: str = ''):
@@ -41,7 +43,7 @@ class PhenotypeModel(BaseModel):
 
     # data_models maps to 'using'
     def __init__(self, description: str = '', owner: str = 'clarity', context: str = 'Patient', population: str = 'All',
-                 phenotype = None, data_models: list = list(),
+                 phenotype=None, data_models: list = list(),
                  includes: list = list(), code_systems: list = list(),
                  value_sets: list = list(), term_sets: list = list(),
                  document_sets: list = list(), data_entities: list = list(), cohorts: list = list(),
@@ -86,7 +88,6 @@ def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
 
 
 def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
-
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
     p_id = -1
@@ -121,7 +122,7 @@ def query_pipeline_ids(phenotype_id: int, connection_string: str):
 
     try:
 
-        cursor.execute("""SELECT pipeline_id from nlp.phenotype_mapping where phenotype_id = %s""",
+        cursor.execute("""SELECT pipeline_id FROM nlp.phenotype_mapping WHERE phenotype_id = %s""",
                        [phenotype_id])
         rows = cursor.fetchall()
         for row in rows:
@@ -143,7 +144,7 @@ def query_phenotype(phenotype_id: int, connection_string: str):
 
     try:
 
-        cursor.execute("""SELECT config from nlp.phenotype where phenotype_id = %s""",
+        cursor.execute("""SELECT config FROM nlp.phenotype WHERE phenotype_id = %s""",
                        [phenotype_id])
         val = cursor.fetchone()[0]
         phenotype = PhenotypeModel.from_json(val)
@@ -173,10 +174,21 @@ def get_sample_phenotype():
     #                                   library='ISBT')
     Sepsis = PhenotypeDefine("Sepsis", "termset", values=['Sepsis', 'Systemic infection'])
     Ventilator = PhenotypeDefine("Ventilator", "termset", values=['ventilator', 'vent'])
+    # ProviderNotes = PhenotypeDefine("ProviderNotes", "documentset",
+    #                                 library="Clarity",
+    #                                 funct="createReportTagList",
+    #                                 arguments=["Physician", "Nurse", "Note", "Discharge Summary"])
     ProviderNotes = PhenotypeDefine("ProviderNotes", "documentset",
                                     library="Clarity",
-                                    funct="createReportTagList",
-                                    arguments=["Physician", "Nurse", "Note", "Discharge Summary"])
+                                    funct="createDocumentSet",
+                                    named_arguments={
+                                        "filter_query": "subject:(55672 OR 77614 OR 31942 OR 67906 OR 30202)",
+                                        "report_types": [
+                                            "Discharge summary"
+                                        ],
+                                        "report_tags": [],
+                                        "query": "%s:smok* OR cigar* OR etoh" % util.solr_text_field
+                                    })
     RadiologyNotes = PhenotypeDefine("Radiology", "documentset",
                                      library="Clarity",
                                      funct="createReportTagList",
@@ -196,7 +208,7 @@ def get_sample_phenotype():
                                    })
 
     hasSepsis = PhenotypeEntity('hasSepsis', 'define',
-                                library='ClarityNLP',
+                                library='Clarity',
                                 funct='ProviderAssertion',
                                 named_arguments={
                                     "termsets": ['Sepsis'],
@@ -259,7 +271,6 @@ if __name__ == "__main__":
     json = p.to_json()
 
     print(json)
-
 
 # conceptset or termset as inputs for entities
 # where or as for operations

@@ -7,6 +7,10 @@ from algorithms import *
 from nlpql import *
 from .docs import auto
 from apis.api_helpers import init
+from tasks import register_tasks, registered_pipelines
+
+register_tasks()
+print(registered_pipelines)
 
 
 phenotype_app = Blueprint('phenotype_app', __name__)
@@ -145,5 +149,19 @@ def nlpql_tester():
             return json.dumps(nlpql_results)
         else:
             return nlpql_results['phenotype'].to_json()
+
+    return "Please POST text containing NLPQL."
+
+@phenotype_app.route("/nlpql_expander", methods=["POST"])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def nlpql_expander():
+    """POST to expand NLPQL termset macros"""
+    if request.method == 'POST' and request.data:
+        nlpql_results = expand_nlpql_macros(request.data.decode("utf-8"))
+        # if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+        #     return json.dumps(nlpql_results)
+        # else:
+        #     return nlpql_results['phenotype']
+        return nlpql_results
 
     return "Please POST text containing NLPQL."

@@ -9,6 +9,7 @@ import sys
 import json
 import nltk
 from nltk.tokenize import sent_tokenize
+import util
 
 from section_tagger import section_tagger_init
 from section_tagger import process_report
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     index = 0
     while (ok):
         try:
-            report = data['response']['docs'][index]['report_text']
+            report = data['response']['docs'][index][util.solr_text_field]
         except:
             ok = False
             break

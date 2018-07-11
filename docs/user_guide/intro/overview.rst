@@ -12,8 +12,8 @@ How is this accomplished?  ClarityNLP uses a query syntax called **Natural Langu
 
 Let's take a look at how NLPQL works.
 
-Walk-through of an Example NLPQL Phenotype
-==========================================
+Example NLPQL Phenotype Walkthrough
+===================================
 
 Imagine you have a dataset with thousands of clinical documents and would like to extract a particular data element.  You can create an NLPQL file to specify what you would like to extract.
 
@@ -44,7 +44,9 @@ Imagine you have a dataset with thousands of clinical documents and would like t
 
 Let's break down the NLPQL above.
 
-**Phenotype Name**
+------------------
+Phenotype Name
+------------------
 
 .. code-block:: java
 
@@ -52,7 +54,9 @@ Let's break down the NLPQL above.
 
 Every ClarityNLP phenotype definition needs a name.  We give it a name (and optionally a version) using the ``phenotype`` command.  Here, we are just declaring that our phenotype will be called "Patient Temperatures".
 
-**Libraries**
+--------------
+Libraries
+--------------
 
 .. code-block:: java
 
@@ -60,7 +64,9 @@ Every ClarityNLP phenotype definition needs a name.  We give it a name (and opti
 
 NLPQL is designed to be extensible and make it easy for developers to build new NLP algorithms and run them using the ClarityNLP platform. A common paradigm for making software extensible is the use of libraries.  Using the ``include`` command, we are saying to include the core Clarity library which has lots of handy commands and NLP algorithms built-in. The ``called`` phrase allows us to select a short name to refer to the library in the NLPQL that follows. In this case, we have selected to call it "Clarity".
 
-**Document Sets**
+------------------
+Document Sets
+------------------
 
 .. code-block:: java
 
@@ -71,7 +77,9 @@ NLPQL is designed to be extensible and make it easy for developers to build new 
 
 In this case, we have declared a document set called "Nursing Notes" and included in it all documents with the Nurse tag.  We could have selected another provider type (eg. Physician), a specialty type (eg. Endocrinology), a setting type (eg. Emergency Department), or a combination such as ``["Physician","Emergency Department"]``.
 
-**Term Sets**
+------------------
+Term Sets
+------------------
 
 .. code-block:: java
 
@@ -82,7 +90,9 @@ In this case, we have declared a document set called "Nursing Notes" and include
 
 In this case, we have created a term set called "TemperatureTerms" and included 3 common ways temperature is  referenced in a clinical note ("temperature", "temp", and "t").
 
-**Phenotype Features**
+----------------------
+Phenotype Features
+----------------------
 
 `Features <topics/features>`_ are the clinical elements that you wish to find and analyze in order to identify your patients of interest.  Features specify an NLP method you'd like to run as well as optional parameters such as document sets, term sets, patient cohorts, and more.  See the `feature examples <overview/examples>`_ to get a better sense of how different features can be created.
 
@@ -116,12 +126,13 @@ With this statement, we are creating a new feature called "hasFever" that includ
   - ``final`` A phenotype may involve the creation of numerous intermediate features that are extracted by NLP processes but are not themselves the final result of the analysis.  For example, we may be interested only in patients with a fever, rather than any patient who has a temperature value recorded.  The `final <topics/final>`_ keyword allows us to indicate the final output or outputs of the phenotype definition.
   - ``value`` Every NLP method returns a result.  The specific format and content of these results will vary by method. As a convenience, ClarityNLP returns a ``value`` parameter for most methods.  The `Value Extraction <http://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/value_extraction.html>`_ method used here also returns several other parameters.   ClarityNLP is flexible in that it can take any parameter you provide and perform operations on it.  However, this will only work if the method being called returns that parameter.  Please consult the documentation for individual methods to see what parameters can be referenced.
 
-==========
-Next Steps
-==========
+Running NLPQL Queries
+=====================
 
-What's next?
-============
+In the full guide, we will walk you through the steps of ingesting and mapping your own data.  Once in place, you will be able to run queries by hitting the `NLPQL API <../apis/nlpql>`_ on your local server or visiting <your_server>:8080/query.  But to run a quick test, feel free to use our `NLPQL test page <https://nlpql.apps.hdap.gatech.edu/>`_.
+
+
+**Next Steps**
 
 The next steps for you are to :ref:`install ClarityNLP <intro-install>`,
 :ref:`follow through the tutorial <intro-tutorial>` to learn how to create

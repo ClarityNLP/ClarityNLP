@@ -12,7 +12,7 @@ How is this accomplished?  ClarityNLP uses a query syntax called **Natural Langu
 
 Let's take a look at how NLPQL works.
 
-Walk-through of an Example NLPQL Phenotype
+Walk-through of an Example Phenotype
 ==========================================
 
 Imagine you have a dataset with thousands of clinical documents and would like to extract a particular data element.  You can create an NLPQL file to specify what you would like to extract.

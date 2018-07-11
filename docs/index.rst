@@ -6,8 +6,7 @@
 ClarityNLP
 ==========
 
-ClarityNLP is a clinical NLP platform developed for the purpose of analyzing and aggregating clinical text to extract complex, computed phenotypes. ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, to identify patients and their clinical observations, extracted from text. ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write your own definitions to find the patients and features that are relevant to your project.
-
+ClarityNLP is an "interoperable NLP" platform developed to streamline analysis of unstructured clinical text.  The platform accelerates review of medical charts to extract data and identify patients for a wide variety of purposes, including research, clinical care, and quality metrics.  ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, that lets you create and deploy NLP jobs quickly without a lot of custom configuration.
 
 
 Documentation
@@ -25,6 +24,3 @@ Documentation
 License
 -------
 This project is licensed under Mozilla Public License 2.0.
-
-
-

@@ -1,0 +1,1363 @@
+abandon,abandons,abandoning,abandoned,abandoned
+abide,abides,abiding,abided,abided
+abolish,abolishes,abolishing,abolished,abolished
+absorb,absorbs,absorbing,absorbed,absorbed
+abuse,abuses,abusing,abused,abused
+accept,accepts,accepting,accepted,accepted
+access,accesses,accessing,accessed,accessed
+accommodate,accommodates,accommodating,accommodated,accommodated
+accompany,accompanies,accompanying,accompanied,accompanied
+account,accounts,accounting,accounted,accounted
+accumulate,accumulates,accumulating,accumulated,accumulated
+accuse,accuses,accusing,accused,accused
+ache,aches,aching,ached,ached
+achieve,achieves,achieving,achieved,achieved
+acknowledge,acknowledges,acknowledging,acknowledged,acknowledged
+acquire,acquires,acquiring,acquired,acquired
+act,acts,acting,acted,acted
+activate,activates,activating,activated,activated
+adapt,adapts,adapting,adapted,adapted
+add,adds,adding,added,added
+address,addresses,addressing,addressed,addressed
+adjust,adjusts,adjusting,adjusted,adjusted
+administer,administers,administering,administered,administered
+admire,admires,admiring,admired,admired
+admit,admits,admitting,admitted,admitted
+adopt,adopts,adopting,adopted,adopted
+advance,advances,advancing,advanced,advanced
+advertise,advertises,advertising,advertised,advertised
+advise,advises,advising,advised,advised
+advocate,advocates,advocating,advocated,advocated
+affect,affects,affecting,affected,affected
+afford,affords,affording,afforded,afforded
+age,ages,ageing aging,aged,aged
+agree,agrees,agreeing,agreed,agreed
+aid,aids,aiding,aided,aided
+aim,aims,aiming,aimed,aimed
+alert,alerts,alerting,alerted,alerted
+alight,alights,alighting,alighted,alighted
+allege,alleges,alleging,alleged,alleged
+allocate,allocates,allocating,allocated,allocated
+allow,allows,allowing,allowed,allowed
+alter,alters,altering,altered,altered
+amend,amends,amending,amended,amended
+amount,amounts,amounting,amounted,amounted
+analyze,analyzes,analyzing,analyzed,analyzed
+announce,announces,announcing,announced,announced
+answer,answers,answering,answered,answered
+anticipate,anticipates,anticipating,anticipated,anticipated
+appeal,appeals,appealing,appealed,appealed
+appear,appears,appearing,appeared,appeared
+apply,applies,applying,applied,applied
+appoint,appoints,appointing,appointed,appointed
+appreciate,appreciates,appreciating,appreciated,appreciated
+approach,approaches,approaching,approached,approached
+approve,approves,approving,approved,approved
+argue,argues,arguing,argued,argued
+arise,arises,arising,arose,arisen
+arm,arms,arming,armed,armed
+arouse,arouses,arousing,aroused,aroused
+arrange,arranges,arranging,arranged,arranged
+arrest,arrests,arresting,arrested,arrested
+arrive,arrives,arriving,arrived,arrived
+ask,asks,asking,asked,asked
+assemble,assembles,assembling,assembled,assembled
+assert,asserts,asserting,asserted,asserted
+assess,assesses,assessing,assessed,assessed
+assign,assigns,assigning,assigned,assigned
+assist,assists,assisting,assisted,assisted
+associate,associates,associating,associated,associated
+assume,assumes,assuming,assumed,assumed
+assure,assures,assuring,assured,assured
+attach,attaches,attaching,attached,attached
+attack,attacks,attacking,attacked,attacked
+attain,attains,attaining,attained,attained
+attempt,attempts,attempting,attempted,attempted
+attend,attends,attending,attended,attended
+attract,attracts,attracting,attracted,attracted
+attribute,attributes,attributing,attributed,attributed
+avoid,avoids,avoiding,avoided,avoided
+await,awaits,awaiting,awaited,awaited
+awake,awakes,awaking,awoke,awoken
+award,awards,awarding,awarded,awarded
+babysit,babysits,babysitting,babysat,babysat
+back,backs,backing,backed,backed
+backlight,backlights,backlighting,backlighted backlit,backlighted backlit
+backslide,backslides,backsliding,backslid backslided,backslidden backslid backslided
+balance,balances,balancing,balanced,balanced
+ban,bans,banning,banned,banned
+bang,bangs,banging,banged,banged
+base,bases,basing,based,based
+bear,bears,bearing,bore,borne born
+beat,beats,beating,beat,beaten beat
+become,becomes,becoming,became,become
+bedo,bedoes,bedoing,bedid,bedone
+bedraw,bedraws,bedrawing,bedrew,bedrawn
+bedream,bedreams,bedreaming,bedreamt bedreamed,bedreamt bedreamed
+bedrive,bedrives,bedriving,bedrove,bedriven
+bedwell,bedwells,bedwelling,bedwelt,bedwelt
+befall,befalls,befalling,befell,befallen
+befight,befights,befighting,befought,befought
+beg,begs,begging,begged,begged
+begin,begins,beginning,began,begun
+behave,behaves,behaving,behaved,behaved
+behear,behears,behearing,beheard,beheard
+behold,beholds,beholding,beheld,beheld
+beken,bekens,bekenning,bekenned bekent,bekenned bekent
+beknit,beknits,beknitting,beknit beknitted,beknit beknitted
+belay,belays,belaying,belaid,belaid
+beleap,beleaps,beleaping,beleapt beleaped,beleapt beleaped
+beleave,beleaves,beleaving,beleft,beleft
+believe,believes,believing,believed,believed
+belong,belongs,belonging,belonged,belonged
+bend,bends,bending,bent,bent
+benefit,benefits,benefiting benefitting,benefited benefitted,benefited benefitted
+bequeath,bequeaths,bequeathing,bequeathed bequoth,bequeathed
+bereave,bereaves,bereaving,bereaved bereft,bereaved bereft
+beseech,beseeches,beseeching,beseeched,beseeched
+beseek,beseeks,beseeking,besought,besought
+beset,besets,besetting,beset,beset
+bespeak,bespeaks,bespeaking,bespoke,bespoken
+bestrew,bestrews,bestrewing,bestrewed,bestrewn
+bestride,bestrides,bestriding,bestrode,bestridden
+bet,bets,betting,bet betted,bet betted
+betake,betakes,betaking,betook,betaken
+betee,betees,beteeing,beteed betow,beteed betown
+betide,betides,betiding,betided,betided
+bid,bids,bidding,bid,bid
+bide,bides,biding,bode bided,bided bidden
+bind,binds,binding,bound,bound
+bite,bites,biting,bit,bitten
+blame,blames,blaming,blamed,blamed
+bleed,bleeds,bleeding,bled,bled
+blend,blends,blending,blended,blended
+bless,blesses,blessing,blessed,blessed
+block,blocks,blocking,blocked,blocked
+blow,blows,blowing,blew,blown
+boast,boasts,boasting,boasted,boasted
+boil,boils,boiling,boiled,boiled
+book,books,booking,booked,booked
+boost,boosts,boosting,boosted,boosted
+borrow,borrows,borrowing,borrowed,borrowed
+bother,bothers,bothering,bothered,bothered
+bounce,bounces,bouncing,bounced,bounced
+bound,bounds,bounding,bounded,bounded
+bow,bows,bowing,bowed,bowed
+break,breaks,breaking,broke,broken
+breastfeed,breastfeeds,breastfeeding,breastfed,breastfed
+breathe,breathes,breathing,breathed,breathed
+breed,breeds,breeding,bred,bred
+bring,brings,bringing,brought,brought
+broadcast,broadcasts,broadcasting,broadcast broadcasted,broadcast broadcasted
+browbeat,browbeats,browbeating,browbeat,browbeaten
+brush,brushes,brushing,brushed,brushed
+build,builds,building,built,built
+burn,burns,burning,burned,burned
+burst,bursts,bursting,burst,burst
+bury,buries,burying,buried,buried
+bust,busts,busting,busted,busted
+buy,buys,buying,bought,bought
+calculate,calculates,calculating,calculated,calculated
+call,calls,calling,called,called
+calm,calms,calming,calmed,calmed
+campaign,campaigns,campaigning,campaigned,campaigned
+can,can,,could,
+cancel,cancels,cancelling canceling,cancelled canceled,cancelled canceled
+capture,captures,capturing,captured,captured
+care,cares,caring,cared,cared
+carry,carries,carrying,carried,carried
+carve,carves,carving,carved,carved carven
+cast,casts,casting,cast,cast
+catch,catches,catching,caught,caught
+cater,caters,catering,catered,catered
+cause,causes,causing,caused,caused
+cease,ceases,ceasing,ceased,ceased
+celebrate,celebrates,celebrating,celebrated,celebrated
+center,centers,centering,centered,centered
+challenge,challenges,challenging,challenged,challenged
+change,changes,changing,changed,changed
+characterize,characterizes,characterizing,characterized,characterized
+charge,charges,charging,charged,charged
+chase,chases,chasing,chased,chased
+chat,chats,chatting,chatted,chatted
+check,checks,checking,checked,checked
+cheer,cheers,cheering,cheered,cheered
+chide,chides,chiding,chid chided,chid chided chidden
+choose,chooses,choosing,chose,chosen
+circulate,circulates,circulating,circulated,circulated
+cite,cites,citing,cited,cited
+clad,clads,cladding,clad cladded,clad cladded
+claim,claims,claiming,claimed,claimed
+clap,claps,clapping,clapped,clapped
+clarify,clarifies,clarifying,clarified,clarified
+classify,classifies,classifying,classified,classified
+clean,cleans,cleaning,cleaned,cleaned
+clear,clears,clearing,cleared,cleared
+cleave,cleaves,cleaving,cleft clove,cleft cloven
+climb,climbs,climbing,climbed,climbed
+cling,clings,clinging,clung,clung
+close,closes,closing,closed,closed
+clothe,clothes,clothing,clad clothed,clad clothed
+clutch,clutches,clutching,clutched,clutched
+coincide,coincides,coinciding,coincided,coincided
+collapse,collapses,collapsing,collapsed,collapsed
+collect,collects,collecting,collected,collected
+colour,colours,colouring,coloured,coloured
+comb,combs,combing,combed,combed
+combine,combines,combining,combined,combined
+come,comes,coming,came,come
+command,commands,commanding,commanded,commanded
+commence,commences,commencing,commenced,commenced
+comment,comments,commenting,commented,commented
+commission,commissions,commissioning,commissioned,commissioned
+commit,commits,committing,committed,committed
+communicate,communicates,communicating,communicated,communicated
+compare,compares,comparing,compared,compared
+compel,compels,compelling,compelled,compelled
+compensate,compensates,compensating,compensated,compensated
+compete,competes,competing,competed,competed
+compile,compiles,compiling,compiled,compiled
+complain,complains,complaining,complained,complained
+complete,completes,completing,completed,completed
+comply,complies,complying,complied,complied
+compose,composes,composing,composed,composed
+comprise,comprises,comprising,comprised,comprised
+conceal,conceals,concealing,concealed,concealed
+concede,concedes,conceding,conceded,conceded
+conceive,conceives,conceiving,conceived,conceived
+concentrate,concentrates,concentrating,concentrated,concentrated
+concern,concerns,concerning,concerned,concerned
+conclude,concludes,concluding,concluded,concluded
+condemn,condemns,condemning,condemned,condemned
+conduct,conducts,conducting,conducted,conducted
+confer,confers,conferring,conferred,conferred
+confess,confesses,confessing,confessed,confessed
+confine,confines,confining,confined,confined
+confirm,confirms,confirming,confirmed,confirmed
+conform,conforms,conforming,conformed,conformed
+confront,confronts,confronting,confronted,confronted
+confuse,confuses,confusing,confused,confused
+connect,connects,connecting,connected,connected
+consider,considers,considering,considered,considered
+consist,consists,consisting,consisted,consisted
+constitute,constitutes,constituting,constituted,constituted
+construct,constructs,constructing,constructed,constructed
+consult,consults,consulting,consulted,consulted
+consume,consumes,consuming,consumed,consumed
+contact,contacts,contacting,contacted,contacted
+contain,contains,containing,contained,contained
+contemplate,contemplates,contemplating,contemplated,contemplated
+continue,continues,continuing,continued,continued
+contract,contracts,contracting,contracted,contracted
+contrast,contrasts,contrasting,contrasted,contrasted
+contribute,contributes,contributing,contributed,contributed
+control,controls,controlling,controlled,controlled
+convert,converts,converting,converted,converted
+convey,conveys,conveying,conveyed,conveyed
+convict,convicts,convicting,convicted,convicted
+convince,convinces,convincing,convinced,convinced
+cook,cooks,cooking,cooked,cooked
+cool,cools,cooling,cooled,cooled
+cope,copes,coping,coped,coped
+copy,copies,copying,copied,copied
+correct,corrects,correcting,corrected,corrected
+correspond,corresponds,corresponding,corresponded,corresponded
+cost,costs,costing,cost costed,cost costed
+count,counts,counting,counted,counted
+counter,counters,countering,countered,countered
+couple,couples,coupling,coupled,coupled
+cover,covers,covering,covered,covered
+cowrite,cowrites,cowriting,cowrote,cowritten
+crack,cracks,cracking,cracked,cracked
+crash,crashes,crashing,crashed,crashed
+crawl,crawls,crawling,crawled,crawled
+create,creates,creating,created,created
+creep,creeps,creeping,crept creeped,crept creeped
+criticize,criticizes,criticizing,criticized,criticized
+cross,crosses,crossing,crossed,crossed
+crosscut,crosscuts,crosscutting,crosscut,crosscut
+crow,crows,crowing,crowed,crowed
+crush,crushes,crushing,crushed,crushed
+cry,cries,crying,cried,cried
+curl,curls,curling,curled,curled
+cut,cuts,cutting,cut,cut
+damage,damages,damaging,damaged,damaged
+dance,dances,dancing,danced,danced
+dare,dare dares,daring,dared,dared
+date,dates,dating,dated,dated
+deal,deals,dealing,dealt,dealt
+debate,debates,debating,debated,debated
+decide,decides,deciding,decided,decided
+declare,declares,declaring,declared,declared
+decline,declines,declining,declined,declined
+decorate,decorates,decorating,decorated,decorated
+decrease,decreases,decreasing,decreased,decreased
+dedicate,dedicates,dedicating,dedicated,dedicated
+deem,deems,deeming,deemed,deemed
+defeat,defeats,defeating,defeated,defeated
+defend,defends,defending,defended,defended
+define,defines,defining,defined,defined
+delay,delays,delaying,delayed,delayed
+deliver,delivers,delivering,delivered,delivered
+demand,demands,demanding,demanded,demanded
+demonstrate,demonstrates,demonstrating,demonstrated,demonstrated
+deny,denies,denying,denied,denied
+depart,departs,departing,departed,departed
+depend,depends,depending,depended,depended
+depict,depicts,depicting,depicted,depicted
+deposit,deposits,depositing,deposited,deposited
+deprive,deprives,depriving,deprived,deprived
+derive,derives,deriving,derived,derived
+descend,descends,descending,descended,descended
+describe,describes,describing,described,described
+deserve,deserves,deserving,deserved,deserved
+design,designs,designing,designed,designed
+desire,desires,desiring,desired,desired
+destroy,destroys,destroying,destroyed,destroyed
+detect,detects,detecting,detected,detected
+determine,determines,determining,determined,determined
+develop,develops,developing,developed developt,developed developt
+devise,devises,devising,devised,devised
+devote,devotes,devoting,devoted,devoted
+dictate,dictates,dictating,dictated,dictated
+die,dies,dying,died,died
+differ,differs,differing,differed,differed
+differentiate,differentiates,differentiating,differentiated,differentiated
+dig,digs,digging,dug,dug
+diminish,diminishes,diminishing,diminished,diminished
+dip,dips,dipping,dipped,dipped
+direct,directs,directing,directed,directed
+disagree,disagrees,disagreeing,disagreed,disagreed
+disappear,disappears,disappearing,disappeared,disappeared
+discharge,discharges,discharging,discharged,discharged
+disclose,discloses,disclosing,disclosed,disclosed
+discover,discovers,discovering,discovered,discovered
+discuss,discusses,discussing,discussed,discussed
+dislike,dislikes,disliking,disliked,disliked
+dismiss,dismisses,dismissing,dismissed,dismissed
+display,displays,displaying,displayed,displayed
+dispose,disposes,disposing,disposed,disposed
+dissolve,dissolves,dissolving,dissolved,dissolved
+distinguish,distinguishes,distinguishing,distinguished,distinguished
+distribute,distributes,distributing,distributed,distributed
+disturb,disturbs,disturbing,disturbed,disturbed
+dive,dives,diving,dived dove,dived
+divert,diverts,diverting,diverted,diverted
+divide,divides,dividing,divided,divided
+do,does,doing,did,done
+dominate,dominates,dominating,dominated,dominated
+double,doubles,doubling,doubled,doubled
+doubt,doubts,doubting,doubted,doubted
+dow,dows,dowing,dowed dought,dowed dought
+downcast,downcasts,downcasting,downcast downcasted,downcast downcasted
+downdraw,downdraws,downdrawing,downdrew,downdrawn
+draft,drafts,drafting,drafted,drafted
+drag,drags,dragging,dragged,dragged
+drain,drains,draining,drained,drained
+draw,draws,drawing,drew,drawn
+dream,dreams,dreaming,dreamed dreamt,dreamed dreamt
+dress,dresses,dressing,dressed,dressed
+drift,drifts,drifting,drifted,drifted
+drink,drinks,drinking,drank,drunk
+drive,drives,driving,drove,driven
+drop,drops,dropping,dropped,dropped
+drown,drowns,drowning,drowned,drowned
+dry,dries,drying,dried,dried
+dump,dumps,dumping,dumped,dumped
+dwell,dwells,dwelling,dwelt dwelled,dwelt dwelled
+earn,earns,earning,earned,earned
+ease,eases,easing,eased,eased
+eat,eats,eating,ate,eaten
+echo,echoes,echoing,echoed,echoed
+edit,edits,editing,edited,edited
+educate,educates,educating,educated,educated
+effect,effects,effecting,effected,effected
+elect,elects,electing,elected,elected
+eliminate,eliminates,eliminating,eliminated,eliminated
+embark,embarks,embarking,embarked,embarked
+embody,embodies,embodying,embodied,embodied
+embrace,embraces,embracing,embraced,embraced
+emerge,emerges,emerging,emerged,emerged
+emphasize,emphasizes,emphasizing,emphasized,emphasized
+employ,employs,employing,employed,employed
+enable,enables,enabling,enabled,enabled
+enclose,encloses,enclosing,enclosed,enclosed
+encounter,encounters,encountering,encountered,encountered
+encourage,encourages,encouraging,encouraged,encouraged
+end,ends,ending,ended,ended
+endorse,endorses,endorsing,endorsed,endorsed
+enforce,enforces,enforcing,enforced,enforced
+engage,engages,engaging,engaged,engaged
+enhance,enhances,enhancing,enhanced,enhanced
+enjoy,enjoys,enjoying,enjoyed,enjoyed
+enquire,enquires,enquiring,enquired,enquired
+ensure,ensures,ensuring,ensured,ensured
+entail,entails,entailing,entailed,entailed
+enter,enters,entering,entered,entered
+entertain,entertains,entertaining,entertained,entertained
+entitle,entitles,entitling,entitled,entitled
+envisage,envisages,envisaging,envisaged,envisaged
+equip,equips,equipping,equipped,equipped
+erect,erects,erecting,erected,erected
+escape,escapes,escaping,escaped,escaped
+establish,establishes,establishing,established,established
+estimate,estimates,estimating,estimated,estimated
+evaluate,evaluates,evaluating,evaluated,evaluated
+evolve,evolves,evolving,evolved,evolved
+examine,examines,examining,examined,examined
+exceed,exceeds,exceeding,exceeded,exceeded
+exchange,exchanges,exchanging,exchanged,exchanged
+exclude,excludes,excluding,excluded,excluded
+excuse,excuses,excusing,excused,excused
+execute,executes,executing,executed,executed
+exercise,exercises,exercising,exercised,exercised
+exert,exerts,exerting,exerted,exerted
+exhaust,exhausts,exhausting,exhausted,exhausted
+exhibit,exhibits,exhibiting,exhibited,exhibited
+exist,exists,existing,existed,existed
+expand,expands,expanding,expanded,expanded
+expect,expects,expecting,expected,expected
+experience,experiences,experiencing,experienced,experienced
+explain,explains,explaining,explained,explained
+explode,explodes,exploding,exploded,exploded
+exploit,exploits,exploiting,exploited,exploited
+explore,explores,exploring,explored,explored
+export,exports,exporting,exported,exported
+expose,exposes,exposing,exposed,exposed
+express,expresses,expressing,expressed,expressed
+extend,extends,extending,extended,extended
+extract,extracts,extracting,extracted,extracted
+face,faces,facing,faced,faced
+facilitate,facilitates,facilitating,facilitated,facilitated
+fade,fades,fading,faded,faded
+fail,fails,failing,failed,failed
+fall,falls,falling,fell,fallen
+fancy,fancies,fancying,fancied,fancied
+favour,favours,favouring,favoured,favoured
+fear,fears,fearing,feared,feared
+feature,features,featuring,featured,featured
+feed,feeds,feeding,fed,fed
+feel,feels,feeling,felt,felt
+fetch,fetches,fetching,fetched,fetched
+fight,fights,fighting,fought,fought
+figure,figures,figuring,figured,figured
+file,files,filing,filed,filed
+fill,fills,filling,filled,filled
+finance,finances,financing,financed,financed
+find,finds,finding,found,found
+fine,fines,fining,fined,fined
+finish,finishes,finishing,finished,finished
+fire,fires,firing,fired,fired
+fit,fits,fitting,fitted fit,fitted fit
+fix,fixes,fixing,fixed,fixed
+flash,flashes,flashing,flashed,flashed
+flee,flees,fleeing,fled,fled
+fling,flings,flinging,flung,flung
+float,floats,floating,floated,floated
+flood,floods,flooding,flooded,flooded
+flow,flows,flowing,flowed,flowed
+fly,flies,flying,flew,flown
+focus,focuses focusses,focusing focussing,focused focussed,focused focussed
+fold,folds,folding,folded,folded
+follow,follows,following,followed,followed
+forbear,forbears,forbearing,forbore,forborne
+forbid,forbids,forbidding,forbid forbade forbad,forbidden
+force,forces,forcing,forced,forced
+forecast,forecasts,forecasting,forecast forecasted,forecast forecasted
+forefeel,forefeels,forefeeling,forefelt,forefelt
+forego,foregoes,foregoing,forewent,foregone
+forehear,forehears,forehearing,foreheard,foreheard
+foreken,forekens,forekenning,forekenned forekent,forekenned forekent
+foreknow,foreknows,foreknowing,foreknew,foreknown
+foresee,foresees,foreseeing,foresaw,foreseen
+foreshow,foreshows,foreshowing,foreshowed,foreshown
+foretell,foretells,foretelling,foretold,foretold
+forget,forgets,forgetting,forgot,forgotten
+forgive,forgives,forgiving,forgave,forgiven
+forgo,forgoes,forgoing,forwent,forgone
+form,forms,forming,formed,formed
+formulate,formulates,formulating,formulated,formulated
+forsake,forsakes,forsaking,forsook,forsaken
+forstand,forstands,forstanding,forstood,forstood
+forswear,forswears,forswearing,forswore,forsworn
+fortee,fortees,forteeing,forteed fortow,forteed fortown
+forthcome,forthcomes,forthcoming,forthcame,forthcome
+forthleap,forthleaps,forthleaping,forthleapt forthleaped,forthleapt forthleaped
+forthtell,forthtells,forthtelling,forthtold,forthtold
+found,founds,founding,founded,founded
+free,frees,freeing,freed,freed
+freeze,freezes,freezing,froze,frozen
+fret,frets,fretting,fretted frate,fretted fretten
+frighten,frightens,frightening,frightened,frightened
+frostbite,frostbites,frostbiting,frostbit,frostbitten
+frown,frowns,frowning,frowned,frowned
+fuck,fucks,fucking,fucked,fucked
+fulfill,fulfills,fulfilling,fulfilled,fulfilled
+function,functions,functioning,functioned,functioned
+fund,funds,funding,funded,funded
+gain,gains,gaining,gained,gained
+gasp,gasps,gasping,gasped,gasped
+gather,gathers,gathering,gathered,gathered
+gaze,gazes,gazing,gazed,gazed
+generate,generates,generating,generated,generated
+get,gets,getting,got,got gotten
+ghostwrite,ghostwrites,ghostwriting,ghostwrote,ghostwritten
+gild,gilds,gilding,gilded gilt,gilded gilt
+gird,girds,girding,girded,girded
+give,gives,giving,gave,given
+glance,glances,glancing,glanced,glanced
+go,goes,going,went,gone
+govern,governs,governing,governed,governed
+grab,grabs,grabbing,grabbed,grabbed
+grant,grants,granting,granted,granted
+grasp,grasps,grasping,grasped,grasped
+greet,greets,greeting,greeted,greeted
+grin,grins,grinning,grinned,grinned
+grind,grinds,grinding,ground grinded,ground grinded
+grip,grips,gripping,gripped,gripped
+grow,grows,growing,grew,grown
+guarantee,guarantees,guaranteeing,guaranteed,guaranteed
+guard,guards,guarding,guarded,guarded
+guess,guesses,guessing,guessed,guessed
+guide,guides,guiding,guided,guided
+halt,halts,halting,halted,halted
+hamstring,hamstrings,hamstringing,hamstrung,hamstrung
+hand,hands,handing,handed,handed
+handle,handles,handling,handled,handled
+handwrite,handwrites,handwriting,handwrote,handwritten
+hang,hangs,hanging,hung,hung
+happen,happens,happening,happened,happened
+hate,hates,hating,hated,hated
+have,has,having,had,had
+head,heads,heading,headed,headed
+hear,hears,hearing,heard,heard
+heat,heats,heating,heated,heated
+heave,heaves,heaving,heaved,heaved
+help,helps,helping,helped,helped
+hesitate,hesitates,hesitating,hesitated,hesitated
+hew,hews,hewing,hewed,hewed hewn
+hide,hides,hiding,hid,hidden
+highlight,highlights,highlighting,highlighted,highlighted
+hire,hires,hiring,hired,hired
+hit,hits,hitting,hit,hit
+hoist,hoists,hoisting,hoisted hoist,hoisted hoist
+hold,holds,holding,held,held
+honour,honours,honouring,honoured,honoured
+hope,hopes,hoping,hoped,hoped
+house,houses,housing,housed,housed
+housesit,housesits,housesitting,housesat,housesat
+hunt,hunts,hunting,hunted,hunted
+hurry,hurries,hurrying,hurried,hurried
+hurt,hurts,hurting,hurt,hurt
+identify,identifies,identifying,identified,identified
+ignore,ignores,ignoring,ignored,ignored
+illustrate,illustrates,illustrating,illustrated,illustrated
+imagine,imagines,imagining,imagined,imagined
+implement,implements,implementing,implemented,implemented
+imply,implies,implying,implied,implied
+import,imports,importing,imported,imported
+impose,imposes,imposing,imposed,imposed
+impress,impresses,impressing,impressed,impressed
+improve,improves,improving,improved,improved
+in,ins,inning,inned,inned
+inbreed,inbreeds,inbreeding,inbred,inbred
+include,includes,including,included,included
+incorporate,incorporates,incorporating,incorporated,incorporated
+increase,increases,increasing,increased,increased
+incur,incurs,incurring,incurred,incurred
+indicate,indicates,indicating,indicated,indicated
+induce,induces,inducing,induced,induced
+influence,influences,influencing,influenced,influenced
+inform,informs,informing,informed,informed
+inherit,inherits,inheriting,inherited,inherited
+inhibit,inhibits,inhibiting,inhibited,inhibited
+inhold,inholds,inholding,inheld,inheld
+initiate,initiates,initiating,initiated,initiated
+injure,injures,injuring,injured,injured
+inlay,inlays,inlaying,inlaid,inlaid
+inlead,inleads,inleading,inled,inled
+input,inputs,inputting,input inputted,input inputted
+insert,inserts,inserting,inserted,inserted
+inset,insets,insetting,inset insetted,inset insetted
+insist,insists,insisting,insisted,insisted
+inspect,inspects,inspecting,inspected,inspected
+inspire,inspires,inspiring,inspired,inspired
+install,installs,installing,installed,installed
+instruct,instructs,instructing,instructed,instructed
+intake,intakes,intaking,intook,intaken
+integrate,integrates,integrating,integrated,integrated
+intend,intends,intending,intended,intended
+interbreed,interbreeds,interbreeding,interbred,interbred
+intercut,intercuts,intercutting,intercut,intercut
+interfere,interferes,interfering,interfered,interfered
+interlay,interlays,interlaying,interlaid,interlaid
+interpret,interprets,interpreting,interpreted,interpreted
+interrupt,interrupts,interrupting,interrupted,interrupted
+intervene,intervenes,intervening,intervened,intervened
+interview,interviews,interviewing,interviewed,interviewed
+interweave,interweaves,interweaving,interwove interweaved,interwoven interweaved
+introduce,introduces,introducing,introduced,introduced
+invent,invents,inventing,invented,invented
+invest,invests,investing,invested,invested
+investigate,investigates,investigating,investigated,investigated
+invite,invites,inviting,invited,invited
+involve,involves,involving,involved,involved
+isolate,isolates,isolating,isolated,isolated
+issue,issues,issuing,issued,issued
+join,joins,joining,joined,joined
+judge,judges,judging,judged,judged
+jump,jumps,jumping,jumped,jumped
+justify,justifies,justifying,justified,justified
+keep,keeps,keeping,kept,kept
+ken,kens,kenning,kenned,kenned
+kick,kicks,kicking,kicked,kicked
+kill,kills,killing,killed,killed
+kiss,kisses,kissing,kissed,kissed
+kneel,kneels,kneeling,knelt kneeled,knelt kneeled
+knit,knits,knitting,knit knitted,knit knitted
+knock,knocks,knocking,knocked,knocked
+know,knows,knowing,knew,known
+label,labels,labeling,labeled,labeled
+lack,lacks,lacking,lacked,lacked
+lade,lades,lading,laded,laden laded
+land,lands,landing,landed,landed
+last,lasts,lasting,lasted,lasted
+laugh,laughs,laughing,laughed,laughed
+launch,launches,launching,launched,launched
+lay,lays,laying,laid,laid
+lead,leads,leading,led,led
+lean,leans,leaning,leaned,leaned
+leap,leaps,leaping,leaped leapt,leaped leapt
+learn,learns,learning,learned,learned
+leave,leaves,leaving,left,left
+lend,lends,lending,lent,lent
+let,lets,letting,let,let
+lie,lies,lying,lay,lain
+lift,lifts,lifting,lifted,lifted
+light,lights,lighting,lit lighted,lit lighted
+like,likes,liking,liked,liked
+limit,limits,limiting,limited,limited
+line,lines,lining,lined,lined
+link,links,linking,linked,linked
+lipread,lipreads,lipreading,lipread,lipread
+list,lists,listing,listed,listed
+listen,listens,listening,listened,listened
+live,lives,living,lived,lived
+load,loads,loading,loaded,loaded
+locate,locates,locating,located,located
+lock,locks,locking,locked,locked
+long,longs,longing,longed,longed
+look,looks,looking,looked,looked
+lose,loses,losing,lost,lost
+love,loves,loving,loved,loved
+lower,lowers,lowering,lowered,lowered
+maintain,maintains,maintaining,maintained,maintained
+make,makes,making,made,made
+manage,manages,managing,managed,managed
+manipulate,manipulates,manipulating,manipulated,manipulated
+manufacture,manufactures,manufacturing,manufactured,manufactured
+march,marches,marching,marched,marched
+mark,marks,marking,marked,marked
+market,markets,marketing,marketed,marketed
+marry,marries,marrying,married,married
+match,matches,matching,matched,matched
+matter,matters,mattering,mattered,mattered
+may,may,,might,
+mean,means,meaning,meant,meant
+measure,measures,measuring,measured,measured
+meet,meets,meeting,met,met
+melt,melts,melting,melted,melted molten
+mention,mentions,mentioning,mentioned,mentioned
+merge,merges,merging,merged,merged
+mind,minds,minding,minded,minded
+misbecome,misbecomes,misbecoming,misbecame,misbecome
+miscast,miscasts,miscasting,miscast,miscast
+mischoose,mischooses,mischoosing,mischose,mischosen
+misdeal,misdeals,misdealing,misdealt,misdealt
+misdo,misdoes,misdoing,misdid,misdone
+misfeed,misfeeds,misfeeding,misfed,misfed
+misfit,misfits,misfitting,misfitted,misfitted
+misgive,misgives,misgiving,misgave,misgiven
+mishear,mishears,mishearing,misheard,misheard
+mishit,mishits,mishitting,mishit,mishit
+mishold,misholds,misholding,misheld,misheld
+miskeep,miskeeps,miskeeping,miskept,miskept
+misken,miskens,miskenning,miskenned miskent,miskenned miskent
+misknow,misknows,misknowing,misknew,misknown
+mislay,mislays,mislaying,mislaid,mislaid
+mislead,misleads,misleading,misled,misled
+mislearn,mislearns,mislearning,mislearned mislearnt,mislearned mislearnt
+misread,misreads,misreading,misread,misread
+miss,misses,missing,missed,missed
+missay,missays,missaying,missaid,missaid
+missee,missees,misseeing,missaw,misseen
+missend,missends,missending,missent,missent
+misset,missets,missetting,misset,misset
+misshape,misshapes,misshaping,misshaped,misshaped
+misspeak,misspeaks,misspeaking,misspoke,misspoken
+misspell,misspells,misspelling,misspelt misspelled,misspelt misspelled
+misspend,misspends,misspending,misspent,misspent
+mistake,mistakes,mistaking,mistook,mistaken
+mistell,mistells,mistelling,mistold,mistold
+misthrow,misthrows,misthrowing,misthrew,misthrown
+misunderstand,misunderstands,misunderstanding,misunderstood,misunderstood
+miswed,misweds,miswedding,miswed miswedded,miswed miswedded
+miswrite,miswrites,miswriting,miswrote,miswritten
+mix,mixes,mixing,mixed,mixed
+modify,modifies,modifying,modified,modified
+monitor,monitors,monitoring,monitored,monitored
+motivate,motivates,motivating,motivated,motivated
+mount,mounts,mounting,mounted,mounted
+move,moves,moving,moved,moved
+mow,mows,mowing,mowed,mowed mown
+multiply,multiplies,multiplying,multiplied,multiplied
+murder,murders,murdering,murdered,murdered
+murmur,murmurs,murmuring,murmured,murmured
+must,must,,,
+mutter,mutters,muttering,muttered,muttered
+name,names,naming,named,named
+narrow,narrows,narrowing,narrowed,narrowed
+need,needs,needing,needed,needed
+neglect,neglects,neglecting,neglected,neglected
+negotiate,negotiates,negotiating,negotiated,negotiated
+nod,nods,nodding,nodded,nodded
+note,notes,noting,noted,noted
+notice,notices,noticing,noticed,noticed
+obey,obeys,obeying,obeyed,obeyed
+object,objects,objecting,objected,objected
+observe,observes,observing,observed,observed
+obtain,obtains,obtaining,obtained,obtained
+occupy,occupies,occupying,occupied,occupied
+occur,occurs,occurring,occurred,occurred
+offer,offers,offering,offered,offered
+offlead,offleads,offleading,offled,offled
+offset,offsets,offsetting,offset offsetted,offset offsetted
+omit,omits,omitting,omitted,omitted
+onlead,onleads,onleading,onled,onled
+open,opens,opening,opened,opened
+operate,operates,operating,operated,operated
+oppose,opposes,opposing,opposed,opposed
+opt,opts,opting,opted,opted
+order,orders,ordering,ordered,ordered
+organize,organizes,organizing,organized,organized
+originate,originates,originating,originated,originated
+outbid,outbids,outbidding,outbid,outbid outbidden
+outbreak,outbreaks,outbreaking,outbroke,outbroken
+outdo,outdoes,outdoing,outdid,outdone
+outdraw,outdraws,outdrawing,outdrew,outdrawn
+outdrink,outdrinks,outdrinking,outdrank,outdrunk
+outdwell,outdwells,outdwelling,outdwelt outdwelled,outdwelt outdwelled
+outeat,outeats,outeating,outate,outeaten
+outfall,outfalls,outfalling,outfell,outfallen
+outfight,outfights,outfighting,outfought,outfought
+outfly,outflies,outflying,outflew,outflown
+outgrow,outgrows,outgrowing,outgrew,outgrown
+outhear,outhears,outhearing,outheard,outheard
+outken,outkens,outkenning,outkenned outkent,outkenned outkent
+outlay,outlays,outlaying,outlaid,outlaid
+outlead,outleads,outleading,outled,outled
+outleap,outleaps,outleaping,outleapt outleaped,outleapt outleaped
+outline,outlines,outlining,outlined,outlined
+output,outputs,outputting,output outputted,output outputted
+outride,outrides,outriding,outrode,outridden
+outrun,outruns,outrunning,outran,outrun
+outsell,outsells,outselling,outsold,outsold
+outshine,outshines,outshining,outshone outshined,outshone outshined
+outspend,outspends,outspending,outspent,outspent
+outspin,outspins,outspinning,outspun,outspun
+outspread,outspreads,outspreading,outspread,outspread
+outstride,outstrides,outstriding,outstrode,outstridden
+outswear,outswears,outswearing,outswore,outsworn
+outswim,outswims,outswimming,outswam,outswum
+outthink,outthinks,outthinking,outthought,outthought
+outthrow,outthrows,outthrowing,outthrew,outthrown
+outthrust,outthrusts,outthrusting,outthrusted,outthrusted
+outwear,outwears,outwearing,outwore,outworn
+overbear,overbears,overbearing,overbore,overborne
+overbeat,overbeats,overbeating,overbeat,overbeaten
+overbend,overbends,overbending,overbent,overbent
+overbid,overbids,overbidding,overbid,overbid
+overblow,overblows,overblowing,overblew,overblown
+overbreed,overbreeds,overbreeding,overbred,overbred
+overbuild,overbuilds,overbuilding,overbuilt,overbuilt
+overbuy,overbuys,overbuying,overbought,overbought
+overcast,overcasts,overcasting,overcast,overcast
+overclothe,overclothes,overclothing,overclothed overclad,overclothed overclad
+overcome,overcomes,overcoming,overcame,overcome
+overdo,overdoes,overdoing,overdid,overdone
+overdraw,overdraws,overdrawing,overdrew,overdrawn
+overdrink,overdrinks,overdrinking,overdrank,overdrunk
+overdrive,overdrives,overdriving,overdrove,overdriven
+overeat,overeats,overeating,overate,overeaten
+overfeed,overfeeds,overfeeding,overfed,overfed
+overfly,overflies,overflying,overflew,overflown
+overgive,overgives,overgiving,overgave,overgiven
+overgrow,overgrows,overgrowing,overgrew,overgrown
+overhang,overhangs,overhanging,overhung,overhung
+overhear,overhears,overhearing,overheard,overheard
+overhit,overhits,overhitting,overhit,overhit
+overkeep,overkeeps,overkeeping,overkept,overkept
+overlade,overlades,overlading,overladed,overladed overladen
+overlay,overlays,overlaying,overlaid overlayed,overlaid overlayed
+overlead,overleads,overleading,overled,overled
+overleap,overleaps,overleaping,overleaped overleapt,overleaped overleapt
+overlearn,overlearns,overlearning,overlearned overlearnt,overlearned overlearnt
+overleave,overleaves,overleaving,overleft,overleft
+overlie,overlies,overlying,overlay,overlain
+overlook,overlooks,overlooking,overlooked,overlooked
+overpay,overpays,overpaying,overpaid,overpaid
+override,overrides,overriding,overrode,overridden
+overrun,overruns,overrunning,overran,overrun
+oversee,oversees,overseeing,oversaw,overseen
+oversell,oversells,overselling,oversold,oversold
+overset,oversets,oversetting,overset,overset
+oversew,oversews,oversewing,oversewed,oversewn
+overshake,overshakes,overshaking,overshook,overshaken
+overshine,overshines,overshining,overshone,overshone
+overshoot,overshoots,overshooting,overshot,overshot
+oversleep,oversleeps,oversleeping,overslept,overslept
+overslide,overslides,oversliding,overslid,overslid
+overspend,overspends,overspending,overspent,overspent
+overspill,overspills,overspilling,overspilled overspilt,overspilled overspilt
+overspread,overspreads,overspreading,overspread,overspread
+overstand,overstands,overstanding,overstood,overstood
+overstrew,overstrews,overstrewing,overstrewed,overstrewn
+overstride,overstrides,overstriding,overstrode,overstrode overstridden
+overstrike,overstrikes,overstriking,overstruck,overstruck
+overswing,overswings,overswinging,overswung,overswung
+overtake,overtakes,overtaking,overtook,overtaken
+overthrow,overthrows,overthrowing,overthrew,overthrown
+overwear,overwears,overwearing,overwore,overworn
+overwet,overwets,overwetting,overwet overwetted,overwet overwetted
+overwork,overworks,overworking,overworked overwrought,overworked overwrought
+overwrite,overwrites,overwriting,overwrote,overwritten
+owe,owes,owing,owed,owed
+own,owns,owning,owned,owned
+pack,packs,packing,packed,packed
+paint,paints,painting,painted,painted
+park,parks,parking,parked,parked
+part,parts,parting,parted,parted
+partake,partakes,partaking,partook,partaken
+participate,participates,participating,participated,participated
+pass,passes,passing,passed,passed
+pause,pauses,pausing,paused,paused
+pay,pays,paying,paid,paid
+peer,peers,peering,peered,peered
+pen,pens,penning,penned pent,penned pent
+penetrate,penetrates,penetrating,penetrated,penetrated
+perceive,perceives,perceiving,perceived,perceived
+perform,performs,performing,performed,performed
+permit,permits,permitting,permitted,permitted
+persist,persists,persisting,persisted,persisted
+persuade,persuades,persuading,persuaded,persuaded
+phone,phones,phoning,phoned,phoned
+pick,picks,picking,picked,picked
+picture,pictures,picturing,pictured,pictured
+pin,pins,pinning,pinned,pinned
+place,places,placing,placed,placed
+plan,plans,planning,planned,planned
+plant,plants,planting,planted,planted
+play,plays,playing,played,played
+plead,pleads,pleading,pleaded pled plead,pleaded pled plead
+please,pleases,pleasing,pleased,pleased
+plunge,plunges,plunging,plunged,plunged
+podcast,podcasts,podcasting,podcasted,podcasted
+point,points,pointing,pointed,pointed
+pop,pops,popping,popped,popped
+pose,poses,posing,posed,posed
+position,positions,positioning,positioned,positioned
+possess,possesses,possessing,possessed,possessed
+pour,pours,pouring,poured,poured
+practice,practices,practicing,practiced,practiced
+praise,praises,praising,praised,praised
+pray,prays,praying,prayed,prayed
+precast,precasts,precasting,precast,precast
+precede,precedes,preceding,preceded,preceded
+predict,predicts,predicting,predicted,predicted
+prefer,prefers,preferring,preferred,preferred
+prepare,prepares,preparing,prepared,prepared
+prepay,prepays,prepaying,prepaid,prepayed prepaid
+prescribe,prescribes,prescribing,prescribed,prescribed
+present,presents,presenting,presented,presented
+preserve,preserves,preserving,preserved,preserved
+preset,presets,presetting,preset,preset
+press,presses,pressing,pressed,pressed
+presume,presumes,presuming,presumed,presumed
+pretend,pretends,pretending,pretended,pretended
+prevail,prevails,prevailing,prevailed,prevailed
+prevent,prevents,preventing,prevented,prevented
+price,prices,pricing,priced,priced
+print,prints,printing,printed,printed
+proceed,proceeds,proceeding,proceeded,proceeded
+process,processes,processing,processed,processed
+proclaim,proclaims,proclaiming,proclaimed,proclaimed
+produce,produces,producing,produced,produced
+progress,progresses,progressing,progressed,progressed
+project,projects,projecting,projected,projected
+promise,promises,promising,promised,promised
+promote,promotes,promoting,promoted,promoted
+prompt,prompts,prompting,prompted,prompted
+pronounce,pronounces,pronouncing,pronounced,pronounced
+proofread,proofreads,proofreading,proofread,proofread
+propose,proposes,proposing,proposed,proposed
+protect,protects,protecting,protected,protected
+protest,protests,protesting,protested,protested
+prove,proves,proving,proved,proved proven
+provide,provides,providing,provided,provided
+provoke,provokes,provoking,provoked,provoked
+publish,publishes,publishing,published,published
+pull,pulls,pulling,pulled,pulled
+punish,punishes,punishing,punished,punished
+purchase,purchases,purchasing,purchased,purchased
+pursue,pursues,pursuing,pursued,pursued
+push,pushes,pushing,pushed,pushed
+put,puts,putting,put,put
+qualify,qualifies,qualifying,qualified,qualified
+question,questions,questioning,questioned,questioned
+quit,quits,quitting,quit quitted,quit quitted
+quote,quotes,quoting,quoted,quoted
+race,races,racing,raced,raced
+rain,rains,raining,rained,rained
+raise,raises,raising,raised,raised
+range,ranges,ranging,ranged,ranged
+rate,rates,rating,rated,rated
+reach,reaches,reaching,reached,reached
+react,reacts,reacting,reacted,reacted
+read,reads,reading,read,read
+realize,realizes,realizing,realized,realized
+reassure,reassures,reassuring,reassured,reassured
+rebid,rebids,rebidding,rebid,rebid
+rebreak,rebreaks,rebreaking,rebroke,rebroken
+rebuild,rebuilds,rebuilding,rebuilt,rebuilt
+recall,recalls,recalling,recalled,recalled
+recast,recasts,recasting,recast,recast
+receive,receives,receiving,received,received
+reckon,reckons,reckoning,reckoned,reckoned
+recognize,recognizes,recognizing,recognized,recognized
+recommend,recommends,recommending,recommended,recommended
+record,records,recording,recorded,recorded
+recover,recovers,recovering,recovered,recovered
+recruit,recruits,recruiting,recruited,recruited
+recut,recuts,recutting,recut,recut
+redeal,redeals,redealing,redealt,redealt
+redo,redoes,redoing,redid,redone
+redraw,redraws,redrawing,redrew,redrawn
+reduce,reduces,reducing,reduced,reduced
+refer,refers,referring,referred,referred
+refind,refinds,refinding,refound,refound
+reflect,reflects,reflecting,reflected,reflected
+refreeze,refreezes,refreezing,refroze,refrozen
+refuse,refuses,refusing,refused,refused
+regain,regains,regaining,regained,regained
+regard,regards,regarding,regarded,regarded
+register,registers,registering,registered,registered
+regret,regrets,regretting,regretted,regretted
+regrow,regrows,regrowing,regrew,regrown
+regulate,regulates,regulating,regulated,regulated
+rehear,rehears,rehearing,reheard,reheard
+reinforce,reinforces,reinforcing,reinforced,reinforced
+reject,rejects,rejecting,rejected,rejected
+relate,relates,relating,related,related
+relax,relaxes,relaxing,relaxed,relaxed
+relearn,relearns,relearning,relearned relearnt,relearned relearnt
+release,releases,releasing,released,released
+relieve,relieves,relieving,relieved,relieved
+relight,relights,relighting,relighted relit,relighted relit
+rely,relies,relying,relied,relied
+remain,remains,remaining,remained,remained
+remake,remakes,remaking,remade,remade
+remark,remarks,remarking,remarked,remarked
+remember,remembers,remembering,remembered,remembered
+remind,reminds,reminding,reminded,reminded
+remove,removes,removing,removed,removed
+rend,rends,rending,rent rended,rent rended
+render,renders,rendering,rendered,rendered
+renew,renews,renewing,renewed,renewed
+rent,rents,renting,rented,rented
+repair,repairs,repairing,repaired,repaired
+repay,repays,repaying,repaid,repaid
+repeat,repeats,repeating,repeated,repeated
+replace,replaces,replacing,replaced,replaced
+reply,replies,replying,replied,replied
+report,reports,reporting,reported,reported
+represent,represents,representing,represented,represented
+reproduce,reproduces,reproducing,reproduced,reproduced
+reprove,reproves,reproving,reproved,reproved
+request,requests,requesting,requested,requested
+require,requires,requiring,required,required
+reread,rereads,rereading,reread,reread
+rerun,reruns,rerunning,reran,rerun
+rescue,rescues,rescuing,rescued,rescued
+research,researches,researching,researched,researched
+resell,resells,reselling,resold,resold
+resemble,resembles,resembling,resembled,resembled
+resend,resends,resending,resent,resent
+reserve,reserves,reserving,reserved,reserved
+reset,resets,resetting,reset,reset
+reshoe,reshoes,reshoeing,reshoed reshod,reshoed reshod
+reshoot,reshoots,reshooting,reshot,reshot
+reshow,reshows,reshowing,reshowed,reshown
+resign,resigns,resigning,resigned,resigned
+resist,resists,resisting,resisted,resisted
+resit,resits,resitting,resat,resat
+resolve,resolves,resolving,resolved,resolved
+respect,respects,respecting,respected,respected
+respond,responds,responding,responded,responded
+rest,rests,resting,rested,rested
+restore,restores,restoring,restored,restored
+restrict,restricts,restricting,restricted,restricted
+result,results,resulting,resulted,resulted
+resume,resumes,resuming,resumed,resumed
+retain,retains,retaining,retained,retained
+retake,retakes,retaking,retook,retaken
+retell,retells,retelling,retold,retold
+rethink,rethinks,rethinking,rethought,rethought
+retire,retires,retiring,retired,retired
+retread,retreads,retreading,retrod,retrodden
+return,returns,returning,returned,returned
+reveal,reveals,revealing,revealed,revealed
+reverse,reverses,reversing,reversed,reversed
+review,reviews,reviewing,reviewed,reviewed
+revise,revises,revising,revised,revised
+revive,revives,reviving,revived,revived
+reward,rewards,rewarding,rewarded,rewarded
+rewed,reweds,rewedding,rewed rewedded,rewed rewedded
+rewind,rewinds,rewinding,rewound,rewound
+rewrite,rewrites,rewriting,rewrote,rewritten
+rid,rids,ridding,rid ridded,rid
+ride,rides,riding,rode,ridden
+ring,rings,ringing,rang,rung
+rip,rips,ripping,ripped,ripped
+rise,rises,rising,rose,risen
+risk,risks,risking,risked,risked
+rive,rives,riving,rived rove,rived riven
+roll,rolls,rolling,rolled,rolled
+round,rounds,rounding,rounded,rounded
+rub,rubs,rubbing,rubbed,rubbed
+rule,rules,ruling,ruled,ruled
+run,runs,running,ran,run
+rush,rushes,rushing,rushed,rushed
+sack,sacks,sacking,sacked,sacked
+sail,sails,sailing,sailed,sailed
+satisfy,satisfies,satisfying,satisfied,satisfied
+save,saves,saving,saved,saved
+saw,saws,sawing,sawed,sawed sawn
+say,says,saying,said,said
+scan,scans,scanning,scanned,scanned
+scatter,scatters,scattering,scattered,scattered
+schedule,schedules,scheduling,scheduled,scheduled
+score,scores,scoring,scored,scored
+scratch,scratches,scratching,scratched,scratched
+scream,screams,screaming,screamed,screamed
+seal,seals,sealing,sealed,sealed
+search,searches,searching,searched,searched
+secure,secures,securing,secured,secured
+see,sees,seeing,saw,seen
+seek,seeks,seeking,sought,sought
+seem,seems,seeming,seemed,seemed
+seethe,seethes,seething,seethed,seethed
+seize,seizes,seizing,seized,seized
+select,selects,selecting,selected,selected
+sell,sells,selling,sold,sold
+send,sends,sending,sent,sent
+sense,senses,sensing,sensed,sensed
+sentence,sentences,sentencing,sentenced,sentenced
+separate,separates,separating,separated,separated
+serve,serves,serving,served,served
+set,sets,setting,set,set
+settle,settles,settling,settled,settled
+sew,sews,sewing,sewed,sewn sewed
+shake,shakes,shaking,shook,shaken
+shall,shall,,should,
+shape,shapes,shaping,shaped,shaped shapen
+share,shares,sharing,shared,shared
+shave,shaves,shaving,shaved,shaved shaven
+shear,shears,shearing,sheared shore,shorn sheared
+shed,sheds,shedding,shed,shed
+shift,shifts,shifting,shifted,shifted
+shine,shines,shining,shone shined,shone shined
+ship,ships,shipping,shipped,shipped
+shit,shits,shitting,shit shitted shat,shit shitted shat
+shite,shites,shiting,shited shit shat,shited shitten
+shiver,shivers,shivering,shivered,shivered
+shoe,shoes,shoeing,shod shoed,shodden shod shoed
+shoot,shoots,shooting,shot,shot
+shop,shops,shopping,shopped,shopped
+shout,shouts,shouting,shouted,shouted
+show,shows,showing,showed,shown
+shrink,shrinks,shrinking,shrank shrunk,shrunk shrunken
+shrug,shrugs,shrugging,shrugged,shrugged
+shut,shuts,shutting,shut,shut
+sigh,sighs,sighing,sighed,sighed
+sightsee,sightsees,sightseeing,sightsaw,sightseen
+sign,signs,signing,signed,signed
+signal,signals,signaling,signaled,signaled
+simulcast,simulcasts,simulcasting,simulcast simulcasted,simulcast simulcasted
+sing,sings,singing,sang,sung
+sink,sinks,sinking,sank,sunk sunken
+sit,sits,sitting,sat,sat
+situate,situates,situating,situated,situated
+slam,slams,slamming,slammed,slammed
+slay,slays,slaying,slew slayed,slain slayed
+sleep,sleeps,sleeping,slept,slept
+slide,slides,sliding,slid,slid
+sling,slings,slinging,slung,slung
+slink,slinks,slinking,slunk slinked slank,slunk slinked slank
+slip,slips,slipping,slipped,slipped
+slit,slits,slitting,slit,slit slitten
+slow,slows,slowing,slowed,slowed
+smash,smashes,smashing,smashed,smashed
+smell,smells,smelling,smelled smelt,smelled smelt
+smile,smiles,smiling,smiled,smiled
+smite,smites,smiting,smote,smitten smited
+smoke,smokes,smoking,smoked,smoked
+snap,snaps,snapping,snapped,snapped
+sneak,sneaks,sneaking,sneaked snuck,sneaked snuck
+solve,solves,solving,solved,solved
+soothsay,soothsays,soothsaying,soothsaid,soothsaid
+sort,sorts,sorting,sorted,sorted
+sound,sounds,sounding,sounded,sounded
+sow,sows,sowing,sowed,sown
+spare,spares,sparing,spared,spared
+speak,speaks,speaking,spoke,spoken
+specify,specifies,specifying,specified,specified
+speed,speeds,speeding,sped,sped
+spell,spells,spelling,spelled,spelled
+spend,spends,spending,spent,spent
+spill,spills,spilling,spilled spilt,spilled spilt
+spin,spins,spinning,spun,spun
+spit,spits,spitting,spat spit,spat spit
+split,splits,splitting,split,split
+spoil,spoils,spoiling,spoiled spoilt,spoiled spoilt
+sponsor,sponsors,sponsoring,sponsored,sponsored
+spot,spots,spotting,spotted,spotted
+spread,spreads,spreading,spread,spread
+spring,springs,springing,sprang sprung,sprung
+squeeze,squeezes,squeezing,squeezed,squeezed
+stage,stages,staging,staged,staged
+stand,stands,standing,stood,stood
+stare,stares,staring,stared,stared
+start,starts,starting,started,started
+starve,starves,starving,starved,starved
+state,states,stating,stated,stated
+stave,staves,staving,stove staved,stove staved
+stay,stays,staying,stayed,stayed
+steal,steals,stealing,stole,stolen
+stem,stems,stemming,stemmed,stemmed
+step,steps,stepping,stepped,stepped
+stick,sticks,sticking,stuck,stuck
+stimulate,stimulates,stimulating,stimulated,stimulated
+sting,stings,stinging,stung,stung
+stink,stinks,stinking,stank stunk,stunk
+stir,stirs,stirring,stirred,stirred
+stop,stops,stopping,stopped,stopped
+store,stores,storing,stored,stored
+strain,strains,straining,strained,strained
+strengthen,strengthens,strengthening,strengthened,strengthened
+stress,stresses,stressing,stressed,stressed
+stretch,stretches,stretching,stretched,stretched
+strew,strews,strewing,strewed,strewn strewed
+stride,strides,striding,strode,stridden
+strike,strikes,striking,struck,struck stricken
+string,strings,stringing,strung,strung
+strip,strips,stripping,stripped stript,stripped stript
+strive,strives,striving,strove strived,striven strived
+stroke,strokes,stroking,stroked,stroked
+struggle,struggles,struggling,struggled,struggled
+study,studies,studying,studied,studied
+subject,subjects,subjecting,subjected,subjected
+sublet,sublets,subletting,sublet,sublet
+submit,submits,submitting,submitted,submitted
+substitute,substitutes,substituting,substituted,substituted
+succeed,succeeds,succeeding,succeeded,succeeded
+suck,sucks,sucking,sucked,sucked
+sue,sues,suing,sued,sued
+suffer,suffers,suffering,suffered,suffered
+suggest,suggests,suggesting,suggested,suggested
+suit,suits,suiting,suited,suited
+sum,sums,summing,summed,summed
+summon,summons,summoning,summoned,summoned
+sunburn,sunburns,sunburning,sunburned,sunburned
+supervise,supervises,supervising,supervised,supervised
+supplement,supplements,supplementing,supplemented,supplemented
+supply,supplies,supplying,supplied,supplied
+support,supports,supporting,supported,supported
+suppose,supposes,supposing,supposed,supposed
+suppress,suppresses,suppressing,suppressed,suppressed
+surprise,surprises,surprising,surprised,surprised
+surround,surrounds,surrounding,surrounded,surrounded
+survive,survives,surviving,survived,survived
+suspect,suspects,suspecting,suspected,suspected
+suspend,suspends,suspending,suspended,suspended
+sustain,sustains,sustaining,sustained,sustained
+swallow,swallows,swallowing,swallowed,swallowed
+swear,swears,swearing,swore,sworn
+sweat,sweats,sweating,sweated sweat,sweated sweat
+sweep,sweeps,sweeping,swept,swept
+swell,swells,swelling,swelled,swollen swelled
+swim,swims,swimming,swam,swum
+swing,swings,swinging,swang swung,swung
+switch,switches,switching,switched,switched
+tackle,tackles,tackling,tackled,tackled
+take,takes,taking,took,taken
+talk,talks,talking,talked,talked
+tap,taps,tapping,tapped,tapped
+target,targets,targeting targetting,targeted targetted,targeted targetted
+taste,tastes,tasting,tasted,tasted
+tax,taxes,taxing,taxed,taxed
+teach,teaches,teaching,taught,taught
+tear,tears,tearing,tore,torn
+telecast,telecasts,telecasting,telecast telecasted,telecast telecasted
+telephone,telephones,telephoning,telephoned,telephoned
+tell,tells,telling,told,told
+tempt,tempts,tempting,tempted,tempted
+tend,tends,tending,tended,tended
+term,terms,terming,termed,termed
+test,tests,testing,tested,tested
+thank,thanks,thanking,thanked,thanked
+think,thinks,thinking,thought,thought
+threaten,threatens,threatening,threatened,threatened
+thrive,thrives,thriving,throve thrived,thriven thrived
+throw,throws,throwing,threw,thrown
+thrust,thrusts,thrusting,thrust thrusted,thrust thrusted
+tie,ties,tying,tied,tied
+tighten,tightens,tightening,tightened,tightened
+time,times,timing,timed,timed
+tip,tips,tipping,tipped,tipped
+top,tops,topping,topped,topped
+toss,tosses,tossing,tossed,tossed
+touch,touches,touching,touched,touched
+tour,tours,touring,toured,toured
+trace,traces,tracing,traced,traced
+trade,trades,trading,traded,traded
+train,trains,training,trained,trained
+transfer,transfers,transferring,transferred,transferred
+transform,transforms,transforming,transformed,transformed
+translate,translates,translating,translated,translated
+transmit,transmits,transmitting,transmitted,transmitted
+transport,transports,transporting,transported,transported
+trap,traps,trapping,trapped,trapped
+travel,travels,travelling traveling,travelled traveled,travelled traveled
+tread,treads,treading,trod,trod trodden
+treat,treats,treating,treated,treated
+tremble,trembles,trembling,trembled,trembled
+trust,trusts,trusting,trusted,trusted
+try,tries,trying,tried,tried
+tuck,tucks,tucking,tucked,tucked
+turn,turns,turning,turned,turned
+twist,twists,twisting,twisted,twisted
+typecast,typecasts,typecasting,typecast typecasted,typecast typecasted
+unbend,unbends,unbending,unbent,unbent
+unbind,unbinds,unbinding,unbound,unbound
+unclothe,unclothes,unclothing,unclothed,unclothed
+underbear,underbears,underbearing,underbore,underborne underborn
+underbet,underbets,underbetting,underbet,underbet
+underbid,underbids,underbidding,underbid,underbid
+underbind,underbinds,underbinding,underbound,underbound
+underbuild,underbuilds,underbuilding,underbuilt,underbuilt
+underbuy,underbuys,underbuying,underbought,underbought
+undercast,undercasts,undercasting,undercast,undercast
+underclothe,underclothes,underclothing,underclothed,underclothed
+undercut,undercuts,undercutting,undercut,undercut
+underdig,underdigs,underdigging,underdug,underdug
+underdo,underdoes,underdoing,underdid,underdone
+underdraw,underdraws,underdrawing,underdrew,underdrawn
+undereat,undereats,undereating,underate,undereaten
+underfeed,underfeeds,underfeeding,underfed,underfed
+undergird,undergirds,undergirding,undergirded,undergirded
+undergo,undergoes,undergoing,underwent,undergone
+undergrow,undergrows,undergrowing,undergrew,undergrown
+underhang,underhangs,underhanging,underhung,underhung
+underkeep,underkeeps,underkeeping,underkept,underkept
+underlay,underlays,underlaying,underlaid,underlaid
+underlead,underleads,underleading,underled,underled
+underlie,underlies,underlying,underlay,underlain
+underline,underlines,underlining,underlined,underlined
+undermine,undermines,undermining,undermined,undermined
+underpay,underpays,underpaying,underpaid,underpaid
+underrun,underruns,underrunning,underran,underrun
+undersee,undersees,underseeing,undersaw,underseen
+undersell,undersells,underselling,undersold,undersold
+undershoot,undershoots,undershooting,undershot,undershot
+undersleep,undersleeps,undersleeping,underslept,underslept
+understand,understands,understanding,understood,understood
+undertake,undertakes,undertaking,undertook,undertaken
+underthrow,underthrows,underthrowing,underthrew,underthrown
+underwrite,underwrites,underwriting,underwrote,underwritten
+undo,undoes,undoing,undid,undone
+unfreeze,unfreezes,unfreezing,unfroze,unfrozen
+unhear,unhears,unhearing,unheard,unheard
+unite,unites,uniting,united,united
+unlay,unlays,unlaying,unlaid,unlaid
+unlearn,unlearns,unlearning,unlearned unlearnt,unlearned unlearnt
+unmake,unmakes,unmaking,unmade,unmade
+unwind,unwinds,unwinding,unwound,unwound
+upcast,upcasts,upcasting,upcast upcasted,upcast upcasted
+update,updates,updating,updated,updated
+updraw,updraws,updrawing,updrew,updrawn
+upgrow,upgrows,upgrowing,upgrew,upgrown
+uphang,uphangs,uphanging,uphung,uphung
+upheave,upheaves,upheaving,upheaved uphove,upheaved
+uphold,upholds,upholding,upheld,upheld
+uprise,uprises,uprising,uprose,uprisen
+upsell,upsells,upselling,upsold,upsold
+upset,upsets,upsetting,upset,upset
+upstand,upstands,upstanding,upstood,upstood
+upsweep,upsweeps,upsweeping,upswept,upswept
+upswell,upswells,upswelling,upswelled,upswelled upswollen
+uptear,uptears,uptearing,uptore,uptorn
+upthrow,upthrows,upthrowing,upthrew,upthrown
+urge,urges,urging,urged,urged
+use,uses,using,used,used
+value,values,valuing,valued,valued
+vanish,vanishes,vanishing,vanished,vanished
+vary,varies,varying,varied,varied
+vex,vexes,vexing,vexed,vexed
+view,views,viewing,viewed,viewed
+visit,visits,visiting,visited,visited
+voice,voices,voicing,voiced,voiced
+vote,votes,voting,voted,voted
+wait,waits,waiting,waited,waited
+wake,wakes,waking,woke,woken
+walk,walks,walking,walked,walked
+wander,wanders,wandering,wandered,wandered
+want,wants,wanting,wanted,wanted
+warm,warms,warming,warmed,warmed
+warn,warns,warning,warned,warned
+wash,washes,washing,washed,washed
+waste,wastes,wasting,wasted,wasted
+watch,watches,watching,watched,watched
+wave,waves,waving,waved,waved
+wax,waxes,waxing,waxed,waxed
+waylay,waylays,waylaying,waylaid,waylaid
+weaken,weakens,weakening,weakened,weakened
+wear,wears,wearing,wore,worn
+weave,weaves,weaving,wove weaved,woven weaved
+webcast,webcasts,webcasting,webcast,webcast
+wed,weds,wedding,wed wedded,wed wedded
+weep,weeps,weeping,wept weeped,wept weeped
+weigh,weighs,weighing,weighed,weighed
+welcome,welcomes,welcoming,welcomed,welcomed
+wend,wends,wending,wended,wended
+wet,wets,wetting,wet wetted,wet wetted
+whisper,whispers,whispering,whispered,whispered
+widen,widens,widening,widened,widened
+will,will,willing,would,
+win,wins,winning,won,won
+wind,winds,winding,wound,wound
+wipe,wipes,wiping,wiped,wiped
+wish,wishes,wishing,wished,wished
+withdraw,withdraws,withdrawing,withdrew,withdrawn
+withhold,withholds,withholding,withheld,withheld
+withstand,withstands,withstanding,withstood,withstood
+witness,witnesses,witnessing,witnessed,witnessed
+wonder,wonders,wondering,wondered,wondered
+work,works,working,worked,worked
+worry,worries,worrying,worried,worried
+wrap,wraps,wrapping,wrapped,wrapped
+wreak,wreaks,wreaking,wreaked wrought,wreaked wrought
+wring,wrings,wringing,wrang wrung,wrung
+write,writes,writing,wrote,written
+writhe,writhes,writhing,writhed,writhed
+yield,yields,yielding,yielded,yielded
+zinc,zincs,zincing zinking zincking,zinced zinked zincked,zinced zinked zincked

@@ -28,7 +28,8 @@ class PipelineConfig(BaseModel):
     def __init__(self, config_type, name, terms=list(), description = '', limit=0, concept_code=-1, owner='system',
                  include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
                  vocabulary='SNOMED', sections=list(), report_type_query='', minimum_value=0, maximum_value=10000,
-                 case_sensitive=False, cohort=list(), is_phenotype=False):
+                 case_sensitive=False, cohort=list(), is_phenotype=False, report_types=list(), custom_query='', filter_query='',
+                 custom_arguments: dict=dict()):
         self.config_type = config_type
         self.name = name
         self.description = description
@@ -40,6 +41,9 @@ class PipelineConfig(BaseModel):
         self.include_descendants = include_descendants
         self.include_ancestors = include_ancestors
         self.report_tags = report_tags
+        self.report_types = report_types
+        self.custom_query = custom_query
+        self.filter_query = filter_query
         self.vocabulary = vocabulary
         self.sections = sections
         self.report_type_query = report_type_query
@@ -48,6 +52,7 @@ class PipelineConfig(BaseModel):
         self.case_sensitive = case_sensitive
         self.cohort = cohort
         self.is_phenotype = is_phenotype
+        self.custom_arguments = custom_arguments
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
@@ -109,9 +114,11 @@ def get_default_config():
     return PipelineConfig('UNKNOWN', 'UNKNOWN', [])
 
 
-def get_query(terms: list()):
-    if terms is not None and len(terms) > 0:
-        return 'report_text:("' + '" OR "'.join(terms) + '")'
+def get_query(custom_query='', terms: list = list()):
+    if custom_query and len(custom_query) > 0:
+        return custom_query
+    elif terms is not None and len(terms) > 0:
+        return util.solr_text_field + ':("' + '" OR "'.join(terms) + '")'
     else:
         return '*'
 

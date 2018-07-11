@@ -5,6 +5,7 @@ flask==0.12.2
 flask-autodoc==0.1.2
 flask-cors==3.0.3
 flower==0.9.2
+inflect==0.3.1
 jobtastic==2.0.0
 kazoo==2.4.0
 luigi==2.7.1

@@ -2,16 +2,18 @@ import datetime
 import sys
 import traceback
 from functools import reduce
-import pandas as pd
 
-from ohdsi import getCohort
+import pandas as pd
+import util
+
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
+from ohdsi import getCohort
 
 DEBUG_LIMIT = 1000
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
 
 pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
-numeric_comp_operators = ['==', '=',  '>', '<', '<=', '>=']
+numeric_comp_operators = ['==', '=', '>', '<', '<=', '>=']
 
 
 def get_terms(model: PhenotypeModel):
@@ -35,35 +37,82 @@ def get_terms_by_keys(term_dict, term_keys: list, concept_keys: list):
     return terms
 
 
-
-def get_report_tags(model):
+def get_document_set_attributes(model):
+    tags = dict()
     types = dict()
-    # TODO
+    custom_query = dict()
+    filter_query = dict()
+    # Clarity.createDocumentSet({
+    #     report_tags: [optional]
+    #     report_types: [optional],
+    #     "filter_query": "
+    # query: "query"
     if model.document_sets:
         for d in model.document_sets:
-            if d['library'] == "Clarity" and d['funct'] == "createReportTagList":
+            print(d)
+            if d['library'] == "Clarity" or d["library"] == "ClarityNLP":
                 args = d['arguments']
-                if len(args) == 1 and type(args[0]) == list:
-                    types[d['name']] = args[0]
-                else:
-                    types[d['name']] = args
-    return types
+                named_args = d['named_arguments']
+                funct = d['funct']
+                doc_set_name = d['name']
+                if funct == "createReportTagList":
+                    if len(args) == 1 and type(args[0]) == list:
+                        tags[doc_set_name] = args[0]
+                    else:
+                        tags[doc_set_name] = args
+                elif funct == "createDocumentSet":
+                    if named_args:
+                        if "report_tags" in named_args:
+                            arg_report_tags = named_args["report_tags"]
+                            if len(arg_report_tags) == 1 and type(arg_report_tags[0]) == list:
+                                tags[doc_set_name] = arg_report_tags[0]
+                            else:
+                                tags[doc_set_name] = arg_report_tags
+                        if "report_types" in named_args:
+                            types[doc_set_name] = named_args["report_types"]
+                        if "filter_query" in named_args:
+                            filter_query[doc_set_name] = named_args["filter_query"]
+                        if "query" in named_args:
+                            custom_query[doc_set_name] = named_args["query"]
+                elif funct == "createReportTypeList":
+                    if len(args) == 1 and type(args[0]) == list:
+                        types[doc_set_name] = args[0]
+                    else:
+                        types[doc_set_name] = args
+
+    return tags, types, custom_query, filter_query
 
 
-def get_report_tags_by_keys(report_tag_dict, keys: list):
-    tags = list()
+def get_item_list_by_key(dictionary, keys: list):
+    items = list()
     for k in keys:
-        tags.extend(report_tag_dict[k])
-    return tags
+        if k in dictionary:
+            items.extend(dictionary[k])
+    return items
+
+
+def get_item_by_key(dictionary, keys: list):
+    # there can really only be one of these, so it will just return the first match
+    for k in keys:
+        if k in dictionary:
+            return dictionary[k]
+    return ''
 
 
 def map_arguments(pipeline: PipelineConfig, e):
     for k in e.keys():
         if not (
-                k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or k == "cohort"):
+                k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or
+                k == "cohort"):
             if k in pipeline_keys:
                 try:
                     pipeline[k] = e[k]
+                except Exception as ex:
+                    traceback.print_exc(file=sys.stdout)
+                    print(ex)
+            else:
+                try:
+                    pipeline.custom_arguments[k] = e[k]
                 except Exception as ex:
                     traceback.print_exc(file=sys.stdout)
                     print(ex)
@@ -82,7 +131,8 @@ def get_cohort_items(cohort_name, cohort_source):
     return cohorts
 
 
-def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug, cohorts, phenotype_limit=0):
+def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug, cohorts, phenotype_limit=0,
+                               report_types=dict(), custom_query=dict(), filter_query=dict()):
     if e['named_arguments'] is None:
         e['named_arguments'] = dict()
     if 'value_sets' not in e['named_arguments']:
@@ -90,7 +140,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
     if 'termsets' not in e['named_arguments']:
         e['named_arguments']['termsets'] = []
 
-    if e['library'] == "Clarity":
+    if e['library'] == "Clarity" or e['library'] == 'ClarityNLP':
         # config_type, name, description, terms
 
         if 'documentsets' in e['named_arguments']:
@@ -100,7 +150,6 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         else:
             doc_sets = list()
 
-        tags = get_report_tags_by_keys(report_tags, doc_sets)
         if phenotype_limit > 0:
             limit = phenotype_limit
         elif debug:
@@ -122,6 +171,11 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         else:
             cohort = list()
 
+        tags = get_item_list_by_key(report_tags, doc_sets)
+        types = get_item_list_by_key(report_types, doc_sets)
+        query = get_item_by_key(custom_query, doc_sets)
+        fq = get_item_by_key(filter_query, doc_sets)
+
         pipeline = PipelineConfig(e['funct'], e['name'],
                                   get_terms_by_keys(all_terms, terms,
                                                     e['named_arguments']['value_sets']
@@ -130,6 +184,9 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   limit=limit,
                                   cohort=cohort,
                                   report_tags=tags,
+                                  report_types=types,
+                                  custom_query=query,
+                                  filter_query=fq,
                                   is_phenotype=True)
         map_arguments(pipeline, e)
         map_arguments(pipeline, e['named_arguments'])
@@ -157,10 +214,11 @@ def get_pipelines_from_phenotype(model: PhenotypeModel):
     pipelines = list()
     if model and model.data_entities and len(model.data_entities) > 0:
         all_terms = get_terms(model)
-        report_tags = get_report_tags(model)
+        report_tags, report_types, custom_query, filter_query = get_document_set_attributes(model)
         cohorts = get_cohorts(model)
         for e in model.data_entities:
-            pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts, model.limit))
+            pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts,
+                                                        model.limit, report_types, custom_query, filter_query))
     return pipelines
 
 
@@ -197,7 +255,7 @@ def string_to_datetime(stringdt):
 
 
 def long_to_datetime(longdt):
-    return datetime.datetime.fromtimestamp(float(longdt/1000))
+    return datetime.datetime.fromtimestamp(float(longdt / 1000))
 
 
 def get_ohdsi_cohort(ent: str, attr: str, phenotype: PhenotypeModel):
@@ -235,7 +293,8 @@ def nlpql_results_to_dataframe(db, job, lookup_key, entity_features, final):
     return df
 
 
-def process_date_diff(pe: PhenotypeEntity, db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, final=False):
+def process_date_diff(pe: PhenotypeEntity, db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner,
+                      final=False):
     args = pe['arguments']
     nlpql_name = pe['name']
     if not len(args) == 3:
@@ -290,7 +349,7 @@ def process_date_diff(pe: PhenotypeEntity, db, job, phenotype: PhenotypeModel, p
 
 
 def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner):
-    if de['library'] == "Clarity":
+    if de['library'] == "Clarity" or de['library'] == "ClarityNLP":
         if de['funct'] == "dateDiff":
             de["name"] = new_de_name
             process_date_diff(de, db, job, phenotype, phenotype_id, phenotype_owner)
