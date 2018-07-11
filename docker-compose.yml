@@ -6,6 +6,7 @@ volumes:
   nlp-solrdata:
   nlp-pgdata:
   nlp-mongodata:
+  # ingest-pgdata:
 
 services:
 
@@ -35,17 +36,19 @@ services:
   nlp-solr:
     container_name: 'NLP_SOLR'
     hostname: ${NLP_SOLR_HOSTNAME}
-    image: solr:6.6
+    build:
+      context: ./utilities/nlp-solr
+      dockerfile: Dockerfile
     ports:
       - "${NLP_SOLR_HOST_PORT}:${NLP_SOLR_CONTAINER_PORT}"
     volumes:
       - 'nlp-solrdata:/opt/solr/server/solr/mycores'
-      - './utilities/nlp-solr/precreate-core:/opt/docker-solr/scripts/precreate-core'
-      - './utilities/nlp-solr/sample.csv:/sample.csv'
     entrypoint:
       - docker-entrypoint.sh
       - solr-precreate
       - ${NLP_CORE_NAME}
+    environment:
+      - SOLR_HEAP=4096m
     env_file:
       - .env
 
@@ -81,6 +84,45 @@ services:
       - 'nlp-pgdata:/var/lib/postgresql/data/'
     env_file:
       - .env
+
+  ingest-api:
+    container_name: INGEST_API
+    hostname: ${INGEST_API_HOSTNAME}
+    build: ./utilities/ingest-api
+    volumes:
+      - ./utilities/ingest-api:/app
+      - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
+    ports:
+      - "${INGEST_API_HOST_PORT}:${INGEST_API_CONTAINER_PORT}"
+    depends_on:
+      # - ingest-pg
+      - redis
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env
+
+  # ingest-client:
+  #   container_name: INGEST_CLIENT
+  #   hostname: ${INGEST_CLIENT_HOSTNAME}
+  #   build:
+  #     context: ./utilities/ingest-client
+  #     dockerfile: Dockerfile.prod
+  #   ports:
+  #     - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
+
+  # ingest-pg:
+  #   container_name: 'INGEST_POSTGRES'
+  #   hostname: ${INGEST_PG_HOSTNAME}
+  #   image: postgres
+  #   environment:
+  #     POSTGRES_USER: ${INGEST_PG_USER}
+  #     POSTGRES_PASSWORD: ${INGEST_PG_PASSWORD}
+  #     POSTGRES_DB: ${INGEST_PG_DATABASE}
+  #   ports:
+  #     - "${INGEST_PG_HOST_PORT}:${INGEST_PG_CONTAINER_PORT}"
+  #   volumes:
+  #     - 'ingest-pgdata:/var/lib/postgresql/data/'
 
   mapper-api:
     container_name: MAPPER_API
