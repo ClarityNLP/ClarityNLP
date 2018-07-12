@@ -181,10 +181,9 @@ Running the Luigi Central Scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ClarityNLP uses Luigi to schedule and manage the data processing tasks. Luigi
-needs to be manually started each time when you run locally. Open a
-terminal and enter this command to launch Luigi. You can replace the bracketed
-entries by ``pidfile``, ``logdir``, and ``statefile`` if dedicated directories
-for these do not exist:
+must be manually started each time you run. Open a terminal and enter this
+command to launch Luigi. You can replace the bracketed entries by ``pid``,
+``logs``, and ``statefile`` if dedicated directories for these do not exist:
 ::
    luigid --background --pidfile <PATH_TO_PIDFILE> --logdir <PATH_TO_LOGDIR> --state-path <PATH_TO_STATEFILE>
 
@@ -192,8 +191,8 @@ for these do not exist:
 Run Flask app
 ^^^^^^^^^^^^^
 
-ClarityNLP uses Flask as the web framework that provides the API endpoints.
-From the ``ClarityNLP/nlp`` directory, launch the web server as follows:
+ClarityNLP uses Flask as the underlying web framework. From the
+``ClarityNLP/nlp`` directory, launch the web server as follows:
 ::
    export FLASK_APP=api.py
    python3 ./api.py
