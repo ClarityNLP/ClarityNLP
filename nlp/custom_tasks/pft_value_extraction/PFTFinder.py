@@ -1,0 +1,22 @@
+from tasks.task_utilities import BaseTask
+from pymongo import MongoClient
+from pft_algo import pft_extractor as pftex
+import ast
+
+class PFTFinder(BaseTask):
+    task_name = "PFTFinder"
+
+    def run_custom_task(self, temp_file, mongo_client: MongoClient):
+        for doc in self.docs:
+            txt = doc[util.solr_text_field]
+
+            # My custom stuff here
+            length = len(txt)
+            if length > 0:
+                obj = ast.literal_eval(pftex(txt))
+
+                # writing results
+                self.write_result_data(temp_file, mongo_client, doc, obj)
+
+                # writing to log
+                self.write_log_data("PFT", "done writing data")
