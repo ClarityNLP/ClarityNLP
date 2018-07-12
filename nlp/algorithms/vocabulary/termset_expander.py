@@ -9,14 +9,10 @@ OVERVIEW:
 
     This module expands macros in NLPQL termsets. The supported macros are:
 
-        Clarity.Synonyms          (WordNet synonyms)
+        Clarity.Synonyms          (WordNet synonyms for NOUN, ADJ, ADV)
         Clarity.Plurals
         Clarity.VerbInflections
         Clarity.LexicalVariants   (verb inflections followed by plurals)
-
-
-    Additional macros are anticipated to be added in the future, such as:
-
         OHDSI.Synonyms
         OHDSI.Ancestors
         OHDSI.Descendants
@@ -42,7 +38,7 @@ SYNTAX:
         Clarity.Synonyms(["term1"])
         Clarity.Synonyms(["term1", "term2", "term3"])
 
-    The first example shows the use of a single term argument. The next example
+    The first example shows the use of a single-term argument. The next example
     shows the use of a single-term array, and the third example shows the use
     of a multi-term array.
 
@@ -61,9 +57,9 @@ SYNTAX:
         Clarity.Synonyms(["term1", "multi word term2"])
 
     This macro would return synonyms for "term1", as well as for
-    "multi word term2" as a whole. It would then find all nouns inside of
-    "multi word term2", find synonyms for each noun, and return the Cartesian
-    product of all possibilities.
+    "multi word term2" as a whole. It would then find all nouns, adjectives,
+    and adverbs inside of "multi word term2", find synonyms for each, and
+    return the Cartesian product of all possibilities.
 
     To illustrate, consider the termset
 
@@ -125,14 +121,30 @@ try:
     from .pluralize import plural
     from .verb_inflector import get_inflections
     from .irregular_verbs import INFLECTION_MAP
+    from .vocabulary import get_synonyms as ohdsi_get_synonyms
+    from .vocabulary import get_ancestors as ohdsi_get_ancestors
+    from .vocabulary import get_descendants as ohdsi_get_descendants
 except Exception as e:
     print(e)
     from pluralize import plural
     from verb_inflector import get_inflections
     from irregular_verbs import INFLECTION_MAP
+    from vocabulary import get_synonyms as ohdsi_get_synonyms
+    from vocabulary import get_ancestors as ohdsi_get_ancestors
+    from vocabulary import get_descendants as ohdsi_get_descendants
+
+# Need to import 'util.py', which lives in the nlp directory two levels up.
+# This is a hack, and we really need a better solution...
+module_dir = sys.path[0]
+pos = module_dir.find('/nlp')
+if -1 != pos:
+    # get path to nlp directory and append to sys.path
+    nlp_dir = module_dir[:pos+4]
+    sys.path.append(nlp_dir)
+import util
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 3
+VERSION_MINOR = 5
 
 MODULE_NAME = 'termset_expander.py'
 
@@ -147,9 +159,9 @@ cmu_dict = cmudict.dict()
 
 # regexes for locating termsets in NLPQL files
 
-# line comment - match everything from // upto but NOT including a newline
+# line comment - match everything from // up to but NOT including the newline
 # also, don't match the // in a URL
-str_line_comment = r'(?<!http:)//.*(?=\n)'
+str_line_comment = r'(?<!http:)(?<!https:)//.*(?=\n)'
 regex_line_comment = re.compile(str_line_comment, re.IGNORECASE)
 
 # multiline comment
@@ -162,7 +174,7 @@ str_term = r'\"[^"]+\"'
 
 # a term list is a final term, preceded by 0 or more terms, each
 # of which is followed by a comma and optional whitespace
-str_term_list = r'(' + str_term + r',\s*)*' + str_term
+str_term_list = r'(' + str_term + r'\s*,\s*)*' + str_term
 
 # nongreedy match up until final \*]; sequence
 str_termset = r'\b(?P<termset>termset\s+(?P<termset_name>[^:]+)\s*:\s*' +\
@@ -181,7 +193,10 @@ str_macro_args = r'\s*\((\s*\[)?' +\
                  r'(?P<args>' + str_term_list + r')' +\
                  r'(\s*\])?\s*\)'
 
-str_macro = str_macro_name + str_macro_args
+# comma following macro, if any
+str_macro_comma = r'\s*(?P<comma>,?)'
+
+str_macro = str_macro_name + str_macro_args + str_macro_comma
 regex_macro = re.compile(str_macro, re.IGNORECASE)
 
 # for finding comments that have been erased
@@ -220,6 +235,9 @@ def to_string(term_list, suffix=''):
     Convert a list of terms to a single string representing the result of
     macro expansion.
     """
+
+    if 0 == len(term_list):
+        return None
 
     terms = ['"' + t + suffix + '"' for t in term_list]
     term_string = ','.join(terms)
@@ -302,7 +320,6 @@ def expand(sentence, index_map):
 
     # list of indices in which to make substitutions in word_list
     indices = [*index_map]
-    #print('indices: {0}'.format(indices))
 
     # generate initial set of new sentences using substitutions[0] for all
     index = indices[0]
@@ -434,29 +451,36 @@ def get_verb_base_form(word):
 
 
 ###############################################################################
-def get_single_noun_synonyms(namespace, noun):
+def get_single_word_synonyms(namespace, word, pos):
     """
-    Return a list of synonyms for the given noun.
+    Return a list of synonyms for the given word with part of speech 'pos'.
     """
+
+    assert pos==wordnet.NOUN or pos==wordnet.ADJ or pos==wordnet.ADV
 
     synonyms = []
     
     if NAMESPACE_CLARITY == namespace:
-        # get all sets of synonyms for which the term is a noun
-        synsets = wordnet.synsets(noun.lower(), pos=wordnet.NOUN)
+        # get all sets of synonyms from Wordnet
+        synsets = wordnet.synsets(word.lower(), pos)
         for s in synsets:
             # the 'lemmas' for each set are the synonyms
             synonyms.extend(s.lemma_names())
+    elif NAMESPACE_OHDSI == namespace:
+        # get OHDSI synonyms from Postgres database (returns list of tuples)
+        tuple_list = ohdsi_get_synonyms(util.conn_string, word.lower(), None)
+        for t in tuple_list:
+            synonyms.append(t[0])
 
     if len(synonyms) > 0:
         synonyms = [s.lower() for s in synonyms]
         uniques = sorted(list(set(synonyms)))
     else:
-        uniques = [noun]
+        uniques = [word]
 
-    # rearrange so that the given noun comes first
+    # rearrange so that the given word comes first
     if len(uniques) > 1:
-        swap_index = uniques.index(noun)
+        swap_index = uniques.index(word)
         uniques[0], uniques[swap_index] = uniques[swap_index], uniques[0]
 
     return uniques
@@ -470,18 +494,19 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
         return to_string(term_list, debug_suffix)
 
     synonyms = []
-    # assume the terms are nouns and get all synonyms
     for t in term_list:
 
         # if t contains a space, assume multiword term
         is_multiword = -1 != t.find(CHAR_SPACE)
 
         # get synonyms for term as a whole, whether multiword or not
-        new_syns = get_single_noun_synonyms(namespace, t)
-        synonyms.extend(new_syns)
+        pos = [wordnet.NOUN, wordnet.ADJ, wordnet.ADV]
+        for p in pos:
+            new_syns = get_single_word_synonyms(namespace, t, p)
+            synonyms.extend(new_syns)
 
         if is_multiword:
-            # get parts of speech and find nouns
+            # get parts of speech
             doc = nlp(t)
             if 1 == len(doc):
                 continue
@@ -490,10 +515,13 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
             index_map = {}
             for token in doc:
                 if 'NOUN' == token.pos_:
-                    index_map[token.i] = token.text
-                    #print('this is a noun: {0}'.format(token))
+                    index_map[token.i] = (token.text, wordnet.NOUN)
+                elif 'ADJ' == token.pos_:
+                    index_map[token.i] = (token.text, wordnet.ADJ)
+                elif 'ADV' == token.pos_:
+                    index_map[token.i] = (token.text, wordnet.ADV)
 
-            # if no nouns, nothing to do
+            # if no entries, nothing to do
             if not index_map:
                 continue
             else:
@@ -502,9 +530,9 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
 
                 # update indices in case spacy did not fully tokenize
                 ok = True
-                for index, token in index_map.items():
+                for index, token_and_pos in index_map.items():
                     if index < len(words):
-                        token = index_map[index]
+                        token = token_and_pos[0]
                         if words[index] == token:
                             continue
 
@@ -512,7 +540,7 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
                     for j in len(words):
                         if words[j] == token:
                             del index_map[index]
-                            index_map[j] = token
+                            index_map[j] = token_and_pos
                         else:
                             # not found
                             ok = False
@@ -526,8 +554,10 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
                     continue
 
             # rebuild the index map with all synonyms
-            for index, token in index_map.items():
-                syns = get_single_noun_synonyms(namespace, token)
+            for index, token_and_pos in index_map.items():
+                token = token_and_pos[0]
+                pos   = token_and_pos[1]
+                syns = get_single_word_synonyms(namespace, token, pos)
                 index_map[index] = syns
                 
             # do the expansion
@@ -608,79 +638,78 @@ def get_verb_inflections(namespace, term_list, return_type=RETURN_TYPE_STRING):
         debug_suffix = '_' + namespace + '_vi'
         return to_string(term_list, debug_suffix)
 
-    if NAMESPACE_CLARITY == namespace:
-        new_terms = []
-        for t in term_list:
+    new_terms = []
+    for t in term_list:
 
-            # if t contains a space, assume multiword term
-            is_multiword = -1 != t.find(CHAR_SPACE)
+        # if t contains a space, assume multiword term
+        is_multiword = -1 != t.find(CHAR_SPACE)
 
-            # assume verb if single word
-            if not is_multiword:
+        # assume verb if single word
+        if not is_multiword:
+            verbs = get_single_verb_inflections(t)
+            new_terms.extend(verbs)
+        else:
+            # get parts of speech and find verbs
+            doc = nlp(t)
+            if 1 == len(doc):
                 verbs = get_single_verb_inflections(t)
                 new_terms.extend(verbs)
+                continue
+
+            # multi-word
+            index_map = {}
+            for token in doc:
+                if 'VERB' == token.pos_:
+                    index_map[token.i] = token.text
+
+            # if no verbs, no inflections to compute
+            if not index_map:
+                verbs = get_single_verb_inflections(t)
+                new_terms.extend(verbs)
+                continue
             else:
-                # get parts of speech and find verbs
-                doc = nlp(t)
-                if 1 == len(doc):
-                    verbs = get_single_verb_inflections(t)
-                    new_terms.extend(verbs)
-                    continue
+                # split into individual words
+                words = t.split()
 
-                # multi-word
-                index_map = {}
-                for token in doc:
-                    if 'VERB' == token.pos_:
-                        index_map[token.i] = token.text
+                # update indices in case spacy did not fully tokenize
+                ok = True
+                for index, token in index_map.items():
+                    if index < len(words):
+                        token = index_map[index]
+                        if words[index] == token:
+                            continue
 
-                # if no verbs, no inflections to compute
-                if not index_map:
-                    verbs = get_single_verb_inflections(t)
-                    new_terms.extend(verbs)
-                    continue
-                else:
-                    # split into individual words
-                    words = t.split()
-
-                    # update indices in case spacy did not fully tokenize
-                    ok = True
-                    for index, token in index_map.items():
-                        if index < len(words):
-                            token = index_map[index]
-                            if words[index] == token:
-                                continue
-
-                        # spacy tokenization is different from t.split()
-                        for j in len(words):
-                            if words[j] == token:
-                                del index_map[index]
-                                index_map[j] = token
-                            else:
-                                # not found
-                                ok = False
-                                break
-
-                        if not ok:
-                            # treat as single word
-                            verbs = get_single_verb_inflections(t)
-                            new_terms.extend(verbs)
+                    # spacy tokenization is different from t.split()
+                    for j in len(words):
+                        if words[j] == token:
+                            del index_map[index]
+                            index_map[j] = token
+                        else:
+                            # not found
+                            ok = False
                             break
 
                     if not ok:
-                        continue
+                        # treat as single word
+                        verbs = get_single_verb_inflections(t)
+                        new_terms.extend(verbs)
+                        break
 
-                # rebuild the index map with all inflections
-                for index, token in index_map.items():
-                    verbs = get_single_verb_inflections(token)
-                    index_map[index] = verbs
+                if not ok:
+                    continue
 
-                # do the expansion
-                new_phrases = expand(t, index_map)
-                new_terms.extend(new_phrases)
+            # rebuild the index map with all inflections
+            for index, token in index_map.items():
+                verbs = get_single_verb_inflections(token)
+                index_map[index] = verbs
 
-        # remove duplicates
-        if len(new_terms) > 0:
-            term_list = sorted(list(set(new_terms)))
+            # do the expansion
+            new_phrases = expand(t, index_map)
+            new_terms.extend(new_phrases)
+
+    # remove duplicates
+    if len(new_terms) > 0:
+        term_list = sorted(list(set(new_terms)))
 
     if RETURN_TYPE_LIST == return_type:
         return term_list
@@ -707,23 +736,57 @@ def get_lexical_variants(namespace, term_list):
 
 
 ###############################################################################
-def get_descendants(namespace, term_list):
+def get_descendants(namespace, term_list, return_type=RETURN_TYPE_STRING):
 
     if DEBUG:
         debug_suffix = '_' + namespace + '_d'
         return to_string(term_list, debug_suffix)
 
-    return to_string(term_list)
+    descendants = []
+    if NAMESPACE_OHDSI == namespace:
+        for t in term_list:
+            term_descendants = ohdsi_get_descendants(util.conn_string, t.lower(), None)
+
+            # term_descendants is a list of tuples, so convert to list
+            for td in term_descendants:
+                descendants.append(td[0])
+
+    # remove duplicates
+    if len(descendants) > 0:
+        descendants = [d.lower() for d in descendants]
+        descendants = sorted(list(set(descendants)))
+
+    if RETURN_TYPE_LIST == return_type:
+        return descendants
+    else:
+        return to_string(descendants)
 
 
 ###############################################################################
-def get_ancestors(namespace, term_list):
+def get_ancestors(namespace, term_list, return_type=RETURN_TYPE_STRING):
 
     if DEBUG:
         debug_suffix = '_' + namespace + '_a'
         return to_string(term_list, debug_suffix)
 
-    return to_string(term_list)
+    ancestors = []
+    if NAMESPACE_OHDSI == namespace:
+        for t in term_list:
+            term_ancestors = ohdsi_get_ancestors(util.conn_string, t.lower(), None)
+
+            # term_ancestors is a list of tuples, so convert to list
+            for ta in term_ancestors:
+                ancestors.append(ta[0])
+
+    # remove duplicates
+    if len(ancestors) > 0:
+        ancestors = [a.lower() for a in ancestors]
+        term_list = sorted(list(set(ancestors)))
+
+    if RETURN_TYPE_LIST == return_type:
+        return term_list
+    else:
+        return to_string(term_list)
 
 
 ###############################################################################
@@ -743,8 +806,16 @@ def expand_macros(str_termlist):
         for match in iterator:
             matched_it = True
             matching_text = match.group()
+
+            has_comma = False
+            if match.group('comma') is not None:
+                has_comma = True
+                comma_group = match.group('comma')
+
             start = match.start()
             end   = match.end()
+            if has_comma:
+                end = end - len(comma_group)
             args = match.group('args').split(',')
             terms = [t.strip().strip('"') for t in args]
 
@@ -771,15 +842,25 @@ def expand_macros(str_termlist):
             elif -1 != macro_op.find(OP_STRING_ANCESTORS):
                 expansion_string = get_ancestors(namespace, terms)
 
-            # invalid macros are not recognized and are igored; the
+            # invalid macros are not recognized and are ignored; the
             # syntax checker will eventually catch them
 
-            # replace the macro with the expansion results
+            # replace the macro with the expansion results, if any
             if expansion_string is not None:
+                # found macro, expanded to a nonempty string
                 new_text += text[prev_end:start]
                 new_text += expansion_string
-                prev_end = end
+                if has_comma:
+                    new_text += comma_group
+                    end += len(comma_group)
+            else:
+                # found a macro, but it expanded to nothing, erase macro text
+                new_text += text[prev_end:start]
+                if has_comma:
+                    end += len(comma_group)
+            prev_end = end
 
+        # append remaining text after the last macro
         new_text += text[prev_end:]
         text = new_text
 
@@ -888,19 +969,6 @@ def run(nlpql_text):
 
     # do the macro expansion
     expanded_nlpql = expand_nlpql(nlpql_no_comments)
-
-    # iterator = regex_erased_comment.finditer(expanded_nlpql)
-    # erased_spans = []
-    # for match in iterator:
-    #     erased_spans.append( (match.start(), match.end()) )
-
-    # assert len(comment_spans) == len(erased_spans)
-    # for i in range(len(comment_spans)):
-    #     cs = comment_spans[i]
-    #     es = erased_spans[i]
-    #     cs_len = cs[1] - cs[0]
-    #     es_len = es[1] - es[0]
-    #     assert cs_len == es_len
 
     # restore the comment strings
     i = 0
@@ -1044,7 +1112,8 @@ def run_tests():
         print('\t[{0}]: {1}'.format(i, sentences[i]))
 
     # synonyms
-    sentences = ['the food tastes good', 'the man owns a vehicle']
+    sentences = ['the food tastes great', 'the man owns a vehicle',
+                 'the large vehicle', 'the sweetly singing bird']
     for s in sentences:
         new_phrases = get_synonyms(NAMESPACE_CLARITY, [s], RETURN_TYPE_LIST)
         print('\nOriginal: {0}'.format(s))
