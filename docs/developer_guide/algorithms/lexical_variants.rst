@@ -159,8 +159,67 @@ Example
    # returns ['be',['is'],['being'],['was','were'],['been']]
 
 
+Algorithms
+==========
+
+The verb inflector uses different algorithms for the various inflections. A
+high-level overview of each algorithm will be presented next. The verb
+inflector uses a list of 558 irregular verb preterite and past participle
+forms scraped from Wikipedia and Wiktionary to support its operations.
+
+Algorithm for the Third-Person Singular Present
+----------------------------------------------
+
+The third-person singular present can be formed for most verbs, either regular
+or irregular, by simply adding an ``s`` character to the end. Some highly
+irregular verbs such as ``be`` and a few others are stored in a list
+of exceptions. If the base form of the verb appears in the exception list,
+the verb inflector performs a simple lookup and returns the result.
+
+If the base form is not in the exception list, the verb inflector checks to
+see if it ends in a consonant followed by 'y'. If so, the terminating 'y' is
+changed to an 'i' and an 'es' is added, such as for the verb ``try``, which
+has the third-person singular present form ``tries``.
+
+If the base form instead ends in a consonant followed by 'o', an 'es' is added
+to the end to form the result. An example of such a verb would be ``echo``, for
+which the desired inflection is ``echoes``.
+
+If the base form has neither of these endings, the verb inflector checks to
+see if it ends in a sibilant sound. The sibilant sounds affect the spelling
+of the third-person singular inflection in the presence of a silent-e ending [2]_.
+The CMU pronouncing dictionary [3]_ is used to detect the presence of sibilant
+sounds. The phonemes for these sounds are based on the ARPAbet [4]_ phonetic
+transcription codes and appear in the next table:
+
+================================  ========
+Sibilant Sound                    Phoneme
+================================  ========
+voiceless alveolar sibilant       S
+voiced alveolar sibilant          Z
+voiceless postalveolar fricative  SH
+voiced postalveolar fricitave     ZH
+voiceless postalveolar affricate  CH
+voiced postalveolar affricate     JH
+================================  ========
+
+If the base form ends in a sibilant sound and has no silent-e ending, an 'es'
+is added to form the desired inflection. Otherwise, an 's' is added to the end
+of the base form and is returned as the result.
+
+Algorithm for the Present Participle
+------------------------------------
+
+TBD
 
 References
 ==========
 
 .. [1] http://users.monash.edu/~damian/papers/extabs/Plurals.html
+
+.. [2] https://en.wikipedia.org/wiki/English_verbs
+
+.. [3] http://www.speech.cs.cmu.edu/cgi-bin/cmudict
+
+.. [4] https://en.wikipedia.org/wiki/ARPABET
+
