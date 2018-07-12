@@ -564,7 +564,7 @@ def third_person_singular_present(base):
     #     voiceless postalveolar fricative  phoneme 'SH'
     #     voiced postalveolar fricitave     phoneme 'ZH'
     #     voiceless postalveolar affricate  phoneme 'CH'
-    #     voiced poatalveolar, affricate    phoneme 'JH'
+    #     voiced postalveolar affricate     phoneme 'JH'
     SIBILANT_PHONEMES = ['S', 'Z', 'SH', 'ZH', 'CH', 'JH']
 
     in_cmu_dict = True
