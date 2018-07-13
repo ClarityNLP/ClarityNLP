@@ -167,6 +167,14 @@ high-level overview of each algorithm will be presented next. The verb
 inflector uses a list of 558 irregular verb preterite and past participle
 forms scraped from Wikipedia and Wiktionary to support its operations.
 
+It should be stated that the rules below have been gleaned from various
+grammar sources scattered about the Internet. Some grammar sites present
+subsets of these rules; others present some rules without mentioning
+any exceptions; and other sites simply present incorrect information. We
+developed these algorithms iteratively, over a period of time, adjusting for
+exceptions and violations as we found them. This is still a work in progress.
+
+
 Algorithm for the Third-Person Singular Present
 ----------------------------------------------
 
@@ -252,6 +260,52 @@ form and returns that as the result.
 
 Algorithm for Consonant Doubling
 --------------------------------
+
+If the base form of the verb ends in ``c``, a ``k`` should generally be
+appended prior to the inflection ending. There are a few exceptions to this
+rule that the verb inflector checks for.
+
+If the base form of the verb ends in two vowels followed by a consonant, the
+rule is generally to not double the final consonant. One exception to this rule
+is if the first vowel is a ``u`` preceded by ``q``. In this case the ``u`` is
+pronounced like a ``w``, so the ``qu`` acts as if it were actually ``qw``. This
+gives the word an effective consonant-vowel-consonant ending, in which case the
+final consonant is doubled. An example of this would be the verb ``equip``,
+which requires a doubled ``p`` for inflection (``equipping``, ``equipped``, etc.).
+
+If the base form of the verb has a vowel-consonant ending, and if the consonant
+is not a silent-t, then the final consonant is doubled for single syllable
+verbs. If the final syllable is stressed, the final consonant is also doubled.
+Otherwise the final consonant is not doubled prior to inflection.
+
+Algorithm for the Past Tense
+----------------------------
+
+If the verb is irregular, its past tense inflection cannot be predicted, so
+the verb inflector simply looks up the past tense form in a dict and returns
+the result. A lookup is also performed for a small list of regular verbs that
+are either known exceptions to the rules, or which have multiple accepted
+spellings for the past tense forms.
+
+If the verb is regular and not in the list of exceptions, the verb inflector
+checks the base form for an ``e`` ending. If the verb ends in ``e``, a ``d`` is
+appended and returned as the result.
+
+If the base form instead ends in a consonant followed by ``y``, the ``y`` is
+changed to ``i`` and ``ed`` is appended and returned as the result.
+
+If the base form ends in a vowel followed by ``l``, both the American and
+British spellings are returned, as described above for the present participle.
+The British spelling appends ``led`` to the base form, while the American
+spelling only appends ``ed``.
+
+If the final consonant requires doubling, the verb inflector appends the proper
+consonant followed by ``ed`` and returns that as the result.
+
+Otherwise, ``ed`` is appended to the base form and returned as the result.
+
+Algorithm for the Past Participle
+---------------------------------
 
 
 
