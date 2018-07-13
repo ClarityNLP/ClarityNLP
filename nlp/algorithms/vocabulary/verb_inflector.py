@@ -388,7 +388,7 @@ def present_participle(base):
         'forfret':['forfretting'],                # not in cmudict
         'grue':['gruing'],                        # not in cmudict
         'housesit':['housesitting'],              # not in cmudict
-        'intercut':['intercutting'],              # intercut
+        'intercut':['intercutting'],              # not in cmudict
         'may':['might'],                          # modal, irregular
         'mishit':['mishitting'],                  # not in cmudict
         'misken':['miskenning'],                  # not in cmudict
