@@ -177,12 +177,12 @@ of exceptions. If the base form of the verb appears in the exception list,
 the verb inflector performs a simple lookup and returns the result.
 
 If the base form is not in the exception list, the verb inflector checks to
-see if it ends in a consonant followed by 'y'. If so, the terminating 'y' is
-changed to an 'i' and an 'es' is added, such as for the verb ``try``, which
-has the third-person singular present form ``tries``.
+see if it ends in a consonant followed by ``y``. If so, the terminating ``y``
+is changed to an ``i`` and an ``es`` is added, such as for the verb ``try``,
+which has the third-person singular present form ``tries``.
 
-If the base form instead ends in a consonant followed by 'o', an 'es' is added
-to the end to form the result. An example of such a verb would be ``echo``, for
+If the base form instead ends in a consonant followed by ``o``, an ``es`` is
+appended to form the result. An example of such a verb would be ``echo``, for
 which the desired inflection is ``echoes``.
 
 If the base form has neither of these endings, the verb inflector checks to
@@ -203,14 +203,57 @@ voiceless postalveolar affricate  CH
 voiced postalveolar affricate     JH
 ================================  ========
 
-If the base form ends in a sibilant sound and has no silent-e ending, an 'es'
-is added to form the desired inflection. Otherwise, an 's' is added to the end
-of the base form and is returned as the result.
+If the base form ends in a sibilant sound and has no silent-e ending, an ``es``
+is appended to form the desired inflection. Otherwise, an ``s`` is appended to
+of the base form and returned as the result.
 
 Algorithm for the Present Participle
 ------------------------------------
 
-TBD
+The verb inflector keeps a dictionary of known exceptions to the rules for
+forming the present participle. Most of these exceptional verbs are either not
+found in the CMU pronouncing dictionary, or are modal verbs, auxiliaries, or
+other irregular forms. Some verbs also have multiple accepted spellings for the
+present participle, so the verb inflector keeps a list of these as well. If the
+base form of the given verb appears as an exception, a simple lookup is
+performed to generate the result.
+
+If the base form of the verb is not a known exception, the verb inflector
+determines whether the base form ends in ``ie``. If it does, the ``ie`` is
+changed to ``ying`` and appended to the base form to generate the result. An
+example of such a verb is ``tie``, which has the form ``tying`` as the present
+participle.
+
+Next the verb inflector checks the base form for an ``ee``, ``oe``, or ``ye``
+ending. If one of these endings is present, the final ``e`` is retained, and
+``ing`` is appended to the base form and returned as the result.
+
+If the base form ends in vowel-``l``, British spelling tends to double the final
+``l`` before appending ``ing``, but American spelling does not. For many verbs both
+the British and American spellings are common, so the verb inflector generates
+both forms and returns them as the result. There appears to be one exception to
+this rule, though. If the vowel preceding the final ``l`` is an ``i``, the rule
+does not seem to apply (such as for the verb ``sail``, whose present participle
+form is ``sailing``, not ``sailling``).
+
+If none of these tests have succeeded, the verb inflector then checks for
+pronounciation-dependent spellings using the CMU pronouncing dictionary. If
+the base form has a silent-e ending, the final ``e`` is dropped and ``ing`` is
+appended to the base verb to form the result, unless the base form is a known
+exception to this rule, in which case the final ``e`` is retained.
+
+The verb inflector next checks for a pronunciation-dependent spelling caused by
+consonant doubling. The rules for consonant doubling are presented in the next
+section. The verb inflector doubles the final consonant if necessary, appends
+``ing``, and returns that as the result.
+
+If none of the tests succeeds, the verb inflector appends ``ing`` to the base
+form and returns that as the result.
+
+Algorithm for Consonant Doubling
+--------------------------------
+
+
 
 References
 ==========
