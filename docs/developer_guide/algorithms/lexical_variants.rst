@@ -315,16 +315,61 @@ regular verbs is equivalent to the simple past tense form.
 Testing the Verb Inflector
 ==========================
 
-TBD
+The file ``verb_inflector.py`` includes 114 test cases that can be run via
+the ``--selftest`` command line option. A more extensive set of 1364 verbs
+and all inflected forms can be found in the file ``inflection_truth_data.txt``.
+This list consists of the unique verbs found in two sets: the set of irregular
+English verbs scraped from Wikipedia [5]_, and the set of the 1000 most common
+English verbs scraped from poetrysoup.com [6]_. The verb_inflector will read
+the file, compute all inflections for each verb, and compare with the data
+taken from the file using this command:
+::
+   python3 ./verb_inflector.py -f inflection_truth_data.txt
+
+The code for scraping the verbs and generating the truth data file can be found
+in the ``verb_scraper`` folder.
+
+To generate the truth data file, change directories to the ``verb_scraper``
+folder and run this command:
+::
+   python3 ./scrape_verbs.py
+
+Two output files will be generated:
+
+* ``verb_list.txt``, a list of the unique verbs found
+* ``irregular_verbs.py``, data structures imported by the verb inflector
+
+In addition to scraping verb data, this code also corrects for some
+inconsistencies found between Wikipedia and the Wiktionary entries for each
+verb.
+
+Copy ``irregular_verbs.py`` to the folder that contains ``verb_inflector.py``,
+which should be the parent of the ``verb_scraper`` folder.
+
+Next, scrape the inflection truth data from Wiktionary for each verb in
+``verb_list.txt``:
+::
+   python3 ./scrape_inflection_data.py
+
+This code loads the verb list, constructs the Wiktionary URL for each verb in
+the list, scrapes the inflection data, corrects further inconsistencies, and
+writes the output file ``raw_inflection_data.txt``.  Progress updates appear
+on the screen as the run progresses.
+
+Finally, generate the truth data file with this command:
+::
+   python3 ./process_scraped_inflection_data.py
+
 
 References
 ==========
 
 .. [1] http://users.monash.edu/~damian/papers/extabs/Plurals.html
-
 .. [2] https://en.wikipedia.org/wiki/English_verbs
-
 .. [3] http://www.speech.cs.cmu.edu/cgi-bin/cmudict
-
 .. [4] https://en.wikipedia.org/wiki/ARPABET
+.. [5] https://en.wikipedia.org/wiki/List_of_English_irregular_verbs
+.. [6] https://www.poetrysoup.com/common_words/common_verbs.aspx
+
+       
 
