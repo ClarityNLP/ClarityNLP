@@ -11,7 +11,7 @@ different ending depending on use), which are as follows, using the verb
 'walk' as an example:
 
 ===========================  ==============
-Verb Form                    Example
+Description                  Inflected Form
 ===========================  ==============
 bare infinitive (base form)  walk
 3rd person singular present  walks
@@ -27,7 +27,7 @@ violate the rules.
 
 ClarityNLP includes a pluralizer and a verb inflector that attempts to compute
 the plurals and inflected forms of English words. The verb inflector ignores
-archaic forms and focuses on contemporary American English.
+archaic forms and focuses primarily on contemporary American English.
 
 Plurals
 =======
@@ -101,13 +101,13 @@ inflection is to supply additional information such as meaning, pronounciation,
 or usage.
 
 Lemmatizers attempt to solve this problem, but with decidedly mixed results.
-Neither the NLTK Wordnet lemmatizer nor the Spacy lemmatizer worked reliably
+Neither the NLTK WordNet lemmatizer nor the Spacy lemmatizer worked reliably
 enough on this module's test data to allow users to input verbs in arbitrary
 inflections. Lemmatization is still an area of active NLP research, so these
 results are not necessarily surprising.
 
-Therefore, for all of these reasons, the ClarityNLP verb inflector requires
-the input verb to be provided in base form.
+Therefore, for all of these reasons, **the ClarityNLP verb inflector requires
+the input verb to be provided in base form**.
 
 Source Code
 ===========
@@ -244,11 +244,11 @@ this rule, though. If the vowel preceding the final ``l`` is an ``i``, the rule
 does not seem to apply (such as for the verb ``sail``, whose present participle
 form is ``sailing``, not ``sailling``).
 
-If none of these tests have succeeded, the verb inflector then checks for
-pronounciation-dependent spellings using the CMU pronouncing dictionary. If
-the base form has a silent-e ending, the final ``e`` is dropped and ``ing`` is
-appended to the base verb to form the result, unless the base form is a known
-exception to this rule, in which case the final ``e`` is retained.
+If none of these tests succeed, the verb inflector checks for pronounciation-
+dependent spellings using the CMU pronouncing dictionary. If the base form has
+a silent-e ending, the final ``e`` is dropped and ``ing`` is appended to the
+base verb to form the result, unless the base form is a known exception to this
+rule, in which case the final ``e`` is retained.
 
 The verb inflector next checks for a pronunciation-dependent spelling caused by
 consonant doubling. The rules for consonant doubling are presented in the next
@@ -278,8 +278,8 @@ is not a silent-t, then the final consonant is doubled for single syllable
 verbs. If the final syllable is stressed, the final consonant is also doubled.
 Otherwise the final consonant is not doubled prior to inflection.
 
-Algorithm for the Past Tense
-----------------------------
+Algorithm for the Simple Past Tense
+-----------------------------------
 
 If the verb is irregular, its past tense inflection cannot be predicted, so
 the verb inflector simply looks up the past tense form in a dict and returns
@@ -307,7 +307,15 @@ Otherwise, ``ed`` is appended to the base form and returned as the result.
 Algorithm for the Past Participle
 ---------------------------------
 
+The past participle for irregular verbs is obtained by simple lookup. The past
+participle for a small number of regular verbs with multiple accepted
+spellings is also obained via lookup. Otherwise, the past participle for
+regular verbs is equivalent to the simple past tense form.
 
+Testing the Verb Inflector
+==========================
+
+TBD
 
 References
 ==========
