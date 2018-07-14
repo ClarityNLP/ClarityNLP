@@ -43,10 +43,6 @@ services:
       - "${NLP_SOLR_HOST_PORT}:${NLP_SOLR_CONTAINER_PORT}"
     volumes:
       - 'nlp-solrdata:/opt/solr/server/solr/mycores'
-    entrypoint:
-      - docker-entrypoint.sh
-      - solr-precreate
-      - ${NLP_CORE_NAME}
     environment:
       - SOLR_HEAP=4096m
     env_file:
