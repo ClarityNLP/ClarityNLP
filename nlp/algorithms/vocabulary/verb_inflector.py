@@ -388,7 +388,7 @@ def present_participle(base):
         'forfret':['forfretting'],                # not in cmudict
         'grue':['gruing'],                        # not in cmudict
         'housesit':['housesitting'],              # not in cmudict
-        'intercut':['intercutting'],              # intercut
+        'intercut':['intercutting'],              # not in cmudict
         'may':['might'],                          # modal, irregular
         'mishit':['mishitting'],                  # not in cmudict
         'misken':['miskenning'],                  # not in cmudict
@@ -564,7 +564,7 @@ def third_person_singular_present(base):
     #     voiceless postalveolar fricative  phoneme 'SH'
     #     voiced postalveolar fricitave     phoneme 'ZH'
     #     voiceless postalveolar affricate  phoneme 'CH'
-    #     voiced poatalveolar, affricate    phoneme 'JH'
+    #     voiced postalveolar affricate     phoneme 'JH'
     SIBILANT_PHONEMES = ['S', 'Z', 'SH', 'ZH', 'CH', 'JH']
 
     in_cmu_dict = True
