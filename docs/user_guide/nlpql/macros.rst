@@ -40,8 +40,10 @@ consider this example:
    The human walks the pet.
 
 If the synonyms for ``human`` are ``man, woman, boy, girl`` and the synonyms for
-``pet`` are ``dog, cat``, then 4*2 = 8 results will be generated:
+``pet`` are ``dog, cat``, then 4*2 = 8 results will be generated, in addition
+to the original:
 ::
+   The human walks the pet.
    The man walks the dog.
    The woman walks the dog.
    The boy walks the dog.
