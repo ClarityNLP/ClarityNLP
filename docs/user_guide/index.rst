@@ -17,6 +17,12 @@ Getting Started
    :hidden:
    intro/overview
 
+NLPQL Macros
+============
+.. toctree::
+   :maxdepth: 2
+
+   nlpql/macros
 
 Ingesting Documents
 ===================
