@@ -10,28 +10,83 @@ from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
+from data_access import base_model
+
+
+def get_config_boolean(pipeline_config, key, default=False):
+    if key in pipeline_config.custom_arguments:
+        try:
+            val = bool(pipeline_config.custom_arguments[key])
+        except Exception as ex:
+            val = default
+        return val
+    return default
+
+
+def get_config_integer(pipeline_config, key, default=-1):
+    if key in pipeline_config.custom_arguments:
+        try:
+            val = int(pipeline_config.custom_arguments[key])
+        except Exception as ex:
+            val = default
+        return val
+    return default
 
 
 def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_config: pipeline_config.PipelineConfig,
-                          doc, data_fields: dict):
+                          doc, data_fields: dict, prefix: str='', phenotype_final: bool = False):
     db = client[util.mongo_db]
+
+    if not data_fields:
+        print('must have additional data fields')
+        return None
+
+    if not p_config:
+        print('must have pipeline config')
+        return None
 
     data_fields["pipeline_type"] = pipeline_type
     data_fields["pipeline_id"] = pipeline_id
     data_fields["job_id"] = job
     data_fields["batch"] = batch
     data_fields["owner"] = p_config.owner
-    data_fields["nlpql_feature"] = p_config.name
+    data_fields["nlpql_feature"] = (prefix + p_config.name)
     data_fields["inserted_date"] = datetime.datetime.now()
-    data_fields["report_id"] = doc[util.solr_report_id_field]
-    data_fields["subject"] = doc[util.solr_subject_field]
-    data_fields["report_date"] = doc[util.solr_report_date_field]
     data_fields["concept_code"] = p_config.concept_code
-    data_fields["phenotype_final"] = False
+    data_fields["phenotype_final"] = phenotype_final
+
+    if doc:
+        data_fields["report_id"] = doc[util.solr_report_id_field]
+        data_fields["subject"] = doc[util.solr_subject_field]
+        data_fields["report_date"] = doc[util.solr_report_date_field]
+    else:
+        data_fields["report_id"] = ''
+        data_fields["subject"] = ''
+        data_fields["report_date"] = ''
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
 
     return inserted
+
+
+class BaseCollector(base_model.BaseModel):
+
+    def run(self, pipeline_id, job, owner, pipeline_type, p_config):
+        client = MongoClient(util.mongo_host, util.mongo_port)
+        db = client[util.mongo_db]
+
+        try:
+            jobs.update_job_status(job, util.conn_string, jobs.IN_PROGRESS, "Running Collector")
+            self.run_custom_task(pipeline_id, job, owner, pipeline_type, p_config, client, db)
+        except Exception as ex:
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
+            print(ex)
+        finally:
+            client.close()
+
+    def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
+        print('please implement run_custom_task')
 
 
 class BaseTask(luigi.Task):
@@ -85,19 +140,19 @@ class BaseTask(luigi.Task):
     def set_name(self, name):
         self.task_name = name
 
-    def write_result_data(self, temp_file, mongo_client, doc, data: dict):
+    def write_result_data(self, temp_file, mongo_client, doc, data: dict, prefix: str=''):
         inserted = pipeline_mongo_writer(mongo_client, self.pipeline, self.task_name, self.job, self.batch,
-                                         self.pipeline_config, doc, data)
+                                         self.pipeline_config, doc, data, prefix=prefix)
         if temp_file is not None:
             temp_file.write(str(inserted))
             temp_file.write('\n')
         return inserted
 
-    def write_multiple_result_data(self, temp_file, mongo_client, doc, data: list):
+    def write_multiple_result_data(self, temp_file, mongo_client, doc, data: list, prefix: str=''):
         ids = list()
         for d in data:
             inserted = pipeline_mongo_writer(mongo_client, self.pipeline, self.task_name, self.job, self.batch,
-                                         self.pipeline_config, doc, d)
+                                         self.pipeline_config, doc, d, prefix=prefix)
             ids.append(inserted)
             if temp_file is not None:
                 temp_file.write(str(inserted))
@@ -117,8 +172,20 @@ class BaseTask(luigi.Task):
         else:
             return ''
 
+    def get_boolean(self, key, default=False):
+        return get_config_boolean(self.pipeline_config, key, default=default)
+
+    def get_integer(self, key, default=-1):
+        return get_config_integer(self.pipeline_config, key, default=default)
+
     def get_document_sentences(self, doc):
         txt = self.get_document_text(doc)
         sentence_list = self.segment.parse_sentences(txt)
         return sentence_list
+
+    def get_collector_class(self):
+        # should be BaseCollector
+        return None
+
+
 

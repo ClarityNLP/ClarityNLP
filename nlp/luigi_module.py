@@ -108,14 +108,15 @@ class PipelineTask(luigi.Task):
     job = luigi.IntParameter()
     owner = luigi.Parameter()
     pipelinetype = luigi.Parameter()
+    solr_query = '*:*'
 
     def requires(self):
         try:
-            solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job, self
+            self.solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job, self
                                                                                           .owner)
 
             task = registered_pipelines[str(self.pipelinetype)]
-            matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=solr_query, batch=n)
+            matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
                        for n in ranges]
 
             return matches
@@ -126,6 +127,16 @@ class PipelineTask(luigi.Task):
         return list()
 
     def run(self):
+        pipeline_config = data_access.get_pipeline_config(self.pipeline, util.conn_string)
+        task = registered_pipelines[str(self.pipelinetype)]
+
+        print('get collector')
+        collector = task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)\
+            .get_collector_class()
+        if collector:
+            print('run collector')
+            collector().run(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
+
         jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % self
                                .pipelinetype)
 
@@ -136,7 +147,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "10026"
+    p_id = "10093"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,
