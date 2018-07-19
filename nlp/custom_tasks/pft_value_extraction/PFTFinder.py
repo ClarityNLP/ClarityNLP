@@ -1,7 +1,12 @@
+import ast
 from tasks.task_utilities import BaseTask
 from pymongo import MongoClient
-from pft_algo import pft_extractor as pftex
-import ast
+
+try:
+    from .pft_algo import pft_extractor as pftex
+except Exception as e:
+    from pft_algo import pft_extractor as pftex
+
 
 class PFTFinder(BaseTask):
     task_name = "PFTFinder"
