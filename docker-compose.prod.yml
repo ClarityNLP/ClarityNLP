@@ -83,6 +83,43 @@ services:
     env_file:
       - .env
 
+  ingest-api:
+    container_name: INGEST_API
+    hostname: ${INGEST_API_HOSTNAME}
+    build: ./utilities/ingest-api
+    ports:
+      - "${INGEST_API_HOST_PORT}:${INGEST_API_CONTAINER_PORT}"
+    depends_on:
+      # - ingest-pg
+      - redis
+    environment:
+      - NODE_ENV=production
+    command: "pm2-runtime app.js"
+    env_file:
+      - .env
+
+  # ingest-client:
+  #   container_name: INGEST_CLIENT
+  #   hostname: ${INGEST_CLIENT_HOSTNAME}
+  #   build:
+  #     context: ./utilities/ingest-client
+  #     dockerfile: Dockerfile.prod
+  #   ports:
+  #     - "${INGEST_CLIENT_HOST_PORT}:${INGESET_CLIENT_CONTAINER_PORT}"
+
+  # ingest-pg:
+  #   container_name: 'INGEST_POSTGRES'
+  #   hostname: ${INGEST_PG_HOSTNAME}
+  #   image: postgres
+  #   environment:
+  #     POSTGRES_USER: ${INGEST_PG_USER}
+  #     POSTGRES_PASSWORD: ${INGEST_PG_PASSWORD}
+  #     POSTGRES_DB: ${INGEST_PG_DATABASE}
+  #   ports:
+  #     - "${INGEST_PG_HOST_PORT}:${INGEST_PG_CONTAINER_PORT}"
+  #   volumes:
+  #     - 'ingest-pgdata:/var/lib/postgresql/data/'
+
   mapper-api:
     container_name: MAPPER_API
     hostname: ${MAPPER_API_HOSTNAME}

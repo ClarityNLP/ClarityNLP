@@ -112,7 +112,7 @@ define hasDyspnea:
   Clarity.ProviderAssertion({
       cohort:PlateletTransfusionPatients,
       termset: [DyspneaTerms],
-      documentset: [ProviderNotes]eravaed
+      documentset: [ProviderNotes]
     });
     
 define hasNausea:

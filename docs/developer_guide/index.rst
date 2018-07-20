@@ -30,6 +30,7 @@ Utility Algorithms
 
    algorithms/section_tagger
    algorithms/context
+   algorithms/lexical_variants
 
 
 Task Algorithms

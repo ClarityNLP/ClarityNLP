@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.5.5
 
 MAINTAINER Health Data Analytics
 
