@@ -22,7 +22,12 @@ registered_pipelines = {
     "NamedEntityRecognition": NERTask,
     "NER": NERTask,
     "POSTagger": POSTaggerTask,
-    "TNMStager": TNMStagerTask
+    "TNMStager": TNMStagerTask,
+    "ngram": NGramTask
+}
+
+registed_collectors = {
+    "ngram": NGramCollector
 }
 
 
