@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from textacy import extract, Doc
+from textacy import extract, Doc, preprocess_text
 
 import util
 
@@ -22,6 +22,14 @@ except Exception as e:
 
 
 class NGramCollector(BaseCollector):
+
+    def custom_cleanup(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
+        print('removing intermediate n-gram records')
+        db.phenotype_results.remove({
+            "nlpql_feature": pipeline_config.name,
+            "job_id": job,
+            "phenotype_final": False
+        })
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
         print("running ngram collector")
@@ -70,7 +78,6 @@ class NGramTask(BaseTask):
         filter_stops = self.get_boolean('filter_stops', default=True)
         filter_punct = self.get_boolean('filter_punct', default=True)
         filter_nums = self.get_boolean('filter_nums', default=False)
-        min_freq = self.get_integer('min_freq', default=1)
         lemmas = self.get_boolean('lemmas', default=True)
         limit_to_termset = self.get_boolean('limit_to_termset', default=False)
         termset = self.pipeline_config.terms
@@ -80,15 +87,15 @@ class NGramTask(BaseTask):
 
         for doc in self.docs:
             ngrams = list()
-            t_doc = Doc(doc[util.solr_text_field])
+            cln_txt = doc[util.solr_text_field].encode("ascii", errors="ignore").decode()
+            t_doc = Doc(preprocess_text(cln_txt, lowercase=True))
             res = extract.ngrams(t_doc, n_num, filter_stops=filter_stops, filter_punct=filter_punct,
-                                 filter_nums=filter_nums, min_freq=min_freq)
+                                 filter_nums=filter_nums)
             for r in res:
                 if lemmas:
                     text = r.lemma_
                 else:
                     text = r.text
-                text = text.lower()
 
                 if limit_to_termset:
                     for t in lower_termset:
@@ -104,8 +111,6 @@ class NGramTask(BaseTask):
                     })
             self.write_multiple_result_data(temp_file, mongo_client, doc, ngrams)
 
-    def get_collector_class(self):
-        return NGramCollector
 
 
 if __name__ == "__main__":

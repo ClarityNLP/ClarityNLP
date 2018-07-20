@@ -128,14 +128,14 @@ class PipelineTask(luigi.Task):
 
     def run(self):
         pipeline_config = data_access.get_pipeline_config(self.pipeline, util.conn_string)
-        task = registered_pipelines[str(self.pipelinetype)]
 
         print('get collector')
-        collector = task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)\
-            .get_collector_class()
-        if collector:
+        collector_class = registed_collectors[str(self.pipelinetype)]
+        if collector_class:
             print('run collector')
-            collector().run(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
+            collector = collector_class()
+            collector.run(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
+            collector.cleanup(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
 
         jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % self
                                .pipelinetype)
@@ -147,7 +147,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "10093"
+    p_id = "10097"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,

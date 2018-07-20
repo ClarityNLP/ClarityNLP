@@ -88,6 +88,23 @@ class BaseCollector(base_model.BaseModel):
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
         print('please implement run_custom_task')
 
+    def custom_cleanup(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
+        print('custom cleanup')
+
+    def cleanup(self, pipeline_id, job, owner, pipeline_type, p_config):
+        client = MongoClient(util.mongo_host, util.mongo_port)
+        db = client[util.mongo_db]
+
+        try:
+            jobs.update_job_status(job, util.conn_string, jobs.IN_PROGRESS, "Running Collector Cleanup")
+            self.custom_cleanup(pipeline_id, job, owner, pipeline_type, p_config, client, db)
+        except Exception as ex:
+            traceback.print_exc(file=sys.stderr)
+            jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
+            print(ex)
+        finally:
+            client.close()
+
 
 class BaseTask(luigi.Task):
 
@@ -108,18 +125,19 @@ class BaseTask(luigi.Task):
         client = MongoClient(util.mongo_host, util.mongo_port)
 
         try:
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Batch %s" %
-                                   self.batch)
-
-            self.pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
-            self.docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start, solr_url=util.solr_url,
-                                        tags=self.pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
-                                        mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key,
-                                        types=self.pipeline_config.report_types,
-                                        filter_query=self.pipeline_config.filter_query)
-
             with self.output().open('w') as temp_file:
+                temp_file.write("start writing custom task")
+                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Batch %s" %
+                                       self.batch)
+
+                self.pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
+                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
+                self.docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start,
+                                            solr_url=util.solr_url,
+                                            tags=self.pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
+                                            mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key,
+                                            types=self.pipeline_config.report_types,
+                                            filter_query=self.pipeline_config.filter_query)
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)
@@ -183,9 +201,6 @@ class BaseTask(luigi.Task):
         sentence_list = self.segment.parse_sentences(txt)
         return sentence_list
 
-    def get_collector_class(self):
-        # should be BaseCollector
-        return None
 
 
 

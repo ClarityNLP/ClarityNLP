@@ -26,6 +26,10 @@ registered_pipelines = {
     "ngram": NGramTask
 }
 
+registed_collectors = {
+    "ngram": NGramCollector
+}
+
 
 def register_pipeline_task(task_name, task_cls):
     # TODO checks if valid type
