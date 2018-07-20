@@ -195,6 +195,16 @@ ClarityNLP uses Flask as the underlying web framework. From the
 ``ClarityNLP/nlp`` directory, launch the web server as follows:
 ::
    export FLASK_APP=api.py
-   python3 ./api.py
+   python3 -m flask run
 
+If you want to run Flask in development mode with an active debugger,
+use this command sequence:
+::
+   export FLASK_APP=api.py
+   export FLASK_ENV=development
+   export FLASK_DEBUG=1
+   python3 -m flask run
+
+The default value of ``FLASK_ENV`` is ``production``. The allowed values
+for ``FLASK_DEBUG`` are ``1`` (enable) and ``0`` (disable).
 
