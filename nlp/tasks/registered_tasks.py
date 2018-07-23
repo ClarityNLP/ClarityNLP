@@ -26,7 +26,7 @@ registered_pipelines = {
     "ngram": NGramTask
 }
 
-registed_collectors = {
+registered_collectors = {
     "ngram": NGramCollector
 }
 

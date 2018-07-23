@@ -130,12 +130,14 @@ class PipelineTask(luigi.Task):
         pipeline_config = data_access.get_pipeline_config(self.pipeline, util.conn_string)
 
         print('get collector')
-        collector_class = registed_collectors[str(self.pipelinetype)]
-        if collector_class:
-            print('run collector')
-            collector = collector_class()
-            collector.run(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
-            collector.cleanup(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
+        collector_name = str(self.pipelinetype)
+        if collector_name in registered_collectors:
+            collector_class = registered_collectors[collector_name]
+            if collector_class:
+                print('run collector')
+                collector = collector_class()
+                collector.run(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
+                collector.cleanup(self.pipeline, self.job, self.owner, self.pipelinetype, pipeline_config)
 
         jobs.update_job_status(str(self.job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % self
                                .pipelinetype)
