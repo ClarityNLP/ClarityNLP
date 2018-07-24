@@ -167,12 +167,83 @@ postgresql.conf file, even if the port entry in that file is commented out.
 
 Solr
 ----
-TODO
+Install and configure Solr by following the instructions on the
+Developer Guide/Technical Background/Solr page of this documentation.
+
+Ingest Data
+^^^^^^^^^^^
+TBD
+
+Map Fields
+^^^^^^^^^^
+The final task for configuring Solr is to setup a mapping of fields in your
+data set to the fields that ClarityNLP expects. The minimal set of fields
+required by ClarityNLP is:
+
++-------------+--------------------------------------------------------------------+
+| Field Name  | Description                                                        |
++=============+====================================================================+
+| id          | a unique ID for this document                                      |
++-------------+--------------------------------------------------------------------+
+| report_id   | a unique ID for this document (can use same value as ``id`` field) |
++-------------+--------------------------------------------------------------------+
+| source      | the name of the document set, the name of your institution, etc.   |
++-------------+--------------------------------------------------------------------+
+| subject     | a patient ID, drug name, or other identifier                       |
++-------------+--------------------------------------------------------------------+
+| report_type | type of data in the document, i.e. ``discharge summary``,          |
+|             | ``radiology``, etc.                                                |
++-------------+--------------------------------------------------------------------+
+| report_date | timestamp in a format accepted by Solr:                            |
+|             |                                                                    |
+|             | - ``YYYY-MM-DDThh:mm:ssZ``                                         |
+|             | - ``YYYY-MM-DDThh:mm:ss.fZ``                                       |
+|             | - ``YYYY-MM-DDThh:mm:ss.ffZ``                                      |
+|             | - ``YYYY-MM-DDThh:mm:ss.fffZ``                                     |
++-------------+--------------------------------------------------------------------+
+| report_text | the actual text of the document, plain text                        |
++-------------+--------------------------------------------------------------------+
+
+The data fields in your documents can be mapped to this set of fields in the
+``project.cfg`` file. Open the file and find the ``[solr]`` section, which
+should have these entries:
+::
+   [solr]
+   url=http://solr.hdap.gatech.edu:8983/solr/mimic
+   text_field=report_text
+   id_field=id
+   report_id_field=report_id
+   source_field=source
+   date_field=report_date
+   subject_field=subject
+   type_field=report_type
+
+Set the ``url`` field to that of your solr instance. The active core should be
+the final component of the path.
+
+Next, for each field type set its value to match the name of the corresponding
+field in your documents. If your Solr instance stores the actual report text
+in a field called ``document_text``, then you would use this line for the
+first field assignment: ``text_field=document_text``.  For each of the
+remaining fields, assign the name of the closest matching field in your
+document set. It is important that each field be mapped.
 
 
-Temp directory
---------------
-Setup a temporary directory on your system, make sure it's writable by the user running the application, and set the value in tmp.dir in project.cfg
+Temp and Log Directories
+------------------------
+Setup a temporary directory on your system, make sure that it is writable by
+the user running ClarityNLP, and set the value in the ``[tmp]`` and ``[log]``
+sections of the ``project.cfg`` file. For instance, if you want the tmp dir
+to be ``/tmp``, you would set the values in ``project.cfg`` to be:
+::
+   [tmp]
+   dir=/tmp
+
+   [log]
+   dir=/tmp
+
+You can also use different locations for the temp and log directories if you
+want.
 
 Running Locally
 ---------------
@@ -181,11 +252,57 @@ Running the Luigi Central Scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ClarityNLP uses Luigi to schedule and manage the data processing tasks. Luigi
-must be manually started each time you run. Open a terminal and enter this
-command to launch Luigi. You can replace the bracketed entries by ``pid``,
-``logs``, and ``statefile`` if dedicated directories for these do not exist:
+must be manually started each time you run.
+
+To configure Luigi, open the ``project.cfg`` file and find the ``[luigi]``
+section. Set the values as follows:
+::
+   [luigi]
+   home=/path/to/luigi
+   scheduler=http://localhost:8082
+   workers=1
+   url=http://localhost:8082
+
+Make sure that the ``home`` entry is set to the location of the luigi binary on
+your system. On a Linux or Mac system, you can find this path by running
+``which luigi``.
+
+Next, open a terminal and enter this command to launch Luigi. You can replace
+the bracketed entries by ``pid``, ``logs``, and ``statefile`` if dedicated
+directories for these do not exist:
 ::
    luigid --background --pidfile <PATH_TO_PIDFILE> --logdir <PATH_TO_LOGDIR> --state-path <PATH_TO_STATEFILE>
+
+Running MongoDB
+^^^^^^^^^^^^^^^
+
+If you run MongoDB locally, start the ``mongod`` server by supplying the path
+to your local config file as follows:
+::
+   mongod --config /path/to/mongod.conf
+
+If you do not use a custom config file, omit the ``config`` argument.
+
+Verify that the mongo server is running by typing ``mongo`` into a terminal to
+start the mongo client. It should connect to the database and prompt for input.
+Exit the client by typing ``quit()`` in the terminal.
+
+Runnning Postgres
+^^^^^^^^^^^^^^^^^
+
+If your Postgres server is not already running, start it using the ``pg_ctl``
+command above. Verify that your server is available by running ``pg_isready``.
+It should report ``accepting connections``.
+
+Ping Solr
+^^^^^^^^^
+
+Verify that you can communicate with your Solr instance by pinging it. Open a
+Web browser and visit the URL formed by appending ``/admin/ping`` to your Solr
+URL. For instance, using the example URL above, the ping URL would be:
+``http://solr.hdap.gatech.edu:8983/solr/mimic/admin/ping``. The Web browser
+should display a status of ``OK`` if it is connected. If you get an HTTP 404
+error, then recheck your URL.
 
 
 Run Flask app
@@ -207,4 +324,12 @@ use this command sequence:
 
 The default value of ``FLASK_ENV`` is ``production``. The allowed values
 for ``FLASK_DEBUG`` are ``1`` (enable) and ``0`` (disable).
+
+The web server prints startup information to the screen as it initializes.
+When initialization is complete you should see output similar to this:
+::
+   * Serving Flask app "nlp.api"
+   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+
+At this point ClarityNLP is fully initialized and waiting for commands.
 

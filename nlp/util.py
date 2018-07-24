@@ -71,3 +71,4 @@ def cmp_2_key(mycmp):
         def __cmp__(self, other):
             return mycmp(self.obj, other.obj)
     return K
+
