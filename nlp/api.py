@@ -1,8 +1,8 @@
 from flask import Flask
 import util
 
-
 def create_app(config_filename=None):
+
     clarity_app = Flask(__name__)
     clarity_app.debug = True
 
@@ -21,7 +21,8 @@ def create_app(config_filename=None):
 
     return clarity_app
 
+# needs to be visible to Flask via import
+app = create_app()
 
 if __name__ == '__main__':
-    app = create_app()
     app.run(host='0.0.0.0', port=5000, threaded=True, debug=util.debug_mode)

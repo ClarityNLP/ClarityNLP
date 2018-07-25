@@ -1,8 +1,12 @@
 from tasks.task_utilities import BaseTask
 from pymongo import MongoClient
-from proximity_txt import get_proximity_txt
-from proximity_phrase import get_proximity_phrase
 
+try:
+    from .proximity_txt import get_proximity_txt
+    from .proximity_phrase import get_proximity_phrase
+except Exception as e:
+    from proximity_txt import get_proximity_txt
+    from proximity_phrase import get_proximity_phrase
 
 class Proximity(BaseTask):
     task_name = "Proximity"

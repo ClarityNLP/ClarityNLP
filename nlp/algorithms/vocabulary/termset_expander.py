@@ -144,7 +144,7 @@ if -1 != pos:
 import util
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 5
+VERSION_MINOR = 6
 
 MODULE_NAME = 'termset_expander.py'
 
@@ -358,11 +358,22 @@ def get_verb_base_form(word):
     recognizing common verb endings and undoing them.
     """
 
+    SPECIAL_CASES = {
+        'has':'have',
+        'having':'have',
+        'is':'be',
+        'are':'be',
+        'being':'be',
+    }
+
     verb = word.lower()
 
     # Is this a known irregular verb form?
     if verb in INFLECTION_MAP:
         return INFLECTION_MAP[verb]
+
+    if verb in SPECIAL_CASES:
+        return SPECIAL_CASES[verb]
 
     trial = verb
 
@@ -504,6 +515,10 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
         for p in pos:
             new_syns = get_single_word_synonyms(namespace, t, p)
             synonyms.extend(new_syns)
+
+        # include the term itself if not already present
+        if t not in synonyms:
+            synonyms.append(t)
 
         if is_multiword:
             # get parts of speech
@@ -1036,6 +1051,8 @@ def run_from_file(filepath):
 def run_tests():
 
     test_data = {
+        'being':'be',
+        'has':'have',
         'carrying':'carry',
         'carried':'carry',
         'carries':'carry',

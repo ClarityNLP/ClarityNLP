@@ -119,7 +119,7 @@ import sys
 import optparse
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
-from nltk.stem.wordnet import WordNetLemmatizer
+
 try:
     from .irregular_verbs import VERBS as IRREGULAR_VERBS
 except Exception as e:
@@ -127,13 +127,11 @@ except Exception as e:
     from irregular_verbs import VERBS as IRREGULAR_VERBS
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 2
+VERSION_MINOR = 3
 
 MODULE_NAME = 'verb_inflector.py'
 
 TRACE = False
-
-lemmatizer = WordNetLemmatizer()
 
 # cmudict phonemes for a 't' sound and an 'ee' sound
 PHONEME_T  = 'T'

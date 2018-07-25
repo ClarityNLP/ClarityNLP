@@ -24,7 +24,7 @@ All documents in ClarityNLP are stored in Solr. These are the minimal required f
 Additional fields can be added to store additional metadata. The following fields are allowable as dynamic fields:
 	
 
-* `*_section` (seachText); e.g. `past_medical_history_section` (for indexing specific sections of notes)
+* `*_section` (searchText); e.g. `past_medical_history_section` (for indexing specific sections of notes)
 * `*_id` (long) e.g.`doctor_id` (any other id you wish to store) 
 * `*_ids` (long, multiValued) e.g. `medication_ids` (any other id as an array)
 * `*_system` (string) e.g. `code_system` (noting any system values)

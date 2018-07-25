@@ -1,7 +1,8 @@
 import re
-import value_extractor as ve
 import json
 import sys
+from algorithms import value_extractor as ve
+
 
 def get_fev1fvc(sentence):
     fev1fvc_list = []
