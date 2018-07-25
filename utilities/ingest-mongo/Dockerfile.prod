@@ -1,0 +1,3 @@
+FROM mongo
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["mongod"]
