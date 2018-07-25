@@ -6,7 +6,8 @@ volumes:
   nlp-solrdata:
   nlp-pgdata:
   nlp-mongodata:
-  # ingest-pgdata:
+  ingest-files:
+  ingest-mongodata:
 
 services:
 
@@ -88,15 +89,31 @@ services:
     volumes:
       - ./utilities/ingest-api:/app
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
+      - ingest-files:/var/lib/ingest-files
     ports:
       - "${INGEST_API_HOST_PORT}:${INGEST_API_CONTAINER_PORT}"
     depends_on:
       # - ingest-pg
       - redis
+    command: ["/app/wait-for-it.sh", "redis:6379", "ingest-mongo:27017", "--timeout=1800", "--", "pm2-dev", "process.json"]
     environment:
       - NODE_ENV=development
+      - JOB_TYPES=ingest
     env_file:
       - .env
+
+  ingest-mongo:
+    image: mongo:3.4.14
+    hostname: ${INGEST_MONGO_HOSTNAME}
+    container_name: '${INGEST_MONGO_CONTAINER_NAME}'
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+      - MONGO_INITDB_DATABASE=${INGEST_MONGO_DATABASE}
+    ports:
+      - "${INGEST_MONGO_HOST_PORT}:${INGEST_MONGO_CONTAINER_PORT}"
+    volumes:
+      - 'ingest-mongodata:/data/db'
 
   # ingest-client:
   #   container_name: INGEST_CLIENT
