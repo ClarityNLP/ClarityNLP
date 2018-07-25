@@ -31,7 +31,7 @@ pipeline{
                         def ingestClientImage = docker.build("ingest-client:1.0", "-f ./utilities/ingest-client/Dockerfile.prod ./utilities/ingest-client")
                         ingestClientImage.push('latest')
                         def ingestMongoImage = docker.build("ingest-mongo:1.0", "-f ./utilities/ingest-mongo/Dockerfile.prod ./utilities/ingest-mongo")
-                        ingestClientImage.push('latest')
+                        ingestMongoImage.push('latest')
                     }
                 }
             }
