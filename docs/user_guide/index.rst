@@ -24,7 +24,7 @@ NLPQL Macros
 
    nlpql/macros
 
-Ingesting Documents
+Ingesting Documentsi
 ===================
 .. toctree::
    :maxdepth: 2
@@ -42,27 +42,27 @@ Mapping Report Types
 Basic Phenotype Examples
 ========================
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    nlpql/basic_examples
 
-Advanced Phenotype Examples
-===========================
-.. toctree::
-   :maxdepth: 2
-
-   nlpql/advanced_examples
-
-Running Queries
-===============
-.. toctree::
-   :maxdepth: 2
-
-   nlpql/running
-
-Reviewing Results
-=================
-.. toctree::
-   :maxdepth: 2
-
-   nlpql/validation
+.. Advanced Phenotype Examples
+.. ===========================
+.. .. toctree::
+..    :maxdepth: 2
+..
+..    nlpql/advanced_examples
+..
+.. Running Queries
+.. ===============
+.. .. toctree::
+..    :maxdepth: 2
+..
+..    nlpql/running
+..
+.. Reviewing Results
+.. =================
+.. .. toctree::
+..    :maxdepth: 2
+..
+..    nlpql/validation
