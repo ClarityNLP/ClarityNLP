@@ -74,8 +74,19 @@ Document Sets
      Clarity.createReportTagList(["Nurse"]);
 
 `Document sets <topics/document_sets>`_ are a list of document types that you would like ClarityNLP to process.  (If no document sets are created, ClarityNLP will simply analyze all documents in your repository.)  Built into the Clarity core library is the ``createReportTagList`` function, which allows you to enumerate a set of document type tags from the `LOINC document ontology <https://loinc.org/document-ontology/current-version/>`_.  Typically, these tags are assigned to your documents at the time of ingestion through use of the `Report Type Mapper <topics/report_type_mapper>`_.
-
+             
 In this case, we have declared a document set called "Nursing Notes" and included in it all documents with the Nurse tag.  We could have selected another provider type (eg. Physician), a specialty type (eg. Endocrinology), a setting type (eg. Emergency Department), or a combination such as ``["Physician","Emergency Department"]``.
+
+.. code-block:: java
+
+    documentset AmoxDischargeNotes:
+         Clarity.createDocumentSet({
+             "report_types":["Discharge summary"],
+             "report_tags": [],
+             "filter_query": "",
+             "query":"report_text:amoxicillin"});
+             
+ClarityNLP provides an additional document set, ``createDocumentSet``, which provides more control over document section, allowing users to select report tags or report types, and provides flexibility to write custom queries.
 
 ------------------
 Term Sets
