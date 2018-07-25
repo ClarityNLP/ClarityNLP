@@ -17,34 +17,36 @@ Getting Started
    :hidden:
    intro/overview
 
-NLPQL Macros
-============
-.. toctree::
-   :maxdepth: 2
 
-   nlpql/macros
-
-Ingesting Documentsi
-===================
-.. toctree::
-   :maxdepth: 2
-
-   ingestion/overview
-
-
-Mapping Report Types
-====================
-.. toctree::
-   :maxdepth: 2
-
-   ingestion/mapping
-
-Basic Phenotype Examples
-========================
+Basic NLP Phenotype Examples
+============================
 .. toctree::
    :maxdepth: 1
 
    nlpql/basic_examples
+
+
+NLPQL Macros
+============
+.. toctree::
+  :maxdepth: 2
+
+  nlpql/macros
+
+   Ingesting Documents
+   ===================
+   .. toctree::
+      :maxdepth: 2
+
+      ingestion/overview
+
+
+   Mapping Report Types
+   ====================
+   .. toctree::
+      :maxdepth: 2
+
+      ingestion/mapping
 
 .. Advanced Phenotype Examples
 .. ===========================
