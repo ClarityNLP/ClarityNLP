@@ -30,6 +30,8 @@ pipeline{
                         ingestApiImage.push('latest')
                         def ingestClientImage = docker.build("ingest-client:1.0", "-f ./utilities/ingest-client/Dockerfile.prod ./utilities/ingest-client")
                         ingestClientImage.push('latest')
+                        def ingestMongoImage = docker.build("ingest-mongo:1.0", "-f ./utilities/ingest-mongo/Dockerfile.prod ./utilities/ingest-mongo")
+                        ingestMongoImage.push('latest')
                     }
                 }
             }
@@ -44,6 +46,7 @@ pipeline{
                     rancher confirm: true, credentialId: 'rancher-server', endpoint: 'https://rancher.hdap.gatech.edu/v2-beta', environmentId: '1a616', environments: '', image: 'axiom/docker-luigi:2.7.1', ports: '', service: 'ClarityNLP/scheduler', timeout: 60
                     rancher confirm: true, credentialId: 'rancher-server', endpoint: 'https://rancher.hdap.gatech.edu/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/nlp-solr:latest', ports: '', service: 'ClarityNLP/nlp-solr', timeout: 60
                     rancher confirm: true, credentialId: 'rancher-server', endpoint: 'https://rancher.hdap.gatech.edu/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/nlp-mongo:latest', ports: '', service: 'ClarityNLP/nlp-mongo', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: 'https://rancher.hdap.gatech.edu/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/ingest-mongo:latest', ports: '', service: 'ClarityNLP/ingest-mongo', timeout: 60
                     rancher confirm: true, credentialId: 'rancher-server', endpoint: 'https://rancher.hdap.gatech.edu/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/nlp-postgres:latest', ports: '', service: 'ClarityNLP/nlp-postgres', timeout: 60
                     rancher confirm: true, credentialId: 'rancher-server', endpoint: 'https://rancher.hdap.gatech.edu/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/rtm-api:latest', ports: '', service: 'ClarityNLP/mapper-api', timeout: 60
                     rancher confirm: true, credentialId: 'rancher-server', endpoint: 'https://rancher.hdap.gatech.edu/v2-beta', environmentId: '1a616', environments: '', image: 'build.hdap.gatech.edu/ingest-api:latest', ports: '', service: 'ClarityNLP/ingest-api', timeout: 60

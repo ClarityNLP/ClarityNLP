@@ -1,5 +1,5 @@
-Macros for Termset Expansion
-****************************
+Termset Expansion
+*****************
 
 NLPQL supports a set of macros for termset generation. The macros
 provide a compact syntax for representing lists of synonyms and lexical
@@ -15,7 +15,7 @@ quotes or a comma-separated list of terms surrounded by brackets:
 ::
    namespace.function("term")
    namespace.function(["term1", "term2", ..., "termN"])
-   
+
 
 If the namespace is omitted it defaults to ``Clarity``.  The supported macros
 are:
@@ -70,7 +70,7 @@ unambiguously determine the base form of a verb from an arbitrary inflection,
 and the ClarityNLP verb inflector requires the base form as input.  See the
 documentation for the :ref:`verb inflector <verb_inflections>` for more on this
 topic.
-   
+
 
 Macro Nesting
 =============
@@ -81,8 +81,8 @@ Macros can also be nested:
    Plurals(Synonyms("neoplasm"))
 
 The nesting depth is limited to two, as these examples illustrate.
-   
-   
+
+
 API
 ===
 
@@ -123,11 +123,10 @@ require editing and removal of irrelevant synonyms. One could use the macros
 as part of an iterative development process for termsets, using the macros to
 generate initial lists of terms which would then be pruned and refined.
 
-   
+
 References
 ==========
 
 .. [1] https://en.wikipedia.org/wiki/Cartesian_product
-.. [2] https://curl.haxx.se/  
+.. [2] https://curl.haxx.se/
 .. [3] https://www.getpostman.com/
-       

@@ -6,6 +6,8 @@ volumes:
   nlp-solrdata:
   nlp-pgdata:
   nlp-mongodata:
+  ingest-files:
+  ingest-mongodata:
 
 services:
 
@@ -98,27 +100,27 @@ services:
     env_file:
       - .env
 
-  # ingest-client:
-  #   container_name: INGEST_CLIENT
-  #   hostname: ${INGEST_CLIENT_HOSTNAME}
-  #   build:
-  #     context: ./utilities/ingest-client
-  #     dockerfile: Dockerfile.prod
-  #   ports:
-  #     - "${INGEST_CLIENT_HOST_PORT}:${INGESET_CLIENT_CONTAINER_PORT}"
+  ingest-mongo:
+    image: mongo:3.4.14
+    hostname: ${INGEST_MONGO_HOSTNAME}
+    container_name: '${INGEST_MONGO_CONTAINER_NAME}'
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+      - MONGO_INITDB_DATABASE=${INGEST_MONGO_DATABASE}
+    ports:
+      - "${INGEST_MONGO_HOST_PORT}:${INGEST_MONGO_CONTAINER_PORT}"
+    volumes:
+      - 'ingest-mongodata:/data/db'
 
-  # ingest-pg:
-  #   container_name: 'INGEST_POSTGRES'
-  #   hostname: ${INGEST_PG_HOSTNAME}
-  #   image: postgres
-  #   environment:
-  #     POSTGRES_USER: ${INGEST_PG_USER}
-  #     POSTGRES_PASSWORD: ${INGEST_PG_PASSWORD}
-  #     POSTGRES_DB: ${INGEST_PG_DATABASE}
-  #   ports:
-  #     - "${INGEST_PG_HOST_PORT}:${INGEST_PG_CONTAINER_PORT}"
-  #   volumes:
-  #     - 'ingest-pgdata:/var/lib/postgresql/data/'
+  ingest-client:
+    container_name: INGEST_CLIENT
+    hostname: ${INGEST_CLIENT_HOSTNAME}
+    build:
+      context: ./utilities/ingest-client
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${INGEST_CLIENT_HOST_PORT}:${INGESET_CLIENT_CONTAINER_PORT}"
 
   mapper-api:
     container_name: MAPPER_API
