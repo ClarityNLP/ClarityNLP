@@ -39,14 +39,16 @@ The set of JSON fields present in the output for each measurement includes:
         x              numeric value of first number
         y              numeric value of second number
         z              numeric value of third number
-        values         JSON array of all numeric values in list
 
-        xView         view specification for x value
-        yView         view specification for y value
-        zView         view specification for z value
+        values         If list is present, a JSON array of values in list.
+                       If list not present, values will be in x, y, and z.
 
-        minValue      either min([x, y, z]) or min(values)
-        maxValue      either max([x, y, z]) or max(values)
+        xView          view specification for x value
+        yView          view specification for y value
+        zView          view specification for z value
+
+        minValue       either min([x, y, z]) or min(values)
+        maxValue       either max([x, y, z]) or max(values)
 
 All JSON results will have an identical number of fields.
 
@@ -111,7 +113,7 @@ VERSION_MAJOR = 0
 VERSION_MINOR = 5
 
 # set to True to enable debug output
-TRACE = True
+TRACE = False
 
 # namedtuple used for serialization
 EMPTY_FIELD = -1
@@ -473,48 +475,6 @@ def convert_units(value, units, is_area_measurement, is_vol_measurement):
 
     return value
 
-###############################################################################
-def get_list_start(sentence, match_start):
-    """
-    Scan backwards from the end-of-list match and find the first number in
-    the list. Return the character offset to the caller.
-    """
-    
-    pos = match_start - 1;
-
-    # get the char at offset 'pos', which must either be a space or comma
-    ch = sentence[pos:pos+1]
-    if TRACE:
-        print('Initial char at pos: ->{0}<-'.format(ch))
-    assert CHAR_SPACE == ch or CHAR_COMMA == ch
-
-    while pos >= 0:
-        c = sentence[pos:pos+1]
-        if c in VALID_LIST_CHARS:
-            # first text char encountered must be a 'd' (for word "and")
-            if 'd' == c and pos >= 2:
-                if 'n' == sentence[pos-1:pos] and 'a' == sentence[pos-2:pos-1]:
-                    # skip word "and"
-                    pos -= 3;
-                else:
-                    # word contains a 'd', but is not the word "and", so exit
-                    break;
-            else:
-                # must be digit, space, comma, '.', or '-'
-                pos = pos - 1
-        else:
-            break
-
-    pos = pos + 1
-
-    # skip leading whitespace
-    c = sentence[pos:pos+1]
-    while CHAR_SPACE == c:
-        pos = pos + 1
-        c = sentence[pos:pos+1]
-
-    return pos;
-
 
 ###############################################################################
 def tokenize_complete_list(sentence, list_text, list_start):
@@ -609,22 +569,12 @@ def tokenize_complete_list(sentence, list_text, list_start):
 ###############################################################################
 def tokenize_list(match, sentence):
     """
-    Tokenize a list of numbers, which is a numeric sequence separated by commas
-    with an optional and before the final number.
+    Extract numeric values and measurements from a list.
     """
 
-    # assert 4 == len(match.groups())
-
-    # list_start = get_list_start(sentence, match.start())
-    # list_text = sentence[list_start:match.end()]
-    # if TRACE:
-    #     print('LIST TEXT ->{0}<-'.format(list_text))
-
-    # tokens = tokenize_complete_list(sentence, list_text, list_start)
-    # return (tokens, list_text)
-
-    print('FOUND LIST: ')
-    print(match.group())
+    list_text = match.group()
+    tokens = tokenize_complete_list(sentence, list_text, match.start())
+    return (tokens, list_text)
     
 
 ###############################################################################
@@ -1107,7 +1057,6 @@ regexes = [
     regex_x_vol,  # 9
     regex_x,      # 10
     regex_list    # 11
-    #regex_listEnd # 11
 ]
 
 # associates a regex index with its measurement tokenizer function
