@@ -1200,6 +1200,28 @@ def run(sentence):
     # convert list to JSON
     return to_json(measurements)
 
+
+###############################################################################
+def self_test(TEST_DICT):
+    """
+    Run the suite of self tests and verify results.
+    """
+
+    for sentence, truth_dict_list in TEST_DICT.items():
+        json_string = run(sentence)
+
+        # parse JSON string and get a list of dicts
+        json_data = json.loads(json_string)
+
+        # iterate over each dict
+        for i in range(len(json_data)):
+            result_dict = json_data[i]
+            truth_dict  = truth_dict_list[i]
+            for key, value in truth_dict.items():
+                assert key in result_dict
+                assert result_dict[key] == value
+
+
 ###############################################################################
 def get_version():
     return 'size_measurement_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
@@ -1225,141 +1247,156 @@ def show_help():
 ###############################################################################
 if __name__ == '__main__':
 
-    TEST_SENTENCES = [
+    TEST_DICT = {
 
         # str_x_cm (x)
-        "The result is 1.5 cm in my estimation.",
-        "The result is 1.5-cm in my estimation.",
-        "The result is 1.5cm in my estimation.",
-        "The result is 1.5cm2 in my estimation.",
-        "The result is 1.5 cm3 in my estimation.",
-        "The result is 1.5 cc in my estimation.",
-        "The current result is 1.5 cm; previously it was 1.8 cm.",
+        "The result is 1.5 cm in my estimation." :
+        [{'x':15.0}],
+        "The result is 1.5-cm in my estimation." :
+        [{'x':15.0}],
+        "The result is 1.5cm in my estimation." :
+        [{'x':15.0}],
+        "The result is 1.5cm2 in my estimation." :
+        [{'x':150.0}],
+        "The result is 1.5 cm3 in my estimation." :
+        [{'x':1500.0}],
+        "The result is 1.5 cc in my estimation." :
+        [{'x':1500.0}],
+        "The current result is 1.5 cm; previously it was 1.8 cm." :
+        [{'x':15.0},{'x':18.0}],
 
         # x vol cm (xvol)
-        "The result is 1.5 cubic centimeters in my estimation.",
-        "The result is 1.5 cu. cm in my estimation.",
-        "The result is 1.6 square centimeters in my estimation.",
+        "The result is 1.5 cubic centimeters in my estimation." :
+        [{'x':1500.0}],
+        "The result is 1.5 cu. cm in my estimation." :
+        [{'x':1500.0}],
+        "The result is 1.6 square centimeters in my estimation." :
+        [{'x':160.0}],
 
         # str_x_to_x_cm (xx1, ranges)
-        "The result is 1.5 to 1.8 cm in my estimation.",
-        "The result is 1.5 - 1.8 cm in my estimation.",
-        "The result is 1.5-1.8cm in my estimation.",
-        "The result is 1 .5-1. 8cm in my estimation.",
-        "The result is 1.5-1.8 cm2 in my estimation.",
+        "The result is 1.5 to 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5 - 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5-1.8cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1 .5-1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5-1.8 cm2 in my estimation." :
+        [{'x':150.0, 'y':180.0, 'condition':'RANGE'}],
 
-        # str_x_cm_to_x_cm (xx2, ranges)
-        "The result is 1.5 cm to 1.8 cm in my estimation.",
-        "The result is 1.5cm - 1.8 cm in my estimation.",
-        "The result is 1.5mm-1.8cm in my estimation.",
-        "The result is 1 .5 cm -1. 8cm in my estimation.",
-        "The result is 1.5cm2-1.8 cm2 in my estimation.",
+        # # str_x_cm_to_x_cm (xx2, ranges)
+        # "The result is 1.5 cm to 1.8 cm in my estimation.",
+        # "The result is 1.5cm - 1.8 cm in my estimation.",
+        # "The result is 1.5mm-1.8cm in my estimation.",
+        # "The result is 1 .5 cm -1. 8cm in my estimation.",
+        # "The result is 1.5cm2-1.8 cm2 in my estimation.",
 
-        # str x_by_x_cm (xy1)
-        "The result is 1.5 x 1.8 cm in my estimation.",
-        "The result is 1.5x1.8cm in my estimation.",
-        "The result is 1.5x1.8 cm in my estimation.",
-        "The result is 1. 5x1. 8cm in my estimation.",
+        # # str x_by_x_cm (xy1)
+        # "The result is 1.5 x 1.8 cm in my estimation.",
+        # "The result is 1.5x1.8cm in my estimation.",
+        # "The result is 1.5x1.8 cm in my estimation.",
+        # "The result is 1. 5x1. 8cm in my estimation.",
 
-        # str_x_cm_by_x_cm (xy2)
-        "The result is 1.5 cm by 1.8 cm in my estimation.",
-        "The result is 1.5cm x 1.8cm in my estimation.",
-        "The result is 1 .5 cm x 1. 8cm in my estimation.",
-        "The result is 1. 5cm x 1. 8cm in my estimation.",
-        "The result is 1.5 cm x 1.8 mm in my estimation.",
+        # # str_x_cm_by_x_cm (xy2)
+        # "The result is 1.5 cm by 1.8 cm in my estimation.",
+        # "The result is 1.5cm x 1.8cm in my estimation.",
+        # "The result is 1 .5 cm x 1. 8cm in my estimation.",
+        # "The result is 1. 5cm x 1. 8cm in my estimation.",
+        # "The result is 1.5 cm x 1.8 mm in my estimation.",
 
-        # x cm view by x cm view (xy3)
-        "The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation.",
-        "The result is 1.5cm craniocaudal x 1.8 cm transverse in my estimation.",
-        "The result is 1. 5cm craniocaudal by 1 .8cm transverse in my estimation.",
+        # # x cm view by x cm view (xy3)
+        # "The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation.",
+        # "The result is 1.5cm craniocaudal x 1.8 cm transverse in my estimation.",
+        # "The result is 1. 5cm craniocaudal by 1 .8cm transverse in my estimation.",
 
-        # x by x by x cm (xyz1)
-        "The result is 1.5 x 1.8 x 2.1 cm in my estimation.",
-        "The result is 1.5x1.8x2.1cm in my estimation.",
-        "The result is 1.5x 1.8x 2.1 cm in my estimation.",
-        "The result is 1 .5 by 1. 8 by 2. 1 cm in my estimation.",
+        # # x by x by x cm (xyz1)
+        # "The result is 1.5 x 1.8 x 2.1 cm in my estimation.",
+        # "The result is 1.5x1.8x2.1cm in my estimation.",
+        # "The result is 1.5x 1.8x 2.1 cm in my estimation.",
+        # "The result is 1 .5 by 1. 8 by 2. 1 cm in my estimation.",
 
-        # x by x cm by x cm (xyz2)
-        "The result is 1.5 x 1.8cm x 2.1cm in my estimation.",
-        "The result is 1.5 x 1.8 cm x 2.1 cm in my estimation.",
-        "The result is 1.5x 1.8cm x2.1cm in my estimation.",
-        "The result is 1 .5x 1.8 cm x2. 1cm in my estimation.",
-        "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation.",
+        # # x by x cm by x cm (xyz2)
+        # "The result is 1.5 x 1.8cm x 2.1cm in my estimation.",
+        # "The result is 1.5 x 1.8 cm x 2.1 cm in my estimation.",
+        # "The result is 1.5x 1.8cm x2.1cm in my estimation.",
+        # "The result is 1 .5x 1.8 cm x2. 1cm in my estimation.",
+        # "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation.",
 
-        # x cm by x cm by x cm (xyz3)
-        "The result is 1.5cm x 1.8cm x 2.1cm in my estimation.",
-        "The result is 1.5 cm by 1.8 cm by 2.1 cm in my estimation.",
-        "The result is 1.5 cm by 1.8 cm x 2.1 cm in my estimation.",
-        "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation.",
-        "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation.",
-        "The result is .1cm x .2cm x .3 mm in my estimation.",
+        # # x cm by x cm by x cm (xyz3)
+        # "The result is 1.5cm x 1.8cm x 2.1cm in my estimation.",
+        # "The result is 1.5 cm by 1.8 cm by 2.1 cm in my estimation.",
+        # "The result is 1.5 cm by 1.8 cm x 2.1 cm in my estimation.",
+        # "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation.",
+        # "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation.",
+        # "The result is .1cm x .2cm x .3 mm in my estimation.",
         
-        # x cm view by x cm view by x cm view (xyz4)
-        "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation.",
-        "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation.",
-        "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation.",
-        "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation.",
-        "The result is 1.5 in craniocaudal x 1 .8in transverse x 2.1 in anterior in my estimation.",
+        # # x cm view by x cm view by x cm view (xyz4)
+        # "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation.",
+        # "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation.",
+        # "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation.",
+        # "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation.",
+        # "The result is 1.5 in craniocaudal x 1 .8in transverse x 2.1 in anterior in my estimation.",
                                         
-        # list end (needed to find lists such as 1.0, 1.1, 1.2, and 1.3 cm)
-        "The result is 1.5, 1.3, and 2.6 cm in my estimation.",
-        "The result is 1.5 and 1.8 cm in my estimation.",
-        "The result is 1.5- and 1.8-cm in my estimation.",
-        "The result is 1.5, and 1.8 cm in my estimation.",
-        "The results are 1.5, 1.8, and 2.1 cm in my estimation.",
-        "The results are 1.5 and 1.8 cm and the other results are " \
-        "2.3 and 4.8 cm in my estimation.",
-        "The results are 1.5, 1.8, and 2.1 cm2 in my estimation.",
-        "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation.",
-        "The left greater saphenous vein is patent with diameters of 0.26, 0.26, 0.39, " \
-        "0.24, and 0.37 and 0.75 cm at the ankle, calf, knee, low thigh, high thigh, " \
-        "and saphenofemoral junction respectively.",
-        "The peak systolic velocities are\n 99, 80, and 77 centimeters per second " \
-        "for the ICA, CCA, and ECA, respectively.",
+        # # list end (needed to find lists such as 1.0, 1.1, 1.2, and 1.3 cm)
+        # "The result is 1.5, 1.3, and 2.6 cm in my estimation.",
+        # "The result is 1.5 and 1.8 cm in my estimation.",
+        # "The result is 1.5- and 1.8-cm in my estimation.",
+        # "The result is 1.5, and 1.8 cm in my estimation.",
+        # "The results are 1.5, 1.8, and 2.1 cm in my estimation.",
+        # "The results are 1.5 and 1.8 cm and the other results are " \
+        # "2.3 and 4.8 cm in my estimation.",
+        # "The results are 1.5, 1.8, and 2.1 cm2 in my estimation.",
+        # "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation.",
+        # "The left greater saphenous vein is patent with diameters of 0.26, 0.26, 0.39, " \
+        # "0.24, and 0.37 and 0.75 cm at the ankle, calf, knee, low thigh, high thigh, " \
+        # "and saphenofemoral junction respectively.",
+        # "The peak systolic velocities are\n 99, 80, and 77 centimeters per second " \
+        # "for the ICA, CCA, and ECA, respectively.",
 
-        # do not interpret the preposition 'in' as 'inches'
-        "Peak systolic velocities on the left in centimeters per second are " \
-        "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
-        "proximal anastomosis, distal anastomosis, and native vessel distally.",
-        "In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
-        "room air, tmep 97.2",
+        # # do not interpret the preposition 'in' as 'inches'
+        # "Peak systolic velocities on the left in centimeters per second are " \
+        # "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
+        # "proximal anastomosis, distal anastomosis, and native vessel distally.",
+        # "In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
+        # "room air, tmep 97.2",
 
-        # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
-        "On admission, height was 75 inches, weight 134 kilograms; heart " \
-        "rate was 59 in sinus rhythm; blood pressure 114/69.",
+        # # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
+        # "On admission, height was 75 inches, weight 134 kilograms; heart " \
+        # "rate was 59 in sinus rhythm; blood pressure 114/69.",
 
-        # do not interpret speeds as linear measurements
-        "Within the graft from proximal to distal, the velocities are " \
-        "68, 128, 98, 75, 105, and 141 centimeters per second.",
+        # # do not interpret speeds as linear measurements
+        # "Within the graft from proximal to distal, the velocities are " \
+        # "68, 128, 98, 75, 105, and 141 centimeters per second.",
 
-        # do not interpret mm Hg as mm
-        "Blood pressure was 112/71 mm Hg while lying flat.",
-        "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg",
-        "The aortic valve was bicuspid with severely thickened and deformed " \
-        "leaflets, and there was\n" \
-        "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
-        "mercury and a\nmean gradient of 52 millimeters of mercury.",
+        # # do not interpret mm Hg as mm
+        # "Blood pressure was 112/71 mm Hg while lying flat.",
+        # "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg",
+        # "The aortic valve was bicuspid with severely thickened and deformed " \
+        # "leaflets, and there was\n" \
+        # "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
+        # "mercury and a\nmean gradient of 52 millimeters of mercury.",
         
-        # newline in measurement
-        "Additional lesions include a 6\n"                                      \
-        "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
-        "mm peripherally based mass within the anterior left frontal lobe\n"    \
-        "as well as a more confluent plaque-like mass with a broad base along " \
-        "the tentorial surface measuring approximately 2\n" +
-        "cm in greatest dimension.",
+        # # newline in measurement
+        # "Additional lesions include a 6\n"                                      \
+        # "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
+        # "mm peripherally based mass within the anterior left frontal lobe\n"    \
+        # "as well as a more confluent plaque-like mass with a broad base along " \
+        # "the tentorial surface measuring approximately 2\n" +
+        # "cm in greatest dimension.",
 
-        # temporality
-        "The previously seen hepatic hemangioma has increased slightly in " \
-        "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm).",
+        # # temporality
+        # "The previously seen hepatic hemangioma has increased slightly in " \
+        # "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm).",
 
-        "There is an interval decrease in the size of target lesion 1 which is a\n" \
-        "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)."
-    ]
+        # "There is an interval decrease in the size of target lesion 1 which is a\n" \
+        # "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)."
+    }
 
     optparser = optparse.OptionParser(add_help_option=False)
     optparser.add_option('-s', '--sentence', action='store',      dest='sentence')                        
     optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
-    optparser.add_option('-z', '--selftest', action='store_true', dest='run_tests', default=False)
+    optparser.add_option('-z', '--selftest', action='store_true', dest='selftest', default=False)
     optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
     
     if 1 == len(sys.argv):
@@ -1376,23 +1413,19 @@ if __name__ == '__main__':
         print(get_version())
         sys.exit(0)
 
-    run_tests = opts.run_tests
+    selftest = opts.selftest
     sentence = opts.sentence
 
-    if not sentence and not run_tests:
+    if not sentence and not selftest:
         print('A sentence must be specified on the command line.')
         sys.exit(-1)
 
-    sentences = []
-    if run_tests:
-        sentences = TEST_SENTENCES
+    if selftest:
+        self_test(TEST_DICT)
     else:
-        sentences.append(sentence)
-
-    for sentence in sentences:
-
-        if run_tests:
-            print(sentence)
+        #sentences = []
+        #sentences.append(sentence)
+        #for sentence in sentences:
 
         # find the measurements and print JSON result to stdout
         json_result = run(sentence)
