@@ -108,10 +108,10 @@ from enum import Enum, unique
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 4
+VERSION_MINOR = 5
 
 # set to True to enable debug output
-TRACE = False
+TRACE = True
 
 # namedtuple used for serialization
 EMPTY_FIELD = -1
@@ -186,13 +186,20 @@ regex_xyz4  = re.compile(str_xyz4)
 seen   = r'(observed|identified|seen|appreciated|noted|confirmed|demonstrated|present)'
 approx = r'((approximately|about|up to|at least|at most|in aggregate)\\s+)?'
 
-strNumber = r'([\.\d]+)'
-regex_number = re.compile(r'\A' + strNumber + r'\Z')
+str_number = r'([\.\d]+)'
+regex_number = re.compile(r'\A' + str_number + r'\Z')
 
 # end-of-list must begin with a space or comma, to prevent the digit in terms
 # such as 'fio2' from being recognized as a list element
-strListEnd = r'[,\s]' + strNumber + r'(\s*[,\-]?\s*and\s+)' + strNumber + r'[\-]?\s*' + cm
-regex_listEnd = re.compile(strListEnd)
+#strListEnd = r'[,\s]' + str_number + r'(\s*[,\-]?\s*and\s+)' + str_number + r'[\-]?\s*' + cm
+#regex_listEnd = re.compile(strListEnd)
+
+# lists must be preceded by whitespace, to avoid capturing the digit
+# in 'fio2' and similar abbreviations
+str_list_num = r'\d+(\.\d+)?'
+str_list_item = str_list_num + r'\s*[-,]?(\s*and\s*)?'
+str_list = r'(?<=\s)(' + str_list_item + r'\s*)*' + str_list_item + cm
+regex_list = re.compile(str_list)
 
 
 prev1 = r'previously\s*measur(ed|ing)\s*' + approx + str_m
@@ -269,7 +276,7 @@ def to_json(measurement_list):
     then serialize the entire list of dicts.
     """
 
-    # sort the list by character offset
+    # order the measurements by their position in the sentence
     measurement_list = sorted(measurement_list, key=lambda x: x.start)
 
     dict_list = []
@@ -598,7 +605,28 @@ def tokenize_complete_list(sentence, list_text, list_start):
 
     return tokens
     
-        
+
+###############################################################################
+def tokenize_list(match, sentence):
+    """
+    Tokenize a list of numbers, which is a numeric sequence separated by commas
+    with an optional and before the final number.
+    """
+
+    # assert 4 == len(match.groups())
+
+    # list_start = get_list_start(sentence, match.start())
+    # list_text = sentence[list_start:match.end()]
+    # if TRACE:
+    #     print('LIST TEXT ->{0}<-'.format(list_text))
+
+    # tokens = tokenize_complete_list(sentence, list_text, list_start)
+    # return (tokens, list_text)
+
+    print('FOUND LIST: ')
+    print(match.group())
+    
+
 ###############################################################################
 def tokenize_xyz4(match):
     """
@@ -1066,23 +1094,6 @@ def tokenize_x(match):
     return tokens
 
 ###############################################################################
-def tokenize_list(match, sentence):
-    """
-    Tokenize a list of numbers, which is a numeric sequence separated by commas
-    with an optional and before the final number.
-    """
-
-    assert 4 == len(match.groups())
-
-    list_start = get_list_start(sentence, match.start())
-    list_text = sentence[list_start:match.end()]
-    if TRACE:
-        print('LIST TEXT ->{0}<-'.format(list_text))
-
-    tokens = tokenize_complete_list(sentence, list_text, list_start)
-    return (tokens, list_text)
-
-
 regexes = [
     regex_xyz4,   # 0
     regex_xyz3,   # 1
@@ -1095,7 +1106,8 @@ regexes = [
     regex_xx2,    # 8
     regex_x_vol,  # 9
     regex_x,      # 10
-#    regex_listEnd # 11
+    regex_list    # 11
+    #regex_listEnd # 11
 ]
 
 # associates a regex index with its measurement tokenizer function
@@ -1110,7 +1122,7 @@ tokenizer_map = {0:tokenize_xyz4,
                  8:tokenize_xx2,
                  9:tokenize_xvol,
                 10:tokenize_x,
-#                 11:tokenize_list
+                11:tokenize_list
 }
 
 LIST_TOKENIZER_FUNCTION_NAME = 'tokenize_list'
@@ -1349,6 +1361,7 @@ if __name__ == '__main__':
         "The result is 1.5 in craniocaudal x 1 .8in transverse x 2.1 in anterior in my estimation.",
                                         
         # list end (needed to find lists such as 1.0, 1.1, 1.2, and 1.3 cm)
+        "The result is 1.5, 1.3, and 2.6 cm in my estimation.",
         "The result is 1.5 and 1.8 cm in my estimation.",
         "The result is 1.5- and 1.8-cm in my estimation.",
         "The result is 1.5, and 1.8 cm in my estimation.",
@@ -1357,44 +1370,49 @@ if __name__ == '__main__':
         "2.3 and 4.8 cm in my estimation.",
         "The results are 1.5, 1.8, and 2.1 cm2 in my estimation.",
         "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation.",
+        "The left greater saphenous vein is patent with diameters of 0.26, 0.26, 0.39, " \
+        "0.24, and 0.37 and 0.75 cm at the ankle, calf, knee, low thigh, high thigh, " \
+        "and saphenofemoral junction respectively.",
+        "The peak systolic velocities are\n 99, 80, and 77 centimeters per second " \
+        "for the ICA, CCA, and ECA, respectively.",
 
-        # do not interpret the preposition 'in' as 'inches'
-        "Peak systolic velocities on the left in centimeters per second are " \
-        "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
-        "proximal anastomosis, distal anastomosis, and native vessel distally.",
-        "In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
-        "room air, tmep 97.2",
+        # # do not interpret the preposition 'in' as 'inches'
+        # "Peak systolic velocities on the left in centimeters per second are " \
+        # "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
+        # "proximal anastomosis, distal anastomosis, and native vessel distally.",
+        # "In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
+        # "room air, tmep 97.2",
 
-        # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
-        "On admission, height was 75 inches, weight 134 kilograms; heart " \
-        "rate was 59 in sinus rhythm; blood pressure 114/69.",
+        # # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
+        # "On admission, height was 75 inches, weight 134 kilograms; heart " \
+        # "rate was 59 in sinus rhythm; blood pressure 114/69.",
 
-        # do not interpret speeds as linear measurements
-        "Within the graft from proximal to distal, the velocities are " \
-        "68, 128, 98, 75, 105, and 141 centimeters per second.",
+        # # do not interpret speeds as linear measurements
+        # "Within the graft from proximal to distal, the velocities are " \
+        # "68, 128, 98, 75, 105, and 141 centimeters per second.",
 
-        # do not interpret mm Hg as mm
-        "Blood pressure was 112/71 mm Hg while lying flat.",
-        "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg",
-        "The aortic valve was bicuspid with severely thickened and deformed " \
-        "leaflets, and there was\n" \
-        "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
-        "mercury and a\nmean gradient of 52 millimeters of mercury.",
+        # # do not interpret mm Hg as mm
+        # "Blood pressure was 112/71 mm Hg while lying flat.",
+        # "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg",
+        # "The aortic valve was bicuspid with severely thickened and deformed " \
+        # "leaflets, and there was\n" \
+        # "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
+        # "mercury and a\nmean gradient of 52 millimeters of mercury.",
         
-        # newline in measurement
-        "Additional lesions include a 6\n"                                      \
-        "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
-        "mm peripherally based mass within the anterior left frontal lobe\n"    \
-        "as well as a more confluent plaque-like mass with a broad base along " \
-        "the tentorial surface measuring approximately 2\n" +
-        "cm in greatest dimension.",
+        # # newline in measurement
+        # "Additional lesions include a 6\n"                                      \
+        # "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
+        # "mm peripherally based mass within the anterior left frontal lobe\n"    \
+        # "as well as a more confluent plaque-like mass with a broad base along " \
+        # "the tentorial surface measuring approximately 2\n" +
+        # "cm in greatest dimension.",
 
-        # temporality
-        "The previously seen hepatic hemangioma has increased slightly in " \
-        "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm).",
+        # # temporality
+        # "The previously seen hepatic hemangioma has increased slightly in " \
+        # "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm).",
 
-        "There is an interval decrease in the size of target lesion 1 which is a\n" \
-        "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)."
+        # "There is an interval decrease in the size of target lesion 1 which is a\n" \
+        # "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)."
     ]
 
     optparser = optparse.OptionParser(add_help_option=False)
