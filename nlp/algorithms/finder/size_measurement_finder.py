@@ -1453,7 +1453,7 @@ if __name__ == '__main__':
         "proximal anastomosis, distal anastomosis, and native vessel distally." :
         [],
 
-        # in still interpreted as 'inches'
+        # '100 in' still interpreted as '100 inches'...
         #"In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
         #"room air, tmep 97.2" :
         #[{'x':2540.0}],
@@ -1528,10 +1528,6 @@ if __name__ == '__main__':
     if selftest:
         self_test(TEST_DICT)
     else:
-        #sentences = []
-        #sentences.append(sentence)
-        #for sentence in sentences:
-
-        # find the measurements and print JSON result to stdout
+        # find the size measurements and print JSON result to stdout
         json_result = run(sentence)
         print(json_result)
