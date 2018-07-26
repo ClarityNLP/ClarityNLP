@@ -603,7 +603,11 @@ def run(filepath):
     if 0 == len(text):
         return EMPTY_JSON
         
-    results = []        
+    return run_on_text(text)
+
+
+def run_on_text(text):
+    results = []
     boundaries = []
 
     # scan the data and process the notes one by one

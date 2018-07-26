@@ -17,52 +17,54 @@ Getting Started
    :hidden:
    intro/overview
 
-NLPQL Macros
-============
+
+Basic NLP Phenotype Examples
+============================
 .. toctree::
-   :maxdepth: 2
-
-   nlpql/macros
-
-Ingesting Documents
-===================
-.. toctree::
-   :maxdepth: 2
-
-   ingestion/overview
-
-
-Mapping Report Types
-====================
-.. toctree::
-   :maxdepth: 2
-
-   ingestion/mapping
-
-Basic Phenotype Examples
-========================
-.. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    nlpql/basic_examples
 
-Advanced Phenotype Examples
-===========================
+
+NLPQL Macros
+============
 .. toctree::
-   :maxdepth: 2
+  :maxdepth: 2
 
-   nlpql/advanced_examples
+  nlpql/macros
 
-Running Queries
-===============
-.. toctree::
-   :maxdepth: 2
+   Ingesting Documents
+   ===================
+   .. toctree::
+      :maxdepth: 2
 
-   nlpql/running
+      ingestion/overview
 
-Reviewing Results
-=================
-.. toctree::
-   :maxdepth: 2
 
-   nlpql/validation
+   Mapping Report Types
+   ====================
+   .. toctree::
+      :maxdepth: 2
+
+      ingestion/mapping
+
+.. Advanced Phenotype Examples
+.. ===========================
+.. .. toctree::
+..    :maxdepth: 2
+..
+..    nlpql/advanced_examples
+..
+.. Running Queries
+.. ===============
+.. .. toctree::
+..    :maxdepth: 2
+..
+..    nlpql/running
+..
+.. Reviewing Results
+.. =================
+.. .. toctree::
+..    :maxdepth: 2
+..
+..    nlpql/validation
