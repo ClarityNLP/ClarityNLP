@@ -1218,7 +1218,7 @@ def show_help():
 
         -h, --help                      Print this information and exit.
         -v, --version                   Print version information and exit.
-        -z, --test                      Run internal tests and print results.
+        -z, --selftest                  Run internal tests and print results.
 
     """)
 
@@ -1359,7 +1359,7 @@ if __name__ == '__main__':
     optparser = optparse.OptionParser(add_help_option=False)
     optparser.add_option('-s', '--sentence', action='store',      dest='sentence')                        
     optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
-    optparser.add_option('-z', '--test',     action='store_true', dest='run_tests', default=False)
+    optparser.add_option('-z', '--selftest', action='store_true', dest='run_tests', default=False)
     optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
     
     if 1 == len(sys.argv):
