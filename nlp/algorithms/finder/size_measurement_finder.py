@@ -252,11 +252,6 @@ IN_TO_MM    = 25.4
 IN_TO_MM_SQ = IN_TO_MM * IN_TO_MM
 
 CHAR_SPACE = ' '
-CHAR_COMMA = ','
-
-# acceptable chars in a list of numbers (digits, '.', "and", ',', space, dash)
-VALID_LIST_CHARS =  ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                     '.', 'a', 'n', 'd', ',', ' ', '-']
 
 # namedtuple objects found by this code - internal use only
 Measurement = namedtuple('Measurement',
@@ -393,7 +388,10 @@ def print_tokens(token_list):
 
     print('TOKENS: ')
     for token in token_list:
-        print('\t[{0:2}]: {1:16} {2:6.2f} {3}'.format(index, token.label, token.value, token.text))
+        print('\t[{0:2}]: {1:16} {2:6.2f} {3}'.format(index,
+                                                      token.label,
+                                                      token.value,
+                                                      token.text))
         index += 1
 
 ###############################################################################
@@ -476,8 +474,9 @@ def tokenize_complete_list(sentence, list_text, list_start):
     """
 
     # Scan the list text and replace any occurrences of 'and' with a comma
-    # followed by two spaces. This will make the subsequent code simpler.
-    # Also replace any dash chars with a space.
+    # followed by two spaces (i.e. preserve the sentence length). This will
+    # make the subsequent tokenization code simpler. Also replace any dash
+    # chars with a space.
 
     list_text = re.sub(r'and', r',  ', list_text)
     list_text = re.sub(r'-', r' ', list_text)
@@ -1122,7 +1121,7 @@ def run(sentence):
     while more_to_go:
         more_to_go = False
 
-        # match object for the regex that gives the best match
+        # data for the regex that gives the longest match overall
         best_matcher = None
         best_regex_index = -1
         best_match_text = ''
