@@ -1202,10 +1202,26 @@ def run(sentence):
 
 
 ###############################################################################
+def close_enough(str_x, str_y):
+    """
+    Return a Boolean indicating whether two floats are within EPSILON
+    of each other.
+    """
+
+    EPSILON = 1.0e-5
+
+    x = float(str_x)
+    y = float(str_y)
+    return abs(x-y) <= EPSILON
+
+###############################################################################
 def self_test(TEST_DICT):
     """
     Run the suite of self tests and verify results.
     """
+
+    STRING_VALUES = [STR_PREVIOUS, STR_CURRENT, 'RANGE',
+                     'craniocaudal', 'transverse', 'anterior']
 
     for sentence, truth_dict_list in TEST_DICT.items():
         json_string = run(sentence)
@@ -1218,13 +1234,45 @@ def self_test(TEST_DICT):
             result_dict = json_data[i]
             truth_dict  = truth_dict_list[i]
             for key, value in truth_dict.items():
-                assert key in result_dict
-                assert result_dict[key] == value
+                if key not in result_dict:
+                    print('\n*** SELF TEST FAILURE: ***\n{0}'.
+                          format(sentence))
+                    print('no result for {0}'.format(key))
+                    continue
+                else:
+                    if isinstance(value, list):
+                        # 'value' and 'result_dict[key]' are lists
+                        # compare corresponding values in each list
+                        ok = True
+                        for j in range(len(value)):
+                            expected = value[j]
+                            computed = result_dict[key][j]
+                            if not close_enough(expected, computed):
+                                ok = False
+                                break
+                    elif value not in STRING_VALUES:
+                        # compare single values
+                        ok = close_enough(value, result_dict[key])
+                    else:
+                        # compare string values
+                        expected_result = value.lower()
+                        computed_result = result_dict[key].lower()
+                        ok = computed_result == expected_result
+
+                    if not ok:
+                        print('\n*** SELF TEST FAILURE: ***\n{0}'.
+                              format(sentence))
+                        print('\t  Computed result: {0}'.
+                              format(computed_result))
+                        print('\t  Expected result: {0}'.
+                              format(expected_result))
 
 
 ###############################################################################
 def get_version():
-    return 'size_measurement_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
+    return 'size_measurement_finder {0}.{1}'.format(VERSION_MAJOR,
+                                                    VERSION_MINOR)
+
         
 ###############################################################################
 def show_help():
@@ -1349,74 +1397,105 @@ if __name__ == '__main__':
         "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation." :
         [{'x':15.0, 'y':18.0, 'z':2.1}],
 
-        # # x cm by x cm by x cm (xyz3)
-        # "The result is 1.5cm x 1.8cm x 2.1cm in my estimation.",
-        # "The result is 1.5 cm by 1.8 cm by 2.1 cm in my estimation.",
-        # "The result is 1.5 cm by 1.8 cm x 2.1 cm in my estimation.",
-        # "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation.",
-        # "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation.",
-        # "The result is .1cm x .2cm x .3 mm in my estimation.",
+        # x cm by x cm by x cm (xyz3)
+        "The result is 1.5cm x 1.8cm x 2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 cm by 1.8 cm by 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 cm by 1.8 cm x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':1.8, 'z':21.0}],
+        "The result is .1cm x .2cm x .3 mm in my estimation." :
+        [{'x':1.0, 'y':2.0, 'z':0.3}],
         
-        # # x cm view by x cm view by x cm view (xyz4)
-        # "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation.",
-        # "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation.",
-        # "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation.",
-        # "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation.",
-        # "The result is 1.5 in craniocaudal x 1 .8in transverse x 2.1 in anterior in my estimation.",
+        # x cm view by x cm view by x cm view (xyz4)
+        "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
+        "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':1.8, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
+        "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
+        "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':1.8, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
                                         
-        # # list end (needed to find lists such as 1.0, 1.1, 1.2, and 1.3 cm)
-        # "The result is 1.5, 1.3, and 2.6 cm in my estimation.",
-        # "The result is 1.5 and 1.8 cm in my estimation.",
-        # "The result is 1.5- and 1.8-cm in my estimation.",
-        # "The result is 1.5, and 1.8 cm in my estimation.",
-        # "The results are 1.5, 1.8, and 2.1 cm in my estimation.",
-        # "The results are 1.5 and 1.8 cm and the other results are " \
-        # "2.3 and 4.8 cm in my estimation.",
-        # "The results are 1.5, 1.8, and 2.1 cm2 in my estimation.",
-        # "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation.",
-        # "The left greater saphenous vein is patent with diameters of 0.26, 0.26, 0.39, " \
-        # "0.24, and 0.37 and 0.75 cm at the ankle, calf, knee, low thigh, high thigh, " \
-        # "and saphenofemoral junction respectively.",
-        # "The peak systolic velocities are\n 99, 80, and 77 centimeters per second " \
-        # "for the ICA, CCA, and ECA, respectively.",
+        # lists
+        "The result is 1.5, 1.3, and 2.6 cm in my estimation." :
+        [{'values':[15.0, 13.0, 26.0]}],
+        "The result is 1.5 and 1.8 cm in my estimation." :
+        [{'values':[15.0, 18.0]}],
+        "The result is 1.5- and 1.8-cm in my estimation." :
+        [{'values':[15.0, 18.0]}],
+        "The result is 1.5, and 1.8 cm in my estimation." :
+        [{'values':[15.0, 18.0]}],
+        "The results are 1.5, 1.8, and 2.1 cm in my estimation." :
+        [{'values':[15.0, 18.0, 21.0]}],
+        "The results are 1.5 and 1.8 cm and the other results are " \
+        "2.3 and 4.8 cm in my estimation." :
+        [{'values':[15.0, 18.0]}, {'values':[23.0, 48.0]}],
+        "The results are 1.5, 1.8, and 2.1 cm2 in my estimation." :
+        [{'values':[150.0, 180.0, 210.0]}],
+        "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation." :
+        [{'values':[1500.0, 1800.0, 2100.0, 2200.0, 2300.0]}],
+        "The left greater saphenous vein is patent with diameters of 0.26, 0.26, 0.38, " \
+        "0.24, and 0.37 and 0.75 cm at the ankle, calf, knee, low thigh, high thigh, " \
+        "and saphenofemoral junction respectively." :
+        [{'values':[2.6, 2.6, 3.8, 2.4, 3.7, 7.5]}],
+        "The peak systolic velocities are\n 99, 80, and 77 centimeters per second " \
+        "for the ICA, CCA, and ECA, respectively." :
+        [],
 
-        # # do not interpret the preposition 'in' as 'inches'
-        # "Peak systolic velocities on the left in centimeters per second are " \
-        # "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
-        # "proximal anastomosis, distal anastomosis, and native vessel distally.",
-        # "In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
-        # "room air, tmep 97.2",
+        # do not interpret the preposition 'in' as 'inches'
+        "Peak systolic velocities on the left in centimeters per second are " \
+        "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
+        "proximal anastomosis, distal anastomosis, and native vessel distally." :
+        [],
 
-        # # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
-        # "On admission, height was 75 inches, weight 134 kilograms; heart " \
-        # "rate was 59 in sinus rhythm; blood pressure 114/69.",
+        # in still interpreted as 'inches'
+        #"In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
+        #"room air, tmep 97.2" :
+        #[{'x':2540.0}],
 
-        # # do not interpret speeds as linear measurements
-        # "Within the graft from proximal to distal, the velocities are " \
-        # "68, 128, 98, 75, 105, and 141 centimeters per second.",
+        # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
+        "On admission, height was 75 inches, weight 134 kilograms; heart " \
+        "rate was 59 in sinus rhythm; blood pressure 114/69." :
+        [{'x':1905.0},{'x':1498.6}],
 
-        # # do not interpret mm Hg as mm
-        # "Blood pressure was 112/71 mm Hg while lying flat.",
-        # "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg",
-        # "The aortic valve was bicuspid with severely thickened and deformed " \
-        # "leaflets, and there was\n" \
-        # "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
-        # "mercury and a\nmean gradient of 52 millimeters of mercury.",
+        # do not interpret speeds as linear measurements
+        "Within the graft from proximal to distal, the velocities are " \
+        "68, 128, 98, 75, 105, and 141 centimeters per second." :
+        [],
+
+        # do not interpret mm Hg as mm
+        "Blood pressure was 112/71 mm Hg while lying flat." :
+        [],
+        "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg" :
+        [],
+        "The aortic valve was bicuspid with severely thickened and deformed " \
+        "leaflets, and there was\n" \
+        "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
+        "mercury and a\nmean gradient of 52 millimeters of mercury." :
+        [],
         
-        # # newline in measurement
-        # "Additional lesions include a 6\n"                                      \
-        # "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
-        # "mm peripherally based mass within the anterior left frontal lobe\n"    \
-        # "as well as a more confluent plaque-like mass with a broad base along " \
-        # "the tentorial surface measuring approximately 2\n" +
-        # "cm in greatest dimension.",
+        # newline in measurement
+        "Additional lesions include a 6\n"                                      \
+        "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
+        "mm peripherally based mass within the anterior left frontal lobe\n"    \
+        "as well as a more confluent plaque-like mass with a broad base along " \
+        "the tentorial surface measuring approximately 2\n" +
+        "cm in greatest dimension." :
+        [{'x':6.0},{'x':10.0},{'x':20.0}],
 
-        # # temporality
-        # "The previously seen hepatic hemangioma has increased slightly in " \
-        # "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm).",
+        # temporality
+        "The previously seen hepatic hemangioma has increased slightly in " \
+        "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm)." :
+        [{'x':40.0, 'y':35.0, 'temporality':'CURRENT'},{'x':38.0, 'y':22.0, 'temporality':'PREVIOUS'}],
 
-        # "There is an interval decrease in the size of target lesion 1 which is a\n" \
-        # "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)."
+        "There is an interval decrease in the size of target lesion 1 which is a\n" \
+        "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)." :
+        [{'x':11.0, 'y':13.0, 'temporality':'CURRENT'}, {'x':11.0, 'y':20.0, 'temporality':'PREVIOUS'}],
     }
 
     optparser = optparse.OptionParser(add_help_option=False)
