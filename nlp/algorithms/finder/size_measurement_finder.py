@@ -1285,43 +1285,69 @@ if __name__ == '__main__':
         "The result is 1.5-1.8 cm2 in my estimation." :
         [{'x':150.0, 'y':180.0, 'condition':'RANGE'}],
 
-        # # str_x_cm_to_x_cm (xx2, ranges)
-        # "The result is 1.5 cm to 1.8 cm in my estimation.",
-        # "The result is 1.5cm - 1.8 cm in my estimation.",
-        # "The result is 1.5mm-1.8cm in my estimation.",
-        # "The result is 1 .5 cm -1. 8cm in my estimation.",
-        # "The result is 1.5cm2-1.8 cm2 in my estimation.",
+        # str_x_cm_to_x_cm (xx2, ranges)
+        "The result is 1.5 cm to 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5cm - 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5mm-1.8cm in my estimation." :
+        [{'x':1.5, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1 .5 cm -1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5cm2-1.8 cm2 in my estimation." :
+        [{'x':150.0, 'y':180.0, 'condition':'RANGE'}],
 
-        # # str x_by_x_cm (xy1)
-        # "The result is 1.5 x 1.8 cm in my estimation.",
-        # "The result is 1.5x1.8cm in my estimation.",
-        # "The result is 1.5x1.8 cm in my estimation.",
-        # "The result is 1. 5x1. 8cm in my estimation.",
+        # str x_by_x_cm (xy1)
+        "The result is 1.5 x 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5x1.8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5x1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1. 5x1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
 
-        # # str_x_cm_by_x_cm (xy2)
-        # "The result is 1.5 cm by 1.8 cm in my estimation.",
-        # "The result is 1.5cm x 1.8cm in my estimation.",
-        # "The result is 1 .5 cm x 1. 8cm in my estimation.",
-        # "The result is 1. 5cm x 1. 8cm in my estimation.",
-        # "The result is 1.5 cm x 1.8 mm in my estimation.",
+        # str_x_cm_by_x_cm (xy2)
+        "The result is 1.5 cm by 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5cm x 1.8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1 .5 cm x 1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1. 5cm x 1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5 cm x 1.8 mm in my estimation." :
+        [{'x':15.0, 'y':1.80}],
 
-        # # x cm view by x cm view (xy3)
-        # "The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation.",
-        # "The result is 1.5cm craniocaudal x 1.8 cm transverse in my estimation.",
-        # "The result is 1. 5cm craniocaudal by 1 .8cm transverse in my estimation.",
+        # x cm view by x cm view (xy3)
+        "The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
+        "The result is 1.5cm craniocaudal x 1.8 cm transverse in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
+        "The result is 1. 5cm craniocaudal by 1 .8cm transverse in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
+        
+        # x by x by x cm (xyz1)
+        "The result is 1.5 x 1.8 x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5x1.8x2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5x 1.8x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1 .5 by 1. 8 by 2. 1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
 
-        # # x by x by x cm (xyz1)
-        # "The result is 1.5 x 1.8 x 2.1 cm in my estimation.",
-        # "The result is 1.5x1.8x2.1cm in my estimation.",
-        # "The result is 1.5x 1.8x 2.1 cm in my estimation.",
-        # "The result is 1 .5 by 1. 8 by 2. 1 cm in my estimation.",
-
-        # # x by x cm by x cm (xyz2)
-        # "The result is 1.5 x 1.8cm x 2.1cm in my estimation.",
-        # "The result is 1.5 x 1.8 cm x 2.1 cm in my estimation.",
-        # "The result is 1.5x 1.8cm x2.1cm in my estimation.",
-        # "The result is 1 .5x 1.8 cm x2. 1cm in my estimation.",
-        # "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation.",
+        # x by x cm by x cm (xyz2)
+        "The result is 1.5 x 1.8cm x 2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 x 1.8 cm x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5x 1.8cm x2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1 .5x 1.8 cm x2. 1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':2.1}],
 
         # # x cm by x cm by x cm (xyz3)
         # "The result is 1.5cm x 1.8cm x 2.1cm in my estimation.",
