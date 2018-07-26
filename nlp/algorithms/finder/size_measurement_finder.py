@@ -39,14 +39,16 @@ The set of JSON fields present in the output for each measurement includes:
         x              numeric value of first number
         y              numeric value of second number
         z              numeric value of third number
-        values         JSON array of all numeric values in list
 
-        xView         view specification for x value
-        yView         view specification for y value
-        zView         view specification for z value
+        values         If list is present, a JSON array of values in list.
+                       If list not present, values will be in x, y, and z.
 
-        minValue      either min([x, y, z]) or min(values)
-        maxValue      either max([x, y, z]) or max(values)
+        xView          view specification for x value
+        yView          view specification for y value
+        zView          view specification for z value
+
+        minValue       either min([x, y, z]) or min(values)
+        maxValue       either max([x, y, z]) or max(values)
 
 All JSON results will have an identical number of fields.
 
@@ -108,7 +110,7 @@ from enum import Enum, unique
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 4
+VERSION_MINOR = 5
 
 # set to True to enable debug output
 TRACE = False
@@ -186,15 +188,15 @@ regex_xyz4  = re.compile(str_xyz4)
 seen   = r'(observed|identified|seen|appreciated|noted|confirmed|demonstrated|present)'
 approx = r'((approximately|about|up to|at least|at most|in aggregate)\\s+)?'
 
-strNumber = r'([\.\d]+)'
-regex_number = re.compile(r'\A' + strNumber + r'\Z')
+regex_number = re.compile(r'\A' + x + r'\Z')
 
-# end-of-list must begin with a space or comma, to prevent the digit in terms
-# such as 'fio2' from being recognized as a list element
-strListEnd = r'[,\s]' + strNumber + r'(\s*[,\-]?\s*and\s+)' + strNumber + r'[\-]?\s*' + cm
-regex_listEnd = re.compile(strListEnd)
+# lists must be preceded by whitespace, to avoid capturing the digit
+# in 'fio2' and similar abbreviations
+str_list_item = x + r'\s*[-,]?(\s*and\s*)?'
+str_list = r'(?<=\s)(' + str_list_item + r'\s*)*' + str_list_item + cm
+regex_list = re.compile(str_list)
 
-
+# expressions for finding 'previous' measurements
 prev1 = r'previously\s*measur(ed|ing)\s*' + approx + str_m
 prev2 = r'(previously\s*)?' + seen + approx + r'(as\s*)?' + str_m
 prev3 = r'(previously|prev)\s*' + approx + str_m
@@ -250,11 +252,6 @@ IN_TO_MM    = 25.4
 IN_TO_MM_SQ = IN_TO_MM * IN_TO_MM
 
 CHAR_SPACE = ' '
-CHAR_COMMA = ','
-
-# acceptable chars in a list of numbers (digits, '.', "and", ',', space, dash)
-VALID_LIST_CHARS =  ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                     '.', 'a', 'n', 'd', ',', ' ', '-']
 
 # namedtuple objects found by this code - internal use only
 Measurement = namedtuple('Measurement',
@@ -269,7 +266,7 @@ def to_json(measurement_list):
     then serialize the entire list of dicts.
     """
 
-    # sort the list by character offset
+    # order the measurements by their position in the sentence
     measurement_list = sorted(measurement_list, key=lambda x: x.start)
 
     dict_list = []
@@ -391,7 +388,10 @@ def print_tokens(token_list):
 
     print('TOKENS: ')
     for token in token_list:
-        print('\t[{0:2}]: {1:16} {2:6.2f} {3}'.format(index, token.label, token.value, token.text))
+        print('\t[{0:2}]: {1:16} {2:6.2f} {3}'.format(index,
+                                                      token.label,
+                                                      token.value,
+                                                      token.text))
         index += 1
 
 ###############################################################################
@@ -466,48 +466,6 @@ def convert_units(value, units, is_area_measurement, is_vol_measurement):
 
     return value
 
-###############################################################################
-def get_list_start(sentence, match_start):
-    """
-    Scan backwards from the end-of-list match and find the first number in
-    the list. Return the character offset to the caller.
-    """
-    
-    pos = match_start - 1;
-
-    # get the char at offset 'pos', which must either be a space or comma
-    ch = sentence[pos:pos+1]
-    if TRACE:
-        print('Initial char at pos: ->{0}<-'.format(ch))
-    assert CHAR_SPACE == ch or CHAR_COMMA == ch
-
-    while pos >= 0:
-        c = sentence[pos:pos+1]
-        if c in VALID_LIST_CHARS:
-            # first text char encountered must be a 'd' (for word "and")
-            if 'd' == c and pos >= 2:
-                if 'n' == sentence[pos-1:pos] and 'a' == sentence[pos-2:pos-1]:
-                    # skip word "and"
-                    pos -= 3;
-                else:
-                    # word contains a 'd', but is not the word "and", so exit
-                    break;
-            else:
-                # must be digit, space, comma, '.', or '-'
-                pos = pos - 1
-        else:
-            break
-
-    pos = pos + 1
-
-    # skip leading whitespace
-    c = sentence[pos:pos+1]
-    while CHAR_SPACE == c:
-        pos = pos + 1
-        c = sentence[pos:pos+1]
-
-    return pos;
-
 
 ###############################################################################
 def tokenize_complete_list(sentence, list_text, list_start):
@@ -516,8 +474,9 @@ def tokenize_complete_list(sentence, list_text, list_start):
     """
 
     # Scan the list text and replace any occurrences of 'and' with a comma
-    # followed by two spaces. This will make the subsequent code simpler.
-    # Also replace any dash chars with a space.
+    # followed by two spaces (i.e. preserve the sentence length). This will
+    # make the subsequent tokenization code simpler. Also replace any dash
+    # chars with a space.
 
     list_text = re.sub(r'and', r',  ', list_text)
     list_text = re.sub(r'-', r' ', list_text)
@@ -598,7 +557,18 @@ def tokenize_complete_list(sentence, list_text, list_start):
 
     return tokens
     
-        
+
+###############################################################################
+def tokenize_list(match, sentence):
+    """
+    Extract numeric values and measurements from a list.
+    """
+
+    list_text = match.group()
+    tokens = tokenize_complete_list(sentence, list_text, match.start())
+    return (tokens, list_text)
+    
+
 ###############################################################################
 def tokenize_xyz4(match):
     """
@@ -1066,23 +1036,6 @@ def tokenize_x(match):
     return tokens
 
 ###############################################################################
-def tokenize_list(match, sentence):
-    """
-    Tokenize a list of numbers, which is a numeric sequence separated by commas
-    with an optional and before the final number.
-    """
-
-    assert 4 == len(match.groups())
-
-    list_start = get_list_start(sentence, match.start())
-    list_text = sentence[list_start:match.end()]
-    if TRACE:
-        print('LIST TEXT ->{0}<-'.format(list_text))
-
-    tokens = tokenize_complete_list(sentence, list_text, list_start)
-    return (tokens, list_text)
-
-
 regexes = [
     regex_xyz4,   # 0
     regex_xyz3,   # 1
@@ -1095,7 +1048,7 @@ regexes = [
     regex_xx2,    # 8
     regex_x_vol,  # 9
     regex_x,      # 10
-#    regex_listEnd # 11
+    regex_list    # 11
 ]
 
 # associates a regex index with its measurement tokenizer function
@@ -1110,7 +1063,7 @@ tokenizer_map = {0:tokenize_xyz4,
                  8:tokenize_xx2,
                  9:tokenize_xvol,
                 10:tokenize_x,
-#                 11:tokenize_list
+                11:tokenize_list
 }
 
 LIST_TOKENIZER_FUNCTION_NAME = 'tokenize_list'
@@ -1168,7 +1121,7 @@ def run(sentence):
     while more_to_go:
         more_to_go = False
 
-        # match object for the regex that gives the best match
+        # data for the regex that gives the longest match overall
         best_matcher = None
         best_regex_index = -1
         best_match_text = ''
@@ -1247,9 +1200,79 @@ def run(sentence):
     # convert list to JSON
     return to_json(measurements)
 
+
+###############################################################################
+def close_enough(str_x, str_y):
+    """
+    Return a Boolean indicating whether two floats are within EPSILON
+    of each other.
+    """
+
+    EPSILON = 1.0e-5
+
+    x = float(str_x)
+    y = float(str_y)
+    return abs(x-y) <= EPSILON
+
+###############################################################################
+def self_test(TEST_DICT):
+    """
+    Run the suite of self tests and verify results.
+    """
+
+    STRING_VALUES = [STR_PREVIOUS, STR_CURRENT, 'RANGE',
+                     'craniocaudal', 'transverse', 'anterior']
+
+    for sentence, truth_dict_list in TEST_DICT.items():
+        json_string = run(sentence)
+
+        # parse JSON string and get a list of dicts
+        json_data = json.loads(json_string)
+
+        # iterate over each dict
+        for i in range(len(json_data)):
+            result_dict = json_data[i]
+            truth_dict  = truth_dict_list[i]
+            for key, value in truth_dict.items():
+                if key not in result_dict:
+                    print('\n*** SELF TEST FAILURE: ***\n{0}'.
+                          format(sentence))
+                    print('no result for {0}'.format(key))
+                    continue
+                else:
+                    if isinstance(value, list):
+                        # 'value' and 'result_dict[key]' are lists
+                        # compare corresponding values in each list
+                        ok = True
+                        for j in range(len(value)):
+                            expected = value[j]
+                            computed = result_dict[key][j]
+                            if not close_enough(expected, computed):
+                                ok = False
+                                break
+                    elif value not in STRING_VALUES:
+                        # compare single values
+                        ok = close_enough(value, result_dict[key])
+                    else:
+                        # compare string values
+                        expected_result = value.lower()
+                        computed_result = result_dict[key].lower()
+                        ok = computed_result == expected_result
+
+                    if not ok:
+                        print('\n*** SELF TEST FAILURE: ***\n{0}'.
+                              format(sentence))
+                        print('\t  Computed result: {0}'.
+                              format(computed_result))
+                        print('\t  Expected result: {0}'.
+                              format(expected_result))
+
+
 ###############################################################################
 def get_version():
-    return 'size_measurement_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
+    return 'size_measurement_finder {0}.{1}'.format(VERSION_MAJOR,
+                                                    VERSION_MINOR)
+
         
 ###############################################################################
 def show_help():
@@ -1265,121 +1288,196 @@ def show_help():
 
         -h, --help                      Print this information and exit.
         -v, --version                   Print version information and exit.
-        -z, --test                      Run internal tests and print results.
+        -z, --selftest                  Run internal tests and print results.
 
     """)
 
 ###############################################################################
 if __name__ == '__main__':
 
-    TEST_SENTENCES = [
+    TEST_DICT = {
 
         # str_x_cm (x)
-        "The result is 1.5 cm in my estimation.",
-        "The result is 1.5-cm in my estimation.",
-        "The result is 1.5cm in my estimation.",
-        "The result is 1.5cm2 in my estimation.",
-        "The result is 1.5 cm3 in my estimation.",
-        "The result is 1.5 cc in my estimation.",
-        "The current result is 1.5 cm; previously it was 1.8 cm.",
+        "The result is 1.5 cm in my estimation." :
+        [{'x':15.0}],
+        "The result is 1.5-cm in my estimation." :
+        [{'x':15.0}],
+        "The result is 1.5cm in my estimation." :
+        [{'x':15.0}],
+        "The result is 1.5cm2 in my estimation." :
+        [{'x':150.0}],
+        "The result is 1.5 cm3 in my estimation." :
+        [{'x':1500.0}],
+        "The result is 1.5 cc in my estimation." :
+        [{'x':1500.0}],
+        "The current result is 1.5 cm; previously it was 1.8 cm." :
+        [{'x':15.0},{'x':18.0}],
 
         # x vol cm (xvol)
-        "The result is 1.5 cubic centimeters in my estimation.",
-        "The result is 1.5 cu. cm in my estimation.",
-        "The result is 1.6 square centimeters in my estimation.",
+        "The result is 1.5 cubic centimeters in my estimation." :
+        [{'x':1500.0}],
+        "The result is 1.5 cu. cm in my estimation." :
+        [{'x':1500.0}],
+        "The result is 1.6 square centimeters in my estimation." :
+        [{'x':160.0}],
 
         # str_x_to_x_cm (xx1, ranges)
-        "The result is 1.5 to 1.8 cm in my estimation.",
-        "The result is 1.5 - 1.8 cm in my estimation.",
-        "The result is 1.5-1.8cm in my estimation.",
-        "The result is 1 .5-1. 8cm in my estimation.",
-        "The result is 1.5-1.8 cm2 in my estimation.",
+        "The result is 1.5 to 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5 - 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5-1.8cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1 .5-1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5-1.8 cm2 in my estimation." :
+        [{'x':150.0, 'y':180.0, 'condition':'RANGE'}],
 
         # str_x_cm_to_x_cm (xx2, ranges)
-        "The result is 1.5 cm to 1.8 cm in my estimation.",
-        "The result is 1.5cm - 1.8 cm in my estimation.",
-        "The result is 1.5mm-1.8cm in my estimation.",
-        "The result is 1 .5 cm -1. 8cm in my estimation.",
-        "The result is 1.5cm2-1.8 cm2 in my estimation.",
+        "The result is 1.5 cm to 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5cm - 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5mm-1.8cm in my estimation." :
+        [{'x':1.5, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1 .5 cm -1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
+        "The result is 1.5cm2-1.8 cm2 in my estimation." :
+        [{'x':150.0, 'y':180.0, 'condition':'RANGE'}],
 
         # str x_by_x_cm (xy1)
-        "The result is 1.5 x 1.8 cm in my estimation.",
-        "The result is 1.5x1.8cm in my estimation.",
-        "The result is 1.5x1.8 cm in my estimation.",
-        "The result is 1. 5x1. 8cm in my estimation.",
+        "The result is 1.5 x 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5x1.8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5x1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1. 5x1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
 
         # str_x_cm_by_x_cm (xy2)
-        "The result is 1.5 cm by 1.8 cm in my estimation.",
-        "The result is 1.5cm x 1.8cm in my estimation.",
-        "The result is 1 .5 cm x 1. 8cm in my estimation.",
-        "The result is 1. 5cm x 1. 8cm in my estimation.",
-        "The result is 1.5 cm x 1.8 mm in my estimation.",
+        "The result is 1.5 cm by 1.8 cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5cm x 1.8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1 .5 cm x 1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1. 5cm x 1. 8cm in my estimation." :
+        [{'x':15.0, 'y':18.0}],
+        "The result is 1.5 cm x 1.8 mm in my estimation." :
+        [{'x':15.0, 'y':1.80}],
 
         # x cm view by x cm view (xy3)
-        "The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation.",
-        "The result is 1.5cm craniocaudal x 1.8 cm transverse in my estimation.",
-        "The result is 1. 5cm craniocaudal by 1 .8cm transverse in my estimation.",
-
+        "The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
+        "The result is 1.5cm craniocaudal x 1.8 cm transverse in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
+        "The result is 1. 5cm craniocaudal by 1 .8cm transverse in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
+        
         # x by x by x cm (xyz1)
-        "The result is 1.5 x 1.8 x 2.1 cm in my estimation.",
-        "The result is 1.5x1.8x2.1cm in my estimation.",
-        "The result is 1.5x 1.8x 2.1 cm in my estimation.",
-        "The result is 1 .5 by 1. 8 by 2. 1 cm in my estimation.",
+        "The result is 1.5 x 1.8 x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5x1.8x2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5x 1.8x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1 .5 by 1. 8 by 2. 1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
 
         # x by x cm by x cm (xyz2)
-        "The result is 1.5 x 1.8cm x 2.1cm in my estimation.",
-        "The result is 1.5 x 1.8 cm x 2.1 cm in my estimation.",
-        "The result is 1.5x 1.8cm x2.1cm in my estimation.",
-        "The result is 1 .5x 1.8 cm x2. 1cm in my estimation.",
-        "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation.",
+        "The result is 1.5 x 1.8cm x 2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 x 1.8 cm x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5x 1.8cm x2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1 .5x 1.8 cm x2. 1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':2.1}],
 
         # x cm by x cm by x cm (xyz3)
-        "The result is 1.5cm x 1.8cm x 2.1cm in my estimation.",
-        "The result is 1.5 cm by 1.8 cm by 2.1 cm in my estimation.",
-        "The result is 1.5 cm by 1.8 cm x 2.1 cm in my estimation.",
-        "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation.",
-        "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation.",
-        "The result is .1cm x .2cm x .3 mm in my estimation.",
+        "The result is 1.5cm x 1.8cm x 2.1cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 cm by 1.8 cm by 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 cm by 1.8 cm x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation." :
+        [{'x':15.0, 'y':18.0, 'z':21.0}],
+        "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation." :
+        [{'x':15.0, 'y':1.8, 'z':21.0}],
+        "The result is .1cm x .2cm x .3 mm in my estimation." :
+        [{'x':1.0, 'y':2.0, 'z':0.3}],
         
         # x cm view by x cm view by x cm view (xyz4)
-        "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation.",
-        "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation.",
-        "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation.",
-        "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation.",
-        "The result is 1.5 in craniocaudal x 1 .8in transverse x 2.1 in anterior in my estimation.",
+        "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
+        "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':1.8, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
+        "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
+        "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation." :
+        [{'x':15.0, 'xView':'craniocaudal', 'y':1.8, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
                                         
-        # list end (needed to find lists such as 1.0, 1.1, 1.2, and 1.3 cm)
-        "The result is 1.5 and 1.8 cm in my estimation.",
-        "The result is 1.5- and 1.8-cm in my estimation.",
-        "The result is 1.5, and 1.8 cm in my estimation.",
-        "The results are 1.5, 1.8, and 2.1 cm in my estimation.",
+        # lists
+        "The result is 1.5, 1.3, and 2.6 cm in my estimation." :
+        [{'values':[15.0, 13.0, 26.0]}],
+        "The result is 1.5 and 1.8 cm in my estimation." :
+        [{'values':[15.0, 18.0]}],
+        "The result is 1.5- and 1.8-cm in my estimation." :
+        [{'values':[15.0, 18.0]}],
+        "The result is 1.5, and 1.8 cm in my estimation." :
+        [{'values':[15.0, 18.0]}],
+        "The results are 1.5, 1.8, and 2.1 cm in my estimation." :
+        [{'values':[15.0, 18.0, 21.0]}],
         "The results are 1.5 and 1.8 cm and the other results are " \
-        "2.3 and 4.8 cm in my estimation.",
-        "The results are 1.5, 1.8, and 2.1 cm2 in my estimation.",
-        "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation.",
+        "2.3 and 4.8 cm in my estimation." :
+        [{'values':[15.0, 18.0]}, {'values':[23.0, 48.0]}],
+        "The results are 1.5, 1.8, and 2.1 cm2 in my estimation." :
+        [{'values':[150.0, 180.0, 210.0]}],
+        "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation." :
+        [{'values':[1500.0, 1800.0, 2100.0, 2200.0, 2300.0]}],
+        "The left greater saphenous vein is patent with diameters of 0.26, 0.26, 0.38, " \
+        "0.24, and 0.37 and 0.75 cm at the ankle, calf, knee, low thigh, high thigh, " \
+        "and saphenofemoral junction respectively." :
+        [{'values':[2.6, 2.6, 3.8, 2.4, 3.7, 7.5]}],
+        "The peak systolic velocities are\n 99, 80, and 77 centimeters per second " \
+        "for the ICA, CCA, and ECA, respectively." :
+        [],
 
         # do not interpret the preposition 'in' as 'inches'
         "Peak systolic velocities on the left in centimeters per second are " \
         "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
-        "proximal anastomosis, distal anastomosis, and native vessel distally.",
-        "In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
-        "room air, tmep 97.2",
+        "proximal anastomosis, distal anastomosis, and native vessel distally." :
+        [],
+
+        # '100 in' still interpreted as '100 inches'...
+        #"In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
+        #"room air, tmep 97.2" :
+        #[{'x':2540.0}],
 
         # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
         "On admission, height was 75 inches, weight 134 kilograms; heart " \
-        "rate was 59 in sinus rhythm; blood pressure 114/69.",
+        "rate was 59 in sinus rhythm; blood pressure 114/69." :
+        [{'x':1905.0},{'x':1498.6}],
 
         # do not interpret speeds as linear measurements
         "Within the graft from proximal to distal, the velocities are " \
-        "68, 128, 98, 75, 105, and 141 centimeters per second.",
+        "68, 128, 98, 75, 105, and 141 centimeters per second." :
+        [],
 
         # do not interpret mm Hg as mm
-        "Blood pressure was 112/71 mm Hg while lying flat.",
-        "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg",
+        "Blood pressure was 112/71 mm Hg while lying flat." :
+        [],
+        "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg" :
+        [],
         "The aortic valve was bicuspid with severely thickened and deformed " \
         "leaflets, and there was\n" \
         "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
-        "mercury and a\nmean gradient of 52 millimeters of mercury.",
+        "mercury and a\nmean gradient of 52 millimeters of mercury." :
+        [],
         
         # newline in measurement
         "Additional lesions include a 6\n"                                      \
@@ -1387,20 +1485,23 @@ if __name__ == '__main__':
         "mm peripherally based mass within the anterior left frontal lobe\n"    \
         "as well as a more confluent plaque-like mass with a broad base along " \
         "the tentorial surface measuring approximately 2\n" +
-        "cm in greatest dimension.",
+        "cm in greatest dimension." :
+        [{'x':6.0},{'x':10.0},{'x':20.0}],
 
         # temporality
         "The previously seen hepatic hemangioma has increased slightly in " \
-        "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm).",
+        "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm)." :
+        [{'x':40.0, 'y':35.0, 'temporality':'CURRENT'},{'x':38.0, 'y':22.0, 'temporality':'PREVIOUS'}],
 
         "There is an interval decrease in the size of target lesion 1 which is a\n" \
-        "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)."
-    ]
+        "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)." :
+        [{'x':11.0, 'y':13.0, 'temporality':'CURRENT'}, {'x':11.0, 'y':20.0, 'temporality':'PREVIOUS'}],
+    }
 
     optparser = optparse.OptionParser(add_help_option=False)
     optparser.add_option('-s', '--sentence', action='store',      dest='sentence')                        
     optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
-    optparser.add_option('-z', '--test',     action='store_true', dest='run_tests', default=False)
+    optparser.add_option('-z', '--selftest', action='store_true', dest='selftest', default=False)
     optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
     
     if 1 == len(sys.argv):
@@ -1417,24 +1518,16 @@ if __name__ == '__main__':
         print(get_version())
         sys.exit(0)
 
-    run_tests = opts.run_tests
+    selftest = opts.selftest
     sentence = opts.sentence
 
-    if not sentence and not run_tests:
+    if not sentence and not selftest:
         print('A sentence must be specified on the command line.')
         sys.exit(-1)
 
-    sentences = []
-    if run_tests:
-        sentences = TEST_SENTENCES
+    if selftest:
+        self_test(TEST_DICT)
     else:
-        sentences.append(sentence)
-
-    for sentence in sentences:
-
-        if run_tests:
-            print(sentence)
-
-        # find the measurements and print JSON result to stdout
+        # find the size measurements and print JSON result to stdout
         json_result = run(sentence)
         print(json_result)
