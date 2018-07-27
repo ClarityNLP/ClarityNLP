@@ -6,7 +6,10 @@ import re
 import os
 import sys
 import json
+import spacy
 import optparse
+from collections import namedtuple
+from nltk.stem.porter import PorterStemmer
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
@@ -18,6 +21,41 @@ REJECT_FILE = 'reject.txt'
 
 accept_set = set()
 reject_set = set()
+
+# load Spacy's English model
+nlp = spacy.load('en')
+
+stemmer = PorterStemmer()
+
+STEMMED_TOKEN_FIELDS = ['token', 'stem']
+StemmedToken = namedtuple('StemmedToken', STEMMED_TOKEN_FIELDS)
+
+###############################################################################
+def print_token(token):
+    """
+    Print useful token data to the screen for debugging.
+    """
+
+    print('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
+                                                              token.text,
+                                                              token.tag_,
+                                                              token.pos_,
+                                                              token.dep_,
+                                                              token.head))
+
+
+###############################################################################
+def print_tokens(doc):
+    """
+    Print all tokens in a SpaCy document.
+    """
+
+    print('\nTokens: ')
+    print('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
+                                                          'POS', 'DEP', 'HEAD'))
+    for token in doc:
+        print_token(token)
+
 
 ###############################################################################
 def init():
@@ -58,14 +96,62 @@ def init():
             #else:
             #    print('reject from reject: ' + test_word)
                 
-    print('accept set contains {0} entries'.format(len(accept_set)))
-    print('reject set contains {0} entries'.format(len(reject_set)))
+    #print('accept set contains {0} entries'.format(len(accept_set)))
+    #print('reject set contains {0} entries'.format(len(reject_set)))
+
+
+###############################################################################
+def morphological_negations(stemmed_token_list):
+    """
+    """
+
+    results = []
+
+    for st in stemmed_token_list:
+        stem = st.stem
+        token = st.token
+        if stem in accept_set or token.text.startswith('non'):
+            if token.text not in reject_set:
+                results.append(token)
+
+    return results
+
+###############################################################################
+def run(sentence):
+    """
+    """
+
+    sentence_lc = sentence.lower()
     
-    return True
+    doc = nlp(sentence_lc)
+    st_list = [StemmedToken(token, stemmer.stem(token.text)) for token in doc]
+    morph_results = morphological_negations(st_list)
+
+    print('morphological negations: ')
+    for token in morph_results:
+        print('sentence[{0}]: {1}'.format(token.i, token.text))
+
 
 ###############################################################################
 def run_tests():
-    pass
+
+    init()
+
+    TEST_DICT = {
+
+        # morphological negations
+        'The doctor disagreed with the test report.' :
+        ['disagreed'],
+        'It is illogical to conduct the experiment.' :
+        ['illogical'],
+        'The ruthlessness of the doctor is represented by means of his ' \
+        'attitude towards his patients.' :
+        [],
+    }
+
+    for sentence, result_list in TEST_DICT.items():
+        run(sentence)
+
 
 ###############################################################################
 def get_version():
@@ -76,17 +162,17 @@ def get_version():
 def show_help():
     print(get_version())
     print("""
-    USAGE: python3 ./{0} -f <filename>  [-hvs]
+    USAGE: python3 ./{0} -f <filename>  [-hvz]
 
     OPTIONS:
 
-        -f, --file <quoted string>  path to input text file
+        -s, --sentence <quoted string>  sentence to be analyzed
 
     FLAGS:
 
         -h, --help           Print this information and exit.
         -v, --version        Print version information and exit.
-        -s, --selftest       Run self-tests and exit
+        -z, --selftest       Run self-tests and exit
 
     """.format(MODULE_NAME))
 
@@ -95,13 +181,13 @@ def show_help():
 if __name__ == '__main__':
 
     optparser = optparse.OptionParser(add_help_option=False)
-    optparser.add_option('-f', '--file', action='store',
-                         dest='filepath')
+    optparser.add_option('-s', '--sentence', action='store',
+                         dest='sentence')
     optparser.add_option('-v', '--version',  action='store_true',
                          dest='get_version')
     optparser.add_option('-h', '--help',     action='store_true',
                          dest='show_help', default=False)
-    optparser.add_option('-s', '--selftest', action='store_true',
+    optparser.add_option('-z', '--selftest', action='store_true',
                          dest='selftest')
 
     opts, other = optparser.parse_args(sys.argv)
@@ -120,3 +206,6 @@ if __name__ == '__main__':
         sys.exit(0)
 
     init()
+
+    result = run(sentence)
+    print(result)
