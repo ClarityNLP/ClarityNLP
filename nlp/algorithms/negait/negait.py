@@ -83,18 +83,15 @@ def init():
             match = re.search(r'[^a-z\-\']+', test_word, re.IGNORECASE)
             if not match:
                 accept_set.add(test_word)
-            #else:
-            #    print('reject from accept: ' + test_word)
                 
     with open(REJECT_FILE, 'r') as infile:
         for line in infile:
             words = line.split(',')
-            test_word = words[0][1:].rstrip() #remove '*'
+            # remove the leading '*'
+            test_word = words[0][1:].rstrip()
             match = re.search(r'[^a-z\-\']+', test_word, re.IGNORECASE)
             if not match:
                 reject_set.add(test_word)
-            #else:
-            #    print('reject from reject: ' + test_word)
                 
     #print('accept set contains {0} entries'.format(len(accept_set)))
     #print('reject set contains {0} entries'.format(len(reject_set)))
@@ -137,7 +134,38 @@ def sentential_negations(doc):
 
     return results
 
+
+###############################################################################
+def has_double_negations(morph_results, sent_results):
+    """
+    """
+
+    WINDOW_SIZE = 6
     
+    len_m = len(morph_results)
+    len_s = len(sent_results)
+
+    results = []
+    
+    # check for double negations involving both morph and sent
+    for i in range(len_m):
+        for j in range(len_s):
+            if j >= i:
+                break
+            if i-j <= WINDOW_SIZE:
+                return True
+
+    # check for sent + sent double negations
+    for i in range(len_s):
+        for j in range(len_s):
+            if j >= i:
+                break
+            if i-j <= WINDOW_SIZE:
+                return True
+            
+    return False
+        
+
 ###############################################################################
 def run(sentence):
     """
@@ -152,10 +180,14 @@ def run(sentence):
     
     morph_results = morphological_negations(st_list)
     sent_results = sentential_negations(doc)
+    has_double = has_double_negations(morph_results, sent_results)
 
-    print('\tmorphological negations: {0}'.format(morph_results))
-    print('\tsentential negations: {0}'.format(sent_results))
+    # print('\tmorphological negations: {0}'.format(morph_results))
+    # print('\t   sentential negations: {0}'.format(sent_results))
+    # print('\t       double negations: {0}'.format(has_double))
 
+    return (morph_results, sent_results, has_double)
+    
 
 ###############################################################################
 def run_tests():
@@ -166,30 +198,55 @@ def run_tests():
 
         # morphological negations
         'The doctor disagreed with the test report.' :
-        ['disagreed'],
+        (['disagreed'], [], False),
         'It is illogical to conduct the experiment.' :
-        ['illogical'],
+        (['illogical'], [], False),
         'It is related to Typhoid fever, but such as Typhoid, it is ' \
         'unrelated to Typhus.' :
-        ['unrelated'],
+        (['unrelated'], [], False),
         'The ruthlessness of the doctor is represented by means of his ' \
         'attitude towards his patients.' :
-        [],
+        ([], [], False),
 
         # sentential negations
         'The doctor could not diagnose the disease.' :
-        ['not'],
+        ([], ['not'], False),
         "The medicine didn't end the fever." :
-        ["didn't"],
+        ([], ["n't"], False),
         'Although vaccines have been developed, none are currently ' \
         'available in the United States.' :
-        ['none'],
+        (['none'], ['none'], False),
+
+        # double negations
+        "The hospital won't allow no more visitors." :
+        ([], ["n't", "no"], True),
+        "Aagenaes Syndrome isn't a syndrome not characterised by congenital " \
+        "hypoplasia of lymph vessels." :
+        ([], ["n't", "not"], True),
     }
 
-    for sentence, result_list in TEST_DICT.items():
-        print(sentence)
-        run(sentence)
+    for sentence, truth in TEST_DICT.items():
+        # 'morph' and 'sent' are lists of Spacy tokens
+        morph, sent, has_double = run(sentence)
+        
+        morph_truth  = truth[0]
+        sent_truth   = truth[1]
+        double_truth = truth[2]
 
+        if len(morph) == len(morph_truth):
+            result_texts = [t.text for t in morph]
+            for r in result_texts:
+                if r not in morph_truth:
+                    print('morph error: {0}'.format(r))
+
+        if len(sent) == len(sent_truth):
+            result_texts = [t.text for t in sent]
+            for r in result_texts:
+                if r not in sent_truth:
+                    print('sent error: {0}'.format(r))
+
+        if has_double != double_truth:
+            print('double error: {0}'.format(has_double))
 
 ###############################################################################
 def get_version():
