@@ -190,6 +190,16 @@ def run(sentence):
     
 
 ###############################################################################
+def report_error(msg, computed, expected):
+    """
+    """
+
+    print(msg)
+    print('\tcomputed: {0}'.format(computed))
+    print('\texpected: {0}'.format(expected))
+
+
+###############################################################################
 def run_tests():
 
     init()
@@ -233,20 +243,30 @@ def run_tests():
         sent_truth   = truth[1]
         double_truth = truth[2]
 
-        if len(morph) == len(morph_truth):
-            result_texts = [t.text for t in morph]
-            for r in result_texts:
-                if r not in morph_truth:
-                    print('morph error: {0}'.format(r))
+        if len(morph) != len(morph_truth):
+            report_error('error in morphological results: ',
+                         morph, morph_truth)
 
-        if len(sent) == len(sent_truth):
-            result_texts = [t.text for t in sent]
-            for r in result_texts:
-                if r not in sent_truth:
-                    print('sent error: {0}'.format(r))
+        result_texts = [t.text for t in morph]
+        for r in result_texts:
+            if r not in morph_truth:
+                report_error('error in morphological results: ',
+                             morph, morph_truth)
+
+        if len(sent) != len(sent_truth):
+            report_error('error in sentential results: ',
+                         sent, sent_truth)
+
+        result_texts = [t.text for t in sent]
+        for r in result_texts:
+            if r not in sent_truth:
+                report_error('error in sentential results: ',
+                             sent, sent_truth)
 
         if has_double != double_truth:
-            print('double error: {0}'.format(has_double))
+            report_error('error in double negation results: ',
+                         has_double, double_truth)
+
 
 ###############################################################################
 def get_version():
