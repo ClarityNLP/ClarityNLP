@@ -103,6 +103,8 @@ def init():
 ###############################################################################
 def morphological_negations(stemmed_token_list):
     """
+    Identify all morphological negations in the sentence. Return a list of
+    tokens representing such words.
     """
 
     results = []
@@ -116,6 +118,26 @@ def morphological_negations(stemmed_token_list):
 
     return results
 
+
+###############################################################################
+def sentential_negations(doc):
+    """
+    """
+
+    NEG_WORDS = set(['no', 'neither', 'nor', 'stop', 'none', 'not'])
+
+    results = []
+    
+    # check for 'neg' dependencies and occurrences of 'neg' words
+    for token in doc:
+        if 'neg' == token.dep_:
+            results.append(token)
+        elif token.text in NEG_WORDS:
+            results.append(token)
+
+    return results
+
+    
 ###############################################################################
 def run(sentence):
     """
@@ -124,12 +146,15 @@ def run(sentence):
     sentence_lc = sentence.lower()
     
     doc = nlp(sentence_lc)
-    st_list = [StemmedToken(token, stemmer.stem(token.text)) for token in doc]
-    morph_results = morphological_negations(st_list)
 
-    print('morphological negations: ')
-    for token in morph_results:
-        print('sentence[{0}]: {1}'.format(token.i, token.text))
+    # build stemmed token list
+    st_list = [StemmedToken(token, stemmer.stem(token.text)) for token in doc]
+    
+    morph_results = morphological_negations(st_list)
+    sent_results = sentential_negations(doc)
+
+    print('\tmorphological negations: {0}'.format(morph_results))
+    print('\tsentential negations: {0}'.format(sent_results))
 
 
 ###############################################################################
@@ -144,12 +169,25 @@ def run_tests():
         ['disagreed'],
         'It is illogical to conduct the experiment.' :
         ['illogical'],
+        'It is related to Typhoid fever, but such as Typhoid, it is ' \
+        'unrelated to Typhus.' :
+        ['unrelated'],
         'The ruthlessness of the doctor is represented by means of his ' \
         'attitude towards his patients.' :
         [],
+
+        # sentential negations
+        'The doctor could not diagnose the disease.' :
+        ['not'],
+        "The medicine didn't end the fever." :
+        ["didn't"],
+        'Although vaccines have been developed, none are currently ' \
+        'available in the United States.' :
+        ['none'],
     }
 
     for sentence, result_list in TEST_DICT.items():
+        print(sentence)
         run(sentence)
 
 
