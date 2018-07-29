@@ -87,7 +87,7 @@ class NGramTask(BaseTask):
 
         for doc in self.docs:
             ngrams = list()
-            cln_txt = doc[util.solr_text_field].encode("ascii", errors="ignore").decode()
+            cln_txt = self.get_document_text(doc).encode("ascii", errors="ignore").decode()
             t_doc = Doc(preprocess_text(cln_txt, lowercase=True))
             res = extract.ngrams(t_doc, n_num, filter_stops=filter_stops, filter_punct=filter_punct,
                                  filter_nums=filter_nums)

@@ -27,7 +27,7 @@ class TermFinderBatchTask(BaseTask):
         self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with TermFinder")
 
         for doc in self.docs:
-            terms_found = term_matcher.get_term_full_text_matches(doc[util.solr_text_field], filters)
+            terms_found = term_matcher.get_term_full_text_matches(self.get_document_text(doc), filters)
             for term in terms_found:
                 obj = {
                     "sentence": term.sentence,
@@ -60,7 +60,7 @@ class ProviderAssertionBatchTask(BaseTask):
 
         self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with ProviderAssertion")
         for doc in self.docs:
-            terms_found = term_matcher.get_term_full_text_matches(doc[util.solr_text_field], pa_filters)
+            terms_found = term_matcher.get_term_full_text_matches(self.get_document_text(doc), pa_filters)
             for term in terms_found:
                 obj = {
                     "sentence": term.sentence,

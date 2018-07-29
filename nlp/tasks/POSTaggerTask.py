@@ -14,7 +14,7 @@ class POSTaggerTask(BaseTask):
 
             # TODO incorporate sections and filters
             for doc in self.docs:
-                res = get_tags(doc[util.solr_text_field])
+                res = get_tags(self.get_document_text(doc))
                 for val in res:
                     obj = {
                         "sentence": val.sentence,

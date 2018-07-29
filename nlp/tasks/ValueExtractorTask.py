@@ -16,7 +16,7 @@ class ValueExtractorTask(BaseTask):
 
         # TODO incorporate sections and filters
         for doc in self.docs:
-            result = run_value_extractor_full(self.pipeline_config.terms, doc[util.solr_text_field],
+            result = run_value_extractor_full(self.pipeline_config.terms, self.get_document_text(doc),
                                               float(self.pipeline_config.
                                                     minimum_value),
                                               float(self.pipeline_config.maximum_value), self.pipeline_config.

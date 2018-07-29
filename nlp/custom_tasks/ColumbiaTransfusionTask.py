@@ -26,7 +26,7 @@ class ColumbiaTransfusionTask(BaseTask):
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         for doc in self.docs:
-            text = doc[util.solr_text_field]
+            text = self.get_document_text(doc)
             json_str = run_transfusion_note_reader(text)
 
             if json_str:

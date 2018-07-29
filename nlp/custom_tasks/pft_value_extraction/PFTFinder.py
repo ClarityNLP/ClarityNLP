@@ -1,6 +1,7 @@
 import ast
 from tasks.task_utilities import BaseTask
 from pymongo import MongoClient
+import util
 
 try:
     from .pft_algo import pft_extractor as pftex
@@ -13,7 +14,7 @@ class PFTFinder(BaseTask):
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         for doc in self.docs:
-            txt = doc[util.solr_text_field]
+            txt = self.get_document_text(doc)
 
             # My custom stuff here
             length = len(txt)

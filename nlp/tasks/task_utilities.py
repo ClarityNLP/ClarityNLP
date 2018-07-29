@@ -186,7 +186,13 @@ class BaseTask(luigi.Task):
 
     def get_document_text(self, doc):
         if doc and util.solr_text_field in doc:
-            return doc[util.solr_text_field]
+            txt = doc[util.solr_text_field]
+            if type(txt) == str:
+                return txt
+            elif type(txt) == list:
+                return ' '.join(txt)
+            else:
+                return str(txt)
         else:
             return ''
 

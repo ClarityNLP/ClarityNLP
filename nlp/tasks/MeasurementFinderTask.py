@@ -15,7 +15,7 @@ class MeasurementFinderTask(BaseTask):
             filters[SECTIONS_FILTER] = self.pipeline_config.sections
 
         for doc in self.docs:
-            meas_results = run_measurement_finder_full(doc[util.solr_text_field], self.pipeline_config.terms)
+            meas_results = run_measurement_finder_full(self.get_document_text(doc), self.pipeline_config.terms)
             for meas in meas_results:
                 value = meas['X']
 

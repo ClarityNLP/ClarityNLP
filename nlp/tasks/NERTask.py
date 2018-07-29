@@ -18,7 +18,7 @@ class NERTask(BaseTask):
 
         # TODO incorporate sections and filters
         for doc in self.docs:
-            res = get_standard_entities(doc[util.solr_text_field])
+            res = get_standard_entities(self.get_document_text(doc))
             for val in res:
                 obj = {
                     "term": val.text,

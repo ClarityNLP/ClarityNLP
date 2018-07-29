@@ -20,7 +20,7 @@ class SampleParameterTask(BaseTask):
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         for doc in self.docs:
-            txt = doc[util.solr_text_field]
+            txt = self.get_document_text(doc)
 
             length = len(txt)
             if length > 0:
