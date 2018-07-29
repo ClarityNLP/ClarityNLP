@@ -14,13 +14,15 @@ from nltk.stem.porter import PorterStemmer
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
 
-MODULE_NAME = 'negait.py'
+# serializable result object
+EMPTY_FIELD = None
+NEGAIT_RESULT_FIELDS = ['sentence',
+                        'morphological_negation_list',
+                        'sentential_negation_list',
+                        'double_negation_list'
+]
+NegaitResult = namedtuple('NegaitResult', NEGAIT_RESULT_FIELDS)
 
-ACCEPT_FILE = 'accept.txt'
-REJECT_FILE = 'reject.txt'
-
-accept_set = set()
-reject_set = set()
 
 # load Spacy's English model
 nlp = spacy.load('en')
@@ -29,6 +31,14 @@ stemmer = PorterStemmer()
 
 STEMMED_TOKEN_FIELDS = ['token', 'stem']
 StemmedToken = namedtuple('StemmedToken', STEMMED_TOKEN_FIELDS)
+
+MODULE_NAME = 'negait.py'
+
+ACCEPT_FILE = 'accept.txt'
+REJECT_FILE = 'reject.txt'
+
+accept_set = set()
+reject_set = set()
 
 ###############################################################################
 def print_token(token):
@@ -55,6 +65,15 @@ def print_tokens(doc):
                                                           'POS', 'DEP', 'HEAD'))
     for token in doc:
         print_token(token)
+
+
+###############################################################################
+def to_json(original_sentence, morph_results, sent_results, double_results):
+    """
+    Convert the results to a JSON string.
+    """
+
+    return (morph_results, sent_results, double_results)
 
 
 ###############################################################################
@@ -136,7 +155,7 @@ def sentential_negations(doc):
 
 
 ###############################################################################
-def has_double_negations(morph_results, sent_results):
+def double_negations(morph_results, sent_results):
     """
     """
 
@@ -145,6 +164,7 @@ def has_double_negations(morph_results, sent_results):
     len_m = len(morph_results)
     len_s = len(sent_results)
 
+    # list of 2-tuples
     results = []
     
     # check for double negations involving both morph and sent
@@ -153,7 +173,7 @@ def has_double_negations(morph_results, sent_results):
             if j >= i:
                 break
             if i-j <= WINDOW_SIZE:
-                return True
+                results.append( (morph_results[i], sent_results[j]) )
 
     # check for sent + sent double negations
     for i in range(len_s):
@@ -161,32 +181,37 @@ def has_double_negations(morph_results, sent_results):
             if j >= i:
                 break
             if i-j <= WINDOW_SIZE:
-                return True
+                results.append( (sent_results[i], sent_results[j]) )
             
-    return False
+    return results
         
 
 ###############################################################################
-def run(sentence):
+def run(original_sentence, json_output=True):
     """
     """
 
-    sentence_lc = sentence.lower()
+    sentence = original_sentence.lower()
     
-    doc = nlp(sentence_lc)
+    doc = nlp(sentence)
 
     # build stemmed token list
     st_list = [StemmedToken(token, stemmer.stem(token.text)) for token in doc]
     
-    morph_results = morphological_negations(st_list)
-    sent_results = sentential_negations(doc)
-    has_double = has_double_negations(morph_results, sent_results)
+    morph_results  = morphological_negations(st_list)
+    sent_results   = sentential_negations(doc)
+    double_results = double_negations(morph_results, sent_results)
 
-    # print('\tmorphological negations: {0}'.format(morph_results))
-    # print('\t   sentential negations: {0}'.format(sent_results))
-    # print('\t       double negations: {0}'.format(has_double))
+    print(original_sentence)
+    print('\tmorphological negations: {0}'.format(morph_results))
+    print('\t   sentential negations: {0}'.format(sent_results))
+    print('\t       double negations: {0}'.format(double_results))
 
-    return (morph_results, sent_results, has_double)
+    if json_output:
+        return to_json(original_sentence,
+                       morph_results, sent_results, double_results)
+    else:
+        return (morph_results, sent_results, double_results)
     
 
 ###############################################################################
@@ -208,36 +233,36 @@ def run_tests():
 
         # morphological negations
         'The doctor disagreed with the test report.' :
-        (['disagreed'], [], False),
+        (['disagreed'], [], []),
         'It is illogical to conduct the experiment.' :
-        (['illogical'], [], False),
+        (['illogical'], [], []),
         'It is related to Typhoid fever, but such as Typhoid, it is ' \
         'unrelated to Typhus.' :
-        (['unrelated'], [], False),
+        (['unrelated'], [], []),
         'The ruthlessness of the doctor is represented by means of his ' \
         'attitude towards his patients.' :
-        ([], [], False),
+        ([], [], []),
 
         # sentential negations
         'The doctor could not diagnose the disease.' :
-        ([], ['not'], False),
+        ([], ['not'], []),
         "The medicine didn't end the fever." :
-        ([], ["n't"], False),
+        ([], ["n't"], []),
         'Although vaccines have been developed, none are currently ' \
         'available in the United States.' :
-        (['none'], ['none'], False),
+        (['none'], ['none'], []),
 
         # double negations
         "The hospital won't allow no more visitors." :
-        ([], ["n't", "no"], True),
+        ([], ["n't", "no"], [('no', "n't")]),
         "Aagenaes Syndrome isn't a syndrome not characterised by congenital " \
         "hypoplasia of lymph vessels." :
-        ([], ["n't", "not"], True),
+        ([], ["n't", "not"], [('not', "n't")]),
     }
 
     for sentence, truth in TEST_DICT.items():
         # 'morph' and 'sent' are lists of Spacy tokens
-        morph, sent, has_double = run(sentence)
+        morph, sent, double = run(sentence, False)
         
         morph_truth  = truth[0]
         sent_truth   = truth[1]
@@ -263,9 +288,17 @@ def run_tests():
                 report_error('error in sentential results: ',
                              sent, sent_truth)
 
-        if has_double != double_truth:
+        if len(double) != len(double_truth):
             report_error('error in double negation results: ',
-                         has_double, double_truth)
+                         double, double_truth)
+
+        for i in range(len(double)):
+            r0 = double[i][0].text
+            r1 = double[i][1].text
+            truth = [double_truth[i][0], double_truth[i][1]]
+            if r0 not in truth or r1 not in truth:
+                report_error('error in double negation results: ',
+                             double, double_truth)
 
 
 ###############################################################################
