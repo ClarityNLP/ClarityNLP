@@ -853,7 +853,7 @@ def get_version():
 def show_help():
     print(get_version())
     print("""
-    USAGE: python3 ./{0} -f <filename>  [-hv]
+    USAGE: python3 ./{0} -f <filename>  [-hvs]
 
     OPTIONS:
 
