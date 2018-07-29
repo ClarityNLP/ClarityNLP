@@ -16,11 +16,14 @@ VERSION_MINOR = 1
 
 # serializable result object
 EMPTY_FIELD = None
-NEGAIT_RESULT_FIELDS = ['sentence',
-                        'morphological_negation_list',
-                        'sentential_negation_list',
-                        'double_negation_list'
+NEGATION_FIELDS = ['is_morphological',
+                   'is_sentential',
+                   'is_double',
+                   'token0',
+                   'token1',
 ]
+
+NEGAIT_RESULT_FIELDS = ['sentence', 'negation_list']
 NegaitResult = namedtuple('NegaitResult', NEGAIT_RESULT_FIELDS)
 
 
@@ -40,32 +43,6 @@ REJECT_FILE = 'reject.txt'
 accept_set = set()
 reject_set = set()
 
-###############################################################################
-def print_token(token):
-    """
-    Print useful token data to the screen for debugging.
-    """
-
-    print('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
-                                                              token.text,
-                                                              token.tag_,
-                                                              token.pos_,
-                                                              token.dep_,
-                                                              token.head))
-
-
-###############################################################################
-def print_tokens(doc):
-    """
-    Print all tokens in a SpaCy document.
-    """
-
-    print('\nTokens: ')
-    print('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
-                                                          'POS', 'DEP', 'HEAD'))
-    for token in doc:
-        print_token(token)
-
 
 ###############################################################################
 def to_json(original_sentence, morph_results, sent_results, double_results):
@@ -73,7 +50,42 @@ def to_json(original_sentence, morph_results, sent_results, double_results):
     Convert the results to a JSON string.
     """
 
-    return (morph_results, sent_results, double_results)
+    result_dict = {}
+    result_dict['sentence'] = original_sentence
+    result_dict['negation_list'] = []
+
+    for m in morph_results:
+        m_dict = {}
+        m_dict['is_morphological'] = True
+        m_dict['is_sentential']    = False
+        m_dict['is_double']        = False
+        m_dict['token0']           = m.text
+        m_dict['token1']           = EMPTY_FIELD
+        result_dict['negation_list'].append(m_dict)
+
+    for s in sent_results:
+        s_dict = {}
+        s_dict['is_morphological'] = False
+        s_dict['is_sentential']    = True
+        s_dict['is_double']        = False
+        s_dict['token_0']          = s.text
+        s_dict['token_1']          = s.head.text
+        result_dict['negation_list'].append(s_dict)
+
+    for d in double_results:
+        d_dict = {}
+        d_dict['is_morphological'] = False
+        d_dict['is_sentential']    = False
+        d_dict['is_double']        = True
+        if d[0].i < d[1].i:
+            d_dict['token0'] = d[0].text
+            d_dict['token1'] = d[1].text
+        else:
+            d_dict['token0'] = d[1].text
+            d_dict['token1'] = d[0].text
+        result_dict['negation_list'].append(d_dict)
+
+    return json.dumps(result_dict, indent=4)
 
 
 ###############################################################################
@@ -353,7 +365,12 @@ if __name__ == '__main__':
         run_tests()
         sys.exit(0)
 
+    sentence = opts.sentence
+    if not sentence and not selftest:
+        print('A sentence must be specified on the command line.')
+        sys.exit(-1)
+
     init()
 
-    result = run(sentence)
-    print(result)
+    json_result = run(sentence)
+    print(json_result)
