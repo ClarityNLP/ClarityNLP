@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-import util
+
 from algorithms import *
 from .task_utilities import BaseTask
 
@@ -17,9 +17,10 @@ class ValueExtractorTask(BaseTask):
         # TODO incorporate sections and filters
         for doc in self.docs:
             result = run_value_extractor_full(self.pipeline_config.terms, self.get_document_text(doc),
-                                              float(self.pipeline_config.
-                                                    minimum_value),
-                                              float(self.pipeline_config.maximum_value), self.pipeline_config.
+                                              self.pipeline_config.
+                                                    minimum_value,self.pipeline_config.maximum_value,
+                                              enumlist=self.pipeline_config.enum_list,
+                                              is_case_sensitive_text=self.pipeline_config.
                                               case_sensitive)
             if result:
                 for meas in result:

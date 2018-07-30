@@ -214,6 +214,7 @@ identifierPair:
 named:
     MIN_VALUE|
     MAX_VALUE|
+    ENUM_LIST|
     CODE_SYSTEM |
     VALUE_SET |
     TERM_SET |
