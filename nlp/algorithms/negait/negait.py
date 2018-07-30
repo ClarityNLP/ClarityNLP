@@ -16,12 +16,13 @@ VERSION_MINOR = 1
 
 # serializable result object
 EMPTY_FIELD = None
-NEGATION_FIELDS = ['is_morphological',
-                   'is_sentential',
-                   'is_double',
-                   'token0',
-                   'token1',
+NEGAIT_FIELDS = ['is_morphological',
+                 'is_sentential',
+                 'is_double',
+                 'token0',
+                 'token1',
 ]
+Negait = namedtuple('Negait', NEGAIT_FIELDS)
 
 NEGAIT_RESULT_FIELDS = ['sentence', 'negation_list']
 NegaitResult = namedtuple('NegaitResult', NEGAIT_RESULT_FIELDS)
@@ -68,8 +69,8 @@ def to_json(original_sentence, morph_results, sent_results, double_results):
         s_dict['is_morphological'] = False
         s_dict['is_sentential']    = True
         s_dict['is_double']        = False
-        s_dict['token_0']          = s.text
-        s_dict['token_1']          = s.head.text
+        s_dict['token0']           = s.text
+        s_dict['token1']           = s.head.text
         result_dict['negation_list'].append(s_dict)
 
     for d in double_results:
@@ -214,10 +215,10 @@ def run(original_sentence, json_output=True):
     sent_results   = sentential_negations(doc)
     double_results = double_negations(morph_results, sent_results)
 
-    print(original_sentence)
-    print('\tmorphological negations: {0}'.format(morph_results))
-    print('\t   sentential negations: {0}'.format(sent_results))
-    print('\t       double negations: {0}'.format(double_results))
+    #print(original_sentence)
+    #print('\tmorphological negations: {0}'.format(morph_results))
+    #print('\t   sentential negations: {0}'.format(sent_results))
+    #print('\t       double negations: {0}'.format(double_results))
 
     if json_output:
         return to_json(original_sentence,
@@ -322,7 +323,7 @@ def get_version():
 def show_help():
     print(get_version())
     print("""
-    USAGE: python3 ./{0} -f <filename>  [-hvz]
+    USAGE: python3 ./{0} -s <sentence>  [-hvz]
 
     OPTIONS:
 
@@ -372,5 +373,24 @@ if __name__ == '__main__':
 
     init()
 
-    json_result = run(sentence)
-    print(json_result)
+    # run and prettyprint results to stdout
+    json_string = run(sentence)
+    json_data = json.loads(json_string)
+    negait_result = NegaitResult(**json_data)
+
+    negation_list = negait_result.negation_list
+
+    # unpack to a list of NegaitResult namedtuples
+    negations = [Negait(**n) for n in negation_list]
+
+    # get max length of longest field name, for prettyprinting
+    max_len = max([len(f) for f in NEGAIT_FIELDS])
+
+    print('\n' + sentence)
+    for n in negations:
+        for f in NEGAIT_FIELDS:
+            val = getattr(n, f)
+            if EMPTY_FIELD != val:
+                INDENT = ' '*(max_len - len(f))
+                print('{0}{1}: {2}'.format(INDENT, f, val))
+        print()
