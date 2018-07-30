@@ -261,18 +261,24 @@ def double_negations(morph_results, sent_results):
     
     # check for double negations involving both morph and sent
     for i in range(len_m):
+        token_index_i = morph_results[i].i
         for j in range(len_s):
-            if j >= i:
+            token_index_j = sent_results[j].i
+            if token_index_j >= token_index_i:
                 break
-            if i-j <= WINDOW_SIZE:
+            word_distance = token_index_i - token_index_j
+            if word_distance <= WINDOW_SIZE:
                 results.append( (morph_results[i], sent_results[j]) )
 
     # check for sent + sent double negations
     for i in range(len_s):
+        token_index_i = sent_results[i].i
         for j in range(len_s):
-            if j >= i:
+            token_index_j = sent_results[j].i
+            if token_index_j >= token_index_i:
                 break
-            if i-j <= WINDOW_SIZE:
+            word_distance = token_index_i - token_index_j
+            if word_distance <= WINDOW_SIZE:
                 results.append( (sent_results[i], sent_results[j]) )
             
     return results
@@ -294,10 +300,10 @@ def run(original_sentence, json_output=True):
     sent_results   = sentential_negations(doc)
     double_results = double_negations(morph_results, sent_results)
 
-    #print(original_sentence)
-    #print('\tmorphological negations: {0}'.format(morph_results))
-    #print('\t   sentential negations: {0}'.format(sent_results))
-    #print('\t       double negations: {0}'.format(double_results))
+    # print(original_sentence)
+    # print('\tmorphological negations: {0}'.format(morph_results))
+    # print('\t   sentential negations: {0}'.format(sent_results))
+    # print('\t       double negations: {0}'.format(double_results))
 
     if json_output:
         return to_json(original_sentence,
@@ -350,6 +356,32 @@ def run_tests():
         "Aagenaes Syndrome isn't a syndrome not characterised by congenital " \
         "hypoplasia of lymph vessels." :
         ([], ["n't", "not"], [('not', "n't")]),
+
+        # example from NegAIT web site
+        "Aagenaes Syndrome isn't a syndrome not characterised by "          \
+        "congenital hypoplasia of lymph vessels, which does not cause "     \
+        "Lymphedema of the legs and recurrent Cholestasis in infancy, and " \
+        "slow progress to Hepatic Cirrhosis and giant cell hepatitis with " \
+        "fibrosis of the portal tracts. " :
+        ([], ["n't", "not", "not"], [("n't", "not")]),
+
+        "The genetic cause is unknown, but it is autosomal recessively "    \
+        "inherited and not the gene is unknown and located to Chromosome "   \
+        "15q1,2." :
+        (['unknown', 'unknown'], ['not'], [('not', 'unknown')]),
+
+        "A common feature of the condition is a generalised lymphatic "     \
+        "anomaly, which may not be indicative of the defect being "         \
+        "lymphangiogenetic in origin1. " :
+        ([], ['not'], []),
+
+        "The condition isn't particularly frequent in southern Norway, "    \
+        "where more than half the cases are not reported from, but is "     \
+        "found in patients in other parts of Europe and the U.S.." :
+        ([], ["n't", "not"], []),
+
+        "It is named after Oystein Aagenaes, a Norwegian paediatrician. " :
+        ([], [], [])
     }
 
     for sentence, truth in TEST_DICT.items():
