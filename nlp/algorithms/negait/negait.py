@@ -22,9 +22,11 @@ The set of JSON fields present in the output includes:
             is_sentential     Boolean, indicates sentential negation
             is_double         Boolean, indicates double negation
             token0            the word identified as the negation
+            index0            token index of token0
             token1            if morphological: EMPTY_FIELD
                               if sentential:    word modified by the negation
                               if double:        the second negation
+            index1            token index of token1
 
 All JSON results will have an identical number of fields. Any fields with a
 value of EMPTY_FIELD should be ignored.
@@ -99,7 +101,9 @@ NEGAIT_FIELDS = ['is_morphological',
                  'is_sentential',
                  'is_double',
                  'token0',
+                 'index0',
                  'token1',
+                 'index1'
 ]
 Negait = namedtuple('Negait', NEGAIT_FIELDS)
 
@@ -140,7 +144,9 @@ def to_json(original_sentence, morph_results, sent_results, double_results):
         m_dict['is_sentential']    = False
         m_dict['is_double']        = False
         m_dict['token0']           = m.text
+        m_dict['index0']           = m.i
         m_dict['token1']           = EMPTY_FIELD
+        m_dict['index1']           = EMPTY_FIELD
         result_dict['negation_list'].append(m_dict)
 
     for s in sent_results:
@@ -149,7 +155,9 @@ def to_json(original_sentence, morph_results, sent_results, double_results):
         s_dict['is_sentential']    = True
         s_dict['is_double']        = False
         s_dict['token0']           = s.text
+        s_dict['index0']           = s.i
         s_dict['token1']           = s.head.text
+        s_dict['index1']           = s.head.i
         result_dict['negation_list'].append(s_dict)
 
     for d in double_results:
@@ -159,10 +167,14 @@ def to_json(original_sentence, morph_results, sent_results, double_results):
         d_dict['is_double']        = True
         if d[0].i < d[1].i:
             d_dict['token0'] = d[0].text
+            d_dict['index0'] = d[0].i
             d_dict['token1'] = d[1].text
+            d_dict['index1'] = d[1].i
         else:
             d_dict['token0'] = d[1].text
+            d_dict['index0'] = d[1].i
             d_dict['token1'] = d[0].text
+            d_dict['index1'] = d[0].i
         result_dict['negation_list'].append(d_dict)
 
     return json.dumps(result_dict, indent=4)
