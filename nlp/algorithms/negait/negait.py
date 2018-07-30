@@ -1,5 +1,84 @@
 #!/usr/bin/env python3
 """
+
+
+OVERVIEW:
+
+
+This module finds instances of negations in sentences. It implements the NeGAIT
+algorithm of Mukherjee et. al. [1] and finds morphological negations, sentential
+negations, and double negations.
+
+
+OUTPUT:
+
+
+The set of JSON fields present in the output includes:
+
+        sentence       the sentence that was processed
+        negation_list  the list of all negations found
+
+            is_morphological  Boolean, indicates morphological negation
+            is_sentential     Boolean, indicates sentential negation
+            is_double         Boolean, indicates double negation
+            token0            the word identified as the negation
+            token1            if morphological: EMPTY_FIELD
+                              if sentential:    word modified by the negation
+                              if double:        the second negation
+
+All JSON results will have an identical number of fields. Any fields with a
+value of EMPTY_FIELD should be ignored.
+
+
+USAGE:
+
+
+To use this code as an imported module, add the following lines to the import
+list in the importing module:
+
+        import json
+        import negait
+
+To find negations in a sentence and capture the JSON result:
+
+        json_string = negait.run(sentence)
+
+To unpack the JSON data and get the list of negations:
+
+        negait_result = NegaitResult(**json_data)
+        negation_list = negait_result.negation_list
+
+To unpack each negation:
+
+        negations = [Negait(**n) for n in negation_list]
+
+The fields of each negation can be accessed as:
+
+        n.is_morphological,
+        n.token0
+        etc.
+
+For a working example, see the __main__ section below.
+
+
+
+COMMAND LINE:
+
+
+This module can also be invoked from the command line. Run the command
+
+        python3 ./negait.py --help
+
+to obtain usage information.
+
+
+REFERENCES:
+
+P. Mukherjee, G. Leroy, et. al.
+NegAIT: A new parser for medical text simplifiation using morphological,
+sentential, and double negation
+Journal of Biomedical Informatics 69 (2017) 55-62
+
 """
 
 import re
@@ -380,7 +459,7 @@ if __name__ == '__main__':
 
     negation_list = negait_result.negation_list
 
-    # unpack to a list of NegaitResult namedtuples
+    # unpack to a list of Negait namedtuples
     negations = [Negait(**n) for n in negation_list]
 
     # get max length of longest field name, for prettyprinting
