@@ -74,10 +74,10 @@ to obtain usage information.
 
 REFERENCES:
 
-P. Mukherjee, G. Leroy, et. al.
-NegAIT: A new parser for medical text simplifiation using morphological,
-sentential, and double negation
-Journal of Biomedical Informatics 69 (2017) 55-62
+P. Mukherjee, G. Leroy, D. Kauchak, S. Rajanarayanan, D. Diaz, N. Yuan,
+T. Pritchard, and S. Colina, "NegAIT: A New Parser for Medical Text
+Ssimplifiation Using Morphological, Sentential, and Double Negation"
+Journal of Biomedical Informatics 69 (2017) 55-62.
 
 """
 
