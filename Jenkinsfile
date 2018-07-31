@@ -2,12 +2,11 @@
 pipeline{
     agent any
 
-    withCredentials([
-      string(credentialsId: 'gtri-build-host', variable: 'GTRI_BUILD_HOST'),
-      string(credentialsId: 'gtri-rancher-api-endpoint', variable: 'GTRI_RANCHER_API_ENDPOINT'),
-      string(credentialsId: 'gtri-clarity-env-id', variable: 'GTRI_CLARITY_ENV_ID'),
-      string(credentialsId: 'emory-clarity-env-id', variable: 'EMORY_CLARITY_ENV_ID'),
-    ]) {
+    environment {
+      GTRI_BUILD_HOST = credentials('gtri-build-host')
+      GTRI_RANCHER_API_ENDPOINT = credentials('gtri-rancher-api-endpoint')
+      GTRI_CLARITY_ENV_ID = credentials('gtri-clarity-env-id')
+      EMORY_CLARITY_ENV_ID = credentials('emory-clarity-env-id')
 
     //Define stages for the build process
     stages{
