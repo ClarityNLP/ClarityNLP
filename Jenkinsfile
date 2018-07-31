@@ -20,7 +20,7 @@ pipeline{
                 //the Jenkins Pipeline, builds a Docker image using the project Dockerfile, and pushes it to the registry
                 //as the latest version.
                 script{
-                    docker.withRegistry('https://$GTRI_BUILD_HOST'){
+                    docker.withRegistry("https://${GTRI_BUILD_HOST}"){
                         def nlpApiImage = docker.build("nlp-api:1.0", "-f ./nlp/Dockerfile.prod ./nlp")
                         nlpApiImage.push('latest')
                         def nlpSolrImage = docker.build("nlp-solr:1.0", "-f ./utilities/nlp-solr/Dockerfile.prod ./utilities/nlp-solr")
@@ -49,18 +49,18 @@ pipeline{
             steps{
                 //Write a script that notifies the Rancher API that the Docker Image for the application has been updated.
                 script{
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/nlp-api:latest', ports: '', service: 'ClarityNLP/nlp-api', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: 'axiom/docker-luigi:2.7.1', ports: '', service: 'ClarityNLP/scheduler', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/nlp-solr:latest', ports: '', service: 'ClarityNLP/nlp-solr', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/nlp-mongo:latest', ports: '', service: 'ClarityNLP/nlp-mongo', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/ingest-mongo:latest', ports: '', service: 'ClarityNLP/ingest-mongo', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/nlp-postgres:latest', ports: '', service: 'ClarityNLP/nlp-postgres', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/rtm-api:latest', ports: '', service: 'ClarityNLP/mapper-api', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/ingest-api:latest', ports: '', service: 'ClarityNLP/ingest-api', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: 'postgres', ports: '', service: 'ClarityNLP/mapper-pg', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/rtm-client:latest', ports: '', service: 'ClarityNLP/mapper-client', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: '$GTRI_BUILD_HOST/ingest-client:latest', ports: '', service: 'ClarityNLP/ingest-client', timeout: 60
-                    rancher confirm: true, credentialId: 'rancher-server', endpoint: '$GTRI_RANCHER_API_ENDPOINT', environmentId: '$GTRI_CLARITY_ENV_ID', environments: '', image: 'redis:3.2.0', ports: '', service: 'ClarityNLP/redis', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/nlp-api:latest", ports: '', service: 'ClarityNLP/nlp-api', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: 'axiom/docker-luigi:2.7.1', ports: '', service: 'ClarityNLP/scheduler', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/nlp-solr:latest", ports: '', service: 'ClarityNLP/nlp-solr', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/nlp-mongo:latest", ports: '', service: 'ClarityNLP/nlp-mongo', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/ingest-mongo:latest", ports: '', service: 'ClarityNLP/ingest-mongo', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/nlp-postgres:latest", ports: '', service: 'ClarityNLP/nlp-postgres', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/rtm-api:latest", ports: '', service: 'ClarityNLP/mapper-api', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/ingest-api:latest", ports: '', service: 'ClarityNLP/ingest-api', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: 'postgres', ports: '', service: 'ClarityNLP/mapper-pg', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/rtm-client:latest", ports: '', service: 'ClarityNLP/mapper-client', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_BUILD_HOST}/ingest-client:latest", ports: '', service: 'ClarityNLP/ingest-client', timeout: 60
+                    rancher confirm: true, credentialId: 'rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: 'redis:3.2.0', ports: '', service: 'ClarityNLP/redis', timeout: 60
 
                 }
             }
