@@ -845,7 +845,10 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
     terms = [term.strip() for term in terms]
 
     if enumlist:
-        filter_terms = enumlist.split(',')
+        if type(enumlist) == 'str':
+            filter_terms = enumlist.split(',')
+        else:
+            filter_terms = enumlist
         filter_terms = [term.strip() for term in filter_terms]
 
     # save a copy of the original terms

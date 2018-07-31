@@ -66,7 +66,8 @@ def value_extractor():
     if request.method == 'POST' and request.data:
         init()
         obj = NLPModel.from_dict(request.get_json())
-        results = run_value_extractor_full(obj.terms, obj.text, obj.min_value, obj.max_value, obj.case_sensitive)
+        results = run_value_extractor_full(obj.terms, obj.text, obj.min_value, obj.max_value, is_case_sensitive_text=obj
+                                           .case_sensitive)
 
         return json.dumps([r.__dict__ for r in results], indent=4)
     return "Please POST a valid JSON object with terms and text"

@@ -1,33 +1,17 @@
 from itertools import product
 
 import regex as re
-
+import json
 from data_access import Measurement
 from algorithms.segmentation import *
-from algorithms.value_extraction.value_extractor import extract_value
+from algorithms.value_extraction import run_value_extractor
 
 print('Initializing models for value extractor...')
 segmentor = Segmentation()
 print('Done initializing models for value extractor...')
 
 
-def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_case_sensitive_text=False, denom_only=False):
-    # convert terms to lowercase unless doing a case-sensitive match
-    if not is_case_sensitive_text:
-        term_list = [term.lower() for term in term_list]
-        text = text.lower()
-
-    # do range check on numerator values for fractions
-    if isinstance(minimum_value, str):
-        if -1 != minimum_value.find('/'):
-            minimum_value = minimum_value.split('/')[0]
-
-    if isinstance(maximum_value, str):
-        if -1 != maximum_value.find('/'):
-            maximum_value = maximum_value.split('/')[0]
-
-    minval = float(minimum_value)
-    maxval = float(maximum_value)
+def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enumlist=list(), is_case_sensitive_text=False, denom_only=False):
 
     sentence_list = segmentor.parse_sentences(text)
     process_results = []
@@ -39,19 +23,23 @@ def run_value_extractor_full(term_list, text, minimum_value, maximum_value, is_c
         match = matcher.search(sentence)
         if match:
             term = match.group(0)
-            value_results = extract_value(term, sentence, minval, maxval, denom_only=denom_only)
-            if len(value_results) > 0:
-                for x in value_results:
-                    process_results.append(
-                        Measurement(sentence=sentence, text=x.matching_term, start=x.start, end=x.end,
-                                    condition=x.cond, X=x.num1, Y=x.num2))
+            value_str = run_value_extractor(term, sentence, str_minval=minimum_value, str_maxval=maximum_value, enumlist=enumlist, is_case_sensitive=is_case_sensitive_text, is_denom_only=denom_only)
+            if len(value_str) > 0:
+                value_results = json.loads(value_str)
+                if 'measurementList' in value_results:
+                    measurement_results = value_results['measurementList']
+                    for x in measurement_results:
+                        process_results.append(
+                            Measurement(sentence=sentence, text=x['matchingTerm'], start=x['start'], end=x['end'],
+                                        condition=x['condition'], X=x['x'], Y=x['y']))
 
     return process_results
 
 
 if __name__ == '__main__':
-    res = run_value_extractor_full(["temperature", "temp", "T"],
-                                   "Temp was 99-101",
-                                   96, 106, False)
+    res = run_value_extractor_full(["temperature", "temp", "T", "BP", "HR", "Sp02"],
+                                   'Prior to transfer, his vitals were BP 119/53 and BP 105/43 sleeping, '
+                                   'HR 103, RR 15, and SpO2 97% on NRB.',
+                                   10, 500, is_case_sensitive_text=False)
 
     [print(str(t.to_json())) for t in res]
