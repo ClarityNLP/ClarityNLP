@@ -7,6 +7,7 @@ pipeline{
       GTRI_RANCHER_API_ENDPOINT = credentials('gtri-rancher-api-endpoint')
       GTRI_CLARITY_ENV_ID = credentials('gtri-clarity-env-id')
       EMORY_CLARITY_ENV_ID = credentials('emory-clarity-env-id')
+    }
 
     //Define stages for the build process
     stages{
@@ -65,5 +66,4 @@ pipeline{
             }
         }
     }
-  }
 }
