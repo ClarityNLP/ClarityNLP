@@ -87,11 +87,11 @@ def phenotype_intermediate_results(job: str):
     return generic_results(job, 'phenotype', False)
 
 
-def get_columns(db, job: str, job_type: str):
-    types = db[job_type + "_results"].distinct("pipeline_type", {"job_id": int(job)})
+def get_columns(db, job: str, job_type: str, phenotype_final: bool):
+    types = db[job_type + "_results"].distinct("pipeline_type", {"job_id": int(job), "phenotype_final": phenotype_final})
     cols = list()
     for j in types:
-        query = {"job_id": int(job), "pipeline_type": j}
+        query = {"job_id": int(job), "pipeline_type": j, "phenotype_final": phenotype_final}
         results = db[job_type + "_results"].find_one(query)
         keys = list(results.keys())
         cols.extend(keys)
@@ -116,7 +116,7 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
                 query = {"job_id": int(job)}
 
             results = db[job_type + "_results"].find(query)
-            columns = sorted(get_columns(db, job, job_type))
+            columns = sorted(get_columns(db, job, job_type, phenotype_final))
             for res in results:
                 keys = list(res.keys())
                 if not header_written:

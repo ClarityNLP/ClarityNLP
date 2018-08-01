@@ -64,9 +64,13 @@ Per document (or ``doc``), there are few helper functions available for you.
 * ``self.get_document_sentences(doc)`` - gets a list of the sentences in a document, parsed with the default ClarityNLP sentence segmentor
 
 
-Custom Algorithm or External Library?
--------------------------------------
-There aren't too many limitations on what you build here, given that it's a something that can input text, and output a Python object. This is a powerful feature that will allow to integrate many types of capabilities into ClarityNLP!
+Accessing Custom Variables
+--------------------------
+If you have custom parameters in your NLPQL, you can access them via the ``custom_arguments`` dictionary in your pipeline config.
+
+.. code-block:: python
+
+    my_value = self.pipeline_config.custom_arguments['my_value']
 
 
 Saving Results
@@ -95,6 +99,36 @@ The second is less common, but may be desirable in certain cases, which is writi
 This is written to the file system and generally not accessible to users via APIs.
 
 
+Using Custom Collectors
+-----------------------
+Collectors in ClarityNLP are similar to the reduce step in map-reduce jobs. They can be implemented similar to custom tasks, except their purpose is generally to summarize across all the data generated in the parallelized Luigi tasks.
+To utilize the collector, extend the ``BaseCollector`` class, and make sure your ``collector_name`` in that class is the same as your ``task_name`` in your custom task.
+
+.. code-block:: python
+
+    class MyCustomCollector(BaseCollector):
+        collector_name = 'cool_custom_stuff'
+
+        def custom_cleanup(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
+            print('custom cleanup (optional)')
+
+        def run_custom_task(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
+            print('run custom task collector')
+            # TODO write out some summary stats to mongodb
+
+
+    class MyCustomTask(BaseTask):
+        task_name = 'cool_custom_stuff'
+
+        def run_custom_task(self, temp_file, mongo_client: MongoClient):
+            print('run custom task')
+
+            for doc in self.docs:
+                # TODO write out some data to mongodb about these docs
+
+
+Collectors often are not needed, but may be necessary for certain algorithm implementations.
+
 Setting up the Python Package
 -----------------------------
 ClarityNLP automatically discovers any classes in the ``custom_task`` package. However, besides saving your Python file in ``custom_tasks``, you just need to make sure it's included in the ``custom_tasks`` package by adding it to ``nlp/custom_tasks/__init__.py``, following the example:
@@ -112,8 +146,13 @@ To run your custom algorithm in NLPQL, you just need to call it by name as a fun
 
     define sampleTask:
       Clarity.MyCustomTask({
-        documentset: [ProviderNotes]
+        documentset: [ProviderNotes],
+        "my_custom_argument": 42
       });
+
+Custom Algorithm or External Library?
+-------------------------------------
+There aren't too many limitations on what you build inside of custom tasks and collectors, given that it's a something that can input text, and output a Python object. This is a powerful feature that will allow to integrate many types of capabilities into ClarityNLP!
 
 
 Other Conventions

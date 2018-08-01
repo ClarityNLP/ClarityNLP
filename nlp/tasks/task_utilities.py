@@ -12,6 +12,8 @@ from data_access import pipeline_config as config
 from data_access import solr_data
 from data_access import base_model
 
+doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
+
 
 def get_config_boolean(pipeline_config, key, default=False):
     if key in pipeline_config.custom_arguments:
@@ -27,6 +29,16 @@ def get_config_integer(pipeline_config, key, default=-1):
     if key in pipeline_config.custom_arguments:
         try:
             val = int(pipeline_config.custom_arguments[key])
+        except Exception as ex:
+            val = default
+        return val
+    return default
+
+
+def get_config_string(pipeline_config, key, default=''):
+    if key in pipeline_config.custom_arguments:
+        try:
+            val = str(pipeline_config.custom_arguments[key])
         except Exception as ex:
             val = default
         return val
@@ -59,10 +71,13 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
         data_fields["report_id"] = doc[util.solr_report_id_field]
         data_fields["subject"] = doc[util.solr_subject_field]
         data_fields["report_date"] = doc[util.solr_report_date_field]
+        data_fields["report_type"] = doc[util.solr_report_type_field]
+        data_fields["source"] = doc[util.solr_source_field]
+        data_fields["solr_id"] = doc[util.solr_id_field]
     else:
-        data_fields["report_id"] = ''
-        data_fields["subject"] = ''
-        data_fields["report_date"] = ''
+        for df in doc_fields:
+            if df not in data_fields:
+                data_fields[df] = ''
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
 
@@ -70,6 +85,8 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
 
 
 class BaseCollector(base_model.BaseModel):
+
+    collector_name = "ClarityNLPLuigiCollector"
 
     def run(self, pipeline_id, job, owner, pipeline_type, p_config):
         client = MongoClient(util.mongo_host, util.mongo_port)
@@ -184,15 +201,20 @@ class BaseTask(luigi.Task):
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         print("Implement your custom functionality here ")
 
-    def get_document_text(self, doc):
+    def get_document_text(self, doc, clean=True):
         if doc and util.solr_text_field in doc:
             txt = doc[util.solr_text_field]
             if type(txt) == str:
-                return txt
+                txt_val =  txt
             elif type(txt) == list:
-                return ' '.join(txt)
+                txt_val = ' '.join(txt)
             else:
-                return str(txt)
+                txt_val = str(txt)
+
+            if clean:
+                return txt_val.encode("ascii", errors="ignore").decode()
+            else:
+                return txt_val
         else:
             return ''
 
@@ -201,6 +223,9 @@ class BaseTask(luigi.Task):
 
     def get_integer(self, key, default=-1):
         return get_config_integer(self.pipeline_config, key, default=default)
+
+    def get_string(self, key, default=''):
+        return get_config_string(self.pipeline_config, key, default=default)
 
     def get_document_sentences(self, doc):
         txt = self.get_document_text(doc)

@@ -56,3 +56,12 @@ def register_tasks():
                         task_name = i
                     registered_pipelines[task_name] = attribute
 
+            if inspect.isclass(attribute) and issubclass(attribute, BaseCollector):
+                if not i == 'BaseCollector':
+                    setattr(sys.modules[__name__], name, attribute)
+
+                    collector_name = attribute.collector_name
+                    if collector_name == "ClarityNLPLuigiCollector":
+                        collector_name = i
+                    registered_collectors[collector_name] = attribute
+

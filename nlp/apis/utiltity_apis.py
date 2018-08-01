@@ -5,6 +5,7 @@ from data_access import *
 from algorithms import *
 from .docs import auto
 import tasks
+import subprocess
 
 utility_app = Blueprint('utility_app', __name__)
 
@@ -12,6 +13,26 @@ utility_app = Blueprint('utility_app', __name__)
 @utility_app.route('/')
 def home():
     return "Welcome to ClarityNLP!"
+
+
+@utility_app.route('/kill_job/<int:job_id>', methods=['GET'])
+@auto.doc(groups=['private'])
+def kill_job(job_id: int):
+    print('killing job now ' + str(job_id))
+    cmd = "ps -ef | grep luigi | grep -v luigid | grep \"job %d\" | awk '{print $2}'" % job_id
+    pid = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = pid.communicate()
+
+    if len(output) > 0 and len(err) == 0:
+        pid = output.decode("utf-8").strip()
+        kill_cmd = "kill -9 %s" % pid
+        subprocess.call(kill_cmd, shell=True)
+        return "Killed job %d, pid %s!" % (job_id, pid)
+    else:
+        if len(output) == 0:
+            return "Unable to kill job. No matching Luigi job!"
+        else:
+            return "Unable to kill job. %s" % err.decode("utf-8")
 
 
 @utility_app.route('/job_results/<int:job_id>/<string:job_type>', methods=['GET'])
