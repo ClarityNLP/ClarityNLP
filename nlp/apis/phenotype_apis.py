@@ -7,10 +7,11 @@ from algorithms import *
 from nlpql import *
 from .docs import auto
 from apis.api_helpers import init
-from tasks import register_tasks, registered_pipelines
+from tasks import register_tasks, registered_pipelines, registered_collectors
 
 register_tasks()
 print(registered_pipelines)
+print(registered_collectors)
 
 
 phenotype_app = Blueprint('phenotype_app', __name__)
@@ -151,6 +152,7 @@ def nlpql_tester():
             return nlpql_results['phenotype'].to_json()
 
     return "Please POST text containing NLPQL."
+
 
 @phenotype_app.route("/nlpql_expander", methods=["POST"])
 @auto.doc(groups=['public', 'private', 'phenotypes'])

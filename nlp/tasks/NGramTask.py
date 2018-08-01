@@ -22,6 +22,7 @@ except Exception as e:
 
 
 class NGramCollector(BaseCollector):
+    collector_name = 'ngram'
 
     def custom_cleanup(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
         print('removing intermediate n-gram records')
@@ -87,7 +88,7 @@ class NGramTask(BaseTask):
 
         for doc in self.docs:
             ngrams = list()
-            cln_txt = self.get_document_text(doc).encode("ascii", errors="ignore").decode()
+            cln_txt = self.get_document_text(doc, clean=True)
             t_doc = Doc(preprocess_text(cln_txt, lowercase=True))
             res = extract.ngrams(t_doc, n_num, filter_stops=filter_stops, filter_punct=filter_punct,
                                  filter_nums=filter_nums)

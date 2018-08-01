@@ -4,3 +4,4 @@ from .SampleParameterTask import SampleParameterTask
 from .pft_value_extraction import *
 from .proximity_search import *
 from .ColumbiaTransfusionTask import ColumbiaTransfusionTask
+from .TextStatsTask import *
