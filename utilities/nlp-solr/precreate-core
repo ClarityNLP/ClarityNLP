@@ -40,7 +40,12 @@ if [[ ! -d $coredir ]]; then
     touch "$coredir/core.properties"
     echo created "$CORE"
 
+    cp /solrconfig.xml "$coredir/conf"
+    echo created custom solrconfig.xml
+
     start-local-solr
+
+    sleep 20
     # Now configure with the Schema API
     # Modify this with your desired schema configuration
 
@@ -69,7 +74,8 @@ if [[ ! -d $coredir ]]; then
       "add-field":{"name":"report_text","type":"searchText","indexed":true,"stored":true,"termPositions":true,"termVectors":true,"docValues":false,"required":true},
       "add-field":{"name":"source","type":"string","indexed":true,"stored":true},
       "add-field":{"name":"subject","type":"string","indexed":true,"stored":true},
-      "add-field":{"name":"report_type","type":"string","indexed":true,"stored":true}
+      "add-field":{"name":"report_type","type":"string","indexed":true,"stored":true},
+      "add-field":{"name":"signatureField","type":"string","stored":"true","indexed":"true","multiValued":"false"}
     }' http://localhost:8983/solr/$CORE/schema
 
     curl -X POST -H 'Content-type:application/json' --data-binary '{
