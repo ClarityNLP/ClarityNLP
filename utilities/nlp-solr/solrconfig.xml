@@ -1210,7 +1210,7 @@
        <bool name="enabled">true</bool>
        <str name="signatureField">id</str>
        <bool name="overwriteDupes">false</bool>
-       <str name="fields">report_text,report_date,source</str>
+       <str name="fields">report_text,report_date,subject</str>
        <str name="signatureClass">solr.processor.Lookup3Signature</str>
      </processor>
      <processor class="solr.RemoveBlankFieldUpdateProcessorFactory"/>
