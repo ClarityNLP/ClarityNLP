@@ -88,10 +88,15 @@ def phenotype_intermediate_results(job: str):
 
 
 def get_columns(db, job: str, job_type: str, phenotype_final: bool):
-    types = db[job_type + "_results"].distinct("pipeline_type", {"job_id": int(job), "phenotype_final": phenotype_final})
+    lookup_key = "pipeline_type"
+    types = db[job_type + "_results"].distinct(lookup_key, {"job_id": int(job), "phenotype_final": phenotype_final})
+    if len(types) == 0:
+        lookup_key = "nlpql_feature"
+        types = db[job_type + "_results"].distinct(lookup_key,
+                                                   {"job_id": int(job), "phenotype_final": phenotype_final})
     cols = list()
     for j in types:
-        query = {"job_id": int(job), "pipeline_type": j, "phenotype_final": phenotype_final}
+        query = {"job_id": int(job), lookup_key: j, "phenotype_final": phenotype_final}
         results = db[job_type + "_results"].find_one(query)
         keys = list(results.keys())
         cols.extend(keys)
