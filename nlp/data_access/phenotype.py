@@ -100,9 +100,9 @@ def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
             name = phenotype.description
         p_json = phenotype.to_json()
         cursor.execute("""
-                      INSERT INTO nlp.phenotype(owner, config, name, description, date_created, nlpql) 
+                      INSERT INTO nlp.phenotype(owner, config, name, description, date_created) 
                       VALUES(%s, %s, %s, %s, current_timestamp, %s) RETURNING phenotype_id
-                      """, (phenotype.owner, p_json, name, phenotype.description, phenotype.nlpql))
+                      """, (phenotype.owner, p_json, name, phenotype.description))
 
         p_id = cursor.fetchone()[0]
         conn.commit()
