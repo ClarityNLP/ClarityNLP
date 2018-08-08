@@ -47,7 +47,7 @@ class PhenotypeModel(BaseModel):
                  includes: list = list(), code_systems: list = list(),
                  value_sets: list = list(), term_sets: list = list(),
                  document_sets: list = list(), data_entities: list = list(), cohorts: list = list(),
-                 operations: list = list(), debug=False, limit: int = 0):
+                 operations: list = list(), debug=False, limit: int = 0, nlpql: str = ''):
         self.owner = owner
         self.description = description
         self.population = population
@@ -64,6 +64,7 @@ class PhenotypeModel(BaseModel):
         self.operations = operations
         self.debug = debug
         self.limit = limit
+        self.nlpql = nlpql
 
 
 def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
@@ -99,9 +100,9 @@ def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
             name = phenotype.description
         p_json = phenotype.to_json()
         cursor.execute("""
-                      INSERT INTO nlp.phenotype(owner, config, name, description, date_created) 
-                      VALUES(%s, %s, %s, %s, current_timestamp) RETURNING phenotype_id
-                      """, (phenotype.owner, p_json, name, phenotype.description))
+                      INSERT INTO nlp.phenotype(owner, config, name, description, date_created, nlpql) 
+                      VALUES(%s, %s, %s, %s, current_timestamp, %s) RETURNING phenotype_id
+                      """, (phenotype.owner, p_json, name, phenotype.description, phenotype.nlpql))
 
         p_id = cursor.fetchone()[0]
         conn.commit()

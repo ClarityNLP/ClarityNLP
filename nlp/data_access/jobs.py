@@ -41,9 +41,9 @@ def create_new_job(job: NlpJob, connection_string: str):
 
     try:
         cursor.execute("""
-                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, pipeline_id, date_started)
-                VALUES (%s, %s, %s, %s, %s, %s, current_timestamp) RETURNING nlp_job_id""",
-                       (job.name, job.job_type, job.description, job.owner, job.status, job.pipeline_id))
+                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, pipeline_id, phenotype_id, date_started)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, current_timestamp) RETURNING nlp_job_id""",
+                       (job.name, job.job_type, job.description, job.owner, job.status, job.pipeline_id, job.phenotype_id))
 
         job_id = cursor.fetchone()[0]
 
@@ -119,6 +119,29 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
         conn.close()
 
     return flag
+
+
+def query_phenotype_jobs(status: str, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    jobs = list()
+
+    try:
+        cursor.execute("""select jb.*, pt.nlpql from nlp.nlp_job as jb
+                         INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
+                        where jb.job_type = 'PHENOTYPE'
+                        and jb.status = %s""",
+                       [status])
+        rows = cursor.fetchall()
+        for row in rows:
+            print(row)
+        return rows
+    except Exception as ex:
+        print(ex)
+    finally:
+        conn.close()
+
+    return jobs
 
 
 if __name__ == "__main__":

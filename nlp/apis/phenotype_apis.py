@@ -17,7 +17,7 @@ print(registered_collectors)
 phenotype_app = Blueprint('phenotype_app', __name__)
 
 
-def post_phenotype(p_cfg: PhenotypeModel):
+def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str=''):
     validated = phenotype_helper.validate_phenotype(p_cfg)
     if not validated['success']:
         return validated
@@ -28,6 +28,7 @@ def post_phenotype(p_cfg: PhenotypeModel):
         return {"success": False,
                 "error": "Failed to insert phenotype"}
 
+    p_cfg.nlpql = raw_nlpql
     job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
                                              owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
                                              phenotype_id=p_id, pipeline_id=-1,
@@ -72,12 +73,13 @@ def phenotype():
 def nlpql():
     """POST to run NLPQL phenotype"""
     if request.method == 'POST' and request.data:
-        nlpql_results = run_nlpql_parser(request.data.decode("utf-8"))
+        raw_nlpql = request.data.decode("utf-8")
+        nlpql_results = run_nlpql_parser(raw_nlpql)
         if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
             return json.dumps(nlpql_results)
         else:
             p_cfg = nlpql_results['phenotype']
-            return json.dumps(post_phenotype(p_cfg), indent=4)
+            return json.dumps(post_phenotype(p_cfg, raw_nlpql), indent=4)
 
     return "Please POST text containing NLPQL."
 
@@ -167,3 +169,15 @@ def nlpql_expander():
         return nlpql_results
 
     return "Please POST text containing NLPQL."
+
+
+@phenotype_app.route('/phenotype_jobs/<string:status_string>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def phenotype_jobs(status_string: str):
+    """GET a phenotype jobs JSON based on the job status"""
+    try:
+        p = query_phenotype_jobs(status_string, util.conn_string)
+        return json.dumps(p, indent=4, sort_keys=True, default=str)
+    except Exception as ex:
+        traceback.print_exc(file=sys.stderr)
+        return "Failed to eval jobs " + str(ex)

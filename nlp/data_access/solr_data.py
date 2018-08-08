@@ -93,7 +93,8 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
         for tag in tags:
             try:
                 lookup_tag = normalize_tag(tag)
-                matched_reports.extend(mapped_items[lookup_tag])
+                if lookup_tag in mapped_items:
+                    matched_reports.extend(mapped_items[lookup_tag])
             except Exception as e:
                 traceback.print_exc(file=sys.stderr)
                 print("Unable to map tag %s" % tag)
