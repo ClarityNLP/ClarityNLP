@@ -58,6 +58,7 @@ create table nlp.phenotype
 	config text not null,
 	name varchar(250),
 	description text,
+	nlpql text,
 	date_created timestamp not null,
 	date_updated timestamp
 )

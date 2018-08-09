@@ -103,11 +103,31 @@ import optparse
 from collections import namedtuple
 
 # imports from ClarityNLP core
-from algorithms.finder.date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-from algorithms.finder.size_measurement_finder import run as run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
+try:
+    # for normal operation via NLP pipeline
+    from algorithms.finder.date_finder import run as \
+        run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from algorithms.finder.size_measurement_finder import run as \
+        run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
+except Exception as e:
+    # If here, this module was executed directly from the value_extraction
+    # folder for testing. Construct path to nlp/algorithms/finder and perform
+    # the imports above. This is a hack to allow an import from a higher-
+    # level package.
+    this_module_dir = sys.path[0]
+    pos = this_module_dir.find('/nlp')
+    if -1 != pos:
+        nlp_dir = this_module_dir[:pos+4]
+        finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+        sys.path.append(finder_dir)
+        from date_finder import run as run_date_finder, \
+            DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+        from size_measurement_finder import run as \
+            run_size_measurement, SizeMeasurement, EMPTY_FIELD as \
+            EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 11
+VERSION_MINOR = 12
 
 # set to True to enable debug output
 TRACE = False
@@ -203,14 +223,14 @@ regex_punct = re.compile(str_punct)
 
 regex_num      = re.compile(str_num)
 regex_fraction = re.compile(str_fraction)
-regex_number = re.compile(str_num)
-regex_digits = re.compile(str_digits)
-regex_range  = re.compile(str_range)
-regex_approx = re.compile(str_approx)
-regex_lt     = re.compile(str_lt)
-regex_lte    = re.compile(str_lte)
-regex_gt     = re.compile(str_gt)
-regex_gte    = re.compile(str_gte)
+regex_number   = re.compile(str_num)
+regex_digits   = re.compile(str_digits)
+regex_range    = re.compile(str_range)
+regex_approx   = re.compile(str_approx)
+regex_lt       = re.compile(str_lt)
+regex_lte      = re.compile(str_lte)
+regex_gt       = re.compile(str_gt)
+regex_gte      = re.compile(str_gte)
 
 # condition field values
 STR_APPROX         = 'APPROX'
@@ -234,6 +254,7 @@ I6 = ' '*24
 
 # used to restore original terms
 term_dict = {}
+
 
 ###############################################################################
 def to_json(original_terms, original_sentence, results, is_text):
@@ -285,6 +306,7 @@ def to_json(original_terms, original_sentence, results, is_text):
 
     result_dict['measurementList'] = dict_list
     return json.dumps(result_dict, indent=4)
+
     
 ###############################################################################
 def cond_to_string(words, cond):
@@ -310,6 +332,7 @@ def cond_to_string(words, cond):
     
     return result
 
+
 ###############################################################################
 def get_num_and_denom(str_fraction):
     """
@@ -319,6 +342,7 @@ def get_num_and_denom(str_fraction):
     values = str_fraction.strip().split('/')
     assert 2 == len(values)
     return (int(values[0]), int(values[1]))
+
 
 ###############################################################################
 def update_match_results(match, spans, results, num1, num2, cond, matching_term):
@@ -342,6 +366,7 @@ def update_match_results(match, spans, results, num1, num2, cond, matching_term)
         results.append(meas)
         spans.append( (start, end))
 
+
 ###############################################################################
 def get_query_start(query_term):
     """
@@ -363,6 +388,7 @@ def get_query_start(query_term):
         str_start = str_query + r'(?P<words>' + str_words + r')'
 
     return str_start
+
 
 ###############################################################################
 def extract_enumlist_values(query_terms, sentence, filter_words):
@@ -424,17 +450,18 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
 
             words = match.group('words')
             words_start = match.start('words')
+            word = ''
             for fw in filter_words:
                 pos = words.find(fw)
                 if -1 != pos and words_start + pos < end:
                     found_it = True
-                    word = fw
-                    break
+                    if len(fw) > len(word):
+                        word = fw
 
-        if found_it:
-            meas = ValueMeasurement(word, start, end,
-                                    word, EMPTY_FIELD, STR_EQUAL, query_term)
-            results.append(meas)
+            if found_it:
+                meas = ValueMeasurement(word, start, end,
+                                        word, EMPTY_FIELD, STR_EQUAL, query_term)
+                results.append(meas)
 
     return results
 
@@ -486,7 +513,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     iterator = re.finditer(str_bf_fraction_range_query, sentence)
     for match in iterator:
         if TRACE:
-            print('\tmatched bf_fraction_range_query: {0}'.match.group())
+            print('\tmatched bf_fraction_range_query: {0}'.format(match.group()))
         (n1, d1) = get_num_and_denom(match.group('frac1'))
         (n2, d2) = get_num_and_denom(match.group('frac2'))
 
@@ -612,6 +639,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     results = remove_hypotheticals(sentence, results)
     return results
 
+
 ###############################################################################
 def remove_hypotheticals(sentence, results):
     """
@@ -715,6 +743,7 @@ def remove_hypotheticals(sentence, results):
             
     return new_results
 
+
 ###############################################################################
 def erase(sentence, start, end):
     """
@@ -724,6 +753,7 @@ def erase(sentence, start, end):
     piece2 = ' '*(end-start)
     piece3 = sentence[end:]
     return piece1 + piece2 + piece3
+
 
 ###############################################################################
 def clean_sentence(sentence, is_case_sensitive):
@@ -755,7 +785,7 @@ def clean_sentence(sentence, is_case_sensitive):
 
         # erase date if not simply isolated digits, such as 1500, which
         # could be a measurement (i.e. 1500 ml)
-        if not regex_digits.match(date.text):
+        if not re.match(r'\s\d+\s', date.text):
             if TRACE:
                 print("\terasing date '{0}'".format(date.text))
             sentence = erase(sentence, start, end)
@@ -784,10 +814,12 @@ def clean_sentence(sentence, is_case_sensitive):
 
     return sentence
 
+
 ###############################################################################
 def get_version():
     return 'value_extractor {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
-        
+
+
 ###############################################################################
 def show_help():
     print(get_version())
@@ -824,6 +856,7 @@ def show_help():
 
     """)
 
+
 ###############################################################################
 def run(term_string, sentence, str_minval=None, str_maxval=None,
         enumlist=None, is_case_sensitive=False, is_denom_only=False):
@@ -845,7 +878,7 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
     terms = [term.strip() for term in terms]
 
     if enumlist:
-        if type(enumlist) == 'str':
+        if isinstance(enumlist, str):
             filter_terms = enumlist.split(',')
         else:
             filter_terms = enumlist
@@ -897,6 +930,7 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
     results = sorted(results, key=lambda x: x.start)
     
     return to_json(original_terms, original_sentence, results, enumlist)
+
 
 ###############################################################################
 if __name__ == '__main__':
