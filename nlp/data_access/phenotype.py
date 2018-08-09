@@ -1,6 +1,8 @@
 import psycopg2
 import psycopg2.extras
 import util
+import sys
+import traceback
 
 try:
     from .base_model import BaseModel
@@ -81,7 +83,7 @@ def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
 
     except Exception as ex:
         print('failed to insert phenotype mapping')
-        print(str(ex))
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 
@@ -100,16 +102,16 @@ def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
             name = phenotype.description
         p_json = phenotype.to_json()
         cursor.execute("""
-                      INSERT INTO nlp.phenotype(owner, config, name, description, date_created) 
-                      VALUES(%s, %s, %s, %s, current_timestamp, %s) RETURNING phenotype_id
-                      """, (phenotype.owner, p_json, name, phenotype.description))
+                      INSERT INTO nlp.phenotype(owner, config, name, description, nlpql, date_created) 
+                      VALUES(%s, %s, %s, %s, %s, current_timestamp) RETURNING phenotype_id
+                      """, (phenotype.owner, p_json, name, phenotype.description, phenotype.nlpql))
 
         p_id = cursor.fetchone()[0]
         conn.commit()
 
     except Exception as ex:
         print('failed to insert phenotype')
-        print(str(ex))
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 
@@ -131,7 +133,7 @@ def query_pipeline_ids(phenotype_id: int, connection_string: str):
 
         return pipeline_ids
     except Exception as ex:
-        print(ex)
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 
@@ -152,7 +154,7 @@ def query_phenotype(phenotype_id: int, connection_string: str):
 
         return phenotype
     except Exception as ex:
-        print(ex)
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 

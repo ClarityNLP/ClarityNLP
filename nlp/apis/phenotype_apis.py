@@ -23,12 +23,14 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str=''):
         return validated
 
     init()
+    if len(raw_nlpql) > 0:
+        p_cfg.nlpql = raw_nlpql
     p_id = insert_phenotype_model(p_cfg, util.conn_string)
     if p_id == -1:
         return {"success": False,
                 "error": "Failed to insert phenotype"}
 
-    p_cfg.nlpql = raw_nlpql
+
     job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
                                              owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
                                              phenotype_id=p_id, pipeline_id=-1,
@@ -79,7 +81,8 @@ def nlpql():
             return json.dumps(nlpql_results)
         else:
             p_cfg = nlpql_results['phenotype']
-            return json.dumps(post_phenotype(p_cfg, raw_nlpql), indent=4)
+            phenotype_info = post_phenotype(p_cfg, raw_nlpql)
+            return json.dumps(phenotype_info, indent=4)
 
     return "Please POST text containing NLPQL."
 
