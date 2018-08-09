@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 import util
 
 def create_app(config_filename=None):
@@ -21,8 +22,10 @@ def create_app(config_filename=None):
 
     return clarity_app
 
+
 # needs to be visible to Flask via import
 app = create_app()
+CORS(app)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, threaded=True, debug=util.debug_mode)
