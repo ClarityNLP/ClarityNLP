@@ -127,7 +127,7 @@ def query_phenotype_jobs(status: str, connection_string: str):
     jobs = list()
 
     try:
-        cursor.execute("""select jb.*, pt.nlpql from nlp.nlp_job as jb
+        cursor.execute("""select jb.*, pt.config from nlp.nlp_job as jb
                          INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                         where jb.job_type = 'PHENOTYPE'
                         and jb.status = %s""",
