@@ -5,6 +5,7 @@
 # report 47, sentences 4-6: vitals broken up
 # report 50: sentence starts with comma, could merge
 # report 55: .H/O broken up
+# report 61 sentences 5-6: no need to split on w/
 # report 67 sentence 13-15: single word sentences, could merge
 # report 68 sentence 11: 10:20 a.m. broken up
 # report 82 sentence 4: sentence split after Mon. abbreviation
@@ -66,12 +67,27 @@ regex_caps_header = re.compile(str_caps_header)
 # neg lookahead prevents capturing inside abbreviations such as Sust.Rel.
 regex_two_sentences = re.compile(r'\b[a-zA-Z]{2,}\.[A-Z][a-z]+(?!\.)')
 
-fov_subs       = []
-anon_subs      = []
-contrast_subs  = []
-size_meas_subs = []
-header_subs    = []
+# prescription information
+str_word       = r'\b[-a-z]+\b'
+str_words      = r'(' + str_word + r'\s+)*' + str_word
+str_drug_name  = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
+str_amount_num = r'(\d+|0\.\d+|\d+\.\d+)'
+#str_amount     = r'(' + str_amount_num + r'(/' + str_amount_num + r')?' +\
+#                 r'|' + str_words + r')'
+str_amount    = r'(' + str_amount_num + r'(/' + str_amount_num + r')?)?'
+str_units     = r'\b[a-z]+\.?'
+str_abbrev    = r'([a-zA-Z]\.){1,3}'
+str_abbrevs   = r'(' + str_abbrev + r'\s+)*' + str_abbrev
+str_prescription = str_drug_name + r'\s+' + str_amount + r'\s*' + str_units + \
+                   r'\s+' + str_abbrevs + r'\s+' + str_words
+regex_prescription = re.compile(str_prescription)
 
+fov_subs          = []
+anon_subs         = []
+contrast_subs     = []
+size_meas_subs    = []
+header_subs       = []
+prescription_subs = []
 
 ###############################################################################
 def find_size_meas_subs(report, sub_list, text):
@@ -109,10 +125,6 @@ def find_substitutions(report, regex, sub_list, text):
 
     subs = []
 
-    # iterator = regex_caps_header.finditer(report)
-    # for match in iterator:
-    #     print('FOUND HEADER MATCH: {0}'.format(match.group()))
-
     iterator = regex.finditer(report)
     for match in iterator:
         subs.append( (match.start(), match.end(), match.group()) )
@@ -145,18 +157,21 @@ def do_substitutions(report):
     global fov_subs
     global size_meas_subs
     global header_subs
+    global prescription_subs
 
-    anon_subs      = []
-    contrast_subs  = []
-    fov_subs       = []
-    size_meas_subs = []
-    header_subs    = []
+    anon_subs         = []
+    contrast_subs     = []
+    fov_subs          = []
+    size_meas_subs    = []
+    header_subs       = []
+    prescription_subs = []
 
     report = find_substitutions(report, regex_caps_header, header_subs, 'HEADER')
     report = find_substitutions(report, regex_anon, anon_subs, 'ANON')
     report = find_substitutions(report, regex_contrast, contrast_subs, 'CONTRAST')
     report = find_substitutions(report, regex_fov, fov_subs, 'FOV')
     report = find_size_meas_subs(report, size_meas_subs, 'MEAS')
+    report = find_substitutions(report, regex_prescription, prescription_subs, 'PRESCRIPTION')
 
     print('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
     return report
@@ -201,8 +216,10 @@ def undo_substitutions(sentence_list):
     global fov_subs
     global size_meas_subs
     global header_subs
+    global prescription_subs
 
     # undo in reverse order from that in 'do_substitutions'
+    sentence_list = replace_text(sentence_list, prescription_subs)
     sentence_list = replace_text(sentence_list, size_meas_subs)
     sentence_list = replace_text(sentence_list, fov_subs)
     sentence_list = replace_text(sentence_list, contrast_subs)
