@@ -184,3 +184,20 @@ def phenotype_jobs(status_string: str):
     except Exception as ex:
         traceback.print_exc(file=sys.stderr)
         return "Failed to eval jobs " + str(ex)
+
+
+@phenotype_app.route('/phenotype_paged_results/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def get_paged_phenotype_results(job_id: int, phenotype_final_str: str):
+    """GET paged phenotype results"""
+    try:
+        phenotype_final = False
+        phenotype_final_str = phenotype_final_str.strip().lower()
+        if phenotype_final_str == 't' or phenotype_final_str == 'true' or phenotype_final_str == 'yes':
+            phenotype_final = True
+        last_id = request.args.get('last_id', '')
+        results = paged_phenotype_results(str(job_id), phenotype_final, last_id)
+
+        return json.dumps(results, indent=4, default=str)
+    except Exception as e:
+        return "Failed to get job status" + str(e)

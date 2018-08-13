@@ -1,8 +1,13 @@
-import util
 import csv
 import os
-from pymongo import MongoClient
+import sys
+import traceback
 from datetime import datetime
+
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+
+import util
 
 pipeline_output_positions = [
     '_id',
@@ -20,6 +25,7 @@ pipeline_output_positions = [
     'end',
     'concept_code'
 ]
+page_size = 100
 
 
 def job_results(job_type: str, job: str):
@@ -146,6 +152,47 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
         client.close()
 
     return filename
+
+
+def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = ''):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    obj = dict()
+
+    try:
+        columns = sorted(get_columns(db, job_id, 'phenotype', phenotype_final))
+        if last_id == '' and last_id != '-1':
+            results = list(db.phenotype_results.find({"job_id": int(job_id), "phenotype_final": phenotype_final}).limit(
+                page_size))
+            obj['count'] = int(
+                db.phenotype_results.find({"job_id": int(job_id), "phenotype_final": phenotype_final}).count())
+        else:
+            results = list(db.phenotype_results.find({"_id": {"$gt": ObjectId(last_id)}, "job_id": int(job_id),
+                 "phenotype_final": phenotype_final}).limit(page_size))
+
+        results_length = len(results)
+        no_more = False
+        if results_length < page_size:
+            no_more = True
+        if results_length > 0:
+            new_last_id = results[-1]['_id']
+        else:
+            new_last_id = ''
+
+        obj['results'] = results
+        obj['no_more'] = no_more
+        obj['new_last_id'] = new_last_id
+        obj['columns'] = columns
+        obj['result_count'] = results_length
+        obj['success'] = True
+
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+        obj['success'] = False
+    finally:
+        client.close()
+
+    return obj
 
 
 def remove_tmp_file(filename):

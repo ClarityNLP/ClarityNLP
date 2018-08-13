@@ -3,6 +3,10 @@ import psycopg2.extras
 import configparser
 import json
 import util
+import sys
+import traceback
+
+
 try:
     from .base_model import BaseModel
 except Exception as e:
@@ -55,7 +59,7 @@ def create_new_job(job: NlpJob, connection_string: str):
 
         return job_id
     except Exception as e:
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 
@@ -90,7 +94,7 @@ def get_job_status(job_id: int, connection_string: str):
 
         return status_dict
     except Exception as ex:
-        print(ex)
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 
@@ -114,7 +118,7 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
 
     except Exception as e:
         flag = -1
-        print(e)
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 
@@ -130,14 +134,19 @@ def query_phenotype_jobs(status: str, connection_string: str):
         cursor.execute("""select jb.*, pt.config, pt.nlpql from nlp.nlp_job as jb
                          INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                         where jb.job_type = 'PHENOTYPE'
-                        and jb.status = %s""",
+                        and jb.status = %s 
+                        order by jb.date_started DESC""",
                        [status])
         rows = cursor.fetchall()
         for row in rows:
-            print(row)
-        return rows
+            name = row['name']
+            if not name or name.strip() == '':
+                name = "Phenotype %s" % str(row['phenotype_id'])
+                row['name'] = name
+            jobs.append(row)
+        return jobs
     except Exception as ex:
-        print(ex)
+        traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
 
