@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 
 # PROBLEMS in radiology_1000.json:
-# report 38: ANON000 still present
 # report 39: dispensing info messed up
 # report 47, sentences 4-6: vitals broken up
 # report 50: sentence starts with comma, could merge
 # report 55: .H/O broken up
+# report 61 sentences 5-6: no need to split on w/
 # report 67 sentence 13-15: single word sentences, could merge
 # report 68 sentence 11: 10:20 a.m. broken up
 # report 82 sentence 4: sentence split after Mon. abbreviation
 # report 76 sentence 6: parenthetical expressions broken up
-# report 90 sentence 22: still have list numbering
-# report 91 sentence 38: measurement broken up
 
 import re
 import os
@@ -53,9 +51,15 @@ regex_contrast = re.compile(str_contrast)
 str_fov = r'\bField of view:\s+\d+'
 regex_fov = re.compile(str_fov)
 
-# numbered lists (for up to 9 items), denoted by period or right parens
-str_list_item = r'(?P<listnum>[1-9](\.|\)))\s+[^\d]+\.'
+# find numbered sentences: look for digits followed by '.' or ')',
+# whitespace, then a capital letter starting a word
+str_list_item = r'\b(?P<listnum>\d+(\.|\)))\s+[A-Z][a-z]+\b'
 regex_list_item = re.compile(str_list_item)
+
+# find captialized headers
+str_caps_word = r'\b([123]-?D|[-_A-Z]+|[-_A-Z]+/[-_A-Z]+)\b'
+str_caps_header = r'(' + str_caps_word + r'\s+)*' + str_caps_word + r'\s*#?:'
+regex_caps_header = re.compile(str_caps_header)
 
 # find concatenated sentences with no space after the period
 
@@ -63,11 +67,27 @@ regex_list_item = re.compile(str_list_item)
 # neg lookahead prevents capturing inside abbreviations such as Sust.Rel.
 regex_two_sentences = re.compile(r'\b[a-zA-Z]{2,}\.[A-Z][a-z]+(?!\.)')
 
-fov_subs       = []
-anon_subs      = []
-contrast_subs  = []
-size_meas_subs = []
+# prescription information
+str_word       = r'\b[-a-z]+\b'
+str_words      = r'(' + str_word + r'\s+)*' + str_word
+str_drug_name  = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
+str_amount_num = r'(\d+|0\.\d+|\d+\.\d+)'
+#str_amount     = r'(' + str_amount_num + r'(/' + str_amount_num + r')?' +\
+#                 r'|' + str_words + r')'
+str_amount    = r'(' + str_amount_num + r'(/' + str_amount_num + r')?)?'
+str_units     = r'\b[a-z]+\.?'
+str_abbrev    = r'([a-zA-Z]\.){1,3}'
+str_abbrevs   = r'(' + str_abbrev + r'\s+)*' + str_abbrev
+str_prescription = str_drug_name + r'\s+' + str_amount + r'\s*' + str_units + \
+                   r'\s+' + str_abbrevs + r'\s+' + str_words
+regex_prescription = re.compile(str_prescription)
 
+fov_subs          = []
+anon_subs         = []
+contrast_subs     = []
+size_meas_subs    = []
+header_subs       = []
+prescription_subs = []
 
 ###############################################################################
 def find_size_meas_subs(report, sub_list, text):
@@ -112,13 +132,6 @@ def find_substitutions(report, regex, sub_list, text):
     if 0 == len(subs):
         return report
 
-    # counter = 0
-    # for match_text in subs:
-    #     replacement = '{0}{1:03}'.format(text, counter)
-    #     report = report.replace(match_text, replacement)
-    #     sub_list.append( (replacement, match_text) )
-    #     counter += 1
-    
     counter = 0
     prev_end = 0
     new_report = ''
@@ -143,18 +156,24 @@ def do_substitutions(report):
     global contrast_subs
     global fov_subs
     global size_meas_subs
+    global header_subs
+    global prescription_subs
 
-    anon_subs      = []
-    contrast_subs  = []
-    fov_subs       = []
-    size_meas_subs = []
-    
+    anon_subs         = []
+    contrast_subs     = []
+    fov_subs          = []
+    size_meas_subs    = []
+    header_subs       = []
+    prescription_subs = []
+
+    report = find_substitutions(report, regex_caps_header, header_subs, 'HEADER')
     report = find_substitutions(report, regex_anon, anon_subs, 'ANON')
     report = find_substitutions(report, regex_contrast, contrast_subs, 'CONTRAST')
     report = find_substitutions(report, regex_fov, fov_subs, 'FOV')
     report = find_size_meas_subs(report, size_meas_subs, 'MEAS')
+    report = find_substitutions(report, regex_prescription, prescription_subs, 'PRESCRIPTION')
 
-    #print('REPORT AFTER SUBSTITUTIONS: \n' + report)
+    print('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
     return report
 
 
@@ -195,13 +214,17 @@ def undo_substitutions(sentence_list):
     global anon_subs
     global contrast_subs
     global fov_subs
-    global size_meas_subs    
+    global size_meas_subs
+    global header_subs
+    global prescription_subs
 
     # undo in reverse order from that in 'do_substitutions'
+    sentence_list = replace_text(sentence_list, prescription_subs)
     sentence_list = replace_text(sentence_list, size_meas_subs)
     sentence_list = replace_text(sentence_list, fov_subs)
     sentence_list = replace_text(sentence_list, contrast_subs)
     sentence_list = replace_text(sentence_list, anon_subs)
+    sentence_list = replace_text(sentence_list, header_subs)
 
     return sentence_list
         
@@ -279,7 +302,7 @@ def merge_broken_headers(sentence_list):
             sentence_list[i-1] = sprev + ':'
             sentence_list[i]   = s[1:].lstrip()
         i += 1
-            
+
     return sentence_list
 
 
@@ -288,25 +311,46 @@ def split_section_headers(sentence_list):
     """
     """
 
-    str_header_word = r'[-_A-Z/]{3,}'
-    str_header = r'\b(' + str_header_word + r'\s+)*' + str_header_word + r'\s*:\s*'
-    regex_header = re.compile(str_header)
-    
     sentences = []
-
     for s in sentence_list:
-        match = regex_header.search(s)
-        if match:
-            before = s[:match.start()]
-            header = match.group()
-            after  = s[match.end():]
-            if len(before) > 0:
-                sentences.append(before)
-            sentences.append(header)
+        subs = []
+        iterator = regex_caps_header.finditer(s)
+        for match in iterator:
+            subs.append( (match.start(), match.end()) )
+        if len(subs) > 0:
+            prev_end = 0
+            for start, end in subs:
+                before = s[prev_end:start].strip()
+                header = s[start:end].strip()
+                prev_end = end
+                if len(before) > 0:
+                    sentences.append(before)
+                sentences.append(header)
+            after = s[prev_end:].strip()
             if len(after) > 0:
                 sentences.append(after)
         else:
             sentences.append(s)
+
+    # str_header_word = r'[-_A-Z/]{3,}'
+    # str_header = r'\b(' + str_header_word + r'\s+)*' + str_header_word + r'\s*:\s*'
+    # regex_header = re.compile(str_header)
+
+    # sentences = []
+
+    # for s in sentence_list:
+    #     match = regex_header.search(s)
+    #     if match:
+    #         before = s[:match.start()]
+    #         header = match.group()
+    #         after  = s[match.end():]
+    #         if len(before) > 0:
+    #             sentences.append(before)
+    #         sentences.append(header)
+    #         if len(after) > 0:
+    #             sentences.append(after)
+    #     else:
+    #         sentences.append(s)
 
     return sentences
         
@@ -343,6 +387,30 @@ def delete_junk_sentences(sentence_list):
             continue
         else:
             sentences.append(s)
+
+    return sentences
+
+
+###############################################################################
+def run(report):
+    """
+    Cleanup the report, do substitutions, tokenize into sentences, fixup
+    problems, undo substitutions, and return the tokenized sentences.
+    """
+
+    report = cleanup_report(report)
+    report = do_substitutions(report)
+
+    sentences = segmentation.parse_sentences(report)
+
+    sentences = undo_substitutions(sentences)
+
+    sentences = merge_broken_headers(sentences)
+    sentences = split_section_headers(sentences)
+    sentences = split_concatenated_sentences(sentences)
+    sentences = delete_junk_sentences(sentences)
+
+    #sentences = split_section_headers(sentences)
 
     return sentences
 
@@ -396,18 +464,9 @@ if __name__ == '__main__':
             ok = False
             break
 
-        clean_report = cleanup_report(report)
-        clean_report = do_substitutions(clean_report)
+        sentences = run(report)
 
-        sentences = segmentation.parse_sentences(clean_report)
-
-        sentences = merge_broken_headers(sentences)
-        sentences = split_section_headers(sentences)
-        sentences = split_concatenated_sentences(sentences)
-        sentences = delete_junk_sentences(sentences)
-
-        sentences = undo_substitutions(sentences)
-        
+        # print all sentences for this report
         count = 0
         for s in sentences:
             print('[{0:3}]\t{1}'.format(count, s))
