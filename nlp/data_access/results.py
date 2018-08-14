@@ -195,6 +195,41 @@ def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '
     return obj
 
 
+def phenotype_subjects(job_id: str, phenotype_final: bool):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    results = []
+    # db.phenotype_results.aggregate([  {"$match":{"job_id":{"$eq":10201}, "phenotype_final":{"$eq":true}}},
+    #  {"$group" : {_id:"$subject", count:{$sum:1}}} ])
+    try:
+        q = [
+            {
+                "$match": {
+                    "phenotype_final": {
+                        "$eq": phenotype_final
+                    },
+                    "job_id": {
+                        "$eq": int(job_id)
+                    }
+                }},
+            {
+                "$group": {
+                    "_id": "$subject",
+                    "count": {
+                        "$sum": 1
+                    }
+                }
+            }
+        ]
+        results = list(db.phenotype_results.aggregate(q))
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
+
+    return results
+
+
 def remove_tmp_file(filename):
     if filename:
         os.remove(filename)

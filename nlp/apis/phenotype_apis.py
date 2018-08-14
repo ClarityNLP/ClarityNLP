@@ -196,8 +196,24 @@ def get_paged_phenotype_results(job_id: int, phenotype_final_str: str):
         if phenotype_final_str == 't' or phenotype_final_str == 'true' or phenotype_final_str == 'yes':
             phenotype_final = True
         last_id = request.args.get('last_id', '')
-        results = paged_phenotype_results(str(job_id), phenotype_final, last_id)
+        res = paged_phenotype_results(str(job_id), phenotype_final, last_id)
 
-        return json.dumps(results, indent=4, default=str)
+        return json.dumps(res, indent=4, default=str)
+    except Exception as e:
+        return "Failed to get job status" + str(e)
+
+
+@phenotype_app.route('/phenotype_subjects/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def get_phenotype_subjects(job_id: int, phenotype_final_str: str):
+    """GET phenotype_subjects"""
+    try:
+        phenotype_final = False
+        phenotype_final_str = phenotype_final_str.strip().lower()
+        if phenotype_final_str == 't' or phenotype_final_str == 'true' or phenotype_final_str == 'yes':
+            phenotype_final = True
+        res = phenotype_subjects(str(job_id), phenotype_final)
+
+        return json.dumps(res, indent=4, default=str)
     except Exception as e:
         return "Failed to get job status" + str(e)
