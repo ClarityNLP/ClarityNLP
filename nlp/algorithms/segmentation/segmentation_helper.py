@@ -87,15 +87,17 @@ regex_prescription = re.compile(str_prescription)
 str_sep      = r'([-:=\s]\s*)?'
 str_temp     = r'\b(T\.?|Temp\.?|Temperature)' + str_sep +\
                r'(' + str_words + r')?' + str_amount_num + r'\s*'
-str_height   = r'\bHeight:?\s+(\(in\.?\):?\s*)?' + str_amount_num + r'\s*'
-str_weight   = r'\bWeight:?\s+(\(lbs?\.?\):?\s*)?' + str_amount_num + r'\s*'
+str_height   = r'\b(Height|Ht\.?)' + str_sep + r'(\(in\.?\):?\s*)?' +\
+               str_amount_num + r'\s*(inches|in\.?|feet|ft\.?|meters|m\.?)?\s*'
+str_weight   = r'\b(Weight|Wt\.?)' + str_sep + r'(\(lbs?\.?\):?\s*)?' +\
+               str_amount_num + r'\s*(grams|gm\.?|g\.?|ounces|oz\.?|pounds|lbs\.?|kilograms|kg\.?)?\s*'
 str_bsa      = r'\bBSA:?\s+(\(m2\):?\s*)?' + str_amount_num + r'(\s+m2)?\s*'
 str_bp       = r'\bBP' + str_sep + r'(\(mm\s+hg\):?\s*)?\d+/\d+\s*'
-str_hr       = r'\b(P|HR)' + str_sep + r'(\(bpm\):?\s*)?' + str_amount_num + r'\s*'
+str_hr       = r'\b(Pulse|P|HR)' + str_sep + r'(\(bpm\):?\s*)?' + str_amount_num + r'\s*'
 str_rr       = r'\bRR?' + str_sep + r'(' + str_words + r')?' + str_amount_num + r'\s*'
-str_o2       = r'\b(O2|SpO2|SaO2|O2Sats?|O2\s+sat|Sats?)' + str_sep +\
-               r'(' + str_words + r')?' + str_amount_num + r'\s*%?\s*' +\
-               r'(/\dL|(on\s+)?RA|\dL(/|\s*)?NC)?'
+str_o2       = r'\b(SpO2%?|SaO2|O2Sats?|O2\s+sat|O2\s+Flow|Sats?|POx|O2)' + str_sep +\
+               r'(' + str_words + r')?' + str_amount_num + r'(/bipap|\s*%?\s*)' +\
+               r'((/|on\s+)?(RA|NRB)|\dL(/|\s*)?NC|on\s+\d\s*L\s+(FM|NC|RA|NRB)|/?\dL)?'
 str_status   = r'\bStatus:\s+(In|Out)patient\s*'
 str_vitals   = r'(' + str_temp + r'|' + str_height + r'|' + str_weight + r'|' +\
                str_bsa + r'|' + str_bp + r'|' + str_hr + r'|' + str_rr + r'|' +\
@@ -451,7 +453,7 @@ def run_tests():
     SENTENCES = [
         'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
         'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 ' +\
+        'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 '                +\
         'BP (mm Hg): 140/91 HR (bpm): 53',
         'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
         'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
@@ -460,6 +462,29 @@ def run_tests():
         'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
         'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
         'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
+        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
+        'In the ED, initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
+        'In the ED initial vitals were HR 106, BP 88/56, RR 20, O2 Sat '     +\
+        '85% 3L.',
+        'In the ED, initial vs were: T=99.3, P=120, BP=111/57, RR=24, '      +\
+        'POx=100%.',
+        'Upon transfer her vitals were HR=120, BP=109/44, RR=29, POx=93% '   +\
+        'on 8L FM.',
+        'Vitals in PACU post-op as follows: BP 120/80 HR 60-80s RR  '        +\
+        'SaO2 96% 6L NC.',
+        'In the ED, initial vital signs were T 97.5, HR 62, BP 168/60, '     +\
+        'RR 18, 95% RA.',
+        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams '       +\
+        'Lt 18.5 inches HC 35 cm',
+        'In the ED, initial vital signs were T 97.0, BP 85/44, HR 107, '     +\
+        'RR 28, and SpO2 91% on NRB.',
+        'Prior to transfer, his vitals were BP 119/53 (105/43 sleeping), '   +\
+        'HR 103, RR 15, and SpO2 97% on NRB.',
+        'In the ED inital vitals were, Temperature 100.8, Pulse: 103, '      +\
+        'RR: 28, BP: 84/43, O2Sat: 88, O2 Flow: 100 (Non-Rebreather).',
+        'At clinic, he was noted to have increased peripheral edema and '    +\
+        'was sent to the ED where his vitals were T 97.1 HR 76 BP 148/80 '   +\
+        'RR 25 SpO2 92%/RA.',
     ]
 
     count = 0
