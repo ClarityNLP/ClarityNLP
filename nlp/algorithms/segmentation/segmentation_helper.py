@@ -21,7 +21,7 @@ import segmentation as seg
 module_dir = sys.path[0]
 pos = module_dir.find('/nlp')
 assert -1 != pos
-# get path to nlp/algorithms/finder and append
+# get path to nlp/algorithms/finder and append to sys.path
 nlp_dir =  module_dir[:pos+4]
 finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
 sys.path.append(finder_dir)
@@ -69,9 +69,10 @@ regex_two_sentences = re.compile(r'\b[a-zA-Z]{2,}\.[A-Z][a-z]+(?!\.)')
 
 # prescription information
 str_word       = r'\b[-a-z]+\b'
-str_words      = r'(' + str_word + r'\s+)*' + str_word
+str_words      = r'(' + str_word + r'\s*)*' + str_word
 str_drug_name  = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
-str_amount_num = r'(\d+|0\.\d+|\d+\.\d+)'
+#str_amount_num = r'(\d+|0\.\d+|\d+\.\d+)'
+str_amount_num = r'\d+(\.\d+)?'
 #str_amount     = r'(' + str_amount_num + r'(/' + str_amount_num + r')?' +\
 #                 r'|' + str_words + r')'
 str_amount    = r'(' + str_amount_num + r'(/' + str_amount_num + r')?)?'
@@ -82,12 +83,32 @@ str_prescription = str_drug_name + r'\s+' + str_amount + r'\s*' + str_units + \
                    r'\s+' + str_abbrevs + r'\s+' + str_words
 regex_prescription = re.compile(str_prescription)
 
+# vitals
+str_sep      = r'([-:=\s]\s*)?'
+str_temp     = r'\b(T\.?|Temp\.?|Temperature)' + str_sep +\
+               r'(' + str_words + r')?' + str_amount_num + r'\s*'
+str_height   = r'\bHeight:?\s+(\(in\.?\):?\s*)?' + str_amount_num + r'\s*'
+str_weight   = r'\bWeight:?\s+(\(lbs?\.?\):?\s*)?' + str_amount_num + r'\s*'
+str_bsa      = r'\bBSA:?\s+(\(m2\):?\s*)?' + str_amount_num + r'(\s+m2)?\s*'
+str_bp       = r'\bBP' + str_sep + r'(\(mm\s+hg\):?\s*)?\d+/\d+\s*'
+str_hr       = r'\b(P|HR)' + str_sep + r'(\(bpm\):?\s*)?' + str_amount_num + r'\s*'
+str_rr       = r'\bRR?' + str_sep + r'(' + str_words + r')?' + str_amount_num + r'\s*'
+str_o2       = r'\b(O2|SpO2|SaO2|O2Sats?|O2\s+sat|Sats?)' + str_sep +\
+               r'(' + str_words + r')?' + str_amount_num + r'\s*%?\s*' +\
+               r'(/\dL|(on\s+)?RA|\dL(/|\s*)?NC)?'
+str_status   = r'\bStatus:\s+(In|Out)patient\s*'
+str_vitals   = r'(' + str_temp + r'|' + str_height + r'|' + str_weight + r'|' +\
+               str_bsa + r'|' + str_bp + r'|' + str_hr + r'|' + str_rr + r'|' +\
+               str_status + r'|' + str_o2 + r')+'
+regex_vitals = re.compile(str_vitals, re.IGNORECASE)
+
 fov_subs          = []
 anon_subs         = []
 contrast_subs     = []
 size_meas_subs    = []
 header_subs       = []
 prescription_subs = []
+vitals_subs       = []
 
 ###############################################################################
 def find_size_meas_subs(report, sub_list, text):
@@ -158,6 +179,7 @@ def do_substitutions(report):
     global size_meas_subs
     global header_subs
     global prescription_subs
+    global vitals_subs
 
     anon_subs         = []
     contrast_subs     = []
@@ -165,7 +187,9 @@ def do_substitutions(report):
     size_meas_subs    = []
     header_subs       = []
     prescription_subs = []
+    vitals_subs       = []
 
+    report = find_substitutions(report, regex_vitals, vitals_subs, 'VITALS')
     report = find_substitutions(report, regex_caps_header, header_subs, 'HEADER')
     report = find_substitutions(report, regex_anon, anon_subs, 'ANON')
     report = find_substitutions(report, regex_contrast, contrast_subs, 'CONTRAST')
@@ -217,6 +241,7 @@ def undo_substitutions(sentence_list):
     global size_meas_subs
     global header_subs
     global prescription_subs
+    global vitals_subs
 
     # undo in reverse order from that in 'do_substitutions'
     sentence_list = replace_text(sentence_list, prescription_subs)
@@ -225,6 +250,7 @@ def undo_substitutions(sentence_list):
     sentence_list = replace_text(sentence_list, contrast_subs)
     sentence_list = replace_text(sentence_list, anon_subs)
     sentence_list = replace_text(sentence_list, header_subs)
+    sentence_list = replace_text(sentence_list, vitals_subs)
 
     return sentence_list
         
@@ -392,11 +418,14 @@ def delete_junk_sentences(sentence_list):
 
 
 ###############################################################################
-def run(report):
+def run(report, segmentation=None):
     """
     Cleanup the report, do substitutions, tokenize into sentences, fixup
     problems, undo substitutions, and return the tokenized sentences.
     """
+
+    if segmentation is None:
+        segmentation = seg.Segmentation()
 
     report = cleanup_report(report)
     report = do_substitutions(report)
@@ -404,7 +433,6 @@ def run(report):
     sentences = segmentation.parse_sentences(report)
 
     sentences = undo_substitutions(sentences)
-
     sentences = merge_broken_headers(sentences)
     sentences = split_section_headers(sentences)
     sentences = split_concatenated_sentences(sentences)
@@ -414,6 +442,32 @@ def run(report):
 
     return sentences
 
+
+###############################################################################
+def run_tests():
+
+    segmentation = seg.Segmentation()
+
+    SENTENCES = [
+        'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
+        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
+        'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 ' +\
+        'BP (mm Hg): 140/91 HR (bpm): 53',
+        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
+        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
+        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
+        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
+        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
+        'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
+        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
+    ]
+
+    count = 0
+    for s in SENTENCES:
+        print(s)
+        sentences = run(s, segmentation)
+        print('\t[{0:3}]\t{1}\n'.format(count, s))
+        count += 1
 
 ###############################################################################
 def show_help():
@@ -453,6 +507,9 @@ if __name__ == '__main__':
 
     infile.close()
 
+    run_tests()
+    sys.exit(0)
+
     segmentation = seg.Segmentation()
     
     ok = True
@@ -464,7 +521,7 @@ if __name__ == '__main__':
             ok = False
             break
 
-        sentences = run(report)
+        sentences = run(report, segmentation)
 
         # print all sentences for this report
         count = 0
