@@ -187,6 +187,17 @@ services:
     volumes:
     - 'mapper-redisdata:/data'
 
+  results-client:
+    container_name: RESULTS_CLIENT
+    hostname: ${RESULTS_CLIENT_HOSTNAME}
+    build:
+      context: ./utilities/results-client
+      dockerfile: Dockerfile
+    environment:
+      - "PORT=${RESULTS_CLIENT_HOST_PORT}"
+    ports:
+      - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
+
   swagger:
     container_name: MAPPER_Swagger_Docs
     hostname: ${MAPPER_SWAGGER_HOSTNAME}

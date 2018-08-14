@@ -13,3 +13,6 @@
 [submodule "utilities/ingest-client"]
 	path = utilities/ingest-client
 	url = https://github.com/ClarityNLP/ingest-client.git
+[submodule "utilities/results-client"]
+	path = utilities/results-client
+	url = https://github.com/ClarityNLP/results-viewer

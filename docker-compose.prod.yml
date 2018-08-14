@@ -120,7 +120,7 @@ services:
       context: ./utilities/ingest-client
       dockerfile: Dockerfile.prod
     ports:
-      - "${INGEST_CLIENT_HOST_PORT}:${INGESET_CLIENT_CONTAINER_PORT}"
+      - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
 
   mapper-api:
     container_name: MAPPER_API
@@ -162,6 +162,15 @@ services:
       - 'mapper-redisdata:/data'
     env_file:
       - .env
+
+  results-client:
+    container_name: RESULTS_CLIENT
+    hostname: ${RESULTS_CLIENT_HOSTNAME}
+    build:
+      context: ./utilities/results-client
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
 
   swagger:
     container_name: MAPPER_SWAGGER
