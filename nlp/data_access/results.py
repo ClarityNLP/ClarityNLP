@@ -230,6 +230,22 @@ def phenotype_subjects(job_id: str, phenotype_final: bool):
     return results
 
 
+def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    results = []
+    try:
+        query = {"job_id": int(job_id), "phenotype_final": phenotype_final, "subject": subject}
+
+        results = list(db["phenotype_results"].find(query))
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
+
+    return results
+
+
 def remove_tmp_file(filename):
     if filename:
         os.remove(filename)
