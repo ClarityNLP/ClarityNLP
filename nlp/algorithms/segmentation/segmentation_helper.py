@@ -1,38 +1,49 @@
 #!/usr/bin/env python3
 
-# PROBLEMS in radiology_1000.json:
-# report 39: dispensing info messed up
-# report 47, sentences 4-6: vitals broken up
-# report 50: sentence starts with comma, could merge
-# report 55: .H/O broken up
-# report 61 sentences 5-6: no need to split on w/
-# report 67 sentence 13-15: single word sentences, could merge
-# report 68 sentence 11: 10:20 a.m. broken up
-# report 82 sentence 4: sentence split after Mon. abbreviation
-# report 76 sentence 6: parenthetical expressions broken up
+# report 530 is a mess
+# report 768 problems with lists: 'units_text' referenced before assignment
+
+# DISABLE LIST PROCESSING WHEN TOKENIZING SENTENCES.
+
 
 import re
 import os
 import sys
 import json
 import spacy
+import optparse
 import segmentation as seg
 
-module_dir = sys.path[0]
-pos = module_dir.find('/nlp')
-assert -1 != pos
-# get path to nlp/algorithms/finder and append to sys.path
-nlp_dir =  module_dir[:pos+4]
-finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
-sys.path.append(finder_dir)
-from date_finder import run as run_date_finder, \
-    DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-from size_measurement_finder import run as \
-    run_size_measurement, SizeMeasurement, EMPTY_FIELD as \
-    EMPTY_SMF_FIELD
+# imports from other ClarityNLP modules
+try:
+    # for normal operation via NLP pipeline
+    from algorithms.finder.date_finder import run as \
+        run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from algorithms.finder.size_measurement_finder import run as \
+        run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
+except Exception as e:
+    # If here, this module was executed directly from the segmentation
+    # folder for testing. Construct path to nlp/algorithms/finder and
+    # perform the imports above. This is a hack to allow an import from
+    # higher-level package.
+    this_module_dir = sys.path[0]
+    pos = this_module_dir.find('/nlp')
+    assert -1 != pos
+    # get path to nlp/algorithms/finder and append to sys.path
+    nlp_dir =  this_module_dir[:pos+4]
+    finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+    sys.path.append(finder_dir)
+    from date_finder import run as run_date_finder, \
+        DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from size_measurement_finder import run as \
+        run_size_measurement, SizeMeasurement, EMPTY_FIELD as \
+        EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
+
+# set to True to enable debug output
+TRACE = False
 
 MODULE_NAME = 'segmentation_helper.py'
 
@@ -53,8 +64,10 @@ regex_fov = re.compile(str_fov)
 
 # find numbered sentences: look for digits followed by '.' or ')',
 # whitespace, then a capital letter starting a word
-str_list_item = r'\b(?P<listnum>\d+(\.|\)))\s+[A-Z][a-z]+\b'
-regex_list_item = re.compile(str_list_item)
+str_list_start = r'\b(?P<listnum>\d+(\.|\)))\s+'
+str_list_item = str_list_start + r'([A-Z][a-z]+|\d)\b'
+regex_list_start = re.compile(str_list_start)
+regex_list_item  = re.compile(str_list_item)
 
 # find captialized headers
 str_caps_word = r'\b([123]-?D|[-_A-Z]+|[-_A-Z]+/[-_A-Z]+)\b'
@@ -68,17 +81,14 @@ regex_caps_header = re.compile(str_caps_header)
 regex_two_sentences = re.compile(r'\b[a-zA-Z]{2,}\.[A-Z][a-z]+(?!\.)')
 
 # prescription information
-str_word       = r'\b[-a-z]+\b'
-str_words      = r'(' + str_word + r'\s*)*' + str_word
-str_drug_name  = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
-#str_amount_num = r'(\d+|0\.\d+|\d+\.\d+)'
-str_amount_num = r'\d+(\.\d+)?'
-#str_amount     = r'(' + str_amount_num + r'(/' + str_amount_num + r')?' +\
-#                 r'|' + str_words + r')'
-str_amount    = r'(' + str_amount_num + r'(/' + str_amount_num + r')?)?'
-str_units     = r'\b[a-z]+\.?'
-str_abbrev    = r'([a-zA-Z]\.){1,3}'
-str_abbrevs   = r'(' + str_abbrev + r'\s+)*' + str_abbrev
+str_word         = r'\b[-a-z]+\b'
+str_words        = r'(' + str_word + r'\s*)*' + str_word
+str_drug_name    = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
+str_amount_num   = r'\d+(\.\d+)?'
+str_amount       = r'(' + str_amount_num + r'(/' + str_amount_num + r')?)?'
+str_units        = r'\b[a-z]+\.?'
+str_abbrev       = r'([a-zA-Z]\.){1,3}'
+str_abbrevs      = r'(' + str_abbrev + r'\s+)*' + str_abbrev
 str_prescription = str_drug_name + r'\s+' + str_amount + r'\s*' + str_units + \
                    r'\s+' + str_abbrevs + r'\s+' + str_words
 regex_prescription = re.compile(str_prescription)
@@ -104,6 +114,19 @@ str_vitals   = r'(' + str_temp + r'|' + str_height + r'|' + str_weight + r'|' +\
                str_status + r'|' + str_o2 + r')+'
 regex_vitals = re.compile(str_vitals, re.IGNORECASE)
 
+# abbreviations
+str_weekday  = r'\b(Mon|Tues|Wed|Thurs|Thur|Thu|Fri|Sat|Sun)\.'
+str_h_o      = r'\b\.?H/O'
+str_r_o      = r'\br/o(ut)?'
+str_with     = r'\bw/'
+str_am_pm    = r'\b(a|p)\.m\.'
+str_s_p      = r'\bs/p'
+str_r_l      = r'\b(Right|Left)\s+[A-Z]+'
+str_abbrev   = r'(' + str_weekday + r'|' + str_h_o + r'|' + str_r_o + r'|'   +\
+               str_with + r'|' + str_am_pm + r'|' + str_s_p + r'|' + str_r_l +\
+               r')'
+regex_abbrev = re.compile(str_abbrev, re.IGNORECASE)
+
 fov_subs          = []
 anon_subs         = []
 contrast_subs     = []
@@ -111,6 +134,7 @@ size_meas_subs    = []
 header_subs       = []
 prescription_subs = []
 vitals_subs       = []
+abbrev_subs       = []
 
 ###############################################################################
 def find_size_meas_subs(report, sub_list, text):
@@ -182,6 +206,7 @@ def do_substitutions(report):
     global header_subs
     global prescription_subs
     global vitals_subs
+    global abbrev_subs
 
     anon_subs         = []
     contrast_subs     = []
@@ -190,7 +215,9 @@ def do_substitutions(report):
     header_subs       = []
     prescription_subs = []
     vitals_subs       = []
+    abbrev_subs      = []
 
+    report = find_substitutions(report, regex_abbrev, abbrev_subs, 'ABBREV')
     report = find_substitutions(report, regex_vitals, vitals_subs, 'VITALS')
     report = find_substitutions(report, regex_caps_header, header_subs, 'HEADER')
     report = find_substitutions(report, regex_anon, anon_subs, 'ANON')
@@ -199,7 +226,9 @@ def do_substitutions(report):
     report = find_size_meas_subs(report, size_meas_subs, 'MEAS')
     report = find_substitutions(report, regex_prescription, prescription_subs, 'PRESCRIPTION')
 
-    print('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
+    if TRACE:
+        print('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
+
     return report
 
 
@@ -244,6 +273,7 @@ def undo_substitutions(sentence_list):
     global header_subs
     global prescription_subs
     global vitals_subs
+    global abbrev_subs
 
     # undo in reverse order from that in 'do_substitutions'
     sentence_list = replace_text(sentence_list, prescription_subs)
@@ -253,6 +283,7 @@ def undo_substitutions(sentence_list):
     sentence_list = replace_text(sentence_list, anon_subs)
     sentence_list = replace_text(sentence_list, header_subs)
     sentence_list = replace_text(sentence_list, vitals_subs)
+    sentence_list = replace_text(sentence_list, abbrev_subs)
 
     return sentence_list
         
@@ -315,9 +346,9 @@ def cleanup_report(report):
     
 
 ###############################################################################
-def merge_broken_headers(sentence_list):
+def merge_sentences(sentence_list):
     """
-    Merge any sentences that begin with a colon.
+    Merge any sentences that begin with a colon or comma.
     """
 
     num = len(sentence_list)
@@ -325,7 +356,7 @@ def merge_broken_headers(sentence_list):
     i = 1
     while i < num:
         s = sentence_list[i]
-        if s.startswith(':'):
+        if s.startswith(':') or s.startswith(','):
             sprev = sentence_list[i-1]
             sentence_list[i-1] = sprev + ':'
             sentence_list[i]   = s[1:].lstrip()
@@ -360,26 +391,6 @@ def split_section_headers(sentence_list):
         else:
             sentences.append(s)
 
-    # str_header_word = r'[-_A-Z/]{3,}'
-    # str_header = r'\b(' + str_header_word + r'\s+)*' + str_header_word + r'\s*:\s*'
-    # regex_header = re.compile(str_header)
-
-    # sentences = []
-
-    # for s in sentence_list:
-    #     match = regex_header.search(s)
-    #     if match:
-    #         before = s[:match.start()]
-    #         header = match.group()
-    #         after  = s[match.end():]
-    #         if len(before) > 0:
-    #             sentences.append(before)
-    #         sentences.append(header)
-    #         if len(after) > 0:
-    #             sentences.append(after)
-    #     else:
-    #         sentences.append(s)
-
     return sentences
         
 
@@ -403,16 +414,19 @@ def split_concatenated_sentences(sentence_list):
 
 
 ###############################################################################
-def delete_junk_sentences(sentence_list):
+def delete_junk(sentence_list):
     """
     """
 
+    str_list_item = r'\b(?P<listnum>\d+(\.|\)))\s+[A-Z][a-z]+\b'
+
     sentences = []
-    
+
     for s in sentence_list:
-        # delete sentences consisting of a number followed by '.' or ')'
-        if re.match(r'\A\d(\.|\))\Z', s):
-            continue
+        # delete any remaining list numbering
+        match = regex_list_start.match(s)
+        if match:
+            sentences.append(s[match.end():])
         else:
             sentences.append(s)
 
@@ -435,12 +449,10 @@ def run(report, segmentation=None):
     sentences = segmentation.parse_sentences(report)
 
     sentences = undo_substitutions(sentences)
-    sentences = merge_broken_headers(sentences)
+    sentences = merge_sentences(sentences)
     sentences = split_section_headers(sentences)
     sentences = split_concatenated_sentences(sentences)
-    sentences = delete_junk_sentences(sentences)
-
-    #sentences = split_section_headers(sentences)
+    sentences = delete_junk(sentences)
 
     return sentences
 
@@ -494,35 +506,86 @@ def run_tests():
         print('\t[{0:3}]\t{1}\n'.format(count, s))
         count += 1
 
+
+###############################################################################
+def get_version():
+    return '{0} {1}.{2}'.format(MODULE_NAME, VERSION_MAJOR, VERSION_MINOR)
+
+
 ###############################################################################
 def show_help():
-    print ("""\nUsage: python3 ./{0} <report_file.json> [report_count] """.
-           format(MODULE_NAME))
-    print()
-    print("\tThe 'report_file' argument is required, must be JSON format.")
-    print("\tUse 'report_count' to limit the number of reports processed, " \
-          "must be an integer.")
-    print()
-    print("\tFor example, to process 15 reports:")
-    print("\n\t\tpython3 ./{0} reports.json 15".format(MODULE_NAME))
-    print()
-    
+    print(get_version())
+    print("""
+    USAGE: python3 ./{0} -f <filename> [-s <start_index> -e <end_index>] [-hvz]
+
+    OPTIONS:
+
+        -f, --file     <quoted string>     Path to input JSON file.
+        -s, --start    <integer>           Index of first record to process.
+        -e, --end      <integer>           Index of final record to process.
+                                           Indexing begins at 0.
+
+    FLAGS:
+
+        -h, --help           Print this information and exit.
+        -v, --version        Print version information and exit.
+        -z, --selftest       Run self-tests and exit.
+
+    """.format(MODULE_NAME))
+
 
 ###############################################################################
 if __name__ == '__main__':
 
-    if 1 == len(sys.argv):
+    optparser = optparse.OptionParser(add_help_option=False)
+    optparser.add_option('-f', '--file', action='store',
+                         dest='filepath')
+    optparser.add_option('-s', '--start', action='store',
+                         dest='start_index')
+    optparser.add_option('-e', '--end', action='store',
+                         dest='end_index')
+    optparser.add_option('-v', '--version',  action='store_true',
+                         dest='get_version')
+    optparser.add_option('-h', '--help',     action='store_true',
+                         dest='show_help', default=False)
+    optparser.add_option('-z', '--selftest', action='store_true',
+                         dest='selftest', default=False)
+
+    opts, other = optparser.parse_args(sys.argv)
+
+    if 1 == len(sys.argv) or opts.show_help:
         show_help()
         sys.exit(0)
 
-    # first arg is the report file
-    json_file = sys.argv[1]
+    if opts.get_version:
+        print(get_version())
+        sys.exit(0)
 
-    # next arg, if present, is the number of reports to process
-    max_reports = 0
-    if 3 == len(sys.argv):
-        max_reports = int(sys.argv[2])
-    
+    if opts.selftest:
+        run_tests()
+        sys.exit(0)
+
+    start_index = None
+    if opts.start_index:
+        start_index = int(opts.start_index)
+
+    if start_index is not None and start_index < 0:
+        print('Start index must be a nonnegative integer.')
+        sys.exit(-1)
+
+    end_index = None
+    if opts.end_index:
+        end_index = int(opts.end_index)
+
+    if end_index is not None and end_index < start_index:
+        print('End index must be >= start_index.')
+        sys.exit(-1)
+
+    json_file = opts.filepath
+    if not os.path.isfile(json_file):
+        print("File not found: '{0}'".format(json_file))
+        sys.exit(-1)
+
     try:
         infile = open(json_file, 'rt')
         data = json.load(infile)
@@ -532,14 +595,16 @@ if __name__ == '__main__':
 
     infile.close()
 
-    run_tests()
-    sys.exit(0)
-
     segmentation = seg.Segmentation()
     
     ok = True
     index = 0
     while (ok):
+
+        if start_index is not None and index < start_index:
+           index += 1
+           continue
+
         try:
             report = data['response']['docs'][index]['report_text']
         except:
@@ -557,7 +622,8 @@ if __name__ == '__main__':
         print("\n\n*** END OF REPORT {0} ***\n\n".format(index))
         
         index += 1
-        if max_reports > 0 and index >= max_reports:
+
+        if end_index is not None and index > end_index:
             break
 
     print("Processed {0} reports.".format(index))
