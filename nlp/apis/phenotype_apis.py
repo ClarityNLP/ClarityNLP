@@ -183,7 +183,7 @@ def phenotype_jobs(status_string: str):
         return json.dumps(p, indent=4, sort_keys=True, default=str)
     except Exception as ex:
         traceback.print_exc(file=sys.stderr)
-        return "Failed to eval jobs " + str(ex)
+        return "Failed: " + str(e)
 
 
 @phenotype_app.route('/phenotype_paged_results/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
@@ -200,7 +200,8 @@ def get_paged_phenotype_results(job_id: int, phenotype_final_str: str):
 
         return json.dumps(res, indent=4, default=str)
     except Exception as e:
-        return "Failed to get job status" + str(e)
+        traceback.print_exc(file=sys.stderr)
+        return "Failed: " + str(e)
 
 
 @phenotype_app.route('/phenotype_subjects/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
@@ -216,7 +217,8 @@ def get_phenotype_subjects(job_id: int, phenotype_final_str: str):
 
         return json.dumps(res, indent=4, default=str)
     except Exception as e:
-        return "Failed to get job status" + str(e)
+        traceback.print_exc(file=sys.stderr)
+        return "Failed: " + str(e)
 
 
 @phenotype_app.route('/phenotype_subject_results/<int:job_id>/<string:phenotype_final_str>/<string:subject>', methods=['GET'])
@@ -232,4 +234,18 @@ def get_phenotype_subject_results(job_id: int, phenotype_final_str, subject: str
 
         return json.dumps(res, indent=4, default=str)
     except Exception as e:
-        return "Failed to get job status" + str(e)
+        traceback.print_exc(file=sys.stderr)
+        return "Failed: " + str(e)
+
+
+@phenotype_app.route('/phenotype_result_by_id/<string:id>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def get_phenotype_result_by_id(id: str):
+    """GET phenotype result for a given mongo identifier"""
+    try:
+        res = lookup_phenotype_result_by_id(id)
+
+        return json.dumps(res, indent=4, default=str)
+    except Exception as e:
+        traceback.print_exc(file=sys.stderr)
+        return "Failed: " + str(e)
