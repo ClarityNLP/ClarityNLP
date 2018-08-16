@@ -348,8 +348,8 @@ def cleanup_report(report):
 
     report = erase_spans(report, spans)
         
-    # Remove long runs of dashes and/or underscores
-    report = re.sub(r'[-_]{3,}', ' ', report)
+    # Remove long runs of dashes, underscores, or stars
+    report = re.sub(r'[-_*]{3,}', ' ', report)
     
     # collapse repeated whitespace (including newlines) into a single space
     report = re.sub(r'\s+', r' ', report)
