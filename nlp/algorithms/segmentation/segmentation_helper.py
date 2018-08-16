@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-# report 530 is a mess
-# report 768 problems with lists: 'units_text' referenced before assignment
+# report 572: 2:21 a.m is split
 
 # DISABLE LIST PROCESSING WHEN TOKENIZING SENTENCES.
 
@@ -120,11 +119,12 @@ str_h_o      = r'\b\.?H/O'
 str_r_o      = r'\br/o(ut)?'
 str_with     = r'\bw/'
 str_am_pm    = r'\b(a|p)\.m\.'
+str_time     = r'(2[0-3]|1[0-9]|[0-9]):[0-5][0-9]\s*(a|A|p|P)\s*\.?(m|M)\s*\.?'
 str_s_p      = r'\bs/p'
 str_r_l      = r'\b(Right|Left)\s+[A-Z]+'
 str_abbrev   = r'(' + str_weekday + r'|' + str_h_o + r'|' + str_r_o + r'|'   +\
-               str_with + r'|' + str_am_pm + r'|' + str_s_p + r'|' + str_r_l +\
-               r')'
+               str_with + r'|' + str_time + r'|' + str_am_pm + r'|' +\
+               str_s_p + r'|' + str_r_l + r')'
 regex_abbrev = re.compile(str_abbrev, re.IGNORECASE)
 
 fov_subs          = []
@@ -418,8 +418,6 @@ def delete_junk(sentence_list):
     """
     """
 
-    str_list_item = r'\b(?P<listnum>\d+(\.|\)))\s+[A-Z][a-z]+\b'
-
     sentences = []
 
     for s in sentence_list:
@@ -427,8 +425,17 @@ def delete_junk(sentence_list):
         match = regex_list_start.match(s)
         if match:
             sentences.append(s[match.end():])
+            continue
+
+        # remove any sentences that consist of just '1.', '2.', etc.
+        str_list_start = r'\b(?P<listnum>\d+(\.|\)))\s+'
+        match = re.match(r'\A\d+(\.|\))\Z', s)
+        if match:
+            continue
+
         else:
             sentences.append(s)
+
 
     return sentences
 
