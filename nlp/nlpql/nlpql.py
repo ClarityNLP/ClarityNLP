@@ -431,12 +431,30 @@ def get_generic_expression(expression: nlpql_parserParser.ExpressionContext, ent
     return entities, operator
 
 
+def get_pretty_text(expression):
+
+    if expression.getChildCount() == 1:
+        expression_text = expression.getText()
+    else:
+        expression_text = ''
+        for c in expression.getChildren():
+            if type(c) == nlpql_parserParser.LogicalOperatorContext or type(c) == nlpql_parserParser.ComparisonOperatorContext:
+                expression_text += ' %s ' % c.getText()
+            else:
+                if c.getChildCount() == 0:
+                    expression_text += c.getText()
+                else:
+                    expression_text += (get_pretty_text(c))
+    
+    return expression_text
+
+
 def get_not_expression(expression: nlpql_parserParser.ExpressionContext, define_name, final):
     print(expression)
     entities = list()
     operator = ""
 
-    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=get_pretty_text(expression))
     return op
 
 
@@ -452,7 +470,7 @@ def get_logical_expression(expression: nlpql_parserParser.ExpressionContext, def
         elif type(c) == nlpql_parserParser.LogicalOperatorContext:
             operator.append(c.getText())
 
-    op = PhenotypeOperations(define_name, operator[0], entities, final=final, raw_text=expression.getText())
+    op = PhenotypeOperations(define_name, operator[0], entities, final=final, raw_text=get_pretty_text(expression))
     return op
 
 
@@ -471,7 +489,7 @@ def get_predicate_expression(expression: nlpql_parserParser.PredicateContext, de
                 else:
                     entities.append(pc)
 
-    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=get_pretty_text(expression))
     return op
 
 
@@ -480,7 +498,7 @@ def get_predicate_boolean(expression: nlpql_parserParser.PredicateBooleanContext
     operator = ""
     entities = list()
 
-    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=expression.getText())
+    op = PhenotypeOperations(define_name, operator, entities, final=final, raw_text=get_pretty_text(expression))
     return op
 
 

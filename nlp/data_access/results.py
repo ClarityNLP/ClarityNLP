@@ -154,6 +154,21 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
     return filename
 
 
+def lookup_phenotype_result_by_id(id: str):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    obj = dict()
+
+    try:
+        obj = db.phenotype_results.find_one({'_id': ObjectId(id)})
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+        obj['success'] = False
+    finally:
+        client.close()
+
+    return obj
+
 def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = ''):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
