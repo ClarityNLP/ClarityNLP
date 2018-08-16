@@ -190,11 +190,14 @@ approx = r'((approximately|about|up to|at least|at most|in aggregate)\\s+)?'
 
 regex_number = re.compile(r'\A' + x + r'\Z')
 
-# lists must be preceded by whitespace, to avoid capturing the digit
-# in 'fio2' and similar abbreviations
+# Lists must be preceded by whitespace, to avoid capturing the digit
+# in 'fio2' and similar abbreviations. Also, lists ALWAYS have an 'and'
+# before the final item, and must contain at least two items.
 str_list_item = x + r'\s*[-,]?(\s*and\s*)?'
-str_list = r'(?<=\s)(' + str_list_item + r'\s*)*' + str_list_item + cm
+str_list = r'(?<=\s)(' + str_list_item + r'\s*)*' + x + r'\s*[-,]?\s*and\s*' +\
+           x + r'\s*[-,]?\s*' + cm
 regex_list = re.compile(str_list)
+regex_list_units = re.compile(cm)
 
 # expressions for finding 'previous' measurements
 prev1 = r'previously\s*measur(ed|ing)\s*' + approx + str_m
@@ -366,6 +369,13 @@ def to_json(measurement_list):
                 data.append(m_dict['y'])
             if EMPTY_FIELD != m_dict['z']:
                 data.append(m_dict['z'])
+
+            # something wrong if empty dict
+            if 0 == len(data):
+                print('size_measurement::to_json: DATA LIST IS EMPTY')
+                print(m_dict)
+                assert len(data) > 0
+
             minValue = min(data)
             maxValue = max(data)
             
@@ -481,21 +491,12 @@ def tokenize_complete_list(sentence, list_text, list_start):
     list_text = re.sub(r'and', r',  ', list_text)
     list_text = re.sub(r'-', r' ', list_text)
 
-    # find the position immediately prior to the units string
-    pos = len(list_text) - 1
-    c = list_text[pos:pos+1]
-    while CHAR_SPACE != c:
-        pos -= 1
-        if pos < 0:
-            break;
-        c = list_text[pos:pos+1]
-
-    if pos < 0:
+    units_match = regex_list_units.search(list_text)
+    if units_match:
+        list_text_no_units = list_text[0:units_match.start()]
+    else:
         # no units, invalid list
         return []
-        
-    # remove the units from the end and keep the list part
-    list_text_no_units = list_text[0:pos]
 
     if TRACE:
         print('\tLIST TEXT NO UNITS: ->{0}<-'.format(list_text_no_units))
@@ -533,20 +534,18 @@ def tokenize_complete_list(sentence, list_text, list_start):
                 print('\tFound list numeric token: ->{0}<-'.format(number_text))
 
     # tokenize the units string
-    match = regex_units.search(list_text[pos+1:])
-    if match:
-        units_text = match.group()
+    units_text = units_match.group()
 
-        is_area = is_area_unit(units_text)
-        is_vol  = is_vol_unit(units_text)
+    is_area = is_area_unit(units_text)
+    is_vol  = is_vol_unit(units_text)
 
-        units_label = TokenLabel.UNITS
-        if is_area:
-            units_label = TokenLabel.UNITS2
-        elif is_vol:
-            units_label = TokenLabel.UNITS3
+    units_label = TokenLabel.UNITS
+    if is_area:
+        units_label = TokenLabel.UNITS2
+    elif is_vol:
+        units_label = TokenLabel.UNITS3
         
-        tokens.append( Token(units_text, units_label, TOKEN_VALUE_NONE))
+    tokens.append( Token(units_text, units_label, TOKEN_VALUE_NONE))
 
     # convert the units of the list items and set all listnumbers to label DIM1
     for i in range(len(tokens)):
@@ -1091,7 +1090,7 @@ def clean_sentence(sentence):
     """
 
     # erase [], {}, or () from the sentence
-    sentence = regex_brackets.sub(' ', sentence)
+    #sentence = regex_brackets.sub(' ', sentence)
 
     # convert sentence to lowercase
     sentence = sentence.lower()
@@ -1105,7 +1104,7 @@ def run(sentence):
     Search the sentence for size measurements and construct a Measurement
     namedtuple for each measurement found. Returns a JSON string.
     
-    """    
+    """
 
     original_sentence = sentence
     sentence = clean_sentence(sentence)
@@ -1189,6 +1188,9 @@ def run(sentence):
                                       token_list = deepcopy(tokens))
             measurements.append(measurement)
 
+            if TRACE:
+                print(measurement)
+
             prev_end += match_end
             tokens = []
 
@@ -1225,6 +1227,12 @@ def self_test(TEST_DICT):
 
     for sentence, truth_dict_list in TEST_DICT.items():
         json_string = run(sentence)
+
+        if '[]' == json_string and len(truth_dict_list) > 0:
+            # no measurement was found
+            print('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
+            print('empty JSON result')
+            continue
 
         # parse JSON string and get a list of dicts
         json_data = json.loads(json_string)
@@ -1496,6 +1504,13 @@ if __name__ == '__main__':
         "There is an interval decrease in the size of target lesion 1 which is a\n" \
         "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)." :
         [{'x':11.0, 'y':13.0, 'temporality':'CURRENT'}, {'x':11.0, 'y':20.0, 'temporality':'PREVIOUS'}],
+
+        # other
+
+        # need to keep 1) (do not erase parens)
+        "IMPRESSION:\n 1)  7 cm X 6.3 cm infrarenal abdominal aortic " \
+        "aneurysm as described." :
+        [{'x':70.0, 'y':63.0, 'temporality':'CURRENT'}],
     }
 
     optparser = optparse.OptionParser(add_help_option=False)
