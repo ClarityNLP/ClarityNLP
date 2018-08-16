@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-# report 572: 2:21 a.m is split
-
-# DISABLE LIST PROCESSING WHEN TOKENIZING SENTENCES.
-
+# report 207: sentence 12 is a time only, could merge with previous
+# report 490: complex, has everything
 
 import re
 import os
@@ -119,13 +117,20 @@ str_h_o      = r'\b\.?H/O'
 str_r_o      = r'\br/o(ut)?'
 str_with     = r'\bw/'
 str_am_pm    = r'\b(a|p)\.m\.'
-str_time     = r'(2[0-3]|1[0-9]|[0-9]):[0-5][0-9]\s*(a|A|p|P)\s*\.?(m|M)\s*\.?'
+str_time     = r'(2[0-3]|1[0-9]|[0-9]):[0-5][0-9]\s*(a|A|p|P)(\s*\.)?(m|M)(\s*\.)?'
 str_s_p      = r'\bs/p'
 str_r_l      = r'\b(Right|Left)\s+[A-Z]+'
+str_sust_rel = r'\bSust\.?\s*Rel\.?'
+str_sig      = r'\bSig\s*:\s*[a-z0-9]+'
 str_abbrev   = r'(' + str_weekday + r'|' + str_h_o + r'|' + str_r_o + r'|'   +\
-               str_with + r'|' + str_time + r'|' + str_am_pm + r'|' +\
-               str_s_p + r'|' + str_r_l + r')'
+               str_with + r'|' + str_time + r'|' + str_am_pm + r'|'          +\
+               str_s_p + r'|' + str_r_l + r'|' + str_sust_rel + r'|'         +\
+               str_sig + r')'
 regex_abbrev = re.compile(str_abbrev, re.IGNORECASE)
+
+# gender
+str_gender   = r'\b(sex|gender)\s*:\s*(male|female|m\.?|f\.?)'
+regex_gender = re.compile(str_gender, re.IGNORECASE)
 
 fov_subs          = []
 anon_subs         = []
@@ -135,6 +140,7 @@ header_subs       = []
 prescription_subs = []
 vitals_subs       = []
 abbrev_subs       = []
+gender_subs       = []
 
 ###############################################################################
 def find_size_meas_subs(report, sub_list, text):
@@ -207,6 +213,7 @@ def do_substitutions(report):
     global prescription_subs
     global vitals_subs
     global abbrev_subs
+    global gender_subs
 
     anon_subs         = []
     contrast_subs     = []
@@ -215,7 +222,8 @@ def do_substitutions(report):
     header_subs       = []
     prescription_subs = []
     vitals_subs       = []
-    abbrev_subs      = []
+    abbrev_subs       = []
+    gender_subs       = []
 
     report = find_substitutions(report, regex_abbrev, abbrev_subs, 'ABBREV')
     report = find_substitutions(report, regex_vitals, vitals_subs, 'VITALS')
@@ -225,6 +233,7 @@ def do_substitutions(report):
     report = find_substitutions(report, regex_fov, fov_subs, 'FOV')
     report = find_size_meas_subs(report, size_meas_subs, 'MEAS')
     report = find_substitutions(report, regex_prescription, prescription_subs, 'PRESCRIPTION')
+    report = find_substitutions(report, regex_gender, gender_subs, 'GENDER')
 
     if TRACE:
         print('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
@@ -274,8 +283,11 @@ def undo_substitutions(sentence_list):
     global prescription_subs
     global vitals_subs
     global abbrev_subs
+    global gender_subs
 
     # undo in reverse order from that in 'do_substitutions'
+
+    sentence_list = replace_text(sentence_list, gender_subs)
     sentence_list = replace_text(sentence_list, prescription_subs)
     sentence_list = replace_text(sentence_list, size_meas_subs)
     sentence_list = replace_text(sentence_list, fov_subs)
@@ -346,9 +358,9 @@ def cleanup_report(report):
     
 
 ###############################################################################
-def merge_sentences(sentence_list):
+def fixup_sentences(sentence_list):
     """
-    Merge any sentences that begin with a colon or comma.
+    Move punctuation from one sentence to another, if necessary.
     """
 
     num = len(sentence_list)
@@ -357,6 +369,7 @@ def merge_sentences(sentence_list):
     while i < num:
         s = sentence_list[i]
         if s.startswith(':') or s.startswith(','):
+            # move to end of previous sentence
             sprev = sentence_list[i-1]
             sentence_list[i-1] = sprev + ':'
             sentence_list[i]   = s[1:].lstrip()
@@ -419,23 +432,50 @@ def delete_junk(sentence_list):
     """
 
     sentences = []
+    num = len(sentence_list)
 
-    for s in sentence_list:
+    #for s in sentence_list:
+    i = 0
+    while i < num:
+        s = sentence_list[i]
+
         # delete any remaining list numbering
         match = regex_list_start.match(s)
         if match:
-            sentences.append(s[match.end():])
-            continue
+            s = s[match.end():]
 
         # remove any sentences that consist of just '1.', '2.', etc.
-        str_list_start = r'\b(?P<listnum>\d+(\.|\)))\s+'
-        match = re.match(r'\A\d+(\.|\))\Z', s)
+        match = re.match(r'\A\s*\d+(\.|\))\s*\Z', s)
         if match:
+            i += 1
             continue
 
-        else:
-            sentences.append(s)
+        # remove any sentences that consist of '#1', '#2', etc.
+        match = re.match(r'\A\s*#\d+\s*\Z', s)
+        if match:
+            i += 1
+            continue
 
+        # remove any sentences consisting entirely of symbols
+        match = re.match(r'\A\s*[^a-zA-Z0-9]+\s*\Z', s)
+        if match:
+            i += 1
+            continue
+
+        # merge isolated age + year
+        if i < num-1:
+            if s.isdigit() and sentence_list[i+1].startswith('y'):
+                s = s + ' ' + sentence_list[i+1]
+                i += 1
+
+        # if next sentence starts with 'now measures', merge with current
+        if i < num-1:
+            if sentence_list[i+1].startswith('now measures'):
+                s = s + ' ' + sentence_list[i+1]
+                i += 1
+
+        sentences.append(s)
+        i += 1
 
     return sentences
 
@@ -455,10 +495,10 @@ def run(report, segmentation=None):
 
     sentences = segmentation.parse_sentences(report)
 
-    sentences = undo_substitutions(sentences)
-    sentences = merge_sentences(sentences)
-    sentences = split_section_headers(sentences)
     sentences = split_concatenated_sentences(sentences)
+    sentences = undo_substitutions(sentences)
+    sentences = fixup_sentences(sentences)
+    sentences = split_section_headers(sentences)
     sentences = delete_junk(sentences)
 
     return sentences
@@ -584,9 +624,13 @@ if __name__ == '__main__':
     if opts.end_index:
         end_index = int(opts.end_index)
 
-    if end_index is not None and end_index < start_index:
-        print('End index must be >= start_index.')
-        sys.exit(-1)
+    if end_index is not None:
+        if start_index is not None and end_index < start_index:
+            print('End index must be >= start_index.')
+            sys.exit(-1)
+        elif end_index < 0:
+            print('End index must be a nonnegative integer.')
+            sys.exit(-1)
 
     json_file = opts.filepath
     if not os.path.isfile(json_file):
