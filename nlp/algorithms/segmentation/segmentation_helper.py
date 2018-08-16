@@ -1,7 +1,55 @@
 #!/usr/bin/env python3
+"""
 
-# report 207: sentence 12 is a time only, could merge with previous
-# report 490: complex, has everything
+
+OVERVIEW:
+
+
+This module attempts to improve sentence tokenization results. It replaces
+text that the spaCy sentence tokenizer erroneously splits apart with single-word
+tokens that cannot be split. The original text is replaced after the sentence
+tokenizer generates its results.
+
+
+OUTPUT:
+
+
+A list of sentence strings.
+
+
+USAGE:
+
+
+The 'run' function does the main work of the module. Run takes two arguments:
+
+    report:        the text to be tokenized into sentences
+    segmentation:  an instance of the ClarityNLP Segmentation() class
+
+
+To use this code as an imported module, add the following lines to the
+import list in the importing module:
+
+        import segmentation_helper
+
+
+The module can also be run from the command line. It will process a JSON file,
+extract the 'report_text' field, split it into sentences, and print each
+sentence to the screen. Help for command line operation can be obtained with
+this command:
+
+        python3 ./segmentation_helper.py --help
+
+
+For example, to process all reports in myfile.json:
+
+        python3 ./segmentation_helper.py -f /path/to/myfile.json
+
+To process only the first 10 reports (indices begin with 0):
+
+        python3 ./segmentation_helper.py -f myfile.json --end 9
+
+
+"""
 
 import re
 import os
