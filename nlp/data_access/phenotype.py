@@ -3,6 +3,7 @@ import psycopg2.extras
 import util
 import sys
 import traceback
+import simplejson as json
 
 try:
     from .base_model import BaseModel
@@ -116,6 +117,34 @@ def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
         conn.close()
 
     return p_id
+
+
+def phenotype_structure(phenotype_id: int, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    hierarchy = dict()
+
+    try:
+
+        cursor.execute("""SELECT config FROM nlp.phenotype WHERE phenotype_id = %s""",
+                       [phenotype_id])
+        config = json.loads(cursor.fetchone()[0])
+
+        final_ops = list(filter(lambda o: o['final'], config['operations']))
+        ops = {o['name']: o for o in config['operations']}
+        des = {o['name']: o for o in config['data_entities']}
+
+        hierarchy['config'] = config
+        hierarchy['finals'] = final_ops
+        hierarchy['operations'] = ops
+        hierarchy['data_entities'] = des
+
+    except Exception as ex:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+
+    return hierarchy
 
 
 def query_pipeline_ids(phenotype_id: int, connection_string: str):
@@ -271,9 +300,12 @@ def get_sample_phenotype():
 if __name__ == "__main__":
     p = get_sample_phenotype()
     sorted(p.operations, key=lambda o: o['final'])
-    json = p.to_json()
+    json_str = p.to_json()
 
-    print(json)
+    print(json_str)
+
+    hier = phenotype_structure(10144, util.conn_string)
+    print(hier)
 
 # conceptset or termset as inputs for entities
 # where or as for operations

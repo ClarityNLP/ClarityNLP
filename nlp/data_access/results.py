@@ -169,6 +169,7 @@ def lookup_phenotype_result_by_id(id: str):
 
     return obj
 
+
 def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = ''):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -251,6 +252,22 @@ def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     results = []
     try:
         query = {"job_id": int(job_id), "phenotype_final": phenotype_final, "subject": subject}
+
+        results = list(db["phenotype_results"].find(query))
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
+
+    return results
+
+
+def phenotype_feature_results(job_id: str, feature: str):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    results = []
+    try:
+        query = {"job_id": int(job_id), "nlpql_feature": feature}
 
         results = list(db["phenotype_results"].find(query))
     except Exception as e:
