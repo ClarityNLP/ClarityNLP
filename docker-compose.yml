@@ -2,7 +2,7 @@ version: '3'
 
 volumes:
   mapper-pgdata:
-  mapper-redisdata:
+  redisdata:
   nlp-solrdata:
   nlp-pgdata:
   nlp-mongodata:
@@ -128,19 +128,6 @@ services:
   #   ports:
   #     - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
 
-  # ingest-pg:
-  #   container_name: 'INGEST_POSTGRES'
-  #   hostname: ${INGEST_PG_HOSTNAME}
-  #   image: postgres
-  #   environment:
-  #     POSTGRES_USER: ${INGEST_PG_USER}
-  #     POSTGRES_PASSWORD: ${INGEST_PG_PASSWORD}
-  #     POSTGRES_DB: ${INGEST_PG_DATABASE}
-  #   ports:
-  #     - "${INGEST_PG_HOST_PORT}:${INGEST_PG_CONTAINER_PORT}"
-  #   volumes:
-  #     - 'ingest-pgdata:/var/lib/postgresql/data/'
-
   mapper-api:
     container_name: MAPPER_API
     hostname: ${MAPPER_API_HOSTNAME}
@@ -179,20 +166,20 @@ services:
       - 'mapper-pgdata:/var/lib/postgresql/data/'
 
   redis:
-    container_name: MAPPER_Redis
-    hostname: ${MAPPER_REDIS_HOSTNAME}
-    image: redis:3.2.0
+    container_name: REDIS
+    hostname: ${REDIS_HOSTNAME}
+    image: redis:4.0.10
     ports:
-      - "${MAPPER_REDIS_HOST_PORT}:${MAPPER_REDIS_CONTAINER_PORT}"
+      - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
     volumes:
-    - 'mapper-redisdata:/data'
+    - 'redisdata:/data'
 
   results-client:
     container_name: RESULTS_CLIENT
     hostname: ${RESULTS_CLIENT_HOSTNAME}
     build:
       context: ./utilities/results-client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile	
     environment:
       - "PORT=${RESULTS_CLIENT_HOST_PORT}"
     ports:
