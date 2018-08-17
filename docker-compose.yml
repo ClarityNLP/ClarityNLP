@@ -11,30 +11,30 @@ volumes:
 
 services:
 
-  # nlp-api:
-  #   container_name: 'NLP_API'
-  #   hostname: ${NLP_API_HOSTNAME}
-  #   build:
-  #     context: ./nlp
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
-  #   volumes:
-  #     - ./nlp:/api
-  #   command: ["/api/scripts/wait-for-it.sh", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
-  #   extra_hosts: #for container --> host comms
-  #     - "docker.local:172.16.123.1"
-  #   env_file:
-  #     - .env
-  #
-  # scheduler:
-  #   container_name: 'LUIGI_SCHEDULER'
-  #   hostname: ${SCHEDULER_HOSTNAME}
-  #   image: 'axiom/docker-luigi:2.7.1'
-  #   ports:
-  #     - "${SCHEDULER_HOST_PORT}:${SCHEDULER_CONTAINER_PORT}"
-  #   env_file:
-  #     - .env
+  nlp-api:
+    container_name: 'NLP_API'
+    hostname: ${NLP_API_HOSTNAME}
+    build:
+      context: ./nlp
+      dockerfile: Dockerfile
+    ports:
+      - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
+    volumes:
+      - ./nlp:/api
+    command: ["/api/scripts/wait-for-it.sh", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
+    extra_hosts: #for container --> host comms
+      - "docker.local:172.16.123.1"
+    env_file:
+      - .env
+
+  scheduler:
+    container_name: 'LUIGI_SCHEDULER'
+    hostname: ${SCHEDULER_HOSTNAME}
+    image: 'axiom/docker-luigi:2.7.1'
+    ports:
+      - "${SCHEDULER_HOST_PORT}:${SCHEDULER_CONTAINER_PORT}"
+    env_file:
+      - .env
 
   nlp-solr:
     container_name: 'NLP_SOLR'
@@ -51,38 +51,38 @@ services:
     env_file:
       - .env
 
-  # nlp-mongo:
-  #   container_name: 'NLP_MONGO'
-  #   image: mongo
-  #   hostname: ${NLP_MONGO_HOSTNAME}
-  #   environment:
-  #     - MONGO_DATA_DIR=/data/db
-  #     - MONGO_LOG_DIR=/dev/null
-  #     - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
-  #   ports:
-  #     - "${NLP_MONGO_HOST_PORT}:${NLP_MONGO_CONTAINER_PORT}"
-  #   volumes:
-  #     - './utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js'
-  #     - 'nlp-mongodata:/data/db'
-  #   env_file:
-  #     - .env
-  #
-  # nlp-postgres:
-  #   container_name: 'NLP_POSTGRES'
-  #   hostname: ${NLP_PG_HOSTNAME}
-  #   build:
-  #     context: ./utilities/nlp-postgres
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     POSTGRES_USER: ${NLP_PG_USER}
-  #     POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
-  #     POSTGRES_DB: ${NLP_PG_DATABASE}
-  #   ports:
-  #     - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
-  #   volumes:
-  #     - 'nlp-pgdata:/var/lib/postgresql/data/'
-  #   env_file:
-  #     - .env
+  nlp-mongo:
+    container_name: 'NLP_MONGO'
+    image: mongo
+    hostname: ${NLP_MONGO_HOSTNAME}
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+      - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
+    ports:
+      - "${NLP_MONGO_HOST_PORT}:${NLP_MONGO_CONTAINER_PORT}"
+    volumes:
+      - './utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js'
+      - 'nlp-mongodata:/data/db'
+    env_file:
+      - .env
+
+  nlp-postgres:
+    container_name: 'NLP_POSTGRES'
+    hostname: ${NLP_PG_HOSTNAME}
+    build:
+      context: ./utilities/nlp-postgres
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_USER: ${NLP_PG_USER}
+      POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
+      POSTGRES_DB: ${NLP_PG_DATABASE}
+    ports:
+      - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
+    volumes:
+      - 'nlp-pgdata:/var/lib/postgresql/data/'
+    env_file:
+      - .env
 
   ingest-api:
     container_name: INGEST_API
@@ -173,17 +173,6 @@ services:
       - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
     volumes:
     - 'redisdata:/data'
-
-  results-client:
-    container_name: RESULTS_CLIENT
-    hostname: ${RESULTS_CLIENT_HOSTNAME}
-    build:
-      context: ./utilities/results-client
-      dockerfile: Dockerfile
-    environment:
-      - "PORT=${RESULTS_CLIENT_HOST_PORT}"
-    ports:
-      - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
 
   swagger:
     container_name: MAPPER_Swagger_Docs
