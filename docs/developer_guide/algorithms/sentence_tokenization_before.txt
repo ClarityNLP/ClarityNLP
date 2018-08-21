@@ -1,0 +1,188 @@
+[  0]	Admission Date:  [
+[  1]	**3104-4-26
+[  2]	**]     Discharge Date:  [**3104-4-28
+[  3]	**]
+
+
+Service:  CARDIAC CA
+
+CHIEF COMPLAINT:   Dyspnea on exertion.
+
+HISTORY OF PRESENT ILLNESS:
+[  4]	This is a 78 year old male with
+hypertension and hyperlipidemia who was in his usual state of health until two weeks prior to admission when he noted increasing shortness of breath on exertion, especially with stairs.
+[  5]	Since that time, the patient reports decreased exercise tolerance but denied any orthopnea, paroxysmal nocturnal dyspnea, or lower extremity swelling.
+[  6]	He denies any dizziness or lightheadedness.
+[  7]	He was seen in Dr.
+[  8]	[**Last Name (STitle) 23973*
+[  9]	*]
+[ 10]	[**Name (STitle) 23974
+[ 11]	*
+[ 12]	*]
+[ 13]	Clinic the day of admission and was found to have
+high grade infra-nodal heart block and was sent to the Emergency Room.
+[ 14]	A central line was placed with temporary
+pacing wire placed overnight.
+[ 15]	PAST MEDICAL HISTORY:
+1.  Hypertension.
+[ 16]	2.
+[ 17]	Hyperlipidemia.
+[ 18]	3.
+[ 19]	Exercise thallium stress test in [**3100*
+[ 20]	*] showed a small
+basal inferior fixed defect.
+[ 21]	4.
+[ 22]	Mild asthma.
+[ 23]	5.
+[ 24]	Hemorrhoids.
+[ 25]	6.
+[ 26]	Colonic polyps.
+[ 27]	7.
+[ 28]	Left bundle branch block since [
+[ 29]	**3098-10-8**].
+8.
+[ 30]	Bilateral hernia repairs.
+[ 31]	ALLERGIES:
+[ 32]	He has no known drug allergies.
+[ 33]	MEDICATIONS:
+[ 34]	1.  Hydrochlorothiazide 12.5 mg
+[ 35]	p.o.
+[ 36]	q. day.
+[ 37]	2.
+[ 38]	Lipitor 40 mg
+[ 39]	p.o.
+[ 40]	q.
+[ 41]	h.s.
+[ 42]	3.
+[ 43]	Enalapril 20
+[ 44]	mg p.o. twice a day.
+[ 45]	4.
+[ 46]	Cardizem 180 mg p.o.
+[ 47]	q. day.
+[ 48]	5.
+[ 49]	Aspirin 81 mg
+[ 50]	p.o.
+[ 51]	q. day.
+[ 52]	SOCIAL HISTORY:
+[ 53]	He has a remote tobacco history; quit over
+25 years ago.
+[ 54]	He has a remote alcohol history; quit over 17
+years ago.
+[ 55]	FAMILY HISTORY:   Family history of stroke but denies any
+family history of coronary artery disease or malignancy.
+[ 56]	PHYSICAL EXAMINATION:   Temperature
+[ 57]	is 98.0 F.; heart rate 35
+to 45; blood pressure 161/32; respiratory rate 19; 98% on room air.
+[ 58]	In no acute distress.
+[ 59]	Pupils were reactive to light; the left was 3 millimeters to 2 millimeters; on the right it was 2 millimeters to 1 millimeters.
+[ 60]	Extraocular movements intact.
+[ 61]	Mucous membranes were moist.
+[ 62]	Jugular venous pressure at about 7 centimeters.
+[ 63]	Lungs were clear to auscultation bilaterally.
+[ 64]	He is bradycardic with normal S1 and S2 with I/VI systolic murmur at the apex.
+[ 65]	His abdomen was soft, nontender, nondistended, with normoactive bowel sounds.
+[ 66]	No edema.
+[ 67]	In his extremities he had two plus dorsalis pedis bilaterally.
+[ 68]	LABORATORY:
+[ 69]	EKG showed sinus with atrial rate of 70, 2:1
+heart block with ventricular rate of 35 and an old left bundle branch block.
+[ 70]	White blood cell count 11.3, hematocrit 34.6, platelets 298.
+[ 71]	Sodium 140, potassium 4.1, chloride 102, bicarbonate 25, BUN
+26, creatinine 1.3, glucose 129.
+[ 72]	CK 96.
+[ 73]	Troponin less than
+0.3.
+
+Echocardiogram in [
+[ 74]	**3103-2-6
+[ 75]	**] showed a large left atrium,
+ejection fraction 60 to 65% with mild symmetric left ventricular hypertrophy, trace aortic regurgitation, mild mitral regurgitation.
+[ 76]	INR was 1.2, PTT 22.7.
+[ 77]	Total cholesterol in [**3104-2-6**]
+showed total cholesterol of 161, LDL 89, HDL of 35, triglycerides of 184.
+[ 78]	Urinalysis was negative.
+[ 79]	Chest x-ray was negative.
+[ 80]	HOSPITAL COURSE:
+[ 81]	The patient remained stable in the
+hospital.
+[ 82]	He underwent electrophysiology study and pacemaker placement.
+[ 83]	He remained stable and asymptomatic.
+[ 84]	He was then discharged home.
+[ 85]	DISCHARGE
+[ 86]	INSTRUCTIONS:
+[ 87]	1.
+[ 88]	Not to lift anything heavier than ten pounds for two
+weeks with the left arm.
+[ 89]	2.
+[ 90]	He was asked to call his cardiologist with any fatigue or
+shortness of breath.
+[ 91]	3.
+[ 92]	He was to follow-up in Device Clinic in one week.
+[ 93]	4.
+[ 94]	He was to follow-up with his cardiologist in two to three
+weeks.
+[ 95]	DISCHARGE DIAGNOSES:
+[ 96]	1.
+[ 97]	Complete heart block.
+[ 98]	MAJOR
+[ 99]	INTERVENTIONS:
+[100]	1.
+[101]	Transvenous pacer wire placement on [**4-26
+[102]	**].
+[103]	2.
+[104]	Pacemaker placement on [
+[105]	**4-27
+[106]	**].
+[107]	CONDITION ON DISCHARGE:   Stable.
+
+DISCHARGE
+[108]	MEDICATIONS:
+[109]	1.
+[110]	Enalapril 20
+[111]	mg p.o. twice a day.
+[112]	2.
+[113]	Hydrochlorothiazide 12.5 mg p.o.
+[114]	q. day.
+[115]	3.
+[116]	Lipitor 40 mg
+[117]	p.o.
+[118]	q.
+[119]	h.s.
+[120]	4.
+[121]	Percocet p.r.n.
+5.
+[122]	Keflex 500 mg p.o.
+[123]	q. six hours for three days.
+[124]	6.
+[125]	Ativan 1 mg p.o.
+[126]	q.
+[127]	h.s.
+[128]	as needed.
+[129]	7.
+[130]	Diltiazem 180 mg p.o.
+[131]	q. day.
+[132]	[**First Name8 (NamePattern2)
+[133]	*
+[134]	*]
+[135]	[
+[136]	**First Name8 (NamePattern2) 1682
+[137]	*
+[138]	*]
+[139]	[**Name8 (MD)
+[140]	*
+[141]	*], M.D.  [**MD Number(1) 1683
+[142]	**]
+
+Dictated By:[**Name8 (MD) 5378
+[143]	**]
+
+MEDQUIST36
+
+D:
+[144]	[**3104-4-29
+[145]	**]  11:19
+T:  [
+[146]	*
+[147]	*3104-5-2**]  21:56
+JOB#:  [
+[148]	**Job Number 23975**]

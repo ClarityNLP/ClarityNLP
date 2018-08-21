@@ -1,0 +1,87 @@
+[  0]	Admission Date: [**3104-4-26**] Discharge Date: [**3104-4-28**] Service:
+[  1]	CARDIAC CA CHIEF COMPLAINT:
+[  2]	Dyspnea on exertion.
+[  3]	HISTORY OF PRESENT ILLNESS:
+[  4]	This is a 78 year old male with hypertension and hyperlipidemia who was in his usual state of health until two weeks prior to admission when he noted increasing shortness of breath on exertion, especially with stairs.
+[  5]	Since that time, the patient reports decreased exercise tolerance but denied any orthopnea, paroxysmal nocturnal dyspnea, or lower extremity swelling.
+[  6]	He denies any dizziness or lightheadedness.
+[  7]	He was seen in Dr. [**Last Name (STitle) 23973**] [**Name (STitle) 23974**] Clinic the day of admission and was found to have high grade infra-nodal heart block and was sent to the Emergency Room.
+[  8]	A central line was placed with temporary pacing wire placed overnight.
+[  9]	PAST MEDICAL HISTORY:
+[ 10]	Hypertension.
+[ 11]	Hyperlipidemia.
+[ 12]	Exercise thallium stress test in [**3100**] showed a small basal inferior fixed defect.
+[ 13]	Mild asthma.
+[ 14]	Hemorrhoids.
+[ 15]	Colonic polyps.
+[ 16]	Left bundle branch block since [**3098-10-8**].
+[ 17]	Bilateral hernia repairs.
+[ 18]	ALLERGIES:
+[ 19]	He has no known drug allergies.
+[ 20]	MEDICATIONS:
+[ 21]	Hydrochlorothiazide 12.5 mg p.o. q. day.
+[ 22]	Lipitor 40 mg p.o. q. h.s.
+[ 23]	Enalapril 20 mg p.o. twice a day.
+[ 24]	Cardizem 180 mg p.o. q. day.
+[ 25]	Aspirin 81 mg p.o. q. day.
+[ 26]	SOCIAL HISTORY:
+[ 27]	He has a remote tobacco history; quit over 25 years ago.
+[ 28]	He has a remote alcohol history; quit over 17 years ago.
+[ 29]	FAMILY HISTORY:
+[ 30]	Family history of stroke but denies any family history of coronary artery disease or malignancy.
+[ 31]	PHYSICAL EXAMINATION:
+[ 32]	Temperature is 98.0 F.; heart rate 35 to 45; blood pressure 161/32; respiratory rate 19; 98% on room air.
+[ 33]	In no acute distress.
+[ 34]	Pupils were reactive to light; the left was 3 millimeters to 2 millimeters; on the right it was 2 millimeters to 1 millimeters.
+[ 35]	Extraocular movements intact.
+[ 36]	Mucous membranes were moist.
+[ 37]	Jugular venous pressure at about 7 centimeters.
+[ 38]	Lungs were clear to auscultation bilaterally.
+[ 39]	He is bradycardic with normal S1 and S2 with I/VI systolic murmur at the apex.
+[ 40]	His abdomen was soft, nontender, nondistended, with normoactive bowel sounds.
+[ 41]	No edema.
+[ 42]	In his extremities he had two plus dorsalis pedis bilaterally.
+[ 43]	LABORATORY:
+[ 44]	EKG showed sinus with atrial rate of 70, 2:1 heart block with ventricular rate of 35 and an old left bundle branch block.
+[ 45]	White blood cell count 11.3, hematocrit 34.6, platelets Sodium 140, potassium 4.1, chloride 102, bicarbonate 25, BUN 26, creatinine 1.3, glucose 129.
+[ 46]	CK Troponin less than 0.
+[ 47]	Echocardiogram in [**3103-2-6**] showed a large left atrium, ejection fraction 60 to 65% with mild symmetric left ventricular hypertrophy, trace aortic regurgitation, mild mitral regurgitation.
+[ 48]	INR was 1.2, PTT 22.
+[ 49]	Total cholesterol in [**3104-2-6**] showed total cholesterol of 161, LDL 89, HDL of 35, triglycerides of Urinalysis was negative.
+[ 50]	Chest x-ray was negative.
+[ 51]	HOSPITAL COURSE:
+[ 52]	The patient remained stable in the hospital.
+[ 53]	He underwent electrophysiology study and pacemaker placement.
+[ 54]	He remained stable and asymptomatic.
+[ 55]	He was then discharged home.
+[ 56]	DISCHARGE INSTRUCTIONS:
+[ 57]	Not to lift anything heavier than ten pounds for two weeks with the left arm.
+[ 58]	He was asked to call his cardiologist with any fatigue or shortness of breath.
+[ 59]	He was to follow-up in Device Clinic in one week.
+[ 60]	He was to follow-up with his cardiologist in two to three weeks.
+[ 61]	DISCHARGE DIAGNOSES:
+[ 62]	Complete heart block.
+[ 63]	MAJOR INTERVENTIONS:
+[ 64]	Transvenous pacer wire placement on [**4-26**].
+[ 65]	Pacemaker placement on [**4-27**].
+[ 66]	CONDITION ON DISCHARGE:
+[ 67]	Stable.
+[ 68]	DISCHARGE MEDICATIONS:
+[ 69]	Enalapril 20 mg p.o. twice a day.
+[ 70]	Hydrochlorothiazide 12.5 mg p.o. q. day.
+[ 71]	Lipitor 40 mg p.o. q. h.s.
+[ 72]	Percocet p.r.n.
+[ 73]	Keflex 500 mg p.o. q. six hours for three days.
+[ 74]	Ativan 1 mg p.o. q. h.s. as needed.
+[ 75]	Diltiazem 180 mg p.o. q. day.
+[ 76]	[**First Name8 (NamePattern2) **]
+[ 77]	[**First Name8 (NamePattern2) 1682**]
+[ 78]	[**Name8 (MD) **], M.D.
+[ 79]	[**MD Number(1) 1683**] Dictated By:[**Name8 (MD) 5378**] MEDQUIST36
+[ 80]	D:
+[ 81]	[**3104-4-29**] 11:19
+[ 82]	T:
+[ 83]	[**3104-5-2**]
+[ 84]	21:56
+[ 85]	JOB#:
+[ 86]	[**Job Number 23975**]
