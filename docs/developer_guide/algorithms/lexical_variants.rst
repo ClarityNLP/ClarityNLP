@@ -25,7 +25,7 @@ relatively straightforward rules (but there are many exceptions). *Irregular*
 verbs have inflected forms for the past tense and/or past participle that
 violate the rules.
 
-ClarityNLP includes a pluralizer and a verb inflector that attempts to compute
+ClarityNLP includes a pluralizer and a verb inflector that attempt to compute
 the plurals and inflected forms of English words. The verb inflector ignores
 archaic forms and focuses primarily on contemporary American English.
 
