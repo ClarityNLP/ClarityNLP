@@ -69,3 +69,57 @@ The improvement process proceeds through several stages, which are:
 Text Cleanup
 ------------
 
+The text cleanup process first searches the report text for cut-and-paste
+section headers found between ``(Over)`` and ``(Cont)`` tokens. These headers
+are often inserted directly into a sentence, producing a confusing result.
+Here is an example:
+
+There are two subcentimeter right renal hypodensities, 1 in\\n                                                             (Over)\\n\\n [**2728-6-8**] 5:24 PM\\n CT CHEST W/CONTRAST; CT ABD & PELVIS W & W/O CONTRAST, ADDL SECTIONSClip # [**Telephone/Fax (1) 103840**]\\n Reason: Evaluate for metastasis/lymphadenopathy related to ? GI [**Country **]\\n Admitting Diagnosis: UPPER GI BLEED\\n  Contrast: OMNIPAQUE Amt: 130\\n ______________________________________________________________________________\\n                                 FINAL REPORT\\n (Cont)\\n the upper pole and 1 in the lower pole, both of which are too small to\\n characterize.
+
+Observe how the ``(Over)..(Cont)`` section has been pasted into this
+sentence:
+
+**"There are two subcentimeter right renal hypodensities, 1 in the**
+**upper pole and 1 in the lower pole, both of which are too small to \\n**
+**characterize."**
+
+The meaning of this passage is not obvious on first inspection to a human
+observer, and it would completely confuse a sentence tokenizer trained on
+formal written English text.
+
+ClarityNLP finds these pasted report headers and removes them.
+
+The next step in the cleanup process is the identification of numbered lists.
+The numbers are removed and the narrative descriptions following the numbers
+are retained.
+
+As is visible in the pasted section header example above, electronic health
+records often contain long runs of dashes, asterisks, or other symbols. These
+strings are used to delimit sections in the report, but they are of no use for
+automated interpretation, so ClarityNLP searches for and removes such strings.
+
+Finally, ClarityNLP locates any instances of repeated whitespace and replaces
+them with a single space.
+
+
+Textual Substitutions
+---------------------
+
+Run the spaCy Sentence Tokenizer
+--------------------------------
+
+Split Consecutive Sentences
+---------------------------
+
+Undo the Substitutions
+----------------------
+
+Perform Additional Sentence Fixups
+----------------------------------
+
+Place All-Caps Section Headers in Their Own Sentence
+----------------------------------------------------
+
+Delete Remaining Errors
+-----------------------
+
