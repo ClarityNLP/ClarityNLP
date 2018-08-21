@@ -31,6 +31,7 @@ Utility Algorithms
    algorithms/section_tagger
    algorithms/context
    algorithms/lexical_variants
+   algorithms/sentence_tokenization
 
 
 Task Algorithms

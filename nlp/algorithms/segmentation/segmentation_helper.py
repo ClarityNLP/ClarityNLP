@@ -391,6 +391,8 @@ def fixup_sentences(sentence_list):
 ###############################################################################
 def split_section_headers(sentence_list):
     """
+    Put an all caps section header in a separate sentence from the subsequent
+    text.
     """
 
     sentences = []
