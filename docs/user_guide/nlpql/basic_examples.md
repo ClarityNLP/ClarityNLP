@@ -2,7 +2,7 @@
 # Overview
 Before going through these examples, make sure to review the [NLPQL walkthrough](../intro/overview.html "simple walkthrough") to get an understanding of the general components of NLPQL.  For this set of examples, we will be focusing on extracting data relevant to congestive heart failure.
 
-Note we recommend prepending each query with `limit=100;` which keeps the job small and allows you to test queries without taking up a lot of time and compute resources. Once you have developed a query and want to scale it to the full dataset, simply remove the `limit` statement.
+Note we recommend prepending each query with `limit 100;` which keeps the job small and allows you to test queries without taking up a lot of time and compute resources. Once you have developed a query and want to scale it to the full dataset, simply remove the `limit` statement.
 
 **All of the sample results shown here are from the de-identified [MIMIC III](https://mimic.physionet.org/) dataset.**
 
@@ -123,7 +123,7 @@ termset NYHAClasses:
 define NYHAClass:
   Clarity.ValueExtraction({
     termset:[NYHATerms],
-    value_list: [NYHAClasses]
+    enum_list: [NYHAClasses]
     });
 ```
 
@@ -131,4 +131,4 @@ define NYHAClass:
 
 
 
-_Note we recommend prepending each query with `limit=100;` which keeps the job small and allows you to test queries without taking up a lot of time and compute resources. Once you have developed a query and want to scale it to the full dataset, simply remove the `limit` statement._
+_Note we recommend prepending each query with `limit 100;` which keeps the job small and allows you to test queries without taking up a lot of time and compute resources. Once you have developed a query and want to scale it to the full dataset, simply remove the `limit` statement._
