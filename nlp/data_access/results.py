@@ -4,8 +4,8 @@ import sys
 import traceback
 from datetime import datetime
 
-from pymongo import MongoClient
 from bson.objectid import ObjectId
+from pymongo import MongoClient
 
 import util
 
@@ -170,6 +170,32 @@ def lookup_phenotype_result_by_id(id: str):
     return obj
 
 
+def lookup_phenotype_results_by_id(id_list: list):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    obj = dict()
+    obj['results'] = list()
+    obj['indexes'] = dict()
+
+    try:
+        # db.phenotype_results.find({"_id": { $in: [ObjectId("5b117352bcf26f020e392a9c"), ObjectId("5b117352bcf26f020e3926e2")]}})
+        # TODO TODO TODO
+        ids = list(map(lambda x: ObjectId(x), id_list))
+        res = db.phenotype_results.find({
+            "_id": {
+                "$in": ids
+            }
+        })
+        obj['results'] = list(res)
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+        obj['success'] = False
+    finally:
+        client.close()
+
+    return obj
+
+
 def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = ''):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -184,7 +210,7 @@ def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '
                 db.phenotype_results.find({"job_id": int(job_id), "phenotype_final": phenotype_final}).count())
         else:
             results = list(db.phenotype_results.find({"_id": {"$gt": ObjectId(last_id)}, "job_id": int(job_id),
-                 "phenotype_final": phenotype_final}).limit(page_size))
+                                                      "phenotype_final": phenotype_final}).limit(page_size))
 
         results_length = len(results)
         no_more = False

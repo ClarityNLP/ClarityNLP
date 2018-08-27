@@ -170,6 +170,23 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), sort='
     return int(response.json()['response']['numFound'])
 
 
+def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):
+
+    url = solr_url + '/select'
+    data = make_post_body("report_id:" + report_id, '', '', 0, 1)
+
+    print("Querying to get document " + url)
+    post_data = json.dumps(data)
+    print(post_data)
+
+    # Getting ID for new cohort
+    response = requests.post(url, headers=get_headers(), data=post_data)
+    if response.status_code != 200:
+        return {}
+
+    return response.json()['response']['docs'][0]
+
+
 if __name__ == '__main__':
     solr = util.solr_url
     if len(sys.argv) > 1:

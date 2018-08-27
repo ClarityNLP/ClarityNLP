@@ -183,7 +183,7 @@ def phenotype_jobs(status_string: str):
         return json.dumps(p, indent=4, sort_keys=True, default=str)
     except Exception as ex:
         traceback.print_exc(file=sys.stderr)
-        return "Failed: " + str(e)
+        return "Failed: " + str(ex)
 
 
 @phenotype_app.route('/phenotype_paged_results/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
@@ -270,6 +270,20 @@ def get_phenotype_feature_results(job_id: int, feature: str):
     """GET phenotype results for a given feature"""
     try:
         res = phenotype_feature_results(str(job_id), feature)
+
+        return json.dumps(res, indent=4, default=str)
+    except Exception as e:
+        traceback.print_exc(file=sys.stderr)
+        return "Failed: " + str(e)
+
+
+@phenotype_app.route('/phenotype_results_by_id/<string:ids>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def get_phenotype_results_by_id(ids: str):
+    """GET phenotype results for a comma-separated list of ids"""
+    try:
+        id_list = ids.split(',')
+        res = lookup_phenotype_results_by_id(id_list)
 
         return json.dumps(res, indent=4, default=str)
     except Exception as e:

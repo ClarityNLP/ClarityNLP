@@ -85,3 +85,14 @@ def get_job_status(job_id: int):
         return json.dumps(status, indent=4)
     except Exception as e:
         return "Failed to get job status" + str(e)
+
+
+@utility_app.route('/document/<string:report_id>', methods=['GET'])
+@auto.doc(groups=['private'])
+def get_document_by_id(report_id: str):
+    """GET Solr document by id"""
+    try:
+        doc = query_doc_by_id(report_id, util.solr_url)
+        return json.dumps(doc, indent=4)
+    except Exception as ex:
+        return "Failed to get document by id" + str(ex)
