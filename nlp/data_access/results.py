@@ -187,6 +187,12 @@ def lookup_phenotype_results_by_id(id_list: list):
             }
         })
         obj['results'] = list(res)
+        n = 0
+        for o in obj['results']:
+            id = str(o['_id'])
+            obj['indexes'][id] = n
+            n = n + 1
+
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         obj['success'] = False
