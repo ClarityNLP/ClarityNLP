@@ -1,3 +1,5 @@
+debug;
+
 phenotype "Karnofksy" version "1";
 
 /* Phenotype library description */

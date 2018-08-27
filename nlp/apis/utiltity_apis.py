@@ -1,5 +1,7 @@
 import simplejson
 from flask import send_file, Blueprint
+from os import listdir
+from os.path import isfile, join
 
 from data_access import *
 from algorithms import *
@@ -96,3 +98,30 @@ def get_document_by_id(report_id: str):
         return json.dumps(doc, indent=4)
     except Exception as ex:
         return "Failed to get document by id" + str(ex)
+
+
+sample_path = './samples/nlpql'
+
+
+@utility_app.route('/nlpql_samples', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'utilities'])
+def get_nlpql_samples():
+    """GET NLPQL samples"""
+    try:
+        nlpql_files = [f for f in listdir(sample_path) if isfile(join(sample_path, f))]
+        return json.dumps(nlpql_files, indent=4)
+    except Exception as e:
+        return "Failed to get nlpql samples" + str(e)
+
+
+@utility_app.route('/nlpql_text/<string:name>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'utilities'])
+def get_nlpql_text(name: str):
+    """GET NLPQL sample by name"""
+    try:
+        sample_file = './samples/nlpql/' + name
+        with open(sample_file, 'r') as f:
+            return f.read()
+    except Exception as e:
+        return "Failed to get nlpql text" + str(e)
+

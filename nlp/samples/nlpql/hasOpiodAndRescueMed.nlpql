@@ -1,3 +1,5 @@
+debug;
+
 // Phenotype library name
 phenotype "Opioid and Death" version "1";
 
