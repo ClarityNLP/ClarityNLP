@@ -1,0 +1,40 @@
+debug;
+
+phenotype "Test Expansion Using English Phrases";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+// The ClarityCore library provides common functions for simplifying NLP pipeline creation
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
+
+termset SurgeonTermset: [
+
+// WordNet synonyms for 'surgeon'
+Clarity.Synonyms("surgeon"),
+
+// WordNet synonyms for 'tumor'
+Clarity.Synonyms("tumor"),
+
+// Verb inflections for 'removes'
+Clarity.VerbInflections("removes"),
+
+// synonyms of "the surgeon removes the tumor"
+Clarity.Synonyms("the surgeon removes the tumor"),
+
+// verb inflections of synonyms of "the surgeon removes the tumor"
+VerbInflections(Synonyms("the surgeon removes the tumor")),
+
+// synonyms of verb inflections of "the surgeon removes the tumor"
+Synonyms(VerbInflections("the surgeon removes the tumor")),
+
+// Process phrase as a whole; do we need to find the nouns and pluralize
+// each as well?
+Clarity.Plurals("the surgeon removes the tumor")
+
+];
