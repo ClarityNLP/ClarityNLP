@@ -83,7 +83,8 @@ def normalize(race_text):
 def find_race(sentence_list):
     """
     Scan a list of sentences and run race-finding regexes on each.
-    Return a dict that maps sentence_index -> race_category.
+    Returns a list of RaceFinderResult namedtuples. Currently returns only
+    the first result found.
     """
 
     result_list = []
