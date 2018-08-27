@@ -186,6 +186,18 @@ def phenotype_jobs(status_string: str):
         return "Failed: " + str(ex)
 
 
+@phenotype_app.route('/phenotype_job_by_id/<string:id>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def phenotype_job_by_id(id: str):
+    """GET a phenotype jobs JSON by id"""
+    try:
+        p = query_phenotype_job_by_id(id, util.conn_string)
+        return json.dumps(p, indent=4, sort_keys=True, default=str)
+    except Exception as ex:
+        traceback.print_exc(file=sys.stderr)
+        return "Failed: " + str(ex)
+
+
 @phenotype_app.route('/phenotype_paged_results/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
 @auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_paged_phenotype_results(job_id: int, phenotype_final_str: str):

@@ -153,6 +153,35 @@ def query_phenotype_jobs(status: str, connection_string: str):
     return jobs
 
 
+def query_phenotype_job_by_id(job_id: str, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    job = {}
+
+    try:
+        cursor.execute("""select jb.*, pt.config, pt.nlpql from nlp.nlp_job as jb
+                         INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
+                        where jb.job_type = 'PHENOTYPE'
+                        and jb.nlp_job_id = %s 
+                        order by jb.date_started DESC""",
+                       [job_id])
+        rows = cursor.fetchall()
+        for row in rows:
+            name = row['name']
+            if not name or name.strip() == '':
+                name = "Phenotype %s" % str(row['phenotype_id'])
+                row['name'] = name
+            job = row
+            break
+        return job
+    except Exception as ex:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+
+    return job
+
+
 if __name__ == "__main__":
     conn_string = util.conn_string
     status = get_job_status(117, conn_string)
