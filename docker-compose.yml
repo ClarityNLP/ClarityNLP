@@ -179,7 +179,7 @@ services:
     hostname: ${RESULTS_CLIENT_HOSTNAME}
     build:
       context: ./utilities/results-client
-      dockerfile: Dockerfile	
+      dockerfile: Dockerfile
     environment:
       - "PORT=${RESULTS_CLIENT_HOST_PORT}"
     ports:
