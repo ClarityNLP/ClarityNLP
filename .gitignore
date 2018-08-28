@@ -9,4 +9,5 @@ prod.env
 _build/
 _templates/
 !__init__.py
-nlp/tasks/custom
+nlp/notebooks/.ipynb_checkpoints
+nlp/notebooks/cooking/.ipynb_checkpoints
