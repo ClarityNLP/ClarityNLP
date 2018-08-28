@@ -132,12 +132,12 @@ def query_phenotype_jobs(status: str, connection_string: str):
 
     try:
         if status == '' or status == 'ALL':
-            cursor.execute("""select jb.*, pt.config, pt.nlpql from nlp.nlp_job as jb
+            cursor.execute("""select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
                                INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                               where jb.job_type = 'PHENOTYPE'
                               order by jb.date_started DESC""")
         else:
-            cursor.execute("""select jb.*, pt.config, pt.nlpql from nlp.nlp_job as jb
+            cursor.execute("""select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
                              INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                             where jb.job_type = 'PHENOTYPE'
                             and jb.status = %s 
