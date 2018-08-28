@@ -47,11 +47,12 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str=''):
     output['pipeline_ids'] = pipeline_ids
     output['pipeline_configs'] = pipeline_urls
     output["status_endpoint"] = "%s/status/%s" % (util.main_url, str(job_id))
+    output["results_viewer"] = "%s?job=%s" % (util.results_viewer_url, str(job_id))
     output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
         util.luigi_url, str(job_id))
-    output["intermediate_results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id),
+    output["intermediate_results_csv"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id),
                                                                         'phenotype_intermediate')
-    output["main_results_endpoint"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id), 'phenotype')
+    output["main_results_csv"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id), 'phenotype')
 
     return output
 
