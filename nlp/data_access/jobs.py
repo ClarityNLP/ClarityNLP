@@ -145,10 +145,10 @@ def query_phenotype_jobs(status: str, connection_string: str):
                            [status])
         rows = cursor.fetchall()
         for row in rows:
-            name = row['name']
+            name = row['phenotype_name']
             if not name or name.strip() == '':
                 name = "Phenotype %s" % str(row['phenotype_id'])
-                row['name'] = name
+                row['phenotype_name'] = name
             jobs.append(row)
         return jobs
     except Exception as ex:
