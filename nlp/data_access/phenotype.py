@@ -97,10 +97,20 @@ def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
     p_id = -1
 
     try:
-        if len(phenotype.description) > 250:
-            name = phenotype.description[0:249]
-        else:
-            name = phenotype.description
+        name = ''
+        if phenotype.phenotype:
+            if 'name' in phenotype.phenotype:
+                if len(phenotype.phenotype['name']) > 250:
+                    name = phenotype.phenotype['name'][0:249]
+                else:
+                    name = phenotype.phenotype['name']
+
+        if len(name) == 0:
+            if len(phenotype.description) > 250:
+                name = phenotype.description[0:249]
+            else:
+                name = phenotype.description
+        name = name.replace('"', '')
         p_json = phenotype.to_json()
         cursor.execute("""
                       INSERT INTO nlp.phenotype(owner, config, name, description, nlpql, date_created) 
