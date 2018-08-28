@@ -41,7 +41,7 @@ define hasOrthopnea:
   Clarity.TermFinder({
     termset:[Orthopnea],
     negated:"Affirmed",
-    sections:["CHIEF_COMPLAINT",["HISTORY_PRESENT_ILLNESS"]]
+    sections:["CHIEF_COMPLAINT","HISTORY_PRESENT_ILLNESS"]
     });
 ```
 But because in most situations we need to find positive mentions that are current and relevant to the patient, ClarityNLP has a convenient function called `ProviderAssertion` that allows you to bypass entering all the typical parameters.  Here is a simple example.  
@@ -111,19 +111,16 @@ limit 100;
 //phenotype name
 phenotype "NYHA Class" version "1";
 
-//include Clarity main NLP libraries
+//include Clarity  main NLP libraries
 include ClarityCore version "1.0" called Clarity;
 
 termset NYHATerms:
   ["nyha"];
 
-termset NYHAClasses:
-  ["i","ii","iii","iv"];  
-
 define NYHAClass:
   Clarity.ValueExtraction({
     termset:[NYHATerms],
-    enum_list: [NYHAClasses]
+    enum_list: ["3","4","iii","iv"];
     });
 ```
 
