@@ -277,12 +277,12 @@ def get_phenotype_structure(id: int):
         return "Failed: " + str(e)
 
 
-@phenotype_app.route('/phenotype_feature_results/<int:job_id>/<string:feature>', methods=['GET'])
+@phenotype_app.route('/phenotype_feature_results/<int:job_id>/<string:feature>/<string:subject>', methods=['GET'])
 @auto.doc(groups=['public', 'private', 'phenotypes'])
-def get_phenotype_feature_results(job_id: int, feature: str):
+def get_phenotype_feature_results(job_id: int, feature: str, subject: str):
     """GET phenotype results for a given feature"""
     try:
-        res = phenotype_feature_results(str(job_id), feature)
+        res = phenotype_feature_results(str(job_id), feature, subject)
 
         return json.dumps(res, indent=4, default=str)
     except Exception as e:

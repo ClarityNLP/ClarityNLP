@@ -294,12 +294,12 @@ def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     return results
 
 
-def phenotype_feature_results(job_id: str, feature: str):
+def phenotype_feature_results(job_id: str, feature: str, subject: str):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
     results = []
     try:
-        query = {"job_id": int(job_id), "nlpql_feature": feature}
+        query = {"job_id": int(job_id), "nlpql_feature": feature, "subject": subject}
 
         results = list(db["phenotype_results"].find(query))
     except Exception as e:
