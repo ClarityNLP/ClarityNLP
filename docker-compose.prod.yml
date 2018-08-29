@@ -169,6 +169,8 @@ services:
     build:
       context: ./utilities/results-client
       dockerfile: Dockerfile.prod
+    environment:
+      - "REACT_APP_LUIGI_URL=${LUIGI_URL}"
     ports:
       - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
 

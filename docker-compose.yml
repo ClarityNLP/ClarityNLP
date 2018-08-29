@@ -182,6 +182,7 @@ services:
       dockerfile: Dockerfile
     environment:
       - "PORT=${RESULTS_CLIENT_HOST_PORT}"
+      - "REACT_APP_LUIGI_URL=${LUIGI_URL}"
     ports:
       - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
 
