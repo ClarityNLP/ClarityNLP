@@ -270,6 +270,7 @@ def phenotype_subjects(job_id: str, phenotype_final: bool):
             }
         ]
         results = list(db.phenotype_results.aggregate(q))
+        results = sorted(results, key=lambda r: r['count'], reverse=True)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
     finally:
