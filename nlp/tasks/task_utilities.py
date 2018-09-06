@@ -65,7 +65,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     data_fields["nlpql_feature"] = (prefix + p_config.name)
     data_fields["inserted_date"] = datetime.datetime.now()
     data_fields["concept_code"] = p_config.concept_code
-    data_fields["phenotype_final"] = phenotype_final
+    data_fields["phenotype_final"] = (phenotype_final or p_config.final)
 
     if doc:
         data_fields["report_id"] = doc[util.solr_report_id_field]
@@ -176,7 +176,7 @@ class BaseTask(luigi.Task):
     def set_name(self, name):
         self.task_name = name
 
-    def write_result_data(self, temp_file, mongo_client, doc, data: dict, prefix: str=''):
+    def write_result_data(self, temp_file, mongo_client, doc, data: dict, prefix: str='', phenotype_final: bool=False):
         inserted = pipeline_mongo_writer(mongo_client, self.pipeline, self.task_name, self.job, self.batch,
                                          self.pipeline_config, doc, data, prefix=prefix)
         if temp_file is not None:
