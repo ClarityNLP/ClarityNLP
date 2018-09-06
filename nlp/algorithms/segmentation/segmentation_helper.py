@@ -363,6 +363,9 @@ def cleanup_report(report):
     
     # collapse repeated whitespace (including newlines) into a single space
     report = re.sub(r'\s+', ' ', report)
+
+    # convert unicode left and right quotation marks to ascii
+    report = re.sub(r'(\u2018|\u2019)', "'", report)
     
     return report
     
