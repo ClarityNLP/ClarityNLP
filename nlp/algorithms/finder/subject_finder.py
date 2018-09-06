@@ -505,11 +505,6 @@ ngram_dict = {}
 ngram_min_chars = 9999999
 ngram_word_counts = []
 
-# replacement nouns - ensure none are in the ngram file
-ngram_replacements = ['car', 'city', 'year', 'news', 'math', 'hall',
-                      'poet', 'fact', 'idea', 'oven', 'poem', 'dirt', 'tale',
-                      'world', 'hotel']
-
 # displacy use flag
 ENABLE_DISPLACY = False
 
@@ -798,7 +793,11 @@ def replace_preserving_length(regex, sentence, str_new):
         piece1 = sentence[0:start]
         
         pad_char_count = (end - start - len(str_new))
-        assert pad_char_count >= 0
+        #assert pad_char_count >= 0
+
+        # skip if lengths are wrong
+        if pad_char_count < 0:
+            continue
         
         piece2 = str_new    
         piece3 = ' ' * pad_char_count
@@ -2412,6 +2411,11 @@ def replace_ngrams(sentence):
     found with a single noun from the 'ngram_replacements' list.
     """
 
+    # replacement nouns - ensure none are in the ngram file
+    ngram_replacements = ['car', 'city', 'year', 'news', 'math', 'hall',
+                          'poet', 'fact', 'idea', 'oven', 'poem', 'dirt',
+                          'tale', 'world', 'hotel']
+
     original_sentence = sentence
     max_ngram_length = ngram_word_counts[-1]
     
@@ -2482,6 +2486,12 @@ def replace_ngrams(sentence):
         replacements[new_wd] = old_wd
         if TRACE: print('\tReplaced {0} with {1}'.format(old_wd, new_wd))
         index += 1
+        if index >= len(ngram_replacements):
+            # found a long sentence with lots of replacements
+            # probably a sentence tokenization error
+            print('*** subject_finder: more matches than ngram replacements ***')
+            print('original sentence: ' + original_sentence)
+            break
 
     return sentence
 
