@@ -140,12 +140,22 @@ def phenotype_structure(phenotype_id: int, connection_string: str):
                        [phenotype_id])
         config = json.loads(cursor.fetchone()[0])
 
-        final_ops = list(filter(lambda o: o['final'], config['operations']))
-        ops = {o['name']: o for o in config['operations']}
-        des = {o['name']: o for o in config['data_entities']}
+        if 'operations' in config:
+            final_ops = list(filter(lambda o: o['final'], config['operations']))
+            ops = {o['name']: o for o in config['operations']}
+        else:
+            final_ops = list()
+            ops = dict()
+
+        if 'data_entities' in config:
+            final_des = list(filter(lambda o: o['final'], config['data_entities']))
+            des = {o['name']: o for o in config['data_entities']}
+        else:
+            des = dict()
+            final_des = dict()
 
         hierarchy['config'] = config
-        hierarchy['finals'] = final_ops
+        hierarchy['finals'] = (final_ops + final_des)
         hierarchy['operations'] = ops
         hierarchy['data_entities'] = des
 
