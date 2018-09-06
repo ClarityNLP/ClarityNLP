@@ -307,7 +307,7 @@ if __name__ == '__main__':
 
     try:
         infile = open(json_file, 'rt')
-        data = json.load(infile)
+        file_data = json.load(infile)
     except:
         print("Could not open file {0}.".format(json_file))
         sys.exit(-1)
@@ -326,7 +326,12 @@ if __name__ == '__main__':
            continue
 
         try:
-            report = data['response']['docs'][index]['report_text']
+            if 'response' in file_data and 'docs' in file_data['response']:
+                # json file has a Solr query response header
+                report = file_data['response']['docs'][index]['report_text']
+            else:
+                # assume json file is just an array of docs
+                report = file_data[index]['report_text']
         except:
             ok = False
             break
