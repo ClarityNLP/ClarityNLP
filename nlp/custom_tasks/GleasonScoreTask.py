@@ -67,7 +67,6 @@ def find_gleason_score(sentence_list):
         for regex in REGEXES:
             match = regex.search(s)
             if match:
-                print('matched: {0}'.format(match.group()))
                 start = match.start()
                 end   = match.end()
 
