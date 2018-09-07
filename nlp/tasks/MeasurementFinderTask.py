@@ -18,7 +18,6 @@ class MeasurementFinderTask(BaseTask):
             meas_results = run_measurement_finder_full(self.get_document_text(doc), self.pipeline_config.terms)
             for meas in meas_results:
                 value = meas['X']
-
                 obj = {
                     "sentence": meas.sentence,
                     "text": meas.text,
@@ -34,7 +33,9 @@ class MeasurementFinderTask(BaseTask):
                     "condition": meas.condition,
                     "value1": meas.value1,
                     "value2": meas.value2,
-                    "temporality": meas.temporality
+                    "temporality": meas.temporality,
+                    "min_value": meas.min_value,
+                    "max_value": meas.max_value
                 }
 
                 self.write_result_data(temp_file, mongo_client, doc, obj)

@@ -14,6 +14,7 @@ def run_measurement_finder_full(text, term_list, is_case_sensitive_text=False):
         term_list = [term.lower() for term in term_list]
         text = text.lower()
 
+    term_count = len(term_list)
     terms = ",".join(term_list)
     results = []
 
@@ -21,18 +22,38 @@ def run_measurement_finder_full(text, term_list, is_case_sensitive_text=False):
     for s in sentence_list:
         json_str = run_subject_finder(terms, s)
         json_obj = json.loads(json_str)
+        if 0 == json_obj['measurementCount']:
+            continue
+        if term_count > 0 and not json_obj['querySuccess']:
+            # ignore if query term(s) not found
+            continue
         if json_obj and 'measurementList' in json_obj:
             for x in json_obj['measurementList']:
                 try:
-                    results.append(Measurement(sentence=s, text=x['text'], location=x['location'],
-                                               x_view=x['x_view'], start=x['start'], temporality=x['temporality'],
-                                               y_view=x['y_view'], Z=x['z'], subject=', '.join(x['subject']),
-                                               X=x['x'], end=x['end'], condition=x['condition'],
-                                               matching_terms=', '.join(x['matchingTerm']),
-                                               value1=x['values'], z_view=x['z_view'], units=x['units'], Y=x['y']
-                                               ))
+                    m = Measurement(sentence=s,
+                                    text=x['text'],
+                                    start=x['start'],
+                                    end=x['end'],
+                                    temporality=x['temporality'],
+                                    units=x['units'],
+                                    condition=x['condition'],
+                                    matching_terms=', '.join(x['matchingTerm']),
+                                    subject=', '.join(x['subject']),
+                                    location=x['location'],
+                                    X=x['x'],
+                                    Y=x['y'],
+                                    Z=x['z'],
+                                    x_view=x['xView'],
+                                    y_view=x['yView'],
+                                    z_view=x['zView'],
+                                    value1=x['values'],
+                                    min_value = x['minValue'],
+                                    max_value = x['maxValue']
+                    )
+                    results.append(m)
+                    
                 except Exception as ex:
-                    print(ex)
+                    print('measurement_finder_wrapper exception: {0}'.format(ex))
 
     return results
 

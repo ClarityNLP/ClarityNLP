@@ -8,7 +8,7 @@ except Exception as e:
 class Measurement(BaseModel):
 
     def __init__(self, subject='', X='', Y='', Z='', units='', text='', start='', end='', location='', temporality='',
-                 sentence='', condition='', value1='', value2='', x_view='', y_view='', z_view='', matching_terms=''):
+                 sentence='', condition='', value1='', value2='', x_view='', y_view='', z_view='', matching_terms='', min_value='', max_value=''):
         self.subject = subject
         self.X = X
         self.Y = Y
@@ -27,6 +27,8 @@ class Measurement(BaseModel):
         self.y_view = y_view
         self.z_view = z_view
         self.matching_terms = matching_terms
+        self.min_value = min_value
+        self.max_value = max_value
 
 
 class MeasurementResults(BaseModel):
