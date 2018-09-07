@@ -6,3 +6,5 @@ from .proximity_search import *
 from .ColumbiaTransfusionTask import ColumbiaTransfusionTask
 from .TextStatsTask import *
 from .RaceFinderTask import RaceFinderTask
+from .GleasonScoreTask import GleasonScoreTask
+
