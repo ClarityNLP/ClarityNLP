@@ -27,24 +27,25 @@ from pymongo import MongoClient
 from collections import namedtuple
 from tasks.task_utilities import BaseTask
 
-VERSION_MAJOR = 0
-VERSION_MINOR = 1
+_VERSION_MAJOR = 0
+_VERSION_MINOR = 1
 
 # Gleason('?s)? score 7 (4 + 3)
-str_gleason1 = r'\bGleason(\'?s)?\s+score\s+(?P<score>\d+)\s+'     +\
+_str_gleason1 = r'\bGleason(\'?s)?\s+score\s+(?P<score>\d+)\s+'     +\
                r'\(\s*(?P<first_num>\d)\s*\+\s*(?P<second_num>\d)\s*\)'
 
 # Gleason('?s)? (score)? 4 + 3
-str_gleason2 = r'\bGleason(\'?s)?\s+(score\s+)?(?P<first_num>\d)\s*\+\s*(?P<second_num>\d)'
+_str_gleason2 = r'\bGleason(\'?s)?\s+(score\s+)?(?P<first_num>\d)\s*\+\s*(?P<second_num>\d)'
 
 # Gleason('?s)? score 7
-str_gleason3 = r'\bGleason(\'?s)?\s+(score\s+)?(?P<score>\d+)'
+_str_gleason3 = r'\bGleason(\'?s)?\s+(score\s+)?(?P<score>\d+)'
 
-regex_gleason1 = re.compile(str_gleason1, re.IGNORECASE)
-regex_gleason2 = re.compile(str_gleason2, re.IGNORECASE)
-regex_gleason3 = re.compile(str_gleason3, re.IGNORECASE)
-REGEXES = [regex_gleason1, regex_gleason2, regex_gleason3]
+_regex_gleason1 = re.compile(_str_gleason1, re.IGNORECASE)
+_regex_gleason2 = re.compile(_str_gleason2, re.IGNORECASE)
+_regex_gleason3 = re.compile(_str_gleason3, re.IGNORECASE)
+_REGEXES = [_regex_gleason1, _regex_gleason2, _regex_gleason3]
 
+# another module might want to import these, so no leading underscore
 GLEASON_SCORE_RESULT_FIELDS = ['sentence_index', 'start', 'end',
                                'score', 'first_num', 'second_num']
 GleasonScoreResult = namedtuple('GleasonScoreResult',
@@ -52,7 +53,7 @@ GleasonScoreResult = namedtuple('GleasonScoreResult',
 
 
 ###############################################################################
-def find_gleason_score(sentence_list):
+def _find_gleason_score(sentence_list):
     """
     Scan a list of sentences and run Gleason score-finding regexes on each.
     Returns a list of GleasonScoreResult namedtuples.
@@ -64,7 +65,7 @@ def find_gleason_score(sentence_list):
         s = sentence_list[i]
         best_width = 0
         best_candidate = None
-        for regex in REGEXES:
+        for regex in _REGEXES:
             match = regex.search(s)
             if match:
                 start = match.start()
@@ -124,7 +125,7 @@ class GleasonScoreTask(BaseTask):
             sentence_list = self.get_document_sentences(doc)
 
             # all Gleason score results in this document
-            result_list = find_gleason_score(sentence_list)
+            result_list = _find_gleason_score(sentence_list)
                 
             if len(result_list) > 0:
                 for result in result_list:
