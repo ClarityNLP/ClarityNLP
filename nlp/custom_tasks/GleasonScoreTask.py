@@ -4,21 +4,21 @@
 This is a custom task for extracting a patient's Gleason score, which is
 relevant to prostate cancer diagnosis and staging.
 
-Sample NLPQL, uses a special set of docs with report_type:"Gleason" :
+Sample NLPQL:
 
     limit 100;
 
     phenotype "Gleason Score Finder" version "1";
     include ClarityCore version "1.0" called Clarity;
 
-    documentset GleasonDocs:
+    documentset Docs:
         Clarity.createDocumentSet({
-            "report_types":["Gleason"]
+            "report_types":["Pathology"]
         });
 
     define final GleasonFinderFunction:
         Clarity.GleasonScoreTask({
-            documentset: [DischargeSummaries]
+            documentset: [Docs]
         });
 """
 
@@ -28,22 +28,38 @@ from collections import namedtuple
 from tasks.task_utilities import BaseTask
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 
-# Gleason('?s)? score 7 (4 + 3)
-_str_gleason1 = r'\bGleason(\'?s)?\s+score\s+(?P<score>\d+)\s+'     +\
-               r'\(\s*(?P<first_num>\d)\s*\+\s*(?P<second_num>\d)\s*\)'
+_SCORE_TEXT_TO_INT = {
+    'two':2,
+    'three':3,
+    'four':4,
+    'five':5,
+    'six':6,
+    'seven':7,
+    'eight':8,
+    'nine':9,
+    'ten':10
+}
 
-# Gleason('?s)? (score)? 4 + 3
-_str_gleason2 = r'\bGleason(\'?s)?\s+(score\s+)?(?P<first_num>\d)\s*\+\s*(?P<second_num>\d)'
+_str_gleason  = r'Gleason(\'?s)?\s*'
+_str_desig    = r'(score|sum|grade|pattern)(\s+(is|of))?'
 
-# Gleason('?s)? score 7
-_str_gleason3 = r'\bGleason(\'?s)?\s+(score\s+)?(?P<score>\d+)'
+# accept a score in digits under these circumstances:
+#     digit not followed by a '+', e.g. 'Gleason score 6'
+#     digit followed by '+' but no digit after, e.g. 'Gleason score 3+'
+# constructs such as Gleason score 3+3 captured in two-part expression below
 
-_regex_gleason1 = re.compile(_str_gleason1, re.IGNORECASE)
-_regex_gleason2 = re.compile(_str_gleason2, re.IGNORECASE)
-_regex_gleason3 = re.compile(_str_gleason3, re.IGNORECASE)
-_REGEXES = [_regex_gleason1, _regex_gleason2, _regex_gleason3]
+_str_score = r'(?P<score>(\d+(?!\+)(?!\s\+)|\d+(?=\+(?!\d))|'             +\
+             r'two|three|four|five|six|seven|eight|nine|ten))'
+
+# parens are optional, space surrounding the '+' varies
+_str_two_part = r'((\(\s*)?(?P<first_num>\d+)\s*\+\s*(?P<second_num>\d+)' +\
+                r'(\s*\))?)?'
+
+_str_total = _str_gleason + r'(' + _str_desig + r'\s*)?'                  +\
+             r'(' + _str_score + r'\s*)?' + _str_two_part
+_regex_gleason = re.compile(_str_total, re.IGNORECASE)
 
 # another module might want to import these, so no leading underscore
 GLEASON_SCORE_RESULT_FIELDS = ['sentence_index', 'start', 'end',
@@ -63,45 +79,56 @@ def _find_gleason_score(sentence_list):
 
     for i in range(len(sentence_list)):
         s = sentence_list[i]
-        best_width = 0
-        best_candidate = None
-        for regex in _REGEXES:
-            match = regex.search(s)
-            if match:
-                start = match.start()
-                end   = match.end()
+        iterator = _regex_gleason.finditer(s)
+        for match in iterator:
+            start = match.start()
+            end   = match.end()
 
-                # keep match if longer than any previous matches
-                width = end - start
-                if width < best_width:
-                    continue
-                
-                best_width = width
+            try:
+                first_num = int(match.group('first_num'))
+            except:
+                first_num = None
 
-                try:
-                    first_num = int(match.group('first_num'))
-                except:
-                    first_num = None
+            try:
+                second_num = int(match.group('second_num'))
+            except:
+                second_num = None
 
-                try:
-                    second_num = int(match.group('second_num'))
-                except:
-                    second_num = None
-
-                try:
-                    score = int(match.group('score'))
-                except:
-                    if first_num is not None and second_num is not None:
-                        score = first_num + second_num
+            try:
+                match_text = match.group('score')
+                if match_text.isdigit():
+                    score = int(match_text)
+                else:
+                    match_text = match_text.strip()
+                    if match_text in _SCORE_TEXT_TO_INT:
+                        score = _SCORE_TEXT_TO_INT[match_text]
                     else:
                         score = None
-                    
-                result = GleasonScoreResult(i, start, end,
-                                            score, first_num, second_num)
-                best_candidate = result
+            except:
+                # no single score was given
+                if first_num is not None and second_num is not None:
+                    score = first_num + second_num
+                else:
+                    score = None
 
-        if best_candidate is not None:
-            result_list.append(best_candidate)
+            # 1 <= first_num <= 5
+            # 1 <= second_num <= 5
+            # 2 <= score <= 10
+            # anything outside of these limits is invalid
+
+            if first_num is not None and (first_num > 5 and first_num <= 10):
+                # assume score reported for first_num
+                score = first_num
+                first_num = None
+                second_num = None
+            elif score is not None and (score < 2 or score > 10):
+                # invalid
+                score = None
+                continue
+                    
+            result = GleasonScoreResult(i, start, end,
+                                        score, first_num, second_num)
+            result_list.append(result)
 
     return result_list
 
