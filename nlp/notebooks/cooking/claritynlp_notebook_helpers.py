@@ -2,8 +2,8 @@ import json, csv
 import urllib, requests
 import pandas as pd
 
-# url = 'http://18.220.133.76:5000/'
-url = 'http://localhost:5000/'
+url = 'http://18.220.133.76:5000/'
+# url = 'http://localhost:5000/'
 nlpql_url = url + 'nlpql'
 expander_url = url + 'nlpql_expander'
 tester_url = url + 'nlpql_tester'
