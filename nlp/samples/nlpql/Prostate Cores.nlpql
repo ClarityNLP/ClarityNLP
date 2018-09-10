@@ -1,0 +1,19 @@
+//phenotype name
+phenotype "Prostate Cores" version "1";
+
+//include Clarity main NLP libraries
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+documentset ProstateCoreNotes:
+     Clarity.createDocumentSet({
+         "query":"prostate AND (cores OR cores)"});
+
+termset Prostate:
+  ["core","cores"];
+
+define final ProstateMention:
+  Clarity.ProviderAssertion({
+  	documentset: [ProstateCoreNotes],
+    termset:[Prostate]
+    });
