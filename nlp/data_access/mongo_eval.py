@@ -463,7 +463,7 @@ def _mongo_format(operator, op1, op2=None):
     
 
 ###############################################################################
-def _to_mongo_command(postfix_tokens):
+def _to_mongo_command(postfix_tokens, match_filters: dict()):
     """
     Convert a tokenized postfix expression into a form for execution by
     the MongoDB aggregation engine. See chapter 7 of 'MongoDB: The Definitive
@@ -478,8 +478,13 @@ def _to_mongo_command(postfix_tokens):
     """
 
     MONGO_PREAMBLE  = '{ "$project" : { "value" : {'
-    MONGO_POSTAMBLE = '}}}' 
-    
+    MONGO_POSTAMBLE = '}}}'
+
+    MATCH_PREAMBLE  = '{ "$match" : {'
+    MATCH_POSTAMBLE = '}}'
+
+    mongo_commands = list()
+
     stack = []
 
     for token in postfix_tokens:
@@ -497,27 +502,40 @@ def _to_mongo_command(postfix_tokens):
 
     # only a single element should remain on the stack
     if 1 == len(stack):
-        return MONGO_PREAMBLE + stack[0] + MONGO_POSTAMBLE
+        mongo_commands.append(MONGO_PREAMBLE + stack[0] + MONGO_POSTAMBLE)
     else:
         err_msg = 'mongo_eval: invalid expression: {0}'.format(postfix_tokens)
         print(err_msg)
-        return _EMPTY_JSON
-            
+        mongo_commands.append(_EMPTY_JSON)
+
+    if match_filters:
+        match_string = ''
+        for k in match_filters.keys():
+            if len(match_string) > 0:
+                match_string = match_string + ", "
+            val = str(match_filters[k])
+            if type(match_filters[k]) == str:
+                val = '"' + val + '"'
+            match_string = match_string + '"' + k + '":' + val
+        mongo_commands.append(MATCH_PREAMBLE + match_string + MATCH_POSTAMBLE)
+
+    return mongo_commands
+
 
 ###############################################################################
-def _mongo_evaluate(json_command, mongo_collection_obj):
+def _mongo_evaluate(json_commands, mongo_collection_obj):
     """
     Execute the aggregation JSON command string and return a list of _ids of 
     all documents that satisfy the query.
     """
     
-    if _EMPTY_JSON == json_command:
+    if len(json_commands) == 0:
         return []
 
     # convert the json_command string to an object by evaluating it and
     # instantiating an OrderedDict (need to maintain argument order)
-    pipeline_obj = OrderedDict(ast.literal_eval(json_command))
-    cursor = mongo_collection_obj.aggregate([pipeline_obj])
+    pipeline_obj = [OrderedDict(ast.literal_eval(j)) for j in json_commands]
+    cursor = mongo_collection_obj.aggregate(pipeline_obj)
             
     # keep all doc ids for which the aggregation result is True
     doc_ids = [doc['_id'] for doc in cursor if doc['value']]
@@ -526,7 +544,7 @@ def _mongo_evaluate(json_command, mongo_collection_obj):
 
 
 ###############################################################################
-def run(mongo_collection_obj, infix_expr):
+def run(mongo_collection_obj, infix_expr, match_filters: dict):
     """
     Evaluate the given infix expression, generate a MongoDB aggregation
     command from it, execute the command against the specified collection,
@@ -547,9 +565,9 @@ def run(mongo_collection_obj, infix_expr):
     """
 
     postfix_tokens = _infix_to_postfix(infix_expr)
-    mongo_command = _to_mongo_command(postfix_tokens)
-    if _TRACE: print('command: {0}'.format(mongo_command))
-    doc_ids = _mongo_evaluate(mongo_command, mongo_collection_obj)
+    mongo_commands = _to_mongo_command(postfix_tokens, match_filters)
+    if _TRACE: print('command: {0}'.format(mongo_commands))
+    doc_ids = _mongo_evaluate(mongo_commands, mongo_collection_obj)
 
     return doc_ids
 
@@ -608,7 +626,8 @@ def _run_tests():
     for expr in TEST_EXPRESSIONS:
         if _TRACE: print('expression: {0}'.format(expr))
 
-        doc_ids = run(mongo_collection_obj, expr)
+        doc_ids = run(mongo_collection_obj, expr, {"job_id": 1,
+                                                   "nlpql_feature": "hasPlasmacytoma"})
         
         if _TRACE: print('results: ')
 
@@ -719,8 +738,9 @@ if __name__ == '__main__':
     print('Expression: {0}'.format(expr))
     postfix_expr = _infix_to_postfix(expr)
     print('   Postfix: {0}'.format(postfix_expr))
-    json_result = _to_mongo_command(postfix_expr)
+    json_result = _to_mongo_command(postfix_expr, {})
     if _EMPTY_JSON != json_result:
         json_data = json.loads(json_result)
         print('   Command: ')
         print(json.dumps(json_data, indent=4))
+

@@ -5,9 +5,11 @@ from functools import reduce
 
 import pandas as pd
 import util
+from pymongo import MongoClient
 
-from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
+from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations, mongo_eval, results
 from ohdsi import getCohort
+
 
 DEBUG_LIMIT = 1000
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
@@ -357,6 +359,12 @@ def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeMod
 
 def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
                        final=False):
+    pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
+    # mongo_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final=False)
+
+
+def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
+                       final=False):
     operation_name = c['name']
 
     if phenotype.context == 'Document':
@@ -490,6 +498,54 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
         if output and len(output) > 0:
             db.phenotype_results.insert_many(output)
             del output
+
+
+def mongo_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
+                       final=False):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    mongo_db_obj = client[util.mongo_db]
+    mongo_collection_obj = mongo_db_obj['phenotype_results']
+
+    try:
+        operation_name = c['name']
+        if phenotype.context == 'Document':
+            on = 'report_id'
+        else:
+            on = 'subject'
+        expression = c['raw_text']
+        mongo_ids = mongo_eval.run(mongo_collection_obj, expression, {
+            "job_id": job
+        })
+        mongo_docs = results.lookup_phenotype_results_by_id(mongo_ids)
+
+        output = list()
+        for doc in mongo_docs['results']:
+            ret = doc
+            ret['job_id'] = job
+            ret['phenotype_id'] = phenotype_id
+            ret['owner'] = phenotype_owner
+            ret['job_date'] = datetime.datetime.now()
+            ret['context_type'] = on
+            ret['raw_definition_text'] = expression
+            ret['nlpql_feature'] = operation_name
+            ret['phenotype_final'] = c['final']
+
+            if '_id' in ret.columns:
+                ret['orig_id'] = ret['_id']
+                ret = ret.drop(columns=['_id'])
+
+            output.append(ret)
+
+        if len(output) > 0:
+            db.phenotype_results.insert_many(output)
+        else:
+            print('No phenotype matches on %s.' % expression)
+
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
+
 
 
 def get_dependencies(po, deps: list):
