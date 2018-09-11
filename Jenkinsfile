@@ -20,7 +20,7 @@ pipeline{
                 //the Jenkins Pipeline, builds a Docker image using the project Dockerfile, and pushes it to the registry
                 //as the latest version.
                 script{
-                    docker.withRegistry("${GTRI_IMAGE_REGISTRY}"){
+                    docker.withRegistry("https://${GTRI_IMAGE_REGISTRY}"){
                         def nlpApiImage = docker.build("nlp-api:1.0", "-f ./nlp/Dockerfile.prod ./nlp")
                         nlpApiImage.push('latest')
                         def nlpSolrImage = docker.build("nlp-solr:1.0", "-f ./utilities/nlp-solr/Dockerfile.prod ./utilities/nlp-solr")
