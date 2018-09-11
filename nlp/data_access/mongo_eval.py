@@ -463,7 +463,7 @@ def _mongo_format(operator, op1, op2=None):
     
 
 ###############################################################################
-def _to_mongo_command(postfix_tokens, match_filters: dict()):
+def _to_mongo_command(postfix_tokens, match_filters: dict):
     """
     Convert a tokenized postfix expression into a form for execution by
     the MongoDB aggregation engine. See chapter 7 of 'MongoDB: The Definitive
@@ -477,8 +477,8 @@ def _to_mongo_command(postfix_tokens, match_filters: dict()):
     string.
     """
 
-    MONGO_PREAMBLE  = '{ "$project" : { "value" : {'
-    MONGO_POSTAMBLE = '}}}'
+    PROJECT_PREAMBLE  = '{ "$project" : { "value" : {'
+    PROJECT_POSTAMBLE = '}}}'
 
     MATCH_PREAMBLE  = '{ "$match" : {'
     MATCH_POSTAMBLE = '}}'
@@ -502,7 +502,7 @@ def _to_mongo_command(postfix_tokens, match_filters: dict()):
 
     # only a single element should remain on the stack
     if 1 == len(stack):
-        mongo_commands.append(MONGO_PREAMBLE + stack[0] + MONGO_POSTAMBLE)
+        mongo_commands.append(PROJECT_PREAMBLE + stack[0] + PROJECT_POSTAMBLE)
     else:
         err_msg = 'mongo_eval: invalid expression: {0}'.format(postfix_tokens)
         print(err_msg)
