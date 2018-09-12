@@ -2,6 +2,7 @@ import datetime
 import sys
 import traceback
 from functools import reduce
+import collections
 
 import pandas as pd
 import util
@@ -9,6 +10,7 @@ from pymongo import MongoClient
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations, mongo_eval, results
 from ohdsi import getCohort
+
 
 
 DEBUG_LIMIT = 1000
@@ -31,10 +33,14 @@ def get_terms(model: PhenotypeModel):
 
 def get_terms_by_keys(term_dict, term_keys: list, concept_keys: list):
     terms = list()
-    for k in term_keys:
-        terms.extend(term_dict[k])
-    for k in concept_keys:
-        terms.extend(term_dict[k])
+    if isinstance(term_keys, collections.Iterable):
+        for k in term_keys:
+            if k in term_dict:
+                terms.extend(term_dict[k])
+    if isinstance(concept_keys, collections.Iterable):
+        for k in concept_keys:
+            if k in term_dict:
+                terms.extend(term_dict[k])
 
     return terms
 
@@ -107,7 +113,7 @@ def get_item_by_key(dictionary, keys: list):
     return ''
 
 
-def map_arguments(pipeline: PipelineConfig, e):
+def map_arguments(pipeline: PipelineConfig, e, all_terms):
     for k in e.keys():
         if not (
                 k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or
@@ -120,7 +126,12 @@ def map_arguments(pipeline: PipelineConfig, e):
                     print(ex)
             else:
                 try:
-                    pipeline.custom_arguments[k] = e[k]
+                    term_mappings = get_terms_by_keys(all_terms, e[k], list())
+                    if len(term_mappings) > 0:
+                        val = term_mappings
+                    else:
+                        val = e[k]
+                    pipeline.custom_arguments[k] = val
                 except Exception as ex:
                     traceback.print_exc(file=sys.stdout)
                     print(ex)
@@ -196,8 +207,8 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   custom_query=query,
                                   filter_query=fq,
                                   is_phenotype=True)
-        map_arguments(pipeline, e)
-        map_arguments(pipeline, e['named_arguments'])
+        map_arguments(pipeline, e, all_terms)
+        map_arguments(pipeline, e['named_arguments'], all_terms)
         return pipeline
     else:
         raise ValueError("External pipelines not yet supported")
