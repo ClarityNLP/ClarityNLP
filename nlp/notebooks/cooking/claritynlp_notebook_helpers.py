@@ -28,3 +28,11 @@ def run_nlpql(nlpql):
     else:
         return {}, '', '', ''
     
+def run_term_expansion(nlpql):
+    re = requests.post(expander_url, data=nlpql, headers={'content-type':'text/plain'})
+    if re.ok:
+        result = re.text
+    else:
+        result = 'Invalid NLPQL'
+    return result
+    
