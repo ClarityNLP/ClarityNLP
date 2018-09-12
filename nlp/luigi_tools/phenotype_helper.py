@@ -39,6 +39,10 @@ def get_terms_by_keys(term_dict, term_keys: list, concept_keys: list):
     return terms
 
 
+def normalize_query_quotes(q: str):
+    return q.replace("'", '"')
+
+
 def get_document_set_attributes(model):
     tags = dict()
     types = dict()
@@ -73,9 +77,11 @@ def get_document_set_attributes(model):
                         if "report_types" in named_args:
                             types[doc_set_name] = named_args["report_types"]
                         if "filter_query" in named_args:
-                            filter_query[doc_set_name] = named_args["filter_query"]
+                            fq = normalize_query_quotes(named_args["filter_query"])
+                            filter_query[doc_set_name] = fq
                         if "query" in named_args:
-                            custom_query[doc_set_name] = named_args["query"]
+                            query = normalize_query_quotes(named_args["query"])
+                            custom_query[doc_set_name] = query
                 elif funct == "createReportTypeList":
                     if len(args) == 1 and type(args[0]) == list:
                         types[doc_set_name] = args[0]
