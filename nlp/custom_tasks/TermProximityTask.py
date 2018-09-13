@@ -204,20 +204,14 @@ class TermProximityTask(BaseTask):
                     any_order = True
                 else:
                     any_order = False
-                
-        #######################################################################
-        #                        T E M P O R A R Y                            #
-        #######################################################################
-        #                                                                     #      
-        #       remove when NLPQL supports termsets for custom_arguments      #
-        #                                                                     #
-        #                                                                     #
-        print('*** PARAMS: ***')                                              #
-        print('\t distance: {0}'.format(distance))                            #
-        print('\tany_order: {0}'.format(any_order))                           #
-        termset1 = termset1.strip('"').split(',')                             #
-        termset2 = termset2.strip('"').split(',')                             #
-        #######################################################################
+
+        print('*** PARAMS: ***')
+        print('\t distance: {0}'.format(distance))
+        print('\tany_order: {0}'.format(any_order))
+        if type(termset1) == str:
+            termset1 = termset1.strip('"').split(',')
+        if type(termset2) == str:
+            termset2 = termset2.strip('"').split(',')
         
         # normalize and remove any duplicates in each list
         set1 = set([t.lower().strip() for t in termset1])
@@ -243,6 +237,8 @@ class TermProximityTask(BaseTask):
                         'word2':result.word2,
                         'start2':result.start2,
                         'end2':result.end2,
+                        'start': min(result.start1, result.start2),
+                        'end': max(result.end1, result.end2),
                         'value':','.join([result.word1, result.word2])
                     }
             
