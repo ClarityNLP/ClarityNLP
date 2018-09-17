@@ -16,3 +16,6 @@
 [submodule "utilities/results-client"]
 	path = utilities/results-client
 	url = https://github.com/ClarityNLP/results-viewer
+[submodule "utilities/export-api"]
+	path = utilities/export-api
+	url = https://github.com/ClarityNLP/ClarityNLPExportResults.git
