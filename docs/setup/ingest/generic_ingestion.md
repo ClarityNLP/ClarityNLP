@@ -17,3 +17,7 @@ curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/rep
         "report_text":"Report text here"
     }'
 ```
+
+#### Upload Scripts
+
+A collection of scripts for ingesting popular datasets (MIMIC, AACT Clinical Trials, Gleason Pathology Documents, etc.) is available [here](https://github.com/ClarityNLP/Utilities).
