@@ -75,3 +75,46 @@ Writes results to MongoDB as a list
 
 ----
 
+
+**write_log_data(job_status: str, status_message: str)**
+
+Writes log message to the `job_status` table
+
+
+----
+
+**run_custom_task(temp_file: File, mongo_client: MongoClient)**
+
+The primary function for tasks to implement to run tasks
+
+----
+
+**get_document_text(doc: dict, clean=True)**
+
+Returns a string of the text given Solr document
+
+----
+
+**get_boolean(key: str, default=False)**
+
+Looks up custom argument with matching key of type `bool`.
+
+----
+
+**get_integer(key: str, default=-1)**
+
+Looks up custom argument with matching key of type `int`.
+
+----
+
+**get_string(key: str, default='')**
+
+Looks up custom argument with matching key of type `str`.
+
+----
+
+**get_document_sentences(doc)**
+
+Returns an collection of sentences for the given Solr document.
+
+----
