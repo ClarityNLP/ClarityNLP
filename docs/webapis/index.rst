@@ -1,5 +1,5 @@
-APIs
-====
+Web APIs
+========
 
 .. toctree::
    :maxdepth: 2

@@ -17,7 +17,7 @@ Documentation
    setup/index
    user_guide/index
    developer_guide/index
-   apis/index
+   webapis/index
    about/index
 
 

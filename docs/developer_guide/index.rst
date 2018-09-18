@@ -8,6 +8,13 @@ Repository
 <https://github.com/ClarityNLP/ClarityNLP>`_
 
 
+API Reference
+-------------
+.. toctree::
+   :maxdepth: 2
+
+   apis/index
+
 
 Technical Background
 --------------------
