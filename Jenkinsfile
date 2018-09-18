@@ -45,6 +45,8 @@ pipeline{
                         resultsClientImage_EmoryStaging.push('latest')
                         def resultsClientImage_GtriProd = docker.build("results-client-gtri-production:1.0", "-f ./utilities/results-client/Dockerfile.gtri ./utilities/results-client")
                         resultsClientImage_GtriProd.push('latest')
+                        def exportApiImage = docker.build("export-api:1.0", "-f ./utilities/export-api/Dockerfile ./utilities/export-api")
+                        exportApiImage.push('latest')
                     }
                 }
             }
@@ -68,6 +70,7 @@ pipeline{
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/ingest-client-gtri-production:latest", ports: '', service: 'ClarityNLP/ingest-client', timeout: 600
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/results-client-gtri-production:latest", ports: '', service: 'ClarityNLP/results-client', timeout: 600
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: 'redis:3.2.0', ports: '', service: 'ClarityNLP/redis', timeout: 600
+                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/export-api:latest", ports: '', service: 'ClarityNLP/export-api', timeout: 600
                     // --- next env ---
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/nlp-api:latest", ports: '', service: 'ClarityNLP/nlp-api', timeout: 2700
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: 'axiom/docker-luigi:2.7.1', ports: '', service: 'ClarityNLP/scheduler', timeout: 600
@@ -82,6 +85,7 @@ pipeline{
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/ingest-client-emory-staging:latest", ports: '', service: 'ClarityNLP/ingest-client', timeout: 600
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/results-client-emory-staging:latest", ports: '', service: 'ClarityNLP/results-client', timeout: 600
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: 'redis:4.0.10', ports: '', service: 'ClarityNLP/redis', timeout: 600
+                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/export-api:latest", ports: '', service: 'ClarityNLP/export-api', timeout: 600
                 }
             }
         }
