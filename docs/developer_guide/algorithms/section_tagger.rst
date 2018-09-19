@@ -1,3 +1,5 @@
+.. _sectiontagging:
+
 Section Tagging
 ***************
 

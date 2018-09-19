@@ -6,7 +6,7 @@ Clarity.ProviderAssertion
 Description
 -----------
 
-Simple task for identifying positive terms that are not hypothethical and related to the subject.
+Simple task for identifying positive terms that are not hypothethical and related to the subject. Read more `here <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/term-finder.html#provider-assertion>`_.
 
 
 Example
