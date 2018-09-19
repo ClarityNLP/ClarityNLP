@@ -1,3 +1,5 @@
+.. _providerassertion:
+
 Clarity.ProviderAssertion
 =========================
 

@@ -1,3 +1,6 @@
+.. _termfinder:
+
+
 Clarity.TermFinder
 ===================
 
