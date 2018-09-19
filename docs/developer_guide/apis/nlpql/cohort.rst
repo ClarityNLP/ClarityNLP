@@ -1,6 +1,6 @@
 .. _cohort:
 
-Cohort
+cohort
 ======
 
 Limits Solr query patients by ones matching the cohort.

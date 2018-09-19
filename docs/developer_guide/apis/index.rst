@@ -1,5 +1,15 @@
 
 
+NLPQL Helpers
+-------------
+
+.. toctree::
+   :maxdepth: 1
+
+   nlpql/documentset
+   nlpql/cohort
+   nlpql/termset
+
 NLPQL Tasks
 -----------
 
