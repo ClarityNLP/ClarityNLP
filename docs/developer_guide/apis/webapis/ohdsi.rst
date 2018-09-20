@@ -1,8 +1,8 @@
 OHDSI WebAPI Utilities
 ======================
 
-Creating Cohorts
-----------------
+/ohdsi_create_cohort?file=<FILENAME>
+-------------------------------------
 
 - Description:
   - Creating cohorts using OHDSI web API.
@@ -17,11 +17,11 @@ Creating Cohorts
 
 - Usage:
   ```
-  http://nlp-api:5000/ohdsi_create_cohort?file=<FILE NAME>
+  http://nlp-api:5000/ohdsi_create_cohort?file=<FILENAME>
   ```
 
-Getting Cohort Information
---------------------------
+/ohdsi_get_cohort?cohort_id=<COHORT_ID>
+---------------------------------------
 
 - Description: Get cohort details from OHDSI.
 
@@ -32,12 +32,12 @@ Getting Cohort Information
 
 - Usage:
   ```
-  http://nlp-api:5000/ohdsi_get_cohort?cohort_id=<COHORT ID>
+  http://nlp-api:5000/ohdsi_get_cohort?cohort_id=<COHORT_ID>
   ```
 
 
-Getting Cohort Information from Cohort Name
--------------------------------------------
+/ohdsi_get_cohort_by_name?cohort_name=<COHORT_NAME>
+---------------------------------------------------
 - Description: Get Cohort details by name
 
 - Method: GET
@@ -47,11 +47,11 @@ Getting Cohort Information from Cohort Name
 
 - Usage:
   ```
-  http://nlp-api:5000/ohdsi_get_cohort_by_name?cohort_name=<COHORT NAME>
+  http://nlp-api:5000/ohdsi_get_cohort_by_name?cohort_name=<COHORT_NAME>
   ```
 
-Getting Concept Sets
---------------------
+/ohdsi_get_conceptset?file=<FILENAME>
+--------------------------------------
 
 - Description:
   - Getting concept set info using OHDSI web API.
@@ -66,11 +66,11 @@ Getting Concept Sets
 
 - Usage:
   ```
-  http://nlp-api:5000/ohdsi_get_conceptset?file=<FILE NAME>
+  http://nlp-api:5000/ohdsi_get_conceptset?file=<FILENAME>
   ```
 
-Getting Cohort Creation Status
-------------------------------
+/ohdsi_cohort_status?cohort_id=<COHORT_ID>
+------------------------------------------
 
 - Description: Get the status of the triggered cohort creation job.
 
@@ -81,5 +81,5 @@ Getting Cohort Creation Status
 
 - Usage:
   ```
-  http://nlp-api:5000/ohdsi_cohort_status?cohort_id=<COHORT ID>
+  http://nlp-api:5000/ohdsi_cohort_status?cohort_id=<COHORT_ID>
   ```

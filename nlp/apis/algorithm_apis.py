@@ -9,7 +9,7 @@ from .docs import auto
 algorithm_app = Blueprint('algorithm_app', __name__)
 
 
-@algorithm_app.route('/ngram', methods=['GET'])
+@algorithm_app.route('/ngram_cohort', methods=['GET'])
 @auto.doc(groups=['public', 'private', 'algorithms'])
 def get_ngram():
     """GET n-grams for a cohort, PARAMETERS: cohort_id=cohort_id, keyword=keyword, n=ngram length, frequency=cutoff frequency"""

@@ -8,8 +8,8 @@ Repository
 <https://github.com/ClarityNLP/ClarityNLP>`_
 
 
-Reference
----------
+Reference Documentation
+-----------------------
 .. toctree::
    :maxdepth: 2
 

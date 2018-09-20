@@ -51,3 +51,15 @@ All operations are prefixed in NLPQL as `define`, with the optional `final` flag
 
    nlpql/operations
 
+
+NLP Web APIs
+------------
+NLP endpoints provided by ClarityNLP.
+
+.. toctree::
+   :maxdepth: 2
+
+   webapis/api_main_list
+   webapis/vocabulary
+   webapis/ngram_cohort
+   webapis/ohdsi
