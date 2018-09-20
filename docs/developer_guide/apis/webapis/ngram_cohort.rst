@@ -1,8 +1,7 @@
-ngram
------
+/ngram_cohort
+-------------
 
-*GET* `http://nlp-api:5000/ngram`
-
+*GET*
 
 **About:** 
 
@@ -17,8 +16,8 @@ Generating n-grams of the Report Text for a particular Cohort. API has to accept
 
 **Example usage:** 
 
-```
-~/ngram?cohort_id=6&n=15&frequency=10
+::
 
-~/ngram?cohort_id=6&keyword=cancer&n=15&frequency=10
-```
+    ~/ngram_cohort?cohort_id=6&n=15&frequency=10
+
+    ~/ngram_cohort?cohort_id=6&keyword=cancer&n=15&frequency=10

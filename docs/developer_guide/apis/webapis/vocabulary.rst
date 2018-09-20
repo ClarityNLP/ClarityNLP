@@ -1,5 +1,5 @@
-Vocabulary Expansion
-====================
+/vocabExpansion?type=<TYPE>&concept=<CONCEPT>&vocab=<VOCAB>
+===========================================================
 
 **About:** 
 
