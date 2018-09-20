@@ -1,12 +1,15 @@
 Developer Guide
 ===============
-This library uses Python 3.4+.
+This library uses Python 3.5+. The source code is hosted `here <https://github.com/ClarityNLP/ClarityNLP>`_.
 
-Repository
-----------
-`GitHub
-<https://github.com/ClarityNLP/ClarityNLP>`_
 
+
+Here's an overview of ClarityNLP's architecture.
+
+.. image:: clarity_simple.png
+   :scale: 75 %
+   :alt: ClarityNLP Simplified Architecture
+   :align: center
 
 Reference Documentation
 -----------------------
@@ -19,7 +22,7 @@ Reference Documentation
 Technical Background
 --------------------
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    technical_background/technologies
    technical_background/solr
