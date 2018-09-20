@@ -3,6 +3,8 @@
 BaseTask
 ========
 
+The base for most ClarityNLP tasks. Provides most of the wiring need to run individual algorithms.
+
 
 Arguments
 ---------

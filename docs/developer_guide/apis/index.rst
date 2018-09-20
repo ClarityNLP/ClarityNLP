@@ -24,6 +24,7 @@ All tasks (or data entities) are prefixed in NLPQL as `define`, with the optiona
    nlpql/provider_assert
    nlpql/term_finder
    nlpql/measurementfinder
+   nlpql/ngram
 
 
 NLPQL Operations
