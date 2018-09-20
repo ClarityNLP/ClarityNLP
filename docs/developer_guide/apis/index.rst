@@ -21,10 +21,25 @@ All tasks (or data entities) are prefixed in NLPQL as `define`, with the optiona
 .. toctree::
    :maxdepth: 1
 
+   nlpql/measurementfinder
+   nlpql/ner
+   nlpql/ngram
+   nlpql/pos
    nlpql/provider_assert
    nlpql/term_finder
-   nlpql/measurementfinder
-   nlpql/ngram
+   nlpql/tnm
+   nlpql/valueextractor
+
+
+
+Also see the following classes, which are the base classes for the NLPQL tasks:
+
+.. toctree::
+   :maxdepth: 1
+
+   nlpql/base_task
+   nlpql/base_collector
+
 
 
 NLPQL Operations
