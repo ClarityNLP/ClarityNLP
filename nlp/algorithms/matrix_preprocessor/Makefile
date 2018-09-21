@@ -35,13 +35,13 @@ LIB_SRC = \
 	utils.cpp
 
 # source files for the C++ test application
-TEST_SRC = \
-	test_preprocessor.cpp \
-	main.cpp
+#TEST_SRC = \
+#	test_preprocessor.cpp \
+#	main.cpp
 
 # object files replace the .cpp extension with .o
 LIB_OBJS  = $(patsubst %.cpp, build/objs/%.o, $(LIB_SRC))
-TEST_OBJS = $(patsubst %.cpp, build/objs/%.o, $(TEST_SRC))
+#TEST_OBJS = $(patsubst %.cpp, build/objs/%.o, $(TEST_SRC))
 
 # paths to all include folders
 INCLUDES = \
@@ -51,14 +51,23 @@ INCLUDES = \
 LIB_TARGET=libpreprocess
 LIBNAME=$(LIB_TARGET)
 
-# name of test program binary
-TEST_TARGET=test_preprocessor
+export CXX
+export CXXFLAGS
+export LDFLAGS
+export LIBS
+export LIBNAME
 
-all: libpreprocess tester
+# name of test program binary
+#TEST_TARGET=test_preprocessor
+
+all: libpreprocess tests #tester
 
 libpreprocess: build/bin/$(LIBNAME).a
 
-tester: libpreprocess build/bin/$(TEST_TARGET)
+#tester: libpreprocess build/bin/$(TEST_TARGET)
+
+tests: libpreprocess
+	cd tests && $(MAKE) all
 
 build/objs/%.o: %.cpp
 	@mkdir -p $(dir $@)
@@ -74,5 +83,6 @@ build/bin/$(TEST_TARGET): $(TEST_OBJS)
 
 clean:
 	@rm -rf build bin* objs* *~
+	cd tests && $(MAKE) clean
 
-.PHONY: all clean libpreprocess tester
+.PHONY: all clean libpreprocess tests #tester

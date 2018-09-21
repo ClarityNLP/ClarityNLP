@@ -74,14 +74,15 @@ cdef class TermFreqMatrix:
     def __dealloc__(self):
         if self._thisptr != NULL:
             del self._thisptr
-    def Width(self):
+    def width(self):
         return self._thisptr.Width()
-    def Height(self):
+    def height(self):
         return self._thisptr.Height()
-    def Size(self):
+    def size(self):
         return self._thisptr.Size()
-    def Capacity(self):
+    def capacity(self):
         return self._thisptr.Capacity()
+        
     #def LockedColBuffer(self):
     #    return self._thisptr.LockedColBuffer()
     #def LockedDataBuffer(self):

@@ -697,3 +697,13 @@ void UniqueCols(TermFrequencyMatrix& M,
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+bool preprocess_tf_matrix(const std::string& matrix_filename,
+                          const unsigned int min_docs_per_term,
+                          const unsigned int min_terms_per_doc)
+{
+    
+    
+    return true;
+}
