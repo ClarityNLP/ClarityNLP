@@ -43,27 +43,25 @@ TermFrequencyMatrix::TermFrequencyMatrix()
 }
 
 //-----------------------------------------------------------------------------
-TermFrequencyMatrix::TermFrequencyMatrix(const SparseMatrix<double>& S,
-                                         bool boolean_mode)
+TermFrequencyMatrix::TermFrequencyMatrix(const unsigned int height,
+                                         const unsigned int width,
+                                         const unsigned int nzmax,
+                                         const unsigned int* col_offsets,
+                                         const unsigned int* row_indices,
+                                         const double* data,
+                                         const bool boolean_mode)
 {
-    Init(S, boolean_mode);
-}
-
-//-----------------------------------------------------------------------------
-void TermFrequencyMatrix::Init(const SparseMatrix<double>& S,
-                               bool boolean_mode)
-{
-    height_ = S.Height();
-    width_ = S.Width();
-    size_ = S.Size();
-    capacity_ = size_;
+    height_ = height;
+    width_ = width;
+    size_ = nzmax;
+    capacity_ = nzmax;
 
     col_offsets_.reserve(width_ + 1);
     tf_data_.reserve(size_);
 
-    const unsigned int* source_cols = S.LockedColBuffer();
-    const unsigned int* source_rows = S.LockedRowBuffer();
-    const double* source_data       = S.LockedDataBuffer();
+    const unsigned int* source_cols = col_offsets;
+    const unsigned int* source_rows = row_indices;
+    const double* source_data       = data;
 
     unsigned int index = 0;
     for (unsigned int c=0; c != width_; ++c)
