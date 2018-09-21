@@ -1,4 +1,3 @@
-
 .. _transfusion:
 
 Clarity.TransfusionNursingNotesParser
@@ -7,7 +6,7 @@ Clarity.TransfusionNursingNotesParser
 Description
 -----------
 
-Tasks that parses Nursing notes (specifically formatted for Columbia) for transfusion information
+Task that parses Nursing notes (specifically formatted for Columbia) for transfusion information.
 
 Example
 -------
