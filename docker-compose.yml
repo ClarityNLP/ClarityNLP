@@ -119,14 +119,20 @@ services:
     volumes:
       - 'ingest-mongodata:/data/db'
 
-  # ingest-client:
-  #   container_name: INGEST_CLIENT
-  #   hostname: ${INGEST_CLIENT_HOSTNAME}
-  #   build:
-  #     context: ./utilities/ingest-client
-  #     dockerfile: Dockerfile.prod
-  #   ports:
-  #     - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
+  ingest-client:
+    container_name: INGEST_CLIENT
+    hostname: ${INGEST_CLIENT_HOSTNAME}
+    build:
+      context: ./utilities/ingest-client
+      dockerfile: Dockerfile
+    ports:
+      - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
+      - 35729:35729 #warm-reload websocket
+    volumes:
+      - './utilities/ingest-client:/usr/src/app'
+      - /usr/src/app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
 
   mapper-api:
     container_name: MAPPER_API
