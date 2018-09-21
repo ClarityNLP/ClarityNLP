@@ -29,6 +29,11 @@ All tasks (or data entities) are prefixed in NLPQL as `define`, with the optiona
    nlpql/term_finder
    nlpql/tnm
    nlpql/valueextractor
+   nlpql/transfusion
+   nlpql/gleason
+   nlpql/race
+   nlpql/proximity
+   nlpql/textstats
 
 
 
