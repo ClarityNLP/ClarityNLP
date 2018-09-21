@@ -34,14 +34,14 @@ LIB_SRC = \
 	term_frequency_matrix.cpp \
 	utils.cpp
 
-# source files for the C++ test application
-#TEST_SRC = \
-#	test_preprocessor.cpp \
-#	main.cpp
+# source files for the C++ preprocessor application
+PREPROCESSOR_SRC = \
+	command_line.cpp \
+	main.cpp
 
 # object files replace the .cpp extension with .o
 LIB_OBJS  = $(patsubst %.cpp, build/objs/%.o, $(LIB_SRC))
-#TEST_OBJS = $(patsubst %.cpp, build/objs/%.o, $(TEST_SRC))
+PREPROCESSOR_OBJS = $(patsubst %.cpp, build/objs/%.o, $(PREPROCESSOR_SRC))
 
 # paths to all include folders
 INCLUDES = \
@@ -58,13 +58,15 @@ export LIBS
 export LIBNAME
 
 # name of test program binary
-#TEST_TARGET=test_preprocessor
+PREPROCESSOR_TARGET=preprocessor
 
-all: libpreprocess tests #tester
+all: libpreprocess tests preprocessor  #tester
 
 libpreprocess: build/bin/$(LIBNAME).a
 
-#tester: libpreprocess build/bin/$(TEST_TARGET)
+#tester: libpreprocess build/bin/$(PREPROCESSOR_TARGET)
+
+preprocessor: libpreprocess build/bin/$(PREPROCESSOR_TARGET)
 
 tests: libpreprocess
 	cd tests && $(MAKE) all
@@ -77,7 +79,7 @@ build/bin/$(LIBNAME).a : $(LIB_OBJS)
 	@mkdir -p $(dir $@)
 	ar rs build/bin/$(LIBNAME).a $(LIB_OBJS)
 
-build/bin/$(TEST_TARGET): $(TEST_OBJS)
+build/bin/$(PREPROCESSOR_TARGET): $(PREPROCESSOR_OBJS)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) build/bin/$(LIBNAME).a $(LIBS)
 
