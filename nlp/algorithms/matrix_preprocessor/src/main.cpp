@@ -76,5 +76,27 @@ bool TestSparseMatrixGet()
         return false;
     }
 
+    // // 1,3,2,4,5
+    // unsigned int size = M.Size();
+    // cout << "data: " << endl;
+    // const double* data = M.LockedDataBuffer();
+    // for (int i=0; i<size-1; ++i)
+    //     cout << data[i] << ",";
+    // cout << data[size-1] << endl;
+
+    // // 1,2,1,2,2
+    // cout << "indices: " << endl;
+    // const unsigned int* indices = M.LockedRowBuffer();
+    // for (int i=0; i<size-1; ++i)
+    //     cout << indices[i] << ",";
+    // cout << indices[size-1] << endl;
+
+    // // 0,2,4,4,5
+    // cout << "col offsets: " << endl;
+    // const unsigned int* col_offsets = M.LockedColBuffer();
+    // for (int i=0; i<size-1; ++i)
+    //     cout << col_offsets[i] << ",";
+    // cout << col_offsets[size-1] << endl;
+
     return true;
 }
