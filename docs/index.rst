@@ -15,6 +15,7 @@ Documentation
    :maxdepth: 2
 
    setup/index
+   api_reference/index
    user_guide/index
    developer_guide/index
    about/index

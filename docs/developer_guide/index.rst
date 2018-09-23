@@ -11,12 +11,6 @@ Here's an overview of ClarityNLP's architecture.
    :alt: ClarityNLP Simplified Architecture
    :align: center
 
-Reference Documentation
------------------------
-.. toctree::
-   :maxdepth: 2
-
-   apis/index
 
 
 Technical Background
