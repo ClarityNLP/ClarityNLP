@@ -16,6 +16,43 @@ If any duplicate rows or colums are found, the code removes the duplicates
 and then checks again, iterating until all duplicates have been removed.
 
 
+PREREQUISITES
+
+
+A C++ compiler is required to use this code.
+
+On Linux, install the build-essential package. If a C++ compiler is not
+provided with this package on your system, then install the g++ package as
+well.
+
+On MacOSX, install the clang++ command line tools with this command:
+
+    xcode-select --install
+
+Alternatively, you could install the full XCode app and use it to install the
+command line tools.
+
+
+BUILDING THE CODE
+
+
+After installing a C++ compiler, build the code as follows:
+
+    cd /path/to/matrix_preprocessor
+    make
+
+The build process should proceed with no errors and create the subdirectory
+build/bin, which should contain these binaries:
+
+    libpreprocess.a
+    preprocessor
+    test_preprocessor
+
+
+The first two binaries must be present to use the python driver, which is
+called 'preprocess.py'.
+
+
 INPUTS
 
 
