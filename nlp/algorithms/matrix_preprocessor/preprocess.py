@@ -34,9 +34,9 @@ def get_version():
 def show_help():
     print(get_version())
     print("""
-    USAGE: python3 ./{0} -i <quoted string, input dir> 
+    USAGE: python3 ./{0} 
 
-        [-o <quoted string> output dir, default is current directory]
+         -i <quoted string> input file, matrix market format
         [-d <positive int>  mininum number of docs per term, default is 3]
         [-t <positive int>  minimum number of terms per doc, default is 5]
         [-m <positive int>  max iterations, default is 1000]
@@ -46,12 +46,7 @@ def show_help():
 
     OPTIONS:
 
-        -i, --indir              <quoted string>  Path to input directory
-                                                  Contains matrix.mtx, 
-                                                  dictionary.txt,
-                                                  documents.txt.
-        -o, --outdir             <quoted string>  Path to output directory.
-                                                  Default is current directory.
+        -i, --infile             <quoted string>  Path to .mtx input file.
         -d, --min_docs_per_term  <int>   A term must appear in at least this
                                          many docs to not prune its row.
         -t, --min_terms_per_doc  <int>   A document must contain at least this
@@ -75,8 +70,7 @@ def show_help():
 if __name__ == '__main__':
 
     optparser = optparse.OptionParser(add_help_option = False)
-    optparser.add_option('-i', '--indir', action='store', dest='indir')
-    optparser.add_option('-o', '--outdir', action='store', dest='outdir')
+    optparser.add_option('-i', '--infile', action='store', dest='infile')
     optparser.add_option('-d', '--min_docs_per_term', action='store',
                          dest='min_d')
     optparser.add_option('-t', '--min_terms_per_doc', action='store',
@@ -106,41 +100,20 @@ if __name__ == '__main__':
         run_tests()
         sys.exit(0)
 
-    if opts.indir is None:
-        print('Error: an input directory must be specified.')
+    if opts.infile is None:
+        print('Error: an input file must be specified.')
         sys.exit(-1)
         
-    if not os.path.isdir(opts.indir):
-        print('Error: not a directory: {0}'.format(opts.indir))
+    if not os.path.exists(opts.infile):
+        print('Error: file not found: {0}'.format(opts.infile))
         sys.exit(-1)
 
-    if not os.path.exists(opts.indir):
-        print('Error: path not found: {0}'.format(opts.indir))
-        sys.exit(-1)
+    infile = opts.infile
 
-    indir = opts.indir
-
-    if opts.outdir is None:
-        outdir = os.getcwd()
-    else:
-        outdir = opts.outdir
-
-    # create output dir if it doesn't exist
-    if not os.path.exists(outdir):
-        try:
-            os.mkdir(outdir)
-        except OSError:
-            print('could not create output directory: {0}'.format(outdir))
-            sys.exit(-1)
-
-    if not os.path.isdir(outdir):
-        print('Error: not a directory: {0}'.format(outdir))
-        sys.exit(-1)
-            
     if opts.min_d is None:
         min_docs_per_term = _MIN_DOCS_PER_TERM
     else:
-        min_docs_per_term = opts.min_d
+        min_docs_per_term = int(opts.min_d)
 
     if min_docs_per_term <= 0:
         print('Error: invalid value for min docs per term: {0}'.
@@ -150,7 +123,7 @@ if __name__ == '__main__':
     if opts.min_t is None:
         min_terms_per_doc = _MIN_TERMS_PER_DOC
     else:
-        min_terms_per_doc = opts.min_t
+        min_terms_per_doc = int(opts.min_t)
 
     if min_terms_per_doc <= 0:
         print('Error: invalid value for min terms per doc: {0}'.
@@ -160,7 +133,7 @@ if __name__ == '__main__':
     if opts.max_iter is None:
         max_iter = _MAX_ITER
     else:
-        max_iter = opts.max_iter
+        max_iter = int(opts.max_iter)
 
     if max_iter <= 0:
         print('Error: invalid value for max iterations: {0}'.format(max_iter))
@@ -169,7 +142,7 @@ if __name__ == '__main__':
     if opts.precision is None:
         precision = _PRECISION
     else:
-        precision = opts.precision
+        precision = int(opts.precision)
 
     if precision <= 0:
         print('Error: invalid value for precision: {0}'.format(precision))
@@ -178,7 +151,7 @@ if __name__ == '__main__':
     if opts.boolean_mode is None:
         boolean_mode = _BOOLEAN_MODE
     else:
-        boolean_mode = opts.boolean_mode
+        boolean_mode = int(opts.boolean_mode)
 
     if boolean_mode > 0:
         boolean_mode = 1
@@ -187,8 +160,7 @@ if __name__ == '__main__':
 
 
     print('options: ')
-    print('\t            indir: {0}'.format(indir))
-    print('\t           outdir: {0}'.format(outdir))
+    print('\t           infile: {0}'.format(infile))
     print('\tmin_docs_per_term: {0}'.format(min_docs_per_term))
     print('\tmin_terms_per_doc: {0}'.format(min_terms_per_doc))
     print('\t         max_iter: {0}'.format(max_iter))
@@ -198,13 +170,11 @@ if __name__ == '__main__':
     command = []
     exe = os.path.join(os.getcwd(), 'build', 'bin', 'preprocessor')
     command.append(exe)
-    command.append('--indir')
-    command.append(indir)
-    command.append('--outdir')
-    command.append(outdir)
-    command.append('--docs_per_term')
+    command.append('--infile')
+    command.append(infile)
+    command.append('--min_docs_per_term')
     command.append('{0}'.format(min_docs_per_term))
-    command.append('--terms_per_doc')
+    command.append('--min_terms_per_doc')
     command.append('{0}'.format(min_terms_per_doc))
     command.append('--maxiter')
     command.append('{0}'.format(max_iter))
@@ -213,7 +183,6 @@ if __name__ == '__main__':
     command.append('--boolean_mode')
     command.append('{0}'.format(boolean_mode))
 
-    #print('command: {0}'.format(command))
     cp = subprocess.run(command,
                         stdout=subprocess.PIPE,
                         universal_newlines=True)
