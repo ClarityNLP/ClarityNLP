@@ -16,6 +16,7 @@
 #include <limits>
 #include <stdexcept>
 #include <algorithm>
+#include <getopt.h>
 #include "utils.hpp"
 #include "command_line.hpp"
 
@@ -30,9 +31,9 @@ void PrintOpts(const CommandLineOptions& opts)
     cout << "\t            infile: " << opts.infile << endl;
     cout << "\t min_docs_per_term: " << opts.min_docs_per_term << endl;
     cout << "\t min_terms_per_doc: " << opts.min_terms_per_doc << endl;
-    cout << "\t          max_iter: " << opts.max_iter << endl;
     cout << "\t         precision: " << opts.precision << endl;
     cout << "\t      boolean_mode: " << opts.boolean_mode << endl;
+    cout << "\t            tf-idf: " << opts.tf_idf << endl;
     cout << endl;
 }
 
@@ -44,79 +45,68 @@ void PrintUsage(const std::string& program_name)
     cout<< "          --infile  <path> " << endl; 
     cout << "        [--min_docs_per_term  3] " << endl;
     cout << "        [--min_terms_per_doc  5] " << endl;
-    cout << "        [--maxiter  1000] " << endl;
     cout << "        [--precision  4] " << endl;
-    cout << "        [--boolean_mode  0] " << endl;
+    cout << "        [--boolean_mode] " << endl;
+    cout << "        [--tf-idf] " << endl;
     cout << endl;
 }
 
 //-----------------------------------------------------------------------------
 void ParseCommandLine(int argc, char* argv[], CommandLineOptions& opts)
 {
-    std::string tmp;
-
     // set defaults
-    opts.infile         = std::string("");
+    opts.infile = std::string("");
     opts.min_docs_per_term = 3;
     opts.min_terms_per_doc = 5;
-    opts.max_iter      = 1000;
-    opts.precision     = 4;
-    opts.boolean_mode  = 0; 
-    
-    for (int k=1; k<argc; k += 2)
-    {
-        if ( ('-' == argv[k][0]) && ('-' == argv[k][1]))
-        {
-            char c = argv[k][2];
-            if ('m' == c)
-            {
-                // --maxiter
-                int max_iter = atoi(argv[k+1]);
-                if (max_iter <= 0)
-                    InvalidValue(std::string(argv[k]));
-                opts.max_iter = max_iter;
-            }
-            else if ('p' == c)
-            {
-                // --precision
-                int precision = atoi(argv[k+1]);
-                if (precision <= 0)
-                    InvalidValue(std::string(argv[k]));
-                if (precision > std::numeric_limits<double>::max_digits10)
-                    precision = std::numeric_limits<double>::max_digits10;
-                opts.precision = precision;
-            }
-            else if ('i' == c)
-            {
-                // --infile
-                opts.infile = std::string(argv[k+1]);
-            }
-            else if ('d' == c)
-            {
-                // --min_docs_per_term
-                int min_docs_per_term = atoi(argv[k+1]);
-                if (min_docs_per_term <= 0)
-                    InvalidValue(std::string(argv[k]));
-                opts.min_docs_per_term = min_docs_per_term;
-            }
-            else if ('t' == c)
-            {
-                // --min_terms_per_doc
-                int min_terms_per_doc = atoi(argv[k+1]);
-                if (min_terms_per_doc <= 0)
-                    InvalidValue(std::string(argv[k]));
-                opts.min_terms_per_doc = min_terms_per_doc;
-            }
-            else if ('b' == c)
-            {
-                // --boolean_mode
-                int boolean_mode = atoi(argv[k+1]);
-                if (boolean_mode < 0)
-                    InvalidValue(std::string(argv[k]));
+    opts.max_iter          = 1000;
+    opts.precision         = 4;
+    opts.boolean_mode      = 0;
+    opts.tf_idf            = 0;
 
-                // interpret any nonzero value as true
-                opts.boolean_mode = (0 == boolean_mode ? 0 : 1);
-            }
+    option longopts[] = {
+        { "infile",            required_argument, NULL, 'i' },
+        { "min_docs_per_term", required_argument, NULL, 'd' },
+        { "min_terms_per_doc", required_argument, NULL, 't' },
+        { "precision"        , required_argument, NULL, 'p' },
+        { "tf_idf",            no_argument,       NULL, 'w' },
+        { "boolean_mode",      no_argument,       NULL, 'b' },
+        {0, 0, 0, 0}
+    };
+
+    int c;
+    while ( (c = getopt_long(argc, argv, "i:d:t:p:wb", longopts, NULL)) != -1)
+    {
+        switch(c)
+        {
+        case 'i':
+            opts.infile = std::string(optarg);
+            break;
+        case 'd':
+            opts.min_docs_per_term = std::atoi(optarg);
+            break;
+        case 't':
+            opts.min_terms_per_doc = std::atoi(optarg);
+            break;
+        case 'p':
+            opts.precision = std::atoi(optarg);
+            break;
+        case 'w':
+            opts.tf_idf = 1;
+            break;
+        case 'b':
+            opts.boolean_mode = 1;
+            break;
+        case 0:
+            // keep going, getopt_long did a variable assignment
+            break;
+        case ':':
+            // missing option argument
+            cerr << "required argument missing for option " << optopt << endl;
+            break;
+        case '?':
+        default:
+            // invalid option
+            cerr << "invalid option: " << optopt << endl;
         }
     }
 }

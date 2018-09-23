@@ -16,7 +16,6 @@ _MIN_DOCS_PER_TERM = 3
 _MIN_TERMS_PER_DOC = 5
 _MAX_ITER          = 1000
 _PRECISION         = 4
-_BOOLEAN_MODE      = 0
 
 ###############################################################################
 def run_tests():
@@ -36,32 +35,26 @@ def show_help():
     print("""
     USAGE: python3 ./{0} 
 
-         -i <quoted string> input file, matrix market format
-        [-d <positive int>  mininum number of docs per term, default is 3]
-        [-t <positive int>  minimum number of terms per doc, default is 5]
-        [-m <positive int>  max iterations, default is 1000]
-        [-p <positive int>  precision of result matrix, default is 4 digits]
-        [-b <int>           boolean mode, 0=False, 1=True, default is False]
-        [-hvz]
-
     OPTIONS:
 
-        -i, --infile             <quoted string>  Path to .mtx input file.
-        -d, --min_docs_per_term  <int>   A term must appear in at least this
-                                         many docs to not prune its row.
-        -t, --min_terms_per_doc  <int>   A document must contain at least this
-                                         many terms to not prune its column.
-        -m, --max_iter           <int>   Maximum number of iterations.
-        -p, --precision          <int>   Number of digits of precision to use
-                                         for entries in the result matrix.
-        -b, --boolean_mode       <int>   Use 1 for all nonzero entries in the
-                                         input matrix.
-                                           
+         -i <quoted string> input filename, matrix market format
+        [-d <positive int>  mininum number of docs per term, default is 3]
+                            (minimum allowable row sum in result matrix)
+        [-t <positive int>  minimum number of terms per doc, default is 5]
+                            (minimum allowable column sum in result matrix)
+        [-p <positive int>  precision of result matrix, default is 4 digits]
+        [-hvzbw]
+
     FLAGS:
 
         -h, --help           Print this information and exit.
         -v, --version        Print version information and exit.
         -z, --selftest       Run self-tests and exit.
+        -b, --boolean        Replace nonzero entries in input matrix with 1
+                             (i.e. use 1 if value present, 0 if not)
+        -w, --weights        Compute tf-idf weights in result matrix
+                             (i.e. output a term-document matrix instead of
+                             a term-frequency matrix)
 
     """.format(_MODULE_NAME))
 
@@ -75,10 +68,11 @@ if __name__ == '__main__':
                          dest='min_d')
     optparser.add_option('-t', '--min_terms_per_doc', action='store',
                          dest='min_t')
-    optparser.add_option('-m', '--max_iter', action='store', dest='max_iter')
     optparser.add_option('-p', '--precision', action='store', dest='precision')
-    optparser.add_option('-b', '--boolean_mode', action='store',
-                         dest='boolean_mode')
+    optparser.add_option('-b', '--boolean_mode', action='store_true',
+                         dest='boolean_mode', default=False)
+    optparser.add_option('-w', '--weights', action='store_true',
+                         dest='weights', default=False)
     optparser.add_option('-v', '--version', action='store_true',
                          dest='get_version')
     optparser.add_option('-h', '--help', action='store_true',
@@ -130,15 +124,6 @@ if __name__ == '__main__':
               format(min_terms_per_doc))
         sys.exit(-1)
 
-    if opts.max_iter is None:
-        max_iter = _MAX_ITER
-    else:
-        max_iter = int(opts.max_iter)
-
-    if max_iter <= 0:
-        print('Error: invalid value for max iterations: {0}'.format(max_iter))
-        sys.exit(-1)
-
     if opts.precision is None:
         precision = _PRECISION
     else:
@@ -148,24 +133,13 @@ if __name__ == '__main__':
         print('Error: invalid value for precision: {0}'.format(precision))
         sys.exit(-1)
 
-    if opts.boolean_mode is None:
-        boolean_mode = _BOOLEAN_MODE
-    else:
-        boolean_mode = int(opts.boolean_mode)
-
-    if boolean_mode > 0:
-        boolean_mode = 1
-    else:
-        boolean_mode = 0
-
-
     print('options: ')
     print('\t           infile: {0}'.format(infile))
     print('\tmin_docs_per_term: {0}'.format(min_docs_per_term))
     print('\tmin_terms_per_doc: {0}'.format(min_terms_per_doc))
-    print('\t         max_iter: {0}'.format(max_iter))
     print('\t        precision: {0}'.format(precision))
-    print('\t     boolean_mode: {0}'.format(boolean_mode))
+    print('\t     boolean_mode: {0}'.format(opts.boolean_mode))
+    print('\t          weights: {0}'.format(opts.weights))
 
     command = []
     exe = os.path.join(os.getcwd(), 'build', 'bin', 'preprocessor')
@@ -176,12 +150,12 @@ if __name__ == '__main__':
     command.append('{0}'.format(min_docs_per_term))
     command.append('--min_terms_per_doc')
     command.append('{0}'.format(min_terms_per_doc))
-    command.append('--maxiter')
-    command.append('{0}'.format(max_iter))
     command.append('--precision')
     command.append('{0}'.format(precision))
-    command.append('--boolean_mode')
-    command.append('{0}'.format(boolean_mode))
+    if opts.boolean_mode:
+        command.append('--boolean_mode')
+    if opts.weights:
+        command.append('--tf_idf')
 
     cp = subprocess.run(command,
                         stdout=subprocess.PIPE,

@@ -101,14 +101,10 @@ int main(int argc, char* argv[])
     // allocate the index sets for the terms and docs
     std::vector<unsigned int> term_indices(height);
     std::vector<unsigned int> doc_indices(width);
-    std::vector<double> scores;
   
     bool ok = preprocess_tf(M, term_indices, doc_indices,
                             opts.max_iter, opts.min_docs_per_term, opts.min_terms_per_doc);
 
-    // compute TF-IDF weights
-    ComputeTfIdf(M, scores);
-    
     timer.Stop();
     elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
     cout << "Processing time: " << elapsed_s << "s." << endl;
@@ -126,37 +122,46 @@ int main(int argc, char* argv[])
     cout << "\tNew width: " << M.Width() << endl;
     cout << "\tNew nonzero count: " << M.Size() << endl;
 
-    //
-    // write the result matrix (with tf-idf scoring) to disk
-    //
-
-    cout << "Writing output matrix '" << outfile << "'" << endl;
-    timer.Start();
-    if (!M.WriteMtxFile(outfile, &scores[0], opts.precision))
+    if (opts.tf_idf)
     {
-        cerr << "\npreprocessor: could not write file " 
-             << outfile << endl;
-        return -1;
+        // compute TF-IDF weights
+        std::vector<double> scores;
+        ComputeTfIdf(M, scores);
+
+        //
+        // write the result matrix (with tf-idf scoring) to disk
+        //
+
+        cout << "Writing output matrix '" << outfile << "'" << endl;
+        timer.Start();
+        if (!M.WriteMtxFile(outfile, &scores[0], opts.precision))
+        {
+            cerr << "\npreprocessor: could not write file "
+                 << outfile << endl;
+            return -1;
+        }
+        timer.Stop();
+        elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
+        cout << "Output file write time: " << elapsed_s << "s." << endl;
     }
-    timer.Stop();
-    elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
-    cout << "Output file write time: " << elapsed_s << "s." << endl;
+    else
+    {
+        //
+        // write the pruned term-frequency matrix to disk
+        //
 
-    // //
-    // // write the pruned term-frequency matrix to disk
-    // //
-
-    // cout << "Writing pruned term-frequency matrix '" << outfile_tf << "'" << endl;
-    // timer.Start();
-    // if (!M.WriteMtxFile(outfile_tf))
-    // {
-    //     cerr << "\npreprocessor: could not write file "
-    //          << outfile_tf << endl;
-    //     return -1;
-    // }
-    // timer.Stop();
-    // elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
-    // cout << "Output term-frequency matrix write time: " << elapsed_s << "s." << endl;
+        cout << "Writing pruned term-frequency matrix '" << outfile_tf << "'" << endl;
+        timer.Start();
+        if (!M.WriteMtxFile(outfile_tf))
+        {
+            cerr << "\npreprocessor: could not write file "
+                 << outfile_tf << endl;
+            return -1;
+        }
+        timer.Stop();
+        elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
+        cout << "Output term-frequency matrix write time: " << elapsed_s << "s." << endl;
+    }
 
     //
     // write the reduced dictionary and document indices to disk

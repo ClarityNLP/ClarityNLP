@@ -24,6 +24,7 @@ struct CommandLineOptions
     int max_iter;
     int precision;    // no. of digits of precision for the output file
     int boolean_mode; // whether to force a boolean term-frequency matrix
+    int tf_idf;       // whether to compute tf-idf scores
 };
 
 void PrintUsage(const std::string& program_name);
