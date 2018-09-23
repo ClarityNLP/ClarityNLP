@@ -1,5 +1,71 @@
 #!/usr/bin/env python3
 """
+
+
+OVERVIEW
+
+
+This is a command-line tool for pruning duplicate rows and columns from a
+term-frequency matrix.
+
+The presence of duplicate rows and/or columns means that the matrix does not
+have full column rank, a condition that can cause numerical problems for
+machine learning algorithms.
+
+If any duplicate rows or colums are found, the code removes the duplicates
+and then checks again, iterating until all duplicates have been removed.
+
+
+INPUTS
+
+
+The input file is assumed to represent a sparse matrix. The matrix market file
+format is assumed. This is a common format supported by Python with the
+scipy.io.mmread and scipy.io.mmwrite functions.
+
+
+Help for all input options can be obtained with the --help option.
+
+
+OUTPUTS
+
+
+The type of output depends on whether the --weights flag is present.
+
+If the --weights flag is absent, the output is another term-frequency matrix
+in matrix market format. The output file name is reduced_matrix_tf.mtx.
+
+If the --weights flag is present, the output is a term-document matrix
+containing tf-idf weights for the entries. In this case the output file name
+is reduced_matrix.mtx.
+
+Two index files are also generated, 'reduced_dictionary_indices.txt' and
+'reduced_document_indices.txt'. These files contain the surviving row and
+column indices from the original term-frequency matrix.
+
+All output files are written to the current directory.
+
+
+EXAMPLES
+
+
+1. Prune duplicate rows/columns from the term-frequency matrix 'mymatrix.mtx'.
+   Write pruned matrix to reduced_matrix_tf.mtx; generate the two index files
+   as well.
+
+   python3 ./preprocess.py --infile /path/to/mymatrix.mtx
+
+
+2. Same as in example 1, but generate a TF-IDF weighted output matrix. Write
+   result matrix to reduced_matrix.mtx; generate the two index files also.
+
+   python3 ./preprocess.py --infile /path/to/mymatrix.mtx --weights
+
+3. Same as 2, but require a mininim row sum of 6 and a mininum column sum of 8
+   in the pruned term-frequency matrix. Compute TF-IDF weights also.
+
+   python ./preprocess.py -i /path/to/mymatrix.mtx -d 6 -t 8 -w
+
 """
 
 import os
@@ -37,12 +103,18 @@ def show_help():
 
     OPTIONS:
 
-         -i <quoted string> input filename, matrix market format
-        [-d <positive int>  mininum number of docs per term, default is 3]
-                            (minimum allowable row sum in result matrix)
-        [-t <positive int>  minimum number of terms per doc, default is 5]
-                            (minimum allowable column sum in result matrix)
-        [-p <positive int>  precision of result matrix, default is 4 digits]
+         -i, --infile             <quoted string> (required) input filename
+                                                  matrix market format
+        [-r, --min_docs_per_term] <positive int>  mininum number of docs per
+                                                  term, default is 3
+                                                  (minimum allowable row sum
+                                                  in result matrix)
+        [-c, --min_terms_per_doc] <positive int>  minimum number of terms per
+                                                  document, default is 5
+                                                  (minimum allowable column sum
+                                                  in result matrix)
+        [-p, --precision]         <positive int>  precision of result matrix
+                                                  (default is 4 digits)
         [-hvzbw]
 
     FLAGS:
@@ -64,9 +136,9 @@ if __name__ == '__main__':
 
     optparser = optparse.OptionParser(add_help_option = False)
     optparser.add_option('-i', '--infile', action='store', dest='infile')
-    optparser.add_option('-d', '--min_docs_per_term', action='store',
+    optparser.add_option('-r', '--min_docs_per_term', action='store',
                          dest='min_d')
-    optparser.add_option('-t', '--min_terms_per_doc', action='store',
+    optparser.add_option('-c', '--min_terms_per_doc', action='store',
                          dest='min_t')
     optparser.add_option('-p', '--precision', action='store', dest='precision')
     optparser.add_option('-b', '--boolean_mode', action='store_true',
