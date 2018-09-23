@@ -18,10 +18,9 @@
 
 struct CommandLineOptions
 {
-    std::string indir;
-    std::string outdir;
-    int terms_per_doc;
-    int docs_per_term;
+    std::string infile;
+    int min_terms_per_doc;
+    int min_docs_per_term;
     int max_iter;
     int precision;    // no. of digits of precision for the output file
     int boolean_mode; // whether to force a boolean term-frequency matrix

@@ -87,8 +87,8 @@ bool TestPreprocessor(const std::string& data_dir)
     std::vector<unsigned int> term_indices;
     std::vector<unsigned int> doc_indices;
     const unsigned int MAX_ITER = 1000;
-    const unsigned int DOCS_PER_TERM = 3;
-    const unsigned int TERMS_PER_DOC = 5;
+    const unsigned int MIN_DOCS_PER_TERM = 3;
+    const unsigned int MIN_TERMS_PER_DOC = 5;
 
     std::vector<std::string> matrixfiles;
     matrixfiles.push_back("matrix.mtx");
@@ -143,7 +143,7 @@ bool TestPreprocessor(const std::string& data_dir)
         term_indices.resize(height[0]);
         doc_indices.resize(width[0]);
         bool ok = preprocess_tf(M0, term_indices, doc_indices, scores,
-                                MAX_ITER, DOCS_PER_TERM, TERMS_PER_DOC);
+                                MAX_ITER, MIN_DOCS_PER_TERM, MIN_TERMS_PER_DOC);
         if (!ok)
         {
             cout << "test_preprocessor: error - preprocess failed." << endl;

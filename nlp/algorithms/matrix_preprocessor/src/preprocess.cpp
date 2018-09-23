@@ -36,13 +36,13 @@ void PruneRows(TermFrequencyMatrix& M,
                std::vector<unsigned int>& histogram_nz,
                std::vector<unsigned int>& term_indices,
                std::vector<unsigned int>& renumbered_term_indices,
-               const unsigned int docs_per_term);
+               const unsigned int min_docs_per_term);
 
 bool PrunableCols(TermFrequencyMatrix& M, 
                   std::vector<unsigned int>& mask,
                   unsigned int& new_width,
                   unsigned int& new_nz,
-                  const unsigned int terms_per_doc);
+                  const unsigned int min_terms_per_doc);
 
 void PruneCols(TermFrequencyMatrix& M, 
                std::vector<unsigned int>& mask,
@@ -82,8 +82,8 @@ bool preprocess_tf(TermFrequencyMatrix& M,
                    std::vector<unsigned int>& doc_indices,
                    std::vector<double>& scores,
                    const unsigned int MAX_ITER,
-                   const unsigned int DOCS_PER_TERM,
-                   const unsigned int TERMS_PER_DOC)
+                   const unsigned int MIN_DOCS_PER_TERM,
+                   const unsigned int MIN_TERMS_PER_DOC)
 {
     const unsigned int m = M.Height();
     const unsigned int n = M.Width();
@@ -128,14 +128,14 @@ bool preprocess_tf(TermFrequencyMatrix& M,
     {
         // Prune any rows satisfying the row pruning criteria.  The mask
         // is not returned, since this function removes the pruned rows.
-        PruneRows(M, mask, histogram, histogram_nz, term_indices, renumbered_term_indices, DOCS_PER_TERM);
+        PruneRows(M, mask, histogram, histogram_nz, term_indices, renumbered_term_indices, MIN_DOCS_PER_TERM);
         width = M.Width();
 
         // Evaluate the column pruning criteria and create a binary mask for
         // all cols.  The mask contains TT for columns that survive, FF for
         // cols that are prunable.  The new_width variable contains the number
         // of surviving columns (the sum of all mask values equal to TT).
-        if (!PrunableCols(M, mask, new_width, new_nz, TERMS_PER_DOC))
+        if (!PrunableCols(M, mask, new_width, new_nz, MIN_TERMS_PER_DOC))
         {
             // No prunable columns were found.  Determine whether all columns
             // are unique.  Unique cols will be identified by a TT value in
@@ -281,7 +281,7 @@ void PruneRows(TermFrequencyMatrix& M,
                std::vector<unsigned int>& histogram_nz,
                std::vector<unsigned int>& term_indices,
                std::vector<unsigned int>& renumbered_term_indices,
-               const unsigned int docs_per_term)
+               const unsigned int min_docs_per_term)
 {
     // For a term-frequency matrix, 'size' and 'nonzero_count' are two 
     // different things.  These are identical for a boolean matrix.
@@ -302,7 +302,7 @@ void PruneRows(TermFrequencyMatrix& M,
     {
         // histogram[r] == sum of occurrence counts for the rth term
         // histogram_nz[r] == number of documents in which the rth term occurs
-        bool condition_1 = (histogram[r] >= docs_per_term);
+        bool condition_1 = (histogram[r] >= min_docs_per_term);
         bool condition_2 = (histogram_nz[r] < width);
         mask[r] = (condition_1 && condition_2) ? TT : FF;
 
@@ -370,7 +370,7 @@ bool PrunableCols(TermFrequencyMatrix& M,
                   std::vector<unsigned int>& mask,
                   unsigned int& new_width,
                   unsigned int& new_nz,
-                  const unsigned int terms_per_doc)
+                  const unsigned int min_terms_per_doc)
 {
     unsigned int source_nz     = M.Size();
     unsigned int source_width  = M.Width();
@@ -383,7 +383,7 @@ bool PrunableCols(TermFrequencyMatrix& M,
     for (unsigned int c=0; c != source_width; ++c)
     {
         unsigned int num_terms = source_cols[c+1] - source_cols[c];
-        mask[c] = (num_terms >= terms_per_doc) ? TT : FF;
+        mask[c] = (num_terms >= min_terms_per_doc) ? TT : FF;
 
         // update width and nonzero count
         new_width += (mask[c] & 0x01);
@@ -696,14 +696,4 @@ void UniqueCols(TermFrequencyMatrix& M,
             new_nz += (cols[c+1] - cols[c]);
         }
     }
-}
-
-//-----------------------------------------------------------------------------
-bool preprocess_tf_matrix(const std::string& matrix_filename,
-                          const unsigned int min_docs_per_term,
-                          const unsigned int min_terms_per_doc)
-{
-    
-    
-    return true;
 }

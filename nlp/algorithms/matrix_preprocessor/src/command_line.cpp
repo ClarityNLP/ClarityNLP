@@ -27,10 +27,9 @@ using std::endl;
 void PrintOpts(const CommandLineOptions& opts)
 {
     cout << "\n      Command line options: \n" << endl;
-    cout << "\t             indir: " << opts.indir << endl;
-    cout << "\t            outdir: " << opts.outdir << endl;
-    cout << "\t     docs_per_term: " << opts.docs_per_term << endl;
-    cout << "\t     terms_per_doc: " << opts.terms_per_doc << endl;
+    cout << "\t            infile: " << opts.infile << endl;
+    cout << "\t min_docs_per_term: " << opts.min_docs_per_term << endl;
+    cout << "\t min_terms_per_doc: " << opts.min_terms_per_doc << endl;
     cout << "\t          max_iter: " << opts.max_iter << endl;
     cout << "\t         precision: " << opts.precision << endl;
     cout << "\t      boolean_mode: " << opts.boolean_mode << endl;
@@ -42,10 +41,9 @@ void PrintUsage(const std::string& program_name)
 {
     cout << endl;
     cout << "Usage: " << program_name << endl;
-    cout<< "          --indir  <path> " << endl; 
-    cout << "        [--outdir  (defaults to current directory)] " << endl;
-    cout << "        [--docs_per_term  3] " << endl;
-    cout << "        [--terms_per_doc  5] " << endl;
+    cout<< "          --infile  <path> " << endl; 
+    cout << "        [--min_docs_per_term  3] " << endl;
+    cout << "        [--min_terms_per_doc  5] " << endl;
     cout << "        [--maxiter  1000] " << endl;
     cout << "        [--precision  4] " << endl;
     cout << "        [--boolean_mode  0] " << endl;
@@ -58,10 +56,9 @@ void ParseCommandLine(int argc, char* argv[], CommandLineOptions& opts)
     std::string tmp;
 
     // set defaults
-    opts.indir         = std::string("");
-    opts.outdir        = std::string("");
-    opts.docs_per_term = 3;
-    opts.terms_per_doc = 5;
+    opts.infile         = std::string("");
+    opts.min_docs_per_term = 3;
+    opts.min_terms_per_doc = 5;
     opts.max_iter      = 1000;
     opts.precision     = 4;
     opts.boolean_mode  = 0; 
@@ -91,29 +88,24 @@ void ParseCommandLine(int argc, char* argv[], CommandLineOptions& opts)
             }
             else if ('i' == c)
             {
-                // --indir
-                opts.indir = std::string(argv[k+1]);
-            }
-            else if ('o' == c)
-            {
-                // --outdir
-                opts.outdir = std::string(argv[k+1]);
+                // --infile
+                opts.infile = std::string(argv[k+1]);
             }
             else if ('d' == c)
             {
-                // --docs_per_term
-                int docs_per_term = atoi(argv[k+1]);
-                if (docs_per_term <= 0)
+                // --min_docs_per_term
+                int min_docs_per_term = atoi(argv[k+1]);
+                if (min_docs_per_term <= 0)
                     InvalidValue(std::string(argv[k]));
-                opts.docs_per_term = docs_per_term;
+                opts.min_docs_per_term = min_docs_per_term;
             }
             else if ('t' == c)
             {
-                // --terms_per_doc
-                int terms_per_doc = atoi(argv[k+1]);
-                if (terms_per_doc <= 0)
+                // --min_terms_per_doc
+                int min_terms_per_doc = atoi(argv[k+1]);
+                if (min_terms_per_doc <= 0)
                     InvalidValue(std::string(argv[k]));
-                opts.terms_per_doc = terms_per_doc;
+                opts.min_terms_per_doc = min_terms_per_doc;
             }
             else if ('b' == c)
             {
@@ -132,10 +124,10 @@ void ParseCommandLine(int argc, char* argv[], CommandLineOptions& opts)
 //-----------------------------------------------------------------------------
 bool IsValid(const CommandLineOptions& opts)
 {
-    // user must specify the intput directory
-    if (opts.indir.empty())
+    // user must specify the input file
+    if (opts.infile.empty())
     {
-        cerr << "preprocessor error: required command line argument --indir not found" << endl;
+        cerr << "preprocessor error: required command line argument --infile not found" << endl;
         return false;
     }
 
@@ -146,17 +138,17 @@ bool IsValid(const CommandLineOptions& opts)
         return false;
     }
 
-    // docs_per_term > 0
-    if (opts.docs_per_term <= 0)
+    // min_docs_per_term > 0
+    if (opts.min_docs_per_term <= 0)
     {
-        cerr << "preprocessor error: docs_per_term must be a positive integer" << endl;
+        cerr << "preprocessor error: min_docs_per_term must be a positive integer" << endl;
         return false;
     }
 
-    // terms_per_doc > 0
-    if (opts.terms_per_doc <= 0)
+    // min_terms_per_doc > 0
+    if (opts.min_terms_per_doc <= 0)
     {
-        cerr << "preprocessor error: terms_per_doc must be a positive integer" << endl;
+        cerr << "preprocessor error: min_terms_per_doc must be a positive integer" << endl;
         return false;
     }
 

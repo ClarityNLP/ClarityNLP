@@ -30,8 +30,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-bool WriteStringsToFile(const std::string& filepath,
-                        std::vector<std::string>& strings,
+bool WriteIndicesToFile(const std::string& filepath,
                         const std::vector<unsigned int>& valid_indices,
                         const unsigned int N);
 
@@ -54,79 +53,20 @@ int main(int argc, char* argv[])
     if (!IsValid(opts))
         return -1;
 
-    //
-    // Check to see if the specified directories exist.
-    //
-
-    if (!DirectoryExists(opts.indir))
+    if (!FileExists(opts.infile))
     {
-        cerr << "\npreprocessor: the specified input directory "
-             << opts.indir << " does not exist." << endl;
+        cerr << "\npreprocessor: the specified input file "
+             << opts.infile << " does not exist." << endl;
         return -1;
     }
 
-    if (!opts.outdir.empty())
-    {
-        if (!DirectoryExists(opts.outdir))
-        {
-            cerr << "\npreprocessor: the specified output directory "
-                 << opts.outdir << " does not exist." << endl;
-            return -1;
-        }
-    }
+    std::string infile = opts.infile;
+    std::string outfile    = std::string("reduced_matrix.mtx");
+    std::string outfile_tf = std::string("reduced_matrix_tf.mtx");
+    std::string outdict    = std::string("reduced_dictionary_indices.txt");
+    std::string outdocs    = std::string("reduced_document_indices.txt");
 
-    // setup paths and filenames
-    std::string inputdir  = EnsureTrailingPathSep(opts.indir);
-    std::string infile = inputdir + std::string("matrix.mtx");
-    std::string indict = inputdir + std::string("dictionary.txt");
-    std::string indocs = inputdir + std::string("documents.txt");
-
-    std::string outputdir, outfile, outfile_tf, outdict, outdocs;
-    if (!opts.outdir.empty())
-    {
-        outputdir = EnsureTrailingPathSep(opts.outdir);
-        outfile    = outputdir + std::string("reduced_matrix.mtx");
-        outfile_tf = outputdir + std::string("reduced_matrix_tf.mtx");
-        outdict    = outputdir + std::string("reduced_dictionary.txt");
-        outdocs    = outputdir + std::string("reduced_documents.txt");
-    }
-    else
-    {
-        outfile    = std::string("reduced_matrix.mtx");
-        outfile_tf = std::string("reduced_matrix_tf.mtx");
-        outdict    = std::string("reduced_dictionary.txt");
-        outdocs    = std::string("reduced_documents.txt");
-    }
-
-    //
-    // load the input dictionary and documents
-    //
-    std::vector<std::string> dictionary, documents;
-
-    if (!LoadStringsFromFile(indict, dictionary))
-    {
-        cerr << "\npreprocessor: could not open dictionary file " 
-             << indict << endl;
-        return -1;
-    }
-    
-    unsigned int num_terms = dictionary.size();
-
-    if (!LoadStringsFromFile(indocs, documents))
-    {
-        cerr << "\npreprocessor: could not open documents file "
-             << indocs << endl;
-        return -1;
-    }
-
-    unsigned int num_docs = documents.size();
-
-    // print options to screen prior to run
-    opts.indir = inputdir;
-    if (outputdir.empty())
-        opts.outdir = std::string("current directory");
-    else
-        opts.outdir = outputdir;
+    // print command line options to the screen
     PrintOpts(opts);
 
     bool boolean_mode = (0 != opts.boolean_mode);
@@ -134,10 +74,7 @@ int main(int argc, char* argv[])
     SparseMatrix<double> A;
     unsigned int height, width, nonzeros;
 
-    //
-    // load the input matrix
-    //
-
+    // load the input matrix and measure the load time
     cout << "Loading input matrix " << infile << endl;
     timer.Start();
     if (!LoadMatrixMarketFile(infile, A, height, width, nonzeros))
@@ -149,32 +86,9 @@ int main(int argc, char* argv[])
     elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
     cout << "\tInput file load time: " << elapsed_s << "s." << endl;
 
-    //
-    // check num_terms and num_docs
-    //
-
-    if (num_terms < A.Height())
-    {
-        cerr << "\npreprocessor error: expected " << A.Height() 
-             << " terms in the dictionary; found " << num_terms << "." << endl;
-        return -1;
-    }
-
-    if (num_docs < A.Width())
-    {
-        cerr << "\npreprocessor error: expected " << A.Width()
-             << " strings in the documents file; found " << num_docs
-             << "." << endl;
-        return -1;
-    }
-
-    //
-    // do the preprocessing
-    //
-
+    // do the row and column pruning and measure the runtime
     timer.Start();
 
-    //TermFrequencyMatrix  M(A, boolean_mode);
     TermFrequencyMatrix M(A.Height(),
                           A.Width(),
                           A.Size(),
@@ -189,7 +103,7 @@ int main(int argc, char* argv[])
     std::vector<double> scores;
   
     bool ok = preprocess_tf(M, term_indices, doc_indices, scores,
-                            opts.max_iter, opts.docs_per_term, opts.terms_per_doc);
+                            opts.max_iter, opts.min_docs_per_term, opts.min_terms_per_doc);
     timer.Stop();
     elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
     cout << "Processing time: " << elapsed_s << "s." << endl;
@@ -234,11 +148,11 @@ int main(int argc, char* argv[])
     // cout << "Output term-frequency matrix write time: " << elapsed_s << "s." << endl;
 
     //
-    // write the reduced dictionary and documents to disk
+    // write the reduced dictionary and document indices to disk
     //
-    cout << "Writing dictionary file '" << outdict << "'" << endl;
+    cout << "Writing dictionary index file '" << outdict << "'" << endl;
     timer.Start();
-    if (!WriteStringsToFile(outdict, dictionary, term_indices, M.Height()))
+    if (!WriteIndicesToFile(outdict, term_indices, M.Height()))
     {
         cerr << "\npreprocessor: could not write file "
              << outdict << endl;
@@ -246,9 +160,9 @@ int main(int argc, char* argv[])
     timer.Stop();
     elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
     
-    cout << "Writing documents file '" << outdocs << "'" << endl;
+    cout << "Writing document index file '" << outdocs << "'" << endl;
     timer.Start();
-    if (!WriteStringsToFile(outdocs, documents, doc_indices, M.Width()))
+    if (!WriteIndicesToFile(outdocs, doc_indices, M.Width()))
     {
         cerr << "\npreprocessor: could not write file "
              << outdocs << endl;
@@ -261,8 +175,7 @@ int main(int argc, char* argv[])
 }
 
 //-----------------------------------------------------------------------------
-bool WriteStringsToFile(const std::string& filepath,
-                        std::vector<std::string>& strings,
+bool WriteIndicesToFile(const std::string& filepath,
                         const std::vector<unsigned int>& valid_indices,
                         const unsigned int N)
 {
@@ -281,7 +194,7 @@ bool WriteStringsToFile(const std::string& filepath,
     for (unsigned int s=0; s != N; ++s)
     {
         unsigned int index = valid_indices[s];
-        ostream << strings[index] << endl;
+        ostream << index << endl;
     }
 
     ostream.close();
