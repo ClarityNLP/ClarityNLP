@@ -24,15 +24,17 @@ LIBS = $(LIBRT) -lm
 
 # source files for the library
 LIB_SRC = \
-	constants.cpp             \
-	error.cpp                 \
-	matrix_market_file.cpp    \
-	preprocess.cpp            \
-	spooky_v2.cpp             \
-	system_mac.cpp            \
-	system_posix.cpp          \
-	term_frequency_matrix.cpp \
-	utils.cpp
+	constants.cpp                 \
+	error.cpp                     \
+	matrix_market_file.cpp        \
+	preprocess.cpp                \
+	spooky_v2.cpp                 \
+	system_mac.cpp                \
+	system_posix.cpp              \
+	term_frequency_matrix.cpp     \
+	utils.cpp                     \
+	score.cpp                     \
+	term_occurrence_histogram.cpp
 
 # source files for the C++ preprocessor application
 PREPROCESSOR_SRC = \

@@ -25,6 +25,7 @@
 #include "term_frequency_matrix.hpp"
 #include "timer.hpp"
 #include "utils.hpp"
+#include "score.hpp"
 
 using std::cout;
 using std::cerr;
@@ -102,8 +103,12 @@ int main(int argc, char* argv[])
     std::vector<unsigned int> doc_indices(width);
     std::vector<double> scores;
   
-    bool ok = preprocess_tf(M, term_indices, doc_indices, scores,
+    bool ok = preprocess_tf(M, term_indices, doc_indices,
                             opts.max_iter, opts.min_docs_per_term, opts.min_terms_per_doc);
+
+    // compute TF-IDF weights
+    ComputeTfIdf(M, scores);
+    
     timer.Stop();
     elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
     cout << "Processing time: " << elapsed_s << "s." << endl;
@@ -115,6 +120,11 @@ int main(int argc, char* argv[])
         cerr << "no output files will be written" << endl;
         return -1;
     }
+
+    cout << "Iterations finished." << endl;
+    cout << "\tNew height: " << M.Height() << endl;
+    cout << "\tNew width: " << M.Width() << endl;
+    cout << "\tNew nonzero count: " << M.Size() << endl;
 
     //
     // write the result matrix (with tf-idf scoring) to disk
@@ -132,9 +142,10 @@ int main(int argc, char* argv[])
     elapsed_s = static_cast<double>(timer.ReportMilliseconds() * 0.001);
     cout << "Output file write time: " << elapsed_s << "s." << endl;
 
-    //
-    // write the pruned term-frequency matrix to disk
-    //
+    // //
+    // // write the pruned term-frequency matrix to disk
+    // //
+
     // cout << "Writing pruned term-frequency matrix '" << outfile_tf << "'" << endl;
     // timer.Start();
     // if (!M.WriteMtxFile(outfile_tf))

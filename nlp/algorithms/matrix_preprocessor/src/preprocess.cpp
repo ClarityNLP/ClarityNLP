@@ -18,13 +18,12 @@
 #include <vector>
 #include <string>
 #include <cassert>
-#include <cmath>
-#include <map>
 #include "preprocess_common.hpp"
 #include "sparse_matrix_decl.hpp"
 #include "sparse_matrix_impl.hpp"
 #include "term_frequency_matrix.hpp"
 #include "spooky_v2.hpp"
+#include "term_occurrence_histogram.hpp"
 
 using std::cout;
 using std::cerr;
@@ -70,17 +69,10 @@ void ResolveFalsePositives2(const unsigned int width,
                             std::vector<unsigned int>& unique_indices,
                             const unsigned int c1);
 
-void TermOccurrenceHistogram(TFData* src,
-                             const unsigned int source_count,
-                             unsigned int* histogram,
-                             unsigned int* histogram_nz,
-                             const unsigned int bin_count);
-
 //-----------------------------------------------------------------------------
 bool preprocess_tf(TermFrequencyMatrix& M,
                    std::vector<unsigned int>& term_indices,
                    std::vector<unsigned int>& doc_indices,
-                   std::vector<double>& scores,
                    const unsigned int MAX_ITER,
                    const unsigned int MIN_DOCS_PER_TERM,
                    const unsigned int MIN_TERMS_PER_DOC)
@@ -88,9 +80,7 @@ bool preprocess_tf(TermFrequencyMatrix& M,
     const unsigned int m = M.Height();
     const unsigned int n = M.Width();
     const unsigned int s = std::max(m, n);
-    unsigned int* cols = M.ColBuffer();
-    TFData* tf_data = M.TFDataBuffer();
-    unsigned int height, width, new_width, new_nz;
+    unsigned width, new_width, new_nz;
 
      // setup the term and doc index vectors
     if (term_indices.size() < m)
@@ -173,105 +163,7 @@ bool preprocess_tf(TermFrequencyMatrix& M,
         ++iter;
     }
 
-    height = M.Height();
-    width  = M.Width();
-    new_nz = M.Size();
-
-    cout << "Iterations finished." << endl;
-    cout << "\tNew height: " << height << endl;
-    cout << "\tNew width: " << width << endl;
-    cout << "\tNew nonzero count: " << new_nz << endl;
-
-    // Compute scores
-    scores.resize(new_nz);
-
-    // sum across the rows of the matrix to compute the number of 
-    // times each term occurs
-    TermOccurrenceHistogram(tf_data, new_nz, &histogram[0], &histogram_nz[0], height);
-
-    // compute idf score
-    double dwidth = static_cast<double>(width);
-    std::vector<double> idf(height);
-    for (unsigned int r=0; r != height; ++r)
-        idf[r] = log(dwidth / static_cast<double>(histogram_nz[r]));
-
-    // initialize the scores
-    for (unsigned int s=0; s != new_nz; ++s)
-        scores[s] = 1.0 + log(static_cast<double>(tf_data[s].count));
-
-    // multiply each nonzero r in M by idf[r] down the cols
-    std::vector<double> D(width);
-    for (unsigned int c=0; c != width; ++c)
-    {
-        unsigned int start = cols[c];
-        unsigned int end   = cols[c+1];
-        
-        double sum_sq = 0.0;
-        for (unsigned int offset=start; offset != end; ++offset)
-        {
-            assert(offset < new_nz);
-            unsigned int r = tf_data[offset].row;
-            scores[offset] *= idf[r];
-            sum_sq += (scores[offset]*scores[offset]);
-        }
-        
-        assert(sum_sq > 0.0);
-        D[c] = 1.0 / sqrt(sum_sq);
-    }
-    
-    for (unsigned int c=0; c != width; ++c)
-    {
-        unsigned int start = cols[c];
-        unsigned int end   = cols[c+1];
-        for (unsigned int offset=start; offset != end; ++offset)
-        {
-            assert(offset < new_nz);
-            scores[offset] *= D[c];
-        }
-    }
-    
-    // // debug: write out the first two cols with 1-based indexing
-    // for (unsigned int c=0; c != 2; ++c)
-    // {
-    //     unsigned int start = cols[c];
-    //     unsigned int end   = cols[c+1];
-    //     for (unsigned int offset=start; offset != end; ++offset)
-    //     {
-    //         //unsigned int r = rows[offset];
-    //         //cout << "(" << r+1 << ", " << c+1 << "): " << data[offset] << endl;
-
-    //         unsigned int r = tf_data[offset].row;
-    //         cout << "(" << r+1 << ", " << c+1 << "): " << scores[offset] << endl;
-    //     }
-    // }
-
     return true;
-}
-
-//-----------------------------------------------------------------------------
-void TermOccurrenceHistogram(TFData* src,
-                             const unsigned int source_count,
-                             unsigned int* histogram,
-                             unsigned int* histogram_nz,
-                             const unsigned int bin_count)
-{
-    // zero the histogram arraya
-    std::fill(histogram, histogram + bin_count, 0);
-    std::fill(histogram_nz, histogram_nz + bin_count, 0);
-
-    // bin the values
-    for (unsigned int i=0; i != source_count; ++i)
-    {
-        unsigned int r = src[i].row;
-        assert(r >= 0);
-        assert(r < bin_count);
-
-        // this histogram sums the values at each element
-        histogram[r] += src[i].count;
-
-        // this histogram counts the number of occupied elements
-        histogram_nz[r] += 1;
-    }
 }
 
 //-----------------------------------------------------------------------------

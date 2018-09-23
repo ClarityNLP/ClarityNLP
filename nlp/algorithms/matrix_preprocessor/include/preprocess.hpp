@@ -20,8 +20,7 @@
 bool preprocess_tf(TermFrequencyMatrix& A,
                    std::vector<unsigned int>& term_indices,
                    std::vector<unsigned int>& doc_indices,
-                   std::vector<double>& scores,
                    const unsigned int MAX_ITER,
-                   const unsigned int DOCS_PER_TERM,
-                   const unsigned int TERMS_PER_DOC);
+                   const unsigned int MIN_DOCS_PER_TERM,
+                   const unsigned int MIN_TERMS_PER_DOC);
 

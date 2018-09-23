@@ -22,6 +22,7 @@
 #include "sparse_matrix_impl.hpp"
 #include "sparse_matrix_io.hpp"
 #include "term_frequency_matrix.hpp"
+#include "score.hpp"
 
 using std::cout;
 using std::cerr;
@@ -142,8 +143,9 @@ bool TestPreprocessor(const std::string& data_dir)
         // run the C++ preprocessor
         term_indices.resize(height[0]);
         doc_indices.resize(width[0]);
-        bool ok = preprocess_tf(M0, term_indices, doc_indices, scores,
+        bool ok = preprocess_tf(M0, term_indices, doc_indices, //scores,
                                 MAX_ITER, MIN_DOCS_PER_TERM, MIN_TERMS_PER_DOC);
+        ComputeTfIdf(M0, scores);
         if (!ok)
         {
             cout << "test_preprocessor: error - preprocess failed." << endl;
