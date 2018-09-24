@@ -5,33 +5,35 @@ Overview
 ========
 
 `Term-frequency matrices` feature prominently in text processing and
-information retrieval algorithms. In these problems one typically has a set of
-documents and a list of words (the `dictionary`). A
+topic modeling algorithms. In these problems one typically starts with
+a set of documents and a list of words (the `dictionary`). A
 term-frequency matrix is constructed from the dictionary and
 the document set by counting the number of occurrences of each dictionary word
 in each document. If the rows of the matrix index the words and the columns
-index the documents, then the matrix element at coordinates (r, c) represents
+index the documents, the matrix element at coordinates `(r, c)` represents
 the number of occurrences of dictionary word `r` in document `c`. Thus each
 entry of the matrix is either zero or a positive integer.
 
 Construction of such a matrix is conceptually simple, but problems can arise if
 the matrix contains duplicate rows or columns. The presence of duplicate
-columns, for instance, means that those documents are *identical* with respect
-to the given dictionary. The linear algebra algorithms that underlie many text
-processing and information retrieval tasks can exhibit instability or extremely
-slow convergence if duplicates are present. Mathematically, a term-frequency
-matrix with duplicate columns has a rank that is numerically less than the
-column count. Under such conditions it is advantageous to remove the duplicated
-columns (and/or rows) and work with a smaller full-rank matrix.
+columns means that the documents at those indices are *identical*
+with respect to the given dictionary. The linear algebra algorithms underlying
+many text processing and information retrieval tasks can exhibit instability or
+extremely slow convergence if duplicates are present. Mathematically, a
+term-frequency matrix with duplicate columns has a rank that is numerically
+less than the column count. Under such conditions it is advantageous to remove
+the duplicated columns (and/or rows) and work with a smaller,
+fuller-rank matrix.
 
-The matrix preprocessor is a command-line tool that scans a term-frequency
-matrix looking for duplicate rows and columns. If it finds any duplicates it
-prunes them and keeps only one row or column from the set of duplicates. After
-pruning it scans the matrix again, since removal of rows or columns could
-create further duplicates. This process of scanning and checking for duplicates
-proceeds iteratively until either nothing is left (a rare occurrence) or a
-stable matrix is achieved. The resulting matrix is written to disk, along with
-the surviving row and column index lists.
+The `ClarityNLP matrix preprocessor` is a command-line tool that scans a
+term-frequency matrix looking for duplicate rows and columns. If it finds any
+duplicates it prunes them and keeps only one row or column from each set of
+duplicates. After pruning it scans the matrix again, since removal of rows or
+columns could create further duplicates. This process of scanning and checking
+for duplicates proceeds iteratively until either a stable matrix is achieved or
+nothing is left (a rare occurrence, mainly for ill-posed problems). The
+resulting matrix is written to disk, along with the surviving row and column
+index lists.
 
 
 Source Code
@@ -72,9 +74,9 @@ binaries should be present in the ``build/bin`` folder: ``libpreprocess.a``,
 Inputs
 ======
 
-The matrix preprocessor requires a single input file representing a sparse
-matrix. The input file must be in MatrixMarket_ format, a popular and efficient
-format for sparse matrices.
+The matrix preprocessor requires a single input file. The input file must be
+in MatrixMarket_ format, a popular and efficient format for
+sparse matrices.
 
 .. _MatrixMarket: https://math.nist.gov/MatrixMarket/
 
@@ -84,8 +86,9 @@ functions ``scipy.io.mmwrite`` and ``scipy.io.mmread``.
 Input Options
 -------------
 
-The matrix preprocessor supports a set of command line options, which are
-presented in the next table:
+The matrix preprocessor supports the following set of command line options. All
+are optional except for ``--infile``, which specifies the file containing the
+term-frequency matrix to be processed:
 
 +--------------------------------+----------+------------------------------------------------------+
 |       Option                   | Argument |                Explanation                           |
@@ -96,13 +99,13 @@ presented in the next table:
 +--------------------------------+----------+------------------------------------------------------+
 |``-c``, ``--min_terms_per_doc`` | integer  | min number of dictionary terms per doc, default 5    |
 +--------------------------------+----------+------------------------------------------------------+
-|``-p``, ``--precision``         | integer  | precision of values in output file                   |
+|``-p``, ``--precision``         | integer  | precision of values in output file, default 4 digits |
 |                                |          | (valid only if ``--weights`` flag is present)        |
 +--------------------------------+----------+------------------------------------------------------+
 |``-w``, ``--weights``           | none     | if present, generate TF-IDF weights for entries      |
 |                                |          | and output a floating point term-document matrix     |
 +--------------------------------+----------+------------------------------------------------------+
-| ``-b``, ``--boolean``          | none     | if presnet, enable boolean mode, in which nonzero    |
+| ``-b``, ``--boolean``          | none     | if present, enable boolean mode, in which nonzero    |
 |                                |          | values in the input matrix are set to 1              |
 +--------------------------------+----------+------------------------------------------------------+
 | ``-h``, ``--help``             | none     | print user help to stdout                            |
@@ -123,18 +126,56 @@ column sum is less than this value.
 Outputs
 =======
 
+The matrix preprocessor generates three output files.
+
+One file, ``reduced_dictionary_indices.txt``, is a list of row indices from the
+original matrix that survived the pruning process. Another file,
+``reduced_document_indices.txt``, contains a list of original document indices
+that survived the pruning process.
+
+The third file, in MatrixMarket format, is the pruned matrix. The contents and
+name of this file depend on whether the ``--weights`` flag was used for the
+run.
+
+If the ``--weights`` flag was absent, the output is another term-frequency
+matrix in MatrixMarket format. The output file name is ``reduced_matrix_tf.mtx``
+and it contains nonnegative integer entries.
+
+If the ``--weights`` flag was present, the output is a term-document matrix
+containing TF_IDF weights for the entries. In this case the output file name
+is ``reduced_matrix.mtx`` and it contains floating point entries. The precision
+of each entry is set by the ``--precision`` flag.
+
+All output files are written to the current directory.
+
 Examples
 ========
 
+1. Prune duplicate rows/columns from the input term-frequency matrix.
+   Write pruned matrix to ``reduced_matrix_tf.mtx``; generate the two index files
+   as well:
+
+       ``python3 ./preprocess.py --infile /path/to/mymatrix.mtx``
+
+
+2. Same as in example 1, but generate an output term-document matrix containing
+   TF-IDF weights. Write result matrix to ``reduced_matrix.mtx``; generate the
+   two index files also:
+
+       ``python3 ./preprocess.py --infile /path/to/mymatrix.mtx --weights``
+
+3. Same as 2, but require a mininim row sum of 6 and a mininum column sum of 8
+   in the pruned term-frequency matrix. Compute TF-IDF weights and output a
+   floating point term-document matrix.
+
+       ``python ./preprocess.py -i /path/to/mymatrix.mtx -r 6 -c 8 -w``
 
 
 Important Note
 ==============
 
-The matrix preprocessor was designed for sparse matrices. The term-
-frequency matrices that occur in text processing problems are typically
-extremely sparse, with occupancies of only a few percent. Dense matrices should
-be handled with different techniques.
-
-
+The matrix preprocessor was designed for sparse matrices. The term-frequency
+matrices that occur in typical text processing problems are extremely sparse,
+with occupancies of only a few percent. Dense matrices should be handled with
+different techniques.
 
