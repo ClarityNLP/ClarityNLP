@@ -36,6 +36,7 @@ Utility Algorithms
    algorithms/context
    algorithms/lexical_variants
    algorithms/sentence_tokenization
+   algorithms/matrix_preprocessor
 
 
 Task Algorithms
