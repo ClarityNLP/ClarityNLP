@@ -31,16 +31,16 @@ Extends
 Arguments
 ---------
 
-=====================  ===================  ========= ======================================
-         Name                 Type          Required                  Notes
-=====================  ===================  ========= ======================================
-documentset            :ref:`documentset`   No
-cohort                 :ref:`cohort`        No
-termset1               :ref:`termset`|str   Yes       :ref:`termset` or comma-separated list of terms to search for
-termset2               :ref:`termset`|str   Yes       :ref:`termset` or comma-separated list of terms to search for
-word_distance          int                  Yes       max distance between search terms
-any_order              bool                 No        Default = false; Should terms in set1 come before terms in set1?
-=====================  ===================  ========= ======================================
+=====================  =====================  ========= ======================================
+         Name                 Type            Required                  Notes
+=====================  =====================  ========= ======================================
+documentset            :ref:`documentset`     No
+cohort                 :ref:`cohort`          No
+termset1               :ref:`termset` or str  Yes       :ref:`termset` or comma-separated list of terms to search for
+termset2               :ref:`termset` or str  Yes       :ref:`termset` or comma-separated list of terms to search for
+word_distance          int                    Yes       max distance between search terms
+any_order              bool                   No        Default = false; Should terms in set1 come before terms in set1?
+=====================  =====================  ========= ======================================
 
 
 
