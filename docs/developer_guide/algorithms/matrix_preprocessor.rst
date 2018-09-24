@@ -84,7 +84,41 @@ functions ``scipy.io.mmwrite`` and ``scipy.io.mmread``.
 Input Options
 -------------
 
+The matrix preprocessor supports a set of command line options, which are
+presented in the next table:
 
++--------------------------------+----------+------------------------------------------------------+
+|       Option                   | Argument |                Explanation                           |
++--------------------------------+----------+------------------------------------------------------+
+|``-i``, ``--infile``            | string   | path to input file, MatrixMarket format              |
++--------------------------------+----------+------------------------------------------------------+
+|``-r``, ``--min_docs_per_term`` | integer  | min number of docs per dictionary term, default 3    |
++--------------------------------+----------+------------------------------------------------------+
+|``-c``, ``--min_terms_per_doc`` | integer  | min number of dictionary terms per doc, default 5    |
++--------------------------------+----------+------------------------------------------------------+
+|``-p``, ``--precision``         | integer  | precision of values in output file                   |
+|                                |          | (valid only if ``--weights`` flag is present)        |
++--------------------------------+----------+------------------------------------------------------+
+|``-w``, ``--weights``           | none     | if present, generate TF-IDF weights for entries      |
+|                                |          | and output a floating point term-document matrix     |
++--------------------------------+----------+------------------------------------------------------+
+| ``-b``, ``--boolean``          | none     | if presnet, enable boolean mode, in which nonzero    |
+|                                |          | values in the input matrix are set to 1              |
++--------------------------------+----------+------------------------------------------------------+
+| ``-h``, ``--help``             | none     | print user help to stdout                            |
++--------------------------------+----------+------------------------------------------------------+
+| ``-v``, ``--version``          | none     | print version information to stdout                  |
++--------------------------------+----------+------------------------------------------------------+
+
+The ``--min_docs_per_term`` option is the cutoff value for pruning rows. Any
+dictionary term that appears in fewer than this many documents will be pruned.
+In other words, a row of the input matrix will be pruned if its row sum is less
+than this value.
+
+Similarly, the ``--min_terms_per_doc`` option is the cutoff value for pruning
+columns. Any document that contains fewer than this many dictionary words will
+be pruned. In other words, a column of the input matrix will be pruned if its
+column sum is less than this value.
 
 Outputs
 =======
