@@ -7,7 +7,7 @@ Overview
 `Term-frequency matrices` are often used in machine learning and
 information retrieval algorithms. In these problems one typically has a set of
 documents and a list of words (the `dictionary`). A
-term-frequency matrix is constructed from the word list and
+term-frequency matrix can be constructed from the dictionary and
 the document set by counting the number of occurrences of each word in each
 document. If the rows of the matrix index the words and the columns index the
 documents, then the matrix element at coordinates (r, c) represents the number
@@ -24,12 +24,14 @@ matrix with duplicate columns has a rank that is numerically less than the
 column count. Under such conditions it is advantageous to remove the duplicated
 columns (and/or rows) and work with a smaller full-rank matrix.
 
-The matrix preprocessor scans a term-frequency matrix looking for duplicate
-rows and columns. If it finds any duplicates it prunes them and keeps only one
-row or column from the set of duplicates. After pruning it scans the matrix
-again, since removal of rows or columns could create further duplicates. This
-process of scanning and checking for duplicates proceeds iteratively until
-either nothing is left (a rare occurrence) or a stable matrix is achieved.
+The matrix preprocessor is a command-line tool that scans a term-frequency
+matrix looking for duplicate rows and columns. If it finds any duplicates it
+prunes them and keeps only one row or column from the set of duplicates. After
+pruning it scans the matrix again, since removal of rows or columns could
+create further duplicates. This process of scanning and checking for duplicates
+proceeds iteratively until either nothing is left (a rare occurrence) or a
+stable matrix is achieved.
+
 
 Source Code
 ===========
@@ -66,6 +68,36 @@ binaries should be present in the ``build/bin`` folder: ``libpreprocess.a``,
 ``preprocessor``, and ``test_preprocessor``.
 
 
+Inputs
+======
+
+The matrix preprocessor requires a single input file representing a sparse
+matrix. The input file must be in MatrixMarket_ format, a common and efficient
+format for sparse matrices.
+
+.. _MatrixMarket: https://math.nist.gov/MatrixMarket/
+
+Python supports the MatrixMarket format via the ``scipy`` module and the
+functions ``scipy.io.mmwrite`` and ``scipy.io.mmread``.
+
+Options
+-------
+
+Outputs
+=======
+
+Examples
+========
+
+
+
+Important Note
+==============
+
+The matrix preprocessor was designed for sparse matrices. The term-
+frequency matrices that occur in text processing problems are typically
+extremely sparse, with occupancies of only a few percent. Dense matrices should
+be handled with different techniques.
 
 
 
