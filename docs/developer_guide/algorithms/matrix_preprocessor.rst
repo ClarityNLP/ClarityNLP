@@ -4,21 +4,21 @@ Term-Frequency Matrix Preprocessor
 Overview
 ========
 
-`Term-frequency matrices` are often used in machine learning and
+`Term-frequency matrices` feature prominently in text processing and
 information retrieval algorithms. In these problems one typically has a set of
 documents and a list of words (the `dictionary`). A
-term-frequency matrix can be constructed from the dictionary and
-the document set by counting the number of occurrences of each word in each
-document. If the rows of the matrix index the words and the columns index the
-documents, then the matrix element at coordinates (r, c) represents the number
-of occurrences of dictionary word `r` in document `c`. Thus each entry of the
-matrix is either zero or a positive integer.
+term-frequency matrix is constructed from the dictionary and
+the document set by counting the number of occurrences of each dictionary word
+in each document. If the rows of the matrix index the words and the columns
+index the documents, then the matrix element at coordinates (r, c) represents
+the number of occurrences of dictionary word `r` in document `c`. Thus each
+entry of the matrix is either zero or a positive integer.
 
 Construction of such a matrix is conceptually simple, but problems can arise if
 the matrix contains duplicate rows or columns. The presence of duplicate
 columns, for instance, means that those documents are *identical* with respect
-to the given dictionary. The linear algebra algorithms that underlie many topic
-modeling and information retrieval tasks can exhibit instability or extremely
+to the given dictionary. The linear algebra algorithms that underlie many text
+processing and information retrieval tasks can exhibit instability or extremely
 slow convergence if duplicates are present. Mathematically, a term-frequency
 matrix with duplicate columns has a rank that is numerically less than the
 column count. Under such conditions it is advantageous to remove the duplicated
@@ -30,7 +30,8 @@ prunes them and keeps only one row or column from the set of duplicates. After
 pruning it scans the matrix again, since removal of rows or columns could
 create further duplicates. This process of scanning and checking for duplicates
 proceeds iteratively until either nothing is left (a rare occurrence) or a
-stable matrix is achieved.
+stable matrix is achieved. The resulting matrix is written to disk, along with
+the surviving row and column index lists.
 
 
 Source Code
@@ -72,7 +73,7 @@ Inputs
 ======
 
 The matrix preprocessor requires a single input file representing a sparse
-matrix. The input file must be in MatrixMarket_ format, a common and efficient
+matrix. The input file must be in MatrixMarket_ format, a popular and efficient
 format for sparse matrices.
 
 .. _MatrixMarket: https://math.nist.gov/MatrixMarket/
@@ -80,8 +81,10 @@ format for sparse matrices.
 Python supports the MatrixMarket format via the ``scipy`` module and the
 functions ``scipy.io.mmwrite`` and ``scipy.io.mmread``.
 
-Options
--------
+Input Options
+-------------
+
+
 
 Outputs
 =======
