@@ -1,13 +1,15 @@
 import simplejson
-from flask import send_file, Blueprint
+from flask import send_file, Blueprint, Response, request
 from os import listdir
 from os.path import isfile, join
 
 from data_access import *
 from algorithms import *
+from results import *
 from .docs import auto
 import tasks
 import subprocess
+import json
 
 utility_app = Blueprint('utility_app', __name__)
 
@@ -125,3 +127,13 @@ def get_nlpql_text(name: str):
     except Exception as e:
         return "Failed to get nlpql text" + str(e)
 
+@utility_app.route('/write_nlpql_feedback', methods=['GET', 'POST'])
+@auto.doc(groups=['public', 'private', 'utilities'])
+def write_nlpql_feedback():
+    """Write NLPQL feedback"""
+    if request.method == 'POST':
+        data = request.get_json()
+        response = writeResultFeedback(util.mongo_host, util.mongo_port, util.mongo_db, data)
+        return response
+    else:
+        return Response('Only POST requests are supported', status=400, mimetype='application/json')
