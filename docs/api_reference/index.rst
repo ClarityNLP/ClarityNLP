@@ -46,6 +46,10 @@ Custom Tasks
    nlpql/textstats
    nlpql/transfusion
 
+
+Base Classes
+~~~~~~~~~~~~
+
 Also see the following classes, which are the base classes for the NLPQL tasks:
 
 .. toctree::
