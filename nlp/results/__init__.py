@@ -1,0 +1,1 @@
+from .result_interface import writeResultFeedback
