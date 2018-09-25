@@ -155,7 +155,8 @@ class BaseTask(luigi.Task):
                                             mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key,
                                             types=self.pipeline_config.report_types,
                                             filter_query=self.pipeline_config.filter_query,
-                                            cohort_ids=self.pipeline_config.cohort)
+                                            cohort_ids=self.pipeline_config.cohort,
+                                            job_results_filters=self.pipeline_config.job_results)
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)
