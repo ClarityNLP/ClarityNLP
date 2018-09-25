@@ -18,6 +18,9 @@ NLPQL Tasks
 All tasks (or data entities) are prefixed in NLPQL as `define`, with the optional `final` flag. The `final` flag writes each result as part of the finalized result set in MongoDB.
 
 
+Core Tasks
+~~~~~~~~~~
+
 .. toctree::
    :maxdepth: 1
 
@@ -31,6 +34,17 @@ All tasks (or data entities) are prefixed in NLPQL as `define`, with the optiona
    nlpql/valueextractor
 
 
+Custom Tasks
+~~~~~~~~~~~~
+
+.. toctree::
+   :maxdepth: 1
+
+   nlpql/gleason
+   nlpql/race
+   nlpql/proximity
+   nlpql/textstats
+   nlpql/transfusion
 
 Also see the following classes, which are the base classes for the NLPQL tasks:
 
@@ -51,3 +65,15 @@ All operations are prefixed in NLPQL as `define`, with the optional `final` flag
 
    nlpql/operations
 
+
+NLP Web APIs
+------------
+NLP endpoints provided by ClarityNLP.
+
+.. toctree::
+   :maxdepth: 2
+
+   webapis/api_main_list
+   webapis/vocabulary
+   webapis/ngram_cohort
+   webapis/ohdsi

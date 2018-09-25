@@ -16,8 +16,6 @@
 
 #include <vector>
 #include <string>
-#include "sparse_matrix_decl.hpp"
-#include "sparse_matrix_impl.hpp"
 
 struct TFData
 {
@@ -50,10 +48,13 @@ public:
     ~TermFrequencyMatrix() {}
     TermFrequencyMatrix();
 
-    // A TermFrequencyMatrix must be constructed from an existing SparseMatrix.
-    TermFrequencyMatrix(const SparseMatrix<double>& S, bool boolean_mode = false);
-
-    void Init(const SparseMatrix<double>& S, bool boolean_mode = false);
+    TermFrequencyMatrix(const unsigned int height,   // row count
+                        const unsigned int width,    // col count
+                        const unsigned int nnz,      // monzero count
+                        const unsigned int* indptr,  // width+1 entries
+                        const unsigned int* indices, // nnz entries
+                        const double* data,          // nnz entries
+                        const bool boolean_mode = false); // treat data as 0, 1
 
     unsigned int Height()    const  {return height_;}
     unsigned int Width()     const  {return width_;}

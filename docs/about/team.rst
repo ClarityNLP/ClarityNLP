@@ -9,8 +9,12 @@ Members
 * Charity Hilton
 * Richard Boyd
 * Trey Schneider
+* Christine Herlihy
 
 Current Students
 ----------------
 * Chirag Jamadagni
+
+Former Students
+---------------
 * Prathamesh Prabhudesai

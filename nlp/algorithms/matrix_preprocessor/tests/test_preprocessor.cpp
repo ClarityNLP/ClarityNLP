@@ -22,6 +22,7 @@
 #include "sparse_matrix_impl.hpp"
 #include "sparse_matrix_io.hpp"
 #include "term_frequency_matrix.hpp"
+#include "score.hpp"
 
 using std::cout;
 using std::cerr;
@@ -87,15 +88,14 @@ bool TestPreprocessor(const std::string& data_dir)
     std::vector<unsigned int> term_indices;
     std::vector<unsigned int> doc_indices;
     const unsigned int MAX_ITER = 1000;
-    const unsigned int DOCS_PER_TERM = 3;
-    const unsigned int TERMS_PER_DOC = 5;
+    const unsigned int MIN_DOCS_PER_TERM = 3;
+    const unsigned int MIN_TERMS_PER_DOC = 5;
 
     std::vector<std::string> matrixfiles;
     matrixfiles.push_back("matrix.mtx");
     matrixfiles.push_back("reduced_matrix.mtx");
 
     SparseMatrix<double> A[2];
-    TermFrequencyMatrix M[2];
     unsigned int height[2], width[2], nz[2];
     std::vector<double> scores;
 
@@ -130,15 +130,22 @@ bool TestPreprocessor(const std::string& data_dir)
                  << matrixfiles[0] << endl;
             continue;
         }
-        
+
         // initialize a TermFrequencyMatrix from it
-        M[0].Init(A[0], boolean_mode);
-        
+        TermFrequencyMatrix M0(A[0].Height(),
+                               A[0].Width(),
+                               A[0].Size(),
+                               A[0].LockedColBuffer(),
+                               A[0].LockedRowBuffer(),
+                               A[0].LockedDataBuffer(),
+                               boolean_mode);
+
         // run the C++ preprocessor
         term_indices.resize(height[0]);
         doc_indices.resize(width[0]);
-        bool ok = preprocess_tf(M[0], term_indices, doc_indices, scores,
-                                MAX_ITER, DOCS_PER_TERM, TERMS_PER_DOC);
+        bool ok = preprocess_tf(M0, term_indices, doc_indices, //scores,
+                                MAX_ITER, MIN_DOCS_PER_TERM, MIN_TERMS_PER_DOC);
+        ComputeTfIdf(M0, scores);
         if (!ok)
         {
             cout << "test_preprocessor: error - preprocess failed." << endl;
@@ -165,22 +172,28 @@ bool TestPreprocessor(const std::string& data_dir)
         
         // initialize a TermFrequencyMatrix from the Matlab result, but
         // don't do any preprocessing on it
-        M[1].Init(A[1], boolean_mode);
+        TermFrequencyMatrix M1(A[1].Height(),
+                               A[1].Width(),
+                               A[1].Size(),
+                               A[1].LockedColBuffer(),
+                               A[1].LockedRowBuffer(),
+                               A[1].LockedDataBuffer(),
+                               boolean_mode);
         
         // this file has already been preprocessed
 
         // compare the matrices
-        if (M[0].CompareAsBoolean(M[1]))
+        if (M0.CompareAsBoolean(M1))
         {            
             // compute the Frobenius norm of the difference between the scores
-            // for M[0] and the loaded data values for A[1]
+            // for M0 and the loaded data values for A[1]
             
             cout << "\n\tterm-frequency matrices at indices "
                  << i << " and " << i+1
                  << " have an identical pattern of nonzeros " << endl;
 
             const double* data1 = A[1].LockedDataBuffer();
-            unsigned int size = M[1].Size();
+            unsigned int size = M1.Size();
             if (size != A[1].Size())
             {
                 cerr << "test_preprocessor: error - unexpected nonzero count "
@@ -216,8 +229,8 @@ bool TestPreprocessor(const std::string& data_dir)
             // Then compute the norms of each column, sort them, and compare
             // the norms 1-1.  
             
-            unsigned int width = M[0].Width();
-            if (M[1].Width() != width)
+            unsigned int width = M0.Width();
+            if (M1.Width() != width)
             {
                 cout << "test_preprocessor: sparse binary matrices at indices "
                      << i << " and " << i+1
@@ -228,14 +241,14 @@ bool TestPreprocessor(const std::string& data_dir)
             std::vector<IndexedData> hash0(width);
             std::vector<IndexedData> hash1(width);
 
-            // extract row data from M[0]
-            const TFData* tf_data0 = M[0].LockedTFDataBuffer();
-            std::vector<unsigned int> rows0(M[0].Size());
-            for (unsigned int s=0; s != M[0].Size(); ++s)
+            // extract row data from M0
+            const TFData* tf_data0 = M0.LockedTFDataBuffer();
+            std::vector<unsigned int> rows0(M0.Size());
+            for (unsigned int s=0; s != M0.Size(); ++s)
                 rows0[s] = tf_data0[s].row;
 
             // hash the row indices of both matrices and sort the results
-            HashColsSpooky(width, M[0].ColBuffer(), &rows0[0], hash0);
+            HashColsSpooky(width, M0.ColBuffer(), &rows0[0], hash0);
             HashColsSpooky(width, A[1].ColBuffer(), A[1].RowBuffer(), hash1);
 
             std::sort(hash0.begin(), hash0.begin() + width,
@@ -270,7 +283,7 @@ bool TestPreprocessor(const std::string& data_dir)
             std::vector<double> norms1(width);
 
             // first matrix
-            const unsigned int* cols0 = M[0].LockedColBuffer();
+            const unsigned int* cols0 = M0.LockedColBuffer();
             for (unsigned int c=0; c != width; ++c)
             {
                 unsigned int start = cols0[c];
