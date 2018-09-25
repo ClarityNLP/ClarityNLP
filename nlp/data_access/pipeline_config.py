@@ -29,7 +29,7 @@ class PipelineConfig(BaseModel):
                  include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
                  vocabulary='SNOMED', sections=list(), report_type_query='', minimum_value=0, maximum_value=10000,
                  case_sensitive=False, cohort=list(), is_phenotype=False, report_types=list(), custom_query='', filter_query='',
-                 custom_arguments: dict=dict(), enum_list: list=list(), final: bool = False):
+                 custom_arguments: dict=dict(), enum_list: list=list(), final: bool = False, job_results=dict()):
         self.config_type = config_type
         self.name = name
         self.description = description
@@ -55,6 +55,7 @@ class PipelineConfig(BaseModel):
         self.custom_arguments = custom_arguments
         self.enum_list = enum_list
         self.final = final
+        self.job_results = job_results
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):

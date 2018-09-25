@@ -101,7 +101,7 @@ EXAMPLES
 3. Same as 2, but require a mininim row sum of 6 and a mininum column sum of 8
    in the pruned term-frequency matrix. Compute TF-IDF weights also.
 
-   python ./preprocess.py -i /path/to/mymatrix.mtx -d 6 -t 8 -w
+   python ./preprocess.py -i /path/to/mymatrix.mtx -r 6 -c 8 -w
 
 """
 

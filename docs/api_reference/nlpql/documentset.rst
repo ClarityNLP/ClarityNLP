@@ -7,7 +7,8 @@ ClarityNLP modules in NLPQL that defines how documents are to be queried in Solr
 Functions
 ---------
 
-**Clarity.createReportTagList**
+Clarity.createReportTagList
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Uses the ClarityNLP document ontology. Mapped using the Report Type Mapper.
 
@@ -21,7 +22,8 @@ Uses the ClarityNLP document ontology. Mapped using the Report Type Mapper.
 
 ----
 
-**Clarity.createDocumentSet**
+Clarity.createDocumentSet
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Uses arguments to build a custom Solr query to retrieve document set. All arguments are optional, but at least one must be present.
 
@@ -50,7 +52,8 @@ query                  str               Use single quote (') to quote. Correspo
 
 ----
 
-**Clarity.createReportTypeList**
+Clarity.createReportTypeList
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Uses an explicit report type list of string to match from the `report_type` field.
 
