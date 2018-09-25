@@ -30,10 +30,11 @@ class PhenotypeEntity(dict):
     def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = '',
                  named_arguments: dict = dict(),
                  arguments: list = list(), funct: str = '', values: list = list(), description: str = '',
-                 concept: str = '', final: bool = False, raw_text: str = ''):
+                 concept: str = '', final: bool = False, raw_text: str = '',
+                 job_results: list = list()):
         dict.__init__(self, name=name, declaration=declaration, version=version, alias=alias, arguments=arguments,
                       named_arguments=named_arguments, library=library, funct=funct, values=values,
-                      description=description, concept=concept, final=final, raw_text=raw_text)
+                      description=description, concept=concept, final=final, raw_text=raw_text, job_results=job_results)
 
 
 class PhenotypeOperations(dict):
@@ -45,10 +46,9 @@ class PhenotypeOperations(dict):
 class PhenotypeModel(BaseModel):
 
     # data_models maps to 'using'
-    def __init__(self, description: str = '', owner: str = 'claritynlp', context: str = 'Patient', population: str = 'All',
-                 phenotype=None, data_models: list = list(),
-                 includes: list = list(), code_systems: list = list(),
-                 value_sets: list = list(), term_sets: list = list(),
+    def __init__(self, description: str = '', owner: str = 'claritynlp', context: str = 'Patient',
+                 population: str='All', phenotype=None, data_models: list = list(), includes: list = list(),
+                 code_systems: list = list(), value_sets: list = list(), term_sets: list = list(),
                  document_sets: list = list(), data_entities: list = list(), cohorts: list = list(),
                  operations: list = list(), debug=False, limit: int = 0, nlpql: str = ''):
         self.owner = owner

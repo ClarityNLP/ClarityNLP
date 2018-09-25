@@ -311,6 +311,25 @@ def phenotype_feature_results(job_id: str, feature: str, subject: str):
     return results
 
 
+def phenotype_results_by_context(context: str, query_filters:dict):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    results = []
+    try:
+        if context.lower() == 'patient' or context.lower() == 'subject':
+            project = 'subject'
+        else:
+            project = 'report_id'
+        results = list(db["phenotype_results"].find(query_filters, {project: 1}))
+
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
+
+    return results
+
+
 def remove_tmp_file(filename):
     if filename:
         os.remove(filename)

@@ -8,7 +8,10 @@ from ohdsi import getCohort
 import traceback
 import sys
 import json
-
+try:
+    from .results import phenotype_results_by_context
+except Exception:
+    from results import phenotype_results_by_context
 
 HEADERS = {
         'Content-Type': 'application/json',
@@ -57,10 +60,12 @@ def make_url(qry, fq, sort, start, rows, solr_url):
     return url
 
 
-def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids):
+def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids, job_results_filter):
     new_fq = fq
 
     mapped_items = get_report_type_mappings(mapper_url, mapper_inst, mapper_key)
+    subjects = list()
+    documents = list()
 
     if types and len(types) > 0:
         if len(new_fq) > 0:
@@ -74,17 +79,23 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
         report_types = 'report_type: (' + report_type_query + ')'
         new_fq += report_types
 
+    if job_results_filter:
+        for k in job_results_filter.keys():
+            job_filter = job_results_filter[k]
+            context = job_filter.pop('context', None)
+            results = phenotype_results_by_context(context, job_filter)
+            if context.lower() == 'patient' or context.lower() == 'subject':
+                subjects.extend(set([str(x['subject']) for x in results]))
+            else:
+                documents.extend(set([str(x['report_id']) for x in results]))
+
+            del results
+
     if len(cohort_ids) > 0:
-        subjects = list()
         for c in cohort_ids:
             patients = getCohort(c)['Patients']
             subjects.extend([str(x['subjectId']) for x in patients])
             del patients
-        if len(subjects) > 0:
-            if len(new_fq) > 0:
-                new_fq += ' AND '
-            subject_fq = 'subject: (' + ' OR '.join(subjects) + ')'
-            new_fq += subject_fq
 
     if len(tags) > 0:
         if len(new_fq) > 0:
@@ -100,8 +111,21 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
                 print("Unable to map tag %s" % tag)
         if len(matched_reports) > 0:
             match_report_clause = '" OR "'.join(matched_reports)
-            report_types = 'report_type: ("' + match_report_clause + '")'
+            report_types = util.solr_report_type_field + ': ("' + match_report_clause + '")'
             new_fq += report_types
+
+    if len(subjects) > 0:
+        if len(new_fq) > 0:
+            new_fq += ' AND '
+        subject_fq = util.solr_subject_field + ': (' + ' OR '.join(subjects) + ')'
+        new_fq += subject_fq
+
+    if len(documents) > 0:
+        if len(new_fq) > 0:
+            new_fq += ' AND '
+        doc_fq = util.solr_report_id_field + ': (' + ' OR '.join(subjects) + ')'
+        new_fq += doc_fq
+
 
     return new_fq
 
@@ -126,10 +150,11 @@ def make_post_body(qry, fq, sort, start, rows):
 
 
 def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), sort='', start=0, rows=10,
-          cohort_ids: list = list(), types: list = list(), filter_query='',
+          cohort_ids=list(), types=list(), filter_query='', job_results_filters=dict(),
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
     url = solr_url + '/select'
-    fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
+    fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
+                 job_results_filters)
     data = make_post_body(qry,  fq, sort, start, rows)
 
     print("Querying " + url)
@@ -145,17 +170,19 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), sort='
     #     print ("  Report id =", document['report_id'])
 
     if response.status_code != 200:
+
         return list()
 
     return response.json()['response']['docs']
 
 
 def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), sort='', start=0, rows=10,
-                   cohort_ids: list = list(), types: list = list(), filter_query='',
+                   cohort_ids=list(), types=list(), filter_query='', job_results_filters=dict(),
                    report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
 
     url = solr_url + '/select'
-    fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids)
+    fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
+                 job_results_filters)
     data = make_post_body(qry, fq, sort, start, rows)
 
     print("Querying to get counts " + url)
