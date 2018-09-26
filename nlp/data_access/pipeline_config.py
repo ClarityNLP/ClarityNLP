@@ -25,37 +25,74 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, terms=list(), description='', limit=0, concept_code=-1, owner='system',
-                 include_synonyms=False, include_descendants=False, include_ancestors=False, report_tags=list(),
-                 vocabulary='SNOMED', sections=list(), report_type_query='', minimum_value=0, maximum_value=10000,
-                 case_sensitive=False, cohort=list(), is_phenotype=False, report_types=list(), custom_query='', filter_query='',
-                 custom_arguments: dict=dict(), enum_list: list=list(), final: bool = False, job_results=dict()):
+    def __init__(self, config_type, name, terms: list=None, description='', limit=0, concept_code=-1,
+                 owner='system', include_synonyms=False, include_descendants=False, include_ancestors=False,
+                 report_tags: list=None, vocabulary='SNOMED', sections: list=None, report_type_query='',
+                 minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list=None,
+                 is_phenotype=False, report_types: list=None, custom_query='', filter_query='',
+                 custom_arguments: dict=None, enum_list: list=None, final: bool=False, job_results: dict=None):
+
+        # This code initializes mutable params in a manner that prevents the
+        # "mutable default argument" bug. In this function the types of the
+        # mutable params are list and dict. If a call to PipelineConfig omits a
+        # value for a mutable param, that param is assigned the value 'None',
+        # which causes the mutable param to be re-initialized to an empty list
+        # or dict.
+
+        # A construct such as 'param: list=list()' only runs the
+        # default initializer on the first call. On subsequent calls the param
+        # is not re-initialized to an empty list.
+
         self.config_type = config_type
         self.name = name
+        if None == terms:
+            self.terms = list()
+        else:
+            self.terms = terms
         self.description = description
-        self.terms = terms
         self.limit = limit
         self.concept_code = concept_code
         self.owner = owner
         self.include_synonyms = include_synonyms
         self.include_descendants = include_descendants
         self.include_ancestors = include_ancestors
-        self.report_tags = report_tags
-        self.report_types = report_types
-        self.custom_query = custom_query
-        self.filter_query = filter_query
+        if None == report_tags:
+            self.report_tags = list()
+        else:
+            self.report_tags = report_tags
         self.vocabulary = vocabulary
-        self.sections = sections
+        if None == sections:
+            self.sections = list()
+        else:
+            self.sections = sections
         self.report_type_query = report_type_query
         self.minimum_value = minimum_value
         self.maximum_value = maximum_value
         self.case_sensitive = case_sensitive
-        self.cohort = cohort
+        if None == cohort:
+            self.cohort = list()
+        else:
+            self.cohort = cohort
         self.is_phenotype = is_phenotype
-        self.custom_arguments = custom_arguments
-        self.enum_list = enum_list
+        if None == report_types:
+            self.report_types = list()
+        else:
+            self.report_types = report_types
+        self.custom_query = custom_query
+        self.filter_query = filter_query
+        if None == custom_arguments:
+            self.custom_arguments = dict()
+        else:
+            self.custom_arguments = custom_arguments
+        if None == enum_list:
+            self.enum_list = list()
+        else:
+            self.enum_list = enum_list
         self.final = final
-        self.job_results = job_results
+        if None == job_results:
+            self.job_results = dict()
+        else:
+            self.job_results = job_results
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
