@@ -1,13 +1,22 @@
 ## Technologies we use
 
+
+### Docker
+
+### Solr
+
 ### Flask
 
 ### Pandas
 
-### Spacy
+### NLP Libraries (spaCy, textacy, nltk)
 
 ### Luigi
 
 ### Postgres
 
 ### MongoDB
+
+### Client-side Libraries (React, Sails)
+
+### Redis
