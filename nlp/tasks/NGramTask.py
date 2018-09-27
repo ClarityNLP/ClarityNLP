@@ -1,8 +1,6 @@
 from pymongo import MongoClient
 from textacy import extract, Doc, preprocess_text
 
-import util
-
 try:
     from .task_utilities import BaseTask, BaseCollector, pipeline_mongo_writer, get_config_integer
 except Exception as e:
@@ -60,9 +58,9 @@ class NGramCollector(BaseCollector):
             }
         ]
 
-        results = list(db.phenotype_results.aggregate(q))
+        ngram_results = list(db.phenotype_results.aggregate(q))
 
-        for r in results:
+        for r in ngram_results:
             if r['cnt'] >= min_freq:
                 pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, 0, pipeline_config, None, {
                     'text': r['_id'],
@@ -113,9 +111,14 @@ class NGramTask(BaseTask):
             self.write_multiple_result_data(temp_file, mongo_client, doc, ngrams)
 
 
-
 if __name__ == "__main__":
-    content = "Can we forge against these enemies a grand and global alliance, North and South, East and West, that can assure a more fruitful life for all mankind? Will you join in that historic effort? In the long history of the world, only a few generations have been granted the role of defending freedom in its hour of maximum danger. I do not shrink from this responsibility — I welcome it. I do not believe that any of us would exchange places with any other people or any other generation. The energy, the faith, the devotion which we bring to this endeavor will light our country and all who serve it — and the glow from that fire can truly light the world."
+    content = "Can we forge against these enemies a grand and global alliance, North and South, East and West, that " \
+              "can assure a more fruitful life for all mankind? Will you join in that historic effort? In the long " \
+              "history of the world, only a few generations have been granted the role of defending freedom in its " \
+              "hour of maximum danger. I do not shrink from this responsibility — I welcome it. I do not believe " \
+              "that any of us would exchange places with any other people or any other generation. The energy, the " \
+              "faith, the devotion which we bring to this endeavor will light our country and all who serve it — and " \
+              "the glow from that fire can truly light the world."
     d = Doc(content)
     results = extract.ngrams(d, 3)
     print(results)

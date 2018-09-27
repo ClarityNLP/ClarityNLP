@@ -57,7 +57,9 @@ class BaseModel(object):
 
 class NLPModel(BaseModel):
 
-    def __init__(self, terms=list(), text='', min_value='0', max_value='10000', case_sensitive=False):
+    def __init__(self, terms=None, text='', min_value='0', max_value='10000', case_sensitive=False):
+        if terms is None:
+            terms = list()
         self.terms = terms
         self.text = text
         self.min_value = min_value

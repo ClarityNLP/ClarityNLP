@@ -75,7 +75,7 @@ def getCohortByName(cohort_name):
 # Getting Cohort information based on Cohort ID
 def getCohort(cohort_id):
     # Getting the cohort summary
-    url = ENDPOINT + '/cohortanalysis/%s/summary' %(cohort_id)
+    url = ENDPOINT + '/cohortanalysis/%s/summary' % cohort_id
     cohort_details = requests.get(url).json()
     cohort_details['cohortDefinition']['expression'] = json.loads(cohort_details['cohortDefinition']['expression']) #fixing ohdsi JSON structure bug
 
@@ -103,7 +103,7 @@ def createCohort(filepath):
     cohort_id = response.json()['id']
 
     # Triggering cohort creation job
-    url = ENDPOINT + '/cohortdefinition/%s/generate/OHDSI-CDMV5' %(cohort_id)
+    url = ENDPOINT + '/cohortdefinition/%s/generate/OHDSI-CDMV5' % cohort_id
     response = requests.get(url)
 
     # Checking if cohort creation job has been triggered

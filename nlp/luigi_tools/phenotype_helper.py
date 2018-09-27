@@ -117,7 +117,7 @@ def map_arguments(pipeline: PipelineConfig, e, all_terms):
     for k in e.keys():
         if not (
                 k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or
-                k == "cohort"):
+                k == "cohort" or k == "job_results"):
             if k in pipeline_keys:
                 try:
                     pipeline[k] = e[k]
@@ -137,21 +137,30 @@ def map_arguments(pipeline: PipelineConfig, e, all_terms):
                     print(ex)
 
 
-def get_cohort_items(cohort_name, cohort_source):
+def get_cohort_items(cohort_name, cohort_source, job_results):
     cohorts = list()
+    job_results_filter = dict()
+
     if type(cohort_name) == str:
         if cohort_name in cohort_source:
             cohorts.append(cohort_source[cohort_name])
+        if cohort_name in job_results:
+            job_results_filter[cohort_name] = job_results[cohort_name]
+
     elif type(cohort_name) == list:
         for name in cohort_name:
             if name in cohort_source:
                 cohorts.extend(cohort_source[name])
+            if name in job_results:
+                job_results_filter[name] = job_results[name]
 
-    return cohorts
+    return cohorts, job_results_filter
 
 
 def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug, cohorts, phenotype_limit=0,
-                               report_types=dict(), custom_query=dict(), filter_query=dict()):
+                               report_types=None, custom_query=dict(), filter_query=dict(), job_results=dict()):
+    if report_types is None:
+        report_types = dict()
     if e['named_arguments'] is None:
         e['named_arguments'] = dict()
     if 'value_sets' not in e['named_arguments']:
@@ -184,11 +193,11 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
             terms = list()
 
         if 'cohort' in e['named_arguments']:
-            cohort = get_cohort_items(e['named_arguments']['cohort'], cohorts)
+            cohort, job_results_filter = get_cohort_items(e['named_arguments']['cohort'], cohorts, job_results)
         elif 'cohorts' in e['named_arguments']:
-            cohort = get_cohort_items(e['named_arguments']['cohorts'], cohorts)
+            cohort, job_results_filter = get_cohort_items(e['named_arguments']['cohorts'], cohorts, job_results)
         else:
-            cohort = list()
+            cohort, job_results_filter = list(), dict()
 
         tags = get_item_list_by_key(report_tags, doc_sets)
         types = get_item_list_by_key(report_types, doc_sets)
@@ -202,6 +211,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   owner=owner,
                                   limit=limit,
                                   cohort=cohort,
+                                  job_results=job_results_filter,
                                   report_tags=tags,
                                   report_types=types,
                                   custom_query=query,
@@ -229,15 +239,33 @@ def get_cohorts(model: PhenotypeModel):
     return cohorts
 
 
+def get_job_results(model: PhenotypeModel):
+    job_results = dict()
+    if model.cohorts:
+        for c in model.cohorts:
+            try:
+                c_name = c['name']
+                if (c['library'] == 'Clarity' or c['library'] == 'ClarityNLP') and c['funct'] == 'getJobResults' and \
+                        'named_arguments' in c:
+                    job_results[c_name] = c['named_arguments']
+
+            except Exception as ex:
+                print(ex)
+                traceback.print_exc(file=sys.stderr)
+    return job_results
+
+
 def get_pipelines_from_phenotype(model: PhenotypeModel):
     pipelines = list()
     if model and model.data_entities and len(model.data_entities) > 0:
         all_terms = get_terms(model)
         report_tags, report_types, custom_query, filter_query = get_document_set_attributes(model)
         cohorts = get_cohorts(model)
+        job_results = get_job_results(model)
         for e in model.data_entities:
             pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts,
-                                                        model.limit, report_types, custom_query, filter_query))
+                                                        model.limit, report_types, custom_query, filter_query,
+                                                        job_results))
     return pipelines
 
 

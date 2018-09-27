@@ -277,12 +277,14 @@ class ConceptGraph():
                                              self.nodes[l[1]].cid))
         outfile.close()
 
-    def load_from_file(self, filename, db_extra = {}):
+    def load_from_file(self, filename, db_extra=None):
         """
         Load the data written by self.dump_to_file() and validate the result.
         The parameter 'db_extra' is explained in the docstring for self.validate.
         """
 
+        if db_extra is None:
+            db_extra = {}
         infile = open(filename, "rt")
         line = infile.readline().rstrip()
         node_count, link_count = line.split(',')

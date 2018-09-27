@@ -61,11 +61,10 @@ Reference: PHP Date Formats, http://php.net/manual/en/datetime.formats.date.php
 
 """
 
-import re
-import os
-import sys
 import json
 import optparse
+import re
+import sys
 from collections import namedtuple
 
 VERSION_MAJOR = 0
@@ -210,7 +209,7 @@ regex_17 = re.compile(str_month, re.IGNORECASE)
 str_iso_8 = r'\b(?P<year>' + str_YY + r')' + \
             r'(?P<month>' + str_MM + r')' + \
             r'(?P<day>' + str_DD + r')\b'
-regex_iso_1 = re.compile(str_iso_8);
+regex_iso_1 = re.compile(str_iso_8)
 
 # optional sign, four-digit year, two-digit month, two-digit day, dashes
 str_iso_s4y2m2d = r'\b(?P<sign>[-+]?)' + \
