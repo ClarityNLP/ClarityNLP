@@ -11,8 +11,10 @@ segmentor = Segmentation()
 print('Done initializing models for value extractor...')
 
 
-def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enumlist=list(), is_case_sensitive_text=False, denom_only=False):
+def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enumlist=None, is_case_sensitive_text=False, denom_only=False):
 
+    if enumlist is None:
+        enumlist = list()
     sentence_list = segmentor.parse_sentences(text)
     process_results = []
     matchers = [re.compile(r"\b%s\b" % t, re.IGNORECASE) for t in term_list]

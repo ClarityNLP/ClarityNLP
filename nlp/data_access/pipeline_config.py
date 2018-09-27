@@ -45,7 +45,7 @@ class PipelineConfig(BaseModel):
 
         self.config_type = config_type
         self.name = name
-        if None == terms:
+        if terms is None:
             self.terms = list()
         else:
             self.terms = terms
@@ -154,7 +154,9 @@ def get_default_config():
     return PipelineConfig('UNKNOWN', 'UNKNOWN', [])
 
 
-def get_query(custom_query='', terms: list = list()):
+def get_query(custom_query='', terms=None):
+    if terms is None:
+        terms = list()
     if custom_query and len(custom_query) > 0:
         return custom_query
     elif terms is not None and len(terms) > 0:

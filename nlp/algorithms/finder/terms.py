@@ -54,7 +54,9 @@ def filter_match(lookup, filters):
         return lookup_str in filters
 
 
-def get_matches(matcher, sentence: str, section='UNKNOWN', filters=dict()):
+def get_matches(matcher, sentence: str, section='UNKNOWN', filters=None):
+    if filters is None:
+        filters = dict()
     matches = []
     match = matcher.search(sentence)
     temporality_filters = get_filter_values(filters, "temporality")
@@ -74,7 +76,9 @@ def get_matches(matcher, sentence: str, section='UNKNOWN', filters=dict()):
     return matches
 
 
-def get_full_text_matches(matchers, text: str, filters={}):
+def get_full_text_matches(matchers, text: str, filters=None):
+    if filters is None:
+        filters = {}
     found_terms = list()
     section_headers, section_texts = [UNKNOWN], [text]
     try:
@@ -119,7 +123,9 @@ class TermFinder(BaseModel):
             term_matches.extend(cur)
         return term_matches
 
-    def get_term_full_text_matches(self, full_text: str, filters={}):
+    def get_term_full_text_matches(self, full_text: str, filters=None):
+        if filters is None:
+            filters = {}
         return get_full_text_matches(self.matchers, full_text, filters)
 
 

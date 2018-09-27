@@ -150,8 +150,10 @@ def make_post_body(qry, fq, sort, start, rows):
 
 
 def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), sort='', start=0, rows=10,
-          cohort_ids=list(), types=list(), filter_query='', job_results_filters=dict(),
+          cohort_ids=list(), types=None, filter_query='', job_results_filters=dict(),
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
+    if types is None:
+        types = list()
     url = solr_url + '/select'
     fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
                  job_results_filters)

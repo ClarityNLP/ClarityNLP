@@ -18,7 +18,9 @@ def run_tnm_from_sentence(sentence, term: str = ''):
     return results
 
 
-def run_tnm_stager_full(text, term_list: list = list()):
+def run_tnm_stager_full(text, term_list=None):
+    if term_list is None:
+        term_list = list()
     res = list()
 
     sentences = segmentor.parse_sentences(text)

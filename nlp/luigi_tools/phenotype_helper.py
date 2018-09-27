@@ -158,7 +158,9 @@ def get_cohort_items(cohort_name, cohort_source, job_results):
 
 
 def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug, cohorts, phenotype_limit=0,
-                               report_types=dict(), custom_query=dict(), filter_query=dict(), job_results=dict()):
+                               report_types=None, custom_query=dict(), filter_query=dict(), job_results=dict()):
+    if report_types is None:
+        report_types = dict()
     if e['named_arguments'] is None:
         e['named_arguments'] = dict()
     if 'value_sets' not in e['named_arguments']:

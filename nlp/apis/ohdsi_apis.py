@@ -1,10 +1,9 @@
-from flask import request, Blueprint, render_template, session,abort
+from flask import request, Blueprint
 
-from data_access import *
 from algorithms import *
+from data_access import *
 from ohdsi import *
 from .docs import auto
-
 
 ohdsi_app = Blueprint('ohdsi_app', __name__)
 

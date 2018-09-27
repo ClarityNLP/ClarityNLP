@@ -17,12 +17,14 @@ except Exception as e:
 class PhenotypeDefine(dict):
 
     def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = 'ClarityNLP',
-                 named_arguments: dict = dict(),
+                 named_arguments=None,
                  arguments: list = list(), funct: str = '', values: list = list(), description: str = '',
                  concept: str = ''):
         dict.__init__(self, name=name, declaration=declaration, version=version, alias=alias, arguments=arguments,
                       named_arguments=named_arguments, library=library, funct=funct, values=values,
                       description=description, concept=concept)
+        if named_arguments is None:
+            named_arguments = dict()
 
 
 class PhenotypeEntity(dict):

@@ -1,7 +1,7 @@
-from algorithms import *
 from pymongo import MongoClient
+
+from algorithms import *
 from .task_utilities import BaseTask
-import util
 
 SECTIONS_FILTER = "sections"
 
