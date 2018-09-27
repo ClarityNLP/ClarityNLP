@@ -3,18 +3,32 @@ from flask import Response
 
 def writeResultFeedback(host, port, database, data):
     try:
+
+        # Parsing info
+        job_id = data['job_id']
+        patient_id = data['patient_id']
+        is_correct = data['is_correct']
+        comments = data['comments']
+
         # connecting to the Mongo DB
         client = MongoClient(host, port)
         db = client[database]
 
         # checking if the results collection exists
         # if collection doesn't exist, creating
-        if 'result_feedback' not in db.list_collection_names():
-            collection = db['result_feedback']
+        collection = db['result_feedback']
 
-        # Writing the result to Mongo
-        entry_id = collection.insert_one(data).inserted_id
-
+        # checking if the result exists in Mongo
+        query = {'job_id':job_id, 'patient_id':patient_id}
+        existing_entry = collection.find_one(query)
+        if existing_entry is None:
+            # Writing a new result to Mongo
+            collection.insert_one(data)
+        else:
+            # Updating existing result in Mongo
+            updated_entry = {'job_id':job_id, 'patient_id':patient_id, 'is_correct':is_correct, 'comments':comments}
+            element = {"$set": updated_entry}
+            collection.update_one(query, element)
 
 
         # returning 200 response
