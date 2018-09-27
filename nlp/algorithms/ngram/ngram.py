@@ -8,17 +8,19 @@ Google: nltk collocations for more filtering and approaches
 #import sys
 #import re
 import nltk
-from nltk import word_tokenize
-from nltk import sent_tokenize
 from nltk.tokenize import RegexpTokenizer
 from nltk.util import ngrams
-from collections import Counter
-import urllib.request
-import urllib.parse
 import requests
+# import sys
+# import re
+import nltk
+import requests
+from nltk.tokenize import RegexpTokenizer
+from nltk.util import ngrams
+
 
 def extract_ngrams(cohort_id, keyword='NIL', n=5, frequency=3):
-    url = 'https://bluebookshelf01.icl.gtri.org/cohortentities/%s/WebAPI' %(cohort_id)
+    url = 'https://bluebookshelf01.icl.gtri.org/cohortentities/%s/WebAPI' % cohort_id
     r = requests.get(url, verify=False)
     q = r.json()
     text = ""
@@ -26,7 +28,7 @@ def extract_ngrams(cohort_id, keyword='NIL', n=5, frequency=3):
         temp = i['demographics']
         subID = temp['personSourceValue']
 
-        url2 = 'https://bluebookshelf01.icl.gtri.org/subjectdocuments/%s/*:*' %(subID)
+        url2 = 'https://bluebookshelf01.icl.gtri.org/subjectdocuments/%s/*:*' % subID
         r2 = requests.get(url2, verify=False)
         doc_json = r2.json()
 

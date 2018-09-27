@@ -1,7 +1,7 @@
-from algorithms import get_tags
 from pymongo import MongoClient
+
+from algorithms import get_tags
 from .task_utilities import BaseTask
-import util
 
 SECTIONS_FILTER = "sections"
 

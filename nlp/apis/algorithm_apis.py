@@ -12,7 +12,8 @@ algorithm_app = Blueprint('algorithm_app', __name__)
 @algorithm_app.route('/ngram_cohort', methods=['GET'])
 @auto.doc(groups=['public', 'private', 'algorithms'])
 def get_ngram():
-    """GET n-grams for a cohort, PARAMETERS: cohort_id=cohort_id, keyword=keyword, n=ngram length, frequency=cutoff frequency"""
+    """GET n-grams for a cohort, PARAMETERS: cohort_id=cohort_id, keyword=keyword, n=ngram length, frequency=cutoff
+    frequency"""
     if request.method == 'GET':
         cohort_id = request.args.get('cohort_id')
         keyword = request.args.get('keyword')

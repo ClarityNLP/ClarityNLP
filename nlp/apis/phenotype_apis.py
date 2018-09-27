@@ -118,8 +118,8 @@ def pipeline():
 
         return json.dumps(output, indent=4)
 
-    except Exception as e:
-        return 'Failed to load and insert pipeline. ' + str(e), 400
+    except Exception as ex:
+        return 'Failed to load and insert pipeline. ' + str(ex), 400
 
 
 @phenotype_app.route('/pipeline_id/<int:pipeline_id>', methods=['GET'])

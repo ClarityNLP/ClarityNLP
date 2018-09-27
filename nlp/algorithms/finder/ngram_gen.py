@@ -21,8 +21,6 @@ USAGE:
 """
 
 import re
-import os
-import sys
 
 # version info
 VERSION_MAJOR = 0
@@ -61,14 +59,16 @@ EXCLUDE_LIST = ['axis', 'gerl', 'smas', 'mass', 'carina', 'lateral', 'male',
 
 ngram_dict = {}
 
+
 ###############################################################################
-def count_words(ngram):
+def count_words(ngram_token):
     """
     Count the number of words in an ngram and return the count.
     """
 
-    words = ngram.split()
+    words = ngram_token.split()
     return len(words)
+
 
 ###############################################################################
 def process_anatomic_sites_file(input_file):
