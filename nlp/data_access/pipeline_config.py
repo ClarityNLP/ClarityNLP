@@ -56,12 +56,12 @@ class PipelineConfig(BaseModel):
         self.include_synonyms = include_synonyms
         self.include_descendants = include_descendants
         self.include_ancestors = include_ancestors
-        if None == report_tags:
+        if report_tags is None:
             self.report_tags = list()
         else:
             self.report_tags = report_tags
         self.vocabulary = vocabulary
-        if None == sections:
+        if sections is None:
             self.sections = list()
         else:
             self.sections = sections
@@ -69,27 +69,27 @@ class PipelineConfig(BaseModel):
         self.minimum_value = minimum_value
         self.maximum_value = maximum_value
         self.case_sensitive = case_sensitive
-        if None == cohort:
+        if cohort is None:
             self.cohort = list()
         else:
             self.cohort = cohort
         self.is_phenotype = is_phenotype
-        if None == report_types:
+        if report_types is None:
             self.report_types = list()
         else:
             self.report_types = report_types
         self.custom_query = custom_query
         self.filter_query = filter_query
-        if None == custom_arguments:
+        if custom_arguments is None:
             self.custom_arguments = dict()
         else:
             self.custom_arguments = custom_arguments
-        if None == enum_list:
+        if enum_list is None:
             self.enum_list = list()
         else:
             self.enum_list = enum_list
         self.final = final
-        if None == job_results:
+        if job_results is None:
             self.job_results = dict()
         else:
             self.job_results = job_results
