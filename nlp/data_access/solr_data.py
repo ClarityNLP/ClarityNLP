@@ -149,11 +149,20 @@ def make_post_body(qry, fq, sort, start, rows):
     return data
 
 
-def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), sort='', start=0, rows=10,
-          cohort_ids=list(), types=None, filter_query='', job_results_filters=dict(),
+def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
+          sort='', start=0, rows=10, cohort_ids: list=None, types: list=None,
+          filter_query='', job_results_filters: dict=None,
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
+
+    if tags is None:
+        tags = list()
+    if cohort_ids is None:
+        cohort_ids = list()
     if types is None:
         types = list()
+    if job_results_filters is None:
+        job_results_filters = dict()
+
     url = solr_url + '/select'
     fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
                  job_results_filters)
@@ -178,10 +187,20 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags=list(), sort='
     return response.json()['response']['docs']
 
 
-def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags=list(), sort='', start=0, rows=10,
-                   cohort_ids=list(), types=list(), filter_query='', job_results_filters=dict(),
+def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
+                   sort='', start=0, rows=10, cohort_ids: list=None, types: list=None,
+                   filter_query='', job_results_filters: dict=None,
                    report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
 
+    if tags is None:
+        tags = list()
+    if cohort_ids is None:
+        cohort_ids = list()
+    if types is None:
+        types = list()
+    if job_results_filters is None:
+        job_results_filters = dict()
+    
     url = solr_url + '/select'
     fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
                  job_results_filters)
