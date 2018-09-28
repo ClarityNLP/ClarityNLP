@@ -42,6 +42,7 @@ Custom Tasks
 
    nlpql/gleason
    nlpql/race
+   nlpql/pftfinder
    nlpql/proximity
    nlpql/textstats
    nlpql/transfusion

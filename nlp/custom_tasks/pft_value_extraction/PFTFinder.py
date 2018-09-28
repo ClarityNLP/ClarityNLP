@@ -19,10 +19,11 @@ class PFTFinder(BaseTask):
             # My custom stuff here
             length = len(txt)
             if length > 0:
-                obj = ast.literal_eval(pftex(txt))
-
-                # writing results
-                self.write_result_data(temp_file, mongo_client, doc, obj)
+                for s in self.get_document_sentences(doc):
+                    obj = ast.literal_eval(pftex(s))
+                    if obj and obj['results']:
+                        if len(obj['results']) > 0:
+                            self.write_result_data(temp_file, mongo_client, doc, obj)
 
                 # writing to log
-                self.write_log_data("PFT", "done writing data")
+                self.write_log_data("TASK_COMPLETE", "done writing data")
