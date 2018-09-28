@@ -38,7 +38,7 @@ except Exception as e:
         EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 2
 
 # set to True to enable debug output
 TRACE = False
@@ -56,6 +56,11 @@ regex_contrast = re.compile(str_contrast)
 # regex for locating a field of view expression
 str_fov = r'\bField of view:\s+\d+'
 regex_fov = re.compile(str_fov)
+
+# start of a numbered section, such as a list, but with no whitespace
+# separating the numbers from the adjacent text
+str_list_start_no_space = r'\b(?P<listnum>\d+(\.|\)))(?P<word>[a-zA-Z]+)'
+regex_list_start_no_space = re.compile(str_list_start_no_space)
 
 # find numbered sentences: look for digits followed by '.' or ')',
 # whitespace, then a capital letter starting a word
@@ -347,6 +352,22 @@ def cleanup_report(report):
             spans.append( (start, end))
             
     report = erase_spans(report, spans)
+
+    # insert a space between list numbers and subsequent text, makes
+    # lists and start-of-sentence negations easier to identify
+    prev_end = 0
+    new_report = ''
+    iterator = regex_list_start_no_space.finditer(report)
+    for match in iterator:
+        # end of list num (digits followed by '.' or ')'
+        end = match.end('listnum')
+        # start of following (concatenated) word
+        start = match.start('word')
+        new_report += report[prev_end:end]
+        new_report += ' '
+        prev_end = start
+    new_report += report[prev_end:]
+    report = new_report
 
     # remove numbering in lists
     spans = []
