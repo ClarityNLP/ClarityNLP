@@ -6,4 +6,6 @@ from .TextStatsTask import *
 from .RaceFinderTask import RaceFinderTask
 from .GleasonScoreTask import GleasonScoreTask
 from .TermProximityTask import TermProximityTask
+from .pft_value_extraction import *
+
 
