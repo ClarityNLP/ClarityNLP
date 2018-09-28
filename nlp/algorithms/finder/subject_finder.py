@@ -208,7 +208,7 @@ from spacy import displacy
 nlp = spacy.load('en')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 4
+VERSION_MINOR = 5
 
 # set to True to enable debug output
 TRACE = False
@@ -1713,22 +1713,42 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
             token_list = get_modifiers(s)
             m.subject.append(token_list)
 
-    # undo ngram replacements and other substitutions for subjects
-    for m in measurements:
-        new_texts = []
-        for token_list in m.subject:
-            subj_texts = [t.text for t in token_list]
-            if len(replacements) > 0:
+    # undo ngram replacements and other substitutions for subjects and locations
+    if len(replacements) > 0:
+        for m in measurements:
+            if EMPTY_FIELD == m.subject:
+                continue
+            new_subj_texts = []
+            # m.subject is a list of spacy tokens
+            for token_list in m.subject:
+                subj_texts = [t.text for t in token_list]
                 for new_text, old_text in replacements.items():
                     for i in range(len(subj_texts)):
                         if subj_texts[i] == new_text:
                             subj_texts[i] = old_text
-            text = ' '.join(subj_texts)
-            new_texts.append(text)
-        m.subject = new_texts
-    
+                text = ' '.join(subj_texts)
+                new_subj_texts.append(text)
+            m.subject = new_subj_texts
+
+    if len(replacements) > 0:
+        for m in measurements:
+            if EMPTY_FIELD == m.location:
+                continue
+            new_loc_texts = []
+            # m.location is a list of python strings
+            for string_list in m.location:
+                loc_texts = string_list.split()
+                for new_text, old_text in replacements.items():
+                    for i in range(len(loc_texts)):
+                        if loc_texts[i] == new_text:
+                            loc_texts[i] = old_text
+                text = ' '.join(loc_texts)
+                new_loc_texts.append(text)
+            m.location = new_loc_texts
+
     # convert to a JSON result
     return to_json(original_terms, original_sentence, measurements)
+
 
 ###############################################################################
 def set_default_subject(m_sentence, sentence_ss, measurements):
