@@ -16,27 +16,67 @@ except Exception as e:
 
 class PhenotypeDefine(dict):
 
-    def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = 'ClarityNLP',
-                 named_arguments=None,
-                 arguments: list = list(), funct: str = '', values: list = list(), description: str = '',
+    def __init__(self, name: str, declaration: str, alias: str = '',
+                 version: str = '', library: str = 'ClarityNLP',
+                 named_arguments: dict=None, arguments: list=None,
+                 funct: str = '', values: list = None, description: str = '',
                  concept: str = ''):
-        dict.__init__(self, name=name, declaration=declaration, version=version, alias=alias, arguments=arguments,
-                      named_arguments=named_arguments, library=library, funct=funct, values=values,
-                      description=description, concept=concept)
+
         if named_arguments is None:
-            named_arguments = dict()
+            named_arguments_init = dict()
+        else:
+            named_arguments_init = named_arguments
+
+        if arguments is None:
+            arguments_init = list()
+        else:
+            arguments_init = arguments
+
+        if values is None:
+            values_init = list()
+        else:
+            values_init = values
+
+        dict.__init__(self, name=name, declaration=declaration, version=version,
+                      alias=alias, arguments=arguments_init,
+                      named_arguments=named_arguments_init, library=library,
+                      funct=funct, values=values_init,
+                      description=description, concept=concept)
 
 
 class PhenotypeEntity(dict):
 
-    def __init__(self, name: str, declaration: str, alias: str = '', version: str = '', library: str = '',
-                 named_arguments: dict = dict(),
-                 arguments: list = list(), funct: str = '', values: list = list(), description: str = '',
-                 concept: str = '', final: bool = False, raw_text: str = '',
-                 job_results: list = list()):
-        dict.__init__(self, name=name, declaration=declaration, version=version, alias=alias, arguments=arguments,
-                      named_arguments=named_arguments, library=library, funct=funct, values=values,
-                      description=description, concept=concept, final=final, raw_text=raw_text, job_results=job_results)
+    def __init__(self, name: str, declaration: str, alias: str = '', version: str = '',
+                 library: str = '', named_arguments: dict = None,
+                 arguments: list = None, funct: str = '', values: list = None,
+                 description: str = '', concept: str = '', final: bool = False,
+                 raw_text: str = '', job_results: list = None):
+
+        if named_arguments is None:
+            named_arguments_init = dict()
+        else:
+            named_arguments_init = named_arguments
+
+        if arguments is None:
+            arguments_init = list()
+        else:
+            arguments_init = arguments
+
+        if values is None:
+            values_init = list()
+        else:
+            values_init = values
+
+        if job_results is None:
+            job_results_init = list()
+        else:
+            job_results_init = job_results
+
+        dict.__init__(self, name=name, declaration=declaration, version=version,
+                      alias=alias, arguments=arguments_init, named_arguments=named_arguments_init,
+                      library=library, funct=funct, values=values_init,
+                      description=description, concept=concept, final=final,
+                      raw_text=raw_text, job_results=job_results_init)
 
 
 class PhenotypeOperations(dict):
@@ -49,24 +89,51 @@ class PhenotypeModel(BaseModel):
 
     # data_models maps to 'using'
     def __init__(self, description: str = '', owner: str = 'claritynlp', context: str = 'Patient',
-                 population: str='All', phenotype=None, data_models: list = list(), includes: list = list(),
-                 code_systems: list = list(), value_sets: list = list(), term_sets: list = list(),
-                 document_sets: list = list(), data_entities: list = list(), cohorts: list = list(),
-                 operations: list = list(), debug=False, limit: int = 0, nlpql: str = ''):
+                 population: str='All', phenotype=None, data_models: list = None, includes: list = None,
+                 code_systems: list = None, value_sets: list = None, term_sets: list = None,
+                 document_sets: list = None, data_entities: list = None, cohorts: list = None,
+                 operations: list = None, debug=False, limit: int = 0, nlpql: str = ''):
         self.owner = owner
         self.description = description
         self.population = population
         self.context = context
-        self.data_models = data_models
         self.phenotype = phenotype
-        self.includes = includes
-        self.code_systems = code_systems
-        self.value_sets = value_sets
-        self.term_sets = term_sets
-        self.document_sets = document_sets
-        self.data_entities = data_entities
-        self.cohorts = cohorts
-        self.operations = operations
+        if data_models is None:
+            self.data_models = list()
+        else:
+            self.data_models = data_models
+        if includes is None:
+            self.includes = list()
+        else:
+            self.includes = includes
+        if code_systems is None:
+            self.code_systems = list()
+        else:
+            self.code_systems = code_systems
+        if value_sets is None:
+            self.value_sets = list()
+        else:
+            self.value_sets = value_sets
+        if term_sets is None:
+            self.term_sets = list()
+        else:
+            self.term_sets = term_sets
+        if document_sets is None:
+            self.document_sets = list()
+        else:
+            self.document_sets = document_sets
+        if data_entities is None:
+            self.data_entities = list()
+        else:
+            self.data_entities = data_entities
+        if cohorts is None:
+            self.cohorts = list()
+        else:
+            self.cohorts = cohorts
+        if operations is None:
+            self.operations = list()
+        else:
+            self.operations = operations
         self.debug = debug
         self.limit = limit
         self.nlpql = nlpql
