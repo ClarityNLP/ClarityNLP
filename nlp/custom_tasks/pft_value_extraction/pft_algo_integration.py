@@ -1,7 +1,11 @@
-from pft_algo import pft_extractor as pftex
+try:
+    from .pft_algo import pft_extractor as pftex
+except Exception as e:
+    from pft_algo import pft_extractor as pftex
+
 from collections import namedtuple
 import json
-import value_extractor as ve
+from algorithms import value_extraction as ve
 
 
 
