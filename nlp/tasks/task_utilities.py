@@ -154,6 +154,7 @@ class BaseTask(luigi.Task):
                                             tags=self.pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
                                             mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key,
                                             types=self.pipeline_config.report_types,
+                                            sources=self.pipeline_config.sources,
                                             filter_query=self.pipeline_config.filter_query,
                                             cohort_ids=self.pipeline_config.cohort,
                                             job_results_filters=self.pipeline_config.job_results)
