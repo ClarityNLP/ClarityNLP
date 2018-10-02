@@ -94,7 +94,9 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
                                           mapper_url=util.report_mapper_url,
                                           mapper_key=util.report_mapper_key, solr_url=util.solr_url,
                                           types=pipeline_config.report_types, filter_query=pipeline_config.filter_query,
-                                          tags=pipeline_config.report_tags, report_type_query=pipeline_config.report_type_query,
+                                          tags=pipeline_config.report_tags,
+                                          report_type_query=pipeline_config.report_type_query,
+                                          sources=pipeline_config.sources,
                                           cohort_ids=pipeline_config.cohort,
                                           job_results_filters=pipeline_config.job_results)
     doc_limit = config.get_limit(total_docs, pipeline_config)
@@ -150,7 +152,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "10497"
+    p_id = "10521"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,

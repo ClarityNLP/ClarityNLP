@@ -54,6 +54,7 @@ def get_document_set_attributes(model):
     types = dict()
     custom_query = dict()
     filter_query = dict()
+    source = dict()
     # Clarity.createDocumentSet({
     #     report_tags: [optional]
     #     report_types: [optional],
@@ -88,13 +89,23 @@ def get_document_set_attributes(model):
                         if "query" in named_args:
                             query = normalize_query_quotes(named_args["query"])
                             custom_query[doc_set_name] = query
+                        if "source" in named_args:
+                            if type(named_args["source"]) == str:
+                                source[doc_set_name] = named_args["source"].split(",")
+                            else:
+                                source[doc_set_name] = named_args["source"]
+                        elif "sources" in named_args:
+                            if type(named_args["sources"]) == str:
+                                source[doc_set_name] = named_args["sources"].split(",")
+                            else:
+                                source[doc_set_name] = named_args["sources"]
                 elif funct == "createReportTypeList":
                     if len(args) == 1 and type(args[0]) == list:
                         types[doc_set_name] = args[0]
                     else:
                         types[doc_set_name] = args
 
-    return tags, types, custom_query, filter_query
+    return tags, types, custom_query, filter_query, source
 
 
 def get_item_list_by_key(dictionary, keys: list):
@@ -159,7 +170,7 @@ def get_cohort_items(cohort_name, cohort_source, job_results):
 
 def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug,
                                cohorts, phenotype_limit=0, report_types: dict=None,
-                               custom_query: dict=None, filter_query: dict=None,
+                               custom_query: dict=None, filter_query: dict=None, source: dict=None,
                                job_results: dict=None):
     if report_types is None:
         report_types = dict()
@@ -167,6 +178,8 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         custom_query = dict()
     if filter_query is None:
         filter_query = dict()
+    if source is None:
+        source = dict()
     if job_results is None:
         job_results = dict()
 
@@ -212,6 +225,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         types = get_item_list_by_key(report_types, doc_sets)
         query = get_item_by_key(custom_query, doc_sets)
         fq = get_item_by_key(filter_query, doc_sets)
+        sources = get_item_list_by_key(source, doc_sets)
 
         pipeline = PipelineConfig(e['funct'], e['name'],
                                   get_terms_by_keys(all_terms, terms,
@@ -223,6 +237,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   job_results=job_results_filter,
                                   report_tags=tags,
                                   report_types=types,
+                                  sources=sources,
                                   custom_query=query,
                                   filter_query=fq,
                                   is_phenotype=True)
@@ -268,12 +283,12 @@ def get_pipelines_from_phenotype(model: PhenotypeModel):
     pipelines = list()
     if model and model.data_entities and len(model.data_entities) > 0:
         all_terms = get_terms(model)
-        report_tags, report_types, custom_query, filter_query = get_document_set_attributes(model)
+        report_tags, report_types, custom_query, filter_query, source = get_document_set_attributes(model)
         cohorts = get_cohorts(model)
         job_results = get_job_results(model)
         for e in model.data_entities:
             pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts,
-                                                        model.limit, report_types, custom_query, filter_query,
+                                                        model.limit, report_types, custom_query, filter_query, source,
                                                         job_results))
     return pipelines
 

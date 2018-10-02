@@ -32,6 +32,7 @@ Uses arguments to build a custom Solr query to retrieve document set. All argume
 =====================  ================  ===============================================================
 report_types           List[str]         List of report types. Corresponds to `report_types` in Solr.
 report_tags            List[str]         List of report tags. Report tags mapped to document ontology.
+source                 str OR List[str]  List of sources to map to. Use array of strings or string, separated by commas.
 filter_query           str               Use single quote (') to quote. Corresponds to Solr `fq` parameter. See `here <https://lucene.apache.org/solr/guide/7_4/common-query-parameters.html#fq-filter-query-parameter>`_.*
 query                  str               Use single quote (') to quote. Corresponds to Solr `q` parameter. See `here <https://lucene.apache.org/solr/guide/7_4/the-standard-query-parser.html#the-standard-query-parser>`_.*
 =====================  ================  ===============================================================
@@ -46,6 +47,7 @@ query                  str               Use single quote (') to quote. Correspo
          "report_types":["Discharge summary"],
          "report_tags": [],
          "filter_query": "",
+         "source": ["MIMIC","FDA Drug Labels"],
          "query":"report_text:amoxicillin"});
 
 
