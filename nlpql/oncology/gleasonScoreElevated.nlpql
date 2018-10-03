@@ -1,0 +1,18 @@
+phenotype "Gleason Score and Prosate Ca" version "1";
+include ClarityCore version "1.0" called Clarity;
+
+cohort ProstateCaPatients:OHDSI.getCohort(336);
+
+documentset Docs:
+    Clarity.createDocumentSet({
+        "report_types":["Pathology"]
+    });
+
+define GleasonScore:
+    Clarity.GleasonScoreTask({
+        cohort:ProstateCaPatients,
+        documentset: [Docs]
+    });
+
+define final ElevatedGleason:
+    where GleasonScore.value > 5;
