@@ -29,8 +29,8 @@ Core Tasks
    nlpql/ngram
    nlpql/pos
    nlpql/provider_assert
+   nlpql/proximity
    nlpql/term_finder
-   nlpql/tnm
    nlpql/valueextractor
 
 
@@ -43,8 +43,8 @@ Custom Tasks
    nlpql/gleason
    nlpql/race
    nlpql/pftfinder
-   nlpql/proximity
    nlpql/textstats
+   nlpql/tnm
    nlpql/transfusion
 
 
