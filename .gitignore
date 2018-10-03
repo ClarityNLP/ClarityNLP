@@ -14,4 +14,4 @@ __pycache__/
 .ipynb_checkpoints
 notebooks/.ipynb_checkpoints
 notebooks/cooking/.ipynb_checkpoints
-notebooks/project.cfg
+project.cfg
