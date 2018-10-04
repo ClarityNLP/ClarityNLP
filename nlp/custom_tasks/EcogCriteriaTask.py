@@ -45,13 +45,13 @@ _str_ecog = r'\b(Eastern Cooperative Oncology Group|ECOG) ([a-z\s=:]+){0,4}'
 _str1 = _str_ecog + r'(?P<lo>\d)'
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
-_str2 = _str_ecog + r'(?P<lo>\d)\s*(,\s*)?(or|to|-)\s*(?P<hi>\d)'
+_str2 = _str_ecog + r'(?P<lo>\d)\s*(,\s*)?(or|to|-|/)\s*(?P<hi>\d)'
 _regex2 = re.compile(_str2, re.IGNORECASE)
 
-_str3 = _str_ecog + r'(?P<lo>\d)\s\d\s*or\s*(?P<hi>\d)'
+_str3 = _str_ecog + r'(?P<lo>\d)\s(?P<mid>\d)\s*(or\s*)?(?P<hi>\d)'
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
-_str4 = _str_ecog + r'(?P<lo>\d)\s\d\s\d\s*or\s*(?P<hi>\d)'
+_str4 = _str_ecog + r'(?P<lo>\d)\s(?P<mid>\d)\s(?P<mid1>\d)\s*(or\s*)?(?P<hi>\d)'
 _regex4 = re.compile(_str4, re.IGNORECASE)
 
 _str_or        = r'(/| or )'
@@ -83,8 +83,9 @@ ECOG_RESULT_FIELDS = [
 
 EcogResult = namedtuple('EcogResult', ECOG_RESULT_FIELDS)
 
-STR_INC = 'INC'
-STR_EX  = 'EX'
+_ID_INC    = 1
+_ID_EX     = 0
+_SCORE_MAX = 5
 
 
 ###############################################################################
@@ -124,12 +125,12 @@ def _cleanup_sentence(s):
 
 
 ###############################################################################
-def _process_sentence(sentence, inc_or_ex = STR_INC):
+def _process_sentence(sentence, inc_or_ex = _ID_INC):
 
     result_list = []
     
     count = 0
-    min_start = 9999999
+    #min_start = 9999999
     for regex in _regexes:
         match = regex.search(sentence)
         if match:
@@ -140,10 +141,10 @@ def _process_sentence(sentence, inc_or_ex = STR_INC):
 
             # character offsets
             start = match.start()
-            if start < min_start:
-                min_start = start
-            else:
-                continue
+            # if start < min_start:
+            #     min_start = start
+            # else:
+            #     continue
             end = match.end()
 
             # all regexes have a 'lo' group capture
@@ -153,6 +154,23 @@ def _process_sentence(sentence, inc_or_ex = STR_INC):
                 hi = int(match.group('hi'))
             except:
                 hi = None
+
+            # backtrack if invalid value was captured
+            if hi is not None and hi > _SCORE_MAX:
+                hi = None
+                try:
+                    mid1 = int(match.group('mid1'))
+                    hi = mid1
+                except:
+                    mid1 = None
+
+            if hi is not None and hi > _SCORE_MAX:
+                hi = None
+                try:
+                    mid = int(match.group('mid'))
+                    hi = mid
+                except:
+                    mid = None
 
             try:
                 op = match.group('op')
@@ -212,7 +230,7 @@ def _process_sentence(sentence, inc_or_ex = STR_INC):
             result_list.append(result)
                 
             # keep the first match, since more complex regexes come first
-            #break
+            break
 
     count += 1
     
@@ -235,7 +253,7 @@ def _find_ecog_scores(document_list):
         if match:
             sentence = match.group()
             sentence = _cleanup_sentence(sentence)
-            results = _process_sentence(sentence, STR_INC)
+            results = _process_sentence(sentence, _ID_INC)
             result_list.extend(results)
             
         # exclusion criteria
@@ -243,7 +261,7 @@ def _find_ecog_scores(document_list):
         if match:
             sentence = match.group()
             sentence = _cleanup_sentence(sentence)
-            results = _process_sentence(sentence, STR_EX)
+            results = _process_sentence(sentence, _ID_EX)
             result_list.extend(results)
 
     return result_list
@@ -275,13 +293,31 @@ class EcogCriteriaTask(BaseTask):
             # write results to MongoDB
             if len(result_list) > 0:
                 for result in result_list:
+
+                    scores = [0,0,0,0,0,0]
+
+                    lo = result.score_min
+                    hi = result.score_max
+
+                    if hi is None:
+                        scores[lo] = 1
+                    else:
+                        for i in range(lo, hi+1):
+                            scores[i] = 1
+
                     obj = {
                         'sentence':result.sentence,
                         'start':result.start,
                         'end':result.end,
                         'inc_or_ex':result.inc_or_ex,
-                        'lo':result.score_min,
-                        'hi':result.score_max
+                        'score_0':scores[0],
+                        'score_1':scores[1],
+                        'score_2':scores[2],
+                        'score_3':scores[3],
+                        'score_4':scores[4],
+                        'score_5':scores[5],
+                        'score_lo':result.score_min,
+                        'score_hi':result.score_max
                     }
 
                     self.write_result_data(temp_file, mongo_client, doc, obj)
