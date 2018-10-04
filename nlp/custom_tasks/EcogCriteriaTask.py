@@ -45,7 +45,7 @@ _str_ecog = r'\b(Eastern Cooperative Oncology Group|ECOG) ([a-z\s=:]+){0,4}'
 _str1 = _str_ecog + r'(?P<lo>\d)'
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
-_str2 = _str_ecog + r'(?P<lo>\d)\s*(,\s*)?(or|to|-|/)\s*(?P<hi>\d)'
+_str2 = _str_ecog + r'(?P<lo>\d)\s*(,\s*)?(or|to|[-/~&])\s*(?P<hi>\d)'
 _regex2 = re.compile(_str2, re.IGNORECASE)
 
 _str3 = _str_ecog + r'(?P<lo>\d)\s(?P<mid>\d)\s*(or\s*)?(?P<hi>\d)'
@@ -91,7 +91,8 @@ _SCORE_MAX = 5
 ###############################################################################
 def _cleanup_document(document):
     """
-    Decode from bytes object, remove repeated whitespace.
+    Remove extraneous chars, collapse whitespace, etc., so simpler regexes
+    can be used.
     """
 
     # replace parens, brackets, and commas with spaces
@@ -111,8 +112,13 @@ def _cleanup_document(document):
 
 ###############################################################################
 def _cleanup_sentence(s):
+    """
+    Replace all-text comparisons with symbols to force match with an operator
+    regex. Need to do this since some regexes capture arbitrary words which
+    aren't currently being interpreted. Some of these operators are
+    nonstandard (i.e. =<, =>), but the meaning should be clear.
+    """
 
-    # replace all-text comparisons with symbols to force op-regex match
     s = re.sub(r'\bequal to or less than\b', '=<', s)
     s = re.sub(r'\bequal to or greater than\b', '=>', s)
     s = re.sub(r'\bgreater than or equal\b', '>=', s)
@@ -126,25 +132,19 @@ def _cleanup_sentence(s):
 
 ###############################################################################
 def _process_sentence(sentence, inc_or_ex = _ID_INC):
+    """
+    Find the first ECOG score in a 'sentence', which is the text of either
+    the inclusion or exclusion criteria.
+    """
 
     result_list = []
     
-    count = 0
-    #min_start = 9999999
     for regex in _regexes:
         match = regex.search(sentence)
         if match:
-        #iterator = regex.finditer(sentence)
-        #for match in iterator:
-
-            #print('matching text: {0}'.format(match.group()))
 
             # character offsets
             start = match.start()
-            # if start < min_start:
-            #     min_start = start
-            # else:
-            #     continue
             end = match.end()
 
             # all regexes have a 'lo' group capture
@@ -155,7 +155,7 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
             except:
                 hi = None
 
-            # backtrack if invalid value was captured
+            # backtrack if invalid value was captured for 'hi'
             if hi is not None and hi > _SCORE_MAX:
                 hi = None
                 try:
@@ -178,25 +178,19 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
                 op = None
 
             if op is not None:
-                # all op matches capture the 'lo' group
-                #print('\top: {0}'.format(op))
 
-                # determine which op
+                # determine which operator and adjust [lo, hi] accordingly
                 op_string = _op_map[regex]
                 if _str_lte == op_string:
                     hi = lo
                     lo = 0
-                    #print('\t\tLESS THAN OR EQUAL')
                 elif _str_gte == op_string:
                     hi = 5
-                    #print('\t\tGT THAN OR EQUAL')
                 elif _str_elt == op_string:
                     hi = lo
                     lo = 0
-                    #print('\t\tEQ TO OR LESS THAN')
                 elif _str_egt == op_string:
                     hi = 5
-                    #print('\t\tEQ TO OR GT THAN')
                 elif _str_lt == op_string:
                     if lo > 1:
                         hi = lo-1
@@ -204,7 +198,6 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
                     else:
                         lo = 0
                         hi = None
-                    #print('\t\tLESS THAN')
                 elif _str_gt == op_string:
                     if lo < 4:
                         lo = lo + 1
@@ -212,57 +205,46 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
                     else:
                         lo = 5
                         hi = None
-                    #print('\t\tGT THAN')
                 elif _str_eq == op_string:
+                    # lo remains the same, no hi
                     pass
-                    # lo remains the same
-                    #print('\t\tEQUAL')
                 else:
                     print('*** Unrecognized operator: {0}'.format(op_string))
 
-            # if hi is not None:
-            #     print('\t[{0}, {1}]'.format(lo, hi))
-            # else:
-            #     print('\t[{0}]'.format(lo))
-
-            # save to results
+            # save result namedtuple
             result = EcogResult(sentence, start, end, inc_or_ex, lo, hi)
             result_list.append(result)
                 
-            # keep the first match, since more complex regexes come first
+            # keep the first match, since more complex matches attempted first
             break
 
-    count += 1
-    
     return result_list
 
     
 ###############################################################################
-def _find_ecog_scores(document_list):
+def _find_ecog_scores(doc):
     """
-    Scan a document list and run ecog score-finding regexes on each.
+    Scan a document and run ecog score-finding regexes on it.
     Returns a list of EcogScoreResult namedtuples.
     """
 
     result_list = []
 
-    for doc in document_list:
-
-        # inclusion criteria
-        match = _regex_inclusion_criteria.search(doc)
-        if match:
-            sentence = match.group()
-            sentence = _cleanup_sentence(sentence)
-            results = _process_sentence(sentence, _ID_INC)
-            result_list.extend(results)
+    # inclusion criteria
+    match = _regex_inclusion_criteria.search(doc)
+    if match:
+        sentence = match.group()
+        sentence = _cleanup_sentence(sentence)
+        results = _process_sentence(sentence, _ID_INC)
+        result_list.extend(results)
             
-        # exclusion criteria
-        match = _regex_exclusion_criteria.search(doc)
-        if match:
-            sentence = match.group()
-            sentence = _cleanup_sentence(sentence)
-            results = _process_sentence(sentence, _ID_EX)
-            result_list.extend(results)
+    # exclusion criteria
+    match = _regex_exclusion_criteria.search(doc)
+    if match:
+        sentence = match.group()
+        sentence = _cleanup_sentence(sentence)
+        results = _process_sentence(sentence, _ID_EX)
+        result_list.extend(results)
 
     return result_list
 
@@ -288,7 +270,7 @@ class EcogCriteriaTask(BaseTask):
             text = _cleanup_document(text)
 
             # search for ECOG scores
-            result_list = _find_ecog_scores([text])
+            result_list = _find_ecog_scores(text)
 
             # write results to MongoDB
             if len(result_list) > 0:
