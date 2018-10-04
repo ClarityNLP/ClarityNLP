@@ -13,9 +13,18 @@ Example
 
 ::
 
-    Clarity.TransfusionNursingNotesParser({
-      documentset: [TransfusionNotes]
-    });
+phenotype "TNN" version "2";
+
+include ClarityCore version "1.0" called Clarity;
+
+documentset TransfusionNotes:
+     Clarity.createDocumentSet({
+         "report_types":["Transfusion Flowsheet"]});
+
+define TransfusionOutput:
+   Clarity.TransfusionNursingNotesParser({
+    documentset: [TransfusionNotes]
+  });
 
 
 Extends
