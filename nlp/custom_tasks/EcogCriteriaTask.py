@@ -287,11 +287,16 @@ class EcogCriteriaTask(BaseTask):
                         for i in range(lo, hi+1):
                             scores[i] = 1
 
+                    if 1 == result.inc_or_ex:
+                        criteria = 'Inclusion'
+                    else:
+                        criteria = 'Exclusion'
+
                     obj = {
                         'sentence':result.sentence,
                         'start':result.start,
                         'end':result.end,
-                        'inc_or_ex':result.inc_or_ex,
+                        'criteria_type':criteria,
                         'score_0':scores[0],
                         'score_1':scores[1],
                         'score_2':scores[2],
