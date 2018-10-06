@@ -118,7 +118,7 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 3
+VERSION_MINOR = 4
 
 # The output of this module is a JSON string containing a list of
 # TransfusionNote namedtuples.  The 'vitals' field of each note is a
@@ -329,6 +329,9 @@ MODULE_NAME = 'columbia_transfusion_note_reader.py'
 
 EMPTY_JSON = '{}'
 
+# number of space characters between adjacent measurements on the same line
+COL_SPACING = 8
+
 ###############################################################################
 def to_datetime(year, month, day, hours, minutes):
     """
@@ -524,7 +527,69 @@ def extract_date_time_list(matchobj, regex_name, item_list):
 
     return found_date_time_list
 
+
+###############################################################################
+def extract_vitals(vitals_text, list_text, num_readings):
+    """
+    Extract numeric values from a line of vitals data. Whitespace is 
+    significant. Numeric values have 'COL_SPACING' space characters from
+    one column to the next. Whitespace gaps between numeric values must be
+    a multiple of COL_SPACING.
+    """
+
+    CHAR_SPACE = ' '
+    results = [EMPTY_FIELD] * num_readings
+
+    # extract list of numeric values
+    source_index = 0
+    numeric_values = [float(v.strip()) for v in list_text.split()]
+
+    # find the position of the first measurement
+    end = vitals_text.find(list_text)
+
+    # scan backwards to find the first non-space character
+    start = None
+    for i in range(end-1, 0, -1):
+        if CHAR_SPACE != vitals_text[i]:
+            start = i+1
+            break
+
+    assert start is not None
+
+    # the difference must be a multiple of the column spacing
+    assert 0 == (end - start) % COL_SPACING
+    meas_index = (end - start) // COL_SPACING
+    # use 0-based indexing
+    results[meas_index - 1] = numeric_values[source_index]
+    source_index += 1
+
+    # scan the string, count spaces between numbers, and assign the
+    # remaining values to their proper offset in the results array
+
+    i = end+1
+    counting_spaces = False
+    while i < len(vitals_text):
+        if CHAR_SPACE != vitals_text[i]:
+            if counting_spaces:
+                # found the first char of the next measurement
+                counting_spaces = False
+                end = i
+                assert 0 == (end - start) % COL_SPACING
+                # delta == no. of cols between current and prev values
+                delta = (end - start) // COL_SPACING
+                results[meas_index - 1 + delta] = numeric_values[source_index]
+                source_index += 1
+                meas_index += delta
+        else:
+            if not counting_spaces:
+                # found the first space char of a new whitespace gap
+                counting_spaces = True
+                start = i
+        i += 1
+
+    return results
     
+
 ###############################################################################
 def process_note(note_text, results):
     """
@@ -534,6 +599,7 @@ def process_note(note_text, results):
     transfusion_note = {}
 
     flowsheets = []
+    num_readings = None
     for regex, regex_name in regexes.items():
         match = regex.search(note_text)
         if match:
@@ -554,13 +620,17 @@ def process_note(note_text, results):
                         date_time_list = []
                         if extract_date_time_list(match_vr, vr_name, date_time_list):
                             vitals_dict[vr_name] = date_time_list
+                            num_readings = len(date_time_list)
                             continue
                         else:
                             # found numeric list
+                            assert num_readings is not None
                             list_text = match_vr.group('list')
                             if list_text is not None:
                                 # get numeric values
-                                values = [float(v.strip()) for v in list_text.split()]
+                                values = extract_vitals(match_vr.group(),
+                                                        list_text,
+                                                        num_readings)
                                 vitals_dict[vr_name] = values
 
                 flowsheets.append(vitals_dict)
