@@ -533,6 +533,37 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
 
             output = ret.to_dict('records')
             del ret
+        elif action == 'NOT':
+            how = 'left'
+
+            for de in data_entities:
+                ent, attr = get_data_entity_split(de)
+                new_df = df[df[lookup_key] == ent]
+                new_df = new_df[col_list]
+                dfs.append(new_df.copy())
+                del new_df
+
+            if len(dfs) > 0:
+                ret = reduce(lambda x, y: pd.merge(x, y, on=on, how=how), dfs)
+                ret = ret.query(on + "_x not in " + on + "_y")
+                ret['job_id'] = job
+                ret['phenotype_id'] = phenotype_id
+                ret['owner'] = phenotype_owner
+                ret['job_date'] = datetime.datetime.now()
+                ret['context_type'] = on
+                ret['raw_definition_text'] = c['raw_text']
+                ret['nlpql_feature'] = operation_name
+                ret['phenotype_final'] = c['final']
+
+                for d in dfs:
+                    del d
+
+                if '_id' in ret.columns:
+                    ret['orig_id'] = ret['_id']
+                    ret = ret.drop(columns=['_id'])
+
+                output = ret.to_dict('records')
+                del ret
         elif action in numeric_comp_operators:
             print(action)
             value_comp = ''
