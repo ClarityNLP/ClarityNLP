@@ -7,14 +7,14 @@ config.read(path.join(SCRIPT_DIR, 'project.cfg'))
 
 
 def read_property(env_name, config_tuple):
-    property_name = ''
-    if getenv(env_name):
-        property_name = environ.get(env_name)
-    else:
-        try:
+    property_name = '-1'
+    try:
+        if getenv(env_name):
+            property_name = environ.get(env_name)
+        else:
             property_name = config.get(config_tuple[0], config_tuple[1])
-        except Exception as ex:
-            print(ex)
+    except Exception as ex:
+        print(ex)
     return property_name
 
 
