@@ -600,11 +600,19 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             del output
 
 
-def mongo_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
-                       final=False):
+def mongo_process_operations(db,
+                             job_id,
+                             phenotype: PhenotypeModel,
+                             phenotype_id,
+                             phenotype_owner, c: PhenotypeOperations,
+                             final=False):
+
     client = MongoClient(util.mongo_host, util.mongo_port)
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
+
+    match_filters = dict()
+    match_filters['job_id'] = job_id
 
     try:
         operation_name = c['name']
@@ -613,15 +621,13 @@ def mongo_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, p
         else:
             on = 'subject'
         expression = c['raw_text']
-        mongo_ids = mongo_eval.run(mongo_collection_obj, expression, {
-            "job_id": job
-        })
+        mongo_ids = mongo_eval.run(mongo_collection_obj, expression, match_filters)
         mongo_docs = results.lookup_phenotype_results_by_id(mongo_ids)
 
         output = list()
         for doc in mongo_docs['results']:
             ret = doc
-            ret['job_id'] = job
+            ret['job_id'] = job_id
             ret['phenotype_id'] = phenotype_id
             ret['owner'] = phenotype_owner
             ret['job_date'] = datetime.datetime.now()
