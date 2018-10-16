@@ -153,11 +153,14 @@ _VERSION_MINOR = 1
 _MODULE_NAME = 'mongo_eval.py'
 
 # set to True to enable debug output
-_TRACE = True
+_TRACE = False
 
 # operators in an NLPQL 'where' expression
-_str_op = r'\A(==|!=|<=|>=|and|or|not|[-+/*%\^<>])\Z'
+_str_op = r'\A(==|!=|<=|>=|and|or|not|[-+/*%\^<>=])\Z'
 _regex_operator = re.compile(_str_op, re.IGNORECASE)
+
+_str_embedded_op = r'(==|!=|<=|>=|[-+/*%\^<>=])'
+_regex_embedded_op = re.compile(_str_embedded_op)
 
 # quoted string literal
 _str_string_literal = r'\A[\'\"][^\'\"]+[\'\"]\Z'
@@ -240,7 +243,7 @@ _EXPR_LOGIC      = 'LOGIC'
 def _is_pure_mathematical_expr(infix_tokens):
     """
     Return a Boolean result indicating whether the given infix expression
-    is a pure mathematical expression.
+    is a "pure mathematical" expression.
 
     Pure mathematical expressions consist entirely of terms of the form:
 
@@ -303,7 +306,7 @@ def _is_pure_mathematical_expr(infix_tokens):
 def _is_logic_expr(infix_tokens):
     """
     Return a Boolean result indicating whether the given infix expression
-    is a pure logic expression. 
+    is a "pure logic" expression.
 
     Pure logic expressions consist entirely of terms of the form:
 
@@ -344,8 +347,8 @@ def _is_logic_expr(infix_tokens):
         for token in infix_tokens:
             match = _regex_operator.match(token)
             if match:
-                # explictly match operators (and, or, and not could be confused
-                # with identifiers)
+                # explictly match operators ('and', 'or', and 'not' could be
+                # confused with identifiers)
                 new_infix_tokens.append(token)
                 continue
             match = _regex_identifier.match(token)
@@ -384,6 +387,30 @@ def _get_token_type(token):
         return _IDENTIFIER
     
     return UNKNOWN
+
+
+###############################################################################
+def _insert_whitespace(infix_expr):
+    """
+    Insert whitespace between all operands and operators. The infix expression
+    already has whitespace surrounding the operators between data entities.
+    """
+
+    tokens = []
+
+    data_entities = infix_expr.split()
+    for de in data_entities:
+        match = _regex_embedded_op.search(de)
+        if match:
+            start = match.start()
+            end   = match.end()
+            tokens.append( de[:start] )
+            tokens.append( match.group() )
+            tokens.append( de[end:] )
+        else:
+            tokens.append(de)
+
+    return ' '.join(tokens)
 
 
 ###############################################################################
@@ -647,7 +674,10 @@ def _mongo_format(operator, op1, op2=None):
     
 
 ###############################################################################
-def _to_mongo_command(postfix_tokens, match_filters: dict, expr_type):
+def _to_mongo_command(postfix_tokens,
+                      match_filters: dict,
+                      expr_type,
+                      join_field):
     """
     Convert a tokenized postfix expression into a form for execution by
     the MongoDB aggregation engine. See chapter 7 of 'MongoDB: The Definitive
@@ -684,7 +714,7 @@ def _to_mongo_command(postfix_tokens, match_filters: dict, expr_type):
         mongo_commands.append(MATCH_PREAMBLE + match_string + MATCH_POSTAMBLE)
 
     if _EXPR_MATH == expr_type:
-        
+        # joins are not needed, can ignore join_field
         for token in postfix_tokens:
             if not _is_operator(token):
                 stack.append(token)
@@ -707,7 +737,7 @@ def _to_mongo_command(postfix_tokens, match_filters: dict, expr_type):
             mongo_commands.append(_EMPTY_JSON)
 
     elif _EXPR_LOGIC == expr_type:
-        # TBD
+        # either an n-way 'AND' or n-way 'OR' expression
         pass
             
     return mongo_commands
@@ -747,6 +777,7 @@ def is_mongo_computable(infix_expr):
     if _TRACE:
         print('called _is_mongo_computable: ')
 
+    infix_expr = _insert_whitespace(infix_expr)
     infix_tokens = _tokenize(infix_expr)
     
     new_infix_tokens = _is_pure_mathematical_expr(infix_tokens)
@@ -756,12 +787,12 @@ def is_mongo_computable(infix_expr):
             print('\tREWRITTEN MATH EXPR: {0}'.format(new_infix_tokens))
         return new_infix_tokens
 
-    new_infix_tokens = _is_logic_expr(infix_tokens)
-    if len(new_infix_tokens) > 0:
-        new_infix_tokens.append(_EXPR_LOGIC)
-        if _TRACE:
-            print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
-        return new_infix_tokens
+    # new_infix_tokens = _is_logic_expr(infix_tokens)
+    # if len(new_infix_tokens) > 0:
+    #     new_infix_tokens.append(_EXPR_LOGIC)
+    #     if _TRACE:
+    #         print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
+    #     return new_infix_tokens
     
     # some others that can be evaluated:
     #     isolated N-way provider assertion AND
@@ -774,7 +805,11 @@ def is_mongo_computable(infix_expr):
 
 
 ###############################################################################
-def run(mongo_collection_obj, infix_str_or_tokens, match_filters: dict=None):
+def run(mongo_collection_obj,
+        infix_str_or_tokens,       # string or token list to evaluate
+        join_field = None,         # which field to join on for logic expr
+        match_filters: dict=None): # initial filters for aggregation pipeline
+
     """
     Evaluate the given infix expression, generate a MongoDB aggregation
     command from it, execute the command against the specified collection,
@@ -823,7 +858,10 @@ def run(mongo_collection_obj, infix_str_or_tokens, match_filters: dict=None):
         infix_tokens = infix_tokens[:-1]
     
     postfix_tokens = _infix_to_postfix(infix_tokens)
-    mongo_commands = _to_mongo_command(postfix_tokens, match_filters, expr_type)
+    mongo_commands = _to_mongo_command(postfix_tokens,
+                                       match_filters,
+                                       expr_type,
+                                       join_field)
     if _TRACE: print('command: {0}'.format(mongo_commands))
     doc_ids = _mongo_evaluate(mongo_commands, mongo_collection_obj)
 
@@ -933,14 +971,24 @@ def _run_tests():
     INFIX_EXPRESSIONS = [
         'Temperature.value >= 100.4',
         'mm.dimension_X >= 5 or mm.dimension_Y >= 5 or mm.dimension_Z >= 5',
-        'hasFever or hasSepsisSymptoms',
-        #'patientsWithAfibTerms not transplantPatients',
-        'A and B and C and D'
+        #'hasFever or hasSepsisSymptoms',
+        #'A and B and C and D',
+        ##'patientsWithAfibTerms not transplantPatients',
     ]
 
     for infix_expr in INFIX_EXPRESSIONS:
         print('expr: ' + infix_expr)
         assert is_mongo_computable(infix_expr)
+
+    text = 'BoneLesionMeasurement.dimension_X>=5 OR ' \
+           'BoneLesionMeasurement.dimension_Y>=5 OR ' \
+           'BoneLesionMeasurement.dimension_Z>=5'
+
+    print('Before whitespace insertion: ')
+    print(text)
+    new_text = _insert_whitespace(text)
+    print('After whitespace insertion: ')
+    print(new_text)
     
 
 ###############################################################################

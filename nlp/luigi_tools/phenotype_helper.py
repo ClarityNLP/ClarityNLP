@@ -631,7 +631,7 @@ def mongo_process_operations(infix_tokens,
         else:
             on = 'subject'
         expression = c['raw_text']
-        mongo_ids = mongo_eval.run(mongo_collection_obj, infix_tokens, match_filters)
+        mongo_ids = mongo_eval.run(mongo_collection_obj, infix_tokens, on, match_filters)
         mongo_docs = results.lookup_phenotype_results_by_id(mongo_ids)
 
         output = list()
