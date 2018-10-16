@@ -188,6 +188,7 @@ _PRECEDENCE_MAP = {
     '>=':4,
     '!=':4,
     '==':4,
+    '=':4,
     '+':9,
     '-':9,
     '*':10,
@@ -208,6 +209,7 @@ _MONGO_OPS = {
     'or':'$or',
     'and':'$and',
     '==':'$eq',
+    '=':'$eq',
     '!=':'$ne',
     '>':'$gt',
     '<':'$lt',
@@ -280,7 +282,7 @@ def _is_pure_mathematical_expr(infix_tokens):
         new_infix_tokens.append('(')
         new_infix_tokens.append('nlpql_feature')
         new_infix_tokens.append('==')
-        new_infix_tokens.append('{0}'.format(nlpql_feature_set.pop()))
+        new_infix_tokens.append('"{0}"'.format(nlpql_feature_set.pop()))
         new_infix_tokens.append(')')
         new_infix_tokens.append('and')
         new_infix_tokens.append('(')
@@ -351,7 +353,7 @@ def _is_logic_expr(infix_tokens):
                 new_infix_tokens.append('(')
                 new_infix_tokens.append('nlpql_feature')
                 new_infix_tokens.append('==')
-                new_infix_tokens.append(token)
+                new_infix_tokens.append('"{0}"'.format(token))
                 new_infix_tokens.append(')')
             else:
                 new_infix_tokens.append(token)
@@ -742,27 +744,10 @@ def is_mongo_computable(infix_expr):
     syntax.
     """
 
-    infix_tokens   = _tokenize(infix_expr)
-    #postfix_tokens = _infix_to_postfix(infix_tokens)
-
-    # # symbolically evaluate the postfix expression
-    # stack = []
-    # for token in postfix_tokens:
-    #     if not _is_operator(token):
-    #         token_type = _get_token_type(token)
-    #         stack.append(token_type)
-    #     else:
-    #         if token in _UNITARY_OPS:
-    #             op = stack.pop()
-    #             result = _symbolic_evaluate(token, op)
-    #         else:
-    #             op2 = stack.pop()
-    #             op1 = stack.pop()
-    #             result = _symbolic_evaluate(token, op1, op2)
-    #         stack.append(result)
-
     if _TRACE:
         print('called _is_mongo_computable: ')
+
+    infix_tokens = _tokenize(infix_expr)
     
     new_infix_tokens = _is_pure_mathematical_expr(infix_tokens)
     if len(new_infix_tokens) > 0:
@@ -789,7 +774,7 @@ def is_mongo_computable(infix_expr):
 
 
 ###############################################################################
-def run(mongo_collection_obj, infix_expr, match_filters: dict=None):
+def run(mongo_collection_obj, infix_str_or_tokens, match_filters: dict=None):
     """
     Evaluate the given infix expression, generate a MongoDB aggregation
     command from it, execute the command against the specified collection,
@@ -809,21 +794,26 @@ def run(mongo_collection_obj, infix_expr, match_filters: dict=None):
 
     """
 
+    if _TRACE:
+        print('Called mongo_eval::run: ')
+        print('\tinfix_str_or_tokens: {0}'.format(infix_str_or_tokens))
+        print('\tmatch_filters: {0}'.format(match_filters))
+
     if match_filters is None:
         # --selftest path
         match_filters = dict()
-        infix_tokens = _tokenize(infix_expr)
+        infix_tokens = _tokenize(infix_str_or_tokens)
         expr_type = _EXPR_MATH
 
     else:
         # tokenize the input expression string and add nlpql_feature filters
-        if str == type(infix_expr):
-            infix_tokens = is_mongo_computable(infix_expr)
+        if str == type(infix_str_or_tokens):
+            infix_tokens = is_mongo_computable(infix_str_or_tokens)
             if 0 == len(infix_tokens):
                 return []
         else:
-            assert list == type(infix_expr)
-            infix_tokens = infix_expr
+            assert list == type(infix_str_or_tokens)
+            infix_tokens = infix_str_or_tokens
 
         assert len(infix_tokens) > 0
         assert _EXPR_MATH == infix_tokens[-1] or _EXPR_LOGIC == infix_tokens[-1]
