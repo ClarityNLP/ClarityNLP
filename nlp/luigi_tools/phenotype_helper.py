@@ -428,8 +428,17 @@ def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeMod
 
 def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
                        final=False):
-    pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
-    # mongo_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final=False)
+
+    # Get the NLPQL expression and determine if Mongo aggregation can evaluate
+    # it. If so, the Mongo evaluator will tokenize the expression and return
+    # the list of infix tokens.
+    expression = c['raw_text']
+
+    infix_tokens = mongo_eval.is_mongo_computable(expression)
+    if len(infix_tokens) > 0:
+        mongo_process_operations(infix_tokens, db, job, phenotype, phenotype_id, phenotype_owner, c, final)
+    else:
+        pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
 
 
 def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
@@ -600,11 +609,20 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             del output
 
 
-def mongo_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
-                       final=False):
+def mongo_process_operations(infix_tokens,
+                             db,
+                             job_id,
+                             phenotype: PhenotypeModel,
+                             phenotype_id,
+                             phenotype_owner, c: PhenotypeOperations,
+                             final=False):
+
     client = MongoClient(util.mongo_host, util.mongo_port)
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
+
+    match_filters = dict()
+    match_filters['job_id'] = job_id
 
     try:
         operation_name = c['name']
@@ -613,15 +631,13 @@ def mongo_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, p
         else:
             on = 'subject'
         expression = c['raw_text']
-        mongo_ids = mongo_eval.run(mongo_collection_obj, expression, {
-            "job_id": job
-        })
+        mongo_ids = mongo_eval.run(mongo_collection_obj, infix_tokens, on, match_filters)
         mongo_docs = results.lookup_phenotype_results_by_id(mongo_ids)
 
         output = list()
         for doc in mongo_docs['results']:
             ret = doc
-            ret['job_id'] = job
+            ret['job_id'] = job_id
             ret['phenotype_id'] = phenotype_id
             ret['owner'] = phenotype_owner
             ret['job_date'] = datetime.datetime.now()
@@ -630,16 +646,16 @@ def mongo_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, p
             ret['nlpql_feature'] = operation_name
             ret['phenotype_final'] = c['final']
 
-            if '_id' in ret.columns:
+            if '_id' in ret:
                 ret['orig_id'] = ret['_id']
-                ret = ret.drop(columns=['_id'])
+                ret.pop('_id', None)
 
             output.append(ret)
 
         if len(output) > 0:
             db.phenotype_results.insert_many(output)
         else:
-            print('No phenotype matches on %s.' % expression)
+            print('mongo_process_operations: No phenotype matches on %s.' % expression)
 
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
