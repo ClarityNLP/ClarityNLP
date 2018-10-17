@@ -16,7 +16,7 @@ ClarityNLP's NLP engine is built in Python, powered by Luigi, using spaCy and ot
 
 3. ClarityNLP has been pre-loaded with documents from the FDA Drug Labels data set, but you can get an idea on how to load more documents [here](http://claritynlp.readthedocs.io/en/latest/setup/index.html#data-ingestion).
 
-4. Now we can test some NLPQL. See some sample NLPQL [here](https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql) and learn more about NLPQL [here](http://claritynlp.readthedocs.io/en/latest/user_guide/intro/overview.html#example-nlpql-phenotype-walkthrough). Let's try on creating a simple NLPQL to find drug allergies in this text.
+4. Now we can test some NLPQL. See some sample NLPQL [here](https://github.com/ClarityNLP/ClarityNLP/tree/master/nlpql) and learn more about NLPQL [here](http://claritynlp.readthedocs.io/en/latest/user_guide/intro/overview.html#example-nlpql-phenotype-walkthrough). Let's try on creating a simple NLPQL to find drug allergies in this text.
 Using Postman, we'll POST the NLPQL below as plain text to [http://localhost:5000/nlpql](http://localhost:5000/nlpql).
 
 <details><summary>Sample NLPQL</summary>
