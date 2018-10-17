@@ -147,13 +147,18 @@ import optparse
 from pymongo import MongoClient
 from collections import OrderedDict
 
+if __name__ == '__main__':
+    import mongo_logic_ops
+else:
+    from data_access import mongo_logic_ops
+
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 
 _MODULE_NAME = 'mongo_eval.py'
 
 # set to True to enable debug output
-_TRACE = False
+_TRACE = True
 
 # operators in an NLPQL 'where' expression
 _str_op = r'\A(==|!=|<=|>=|and|or|not|[-+/*%\^<>=])\Z'
@@ -300,7 +305,7 @@ def _is_pure_mathematical_expr(infix_tokens):
         return new_infix_tokens
     else:
         return EMPTY_LIST
-    
+
 
 ###############################################################################
 def _is_logic_expr(infix_tokens):
@@ -324,6 +329,7 @@ def _is_logic_expr(infix_tokens):
     """
 
     operator_set = set()
+    identifier_set = set()
     
     for token in infix_tokens:
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
@@ -336,6 +342,7 @@ def _is_logic_expr(infix_tokens):
                 continue
         match = _regex_identifier.match(token)
         if match:
+            identifier_set.add(match.group())
             continue
 
         # if here, not a pure logic expression
@@ -343,24 +350,29 @@ def _is_logic_expr(infix_tokens):
 
     if 1 == len(operator_set):
         # rewrite for Mongo evaluation
-        new_infix_tokens = []
-        for token in infix_tokens:
-            match = _regex_operator.match(token)
-            if match:
-                # explictly match operators ('and', 'or', and 'not' could be
-                # confused with identifiers)
-                new_infix_tokens.append(token)
-                continue
-            match = _regex_identifier.match(token)
-            if match:
-                new_infix_tokens.append('(')
-                new_infix_tokens.append('nlpql_feature')
-                new_infix_tokens.append('==')
-                new_infix_tokens.append('"{0}"'.format(token))
-                new_infix_tokens.append(')')
-            else:
-                new_infix_tokens.append(token)
+        # new_infix_tokens = []
+        # for token in infix_tokens:
+        #     match = _regex_operator.match(token)
+        #     if match:
+        #         # explictly match operators ('and', 'or', and 'not' could be
+        #         # confused with identifiers)
+        #         new_infix_tokens.append(token)
+        #         continue
+        #     match = _regex_identifier.match(token)
+        #     if match:
+        #         new_infix_tokens.append('(')
+        #         new_infix_tokens.append('nlpql_feature')
+        #         new_infix_tokens.append('==')
+        #         new_infix_tokens.append('"{0}"'.format(token))
+        #         new_infix_tokens.append(')')
+        #     else:
+        #         new_infix_tokens.append(token)
+        # return new_infix_tokens
+
+        new_infix_tokens = [operator_set.pop()]
+        new_infix_tokens.append(list(identifier_set))
         return new_infix_tokens
+
     else:
         return _EMPTY_LIST
 
@@ -629,6 +641,28 @@ def _infix_to_postfix(infix_tokens):
 
 
 ###############################################################################
+def _filters_to_pipeline(pipeline, match_filters: dict):
+    """
+    """
+
+    MATCH_PREAMBLE  = '{ "$match" : {'
+    MATCH_POSTAMBLE = '}}'
+
+    if match_filters:
+        match_string = ''
+        for k in match_filters.keys():
+            if len(match_string) > 0:
+                match_string = match_string + ", "
+            val = str(match_filters[k])
+            if type(match_filters[k]) == str:
+                val = '"' + val + '"'
+            match_string = match_string + '"' + k + '":' + val
+        pipeline.append(MATCH_PREAMBLE + match_string + MATCH_POSTAMBLE)
+
+    return pipeline
+
+
+###############################################################################
 def _format_operand(operand):
     """
     Construct the appropriate MongoDB syntax for an operand in an aggregation
@@ -694,24 +728,27 @@ def _to_mongo_command(postfix_tokens,
     PROJECT_PREAMBLE  = '{ "$project" : { "value" : {'
     PROJECT_POSTAMBLE = '}}}'
 
-    MATCH_PREAMBLE  = '{ "$match" : {'
-    MATCH_POSTAMBLE = '}}'
+    #MATCH_PREAMBLE  = '{ "$match" : {'
+    #MATCH_POSTAMBLE = '}}'
 
     stack = list()
     mongo_commands = list()
 
     # place job_id filter first (along with any others), to (hopefully) reduce
     # the workload for the evaluator
-    if match_filters:
-        match_string = ''
-        for k in match_filters.keys():
-            if len(match_string) > 0:
-                match_string = match_string + ", "
-            val = str(match_filters[k])
-            if type(match_filters[k]) == str:
-                val = '"' + val + '"'
-            match_string = match_string + '"' + k + '":' + val
-        mongo_commands.append(MATCH_PREAMBLE + match_string + MATCH_POSTAMBLE)
+    # if match_filters:
+    #     match_string = ''
+    #     for k in match_filters.keys():
+    #         if len(match_string) > 0:
+    #             match_string = match_string + ", "
+    #         val = str(match_filters[k])
+    #         if type(match_filters[k]) == str:
+    #             val = '"' + val + '"'
+    #         match_string = match_string + '"' + k + '":' + val
+    #     mongo_commands.append(MATCH_PREAMBLE + match_string + MATCH_POSTAMBLE)
+
+    # insert the filters into the aggregation pipeline
+    mongo_commands = _filters_to_pipeline(mongo_commands, match_filters)
 
     if _EXPR_MATH == expr_type:
         # joins are not needed, can ignore join_field
@@ -738,7 +775,8 @@ def _to_mongo_command(postfix_tokens,
 
     elif _EXPR_LOGIC == expr_type:
         # either an n-way 'AND' or n-way 'OR' expression
-        pass
+        operator = postfix_tokens[-1]
+        print('here is operator: {0}'.format(operator))
             
     return mongo_commands
 
@@ -787,12 +825,12 @@ def is_mongo_computable(infix_expr):
             print('\tREWRITTEN MATH EXPR: {0}'.format(new_infix_tokens))
         return new_infix_tokens
 
-    # new_infix_tokens = _is_logic_expr(infix_tokens)
-    # if len(new_infix_tokens) > 0:
-    #     new_infix_tokens.append(_EXPR_LOGIC)
-    #     if _TRACE:
-    #         print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
-    #     return new_infix_tokens
+    new_infix_tokens = _is_logic_expr(infix_tokens)
+    if len(new_infix_tokens) > 0:
+        new_infix_tokens.append(_EXPR_LOGIC)
+        if _TRACE:
+            print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
+        return new_infix_tokens
     
     # some others that can be evaluated:
     #     isolated N-way provider assertion AND
@@ -834,36 +872,87 @@ def run(mongo_collection_obj,
         print('\tinfix_str_or_tokens: {0}'.format(infix_str_or_tokens))
         print('\tmatch_filters: {0}'.format(match_filters))
 
+    # if match_filters is None:
+    #     # --selftest path
+    #     match_filters = dict()
+    #     infix_tokens = _tokenize(infix_str_or_tokens)
+    #     expr_type = _EXPR_MATH
+
+    # else:
+    #     # tokenize the input expression string and add nlpql_feature filters
+    #     if str == type(infix_str_or_tokens):
+    #         infix_tokens = is_mongo_computable(infix_str_or_tokens)
+    #         if 0 == len(infix_tokens):
+    #             return []
+    #     else:
+    #         assert list == type(infix_str_or_tokens)
+    #         infix_tokens = infix_str_or_tokens
+
+    #     assert len(infix_tokens) > 0
+    #     assert _EXPR_MATH == infix_tokens[-1] or _EXPR_LOGIC == infix_tokens[-1]
+
+    #     # strip the expression type token
+    #     expr_type = infix_tokens[-1]
+    #     infix_tokens = infix_tokens[:-1]
+
     if match_filters is None:
         # --selftest path
         match_filters = dict()
-        infix_tokens = _tokenize(infix_str_or_tokens)
-        expr_type = _EXPR_MATH
+
+    # tokenize the input expression string and add nlpql_feature filters
+    if str == type(infix_str_or_tokens):
+        infix_tokens = is_mongo_computable(infix_str_or_tokens)
+        if 0 == len(infix_tokens):
+            return []
+    else:
+        assert list == type(infix_str_or_tokens)
+        infix_tokens = infix_str_or_tokens
+
+    assert len(infix_tokens) > 0
+    assert _EXPR_MATH == infix_tokens[-1] or _EXPR_LOGIC == infix_tokens[-1]
+
+    # strip the expression type token
+    expr_type = infix_tokens[-1]
+    infix_tokens = infix_tokens[:-1]
+
+    if _TRACE:
+        print('infix tokens before postfix in run: {0}'.format(infix_tokens))
+
+    if _EXPR_MATH == expr_type:
+        postfix_tokens = _infix_to_postfix(infix_tokens)
+        mongo_pipeline = _to_mongo_command(postfix_tokens,
+                                           match_filters,
+                                           expr_type,
+                                           join_field)
+
+        if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
+        doc_ids = _mongo_evaluate(mongo_pipeline, mongo_collection_obj)
 
     else:
-        # tokenize the input expression string and add nlpql_feature filters
-        if str == type(infix_str_or_tokens):
-            infix_tokens = is_mongo_computable(infix_str_or_tokens)
-            if 0 == len(infix_tokens):
-                return []
-        else:
-            assert list == type(infix_str_or_tokens)
-            infix_tokens = infix_str_or_tokens
+        # the operator and nlpql features are stored in 'infix_tokens'
+        operator           = infix_tokens[0]
+        nlpql_feature_list = infix_tokens[1]
 
-        assert len(infix_tokens) > 0
-        assert _EXPR_MATH == infix_tokens[-1] or _EXPR_LOGIC == infix_tokens[-1]
+        mongo_pipeline = [
+            {
+                "$match" : {
+                    "job_id" : match_filters['job_id']
+                }
+            }
+        ]
+        #_filters_to_pipeline(mongo_pipeline, match_filters)
 
-        # strip the expression type token
-        expr_type = infix_tokens[-1]
-        infix_tokens = infix_tokens[:-1]
-    
-    postfix_tokens = _infix_to_postfix(infix_tokens)
-    mongo_commands = _to_mongo_command(postfix_tokens,
-                                       match_filters,
-                                       expr_type,
-                                       join_field)
-    if _TRACE: print('command: {0}'.format(mongo_commands))
-    doc_ids = _mongo_evaluate(mongo_commands, mongo_collection_obj)
+
+        mongo_pipeline = mongo_logic_ops.logic_expr(mongo_pipeline,
+                                                    operator,
+                                                    join_field,
+                                                    nlpql_feature_list)
+
+        if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
+        cursor = mongo_collection_obj.aggregate(mongo_pipeline)
+
+        # keep all doc ids for which the aggregation result is True
+        doc_ids = [doc['_id'] for doc in cursor]
 
     return doc_ids
 
@@ -873,11 +962,12 @@ def _run_tests():
 
     COLLECTION_NAME = 'eval_test'
     
-    variables = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+    variables = ['nlpql_feature', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 
     data = []
-    for i in range(1,21):
+    for i in range(0,21):
         values = [(i+j) for j in range(0, len(variables))]
+        values[0] = 'T' # the nlpql_feature
         data.append({item[0]:item[1] for item in list(zip(variables, values))})
 
     if _TRACE:
@@ -887,20 +977,20 @@ def _run_tests():
 
     TEST_EXPRESSIONS = [
         # operators and operands must be separated by whitespace
-        'not (A >= 8)',
-        'B + D * F < 400',
-        'not ( 0 == C % 5 ) and not ( 0 == D % 3)',
-        '(A >= 5 and D <= 20) or (F >= 23 and H <= 27 and G == 25)',
-        '5 * H >= A ^ 2',
-        'E % 15 < 10',
-        'A == 19 and B == 20 and C == 21 or (E < 15 and H > 10 and (G >= 11 and G <= 14))',
-        'B != 10 and C != 12 and D != 13',
-        'A > 4 and B < 16 and C > 7 and D < 16',
-        '2 * H - 3 == F + G',
-        'A ^ (D % B) < 2 * (H + D)',
-        'not (A < 5 or B > 10 and C < 15 or D > 20) or G == 22 or F == 25 and not H == 8',
-        '(((A * B) - (2 * C)) > (1 * H) )',
-        '(A / 2) ^ 3 ^ 2  < D * E * F * G * H',
+        'not (T.A >= 8)',
+        'T.B + T.D * T.F < 400',
+        'not ( 0 == T.C % 5 ) and not ( 0 == T.D % 3)',
+        '(T.A >= 5 and T.D <= 20) or (T.F >= 23 and T.H <= 27 and T.G == 25)',
+        '5 * T.H >= T.A ^ 2',
+        'T.E % 15 < 10',
+        'T.A == 19 and T.B == 20 and T.C == 21 or (T.E < 15 and T.H > 10 and (T.G >= 11 and T.G <= 14))',
+        'T.B != 10 and T.C != 12 and T.D != 13',
+        'T.A > 4 and T.B < 16 and T.C > 7 and T.D < 16',
+        '2 * T.H - 3 == T.F + T.G',
+        'T.A ^ (T.D % T.B) < 2 * (T.H + T.D)',
+        'not (T.A < 5 or T.B > 10 and T.C < 15 or T.D > 20) or T.G == 22 or T.F == 25 and not T.H == 8',
+        '(((T.A * T.B) - (2 * T.C)) > (1 * T.H) )',
+        '(T.A / 2) ^ 3 ^ 2  < T.D * T.E * T.F * T.G * T.H',
     ]
     
     # connect to the local mongo instance
@@ -923,7 +1013,7 @@ def _run_tests():
         if _TRACE: print('expression: {0}'.format(expr))
 
         # no match filters needed for math testing
-        doc_ids = run(mongo_collection_obj, expr)
+        doc_ids = run(mongo_collection_obj, expr, 'report_id')
         
         if _TRACE: print('results: ')
 
@@ -934,6 +1024,9 @@ def _run_tests():
 
             # restore the original expression
             expr = expr_save
+
+            # remove the 'T.' from each variable
+            expr = re.sub(r'T\.', '', expr)
 
             # substitute values of each variable occurring in expr
             for var in variables:
@@ -971,14 +1064,22 @@ def _run_tests():
     INFIX_EXPRESSIONS = [
         'Temperature.value >= 100.4',
         'mm.dimension_X >= 5 or mm.dimension_Y >= 5 or mm.dimension_Z >= 5',
-        #'hasFever or hasSepsisSymptoms',
-        #'A and B and C and D',
+        'hasFever or hasSepsisSymptoms',
+        'A and B and C and D',
         ##'patientsWithAfibTerms not transplantPatients',
     ]
 
+    mongo_collection_obj = mongo_db_obj[COLLECTION_NAME]
+
     for infix_expr in INFIX_EXPRESSIONS:
         print('expr: ' + infix_expr)
-        assert is_mongo_computable(infix_expr)
+        infix_tokens = is_mongo_computable(infix_expr)
+        assert len(infix_tokens) > 0
+        doc_ids = run(mongo_collection_obj, infix_tokens, 'report_id', {})
+        print('RESULT DOC IDS: ')
+        print(doc_ids)
+
+    mongo_db_obj.drop_collection(COLLECTION_NAME)
 
     text = 'BoneLesionMeasurement.dimension_X>=5 OR ' \
            'BoneLesionMeasurement.dimension_Y>=5 OR ' \
