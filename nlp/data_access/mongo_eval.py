@@ -159,7 +159,7 @@ _VERSION_MINOR = 1
 _MODULE_NAME = 'mongo_eval.py'
 
 # set to True to enable debug output
-_TRACE = False
+_TRACE = True
 
 # operators in an NLPQL 'where' expression
 _str_op = r'\A(==|!=|<=|>=|and|or|not|[-+/*%\^<>=])\Z'
@@ -319,7 +319,7 @@ def _is_logic_expr(infix_tokens):
         identifier
         n-way 'and'
         n-way 'or'
-        expressions involving 'not' TBD
+        A not B
 
     These expressions do NOT involve numeric literals or terms of the form
     nlpql_feature.value.
@@ -329,6 +329,9 @@ def _is_logic_expr(infix_tokens):
 
     """
 
+    if _TRACE:
+        print('_is_logic_expr: testing {0}'.format(infix_tokens))
+
     operator_set = set()
     identifier_set = set()
     
@@ -337,8 +340,8 @@ def _is_logic_expr(infix_tokens):
             continue
         match = _regex_operator.match(token)
         if match:
-            op_text = match.group()
-            if 'and' == op_text or 'or' == op_text: # #or 'not' == op_text:
+            op_text = match.group().lower()
+            if 'and' == op_text or 'or' == op_text or 'not' == op_text:
                 operator_set.add(op_text)
                 continue
         match = _regex_identifier.match(token)
@@ -350,30 +353,23 @@ def _is_logic_expr(infix_tokens):
         return _EMPTY_LIST
 
     if 1 == len(operator_set):
-        # rewrite for Mongo evaluation
-        # new_infix_tokens = []
-        # for token in infix_tokens:
-        #     match = _regex_operator.match(token)
-        #     if match:
-        #         # explictly match operators ('and', 'or', and 'not' could be
-        #         # confused with identifiers)
-        #         new_infix_tokens.append(token)
-        #         continue
-        #     match = _regex_identifier.match(token)
-        #     if match:
-        #         new_infix_tokens.append('(')
-        #         new_infix_tokens.append('nlpql_feature')
-        #         new_infix_tokens.append('==')
-        #         new_infix_tokens.append('"{0}"'.format(token))
-        #         new_infix_tokens.append(')')
-        #     else:
-        #         new_infix_tokens.append(token)
-        # return new_infix_tokens
+        operator = operator_set.pop()
 
-        new_infix_tokens = [operator_set.pop()]
-        new_infix_tokens.append(list(identifier_set))
-        return new_infix_tokens
+        # n-way 'and', n-way 'or'
+        if 'and' == operator or 'or' == operator:
+            new_infix_tokens = [operator]
+            new_infix_tokens.append(list(identifier_set))
+            if _TRACE: print('\tfound n-way {0} expression'.format(operator))
+            return new_infix_tokens
 
+        # 'A not B'
+        elif 'not' == operator and 2 == len(identifier_set):
+            new_infix_tokens = [operator]
+            new_infix_tokens.append(list(identifier_set))
+            if _TRACE: print('\tfound "A not B" expression')
+            return new_infix_tokens
+        else:
+            return _EMPTY_LIST
     else:
         return _EMPTY_LIST
 
@@ -941,13 +937,11 @@ def run(mongo_collection_obj,
                 }
             }
         ]
-        #_filters_to_pipeline(mongo_pipeline, match_filters)
 
-
-        mongo_pipeline = mongo_logic_ops.logic_expr(mongo_pipeline,
-                                                    operator,
-                                                    join_field,
-                                                    nlpql_feature_list)
+        mongo_pipeline = mongo_logic_ops.logic_expr_a_b(mongo_pipeline,
+                                                        operator,
+                                                        join_field,
+                                                        nlpql_feature_list)
 
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
         cursor = mongo_collection_obj.aggregate(mongo_pipeline)
@@ -1113,77 +1107,77 @@ def _run_tests():
 
     # logical AND between features A and B, join on report_id
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'report_id',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['A', 'B'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [4,5,9,10]
 
     # logical AND between features A and B, join on subject
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'subject',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
 
     # logical AND between features C and D, join on report_id
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'report_id',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['C', 'D'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,14]
 
     # logical AND between features B, C and D, join on subject
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'subject',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['B', 'C', 'D'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [6,7,11,12,14,15]
 
     # logical AND between features A, B, C and D, join on subject
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'subject',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B', 'C', 'D'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,6,7,11,12,14,15]
 
     # logical OR between features C and D
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'or', None,
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', None,
                                           ['C', 'D'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,12,13,14,15]
 
     # logical OR between features A, C, and D
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'or', None,
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', None,
                                           ['A', 'C', 'D'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
 
     # A not B, join on report_id
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'report_id',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['A', 'B'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3]
 
     # A not B, join on subject
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'subject',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['A', 'B'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == []
 
     # D not C, join on report_id
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'report_id',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['D', 'C'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [15]
 
     # B not C, join on subject
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'subject',
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['B', 'C'])
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [9,10]
