@@ -144,6 +144,7 @@ import ast
 import sys
 import json
 import optparse
+import subprocess
 from pymongo import MongoClient
 from collections import OrderedDict
 
@@ -158,7 +159,7 @@ _VERSION_MINOR = 1
 _MODULE_NAME = 'mongo_eval.py'
 
 # set to True to enable debug output
-_TRACE = True
+_TRACE = False
 
 # operators in an NLPQL 'where' expression
 _str_op = r'\A(==|!=|<=|>=|and|or|not|[-+/*%\^<>=])\Z'
@@ -958,10 +959,34 @@ def run(mongo_collection_obj,
 
 
 ###############################################################################
+def _run_test_pipeline(mongo_collection_obj, pipeline):
+    """
+    Run an aggregation pipeline for self-testing.
+    """
+
+    cursor = mongo_collection_obj.aggregate(pipeline)
+    doc_ids = [doc['_id'] for doc in cursor]
+    return sorted(doc_ids)
+
+
+###############################################################################
 def _run_tests():
 
-    COLLECTION_NAME = 'eval_test'
-    
+    # mongo needs to be running locally for this test, so check for it...
+    ps_process = subprocess.run(['ps', '-ax'],
+                                stdout=subprocess.PIPE,
+                                universal_newlines=True)
+    grep_process = subprocess.run(['grep', 'mongod'],
+                                  input=ps_process.stdout,
+                                  stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+    if 0 == len(grep_process.stdout):
+        print('mongo_eval: please start the mongod server for this test...')
+        return
+
+    # a name that should be unique...
+    COLLECTION_NAME = 'clarity_nlp_mongo_eval_test_!~!_001;;;'
+
     variables = ['nlpql_feature', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 
     data = []
@@ -975,24 +1000,33 @@ def _run_tests():
         for elem in data:
             print(elem)
 
+    # test expressions for the math evaluator
+    # operators and operands MUST be separated by whitespace
     TEST_EXPRESSIONS = [
-        # operators and operands must be separated by whitespace
         'not (T.A >= 8)',
         'T.B + T.D * T.F < 400',
         'not ( 0 == T.C % 5 ) and not ( 0 == T.D % 3)',
         '(T.A >= 5 and T.D <= 20) or (T.F >= 23 and T.H <= 27 and T.G == 25)',
         '5 * T.H >= T.A ^ 2',
         'T.E % 15 < 10',
-        'T.A == 19 and T.B == 20 and T.C == 21 or (T.E < 15 and T.H > 10 and (T.G >= 11 and T.G <= 14))',
+
+        # spans two lines
+        'T.A == 19 and T.B == 20 and T.C == 21 or '              \
+        '(T.E < 15 and T.H > 10 and (T.G >= 11 and T.G <= 14))',
+
         'T.B != 10 and T.C != 12 and T.D != 13',
         'T.A > 4 and T.B < 16 and T.C > 7 and T.D < 16',
         '2 * T.H - 3 == T.F + T.G',
         'T.A ^ (T.D % T.B) < 2 * (T.H + T.D)',
-        'not (T.A < 5 or T.B > 10 and T.C < 15 or T.D > 20) or T.G == 22 or T.F == 25 and not T.H == 8',
+
+        # spans two lines
+        'not (T.A < 5 or T.B > 10 and T.C < 15 or T.D > 20) or ' \
+        'T.G == 22 or T.F == 25 and not T.H == 8',
+
         '(((T.A * T.B) - (2 * T.C)) > (1 * T.H) )',
         '(T.A / 2) ^ 3 ^ 2  < T.D * T.E * T.F * T.G * T.H',
     ]
-    
+
     # connect to the local mongo instance
     mongo_client_obj = MongoClient()
 
@@ -1048,48 +1082,113 @@ def _run_tests():
                 if _TRACE: print('\t\tFALSE')
                 assert not result
         cursor.rewind()
-    
+
     mongo_db_obj.drop_collection(COLLECTION_NAME)
 
+    # data for testing logic ops
+    data = [
+        {'_id':1,  'nlpql_feature':'A', 'report_id':1, 'subject':1},
+        {'_id':2,  'nlpql_feature':'A', 'report_id':2, 'subject':2},
+        {'_id':3,  'nlpql_feature':'A', 'report_id':3, 'subject':3},
+        {'_id':4,  'nlpql_feature':'A', 'report_id':4, 'subject':4},
+        {'_id':5,  'nlpql_feature':'A', 'report_id':5, 'subject':5},
 
-    # need to handle this:
-    # define final baseAfibCases:
-    #     where patientsWithAfibTerms NOT transplantPatients;
+        {'_id':6,  'nlpql_feature':'B', 'report_id':6, 'subject':1},
+        {'_id':7,  'nlpql_feature':'B', 'report_id':7, 'subject':2},
+        {'_id':8,  'nlpql_feature':'B', 'report_id':8, 'subject':3},
+        {'_id':9,  'nlpql_feature':'B', 'report_id':4, 'subject':4},
+        {'_id':10, 'nlpql_feature':'B', 'report_id':5, 'subject':5},
 
-    # assign pure math results to separate variables
-    # final expression must either be:
-    #     logical ops between existing nlpql_features
-    #     pure math expression
-    
-    INFIX_EXPRESSIONS = [
-        'Temperature.value >= 100.4',
-        'mm.dimension_X >= 5 or mm.dimension_Y >= 5 or mm.dimension_Z >= 5',
-        'hasFever or hasSepsisSymptoms',
-        'A and B and C and D',
-        ##'patientsWithAfibTerms not transplantPatients',
+        {'_id':11, 'nlpql_feature':'C', 'report_id':6, 'subject':1},
+        {'_id':12, 'nlpql_feature':'C', 'report_id':7, 'subject':2},
+        {'_id':13, 'nlpql_feature':'C', 'report_id':8, 'subject':3},
+
+        {'_id':14, 'nlpql_feature':'D', 'report_id':6, 'subject':1},
+        {'_id':15, 'nlpql_feature':'D', 'report_id':9, 'subject':2},
     ]
 
     mongo_collection_obj = mongo_db_obj[COLLECTION_NAME]
+    mongo_db_obj.drop_collection(COLLECTION_NAME)
+    result = mongo_collection_obj.insert_many(data)
 
-    for infix_expr in INFIX_EXPRESSIONS:
-        print('expr: ' + infix_expr)
-        infix_tokens = is_mongo_computable(infix_expr)
-        assert len(infix_tokens) > 0
-        doc_ids = run(mongo_collection_obj, infix_tokens, 'report_id', {})
-        print('RESULT DOC IDS: ')
-        print(doc_ids)
+    # logical AND between features A and B, join on report_id
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'report_id',
+                                          ['A', 'B'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [4,5,9,10]
+
+    # logical AND between features A and B, join on subject
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'subject',
+                                          ['A', 'B'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
+
+    # logical AND between features C and D, join on report_id
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'report_id',
+                                          ['C', 'D'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [11,14]
+
+    # logical AND between features B, C and D, join on subject
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'subject',
+                                          ['B', 'C', 'D'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [6,7,11,12,14,15]
+
+    # logical AND between features A, B, C and D, join on subject
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'and', 'subject',
+                                          ['A', 'B', 'C', 'D'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [1,2,6,7,11,12,14,15]
+
+    # logical OR between features C and D
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'or', None,
+                                          ['C', 'D'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [11,12,13,14,15]
+
+    # logical OR between features A, C, and D
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'or', None,
+                                          ['A', 'C', 'D'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
+
+    # A not B, join on report_id
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'report_id',
+                                          ['A', 'B'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [1,2,3]
+
+    # A not B, join on subject
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'subject',
+                                          ['A', 'B'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == []
+
+    # D not C, join on report_id
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'report_id',
+                                          ['D', 'C'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [15]
+
+    # B not C, join on subject
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr(pipeline, 'not', 'subject',
+                                          ['B', 'C'])
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [9,10]
 
     mongo_db_obj.drop_collection(COLLECTION_NAME)
-
-    text = 'BoneLesionMeasurement.dimension_X>=5 OR ' \
-           'BoneLesionMeasurement.dimension_Y>=5 OR ' \
-           'BoneLesionMeasurement.dimension_Z>=5'
-
-    print('Before whitespace insertion: ')
-    print(text)
-    new_text = _insert_whitespace(text)
-    print('After whitespace insertion: ')
-    print(new_text)
     
 
 ###############################################################################
