@@ -110,13 +110,13 @@ from enum import Enum, unique
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 5
+VERSION_MINOR = 6
 
 # set to True to enable debug output
 TRACE = False
 
 # namedtuple used for serialization
-EMPTY_FIELD = -1
+EMPTY_FIELD = None
 SIZE_MEASUREMENT_FIELDS = ['text', 'start', 'end', 'temporality', 'units',
                            'condition', 'x', 'y', 'z', 'values', 'xView',
                            'yView', 'zView', 'minValue', 'maxValue']
@@ -534,7 +534,9 @@ def tokenize_complete_list(sentence, list_text, list_start):
                 print('\tFound list numeric token: ->{0}<-'.format(number_text))
 
     # tokenize the units string
-    units_text = units_match.group()
+    units_text = units_match.group().strip()
+    if TRACE:
+        print('\tList units_text: ->{0}<-'.format(units_text))
 
     is_area = is_area_unit(units_text)
     is_vol  = is_vol_unit(units_text)
@@ -1263,17 +1265,17 @@ def self_test(TEST_DICT):
                         ok = close_enough(value, result_dict[key])
                     else:
                         # compare string values
-                        expected_result = value.lower()
-                        computed_result = result_dict[key].lower()
-                        ok = computed_result == expected_result
+                        expected = value.lower()
+                        computed = result_dict[key].lower()
+                        ok = computed == expected
 
                     if not ok:
                         print('\n*** SELF TEST FAILURE: ***\n{0}'.
                               format(sentence))
                         print('\t  Computed result: {0}'.
-                              format(computed_result))
+                              format(computed))
                         print('\t  Expected result: {0}'.
-                              format(expected_result))
+                              format(expected))
 
 
 ###############################################################################
