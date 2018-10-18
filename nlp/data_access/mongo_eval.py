@@ -159,7 +159,7 @@ _VERSION_MINOR = 2
 _MODULE_NAME = 'mongo_eval.py'
 
 # set to True to enable debug output
-_TRACE = True
+_TRACE = False
 
 # operators in an NLPQL 'where' expression
 _str_op = r'\A(==|!=|<=|>=|and|or|not|[-+/*%\^<>=])\Z'
