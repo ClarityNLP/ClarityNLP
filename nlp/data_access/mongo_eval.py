@@ -154,7 +154,7 @@ else:
     from data_access import mongo_logic_ops
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 
 _MODULE_NAME = 'mongo_eval.py'
 
@@ -705,10 +705,10 @@ def _mongo_format(operator, op1, op2=None):
     
 
 ###############################################################################
-def _to_mongo_command(postfix_tokens,
-                      match_filters: dict,
-                      expr_type,
-                      join_field):
+def _to_mongo_pipeline(postfix_tokens,
+                       match_filters: dict,
+                       expr_type,
+                       join_field):
     """
     Convert a tokenized postfix expression into a form for execution by
     the MongoDB aggregation engine. See chapter 7 of 'MongoDB: The Definitive
@@ -798,7 +798,7 @@ def is_mongo_computable(infix_expr):
 
     infix_expr = _insert_whitespace(infix_expr)
     infix_tokens = _tokenize(infix_expr)
-    
+
     new_infix_tokens = _is_pure_mathematical_expr(infix_tokens)
     if len(new_infix_tokens) > 0:
         new_infix_tokens.append(_EXPR_MATH)
@@ -871,10 +871,10 @@ def run(mongo_collection_obj,
 
     if _EXPR_MATH == expr_type:
         postfix_tokens = _infix_to_postfix(infix_tokens)
-        mongo_pipeline = _to_mongo_command(postfix_tokens,
-                                           match_filters,
-                                           expr_type,
-                                           join_field)
+        mongo_pipeline = _to_mongo_pipeline(postfix_tokens,
+                                            match_filters,
+                                            expr_type,
+                                            join_field)
 
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
         doc_ids = _mongo_evaluate(mongo_pipeline, mongo_collection_obj)
@@ -942,6 +942,12 @@ def _run_tests():
         values = [(i+j) for j in range(0, len(variables))]
         values[0] = 'T' # the nlpql_feature
         data.append({item[0]:item[1] for item in list(zip(variables, values))})
+
+    # add a row where some data is missing
+    data.append({item[0]:item[1] for item in [
+        ('nlpql_feature', 'T'), ('A', None), ('B', 1), ('C', 2), ('D', 3),
+        ('E', None), ('F', 1), ('G', 2), ('H', 5)
+    ]})
 
     if _TRACE:
         print('DATA: ')
@@ -1019,16 +1025,24 @@ def _run_tests():
             # convert '^' to python '**' operator
             if '^' in expr:
                 expr = expr.replace('^', '**')
-                
-            if _TRACE: print('\tevaluation: {0}'.format(expr))
-            result = eval(expr)
 
-            if doc['_id'] in doc_ids:
-                if _TRACE: print('\t\tTRUE')
-                assert result
-            else:
-                if _TRACE: print('\t\tFALSE')
-                assert not result
+            success = True
+            try:
+                if _TRACE: print('\tevaluation: {0}'.format(expr))
+                boolean_result = eval(expr)
+            except TypeError:
+                # will be thrown if any values are 'None'
+                success = False
+                if _TRACE: print('\t\tCOULD NOT EVALUATE')
+
+            if success:
+                if doc['_id'] in doc_ids:
+                    if _TRACE: print('\t\tTRUE')
+                    assert boolean_result
+                else:
+                    if _TRACE: print('\t\tFALSE')
+                    assert not boolean_result
+
         cursor.rewind()
 
     mongo_db_obj.drop_collection(COLLECTION_NAME)
@@ -1136,6 +1150,19 @@ def _run_tests():
     doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [9,10]
 
+    # not B
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'B')
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
+
+    # not D
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'D')
+    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [1,2,3,4,5,6,7,8,9,10,11,12,13]
+
+
     mongo_db_obj.drop_collection(COLLECTION_NAME)
     
 
@@ -1214,7 +1241,7 @@ if __name__ == '__main__':
     print('Expression: {0}'.format(expr))
     postfix_expr = _infix_to_postfix(expr)
     print('   Postfix: {0}'.format(postfix_expr))
-    json_result = _to_mongo_command(postfix_expr, {})
+    json_result = _to_mongo_pipeline(postfix_expr, {})
     if _EMPTY_JSON != json_result:
         json_data = json.loads(json_result)
         print('   Command: ')
