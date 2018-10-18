@@ -725,24 +725,8 @@ def _to_mongo_command(postfix_tokens,
     PROJECT_PREAMBLE  = '{ "$project" : { "value" : {'
     PROJECT_POSTAMBLE = '}}}'
 
-    #MATCH_PREAMBLE  = '{ "$match" : {'
-    #MATCH_POSTAMBLE = '}}'
-
     stack = list()
     mongo_commands = list()
-
-    # place job_id filter first (along with any others), to (hopefully) reduce
-    # the workload for the evaluator
-    # if match_filters:
-    #     match_string = ''
-    #     for k in match_filters.keys():
-    #         if len(match_string) > 0:
-    #             match_string = match_string + ", "
-    #         val = str(match_filters[k])
-    #         if type(match_filters[k]) == str:
-    #             val = '"' + val + '"'
-    #         match_string = match_string + '"' + k + '":' + val
-    #     mongo_commands.append(MATCH_PREAMBLE + match_string + MATCH_POSTAMBLE)
 
     # insert the filters into the aggregation pipeline
     mongo_commands = _filters_to_pipeline(mongo_commands, match_filters)
@@ -822,19 +806,12 @@ def is_mongo_computable(infix_expr):
             print('\tREWRITTEN MATH EXPR: {0}'.format(new_infix_tokens))
         return new_infix_tokens
 
-    new_infix_tokens = _is_logic_expr(infix_tokens)
-    if len(new_infix_tokens) > 0:
-        new_infix_tokens.append(_EXPR_LOGIC)
-        if _TRACE:
-            print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
-        return new_infix_tokens
-    
-    # some others that can be evaluated:
-    #     isolated N-way provider assertion AND
-    #     isolated N-way provider assertion OR
-    #     the above with NOT?
-    #     N-way AND provider assertion OR'd with pure_math expression(s)
-    #     N-way OR  provider assertion OR'd with pure_math expression(s)
+    # new_infix_tokens = _is_logic_expr(infix_tokens)
+    # if len(new_infix_tokens) > 0:
+    #     new_infix_tokens.append(_EXPR_LOGIC)
+    #     if _TRACE:
+    #         print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
+    #     return new_infix_tokens
     
     return _EMPTY_LIST
 
@@ -868,29 +845,6 @@ def run(mongo_collection_obj,
         print('Called mongo_eval::run: ')
         print('\tinfix_str_or_tokens: {0}'.format(infix_str_or_tokens))
         print('\tmatch_filters: {0}'.format(match_filters))
-
-    # if match_filters is None:
-    #     # --selftest path
-    #     match_filters = dict()
-    #     infix_tokens = _tokenize(infix_str_or_tokens)
-    #     expr_type = _EXPR_MATH
-
-    # else:
-    #     # tokenize the input expression string and add nlpql_feature filters
-    #     if str == type(infix_str_or_tokens):
-    #         infix_tokens = is_mongo_computable(infix_str_or_tokens)
-    #         if 0 == len(infix_tokens):
-    #             return []
-    #     else:
-    #         assert list == type(infix_str_or_tokens)
-    #         infix_tokens = infix_str_or_tokens
-
-    #     assert len(infix_tokens) > 0
-    #     assert _EXPR_MATH == infix_tokens[-1] or _EXPR_LOGIC == infix_tokens[-1]
-
-    #     # strip the expression type token
-    #     expr_type = infix_tokens[-1]
-    #     infix_tokens = infix_tokens[:-1]
 
     if match_filters is None:
         # --selftest path
