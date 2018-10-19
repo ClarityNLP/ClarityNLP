@@ -10,6 +10,11 @@ Setting up ClarityNLP Locally
 
 1. Install `Docker for Mac <https://www.docker.com/docker-mac>`_ or `Docker for Windows <https://www.docker.com/docker-windows>`_.
 
+These are the recommended Docker settings for ClarityNLP. In Docker, they can be updated via Docker > Preferences > Advanced.
+
+* Memory: >8GB
+* Disk: >256GB recommended, but can run on much less (depends on data needs)
+
 2. Run
 ::
 
@@ -69,14 +74,6 @@ forcefully kill the containers.
 
     sh stop_all_docker_containers.sh
 
-
-
-Docker Settings
----------------
-These are the recommended setting for ClarityNLP. In Docker, they can be updated via Docker > Preferences > Advanced.
-
-* Memory: >8GB
-* Disk: >256GB recommended, but can run on much less (depends on data needs)
 
 
 ClarityNLP Links
