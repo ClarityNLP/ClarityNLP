@@ -55,6 +55,8 @@ ohdsi_url = read_property('OHDSI_WEBAPI_URL', ('ohdsi', 'webapi'))
 
 debug_mode = read_property('NLP_API_DEBUG_MODE', ('local', 'debug'))
 
+azure_key = read_property('NLP_AZURE_KEY', ('apis', 'azure_key'))
+
 solr_text_field = read_property('SOLR_TEXT_FIELD', ('solr', 'text_field'))
 solr_id_field = read_property('SOLR_ID_FIELD', ('solr', 'id_field'))
 solr_report_id_field = read_property('SOLR_REPORT_ID_FIELD', ('solr', 'report_id_field'))
@@ -73,4 +75,3 @@ def cmp_2_key(mycmp):
         def __cmp__(self, other):
             return mycmp(self.obj, other.obj)
     return K
-
