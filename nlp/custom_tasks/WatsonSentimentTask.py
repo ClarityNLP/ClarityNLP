@@ -3,8 +3,8 @@ from pymongo import MongoClient
 import requests
 
 
-class SentimentAPITask(BaseTask):
-    task_name = "AzureSentiment"
+class WatsonSentimentTask(BaseTask):
+    task_name = "WatsonSentiment"
 
     # NLPQL
 
@@ -18,16 +18,17 @@ class SentimentAPITask(BaseTask):
             txt = self.get_document_text(doc)
             headers = {'Content-Type': 'application/json', 'Ocp-Apim-Subscription-Key': 'f2c27101438f40928132a93b9257abb9'}
             payload = {"documents": [{"language": "en", "id": "1", "text": txt}]}
-            response = requests.post('https://eastus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment', headers=headers, json=payload)
+            response = requests.post('https://eastus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment', headers=headers, data=payload)
             if response.status_code == 200:
                 json_response = response.json()
-                val = json_response['documents'][0]
-                obj = {
-                    'sentiment_score': val['score'],
-                }
+                if json_response['errors'] == []:
+                    val = json_response['documents']
+                    obj = {
+                        'score': val['score']
+                    }
 
-                # writing results
-                self.write_result_data(temp_file, mongo_client, doc, obj)
+                    # writing results
+                    self.write_result_data(temp_file, mongo_client, doc, obj)
 
             else:
                 # writing to log (optional)
