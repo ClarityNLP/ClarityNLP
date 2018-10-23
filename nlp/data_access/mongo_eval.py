@@ -742,7 +742,7 @@ def _to_mongo_pipeline(postfix_tokens,
 
 
 ###############################################################################
-def _mongo_evaluate(json_commands, mongo_collection_obj):
+def _mongo_evaluate_single_row(json_commands, mongo_collection_obj):
     """
     Execute the aggregation JSON command string and return a list of _ids of 
     all documents that satisfy the query.
@@ -831,37 +831,37 @@ def run(mongo_collection_obj,
 
     # tokenize the input expression string and add nlpql_feature filters
     if str == type(infix_str_or_tokens):
-        infix_tokens = is_mongo_computable(infix_str_or_tokens)
-        if 0 == len(infix_tokens):
+        tokens = is_mongo_computable(infix_str_or_tokens)
+        if 0 == len(tokens):
             return []
     else:
         assert list == type(infix_str_or_tokens)
-        infix_tokens = infix_str_or_tokens
+        tokens = infix_str_or_tokens
 
-    assert len(infix_tokens) > 0
-    assert _SINGLE_ROW_OP == infix_tokens[-1] or _MULTI_ROW_OP == infix_tokens[-1]
+    assert len(tokens) > 0
+    assert _SINGLE_ROW_OP == tokens[-1] or _MULTI_ROW_OP == tokens[-1]
 
     # strip the expression type token
-    expr_type = infix_tokens[-1]
-    infix_tokens = infix_tokens[:-1]
+    expr_type = tokens[-1]
+    tokens = tokens[:-1]
 
     if _TRACE:
-        print('infix tokens before postfix in run: {0}'.format(infix_tokens))
+        print('tokens before postfix in run: {0}'.format(tokens))
 
     if _SINGLE_ROW_OP == expr_type:
-        postfix_tokens = _infix_to_postfix(infix_tokens)
+        postfix_tokens = _infix_to_postfix(tokens)
         mongo_pipeline = _to_mongo_pipeline(postfix_tokens,
                                             match_filters,
                                             expr_type,
                                             join_field)
 
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
-        doc_ids = _mongo_evaluate(mongo_pipeline, mongo_collection_obj)
+        doc_ids = _mongo_evaluate_single_row(mongo_pipeline, mongo_collection_obj)
 
     else:
-        # the operator and nlpql features are stored in 'infix_tokens'
-        operator           = infix_tokens[0]
-        nlpql_feature_list = infix_tokens[1]
+        # the operator and nlpql features are stored in the 'tokens' list
+        operator           = tokens[0]
+        nlpql_feature_list = tokens[1]
 
         mongo_pipeline = [
             {
