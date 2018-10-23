@@ -6,30 +6,37 @@ import requests
 class WatsonSentimentTask(BaseTask):
     task_name = "WatsonSentiment"
 
-    # NLPQL
-
     # define sampleTask:
-    # Clarity.AzureSentiment({
-    #   documentset: [ProviderNotes]
+    # Clarity.WatsonSentiment({
+    #   documentset: [ProviderNotes],
+    #   "api_key": "{your_api_key}",
+    #   "authorization":"{your_authorization}"
     # });
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         for doc in self.docs:
-            txt = self.get_document_text(doc)
-            headers = {'Content-Type': 'application/json', 'Ocp-Apim-Subscription-Key': 'f2c27101438f40928132a93b9257abb9'}
-            payload = {"documents": [{"language": "en", "id": "1", "text": txt}]}
-            response = requests.post('https://eastus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment', headers=headers, data=payload)
-            if response.status_code == 200:
-                json_response = response.json()
-                if json_response['errors'] == []:
-                    val = json_response['documents']
-                    obj = {
-                        'score': val['score']
-                    }
 
-                    # writing results
-                    self.write_result_data(temp_file, mongo_client, doc, obj)
+            sentence_list = self.get_document_sentences(doc)
 
-            else:
-                # writing to log (optional)
-                self.write_log_data("OOPS", "No sentiment this time!")
+            for sentence in sentence_list:
+                headers = {'Content-Type': 'application/json', 'apikey': self.pipeline_config.custom_arguments['api_key'], 'authorization': self.pipeline_config.custom_arguments['authorization']}
+                self.write_log_data("INFO", self.pipeline_config.custom_arguments['api_key'])
+
+                payload = {"text": sentence}
+                response = requests.post('https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21', headers=headers, json=payload)
+                if response.status_code == 200:
+                    json_response = response.json()
+                    tones = json_response['document_tone']['tones']
+                    for tone in tones:
+                        obj = {
+                            'tone_name': tone['tone_name'],
+                            'tone_score': tone['score'],
+                            'sentence': sentence
+                        }
+
+                        # writing results
+                        self.write_result_data(temp_file, mongo_client, doc, obj)
+
+                else:
+                    # writing to log (optional)
+                    self.write_log_data("OOPS", "No sentiment this time!")
