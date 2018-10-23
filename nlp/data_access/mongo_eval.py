@@ -909,12 +909,44 @@ def run(mongo_collection_obj,
 ###############################################################################
 def _run_test_pipeline(mongo_collection_obj, pipeline):
     """
-    Run an aggregation pipeline for self-testing.
+    Run an aggregation pipeline for self-testing. Each aggregation result
+    contains a single field called 'ntuple', which is an array of intermediate
+    phenotype result documents.
+
+    For logical AND, there is an ntuple for each value of the join variable.
+    The ntuple contains the documents that were joined on that particular value.
+
+    For logical OR, there is a single ntuple containing all result documents.
+
+    For logical A NOT B, there is an ntuple containing a single doc for each
+    value of the join variable in A but not in B.
+
+    For logical NOT, there is a single ntuple containing all result documents.
     """
 
+    ids = []
+    groups = []
+
     cursor = mongo_collection_obj.aggregate(pipeline)
-    doc_ids = [doc['_id'] for doc in cursor]
-    return sorted(doc_ids)
+
+    empty_cursor = True
+    for agg_result in cursor:
+        empty_cursor = False
+        ntuple = agg_result['ntuple']
+        groups.append(ntuple)
+        for t in ntuple:
+            ids.append(t['_id'])
+    # print('groups: ')
+    # if empty_cursor:
+    #     print('\t[]')
+    # else:
+    #     for g in groups:
+    #         print('\t{0}'.format(g))
+    # print()
+
+    #doc_ids = [doc['_id'] for doc in cursor]
+    #return sorted(doc_ids)
+    return (sorted(ids), groups)
 
 
 ###############################################################################
@@ -929,7 +961,7 @@ def _run_tests():
                                   stdout=subprocess.PIPE,
                                   universal_newlines=True)
     if 0 == len(grep_process.stdout):
-        print('mongo_eval: please start the mongod server for this test...')
+        print('mongo_eval: please start a local mongo server for this test...')
         return
 
     # a name that should be unique...
@@ -1077,89 +1109,89 @@ def _run_tests():
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [4,5,9,10]
 
     # logical AND between features A and B, join on subject
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
 
     # logical AND between features C and D, join on report_id
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,14]
 
     # logical AND between features B, C and D, join on subject
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['B', 'C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [6,7,11,12,14,15]
 
     # logical AND between features A, B, C and D, join on subject
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B', 'C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,6,7,11,12,14,15]
 
     # logical OR between features C and D
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', None,
                                           ['C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,12,13,14,15]
 
     # logical OR between features A, C, and D
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', None,
                                           ['A', 'C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
 
     # A not B, join on report_id
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3]
 
     # A not B, join on subject
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == []
 
     # D not C, join on report_id
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['D', 'C'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [15]
 
     # B not C, join on subject
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['B', 'C'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [9,10]
 
     # not B
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'B')
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
 
     # not D
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'D')
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,6,7,8,9,10,11,12,13]
 
 
