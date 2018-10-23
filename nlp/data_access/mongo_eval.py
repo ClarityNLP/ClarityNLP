@@ -929,23 +929,12 @@ def _run_test_pipeline(mongo_collection_obj, pipeline):
 
     cursor = mongo_collection_obj.aggregate(pipeline)
 
-    empty_cursor = True
     for agg_result in cursor:
-        empty_cursor = False
         ntuple = agg_result['ntuple']
         groups.append(ntuple)
         for t in ntuple:
             ids.append(t['_id'])
-    # print('groups: ')
-    # if empty_cursor:
-    #     print('\t[]')
-    # else:
-    #     for g in groups:
-    #         print('\t{0}'.format(g))
-    # print()
 
-    #doc_ids = [doc['_id'] for doc in cursor]
-    #return sorted(doc_ids)
     return (sorted(ids), groups)
 
 

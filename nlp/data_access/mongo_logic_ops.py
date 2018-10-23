@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-Implementations of n-ary logical AND, n-ary logical OR,
-set difference (A - B) or (A not B), and set complement (NOT A)
-using Mongo aggregation.
+Implementation via Mongo aggregation of n-ary logical AND, n-ary logical OR,
+set difference (either 'A - B' or 'A not B', and set complement (NOT A).
 
 This file is to be imported by the mongo evaluator.
 """
 
 ###############################################################################
 def _append_logical_and(pipeline,             # pipeline to append to
-                        id_string,            # formatted join field
+                        id_string,            # formatted "$join_field"
                         n,                    # n-ary AND
                         nlpql_feature_list):
     """
@@ -35,9 +34,9 @@ def _append_logical_and(pipeline,             # pipeline to append to
         # group these records by value of the join variable
         {
             "$group" : {
-                "_id" : id_string,               # field to group on
+                "_id"    : id_string,            # field to group on
                 "ntuple" : {"$push" : "$$ROOT"}, # grouped documents
-                "count" : {"$sum" : 1}           # count joined docs for
+                "count"  : {"$sum" : 1}          # count joined docs for
                                                  # each value of join var
             }
         },
@@ -57,15 +56,6 @@ def _append_logical_and(pipeline,             # pipeline to append to
         }
 
         # the ntuple array contains each group of joined docs
-
-        # # serialize the entries, using one element from docs at a time;
-        # # creates new 'docs' field for each matching record
-        # { "$unwind" : "$docs" },
-
-        # # results after joining on subject: have _id, docs, and count fields
-
-        # # only emit the docs entries into the result set
-        # { "$replaceRoot" : { "newRoot" : "$docs" }}
     ]
 
     return pipeline.extend(stages)
@@ -73,11 +63,12 @@ def _append_logical_and(pipeline,             # pipeline to append to
 
 ###############################################################################
 def _append_logical_a_not_b(pipeline,         # pipeline to append to
-                            id_string,        # formatted join field
+                            id_string,        # formatted "$join_field"
                             nlpql_feature_a,
                             nlpql_feature_b):
     """
     Join on the id_string and return all docs from A that are not in B.
+    The id_string parameter encodes the join variable: "$join_variable".
     """
 
     stages = [
@@ -92,34 +83,25 @@ def _append_logical_a_not_b(pipeline,         # pipeline to append to
         # group these records by value of the join variable
         {
             "$group" : {
-                "_id" : id_string,               # field to group on
+                "_id"    : id_string,            # field to group on
                 "ntuple" : {"$push" : "$$ROOT"}, # grouped documents
-                "count" : { "$sum" : 1}          # count joined docs for
+                "count"  : { "$sum" : 1}         # count joined docs for
                                                  # each value of join var
             }
         },
 
-        # {'_id':..., 'docs':[records w/same value of join var], 'count':...}
+        # {'_id':..., 'ntuple':[records w/same value of join var], 'count':...}
 
         # keep only the results with a single NLPQL feature
         { "$match" : { "count" : { "$eq" : 1 }}},
 
-        # keep only the docs having nlpql_feature_a
+        # of these, keep only the docs having nlpql_feature_a
         { "$match" : { "ntuple.nlpql_feature" : { "$in" : [nlpql_feature_a]}}},
 
-        # # serialize the entries, using one element from docs at a time;
-        # # creates new 'docs' field for each matching record
-        # { "$unwind" : "$docs" },
-
-        # # results after joining on subject: have _id, docs, and count fields
-
-        # # only emit the docs entries into the result set
-        # { "$replaceRoot" : { "newRoot" : "$docs" }}
-
-        # project out the _id values in the ntuple array
+        # project out the ntuple array
         {
             "$project" : {
-                "_id"     : 0,       # suppress _id field, not needed
+                "_id"    : 0,        # suppress _id field, not needed
                 "ntuple" : "$ntuple" # keep ntuple array
             }
         }
@@ -130,7 +112,7 @@ def _append_logical_a_not_b(pipeline,         # pipeline to append to
 
 ###############################################################################
 def _append_logical_or(pipeline,            # pipeline to append to
-                       id_string,           # formatted join field
+                       id_string,           # formatted "$join_field"
                        nlpql_feature_list):
     """
     Compute the union of all records having the given nlpql features.
@@ -152,7 +134,7 @@ def _append_logical_or(pipeline,            # pipeline to append to
         # want to create an array of all _ids in the group
         {
             "$group" : {
-                "_id" : id_string,              # field to group on
+                "_id"    : id_string,              # field to group on
                 "ntuple" : {"$push" : "$$ROOT"} # grouped documents
             }
         },
@@ -171,7 +153,7 @@ def _append_logical_or(pipeline,            # pipeline to append to
 
 ###############################################################################
 def _append_logical_not_a(pipeline,       # pipeline to append to
-                          id_string,      # formatted join field
+                          id_string,      # formatted "$join_field"
                           nlpql_feature):
     """
     Find all records that do NOT have the given nlpql feature.
@@ -188,7 +170,7 @@ def _append_logical_not_a(pipeline,       # pipeline to append to
         # group by value of the nlpql_feature
         {
             "$group" : {
-                "_id" : id_string,              # field to group on
+                "_id"    : id_string,           # field to group on
                 "ntuple" : {"$push" : "$$ROOT"} # grouped documents
             }
         },
@@ -196,8 +178,8 @@ def _append_logical_not_a(pipeline,       # pipeline to append to
         # project out the ntuple array
         {
             "$project" : {
-                "_id"     : 0, # suppress _id field, not needed
-                "ntuple" : 1   # keep ntuple array
+                "_id"    : 0, # suppress _id field, not needed
+                "ntuple" : 1  # keep ntuple array
             }
         }
     ]
