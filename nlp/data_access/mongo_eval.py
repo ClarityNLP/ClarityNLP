@@ -236,31 +236,26 @@ _LEFT_PARENS     = '('
 _RIGHT_PARENS    = ')'
 _EMPTY_JSON      = '[]'
 _EMPTY_LIST      = []
-_UNKNOWN         = 'UNKNOWN'
-_OPERATOR        = 'OPERATOR'
-_IDENTIFIER      = 'IDENTIFIER'
-_VARIABLE        = 'VARIABLE'
-_NUMERIC_LITERAL = 'NUMERIC_LITERAL'
-_EXPR_MATH       = 'MATH'
-_EXPR_LOGIC      = 'LOGIC'
+_SINGLE_ROW_OP   = 'SINGLE_ROW_OP'
+_MULTI_ROW_OP    = 'MULTI_ROW_OP'
 
 
 ###############################################################################
-def _is_pure_mathematical_expr(infix_tokens):
+def _is_single_row_op(infix_tokens):
     """
     Return a Boolean result indicating whether the given infix expression
-    is a "pure mathematical" expression.
+    can be evaluated as a "single-row" operation.
 
-    Pure mathematical expressions consist entirely of terms of the form:
+    Pure single-row operations consist entirely of terms of the form:
 
             nlpql_feature.value
             operator
             numeric_literal
 
     These expressions involve a single nlpql_feature, so that all variables
-    can be found in the same 'row' of the intermediate result (mongo document).
-    The condition of being all in the same row means that no joins are needed
-    to evaluate the final result.
+    can be found in the same 'row' (mongo document) of the intermediate
+    results. The condition of being all in the same row means that no joins
+    are needed to evaluate the expression.
 
     """
 
@@ -281,7 +276,7 @@ def _is_pure_mathematical_expr(infix_tokens):
         if match:
             continue
 
-        # if here, not a pure mathematical expression
+        # if here, not a single-row operation
         return _EMPTY_LIST
 
     if 1 == len(nlpql_feature_set):
@@ -309,17 +304,18 @@ def _is_pure_mathematical_expr(infix_tokens):
 
 
 ###############################################################################
-def _is_logic_expr(infix_tokens):
+def _is_multi_row_op(infix_tokens):
     """
     Return a Boolean result indicating whether the given infix expression
-    is a "pure logic" expression.
+    is a "multi-row" operation.
 
-    Pure logic expressions consist entirely of terms of the form:
+    Multi-row operations consist entirely of terms of the form:
 
         identifier
         n-way 'and'
         n-way 'or'
         A not B
+        not A
 
     These expressions do NOT involve numeric literals or terms of the form
     nlpql_feature.value.
@@ -330,7 +326,7 @@ def _is_logic_expr(infix_tokens):
     """
 
     if _TRACE:
-        print('_is_logic_expr: testing {0}'.format(infix_tokens))
+        print('_is_multi_row_op: testing {0}'.format(infix_tokens))
 
     operator_set = set()
     identifier_set = set()
@@ -349,7 +345,7 @@ def _is_logic_expr(infix_tokens):
             identifier_set.add(match.group())
             continue
 
-        # if here, not a pure logic expression
+        # if here, not a multi-row operation
         return _EMPTY_LIST
 
     if 1 == len(operator_set):
@@ -368,34 +364,17 @@ def _is_logic_expr(infix_tokens):
             new_infix_tokens.append(list(identifier_set))
             if _TRACE: print('\tfound "A not B" expression')
             return new_infix_tokens
+
+        # not A
+        elif 'not' == operator and 1 == len(identifier_set):
+            new_infix_tokens = [operator]
+            new_infix_tokens.append(list(identifier_set))
+            if _TRACE: print('\tfound "not A" expression')
+            return new_infix_tokens
         else:
             return _EMPTY_LIST
     else:
         return _EMPTY_LIST
-
-    
-###############################################################################
-def _get_token_type(token):
-    """
-    Test the form of the token and return whether it is a numeric literal,
-    operator, etc.
-
-    """
-
-    match = _regex_feature_and_value.match(token)
-    if match:
-        return _VARIABLE
-    match = _regex_numeric_literal.match(token)
-    if match:
-        return _NUMERIC_LITERAL
-    match = _regex_operator.match(token)
-    if match:
-        return _OPERATOR
-    match = _regex_identifier.match(token)
-    if match:
-        return _IDENTIFIER
-    
-    return UNKNOWN
 
 
 ###############################################################################
@@ -731,7 +710,7 @@ def _to_mongo_pipeline(postfix_tokens,
     # insert the filters into the aggregation pipeline
     mongo_commands = _filters_to_pipeline(mongo_commands, match_filters)
 
-    if _EXPR_MATH == expr_type:
+    if _SINGLE_ROW_OP == expr_type:
         # joins are not needed, can ignore join_field
         for token in postfix_tokens:
             if not _is_operator(token):
@@ -754,7 +733,7 @@ def _to_mongo_pipeline(postfix_tokens,
             print(err_msg)
             mongo_commands.append(_EMPTY_JSON)
 
-    elif _EXPR_LOGIC == expr_type:
+    elif _MULTI_ROW_OP == expr_type:
         # either an n-way 'AND' or n-way 'OR' expression
         operator = postfix_tokens[-1]
         print('here is operator: {0}'.format(operator))
@@ -799,19 +778,19 @@ def is_mongo_computable(infix_expr):
     infix_expr = _insert_whitespace(infix_expr)
     infix_tokens = _tokenize(infix_expr)
 
-    new_infix_tokens = _is_pure_mathematical_expr(infix_tokens)
+    new_infix_tokens = _is_single_row_op(infix_tokens)
     if len(new_infix_tokens) > 0:
-        new_infix_tokens.append(_EXPR_MATH)
+        new_infix_tokens.append(_SINGLE_ROW_OP)
         if _TRACE:
-            print('\tREWRITTEN MATH EXPR: {0}'.format(new_infix_tokens))
+            print('\tREWRITTEN SINGLE-ROW OP: {0}'.format(new_infix_tokens))
         return new_infix_tokens
 
-    # new_infix_tokens = _is_logic_expr(infix_tokens)
-    # if len(new_infix_tokens) > 0:
-    #     new_infix_tokens.append(_EXPR_LOGIC)
-    #     if _TRACE:
-    #         print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
-    #     return new_infix_tokens
+    new_infix_tokens = _is_multi_row_op(infix_tokens)
+    if len(new_infix_tokens) > 0:
+        new_infix_tokens.append(_MULTI_ROW_OP)
+        if _TRACE:
+            print('\tREWRITTEN MULTI_ROW_OP: {0}'.format(new_infix_tokens))
+        return new_infix_tokens
     
     return _EMPTY_LIST
 
@@ -860,7 +839,7 @@ def run(mongo_collection_obj,
         infix_tokens = infix_str_or_tokens
 
     assert len(infix_tokens) > 0
-    assert _EXPR_MATH == infix_tokens[-1] or _EXPR_LOGIC == infix_tokens[-1]
+    assert _SINGLE_ROW_OP == infix_tokens[-1] or _MULTI_ROW_OP == infix_tokens[-1]
 
     # strip the expression type token
     expr_type = infix_tokens[-1]
@@ -869,7 +848,7 @@ def run(mongo_collection_obj,
     if _TRACE:
         print('infix tokens before postfix in run: {0}'.format(infix_tokens))
 
-    if _EXPR_MATH == expr_type:
+    if _SINGLE_ROW_OP == expr_type:
         postfix_tokens = _infix_to_postfix(infix_tokens)
         mongo_pipeline = _to_mongo_pipeline(postfix_tokens,
                                             match_filters,
@@ -975,7 +954,7 @@ def _run_tests():
         for elem in data:
             print(elem)
 
-    # test expressions for the math evaluator
+    # data for testing single-row operations
     # operators and operands MUST be separated by whitespace
     TEST_EXPRESSIONS = [
         'not (T.A >= 8)',
@@ -1021,12 +1000,12 @@ def _run_tests():
     for expr in TEST_EXPRESSIONS:
         if _TRACE: print('expression: {0}'.format(expr))
 
-        # no match filters needed for math testing
+        # run the single-row operation using MongoDB aggregation
         doc_ids = run(mongo_collection_obj, expr, 'report_id')
         
         if _TRACE: print('results: ')
 
-        # extract variable values from each doc, substitute, and evaluate
+        # now run the same expression using the Python evaluator
         expr_save = expr
         for doc in cursor:
             if _TRACE: print('\t{0}'.format(doc))
@@ -1056,6 +1035,7 @@ def _run_tests():
                 success = False
                 if _TRACE: print('\t\tCOULD NOT EVALUATE')
 
+            # compare MongoDB result and python result
             if success:
                 if doc['_id'] in doc_ids:
                     if _TRACE: print('\t\tTRUE')
@@ -1068,7 +1048,7 @@ def _run_tests():
 
     mongo_db_obj.drop_collection(COLLECTION_NAME)
 
-    # data for testing logic ops
+    # data for testing multi-row operations
     data = [
         {'_id':1,  'nlpql_feature':'A', 'report_id':1, 'subject':1},
         {'_id':2,  'nlpql_feature':'A', 'report_id':2, 'subject':2},
@@ -1094,35 +1074,35 @@ def _run_tests():
     mongo_db_obj.drop_collection(COLLECTION_NAME)
     result = mongo_collection_obj.insert_many(data)
 
-    # logical AND between features A and B, join on report_id
+    # logical AND between features A and B, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [4,5,9,10]
 
-    # logical AND between features A and B, join on subject
+    # logical AND between features A and B, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
 
-    # logical AND between features C and D, join on report_id
+    # logical AND between features C and D, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,14]
 
-    # logical AND between features B, C and D, join on subject
+    # logical AND between features B, C and D, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['B', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [6,7,11,12,14,15]
 
-    # logical AND between features A, B, C and D, join on subject
+    # logical AND between features A, B, C and D, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B', 'C', 'D'])
@@ -1143,28 +1123,28 @@ def _run_tests():
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
 
-    # A not B, join on report_id
+    # A not B, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3]
 
-    # A not B, join on subject
+    # A not B, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == []
 
-    # D not C, join on report_id
+    # D not C, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['D', 'C'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [15]
 
-    # B not C, join on subject
+    # B not C, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['B', 'C'])
