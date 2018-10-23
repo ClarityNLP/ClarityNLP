@@ -146,12 +146,26 @@ import json
 import optparse
 import subprocess
 from pymongo import MongoClient
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 if __name__ == '__main__':
     import mongo_logic_ops
 else:
     from data_access import mongo_logic_ops
+
+# results are returned as instances of this namedtuple type
+MONGO_EVAL_FIELDS = ['operation', 'doc_ids', 'doc_groups']
+MongoEvalResult = namedtuple('MongoEvalResult', MONGO_EVAL_FIELDS)
+
+# values for the 'mongo_op' field
+MONGO_OP_MATH    = 'MATH'
+MONGO_OP_AND     = 'AND'
+MONGO_OP_OR      = 'OR'
+MONGO_OP_SETDIFF = 'SETDIFF'
+MONGO_OP_NOT     = 'NOT'
+
+
+# non-exported variables
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
@@ -159,7 +173,7 @@ _VERSION_MINOR = 2
 _MODULE_NAME = 'mongo_eval.py'
 
 # set to True to enable debug output
-_TRACE = False
+_TRACE = True
 
 # operators in an NLPQL 'where' expression
 _str_op = r'\A(==|!=|<=|>=|and|or|not|[-+/*%\^<>=])\Z'
@@ -785,12 +799,12 @@ def is_mongo_computable(infix_expr):
             print('\tREWRITTEN SINGLE-ROW OP: {0}'.format(new_infix_tokens))
         return new_infix_tokens
 
-    new_infix_tokens = _is_multi_row_op(infix_tokens)
-    if len(new_infix_tokens) > 0:
-        new_infix_tokens.append(_MULTI_ROW_OP)
-        if _TRACE:
-            print('\tREWRITTEN MULTI_ROW_OP: {0}'.format(new_infix_tokens))
-        return new_infix_tokens
+    # new_infix_tokens = _is_multi_row_op(infix_tokens)
+    # if len(new_infix_tokens) > 0:
+    #     new_infix_tokens.append(_MULTI_ROW_OP)
+    #     if _TRACE:
+    #         print('\tREWRITTEN MULTI_ROW_OP: {0}'.format(new_infix_tokens))
+    #     return new_infix_tokens
     
     return _EMPTY_LIST
 
@@ -804,7 +818,7 @@ def run(mongo_collection_obj,
     """
     Evaluate the given infix expression, generate a MongoDB aggregation
     command from it, execute the command against the specified collection,
-    and return a list of _ids for all documents satisfying the expression.
+    and return a MongoEvalResult namedtuple with the results.
 
     The infix_expr is a string that is assumed to have survived the NLPQL
     parsing process, so the syntax is assumed to be correct.
@@ -858,6 +872,10 @@ def run(mongo_collection_obj,
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
         doc_ids = _mongo_evaluate_single_row(mongo_pipeline, mongo_collection_obj)
 
+        mongo_eval_result = MongoEvalResult(operation  = MONGO_OP_MATH,
+                                            doc_ids    = doc_ids,
+                                            doc_groups = [])
+
     else:
         # the operator and nlpql features are stored in the 'tokens' list
         operator           = tokens[0]
@@ -882,7 +900,7 @@ def run(mongo_collection_obj,
         # keep all doc ids for which the aggregation result is True
         doc_ids = [doc['_id'] for doc in cursor]
 
-    return doc_ids
+    return mongo_eval_result
 
 
 ###############################################################################
@@ -1001,7 +1019,7 @@ def _run_tests():
         if _TRACE: print('expression: {0}'.format(expr))
 
         # run the single-row operation using MongoDB aggregation
-        doc_ids = run(mongo_collection_obj, expr, 'report_id')
+        mongo_eval_result = run(mongo_collection_obj, expr, 'report_id')
         
         if _TRACE: print('results: ')
 
@@ -1037,7 +1055,7 @@ def _run_tests():
 
             # compare MongoDB result and python result
             if success:
-                if doc['_id'] in doc_ids:
+                if doc['_id'] in mongo_eval_result.doc_ids:
                     if _TRACE: print('\t\tTRUE')
                     assert boolean_result
                 else:
