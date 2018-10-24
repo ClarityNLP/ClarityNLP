@@ -1,5 +1,6 @@
 import datetime
 import sys
+import copy
 import traceback
 from functools import reduce
 import collections
@@ -670,7 +671,7 @@ def mongo_process_operations(infix_tokens,
 
         # single-row evaluation results, both intermediate and final
         for doc in mongo_docs['results']:
-            ret = doc
+            ret = copy.deepcopy(doc)
             ret['job_id'] = job_id
             ret['phenotype_id'] = phenotype_id
             ret['owner'] = phenotype_owner
@@ -679,20 +680,31 @@ def mongo_process_operations(infix_tokens,
             ret['raw_definition_text'] = expression
             ret['nlpql_feature'] = operation_name
             ret['phenotype_final'] = c['final']
-            
-            if '_id' in ret:
-                ret['orig_id'] = ret['_id']
-                ret.pop('_id', None)
 
+            # save the original id in an array field
+            #if '_id' in ret:
+            #    ret['orig_id'] = ret['_id']
+            #    ret.pop('_id', None)
+
+            # should never encounter a doc with no _id...
+            if not '_id' in ret:
+                print('this doc has no _id field: ')
+                print(doc)
+                print()
+                assert '_id' in ret
+
+            # source_ids is an array field
+            ret['source_ids'] = [doc['_id']]
+            ret.pop('_id', None)
+            
             output.append(ret)
 
         if len(output) > 0:
             db.phenotype_results.insert_many(output)
         else:
-            print('mongo_process_operations: No phenotype matches on %s.' % expression)
+            print('mongo_process_operations (math): No phenotype matches on %s.' % expression)
 
-    elif (mongo_eval.MONGO_OP_OR  == eval_result.operation) or  \
-         (mongo_eval.MONGO_OP_AND == eval_result.operation):
+    elif mongo_eval.MONGO_OP_OR == eval_result.operation:
         # multi-row evaluation result, either n-ary AND, n-ary OR
         print('           operation: {0}'.format(eval_result.operation))
         print('            is_final: {0}'.format(is_final))
@@ -706,7 +718,71 @@ def mongo_process_operations(infix_tokens,
             # ret = {}
             # counter = 1
             for doc in g:
-                print('\t\tdoc id {0}, nlpql_feature {1}'.format(doc['_id'], doc['nlpql_feature']))
+                print('\t\tdoc id {0}, nlpql_feature {1}, source_ids: {2}'.
+                      format(doc['_id'], doc['nlpql_feature'], doc['source_ids']))
+
+                # copy doc object to output and remove source _id (MongoDB will
+                # assign a new _id when writing this result)
+                ret = {} #copy.deepcopy(doc)
+                #ret.pop('_id', None)
+
+                # get doc fields (these vary with the NLPQL task)
+                fields = doc.keys()
+
+                EXCLUDE_FIELDS = [
+                    '_id', 'job_id', 'phenotype_id', 'owner',
+                    'job_date', 'context_type', 'raw_definition_text',
+                    'nlpql_feature', 'phenotype_final'
+                ]
+
+                fields_to_copy = [f for f in fields if f not in EXCLUDE_FIELDS]
+                for f in fields_to_copy:
+                    ret[f] = copy.deepcopy(doc[f])
+                
+                if 'source_ids' not in doc:
+                    ret['source_ids'] = [doc['_id']]
+                else:
+                    ret['source_ids'] = copy.deepcopy(doc['source_ids'])
+                    ret['source_ids'].append(doc['_id'])
+                
+                if 'source_features' not in doc:
+                    ret['source_features'] = [doc['nlpql_feature']]
+                else:
+                    ret['source_features'] = copy.deepcopy(doc['source_features'])
+                    ret['source_features'].append(doc['nlpql_feature'])
+
+                if 'source_sentences' not in doc:
+                    ret['source_sentences'] = [doc['sentence']]
+                else:
+                    ret['source_sentences'] = copy.deepcopy(doc['source_sentences'])
+                    ret['source_sentences'].append(doc['sentence'])
+
+                if 'report_id' == on:
+                    if 'source_report_ids' not in doc:
+                        ret['source_report_ids'] = [doc['report_id']]
+                    else:
+                        ret['source_report_ids'] = copy.deepcopy(doc['source_report_ids'])
+                        ret['source_report_ids'].append(doc['report_id'])
+                else:
+                    if 'source_subjects' not in doc:
+                        ret['source_subjects'] = [doc['subject']]
+                    else:
+                        ret['source_subjects'] = copy.deepcopy(doc['source_subjects'])
+                        ret['source_subjects'].append(doc['subject'])
+                    
+                # update job and phenotype fields
+                ret['job_id'] = job_id
+                ret['phenotype_id'] = phenotype_id
+                ret['owner'] = phenotype_owner
+                ret['job_date'] = datetime.datetime.now()
+                ret['context_type'] = on
+                ret['raw_definition_text'] = expression
+                ret['nlpql_feature'] = operation_name
+                ret['phenotype_final'] = c['final']
+
+                    
+                output.append(ret)
+
                 # n-ary fields, need a numeric suffix
                 # ret['_id_{0}'.format(counter)] = doc['_id']
                 # ret['feature_{0}'.format(counter)] = doc['nlpql_feature']
@@ -722,26 +798,13 @@ def mongo_process_operations(infix_tokens,
 
                 # counter = counter + 1
 
-        #     ret['job_id'] = job_id
-        #     ret['phenotype_id'] = phenotype_id
-        #     ret['owner'] = phenotype_owner
-        #     ret['job_date'] = datetime.datetime.now()
-        #     ret['context_type'] = on
-        #     ret['raw_definition_text'] = expression
-        #     ret['nlpql_feature'] = operation_name
-        #     ret['phenotype_final'] = c['final']
 
-        #     if '_id' in ret:
-        #         ret['orig_id'] = ret['_id']
-        #         ret.pop('_id', None)
+        #    group_counter = group_counter + 1
 
-        #     output.append(ret)
-        #     group_counter = group_counter + 1
-
-        # if len(output) > 0:
-        #     db.phenotype_results.insert_many(output)
-        # else:
-        #     print('mongo_process_operations: No phenotype matches on %s.' % expression)
+        if len(output) > 0:
+            db.phenotype_results.insert_many(output)
+        else:
+            print('mongo_process_operations (or): No phenotype matches on %s.' % expression)
 
 
 

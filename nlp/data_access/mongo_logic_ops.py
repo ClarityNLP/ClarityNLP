@@ -112,14 +112,9 @@ def _append_logical_a_not_b(pipeline,         # pipeline to append to
 
 ###############################################################################
 def _append_logical_or(pipeline,            # pipeline to append to
-                       id_string,           # formatted "$join_field"
                        nlpql_feature_list):
     """
-    Compute the union of all records having the given nlpql features by 
-    performing a full outer join on the join field.
-
-    The actual mathematical operation performed is
-    A OR B NOT (all other NLPQL features).
+    Compute the union of all records having the specified nlpql_features.
     """
 
     stages = [
@@ -131,11 +126,10 @@ def _append_logical_or(pipeline,            # pipeline to append to
             }
         },
 
-        # group these records (field to group on does not matter)
-        # want to create an array of all _ids in the group
+        # group these records by nlpql_feature
         {
             "$group" : {
-                "_id"    : id_string,            # field to group on
+                "_id"    : "$nlpql_feature",
                 "ntuple" : {"$addToSet" : "$$ROOT"}  # grouped documents
             }
         },
@@ -205,9 +199,10 @@ def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
 ###############################################################################
 def _logical_a_or_b(pipeline, field_to_join_on, nlpql_feature_list):
 
-    id_string = "${0}".format(field_to_join_on)
+    #id_string = "${0}".format(field_to_join_on)
 
-    _append_logical_or(pipeline, id_string, nlpql_feature_list)
+    _append_logical_or(pipeline, #id_string,
+                       nlpql_feature_list)
     return pipeline
 
 
