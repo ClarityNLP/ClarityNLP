@@ -115,7 +115,8 @@ def _append_logical_or(pipeline,            # pipeline to append to
                        id_string,           # formatted "$join_field"
                        nlpql_feature_list):
     """
-    Compute the union of all records having the given nlpql features.
+    Compute the union of all records having the given nlpql features by 
+    performing a full outer join on the join field.
 
     The actual mathematical operation performed is
     A OR B NOT (all other NLPQL features).
@@ -134,15 +135,15 @@ def _append_logical_or(pipeline,            # pipeline to append to
         # want to create an array of all _ids in the group
         {
             "$group" : {
-                "_id"    : id_string,              # field to group on
-                "ntuple" : {"$push" : "$$ROOT"} # grouped documents
+                "_id"    : id_string,            # field to group on
+                "ntuple" : {"$addToSet" : "$$ROOT"}  # grouped documents
             }
         },
 
         # project out the ntuple array
         {
             "$project" : {
-                "_id"     : 0, # suppress _id field, not needed
+                "_id"    : 0,  # suppress _id field, not needed
                 "ntuple" : 1   # keep ntuple array
             }
         }

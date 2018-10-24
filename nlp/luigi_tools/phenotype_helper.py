@@ -629,48 +629,119 @@ def mongo_process_operations(infix_tokens,
     # sentence_x, sentence_y,
     # either subject_x, subject_y or report_id_x, report_id_y
 
-    try:
-        operation_name = c['name']
-        if phenotype.context == 'Document':
-            on = 'report_id'
-        else:
-            on = 'subject'
-        expression = c['raw_text']
-        eval_result = mongo_eval.run(mongo_collection_obj,
-                                     infix_tokens,
-                                     on,
-                                     match_filters)
+    operation_name = c['name']
+    if phenotype.context == 'Document':
+        on = 'report_id'
+    else:
+        on = 'subject'
+    expression = c['raw_text']
+    
+    eval_result = mongo_eval.run(mongo_collection_obj, infix_tokens, on, match_filters)
+    #print('HERE IS THE eval_result: ')
+    #print('{0}'.format(eval_result))
+    if mongo_eval.MONGO_OP_ERROR == eval_result.operation:
+        # could not compute result
+        print('mongo_process_operations error: ')
+        print('\tMONGO_OP_ERROR for operation {0}'.format(operation_name))
+        client.close()
+        return
 
-        if mongo_eval.MONGO_OP_MATH == eval_result.operation:
-            mongo_docs = results.lookup_phenotype_results_by_id(eval_result.doc_ids)
-
-            output = list()
-            for doc in mongo_docs['results']:
-                ret = doc
-                ret['job_id'] = job_id
-                ret['phenotype_id'] = phenotype_id
-                ret['owner'] = phenotype_owner
-                ret['job_date'] = datetime.datetime.now()
-                ret['context_type'] = on
-                ret['raw_definition_text'] = expression
-                ret['nlpql_feature'] = operation_name
-                ret['phenotype_final'] = c['final']
-
-                if '_id' in ret:
-                    ret['orig_id'] = ret['_id']
-                    ret.pop('_id', None)
-
-                output.append(ret)
-
-            if len(output) > 0:
-                db.phenotype_results.insert_many(output)
-            else:
-                print('mongo_process_operations: No phenotype matches on %s.' % expression)
-
+    try:        
+        mongo_docs = results.lookup_phenotype_results_by_id(eval_result.doc_ids)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
+        mongo_docs = []
     finally:
         client.close()
+
+    if 0 == len(mongo_docs):
+        return
+        
+    output = list()
+    is_final = c['final']
+    
+    #print('Here is final: {0}'.format(c['final']))
+    #print('Here is type(final): {0}'.format(type(c['final'])))
+    #print('Here is eval_result.operation: {0}'.format(eval_result.operation))
+    
+    # if intermediate result or if single-row computation
+    #   if (not c['final']) or (mongo_eval.MONGO_OP_MATH == eval_result.operation):
+    if mongo_eval.MONGO_OP_MATH == eval_result.operation:
+
+        # single-row evaluation results, both intermediate and final
+        for doc in mongo_docs['results']:
+            ret = doc
+            ret['job_id'] = job_id
+            ret['phenotype_id'] = phenotype_id
+            ret['owner'] = phenotype_owner
+            ret['job_date'] = datetime.datetime.now()
+            ret['context_type'] = on
+            ret['raw_definition_text'] = expression
+            ret['nlpql_feature'] = operation_name
+            ret['phenotype_final'] = c['final']
+            
+            if '_id' in ret:
+                ret['orig_id'] = ret['_id']
+                ret.pop('_id', None)
+
+            output.append(ret)
+
+        if len(output) > 0:
+            db.phenotype_results.insert_many(output)
+        else:
+            print('mongo_process_operations: No phenotype matches on %s.' % expression)
+
+    elif (mongo_eval.MONGO_OP_OR  == eval_result.operation) or  \
+         (mongo_eval.MONGO_OP_AND == eval_result.operation):
+        # multi-row evaluation result, either n-ary AND, n-ary OR
+        print('           operation: {0}'.format(eval_result.operation))
+        print('            is_final: {0}'.format(is_final))
+        print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+        print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+
+        doc_groups = eval_result.doc_groups
+        group_counter = 1
+        for g in doc_groups:
+            print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+            # ret = {}
+            # counter = 1
+            for doc in g:
+                print('\t\tdoc id {0}, nlpql_feature {1}'.format(doc['_id'], doc['nlpql_feature']))
+                # n-ary fields, need a numeric suffix
+                # ret['_id_{0}'.format(counter)] = doc['_id']
+                # ret['feature_{0}'.format(counter)] = doc['nlpql_feature']
+                # if is_final:
+                #     ret['report_date_{0}'.format(counter)] = doc['report_date']
+                #     ret['sentence_{0}'.format(counter)] = doc['sentence']
+                #     if 'report_id' == on:
+                #         ret['report_id_{0}'.format(counter)] = doc['report_id']
+                #         ret['subject'] = doc['subject']
+                #     else:
+                #         ret['report_id'] = doc['report_id']
+                #         ret['subject_{0}'.format(counter)] = doc['subject']
+
+                # counter = counter + 1
+
+        #     ret['job_id'] = job_id
+        #     ret['phenotype_id'] = phenotype_id
+        #     ret['owner'] = phenotype_owner
+        #     ret['job_date'] = datetime.datetime.now()
+        #     ret['context_type'] = on
+        #     ret['raw_definition_text'] = expression
+        #     ret['nlpql_feature'] = operation_name
+        #     ret['phenotype_final'] = c['final']
+
+        #     if '_id' in ret:
+        #         ret['orig_id'] = ret['_id']
+        #         ret.pop('_id', None)
+
+        #     output.append(ret)
+        #     group_counter = group_counter + 1
+
+        # if len(output) > 0:
+        #     db.phenotype_results.insert_many(output)
+        # else:
+        #     print('mongo_process_operations: No phenotype matches on %s.' % expression)
 
 
 
