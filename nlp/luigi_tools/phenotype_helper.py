@@ -681,11 +681,6 @@ def mongo_process_operations(infix_tokens,
             ret['nlpql_feature'] = operation_name
             ret['phenotype_final'] = c['final']
 
-            # save the original id in an array field
-            #if '_id' in ret:
-            #    ret['orig_id'] = ret['_id']
-            #    ret.pop('_id', None)
-
             # should never encounter a doc with no _id...
             if not '_id' in ret:
                 print('this doc has no _id field: ')
@@ -715,20 +710,17 @@ def mongo_process_operations(infix_tokens,
         group_counter = 1
         for g in doc_groups:
             print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
-            # ret = {}
-            # counter = 1
+            group_counter += 1
             for doc in g:
                 print('\t\tdoc id {0}, nlpql_feature {1}, source_ids: {2}'.
                       format(doc['_id'], doc['nlpql_feature'], doc['source_ids']))
 
-                # copy doc object to output and remove source _id (MongoDB will
-                # assign a new _id when writing this result)
-                ret = {} #copy.deepcopy(doc)
-                #ret.pop('_id', None)
+                ret = {}
 
                 # get doc fields (these vary with the NLPQL task)
                 fields = doc.keys()
 
+                # don't copy these fields from doc to ret
                 EXCLUDE_FIELDS = [
                     '_id', 'job_id', 'phenotype_id', 'owner',
                     'job_date', 'context_type', 'raw_definition_text',
@@ -738,38 +730,85 @@ def mongo_process_operations(infix_tokens,
                 fields_to_copy = [f for f in fields if f not in EXCLUDE_FIELDS]
                 for f in fields_to_copy:
                     ret[f] = copy.deepcopy(doc[f])
-                
-                if 'source_ids' not in doc:
-                    ret['source_ids'] = [doc['_id']]
-                else:
-                    ret['source_ids'] = copy.deepcopy(doc['source_ids'])
-                    ret['source_ids'].append(doc['_id'])
-                
-                if 'source_features' not in doc:
-                    ret['source_features'] = [doc['nlpql_feature']]
-                else:
-                    ret['source_features'] = copy.deepcopy(doc['source_features'])
-                    ret['source_features'].append(doc['nlpql_feature'])
 
-                if 'source_sentences' not in doc:
-                    ret['source_sentences'] = [doc['sentence']]
-                else:
-                    ret['source_sentences'] = copy.deepcopy(doc['source_sentences'])
-                    ret['source_sentences'].append(doc['sentence'])
+                if not is_final:
+                    if 'source_ids' not in doc:
+                        ret['source_ids'] = [doc['_id']]
+                    else:
+                        ret['source_ids'] = copy.deepcopy(doc['source_ids'])
+                        ret['source_ids'].append(doc['_id'])
 
-                if 'report_id' == on:
-                    if 'source_report_ids' not in doc:
-                        ret['source_report_ids'] = [doc['report_id']]
+                    if 'source_features' not in doc:
+                        ret['source_features'] = [doc['nlpql_feature']]
                     else:
-                        ret['source_report_ids'] = copy.deepcopy(doc['source_report_ids'])
-                        ret['source_report_ids'].append(doc['report_id'])
+                        ret['source_features'] = copy.deepcopy(doc['source_features'])
+                        ret['source_features'].append(doc['nlpql_feature'])
+
+                    if 'source_sentences' not in doc:
+                        ret['source_sentences'] = [doc['sentence']]
+                    else:
+                        ret['source_sentences'] = copy.deepcopy(doc['source_sentences'])
+                        sentence = doc['sentence']
+                        num_sentences = len(ret['source_sentences'])
+                        all_equal = True
+                        for j in reversed(range(num_sentences)):
+                            prev = ret['source_sentences'][j]
+                            if None == prev or sentence == prev:
+                                continue
+                            else:
+                                all_equal = False
+                                break
+                        if all_equal:
+                            # reduce file size by not repeating the same sentence
+                            ret['source_sentences'].append(None)
+                        else:
+                            ret['source_sentences'].append(sentence)
                 else:
-                    if 'source_subjects' not in doc:
-                        ret['source_subjects'] = [doc['subject']]
+                    if 'source_ids' not in doc:
+                        source_ids = [doc['_id']]
                     else:
-                        ret['source_subjects'] = copy.deepcopy(doc['source_subjects'])
-                        ret['source_subjects'].append(doc['subject'])
-                    
+                        source_ids = copy.deepcopy(doc['source_ids'])
+                        source_ids.append(doc['_id'])                        
+                        
+                    if 'source_features' not in doc:
+                        source_features = [doc['nlpql_feature']]
+                    else:
+                        source_features = copy.deepcopy(doc['source_features'])
+                        source_features.append(doc['nlpql_feature'])
+
+                    if 'source_sentences' not in doc:
+                        source_sentences = [doc['sentence']]
+                    else:
+                        source_sentences = copy.deepcopy(doc['source_sentences'])
+                        sentence = doc['sentence']
+                        num_sentences = len(source_sentences)
+                        all_equal = True
+                        for j in reversed(range(num_sentences)):
+                            prev = source_sentences[j]
+                            if None == prev or sentence == prev:
+                                continue
+                            else:
+                                all_equal = False
+                                break
+                        if all_equal:
+                            # reduce file size by not repeating the same sentence
+                            source_sentences.append(None)
+                        else:
+                            source_sentences.append(sentence)
+                        
+                    # add one field for each array item to the final result
+                    for j in range(len(source_ids)):
+                        ret['source_id_{0}'.format(j)] = source_ids[j]
+                    for j in range(len(source_features)):
+                        ret['source_feature_{0}'.format(j)] = source_features[j]
+                    for j in range(len(source_sentences)):
+                        ret['source_sentence_{0}'.format(j)] = source_sentences[j]
+
+                    # remove the array fields, if any
+                    ret.pop('source_ids', None)
+                    ret.pop('source_features', None)
+                    ret.pop('source_sentences', None)
+                        
                 # update job and phenotype fields
                 ret['job_id'] = job_id
                 ret['phenotype_id'] = phenotype_id
@@ -779,27 +818,8 @@ def mongo_process_operations(infix_tokens,
                 ret['raw_definition_text'] = expression
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
-
                     
                 output.append(ret)
-
-                # n-ary fields, need a numeric suffix
-                # ret['_id_{0}'.format(counter)] = doc['_id']
-                # ret['feature_{0}'.format(counter)] = doc['nlpql_feature']
-                # if is_final:
-                #     ret['report_date_{0}'.format(counter)] = doc['report_date']
-                #     ret['sentence_{0}'.format(counter)] = doc['sentence']
-                #     if 'report_id' == on:
-                #         ret['report_id_{0}'.format(counter)] = doc['report_id']
-                #         ret['subject'] = doc['subject']
-                #     else:
-                #         ret['report_id'] = doc['report_id']
-                #         ret['subject_{0}'.format(counter)] = doc['subject']
-
-                # counter = counter + 1
-
-
-        #    group_counter = group_counter + 1
 
         if len(output) > 0:
             db.phenotype_results.insert_many(output)
