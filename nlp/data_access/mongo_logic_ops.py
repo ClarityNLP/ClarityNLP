@@ -8,7 +8,10 @@ This file is to be imported by the mongo evaluator.
 
 ###############################################################################
 def _append_logical_and(pipeline,             # pipeline to append to
-                        id_string,            # formatted "$join_field"
+                        #id_string,            # formatted "$join_field"
+                        str_filter_1,
+                        str_filter_2,
+                        feature_string,
                         n,                    # n-ary AND
                         nlpql_feature_list):
     """
@@ -34,10 +37,12 @@ def _append_logical_and(pipeline,             # pipeline to append to
         # group these records by value of the join variable
         {
             "$group" : {
-                "_id"    : id_string,            # field to group on
+                #"_id"    : id_string,            # field to group on
+                #"_id" : { "subject" : "$subject", "sentence" : "$sentence"},
+                "_id" : { str_filter_1 : str_filter_2, "sentence" : "$sentence", "start" : "$start" },
                 "ntuple" : {"$push" : "$$ROOT"}, # grouped documents
-                "count"  : {"$sum" : 1}          # count joined docs for
-                                                 # each value of join var
+                "count"  : {"$sum" : 1},         # count joined docs for each value of join var
+                "feature_set" : {"$addToSet" : "$nlpql_feature"}
             }
         },
 
@@ -47,15 +52,23 @@ def _append_logical_and(pipeline,             # pipeline to append to
         # (need n NLPQL features for an n-ary join)
         { "$match" : { "count" : { "$gte" : n }}},
 
+        # keep only those records with n different nlpql_features
+        # (check for the existence of an element at index n-1)
+        { "$match" : { feature_string : { "$exists" : True }}},
+
         # project out the ntuple array
         {
             "$project" : {
                 "_id"    : 0, # suppress _id field, not needed
                 "ntuple" : 1  # keep ntuple array
             }
-        }
+        },
 
-        # the ntuple array contains each group of joined docs
+        # # the ntuple array contains each group of joined docs
+
+        # # unwind and replace the root with the ntuple doc
+        # { "$unwind" : "$ntuple" },
+        # { "$replaceRoot" : {"newRoot" : "$ntuple" }},
     ]
 
     return pipeline.extend(stages)
@@ -186,11 +199,18 @@ def _append_logical_not_a(pipeline,       # pipeline to append to
 ###############################################################################
 def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
 
-    id_string = "${0}".format(field_to_join_on)
+    #id_string = "${0}".format(field_to_join_on)
+    str_filter_1 = field_to_join_on
+    str_filter_2 = "${0}".format(field_to_join_on)
+    feature_count = len(nlpql_feature_list) - 1
+    feature_string = "feature_set.{0}".format(feature_count)
     n = len(nlpql_feature_list)
     
     _append_logical_and(pipeline,
-                        id_string,
+                        #id_string,
+                        str_filter_1,
+                        str_filter_2,
+                        feature_string,
                         n,
                         nlpql_feature_list)
     return pipeline

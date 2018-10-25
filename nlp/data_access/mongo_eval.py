@@ -1138,24 +1138,24 @@ def _run_tests():
 
     # data for testing multi-row operations
     data = [
-        {'_id':1,  'nlpql_feature':'A', 'report_id':1, 'subject':1},
-        {'_id':2,  'nlpql_feature':'A', 'report_id':2, 'subject':2},
-        {'_id':3,  'nlpql_feature':'A', 'report_id':3, 'subject':3},
-        {'_id':4,  'nlpql_feature':'A', 'report_id':4, 'subject':4},
-        {'_id':5,  'nlpql_feature':'A', 'report_id':5, 'subject':5},
+        {'_id':1,  'nlpql_feature':'A', 'report_id':1, 'subject':1, 'sentence':'Hello1', 'start':1},
+        {'_id':2,  'nlpql_feature':'A', 'report_id':2, 'subject':2, 'sentence':'Hello2', 'start':2},
+        {'_id':3,  'nlpql_feature':'A', 'report_id':3, 'subject':3, 'sentence':'Hello3', 'start':3},
+        {'_id':4,  'nlpql_feature':'A', 'report_id':4, 'subject':4, 'sentence':'Hello4', 'start':4},
+        {'_id':5,  'nlpql_feature':'A', 'report_id':5, 'subject':5, 'sentence':'Hello5', 'start':5},
 
-        {'_id':6,  'nlpql_feature':'B', 'report_id':6, 'subject':1},
-        {'_id':7,  'nlpql_feature':'B', 'report_id':7, 'subject':2},
-        {'_id':8,  'nlpql_feature':'B', 'report_id':8, 'subject':3},
-        {'_id':9,  'nlpql_feature':'B', 'report_id':4, 'subject':4},
-        {'_id':10, 'nlpql_feature':'B', 'report_id':5, 'subject':5},
+        {'_id':6,  'nlpql_feature':'B', 'report_id':6, 'subject':1, 'sentence':'Hello6', 'start':1},
+        {'_id':7,  'nlpql_feature':'B', 'report_id':7, 'subject':2, 'sentence':'Hello7', 'start':2},
+        {'_id':8,  'nlpql_feature':'B', 'report_id':8, 'subject':3, 'sentence':'Hello8', 'start':3},
+        {'_id':9,  'nlpql_feature':'B', 'report_id':4, 'subject':4, 'sentence':'Hello4', 'start':4},
+        {'_id':10, 'nlpql_feature':'B', 'report_id':5, 'subject':5, 'sentence':'Hello5', 'start':5},
 
-        {'_id':11, 'nlpql_feature':'C', 'report_id':6, 'subject':1},
-        {'_id':12, 'nlpql_feature':'C', 'report_id':7, 'subject':2},
-        {'_id':13, 'nlpql_feature':'C', 'report_id':8, 'subject':3},
+        {'_id':11, 'nlpql_feature':'C', 'report_id':6, 'subject':1, 'sentence':'Hello6', 'start':1},
+        {'_id':12, 'nlpql_feature':'C', 'report_id':7, 'subject':2, 'sentence':'Hello7', 'start':2},
+        {'_id':13, 'nlpql_feature':'C', 'report_id':8, 'subject':3, 'sentence':'Hello8', 'start':3},
 
-        {'_id':14, 'nlpql_feature':'D', 'report_id':6, 'subject':1},
-        {'_id':15, 'nlpql_feature':'D', 'report_id':9, 'subject':2},
+        {'_id':14, 'nlpql_feature':'D', 'report_id':6, 'subject':1, 'sentence':'Hello6', 'start':1},
+        {'_id':15, 'nlpql_feature':'D', 'report_id':9, 'subject':2, 'sentence':'Hello9', 'start':2},
     ]
 
     mongo_collection_obj = mongo_db_obj[COLLECTION_NAME]
@@ -1174,7 +1174,8 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
+    #assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
+    assert doc_ids == [4,5,9,10]
 
     # logical AND between features C and D, document context
     pipeline = []
@@ -1188,14 +1189,16 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['B', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == [6,7,11,12,14,15]
+    #assert doc_ids == [6,7,11,12,14,15]
+    assert doc_ids == [6,11,14]
 
     # logical AND between features A, B, C and D, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == [1,2,6,7,11,12,14,15]
+    #assert doc_ids == [1,2,6,7,11,12,14,15]
+    assert doc_ids == []
 
     # logical OR between features C and D, document context
     pipeline = []

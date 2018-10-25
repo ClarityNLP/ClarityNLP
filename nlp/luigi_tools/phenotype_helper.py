@@ -699,8 +699,46 @@ def mongo_process_operations(infix_tokens,
         else:
             print('mongo_process_operations (math): No phenotype matches on %s.' % expression)
 
-    elif mongo_eval.MONGO_OP_OR == eval_result.operation:
-        # multi-row evaluation result, either n-ary AND, n-ary OR
+    # elif mongo_eval.MONGO_OP_SETDIFF == eval_result.operation:
+    #     # multi-row evaluation result, A NOT B (A SUBTRACT B)
+    #     print('           operation: {0}'.format(eval_result.operation))
+    #     print('            is_final: {0}'.format(is_final))
+    #     print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+    #     print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+
+    #     doc_groups = eval_result.doc_groups
+    #     group_counter = 1
+    #     for g in doc_groups:
+    #         print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+    #         group_counter += 1
+    #         for doc in g:
+    #             print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+    #                   'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+    #                   format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+    #                          doc['report_id'], doc['subject'], doc['start'],
+    #                          doc['end']))
+
+    # elif mongo_eval.MONGO_OP_NOT == eval_result.operation:
+    #     # multi-row evaluation result, NOT A
+    #     print('           operation: {0}'.format(eval_result.operation))
+    #     print('            is_final: {0}'.format(is_final))
+    #     print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+    #     print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+
+    #     doc_groups = eval_result.doc_groups
+    #     group_counter = 1
+    #     for g in doc_groups:
+    #         print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+    #         group_counter += 1
+    #         for doc in g:
+    #             print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+    #                   'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+    #                   format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+    #                          doc['report_id'], doc['subject'], doc['start'],
+    #                          doc['end']))
+            
+    elif mongo_eval.MONGO_OP_AND == eval_result.operation:
+        # multi-row evaluation result, n-ary AND
         print('           operation: {0}'.format(eval_result.operation))
         print('            is_final: {0}'.format(is_final))
         print('           doc count: {0}'.format(len(eval_result.doc_ids)))
@@ -712,8 +750,29 @@ def mongo_process_operations(infix_tokens,
             print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
             group_counter += 1
             for doc in g:
-                print('\t\tdoc id {0}, nlpql_feature {1}, source_ids: {2}'.
-                      format(doc['_id'], doc['nlpql_feature'], doc['source_ids']))
+                print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                      'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                      format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                             doc['report_id'], doc['subject'], doc['start'],
+                             doc['end']))
+
+        
+                
+    elif mongo_eval.MONGO_OP_OR == eval_result.operation:
+        # multi-row evaluation result, n-ary OR
+        # print('           operation: {0}'.format(eval_result.operation))
+        # print('            is_final: {0}'.format(is_final))
+        # print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+        # print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+
+        doc_groups = eval_result.doc_groups
+        group_counter = 1
+        for g in doc_groups:
+            #print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+            group_counter += 1
+            for doc in g:
+                #print('\t\tdoc id {0}, nlpql_feature {1}, source_ids: {2}'.
+                #      format(doc['_id'], doc['nlpql_feature'], doc['source_ids']))
 
                 ret = {}
 
