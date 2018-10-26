@@ -814,20 +814,24 @@ def mongo_process_operations(infix_tokens,
 
                 ret = {}                
                 history = {
+                    'operations'      : [],
                     'source_ids'      : [],
                     'source_features' : []
                 }
 
                 histories = []
+
+                # record the current operation
+                history['operations'].append('AND_{0}'.format(eval_result.n))
                 
                 # insert the fields that DIFFER between the ntuple members
                 # into the history
                 for doc in ntuple:
-                    # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-                    #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-                    #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-                    #              doc['report_id'], doc['subject'], doc['start'],
-                    #              doc['end']))
+                    print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                          'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                          format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                                 doc['report_id'], doc['subject'], doc['start'],
+                                 doc['end']))
 
                     history['source_ids'].append(doc['_id'])
                     history['source_features'].append(doc['nlpql_feature'])
