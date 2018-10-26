@@ -990,17 +990,17 @@ def _run_test_pipeline(mongo_collection_obj, pipeline):
     cursor = mongo_collection_obj.aggregate(pipeline)
 
     for agg_result in cursor:
-        #print('agg_result: {0}'.format(agg_result))
+        print('agg_result: {0}'.format(agg_result))
         ntuple = agg_result['ntuple']
         groups.append(ntuple)
         for t in ntuple:
             ids.append(t['_id'])
 
-    # for g in groups:
-    #     print('\tgroup size: {0}'.format(len(g)))
-    #     for t in g:
-    #         print('\t\t{0}'.format(t))
-    # print()
+    for g in groups:
+        print('\tgroup size: {0}'.format(len(g)))
+        for t in g:
+            print('\t\t{0}'.format(t))
+    print()
             
     return (sorted(ids), groups)
 

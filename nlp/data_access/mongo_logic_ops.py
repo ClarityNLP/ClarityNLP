@@ -12,6 +12,7 @@ def _append_logical_and(pipeline,             # pipeline to append to
                         str_filter_1,
                         str_filter_2,
                         feature_string,
+                        sort_field,
                         n,                    # n-ary AND
                         nlpql_feature_list):
     """
@@ -63,9 +64,18 @@ def _append_logical_and(pipeline,             # pipeline to append to
                 "ntuple" : 1  # keep ntuple array
             }
         },
+        
+        # the ntuple array contains each group of joined docs
 
-        # # the ntuple array contains each group of joined docs
+        # { "$unwind" : "$ntuple" },
+        # { "$sort" : { sort_field : 1}},
+        # { "$replaceRoot" : {"newRoot" : "$ntuple"}},
+        # { "$group" : { "_id" : "$_id", "ntuple": {"$push" : "$$ROOT"}}},                    
 
+        
+
+
+        
         # # unwind and replace the root with the ntuple doc
         # { "$unwind" : "$ntuple" },
         # { "$replaceRoot" : {"newRoot" : "$ntuple" }},
@@ -204,6 +214,10 @@ def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
     str_filter_2 = "${0}".format(field_to_join_on)
     feature_count = len(nlpql_feature_list) - 1
     feature_string = "feature_set.{0}".format(feature_count)
+    if 'report_id' == field_to_join_on:
+        sort_field = 'ntuple.subject'
+    else:
+        sort_field = 'ntuple.report_id'
     n = len(nlpql_feature_list)
     
     _append_logical_and(pipeline,
@@ -211,6 +225,7 @@ def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
                         str_filter_1,
                         str_filter_2,
                         feature_string,
+                        sort_field,
                         n,
                         nlpql_feature_list)
     return pipeline

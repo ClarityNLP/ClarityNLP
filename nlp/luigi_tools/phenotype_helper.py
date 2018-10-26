@@ -633,8 +633,10 @@ def mongo_process_operations(infix_tokens,
     operation_name = c['name']
     if phenotype.context == 'Document':
         on = 'report_id'
+        other = 'subject'
     else:
         on = 'subject'
+        other = 'report_id'
     expression = c['raw_text']
     
     eval_result = mongo_eval.run(mongo_collection_obj, infix_tokens, on, match_filters)
@@ -743,13 +745,32 @@ def mongo_process_operations(infix_tokens,
         print('            is_final: {0}'.format(is_final))
         print('           doc count: {0}'.format(len(eval_result.doc_ids)))
         print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
-
+        
         doc_groups = eval_result.doc_groups
         group_counter = 1
         for g in doc_groups:
             print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
             group_counter += 1
+
+            # need n elements for an ntuple
+            if len(g) < eval_result.n:
+                continue
+            
+            # Groups have been matched on the 'on' field, sentence, and start.
+            # Separate into ntuples with one value each of nlpql_feature and
+            # identical values of the 'other' field.
+
+            ntuples = []
             for doc in g:
+                ntuples.append(doc)
+            ntuples = sorted(ntuples, key=lambda x: x[other])
+
+            # Take the elements of the ntuples list in groups of n. Check to
+            # see that successive elements have different nlpql_feature fields.
+            # If identical, skip 
+
+            
+            for doc in ntuples:
                 print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
                       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
                       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
@@ -759,7 +780,8 @@ def mongo_process_operations(infix_tokens,
         
                 
     elif mongo_eval.MONGO_OP_OR == eval_result.operation:
-        # multi-row evaluation result, n-ary OR
+
+        # multi-row evaluation result, n-ary OR, n-ary AND
         # print('           operation: {0}'.format(eval_result.operation))
         # print('            is_final: {0}'.format(is_final))
         # print('           doc count: {0}'.format(len(eval_result.doc_ids)))
