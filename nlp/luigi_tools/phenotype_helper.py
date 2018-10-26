@@ -610,6 +610,40 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             del output
 
 
+def to_ntuples(group, n):
+    """
+    Convert a group of MongoDB result docs from an n-ary AND operation to
+    ntuples. Each member of the ntuple has a unique value of the n NLPQL
+    features.
+    
+    Each group and ntuple is a list of dicts.
+    """
+    
+    # compose ntuples with one value each of the n NLPQL features
+    ntuples = []
+    indices = [i for i in range(0, len(group))]
+
+    while True:
+        features = set()
+        tuple_indices = []
+        for i in indices:
+            feature = group[i]['nlpql_feature']
+            if feature in features:
+                continue
+            features.add(feature)
+            tuple_indices.append(i)
+
+        if n != len(features):
+            break
+        else:
+            ntuple = [group[i] for i in tuple_indices]
+            ntuples.append(ntuple)
+            for i in tuple_indices:
+                indices.remove(i)
+                
+    return ntuples
+            
+
 def mongo_process_operations(infix_tokens,
                              db,
                              job_id,
@@ -662,6 +696,13 @@ def mongo_process_operations(infix_tokens,
         
     output = list()
     is_final = c['final']
+
+    # these fields are not copied from current doc to result doc
+    NO_COPY_FIELDS = [
+        '_id', 'job_id', 'phenotype_id', 'owner',
+        'job_date', 'context_type', 'raw_definition_text',
+        'nlpql_feature', 'phenotype_final', 'history'
+    ]
     
     #print('Here is final: {0}'.format(c['final']))
     #print('Here is type(final): {0}'.format(type(c['final'])))
@@ -742,6 +783,7 @@ def mongo_process_operations(infix_tokens,
     elif mongo_eval.MONGO_OP_AND == eval_result.operation:
         # multi-row evaluation result, n-ary AND
         print('           operation: {0}'.format(eval_result.operation))
+        print('                   n: {0}'.format(eval_result.n))
         print('            is_final: {0}'.format(is_final))
         print('           doc count: {0}'.format(len(eval_result.doc_ids)))
         print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
@@ -756,29 +798,77 @@ def mongo_process_operations(infix_tokens,
             if len(g) < eval_result.n:
                 continue
             
-            # Groups have been matched on the 'on' field, sentence, and start.
-            # Separate into ntuples with one value each of nlpql_feature and
-            # identical values of the 'other' field.
+            # Groups have been matched on the 'on', 'sentence', and 'start'
+            # fields. Separate into ntuples with one value each of the NLPQL
+            # features and identical values of the 'other' field.
 
-            ntuples = []
+            # sort on the 'other' field
+            group = []
             for doc in g:
-                ntuples.append(doc)
-            ntuples = sorted(ntuples, key=lambda x: x[other])
-
-            # Take the elements of the ntuples list in groups of n. Check to
-            # see that successive elements have different nlpql_feature fields.
-            # If identical, skip 
-
+                group.append(doc)
+            group = sorted(group, key=lambda x: x[other])
+            ntuples = to_ntuples(group, eval_result.n)
             
-            for doc in ntuples:
-                print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-                      'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-                      format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-                             doc['report_id'], doc['subject'], doc['start'],
-                             doc['end']))
+            print('\tntuple count: {0}'.format(len(ntuples)))
+            for ntuple in ntuples:
 
-        
+                ret = {}                
+                history = {
+                    'source_ids'      : [],
+                    'source_features' : []
+                }
+
+                histories = []
                 
+                # insert the fields that DIFFER between the ntuple members
+                # into the history
+                for doc in ntuple:
+                    # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                    #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                    #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                    #              doc['report_id'], doc['subject'], doc['start'],
+                    #              doc['end']))
+
+                    history['source_ids'].append(doc['_id'])
+                    history['source_features'].append(doc['nlpql_feature'])
+
+                    if 'history' in doc:
+                        histories.append(doc['history'])
+
+                # this evaluation gets appended to the history as well
+                histories.append(history)
+                
+                # copy eligible fields (use the 0th element for the field list)
+                fields = ntuple[0].keys()
+                fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+                for f in fields_to_copy:
+                    field0 = ntuple[0][f]
+                    for j in range(1, eval_result.n):
+                        fieldj = ntuple[j][f]
+                        if field0 != fieldj:
+                            print('\tField {0} unequal: {0} <-> {1}'.format(f, field0, fieldj))
+                    ret[f] = copy.deepcopy(ntuple[0][f])
+                    
+                # update job and phenotype fields
+                ret['job_id'] = job_id
+                ret['phenotype_id'] = phenotype_id
+                ret['owner'] = phenotype_owner
+                ret['job_date'] = datetime.datetime.now()
+                ret['context_type'] = on
+                ret['raw_definition_text'] = expression
+                ret['nlpql_feature'] = operation_name
+                ret['phenotype_final'] = c['final']
+                ret['history'] = copy.deepcopy(histories)
+
+                output.append(ret)
+
+        if len(output) > 0:
+            db.phenotype_results.insert_many(output)
+        else:
+            print('mongo_process_operations (and): No phenotype matches on %s.' % expression)
+                
+
+                    
     elif mongo_eval.MONGO_OP_OR == eval_result.operation:
 
         # multi-row evaluation result, n-ary OR, n-ary AND
@@ -802,13 +892,13 @@ def mongo_process_operations(infix_tokens,
                 fields = doc.keys()
 
                 # don't copy these fields from doc to ret
-                EXCLUDE_FIELDS = [
-                    '_id', 'job_id', 'phenotype_id', 'owner',
-                    'job_date', 'context_type', 'raw_definition_text',
-                    'nlpql_feature', 'phenotype_final'
-                ]
+                # NO_COPY_FIELDS = [
+                #     '_id', 'job_id', 'phenotype_id', 'owner',
+                #     'job_date', 'context_type', 'raw_definition_text',
+                #     'nlpql_feature', 'phenotype_final'
+                # ]
 
-                fields_to_copy = [f for f in fields if f not in EXCLUDE_FIELDS]
+                fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
                 for f in fields_to_copy:
                     ret[f] = copy.deepcopy(doc[f])
 
