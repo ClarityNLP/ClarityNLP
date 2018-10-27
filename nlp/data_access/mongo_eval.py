@@ -1214,9 +1214,9 @@ def _run_tests():
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,12,13,14,15]
     
-    # logical OR between features A, C, and D
+    # logical OR between features A, C, and D, document context
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', None,
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', 'report_id',
                                           ['A', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]

@@ -8,11 +8,10 @@ This file is to be imported by the mongo evaluator.
 
 ###############################################################################
 def _append_logical_and(pipeline,             # pipeline to append to
-                        #id_string,            # formatted "$join_field"
                         str_filter_1,
                         str_filter_2,
                         feature_string,
-                        sort_field,
+                        #sort_field,
                         n,                    # n-ary AND
                         nlpql_feature_list):
     """
@@ -66,22 +65,49 @@ def _append_logical_and(pipeline,             # pipeline to append to
         },
         
         # the ntuple array contains each group of joined docs
-
-        # { "$unwind" : "$ntuple" },
-        # { "$sort" : { sort_field : 1}},
-        # { "$replaceRoot" : {"newRoot" : "$ntuple"}},
-        # { "$group" : { "_id" : "$_id", "ntuple": {"$push" : "$$ROOT"}}},                    
-
-        
-
-
-        
-        # # unwind and replace the root with the ntuple doc
-        # { "$unwind" : "$ntuple" },
-        # { "$replaceRoot" : {"newRoot" : "$ntuple" }},
     ]
 
     return pipeline.extend(stages)
+
+
+###############################################################################
+def _append_logical_or(pipeline,            # pipeline to append to
+                       str_filter_1,
+                       str_filter_2,
+                       nlpql_feature_list):
+    """
+    Compute the union of all records having the specified nlpql_features.
+    """
+
+    stages = [
+
+        # find those records having the specified nlpql features
+        {
+            "$match" : {
+                "nlpql_feature" : {"$in" : nlpql_feature_list}
+            }
+        },
+
+        # group these records by the join variables
+        {
+            "$group" : {
+                #"_id"    : "$nlpql_feature",
+                "_id" : { str_filter_1 : str_filter_2, "sentence" : "$sentence", "start" : "$start" },
+                "ntuple" : {"$addToSet" : "$$ROOT"}  # grouped documents
+            }
+        },
+
+        # project out the ntuple array
+        {
+            "$project" : {
+                "_id"    : 0,  # suppress _id field, not needed
+                "ntuple" : 1   # keep ntuple array
+            }
+        }
+    ]
+
+    return pipeline.extend(stages)
+
 
 
 ###############################################################################
@@ -134,42 +160,6 @@ def _append_logical_a_not_b(pipeline,         # pipeline to append to
 
 
 ###############################################################################
-def _append_logical_or(pipeline,            # pipeline to append to
-                       nlpql_feature_list):
-    """
-    Compute the union of all records having the specified nlpql_features.
-    """
-
-    stages = [
-
-        # find those records having the specified nlpql features
-        {
-            "$match" : {
-                "nlpql_feature" : {"$in" : nlpql_feature_list}
-            }
-        },
-
-        # group these records by nlpql_feature
-        {
-            "$group" : {
-                "_id"    : "$nlpql_feature",
-                "ntuple" : {"$addToSet" : "$$ROOT"}  # grouped documents
-            }
-        },
-
-        # project out the ntuple array
-        {
-            "$project" : {
-                "_id"    : 0,  # suppress _id field, not needed
-                "ntuple" : 1   # keep ntuple array
-            }
-        }
-    ]
-
-    return pipeline.extend(stages)
-
-
-###############################################################################
 def _append_logical_not_a(pipeline,       # pipeline to append to
                           id_string,      # formatted "$join_field"
                           nlpql_feature):
@@ -214,18 +204,17 @@ def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
     str_filter_2 = "${0}".format(field_to_join_on)
     feature_count = len(nlpql_feature_list) - 1
     feature_string = "feature_set.{0}".format(feature_count)
-    if 'report_id' == field_to_join_on:
-        sort_field = 'ntuple.subject'
-    else:
-        sort_field = 'ntuple.report_id'
+    # if 'report_id' == field_to_join_on:
+    #     sort_field = 'ntuple.subject'
+    # else:
+    #     sort_field = 'ntuple.report_id'
     n = len(nlpql_feature_list)
     
     _append_logical_and(pipeline,
-                        #id_string,
                         str_filter_1,
                         str_filter_2,
                         feature_string,
-                        sort_field,
+                        #sort_field,
                         n,
                         nlpql_feature_list)
     return pipeline
@@ -235,8 +224,12 @@ def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
 def _logical_a_or_b(pipeline, field_to_join_on, nlpql_feature_list):
 
     #id_string = "${0}".format(field_to_join_on)
+    str_filter_1 = field_to_join_on
+    str_filter_2 = "${0}".format(field_to_join_on)
 
     _append_logical_or(pipeline, #id_string,
+                       str_filter_1,
+                       str_filter_2,
                        nlpql_feature_list)
     return pipeline
 
