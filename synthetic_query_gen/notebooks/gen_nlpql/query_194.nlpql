@@ -1,0 +1,52 @@
+
+
+// Phenotype library name
+phenotype "SyntheticQueryTesting_194_NCT00074841_000001100000000000100000000" version "1";
+
+// Phenotype library description 
+description "Synthetically generated, paramaterized query; for computing benchark runtime stats";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org";
+
+documentset PotentiallyEligiblePatientsNotes:
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]); 
+
+// Gender inclusion criteria termset, if gender criteria present
+
+
+// Race inclusion criteria termset, if race criteria present
+
+
+// Condition(s) inclusion criteria termset, if condition criteria present
+
+
+// Medication(s) inclusion criteria termset, if medication criteria present
+
+        
+termset MedicationTerms:[
+    "Glucose"
+];
+
+define  Medications:
+  Clarity.ProviderAssertion({
+    termset:[ConditionTerms],
+    documentset:[PotentiallyEligiblePatientsNotes]
+    }); 
+        
+
+// Results
+
+
+define final SyntheticQueryResults:
+    where Medications;
+    
+
+
