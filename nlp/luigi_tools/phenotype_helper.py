@@ -781,7 +781,7 @@ def mongo_process_operations(infix_tokens,
             # single-row operations have no history to carry forward
             history = {
                 'operations' : ['MATH'],
-                'source_ids' : [doc[_'id']],
+                'source_ids' : [doc['_id']],
                 'source_features' : [doc['nlpql_feature']]
             }
             ret['history'] = copy.deepcopy(history)
