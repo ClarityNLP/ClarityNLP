@@ -172,6 +172,8 @@ MONGO_OP_ERROR   = 'ERROR'
 
 MONGO_EVAL_ERROR = MongoEvalResult(MONGO_OP_ERROR, 0, [], [])
 
+MONGO_AND_MEANS_INTERSECTION = mongo_logic_ops.AND_MEANS_INTERSECTION
+
 
 # non-exported variables
 
@@ -1174,8 +1176,10 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    #assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
-    assert doc_ids == [4,5,9,10]
+    if mongo_logic_ops.AND_MEANS_INTERSECTION:
+        assert doc_ids == [4,5,9,10]
+    else:
+        assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
 
     # logical AND between features C and D, document context
     pipeline = []
@@ -1189,16 +1193,20 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['B', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    #assert doc_ids == [6,7,11,12,14,15]
-    assert doc_ids == [6,11,14]
+    if mongo_logic_ops.AND_MEANS_INTERSECTION:
+        assert doc_ids == [6,11,14]
+    else:
+        assert doc_ids == [6,7,11,12,14,15]
 
     # logical AND between features A, B, C and D, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    #assert doc_ids == [1,2,6,7,11,12,14,15]
-    assert doc_ids == []
+    if mongo_logic_ops.AND_MEANS_INTERSECTION:
+        assert doc_ids == []
+    else:
+        assert doc_ids == [1,2,6,7,11,12,14,15]
 
     # logical OR between features C and D, document context
     pipeline = []

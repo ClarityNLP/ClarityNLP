@@ -6,13 +6,15 @@ set difference (either 'A - B' or 'A not B', and set complement (NOT A).
 This file is to be imported by the mongo evaluator.
 """
 
+# Set this to True to join on (report_id|subject) && sentence && start.
+# Otherwise join on report_id or subject only.
+# Use the first for logical consistency for measurements or any chunks of
+# text defined by a sentence and a start offset.
+AND_MEANS_INTERSECTION=False
+
 ###############################################################################
 def _append_logical_and(pipeline,             # pipeline to append to
-                        str_filter_1,
-                        str_filter_2,
-                        feature_string,
-                        #sort_field,
-                        n,                    # n-ary AND
+                        field_to_join_on,
                         nlpql_feature_list):
     """
     Append the aggregation stages required to implement a logical AND on the
@@ -25,6 +27,28 @@ def _append_logical_and(pipeline,             # pipeline to append to
     in the result set.
     """
 
+   #id_string = "${0}".format(field_to_join_on)
+    
+    str_filter_1 = field_to_join_on
+    str_filter_2 = "${0}".format(field_to_join_on)
+    
+    n = len(nlpql_feature_list)
+    feature_string = "feature_set.{0}".format(n-1)
+
+    # set the join condition
+    if AND_MEANS_INTERSECTION:
+        # join on either (report_id or subject) AND sentence AND start offset
+        join_obj = {
+            str_filter_1 : str_filter_2,
+            "sentence" : "$sentence",
+            "start" : "$start"
+        }
+    else:
+        # join only on either report_id or subject
+        join_obj = {
+            str_filter_1 : str_filter_2
+        }
+    
     stages = [
 
         # find those records having the specified nlpql features
@@ -37,9 +61,7 @@ def _append_logical_and(pipeline,             # pipeline to append to
         # group these records by value of the join variable
         {
             "$group" : {
-                #"_id"    : id_string,            # field to group on
-                #"_id" : { "subject" : "$subject", "sentence" : "$sentence"},
-                "_id" : { str_filter_1 : str_filter_2, "sentence" : "$sentence", "start" : "$start" },
+                "_id" : join_obj,
                 "ntuple" : {"$push" : "$$ROOT"}, # grouped documents
                 "count"  : {"$sum" : 1},         # count joined docs for each value of join var
                 "feature_set" : {"$addToSet" : "$nlpql_feature"}
@@ -72,13 +94,26 @@ def _append_logical_and(pipeline,             # pipeline to append to
 
 ###############################################################################
 def _append_logical_or(pipeline,            # pipeline to append to
-                       str_filter_1,
-                       str_filter_2,
+                       field_to_join_on,
                        nlpql_feature_list):
     """
     Compute the union of all records having the specified nlpql_features.
     """
 
+    str_filter_1 = field_to_join_on
+    str_filter_2 = "${0}".format(field_to_join_on)
+
+    if AND_MEANS_INTERSECTION:
+        join_obj = {
+            str_filter_1 : str_filter_2,
+            "sentence" : "$sentence",
+            "start" : "$start"
+        }
+    else:
+        join_obj = {
+            str_filter_1 : str_filter_2
+        }
+    
     stages = [
 
         # find those records having the specified nlpql features
@@ -91,8 +126,7 @@ def _append_logical_or(pipeline,            # pipeline to append to
         # group these records by the join variables
         {
             "$group" : {
-                #"_id"    : "$nlpql_feature",
-                "_id" : { str_filter_1 : str_filter_2, "sentence" : "$sentence", "start" : "$start" },
+                "_id" : join_obj,
                 "ntuple" : {"$addToSet" : "$$ROOT"}  # grouped documents
             }
         },
@@ -200,22 +234,9 @@ def _append_logical_not_a(pipeline,       # pipeline to append to
 def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
 
     #id_string = "${0}".format(field_to_join_on)
-    str_filter_1 = field_to_join_on
-    str_filter_2 = "${0}".format(field_to_join_on)
-    feature_count = len(nlpql_feature_list) - 1
-    feature_string = "feature_set.{0}".format(feature_count)
-    # if 'report_id' == field_to_join_on:
-    #     sort_field = 'ntuple.subject'
-    # else:
-    #     sort_field = 'ntuple.report_id'
-    n = len(nlpql_feature_list)
     
     _append_logical_and(pipeline,
-                        str_filter_1,
-                        str_filter_2,
-                        feature_string,
-                        #sort_field,
-                        n,
+                        field_to_join_on,
                         nlpql_feature_list)
     return pipeline
 
@@ -223,13 +244,8 @@ def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
 ###############################################################################
 def _logical_a_or_b(pipeline, field_to_join_on, nlpql_feature_list):
 
-    #id_string = "${0}".format(field_to_join_on)
-    str_filter_1 = field_to_join_on
-    str_filter_2 = "${0}".format(field_to_join_on)
-
     _append_logical_or(pipeline, #id_string,
-                       str_filter_1,
-                       str_filter_2,
+                       field_to_join_on,
                        nlpql_feature_list)
     return pipeline
 

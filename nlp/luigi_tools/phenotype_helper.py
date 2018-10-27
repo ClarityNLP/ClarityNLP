@@ -610,7 +610,7 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             del output
 
 
-def to_AND_group_ntuples(and_group, n, other):
+def to_AND_INTERSECT_group_ntuples(and_group, n, other):
     """
     Convert a group of MongoDB result docs from an n-ary AND operation to
     ntuples. Each member of the ntuple has a unique value of the n NLPQL
@@ -649,8 +649,79 @@ def to_AND_group_ntuples(and_group, n, other):
                 
     return ntuples
 
+def to_AND_JOIN_group_ntuples(g, n, other):
+    """
+    """
 
-def to_OR_group_ntuples(or_group, n, other):
+    # sort on the 'other' field
+    group = []
+    for doc in g:
+        group.append(doc)
+    group = sorted(group, key=lambda x: x[other])
+
+    # count the number of entries for each nlpql feature
+    feature_map = {}
+    for doc in group:
+        feature = doc['nlpql_feature']
+        if not feature in feature_map:
+            feature_map[feature] = 1
+        else:
+            feature_map[feature] += 1
+
+    max_count = 0
+    for feature, count in feature_map.items():
+        if count > max_count:
+            max_count = count
+
+    # assign doc indices to each feature
+    feature_map = {}
+    for i in range(len(group)):
+        doc = group[i]
+        feature = doc['nlpql_feature']
+        if not feature in feature_map:
+            # number of docs with this feature, current_index, index_list
+            feature_map[feature] = (1, 0, [i])
+        else:
+            count, current_index, index_list = feature_map[feature]
+            index_list.append(i)
+            count += 1
+            feature_map[feature] = (count, current_index, index_list)
+
+    # Generate ntuples by assigning one element from each group until max_count
+    # ntuples have been generated. Cycle the indices for each group.
+
+    ntuples = []
+    while len(ntuples) < max_count:
+        ntuple = []
+        for feature, v in feature_map.items():
+            feature_count = v[0]
+            current_index = v[1]
+            index_list    = v[2]
+            ntuple.append(group[index_list[current_index]])
+            current_index += 1
+            if current_index >= feature_count:
+                current_index = 0
+            feature_map[feature] = (feature_count, current_index, index_list)
+        ntuples.append(ntuple)
+
+    return ntuples
+
+
+def to_OR_JOIN_group_ntuples(g, n, other):
+    """
+    """
+
+    ntuple = []
+    for doc in g:
+        ntuple.append(doc)
+    ntuple = sorted(ntuple, key=lambda x: x[other])
+    ntuples = [ [item] for item in ntuple]
+
+    return ntuples
+
+
+
+def to_OR_INTERSECT_group_ntuples(or_group, n, other):
     """
     Convert a group of MongoDB result docs from an n-ary OR operation to
     ntuples. Each member of the ntuple has a unique value of the n NLPQL
@@ -816,13 +887,36 @@ def mongo_process_operations(infix_tokens,
                 # need n elements for an AND ntuple (OR needs from 1..n)
                 if len(g) < eval_result.n:
                     continue
-            
-                # Groups have been matched on the 'on', 'sentence', and 'start'
-                # fields. Separate into ntuples having one value each of the NLPQL
-                # features and identical values of the 'other' field.
-                ntuples = to_AND_group_ntuples(g, eval_result.n, other)
+
+                if mongo_eval.MONGO_AND_MEANS_INTERSECTION:
+                    ntuples = to_AND_INTERSECT_group_ntuples(g, eval_result.n, other)
+                else:
+                    ntuples = to_AND_JOIN_group_ntuples(g, eval_result.n, other)
             else:
-                ntuples = to_OR_group_ntuples(g, eval_result.n, other)
+                if mongo_eval.MONGO_AND_MEANS_INTERSECTION:
+                    ntuples = to_OR_INTERSECT_group_ntuples(g, eval_result.n, other)
+                else:
+                    ntuples = to_OR_JOIN_group_ntuples(g, eval_result.n, other)
+            
+            # if mongo_eval.MONGO_AND_MEANS_INTERSECTION:
+            #     if mongo_eval.MONGO_OP_AND == eval_result.operation:
+            #         # need n elements for an AND ntuple (OR needs from 1..n)
+            #         if len(g) < eval_result.n:
+            #             continue
+
+            #         # Groups have been matched on the 'on', 'sentence', and 'start'
+            #         # fields. Separate into ntuples having one value each of the NLPQL
+            #         # features and identical values of the 'other' field.
+            #         ntuples = to_AND_INTERSECT_group_ntuples(g, eval_result.n, other)
+            #     else:
+            #         ntuples = to_OR_INTERSECT_group_ntuples(g, eval_result.n, other)
+            # else:
+            #     # entire group is a single ntuple
+            #     ntuple = []
+            #     for doc in g:
+            #         ntuple.append(doc)
+            #     ntuple = sorted(ntuple, key=lambda x: x[other])
+            #     ntuples = [ntuple]
                 
             print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:
@@ -867,7 +961,8 @@ def mongo_process_operations(infix_tokens,
                     for j in range(1, len(ntuple)):
                         fieldj = ntuple[j][f]
                         if field0 != fieldj:
-                            print('\tField {0} unequal: {0} <-> {1}'.format(f, field0, fieldj))
+                            print('\t[{0}]: Field {1} unequal: "{2}" <-> "{3}"'.
+                                  format(j, f, field0, fieldj))
                     ret[f] = copy.deepcopy(ntuple[0][f])
                     
                 # update job and phenotype fields
