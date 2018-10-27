@@ -26,9 +26,9 @@ def run_nlpql(i):
     res = requests.post(nlpql_url, data=nlpql, headers={'content-type': 'text/plain'})
     if res.ok:
         print("Running job %d" % i)
-        time.sleep(300)
+        time.sleep(600)
     else:
-        print('Failed to run job')
+        print('Failed to run job %d' % i)
         sys.exit(1)
 
 
@@ -38,10 +38,11 @@ if __name__ == "__main__":
         if i < cur_job:
             pass
         else:
+            print('Attempting job %d' % i)
             if get_active_workers() < max_workers:
                 run_nlpql(i)
             else:
                 while get_active_workers() >= max_workers:
-                    print('At max workers sleeping...')
+                    print('At max workers sleeping for 1 minute...')
                     time.sleep(60)
                 run_nlpql(i)
