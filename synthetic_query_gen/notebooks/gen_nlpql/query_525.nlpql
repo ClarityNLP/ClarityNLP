@@ -45,7 +45,7 @@ termset MedicationTerms:[
 
 define  Medications:
   Clarity.ProviderAssertion({
-    termset:[ConditionTerms],
+    termset:[MedicationTerms],
     documentset:[PotentiallyEligiblePatientsNotes]
     }); 
         

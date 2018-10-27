@@ -42,8 +42,4 @@ define  isMale
 // Results
 
 
-define final SyntheticQueryResults:
-    where isMale;
-    
-
 

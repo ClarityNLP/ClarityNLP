@@ -45,8 +45,4 @@ define  Conditions:
 // Results
 
 
-define final SyntheticQueryResults:
-    where Conditions;
-    
-
 

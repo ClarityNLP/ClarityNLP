@@ -45,8 +45,4 @@ define  RaceMatch:
 // Results
 
 
-define final SyntheticQueryResults:
-    where RaceMatch;
-    
-
 

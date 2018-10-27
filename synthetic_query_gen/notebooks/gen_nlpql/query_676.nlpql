@@ -34,8 +34,4 @@ documentset PotentiallyEligiblePatientsNotes:
 // Results
 
 
-define final SyntheticQueryResults:
-    where ;
-    
-
 
