@@ -688,7 +688,11 @@ def to_AND_JOIN_group_ntuples(g, n, other):
             feature_map[feature] = (count, current_index, index_list)
 
     # Generate ntuples by assigning one element from each group until max_count
-    # ntuples have been generated. Cycle the indices for each group.
+    # ntuples have been generated. Cycle the indices for each group. The
+    # resulting set of ntuples will be members of the inner join set.
+    # No values of the 'other' field will be lost by doing this, and this
+    # simpler procedure captures all documents or patients with the stated
+    # NLPQL conditions.
 
     ntuples = []
     while len(ntuples) < max_count:
@@ -937,11 +941,11 @@ def mongo_process_operations(infix_tokens,
                 # insert the fields that DIFFER between the ntuple members
                 # into the history
                 for doc in ntuple:
-                    print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-                          'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-                          format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-                                 doc['report_id'], doc['subject'], doc['start'],
-                                 doc['end']))
+                    # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                    #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                    #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                    #              doc['report_id'], doc['subject'], doc['start'],
+                    #              doc['end']))
 
                     history['source_ids'].append(doc['_id'])
                     history['source_features'].append(doc['nlpql_feature'])
@@ -951,19 +955,21 @@ def mongo_process_operations(infix_tokens,
 
                 # this evaluation gets appended to the history as well
                 histories.append(history)
+
+                # COPYING IS WRONG FOR AND means JOIN - FIX THIS
                 
                 # copy eligible fields (use the 0th element for the field list)
                 fields = ntuple[0].keys()
                 fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
                 for f in fields_to_copy:
-                    field0 = ntuple[0][f]
-                    #for j in range(1, eval_result.n):
-                    for j in range(1, len(ntuple)):
-                        fieldj = ntuple[j][f]
-                        if field0 != fieldj:
-                            print('\t[{0}]: Field {1} unequal: "{2}" <-> "{3}"'.
-                                  format(j, f, field0, fieldj))
-                    ret[f] = copy.deepcopy(ntuple[0][f])
+                    # field0 = ntuple[0][f]
+                    # for j in range(1, len(ntuple)):
+                    #     fieldj = ntuple[j][f]
+                    #     if field0 != fieldj:
+                    #         print('\t[{0}]: Field {1} unequal: "{2}" <-> "{3}"'.
+                    #               format(j, f, field0, fieldj))
+                    if f in ntuple[0]:
+                        ret[f] = copy.deepcopy(ntuple[0][f])
                     
                 # update job and phenotype fields
                 ret['job_id'] = job_id
