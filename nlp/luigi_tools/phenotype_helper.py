@@ -706,65 +706,6 @@ def to_OR_group_ntuples(or_group, n, other):
     return ntuples
     
 
-# def mongo_eval_update_ntuple(ntuple, operator, eval_result):
-#     """
-#     """
-    
-#     ret = {}                
-#     history = {
-#         'operations'      : [],
-#         'source_ids'      : [],
-#         'source_features' : []
-#     }
-
-#     histories = []
-
-#     # record the current operation
-#     history['operations'].append('AND_{0}'.format(eval_result.n))
-
-#     # insert the fields that DIFFER between the ntuple members
-#     # into the history
-#     for doc in ntuple:
-#         print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-#               'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-#               format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-#                      doc['report_id'], doc['subject'], doc['start'],
-#                      doc['end']))
-
-#         history['source_ids'].append(doc['_id'])
-#         history['source_features'].append(doc['nlpql_feature'])
-
-#         if 'history' in doc:
-#             histories.append(doc['history'])
-
-#     # this evaluation gets appended to the history as well
-#     histories.append(history)
-
-#     # copy eligible fields (use the 0th element for the field list)
-#     fields = ntuple[0].keys()
-#     fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-#     for f in fields_to_copy:
-#         field0 = ntuple[0][f]
-#         for j in range(1, eval_result.n):
-#             fieldj = ntuple[j][f]
-#             if field0 != fieldj:
-#                 print('\tField {0} unequal: {0} <-> {1}'.format(f, field0, fieldj))
-#         ret[f] = copy.deepcopy(ntuple[0][f])
-
-#     # update job and phenotype fields
-#     ret['job_id'] = job_id
-#     ret['phenotype_id'] = phenotype_id
-#     ret['owner'] = phenotype_owner
-#     ret['job_date'] = datetime.datetime.now()
-#     ret['context_type'] = on
-#     ret['raw_definition_text'] = expression
-#     ret['nlpql_feature'] = operation_name
-#     ret['phenotype_final'] = c['final']
-#     ret['history'] = copy.deepcopy(histories)
-
-#     return ret
-
-
 def mongo_process_operations(infix_tokens,
                              db,
                              job_id,
@@ -848,9 +789,10 @@ def mongo_process_operations(infix_tokens,
         else:
             print('mongo_process_operations (math): No phenotype matches on %s.' % expression)
             
-    elif mongo_eval.MONGO_OP_AND == eval_result.operation:
+    elif (mongo_eval.MONGO_OP_AND == eval_result.operation) or \
+         (mongo_eval.MONGO_OP_OR  == eval_result.operation):
         
-        # multi-row evaluation result, n-ary AND
+        # multi-row evaluation result, n-ary AND, n-ary OR
         print('           operation: {0}'.format(eval_result.operation))
         print('                   n: {0}'.format(eval_result.n))
         print('            is_final: {0}'.format(is_final))
@@ -863,15 +805,18 @@ def mongo_process_operations(infix_tokens,
             print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
             group_counter += 1
 
-            # need n elements for an AND ntuple (OR needs from 1..n)
-            if len(g) < eval_result.n:
-                continue
+            if mongo_eval.MONGO_OP_AND == eval_result.operation:
+                # need n elements for an AND ntuple (OR needs from 1..n)
+                if len(g) < eval_result.n:
+                    continue
             
-            # Groups have been matched on the 'on', 'sentence', and 'start'
-            # fields. Separate into ntuples having one value each of the NLPQL
-            # features and identical values of the 'other' field.
-            ntuples = to_AND_group_ntuples(g, eval_result.n, other)
-            
+                # Groups have been matched on the 'on', 'sentence', and 'start'
+                # fields. Separate into ntuples having one value each of the NLPQL
+                # features and identical values of the 'other' field.
+                ntuples = to_AND_group_ntuples(g, eval_result.n, other)
+            else:
+                ntuples = to_OR_group_ntuples(g, eval_result.n, other)
+                
             print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:
 
@@ -885,7 +830,8 @@ def mongo_process_operations(infix_tokens,
                 histories = []
 
                 # record the current operation
-                history['operations'].append('AND_{0}'.format(eval_result.n))
+                history['operations'].append('{0}_{1}'.format(eval_result.operation,
+                                                              eval_result.n))
                 
                 # insert the fields that DIFFER between the ntuple members
                 # into the history
@@ -933,90 +879,91 @@ def mongo_process_operations(infix_tokens,
         if len(output) > 0:
             db.phenotype_results.insert_many(output)
         else:
-            print('mongo_process_operations (AND): No phenotype matches on %s.' % expression)
+            print('mongo_process_operations ({0}): no phenotype matches on {1}.'.
+                  format(eval_result.operation, expression))
 
             
-    elif mongo_eval.MONGO_OP_OR == eval_result.operation:
+    # elif mongo_eval.MONGO_OP_OR == eval_result.operation:
 
-        # multi-row evaluation result, n-ary AND
-        print('           operation: {0}'.format(eval_result.operation))
-        print('                   n: {0}'.format(eval_result.n))
-        print('            is_final: {0}'.format(is_final))
-        print('           doc count: {0}'.format(len(eval_result.doc_ids)))
-        print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+    #     # multi-row evaluation result, n-ary AND
+    #     print('           operation: {0}'.format(eval_result.operation))
+    #     print('                   n: {0}'.format(eval_result.n))
+    #     print('            is_final: {0}'.format(is_final))
+    #     print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+    #     print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
         
-        doc_groups = eval_result.doc_groups
-        group_counter = 1
-        for g in doc_groups:
-            print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
-            group_counter += 1
+    #     doc_groups = eval_result.doc_groups
+    #     group_counter = 1
+    #     for g in doc_groups:
+    #         print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+    #         group_counter += 1
 
-            # Groups have been matched on the 'on', 'sentence', and 'start'
-            # fields. Separate into ntuples having one value each of the NLPQL
-            # features and identical values of the 'other' field.
-            ntuples = to_OR_group_ntuples(g, eval_result.n, other)
+    #         # Groups have been matched on the 'on', 'sentence', and 'start'
+    #         # fields. Separate into ntuples having one value each of the NLPQL
+    #         # features and identical values of the 'other' field.
+    #         ntuples = to_OR_group_ntuples(g, eval_result.n, other)
             
-            print('\tntuple count: {0}'.format(len(ntuples)))
-            for ntuple in ntuples:
+    #         print('\tntuple count: {0}'.format(len(ntuples)))
+    #         for ntuple in ntuples:
 
-                ret = {}                
-                history = {
-                    'operations'      : [],
-                    'source_ids'      : [],
-                    'source_features' : []
-                }
+    #             ret = {}                
+    #             history = {
+    #                 'operations'      : [],
+    #                 'source_ids'      : [],
+    #                 'source_features' : []
+    #             }
 
-                histories = []
+    #             histories = []
 
-                # record the current operation
-                history['operations'].append('AND_{0}'.format(eval_result.n))
+    #             # record the current operation
+    #             history['operations'].append('AND_{0}'.format(eval_result.n))
                 
-                # insert the fields that DIFFER between the ntuple members
-                # into the history
-                for doc in ntuple:
-                    print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-                          'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-                          format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-                                 doc['report_id'], doc['subject'], doc['start'],
-                                 doc['end']))
+    #             # insert the fields that DIFFER between the ntuple members
+    #             # into the history
+    #             for doc in ntuple:
+    #                 print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+    #                       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+    #                       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+    #                              doc['report_id'], doc['subject'], doc['start'],
+    #                              doc['end']))
 
-                    history['source_ids'].append(doc['_id'])
-                    history['source_features'].append(doc['nlpql_feature'])
+    #                 history['source_ids'].append(doc['_id'])
+    #                 history['source_features'].append(doc['nlpql_feature'])
 
-                    if 'history' in doc:
-                        histories.append(doc['history'])
+    #                 if 'history' in doc:
+    #                     histories.append(doc['history'])
 
-                # this evaluation gets appended to the history as well
-                histories.append(history)
+    #             # this evaluation gets appended to the history as well
+    #             histories.append(history)
                 
-                # copy eligible fields (use the 0th element for the field list)
-                fields = ntuple[0].keys()
-                fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-                for f in fields_to_copy:
-                    field0 = ntuple[0][f]
-                    for j in range(1, len(ntuple)):
-                        fieldj = ntuple[j][f]
-                        if field0 != fieldj:
-                            print('\tField {0} unequal: {0} <-> {1}'.format(f, field0, fieldj))
-                    ret[f] = copy.deepcopy(ntuple[0][f])
+    #             # copy eligible fields (use the 0th element for the field list)
+    #             fields = ntuple[0].keys()
+    #             fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+    #             for f in fields_to_copy:
+    #                 field0 = ntuple[0][f]
+    #                 for j in range(1, len(ntuple)):
+    #                     fieldj = ntuple[j][f]
+    #                     if field0 != fieldj:
+    #                         print('\tField {0} unequal: {0} <-> {1}'.format(f, field0, fieldj))
+    #                 ret[f] = copy.deepcopy(ntuple[0][f])
                     
-                # update job and phenotype fields
-                ret['job_id'] = job_id
-                ret['phenotype_id'] = phenotype_id
-                ret['owner'] = phenotype_owner
-                ret['job_date'] = datetime.datetime.now()
-                ret['context_type'] = on
-                ret['raw_definition_text'] = expression
-                ret['nlpql_feature'] = operation_name
-                ret['phenotype_final'] = c['final']
-                ret['history'] = copy.deepcopy(histories)
+    #             # update job and phenotype fields
+    #             ret['job_id'] = job_id
+    #             ret['phenotype_id'] = phenotype_id
+    #             ret['owner'] = phenotype_owner
+    #             ret['job_date'] = datetime.datetime.now()
+    #             ret['context_type'] = on
+    #             ret['raw_definition_text'] = expression
+    #             ret['nlpql_feature'] = operation_name
+    #             ret['phenotype_final'] = c['final']
+    #             ret['history'] = copy.deepcopy(histories)
 
-                output.append(ret)
+    #             output.append(ret)
 
-        if len(output) > 0:
-            db.phenotype_results.insert_many(output)
-        else:
-            print('mongo_process_operations (OR): No phenotype matches on %s.' % expression)
+    #     if len(output) > 0:
+    #         db.phenotype_results.insert_many(output)
+    #     else:
+    #         print('mongo_process_operations (OR): No phenotype matches on %s.' % expression)
 
         
     # elif mongo_eval.MONGO_OP_OR == eval_result.operation:
