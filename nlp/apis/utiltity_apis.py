@@ -31,12 +31,24 @@ def kill_job(job_id: int):
         pid = output.decode("utf-8").strip()
         kill_cmd = "kill -9 %s" % pid
         subprocess.call(kill_cmd, shell=True)
+        update_job_status(str(job_id), util.conn_string, "KILLED", "Killed by user command")
         return "Killed job %d, pid %s!" % (job_id, pid)
     else:
         if len(output) == 0:
             return "Unable to kill job. No matching Luigi job!"
         else:
             return "Unable to kill job. %s" % err.decode("utf-8")
+
+
+@utility_app.route('/delete_job/<int:job_id>', methods=['GET'])
+@auto.doc(groups=['private'])
+def delete_job_by_id(job_id: int):
+    print('deleting job now ' + str(job_id))
+    flag = delete_job(str(job_id), util.conn_string)
+    if flag == 1:
+        return "Successfully deleted Job!"
+    else:
+        return "Unable to delete Job!"
 
 
 @utility_app.route('/job_results/<int:job_id>/<string:job_type>', methods=['GET'])

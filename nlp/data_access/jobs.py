@@ -5,7 +5,7 @@ import json
 import util
 import sys
 import traceback
-
+from pymongo import MongoClient
 
 try:
     from .base_model import BaseModel
@@ -121,6 +121,34 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
         traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
+
+    return flag
+
+
+def delete_job(job_id: str, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    client = MongoClient(util.mongo_host, util.mongo_port)
+
+    cursor = conn.cursor()
+    flag = -1 # To determine whether the update was successful or not
+
+    try:
+        cursor.execute("DELETE FROM nlp.nlp_job_status  WHERE nlp_job_id=" + job_id)
+        cursor.execute("DELETE FROM nlp.nlp_job WHERE nlp_job_id=" + job_id)
+        conn.commit()
+
+        db = client[util.mongo_db]
+        db.phenotype_results.remove({
+            "job_id": int(job_id)
+        })
+
+        flag = 1
+    except Exception as e:
+        flag = -1
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+        client.close()
 
     return flag
 
