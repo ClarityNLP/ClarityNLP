@@ -38,7 +38,7 @@ termset ConditionTerms:[
     "diabetes", "dm"
 ];
 
-define  Conditions:
+define final Conditions:
   Clarity.ProviderAssertion({
     termset:[ConditionTerms],
     documentset:[PotentiallyEligiblePatientsNotes]

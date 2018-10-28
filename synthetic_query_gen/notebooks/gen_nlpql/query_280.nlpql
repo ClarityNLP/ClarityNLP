@@ -38,7 +38,7 @@ termset ConditionTerms:[
     "Gastroesophageal reflux", "GERD"
 ];
 
-define  Conditions:
+define final Conditions:
   Clarity.ProviderAssertion({
     termset:[ConditionTerms],
     documentset:[PotentiallyEligiblePatientsNotes]

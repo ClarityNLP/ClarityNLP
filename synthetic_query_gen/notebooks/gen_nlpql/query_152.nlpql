@@ -38,7 +38,7 @@ termset ConditionTerms:[
     "congestive heart failure", "chf", "ccf - congestive cardiac failure", "chf - congestive heart failure", "congestive cardiac failure", "congestive heart disease", "congestive heart failure", "congestive heart failure (disorder)", "congestive heart failure (finding)"
 ];
 
-define  Conditions:
+define final Conditions:
   Clarity.ProviderAssertion({
     termset:[ConditionTerms],
     documentset:[PotentiallyEligiblePatientsNotes]

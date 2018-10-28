@@ -38,7 +38,7 @@ define Race:
         termset:[Races]
     });
 
-define  RaceMatch:
+define final RaceMatch:
     where Race.value_normalized = "asian";
         
 

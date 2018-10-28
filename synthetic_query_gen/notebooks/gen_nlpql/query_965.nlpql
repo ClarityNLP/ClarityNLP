@@ -38,7 +38,7 @@ termset ConditionTerms:[
     "renal failure"
 ];
 
-define  Conditions:
+define final Conditions:
   Clarity.ProviderAssertion({
     termset:[ConditionTerms],
     documentset:[PotentiallyEligiblePatientsNotes]

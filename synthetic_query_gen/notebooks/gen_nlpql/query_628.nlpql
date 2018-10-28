@@ -41,7 +41,7 @@ termset MedicationTerms:[
     "acetaminophen"
 ];
 
-define  Medications:
+define final Medications:
   Clarity.ProviderAssertion({
     termset:[MedicationTerms],
     documentset:[PotentiallyEligiblePatientsNotes]

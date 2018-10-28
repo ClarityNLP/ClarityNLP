@@ -38,7 +38,7 @@ termset ConditionTerms:[
     "Atrial fibrillation", "Atrial fibrulation", "Atrial fabrillation", "Atrial fibrilation", "a fib", "afib", "atrial fib", "atr fibrillation", "atr fibrulation", "atr fabrillation", "atr fibrilation", "atr fib", "auricular fibrillation", "auricular fibrulation", "auricular fabrillation", "auricular fibrilation", "auricular fib", "aflutter", "atrial flutter"
 ];
 
-define  Conditions:
+define final Conditions:
   Clarity.ProviderAssertion({
     termset:[ConditionTerms],
     documentset:[PotentiallyEligiblePatientsNotes]

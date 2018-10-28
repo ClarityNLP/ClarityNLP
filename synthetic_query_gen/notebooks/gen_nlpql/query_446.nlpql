@@ -38,7 +38,7 @@ termset ConditionTerms:[
     "Urinary tract infectious disease", "UTI", "urinary tract infection"
 ];
 
-define  Conditions:
+define final Conditions:
   Clarity.ProviderAssertion({
     termset:[ConditionTerms],
     documentset:[PotentiallyEligiblePatientsNotes]
