@@ -1,5 +1,11 @@
 
 
+// limit if any
+
+limit 1000;
+        
+
+ 
 // Phenotype library name
 phenotype "SyntheticQueryTesting_197_NCT02030314_000000000000000000000000001" version "1";
 

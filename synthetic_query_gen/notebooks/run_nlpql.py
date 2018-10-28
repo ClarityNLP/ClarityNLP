@@ -2,7 +2,7 @@ import requests
 import time
 import sys
 
-max_workers = 10
+max_workers = 5
 max_jobs = 100
 cur_job = 2
 url = 'http://18.220.133.76:5000/'
@@ -26,7 +26,7 @@ def run_nlpql(i):
     res = requests.post(nlpql_url, data=nlpql, headers={'content-type': 'text/plain'})
     if res.ok:
         print("Running job %d" % i)
-        time.sleep(600)
+        time.sleep(120)
     else:
         print('Failed to run job %d' % i)
         sys.exit(1)
@@ -43,6 +43,6 @@ if __name__ == "__main__":
                 run_nlpql(i)
             else:
                 while get_active_workers() >= max_workers:
-                    print('At max workers sleeping for 1 minute...')
+                    print('At max workers for job %d sleeping for 1 minute...' % i)
                     time.sleep(60)
                 run_nlpql(i)
