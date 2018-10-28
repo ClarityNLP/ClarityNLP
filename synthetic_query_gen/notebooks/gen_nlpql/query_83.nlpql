@@ -29,7 +29,7 @@ documentset PotentiallyEligiblePatientsNotes:
 
 termset Male: ["man", "men", "male", "boy", "boys"];
 
-define  isMale
+define  isMale:
  Clarity.ProviderAssertion({
    termset:[Male],
    documentset:[PotentiallyEligiblePatientsNotes]

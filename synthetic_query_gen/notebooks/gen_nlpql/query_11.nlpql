@@ -29,7 +29,7 @@ documentset PotentiallyEligiblePatientsNotes:
 
 termset Female: ["woman", "women", "female", "girl", "girls", "pregnant", "menopausal", "postmenopausal"];
 
-define  isFemale
+define  isFemale:
  Clarity.ProviderAssertion({
    termset:[Female],
    documentset:[PotentiallyEligiblePatientsNotes]
