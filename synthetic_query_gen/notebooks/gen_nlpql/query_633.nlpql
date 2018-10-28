@@ -47,7 +47,7 @@ define Race:
     });
 
 define  RaceMatch:
-    where Race.value_normalized = "white";
+    where Race.value_normalized == "white";
         
 
 // Condition(s) inclusion criteria termset, if condition criteria present

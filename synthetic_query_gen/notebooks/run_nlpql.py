@@ -4,7 +4,7 @@ import sys
 
 max_workers = 5
 max_jobs = 100
-cur_job = 0
+cur_job = 11
 url = 'http://18.220.133.76:5000/'
 nlpql_url = url + 'nlpql'
 

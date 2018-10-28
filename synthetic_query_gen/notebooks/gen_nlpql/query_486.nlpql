@@ -39,7 +39,7 @@ define Race:
     });
 
 define final RaceMatch:
-    where Race.value_normalized = "asian";
+    where Race.value_normalized == "asian";
         
 
 // Condition(s) inclusion criteria termset, if condition criteria present
