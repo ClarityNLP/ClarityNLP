@@ -796,11 +796,6 @@ def mongo_process_operations(infix_tokens,
     match_filters = dict()
     match_filters['job_id'] = job_id
 
-    # fields to appear in final result, for each group member:
-    # _id_x, _id_y, feature_x, feature_y, report_date_x, report_date_y,
-    # sentence_x, sentence_y,
-    # either subject_x, subject_y or report_id_x, report_id_y
-
     operation_name = c['name']
     if phenotype.context == 'Document':
         on = 'report_id'
@@ -902,26 +897,6 @@ def mongo_process_operations(infix_tokens,
                 else:
                     ntuples = to_OR_JOIN_group_ntuples(g, eval_result.n, other)
             
-            # if mongo_eval.MONGO_AND_MEANS_INTERSECTION:
-            #     if mongo_eval.MONGO_OP_AND == eval_result.operation:
-            #         # need n elements for an AND ntuple (OR needs from 1..n)
-            #         if len(g) < eval_result.n:
-            #             continue
-
-            #         # Groups have been matched on the 'on', 'sentence', and 'start'
-            #         # fields. Separate into ntuples having one value each of the NLPQL
-            #         # features and identical values of the 'other' field.
-            #         ntuples = to_AND_INTERSECT_group_ntuples(g, eval_result.n, other)
-            #     else:
-            #         ntuples = to_OR_INTERSECT_group_ntuples(g, eval_result.n, other)
-            # else:
-            #     # entire group is a single ntuple
-            #     ntuple = []
-            #     for doc in g:
-            #         ntuple.append(doc)
-            #     ntuple = sorted(ntuple, key=lambda x: x[other])
-            #     ntuples = [ntuple]
-                
             print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:
 
@@ -989,94 +964,7 @@ def mongo_process_operations(infix_tokens,
         else:
             print('mongo_process_operations ({0}): no phenotype matches on {1}.'.
                   format(eval_result.operation, expression))
-
             
-    # elif mongo_eval.MONGO_OP_OR == eval_result.operation:
-    # *********** D E L E T E *************************
-    #     # multi-row evaluation result, n-ary OR
-    #     print('           operation: {0}'.format(eval_result.operation))
-    #     print('                   n: {0}'.format(eval_result.n))
-    #     print('            is_final: {0}'.format(is_final))
-    #     print('           doc count: {0}'.format(len(eval_result.doc_ids)))
-    #     print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
-
-    #     doc_groups = eval_result.doc_groups
-    #     group_counter = 1
-    #     for g in doc_groups:
-    #         print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
-    #         group_counter += 1
-            
-    #         for doc in g:
-    #             print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-    #                   'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-    #                   format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-    #                          doc['report_id'], doc['subject'], doc['start'],
-    #                          doc['end']))
-
-    #             ret = {}
-
-    #             # get doc fields (these vary with the NLPQL task)
-    #             fields = doc.keys()
-
-    #             # don't copy these fields from doc to ret
-    #             # NO_COPY_FIELDS = [
-    #             #     '_id', 'job_id', 'phenotype_id', 'owner',
-    #             #     'job_date', 'context_type', 'raw_definition_text',
-    #             #     'nlpql_feature', 'phenotype_final'
-    #             # ]
-
-    #             fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-    #             for f in fields_to_copy:
-    #                 ret[f] = copy.deepcopy(doc[f])
-
-    #             if 'source_ids' not in doc:
-    #                 ret['source_ids'] = [doc['_id']]
-    #             else:
-    #                 ret['source_ids'] = copy.deepcopy(doc['source_ids'])
-    #                 ret['source_ids'].append(doc['_id'])
-
-    #             if 'source_features' not in doc:
-    #                 ret['source_features'] = [doc['nlpql_feature']]
-    #             else:
-    #                 ret['source_features'] = copy.deepcopy(doc['source_features'])
-    #                 ret['source_features'].append(doc['nlpql_feature'])
-
-    #             if 'source_sentences' not in doc:
-    #                 ret['source_sentences'] = [doc['sentence']]
-    #             else:
-    #                 ret['source_sentences'] = copy.deepcopy(doc['source_sentences'])
-    #                 sentence = doc['sentence']
-    #                 num_sentences = len(ret['source_sentences'])
-    #                 all_equal = True
-    #                 for j in reversed(range(num_sentences)):
-    #                     prev = ret['source_sentences'][j]
-    #                     if None == prev or sentence == prev:
-    #                         continue
-    #                     else:
-    #                         all_equal = False
-    #                         break
-    #                 if all_equal:
-    #                     # reduce file size by not repeating the same sentence
-    #                     ret['source_sentences'].append(None)
-    #                 else:
-    #                     ret['source_sentences'].append(sentence)
-                        
-    #             # update job and phenotype fields
-    #             ret['job_id'] = job_id
-    #             ret['phenotype_id'] = phenotype_id
-    #             ret['owner'] = phenotype_owner
-    #             ret['job_date'] = datetime.datetime.now()
-    #             ret['context_type'] = on
-    #             ret['raw_definition_text'] = expression
-    #             ret['nlpql_feature'] = operation_name
-    #             ret['phenotype_final'] = c['final']
-                    
-    #             output.append(ret)
-
-    #     if len(output) > 0:
-    #         db.phenotype_results.insert_many(output)
-    #     else:
-    #         print('mongo_process_operations (or): No phenotype matches on %s.' % expression)
 
     # elif mongo_eval.MONGO_OP_SETDIFF == eval_result.operation:
     #     # multi-row evaluation result, A NOT B (A SUBTRACT B)
