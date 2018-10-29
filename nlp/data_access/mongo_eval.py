@@ -172,7 +172,7 @@ MONGO_OP_ERROR   = 'ERROR'
 
 MONGO_EVAL_ERROR = MongoEvalResult(MONGO_OP_ERROR, 0, [], [])
 
-MONGO_AND_MEANS_INTERSECTION = mongo_logic_ops.AND_MEANS_INTERSECTION
+MONGO_MEASUREMENT_CONTEXT = mongo_logic_ops.MEASUREMENT_CONTEXT
 
 
 # non-exported variables
@@ -1176,7 +1176,7 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    if mongo_logic_ops.AND_MEANS_INTERSECTION:
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
         assert doc_ids == [4,5,9,10]
     else:
         assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
@@ -1193,7 +1193,7 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['B', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    if mongo_logic_ops.AND_MEANS_INTERSECTION:
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
         assert doc_ids == [6,11,14]
     else:
         assert doc_ids == [6,7,11,12,14,15]
@@ -1203,7 +1203,7 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B', 'C', 'D'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    if mongo_logic_ops.AND_MEANS_INTERSECTION:
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
         assert doc_ids == []
     else:
         assert doc_ids == [1,2,6,7,11,12,14,15]
@@ -1241,7 +1241,10 @@ def _run_tests():
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['A', 'B'])
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == []
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
+        assert doc_ids == [1,2,3]
+    else:
+        assert doc_ids == []
 
     # D not C, document context
     pipeline = []
@@ -1259,13 +1262,13 @@ def _run_tests():
 
     # not B
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'B')
+    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'report_id', 'B')
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
 
     # not D
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'D')
+    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'subject', 'D')
     doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,6,7,8,9,10,11,12,13]
 

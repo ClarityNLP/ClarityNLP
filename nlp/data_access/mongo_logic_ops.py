@@ -10,7 +10,7 @@ This file is to be imported by the mongo evaluator.
 # Otherwise join on report_id or subject only.
 # Use the first for logical consistency for measurements or any chunks of
 # text defined by a sentence and a start offset.
-AND_MEANS_INTERSECTION=False
+MEASUREMENT_CONTEXT=False
 
 ###############################################################################
 def _append_logical_and(pipeline,             # pipeline to append to
@@ -36,7 +36,7 @@ def _append_logical_and(pipeline,             # pipeline to append to
     feature_string = "feature_set.{0}".format(n-1)
 
     # set the join condition
-    if AND_MEANS_INTERSECTION:
+    if MEASUREMENT_CONTEXT:
         # join on either (report_id or subject) AND sentence AND start offset
         join_obj = {
             str_filter_1 : str_filter_2,
@@ -103,7 +103,7 @@ def _append_logical_or(pipeline,            # pipeline to append to
     str_filter_1 = field_to_join_on
     str_filter_2 = "${0}".format(field_to_join_on)
 
-    if AND_MEANS_INTERSECTION:
+    if MEASUREMENT_CONTEXT:
         join_obj = {
             str_filter_1 : str_filter_2,
             "sentence" : "$sentence",
@@ -146,14 +146,31 @@ def _append_logical_or(pipeline,            # pipeline to append to
 
 ###############################################################################
 def _append_logical_a_not_b(pipeline,         # pipeline to append to
-                            id_string,        # formatted "$join_field"
+                            field_to_join_on, # formatted "$join_field"
                             nlpql_feature_a,
                             nlpql_feature_b):
     """
-    Join on the id_string and return all docs from A that are not in B.
-    The id_string parameter encodes the join variable: "$join_variable".
+    Find all elements common to A and B, then remove them from A. Whether an
+    element belongs to both sets is determined by the join condition.
     """
 
+    str_filter_1 = field_to_join_on
+    str_filter_2 = "${0}".format(field_to_join_on)
+    
+    # set the join condition
+    if MEASUREMENT_CONTEXT:
+        # join on either (report_id or subject) AND sentence AND start offset
+        join_obj = {
+            str_filter_1 : str_filter_2,
+            "sentence" : "$sentence",
+            "start" : "$start"
+        }
+    else:
+        # join only on either report_id or subject
+        join_obj = {
+            str_filter_1 : str_filter_2
+        }
+    
     stages = [
 
         # find those records having the specified nlpql features
@@ -166,7 +183,7 @@ def _append_logical_a_not_b(pipeline,         # pipeline to append to
         # group these records by value of the join variable
         {
             "$group" : {
-                "_id"    : id_string,            # field to group on
+                "_id"    : join_obj,
                 "ntuple" : {"$push" : "$$ROOT"}, # grouped documents
                 "count"  : { "$sum" : 1}         # count joined docs for
                                                  # each value of join var
@@ -194,13 +211,31 @@ def _append_logical_a_not_b(pipeline,         # pipeline to append to
 
 
 ###############################################################################
-def _append_logical_not_a(pipeline,       # pipeline to append to
-                          id_string,      # formatted "$join_field"
+def _append_logical_not_a(pipeline,
+                          field_to_join_on,
                           nlpql_feature):
     """
-    Find all records that do NOT have the given nlpql feature.
+    Find all records that do NOT have the given nlpql feature. Group them by
+    the join condition to conform to the other operations in this module.
     """
 
+    str_filter_1 = field_to_join_on
+    str_filter_2 = "${0}".format(field_to_join_on)
+    
+    # set the join condition
+    if MEASUREMENT_CONTEXT:
+        # join on either (report_id or subject) AND sentence AND start offset
+        join_obj = {
+            str_filter_1 : str_filter_2,
+            "sentence" : "$sentence",
+            "start" : "$start"
+        }
+    else:
+        # join only on either report_id or subject
+        join_obj = {
+            str_filter_1 : str_filter_2
+        }
+    
     stages = [
 
         {
@@ -212,7 +247,7 @@ def _append_logical_not_a(pipeline,       # pipeline to append to
         # group by value of the nlpql_feature
         {
             "$group" : {
-                "_id"    : id_string,           # field to group on
+                "_id"    : join_obj,            # field to group on
                 "ntuple" : {"$push" : "$$ROOT"} # grouped documents
             }
         },
@@ -233,8 +268,6 @@ def _append_logical_not_a(pipeline,       # pipeline to append to
 ###############################################################################
 def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
 
-    #id_string = "${0}".format(field_to_join_on)
-    
     _append_logical_and(pipeline,
                         field_to_join_on,
                         nlpql_feature_list)
@@ -244,7 +277,7 @@ def _logical_a_and_b(pipeline, field_to_join_on, nlpql_feature_list):
 ###############################################################################
 def _logical_a_or_b(pipeline, field_to_join_on, nlpql_feature_list):
 
-    _append_logical_or(pipeline, #id_string,
+    _append_logical_or(pipeline,
                        field_to_join_on,
                        nlpql_feature_list)
     return pipeline
@@ -256,10 +289,8 @@ def _logical_a_not_b(pipeline,
                      nlpql_feature_a,
                      nlpql_feature_b):
 
-    id_string = "${0}".format(field_to_join_on)
-
     _append_logical_a_not_b(pipeline,
-                            id_string,
+                            field_to_join_on,
                             nlpql_feature_a,
                             nlpql_feature_b)
     return pipeline
@@ -297,14 +328,12 @@ def logic_expr_a_b(pipeline, operator, field_to_join_on, nlpql_feature_list):
 
 
 ###############################################################################
-def logic_expr_not_a(pipeline, nlpql_feature):
+def logic_expr_not_a(pipeline, field_to_join_on, nlpql_feature):
     """
     Build a MongoDB aggregation pipeline to compute the expression 'not A',
     where A is a set of MongoDB documents. The 'not' operator is applied to
     the nlpql_feature field of each document.
     """
 
-    id_string = "{0}".format(nlpql_feature)
-
-    pipeline = _append_logical_not_a(pipeline, id_string, nlpql_feature)
+    pipeline = _append_logical_not_a(pipeline, field_to_join_on, nlpql_feature)
     return pipeline
