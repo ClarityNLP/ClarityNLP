@@ -421,6 +421,7 @@ def _is_multi_row_op(infix_tokens):
             new_infix_tokens.append(list(identifier_set))
             if _TRACE: print('\tfound "not A" expression')
             return new_infix_tokens
+
         else:
             return _EMPTY_LIST
     else:
@@ -951,6 +952,7 @@ def run(mongo_collection_obj,
         else:
             assert 1 == feature_count
             mongo_pipeline = mongo_logic_ops.logic_expr_not_a(mongo_pipeline,
+                                                              join_field,
                                                               nlpql_feature_list[0])
 
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))

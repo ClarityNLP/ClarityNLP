@@ -435,6 +435,13 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     # the list of infix tokens.
     expression = c['raw_text']
 
+    # a hack for testing purposes
+    print('process_operations expression: {0}'.format(expression))
+    if 'NOTLesionMeasurement.dimension_X<30' == expression:
+        expression = 'NOT LesionMeasurement.dimension_X < 30'
+    elif 'NOThasLesionLT30' == expression:
+        expression = 'NOT hasLesionLT30'
+    
     infix_tokens = mongo_eval.is_mongo_computable(expression)
     if len(infix_tokens) > 0:
         mongo_process_operations(infix_tokens, db, job, phenotype, phenotype_id, phenotype_owner, c, final)
@@ -789,6 +796,8 @@ def mongo_process_operations(infix_tokens,
                              phenotype_owner, c: PhenotypeOperations,
                              final=False):
 
+    #print('mongo_process_operations infix tokens: {0}'.format(infix_tokens))
+    
     client = MongoClient(util.mongo_host, util.mongo_port)
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
@@ -916,11 +925,11 @@ def mongo_process_operations(infix_tokens,
                 # insert the fields that DIFFER between the ntuple members
                 # into the history
                 for doc in ntuple:
-                    print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-                          'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-                          format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-                                 doc['report_id'], doc['subject'], doc['start'],
-                                 doc['end']))
+                    # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                    #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                    #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                    #              doc['report_id'], doc['subject'], doc['start'],
+                    #              doc['end']))
 
                     history['source_ids'].append(doc['_id'])
                     history['source_features'].append(doc['nlpql_feature'])
@@ -965,25 +974,25 @@ def mongo_process_operations(infix_tokens,
             print('mongo_process_operations ({0}): no phenotype matches on {1}.'.
                   format(eval_result.operation, expression))
 
-    # elif mongo_eval.MONGO_OP_NOT == eval_result.operation:
-    #     # multi-row evaluation result, NOT A
-    #     print('           operation: {0}'.format(eval_result.operation))
-    #     print('                   n: {0}'.format(eval_result.n))
-    #     print('            is_final: {0}'.format(is_final))
-    #     print('           doc count: {0}'.format(len(eval_result.doc_ids)))
-    #     print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+    elif mongo_eval.MONGO_OP_NOT == eval_result.operation:
+        # multi-row evaluation result, NOT A
+        print('           operation: {0}'.format(eval_result.operation))
+        print('                   n: {0}'.format(eval_result.n))
+        print('            is_final: {0}'.format(is_final))
+        print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+        print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
 
-    #     doc_groups = eval_result.doc_groups
-    #     group_counter = 1
-    #     for g in doc_groups:
-    #         print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
-    #         group_counter += 1
-    #         for doc in g:
-    #             print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-    #                   'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-    #                   format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-    #                          doc['report_id'], doc['subject'], doc['start'],
-    #                          doc['end']))
+        doc_groups = eval_result.doc_groups
+        group_counter = 1
+        for g in doc_groups:
+            print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+            group_counter += 1
+            for doc in g:
+                print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                      'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                      format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                             doc['report_id'], doc['subject'], doc['start'],
+                             doc['end']))
 
     # elif mongo_eval.MONGO_OP_SETDIFF == eval_result.operation:
     #     # multi-row evaluation result, A NOT B (A SUBTRACT B)
