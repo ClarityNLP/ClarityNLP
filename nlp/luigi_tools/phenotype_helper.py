@@ -440,8 +440,8 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     if 'NOTLesionMeasurement.dimension_X<30' == expression:
         expression = 'NOT LesionMeasurement.dimension_X < 30'
     elif 'NOThasLesionLT999' == expression:
-        expression = 'hasLesionLT30 NOT hasLesionLT15'
-        #expression = 'NOT hasLesionLT30'
+        expression = 'hasLesions NOT hasLesionGE15andLT30Math'
+        #expression = 'hasLesionLT30 NOT hasLesionLT15'
     
     infix_tokens = mongo_eval.is_mongo_computable(expression)
     if len(infix_tokens) > 0:
