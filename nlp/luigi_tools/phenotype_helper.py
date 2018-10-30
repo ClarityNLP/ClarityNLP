@@ -618,7 +618,7 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             del output
 
 
-def to_AND_INTERSECT_group_ntuples(and_group, n, other):
+def _to_ntuples_AND_meas_context(and_group, n, other):
     """
     Convert a group of MongoDB result docs from an n-ary AND operation to
     ntuples. Each member of the ntuple has a unique value of the n NLPQL
@@ -657,7 +657,7 @@ def to_AND_INTERSECT_group_ntuples(and_group, n, other):
                 
     return ntuples
 
-def to_AND_JOIN_group_ntuples(g, n, other):
+def _to_ntuples_AND(g, n, other):
     """
     """
 
@@ -719,7 +719,7 @@ def to_AND_JOIN_group_ntuples(g, n, other):
     return ntuples
 
 
-def to_OR_JOIN_group_ntuples(g, n, other):
+def _to_ntuples_OR(g, n, other):
     """
     """
 
@@ -733,7 +733,7 @@ def to_OR_JOIN_group_ntuples(g, n, other):
 
 
 
-def to_OR_INTERSECT_group_ntuples(or_group, n, other):
+def _to_ntuples_OR_meas_context(or_group, n, other):
     """
     Convert a group of MongoDB result docs from an n-ary OR operation to
     ntuples. Each member of the ntuple has a unique value of the n NLPQL
@@ -898,14 +898,14 @@ def mongo_process_operations(infix_tokens,
                     continue
 
                 if mongo_eval.MONGO_MEASUREMENT_CONTEXT:
-                    ntuples = to_AND_INTERSECT_group_ntuples(g, eval_result.n, other)
+                    ntuples = _to_ntuples_AND_meas_context(g, eval_result.n, other)
                 else:
-                    ntuples = to_AND_JOIN_group_ntuples(g, eval_result.n, other)
+                    ntuples = _to_ntuples_AND(g, eval_result.n, other)
             else:
                 if mongo_eval.MONGO_MEASUREMENT_CONTEXT:
-                    ntuples = to_OR_INTERSECT_group_ntuples(g, eval_result.n, other)
+                    ntuples = _to_ntuples_OR_meas_context(g, eval_result.n, other)
                 else:
-                    ntuples = to_OR_JOIN_group_ntuples(g, eval_result.n, other)
+                    ntuples = _to_ntuples_OR(g, eval_result.n, other)
             
             print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:

@@ -192,11 +192,8 @@ def _append_logical_a_not_b(pipeline,         # pipeline to append to
 
         # {'_id':..., 'ntuple':[records w/same value of join var], 'count':...}
 
-        # keep only the results with a single NLPQL feature
-        { "$match" : { "count" : { "$eq" : 1 }}},
-
         # of these, keep only the docs having nlpql_feature_a
-        { "$match" : { "ntuple.nlpql_feature" : { "$in" : [nlpql_feature_a]}}},
+        { "$match" : { "ntuple.nlpql_feature" : { "$nin" : [nlpql_feature_b]}}},
 
         # project out the ntuple array
         {
