@@ -6,7 +6,6 @@
 
 ClarityNLP is a clinical natural language processing platform focused on making healthcare NLP more accessible and reproducible.  Over the past decade, NLP methods have far outstripped our ability to use them effectively.
 
-process of extracting and using data found in clinical text. reproducible, validated data extraction phenotyp analyzing and aggregating clinical text to extract complex, computable phenotypes.
 ClarityNLP combines NLP techniques and libraries with a powerful query language, NLPQL, to identify patients and their clinical observations, extracted from text.
 ClarityNLP gives you insights into clinical (and other) text without a lot of custom configuration, and NLPQL lets you write your own definitions to find the patients and features that are relevant to your project.  
 
