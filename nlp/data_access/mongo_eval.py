@@ -364,8 +364,8 @@ def _is_multi_row_op(infix_tokens):
         identifier
         n-way 'and'
         n-way 'or'
-        A not B
-        not A
+        A not B   (aka SETDIFF, everything in A but not also in B)
+        (perhaps later) not A
 
     These expressions do NOT involve numeric literals or terms of the form
     nlpql_feature.value.
@@ -379,7 +379,7 @@ def _is_multi_row_op(infix_tokens):
         print('_is_multi_row_op: testing {0}'.format(infix_tokens))
 
     operator_set = set()
-    identifier_set = set()
+    identifier_list = list() # list preserves operand order
     
     for token in infix_tokens:
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
@@ -392,7 +392,7 @@ def _is_multi_row_op(infix_tokens):
                 continue
         match = _regex_identifier.match(token)
         if match:
-            identifier_set.add(match.group())
+            identifier_list.append(match.group())
             continue
 
         # if here, not a multi-row operation
@@ -404,23 +404,23 @@ def _is_multi_row_op(infix_tokens):
         # n-way 'and', n-way 'or'
         if _OPERATOR_AND == operator or _OPERATOR_OR == operator:
             new_infix_tokens = [operator]
-            new_infix_tokens.append(list(identifier_set))
+            new_infix_tokens.append(identifier_list)
             if _TRACE: print('\tfound n-way {0} expression'.format(operator))
             return new_infix_tokens
 
         # 'A not B'
-        elif _OPERATOR_NOT == operator and 2 == len(identifier_set):
+        elif _OPERATOR_NOT == operator and 2 == len(identifier_list):
             new_infix_tokens = [operator]
-            new_infix_tokens.append(list(identifier_set))
+            new_infix_tokens.append(identifier_list)
             if _TRACE: print('\tfound "A not B" expression')
             return new_infix_tokens
 
-        # not A
-        elif _OPERATOR_NOT == operator and 1 == len(identifier_set):
-            new_infix_tokens = [operator]
-            new_infix_tokens.append(list(identifier_set))
-            if _TRACE: print('\tfound "not A" expression')
-            return new_infix_tokens
+        # # not A (may not support this)
+        # elif _OPERATOR_NOT == operator and 1 == len(identifier_list):
+        #     new_infix_tokens = [operator]
+        #     new_infix_tokens.append(identifier_list) #list(identifier_set))
+        #     if _TRACE: print('\tfound "not A" expression')
+        #     return new_infix_tokens
 
         else:
             return _EMPTY_LIST

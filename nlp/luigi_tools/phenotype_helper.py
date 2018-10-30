@@ -435,12 +435,13 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     # the list of infix tokens.
     expression = c['raw_text']
 
-    # a hack for testing purposes
+    # a hack for testing purposes...
     print('process_operations expression: {0}'.format(expression))
     if 'NOTLesionMeasurement.dimension_X<30' == expression:
         expression = 'NOT LesionMeasurement.dimension_X < 30'
-    elif 'NOThasLesionLT30' == expression:
-        expression = 'NOT hasLesionLT30'
+    elif 'NOThasLesionLT999' == expression:
+        expression = 'hasLesionLT30 NOT hasLesionLT15'
+        #expression = 'NOT hasLesionLT30'
     
     infix_tokens = mongo_eval.is_mongo_computable(expression)
     if len(infix_tokens) > 0:
@@ -974,10 +975,9 @@ def mongo_process_operations(infix_tokens,
             print('mongo_process_operations ({0}): no phenotype matches on {1}.'.
                   format(eval_result.operation, expression))
 
-    elif mongo_eval.MONGO_OP_NOT == eval_result.operation:
-        # multi-row evaluation result, NOT A
+    elif mongo_eval.MONGO_OP_SETDIFF == eval_result.operation:
+        # multi-row evaluation result, A NOT B (A SUBTRACT B)
         print('           operation: {0}'.format(eval_result.operation))
-        print('                   n: {0}'.format(eval_result.n))
         print('            is_final: {0}'.format(is_final))
         print('           doc count: {0}'.format(len(eval_result.doc_ids)))
         print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
@@ -988,15 +988,69 @@ def mongo_process_operations(infix_tokens,
             print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
             group_counter += 1
             for doc in g:
-                print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
-                      'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
-                      format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
-                             doc['report_id'], doc['subject'], doc['start'],
-                             doc['end']))
 
-    # elif mongo_eval.MONGO_OP_SETDIFF == eval_result.operation:
-    #     # multi-row evaluation result, A NOT B (A SUBTRACT B)
+                # no concept of ntuples for SETDIFF, just take docs in order
+
+                ret = {}
+                history = {
+                    'operations'      : [],
+                    'source_ids'      : [],
+                    'source_features' : []
+                }
+
+                histories = []
+
+                # record the current operation
+                history['operations'].append('{0}'.format(eval_result.operation))
+
+                # insert the fields that DIFFER between the ntuple members
+                # into the history
+
+                # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                #              doc['report_id'], doc['subject'], doc['start'],
+                #              doc['end']))
+
+                history['source_ids'].append(doc['_id'])
+                history['source_features'].append(doc['nlpql_feature'])
+
+                if 'history' in doc:
+                    histories.append(doc['history'])
+
+                # this evaluation gets appended to the history as well
+                histories.append(history)
+
+                # copy eligible fields (use the 0th element for the field list)
+                fields = doc.keys()
+                fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+                for f in fields_to_copy:
+                    if f in doc:
+                        ret[f] = copy.deepcopy(doc[f])
+
+                # update job and phenotype fields
+                ret['job_id'] = job_id
+                ret['phenotype_id'] = phenotype_id
+                ret['owner'] = phenotype_owner
+                ret['job_date'] = datetime.datetime.now()
+                ret['context_type'] = on
+                ret['raw_definition_text'] = expression
+                ret['nlpql_feature'] = operation_name
+                ret['phenotype_final'] = c['final']
+                ret['history'] = copy.deepcopy(histories)
+
+                output.append(ret)
+
+        if len(output) > 0:
+            db.phenotype_results.insert_many(output)
+        else:
+            print('mongo_process_operations ({0}): no phenotype matches on {1}.'.
+                  format(eval_result.operation, expression))
+
+    # elif mongo_eval.MONGO_OP_NOT == eval_result.operation:
+    #     # multi-row evaluation result, NOT A
     #     print('           operation: {0}'.format(eval_result.operation))
+    #     print('                   n: {0}'.format(eval_result.n))
     #     print('            is_final: {0}'.format(is_final))
     #     print('           doc count: {0}'.format(len(eval_result.doc_ids)))
     #     print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
@@ -1012,6 +1066,7 @@ def mongo_process_operations(infix_tokens,
     #                   format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
     #                          doc['report_id'], doc['subject'], doc['start'],
     #                          doc['end']))
+
 
 def get_dependencies(po, deps: list):
     for de in po['data_entities']:
