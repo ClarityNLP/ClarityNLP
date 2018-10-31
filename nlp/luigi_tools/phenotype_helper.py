@@ -12,7 +12,8 @@ from pymongo import MongoClient
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations, mongo_eval, results
 from ohdsi import getCohort
 
-
+import json
+from bson import json_util, ObjectId
 
 DEBUG_LIMIT = 1000
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
@@ -859,14 +860,26 @@ def mongo_process_operations(infix_tokens,
             ret['phenotype_final'] = c['final']
 
             # single-row operations have no history to carry forward
+            # history = {
+            #     'operations' : [expression],
+            #     'source_ids' : [doc['_id']],
+            #     'source_features' : [doc['nlpql_feature']]
+            # }
             history = {
-                'operations' : ['MATH'],
-                'source_ids' : [doc['_id']],
-                'source_features' : [doc['nlpql_feature']]
+                'operation' : {
+                    'operator' : 'MATH',
+                    'expression' : expression,
+                    'source_ids'  : [doc['_id']],
+                    'source_features' : [doc['nlpql_feature']]
+                }
             }
-            ret['history'] = copy.deepcopy(history)
-            
-            # remove the copied doc['_id'] field; let Mongo assign a new one
+
+            if not is_final:
+                ret['history'] = copy.deepcopy(history)
+            else:
+                ret['history'] = json_util.dumps(history)
+
+            # remove the copied doc['_id'] so that Mongo will assign a new one
             ret.pop('_id', None)
             
             output.append(ret)
@@ -910,18 +923,28 @@ def mongo_process_operations(infix_tokens,
             print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:
 
-                ret = {}                
+                ret = {}
                 history = {
-                    'operations'      : [],
-                    'source_ids'      : [],
-                    'source_features' : []
+                    'operation' : {
+                        'operator' : '{0}_{1}'.format(eval_result.operation,
+                                                      eval_result.n),
+                        'expression' : expression,
+                        'source_ids'  : [],
+                        'source_features' : []
+                    }
                 }
+
+                # history = {
+                #     'operations'      : [],
+                #     'source_ids'      : [],
+                #     'source_features' : []
+                # }
 
                 histories = []
 
                 # record the current operation
-                history['operations'].append('{0}_{1}'.format(eval_result.operation,
-                                                              eval_result.n))
+                #history['operations'].append('{0}'.format(eval_result.operation))
+                #history['operation']['expression'] = '{0}'.format(eval_result.operation)
                 
                 # insert the fields that DIFFER between the ntuple members
                 # into the history
@@ -932,8 +955,10 @@ def mongo_process_operations(infix_tokens,
                     #              doc['report_id'], doc['subject'], doc['start'],
                     #              doc['end']))
 
-                    history['source_ids'].append(doc['_id'])
-                    history['source_features'].append(doc['nlpql_feature'])
+                    #history['source_ids'].append(doc['_id'])
+                    history['operation']['source_ids'].append(doc['_id'])
+                    #history['source_features'].append(doc['nlpql_feature'])
+                    history['operation']['source_features'].append(doc['nlpql_feature'])
 
                     if 'history' in doc:
                         histories.append(doc['history'])
@@ -965,7 +990,11 @@ def mongo_process_operations(infix_tokens,
                 ret['raw_definition_text'] = expression
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
-                ret['history'] = copy.deepcopy(histories)
+
+                if not is_final:
+                    ret['history'] = copy.deepcopy(histories)
+                else:
+                    ret['history'] = json_util.dumps(histories)
 
                 output.append(ret)
 
@@ -993,15 +1022,24 @@ def mongo_process_operations(infix_tokens,
 
                 ret = {}
                 history = {
-                    'operations'      : [],
-                    'source_ids'      : [],
-                    'source_features' : []
+                    'operation' : {
+                        'operator' : '{0}'.format(eval_result.operation),
+                        'expression' : expression, #'{0}'.format(eval_result.operation),
+                        'source_ids'  : [],
+                        'source_features' : []
+                    }
                 }
+
+                # history = {
+                #     'operations'      : [],
+                #     'source_ids'      : [],
+                #     'source_features' : []
+                # }
 
                 histories = []
 
                 # record the current operation
-                history['operations'].append('{0}'.format(eval_result.operation))
+                #history['operations'].append('{0}'.format(eval_result.operation))
 
                 # insert the fields that DIFFER between the ntuple members
                 # into the history
@@ -1012,8 +1050,8 @@ def mongo_process_operations(infix_tokens,
                 #              doc['report_id'], doc['subject'], doc['start'],
                 #              doc['end']))
 
-                history['source_ids'].append(doc['_id'])
-                history['source_features'].append(doc['nlpql_feature'])
+                history['operation']['source_ids'].append(doc['_id'])
+                history['operation']['source_features'].append(doc['nlpql_feature'])
 
                 if 'history' in doc:
                     histories.append(doc['history'])
@@ -1037,7 +1075,11 @@ def mongo_process_operations(infix_tokens,
                 ret['raw_definition_text'] = expression
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
-                ret['history'] = copy.deepcopy(histories)
+
+                if not is_final:
+                    ret['history'] = copy.deepcopy(histories)
+                else:
+                    ret['history'] = json_util.dumps(histories)
 
                 output.append(ret)
 
