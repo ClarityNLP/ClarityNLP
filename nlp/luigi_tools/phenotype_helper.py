@@ -860,11 +860,6 @@ def mongo_process_operations(infix_tokens,
             ret['phenotype_final'] = c['final']
 
             # single-row operations have no history to carry forward
-            # history = {
-            #     'operations' : [expression],
-            #     'source_ids' : [doc['_id']],
-            #     'source_features' : [doc['nlpql_feature']]
-            # }
             history = {
                 'operation' : {
                     'operator' : 'MATH',
@@ -934,18 +929,8 @@ def mongo_process_operations(infix_tokens,
                     }
                 }
 
-                # history = {
-                #     'operations'      : [],
-                #     'source_ids'      : [],
-                #     'source_features' : []
-                # }
-
                 histories = []
 
-                # record the current operation
-                #history['operations'].append('{0}'.format(eval_result.operation))
-                #history['operation']['expression'] = '{0}'.format(eval_result.operation)
-                
                 # insert the fields that DIFFER between the ntuple members
                 # into the history
                 for doc in ntuple:
@@ -955,9 +940,7 @@ def mongo_process_operations(infix_tokens,
                     #              doc['report_id'], doc['subject'], doc['start'],
                     #              doc['end']))
 
-                    #history['source_ids'].append(doc['_id'])
                     history['operation']['source_ids'].append(doc['_id'])
-                    #history['source_features'].append(doc['nlpql_feature'])
                     history['operation']['source_features'].append(doc['nlpql_feature'])
 
                     if 'history' in doc:
@@ -966,7 +949,8 @@ def mongo_process_operations(infix_tokens,
                 # this evaluation gets appended to the history as well
                 histories.append(history)
 
-                # COPYING IS WRONG FOR AND means JOIN - FIX THIS
+                # copying makes no sense for n-way AND outside of a measurement
+                # context - FIX THIS
                 
                 # copy eligible fields (use the 0th element for the field list)
                 fields = ntuple[0].keys()
@@ -1024,25 +1008,13 @@ def mongo_process_operations(infix_tokens,
                 history = {
                     'operation' : {
                         'operator' : '{0}'.format(eval_result.operation),
-                        'expression' : expression, #'{0}'.format(eval_result.operation),
+                        'expression' : expression,
                         'source_ids'  : [],
                         'source_features' : []
                     }
                 }
 
-                # history = {
-                #     'operations'      : [],
-                #     'source_ids'      : [],
-                #     'source_features' : []
-                # }
-
                 histories = []
-
-                # record the current operation
-                #history['operations'].append('{0}'.format(eval_result.operation))
-
-                # insert the fields that DIFFER between the ntuple members
-                # into the history
 
                 # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
                 #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
