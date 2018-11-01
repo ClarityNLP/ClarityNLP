@@ -804,12 +804,23 @@ def _mongo_evaluate_single_row(json_commands, mongo_collection_obj):
     # convert the json_command string to an object by evaluating it and
     # instantiating an OrderedDict (need to maintain argument order)
     pipeline_obj = [OrderedDict(ast.literal_eval(j)) for j in json_commands]
+
+    # cursor iterates over docs containing an _id field and a Boolean 'value'
     cursor = mongo_collection_obj.aggregate(pipeline_obj)
-            
+
     # keep all doc ids for which the aggregation result is True
     doc_ids = [doc['_id'] for doc in cursor if doc['value']]
 
-    return doc_ids    
+    # now query for the full documents
+    cursor = mongo_collection_obj.find({'_id' : {'$in' : doc_ids}})
+
+    # put all docs in a single group
+    group = []
+    for doc in cursor:
+        group.append(doc)
+
+    # return doc ids and an array of groups
+    return (doc_ids, [group])
 
 
 ###############################################################################
@@ -920,12 +931,13 @@ def run(mongo_collection_obj,
                                             join_field)
 
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
-        doc_ids = _mongo_evaluate_single_row(mongo_pipeline, mongo_collection_obj)
+        ids, groups = _mongo_evaluate_single_row(mongo_pipeline,
+                                                 mongo_collection_obj)
 
         mongo_eval_result = MongoEvalResult(operation  = MONGO_OP_MATH,
                                             n          = 1,
-                                            doc_ids    = doc_ids,
-                                            doc_groups = [])
+                                            doc_ids    = ids,
+                                            doc_groups = groups)
 
     else:
         # the operator and nlpql features are stored in the 'tokens' list

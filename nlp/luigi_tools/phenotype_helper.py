@@ -822,17 +822,16 @@ def mongo_process_operations(infix_tokens,
         client.close()
         return
 
-    # get rid of this? - rewrite the MATH loop below
-    try:        
-        mongo_docs = results.lookup_phenotype_results_by_id(eval_result.doc_ids)
-    except Exception as e:
-        traceback.print_exc(file=sys.stdout)
-        mongo_docs = []
-    finally:
-        client.close()
+    # try:        
+    #     mongo_docs = results.lookup_phenotype_results_by_id(eval_result.doc_ids)
+    # except Exception as e:
+    #     traceback.print_exc(file=sys.stdout)
+    #     mongo_docs = []
+    # finally:
+    #     client.close()
 
-    if 0 == len(mongo_docs):
-        return
+    # if 0 == len(mongo_docs):
+    #     return
 
     output = list()
     is_final = c['final']
@@ -847,7 +846,11 @@ def mongo_process_operations(infix_tokens,
     if mongo_eval.MONGO_OP_MATH == eval_result.operation:
 
         # single-row evaluation results, both intermediate and final
-        for doc in mongo_docs['results']:
+        #for doc in mongo_docs['results']:
+        doc_groups = eval_result.doc_groups
+        assert 1 == len(doc_groups)
+        for doc in doc_groups[0]:
+    
             ret = copy.deepcopy(doc)
             ret['job_id'] = job_id
             ret['phenotype_id'] = phenotype_id
@@ -1057,12 +1060,7 @@ def mongo_process_operations(infix_tokens,
                                     found_it = True
                                     col = 'nlpql_feature_{0}'.format(index+1)
                                     values = obj['source_features']
-                                    print('values: {0}'.format(values))
-                                    assert type(values) == list
-                                    if len(values) > 1:
-                                        ret[col] = copy.deepcopy(values)
-                                    else:
-                                        ret[col] = copy.deepcopy(values[0])
+                                    ret[col] = ','.join(values)
                                     # only go back one level
                                     break
 
