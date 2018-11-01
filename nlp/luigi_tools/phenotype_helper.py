@@ -833,7 +833,7 @@ def mongo_process_operations(infix_tokens,
 
     if 0 == len(mongo_docs):
         return
-        
+
     output = list()
     is_final = c['final']
 
@@ -864,11 +864,30 @@ def mongo_process_operations(infix_tokens,
                     'nlpql_feature' : operation_name,
                     'operator' : 'MATH',
                     'expression' : expression,
-                    'source_ids'  : [doc['_id']],
-                    'source_features' : [doc['nlpql_feature']]
+                    'source_ids'  : [str(doc['_id'])],
+                    'source_features' : [doc['nlpql_feature']],
+                    'matching_texts' : [],
+
+                    # placeholders for the 'other' field
+                    'report_ids' : [],
+                    'subjects' : []
                 }
             }
 
+            if 'sentence' in doc:
+                sentence = doc['sentence']
+                start = doc['start']
+                end = doc['end']
+                history['operation']['matching_texts'].append(sentence[start:end])
+            else:
+                history['operation']['matching_texts'].append(None)
+
+            # accumulate the 'other' field
+            if 'report_id' == on:
+                history['operation']['subjects'].append(doc['subject'])
+            else:
+                history['operation']['report_ids'].append(doc['report_id'])
+                
             if not is_final:
                 ret['history'] = [copy.deepcopy(history)]
             else:
@@ -925,7 +944,10 @@ def mongo_process_operations(infix_tokens,
                         'operator' : '{0}'.format(eval_result.operation),
                         'expression' : expression,
                         'source_ids'  : [],
-                        'source_features' : []
+                        'source_features' : [],
+                        'matching_texts' : [],
+                        'report_ids' : [],
+                        'subjects' : []
                     }
                 }
 
@@ -944,9 +966,22 @@ def mongo_process_operations(infix_tokens,
                     if 'history' in doc:
                         histories.extend(doc['history'])
 
-                    history['operation']['source_ids'].append(doc['_id'])
+                    history['operation']['source_ids'].append(str(doc['_id']))
                     history['operation']['source_features'].append(doc['nlpql_feature'])
+                    if 'sentence' in doc:
+                        start = doc['start']
+                        end = doc['end']
+                        matching_text = doc['sentence'][start:end]
+                        history['operation']['matching_texts'].append(matching_text)
+                    else:
+                        history['operation']['matching_texts'].append(None)
 
+                    # accumulate the 'other' field
+                    if 'report_id' == on:
+                        history['operation']['subjects'].append(doc['subject'])
+                    else:
+                        history['operation']['report_ids'].append(doc['report_id'])
+                        
                 # this evaluation gets appended to the history as well
                 histories.append(history)
 
@@ -987,13 +1022,31 @@ def mongo_process_operations(infix_tokens,
                     ret['history'] = copy.deepcopy(histories)
                 else:
                     ret['history'] = json_util.dumps(histories)
-
+                    
                     feature_list = expression.split(eval_result.operation)
                     feature_list = [f.strip() for f in feature_list]
-                    #print('feature_list: {0}'.format(feature_list))
+
+                    # get nlpql_feature_1, nlpql_feature_2, etc.
                     for f in history['operation']['source_features']:
                         if f in feature_list:
                             index = feature_list.index(f)
+
+                            # _id fields
+                            col = '_id_{0}'.format(index+1)
+                            ret[col] = history['operation']['source_ids'][index]
+                            
+                            # matching_text fields
+                            col = 'text_{0}'.format(index+1)
+                            ret[col] = history['operation']['matching_texts'][index]
+
+                            # other field
+                            if 'report_id' == on:
+                                col = 'subject_{0}'.format(index+1)
+                                ret[col] = history['operation']['subjects'][index]
+                            else:
+                                col = 'report_id_{0}'.format(index+1)
+                                ret[col] = history['operation']['report_ids'][index]
+                            
                             # walk through history to find 'f' as the nlpql_feature
                             found_it = False
                             for k in reversed(range(len(histories)-1)):
@@ -1048,7 +1101,9 @@ def mongo_process_operations(infix_tokens,
                         'operator' : '{0}'.format(eval_result.operation),
                         'expression' : expression,
                         'source_ids'  : [],
-                        'source_features' : []
+                        'source_features' : [],
+                        'report_ids' : [],
+                        'subjects' : []
                     }
                 }
 
@@ -1063,9 +1118,23 @@ def mongo_process_operations(infix_tokens,
                 if 'history' in doc:
                     histories.extend(doc['history'])
 
-                history['operation']['source_ids'].append(doc['_id'])
+                history['operation']['source_ids'].append(str(doc['_id']))
                 history['operation']['source_features'].append(doc['nlpql_feature'])
 
+                if 'sentence' in doc:
+                    start = doc['start']
+                    end = doc['end']
+                    matching_text = doc['sentence'][start:end]
+                    history['operation']['matching_texts'].append(matching_text)
+                else:
+                    history['operation']['matching_texts'].append(None)
+
+                # accumulate the 'other' field
+                if 'report_id' == on:
+                    history['operation']['subjects'].append(doc['subject'])
+                else:
+                    history['operation']['report_ids'].append(doc['report_ids'])
+                    
                 # this evaluation gets appended to the history as well
                 histories.append(history)
 
