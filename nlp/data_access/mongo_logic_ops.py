@@ -10,7 +10,7 @@ This file is to be imported by the mongo evaluator.
 # Otherwise join on report_id or subject only.
 # Use the first for logical consistency for measurements or any chunks of
 # text defined by a sentence and a start offset.
-MEASUREMENT_CONTEXT=True
+MEASUREMENT_CONTEXT=False
 
 ###############################################################################
 def _append_logical_and(pipeline,             # pipeline to append to

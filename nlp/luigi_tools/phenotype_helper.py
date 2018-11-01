@@ -798,8 +798,6 @@ def mongo_process_operations(infix_tokens,
                              phenotype_owner, c: PhenotypeOperations,
                              final=False):
 
-    #print('mongo_process_operations infix tokens: {0}'.format(infix_tokens))
-    
     client = MongoClient(util.mongo_host, util.mongo_port)
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
@@ -824,6 +822,7 @@ def mongo_process_operations(infix_tokens,
         client.close()
         return
 
+    # get rid of this? - rewrite the MATH loop below
     try:        
         mongo_docs = results.lookup_phenotype_results_by_id(eval_result.doc_ids)
     except Exception as e:
@@ -862,6 +861,7 @@ def mongo_process_operations(infix_tokens,
             # single-row operations have no history to carry forward
             history = {
                 'operation' : {
+                    'nlpql_feature' : operation_name,
                     'operator' : 'MATH',
                     'expression' : expression,
                     'source_ids'  : [doc['_id']],
@@ -870,7 +870,7 @@ def mongo_process_operations(infix_tokens,
             }
 
             if not is_final:
-                ret['history'] = copy.deepcopy(history)
+                ret['history'] = [copy.deepcopy(history)]
             else:
                 ret['history'] = json_util.dumps(history)
 
@@ -921,8 +921,8 @@ def mongo_process_operations(infix_tokens,
                 ret = {}
                 history = {
                     'operation' : {
-                        'operator' : '{0}_{1}'.format(eval_result.operation,
-                                                      eval_result.n),
+                        'nlpql_feature' : operation_name,
+                        'operator' : '{0}'.format(eval_result.operation),
                         'expression' : expression,
                         'source_ids'  : [],
                         'source_features' : []
@@ -940,11 +940,12 @@ def mongo_process_operations(infix_tokens,
                     #              doc['report_id'], doc['subject'], doc['start'],
                     #              doc['end']))
 
+                    
+                    if 'history' in doc:
+                        histories.extend(doc['history'])
+
                     history['operation']['source_ids'].append(doc['_id'])
                     history['operation']['source_features'].append(doc['nlpql_feature'])
-
-                    if 'history' in doc:
-                        histories.append(doc['history'])
 
                 # this evaluation gets appended to the history as well
                 histories.append(history)
@@ -975,10 +976,46 @@ def mongo_process_operations(infix_tokens,
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
 
+                # For final result:
+                #     n-ary AND and n-ary OR need feature_1 feature_2 ... feature_n
+                #     Fill in whichever entries this doc has
+                #     Use text_1 text_2 ... text_n instead of sentences
+                #     Need other_1 other_2 ... other_n
+                #     _id_1 _id_2 ... _id_n
+                
                 if not is_final:
                     ret['history'] = copy.deepcopy(histories)
                 else:
                     ret['history'] = json_util.dumps(histories)
+
+                    feature_list = expression.split(eval_result.operation)
+                    feature_list = [f.strip() for f in feature_list]
+                    #print('feature_list: {0}'.format(feature_list))
+                    for f in history['operation']['source_features']:
+                        if f in feature_list:
+                            index = feature_list.index(f)
+                            # walk through history to find 'f' as the nlpql_feature
+                            found_it = False
+                            for k in reversed(range(len(histories)-1)):
+                                obj = histories[k]['operation']
+                                feature = obj['nlpql_feature']
+                                operator = obj['operator']
+                                if feature == f and operator != 'MATH':
+                                    found_it = True
+                                    col = 'nlpql_feature_{0}'.format(index+1)
+                                    values = obj['source_features']
+                                    print('values: {0}'.format(values))
+                                    assert type(values) == list
+                                    if len(values) > 1:
+                                        ret[col] = copy.deepcopy(values)
+                                    else:
+                                        ret[col] = copy.deepcopy(values[0])
+                                    # only go back one level
+                                    break
+
+                            if not found_it:
+                                # includes MATH ops also...
+                                ret['nlpql_feature_{0}'.format(index+1)] = f
 
                 output.append(ret)
 
@@ -1007,6 +1044,7 @@ def mongo_process_operations(infix_tokens,
                 ret = {}
                 history = {
                     'operation' : {
+                        'nlpql_feature' : operation_name,
                         'operator' : '{0}'.format(eval_result.operation),
                         'expression' : expression,
                         'source_ids'  : [],
@@ -1022,11 +1060,11 @@ def mongo_process_operations(infix_tokens,
                 #              doc['report_id'], doc['subject'], doc['start'],
                 #              doc['end']))
 
+                if 'history' in doc:
+                    histories.extend(doc['history'])
+
                 history['operation']['source_ids'].append(doc['_id'])
                 history['operation']['source_features'].append(doc['nlpql_feature'])
-
-                if 'history' in doc:
-                    histories.append(doc['history'])
 
                 # this evaluation gets appended to the history as well
                 histories.append(history)
