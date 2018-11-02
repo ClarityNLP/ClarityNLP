@@ -618,7 +618,30 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             db.phenotype_results.insert_many(output)
             del output
 
+def _sort_group_on_other(group, other):
+    """
+    If the 'other' field is a list, rearrange the document group g so that all
+    docs sharing the same 'other' field are adjacent. 
+    """
 
+    # find unique lists
+    value_map = {}
+    for i in range(len(group)):
+        g = group[i]
+        key = tuple(g[other])
+        if key not in value_map:
+            value_map[key] = [i]
+        else:
+            value_map[key].append(i)
+
+    new_group = []
+    for k,indx_list in value_map.items():
+        for i in indx_list:
+            new_group.append(group[i])
+
+    return new_group
+        
+            
 def _to_ntuples_AND_meas_context(and_group, n, other):
     """
     Convert a group of MongoDB result docs from an n-ary AND operation to
@@ -632,7 +655,8 @@ def _to_ntuples_AND_meas_context(and_group, n, other):
     group = []
     for doc in and_group:
         group.append(doc)
-    group = sorted(group, key=lambda x: x[other])
+    #group = sorted(group, key=lambda x: x[other])
+    group = _sort_group_on_other(group, other)
 
     # compose ntuples with one value each of the n NLPQL features
     ntuples = []
@@ -658,6 +682,7 @@ def _to_ntuples_AND_meas_context(and_group, n, other):
                 
     return ntuples
 
+
 def _to_ntuples_AND(g, n, other):
     """
     """
@@ -666,7 +691,8 @@ def _to_ntuples_AND(g, n, other):
     group = []
     for doc in g:
         group.append(doc)
-    group = sorted(group, key=lambda x: x[other])
+    #group = sorted(group, key=lambda x: x[other])
+    group = _sort_group_on_other(group, other)
 
     # count the number of entries for each nlpql feature
     feature_map = {}
@@ -727,7 +753,8 @@ def _to_ntuples_OR(g, n, other):
     ntuple = []
     for doc in g:
         ntuple.append(doc)
-    ntuple = sorted(ntuple, key=lambda x: x[other])
+    #ntuple = sorted(ntuple, key=lambda x: x[other])
+    ntuple = _sort_group_on_other(ntuple, other)
     ntuples = [ [item] for item in ntuple]
 
     return ntuples
@@ -745,7 +772,8 @@ def _to_ntuples_OR_meas_context(or_group, n, other):
     group = []
     for doc in or_group:
         group.append(doc)
-    group = sorted(group, key=lambda x: x[other])
+    #group = sorted(group, key=lambda x: x[other])
+    group = _sort_group_on_other(group, other)
 
     doc_count = len(group)
     indices = [i for i in range(0, doc_count)]
@@ -842,6 +870,9 @@ def mongo_process_operations(infix_tokens,
         'job_date', 'context_type', 'raw_definition_text',
         'nlpql_feature', 'phenotype_final', 'history'
     ]
+
+    # the field to join on should not be copied
+    NO_COPY_FIELDS.append(on)
     
     if mongo_eval.MONGO_OP_MATH == eval_result.operation:
 
@@ -850,8 +881,27 @@ def mongo_process_operations(infix_tokens,
         doc_groups = eval_result.doc_groups
         assert 1 == len(doc_groups)
         for doc in doc_groups[0]:
-    
-            ret = copy.deepcopy(doc)
+
+            # output doc
+            ret = {}
+            
+            # add ntuple doc fields to the output doc as lists
+            field_map = {}
+            fields = doc.keys()
+            fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+            for f in fields_to_copy:
+                if f not in field_map:
+                    field_map[f] = [doc[f]]
+                else:
+                    field_map[f].append(doc[f])
+
+            for k,v in field_map.items():
+                ret[k] = copy.deepcopy(v)
+
+            # set the join field; same value for all ntuple entries
+            ret[on] = doc[on]
+            
+            #ret = copy.deepcopy(doc)
             ret['job_id'] = job_id
             ret['phenotype_id'] = phenotype_id
             ret['owner'] = phenotype_owner
@@ -864,6 +914,7 @@ def mongo_process_operations(infix_tokens,
             # single-row operations have no history to carry forward
             history = {
                 'operation' : {
+                    'docs' : [copy.deepcopy(doc)],
                     'nlpql_feature' : operation_name,
                     'operator' : 'MATH',
                     'expression' : expression,
@@ -877,13 +928,13 @@ def mongo_process_operations(infix_tokens,
                 }
             }
 
-            if 'sentence' in doc:
-                sentence = doc['sentence']
-                start = doc['start']
-                end = doc['end']
-                history['operation']['matching_texts'].append(sentence[start:end])
-            else:
-                history['operation']['matching_texts'].append(None)
+            # if 'sentence' in doc:
+            #     sentence = doc['sentence']
+            #     start = doc['start']
+            #     end = doc['end']
+            #     history['operation']['matching_texts'].append(sentence[start:end])
+            # else:
+            #     history['operation']['matching_texts'].append(None)
 
             # accumulate the 'other' field
             if 'report_id' == on:
@@ -943,6 +994,7 @@ def mongo_process_operations(infix_tokens,
                 ret = {}
                 history = {
                     'operation' : {
+                        'docs' : [],
                         'nlpql_feature' : operation_name,
                         'operator' : '{0}'.format(eval_result.operation),
                         'expression' : expression,
@@ -969,15 +1021,16 @@ def mongo_process_operations(infix_tokens,
                     if 'history' in doc:
                         histories.extend(doc['history'])
 
+                    history['operation']['docs'].append(copy.deepcopy(doc))
                     history['operation']['source_ids'].append(str(doc['_id']))
                     history['operation']['source_features'].append(doc['nlpql_feature'])
-                    if 'sentence' in doc:
-                        start = doc['start']
-                        end = doc['end']
-                        matching_text = doc['sentence'][start:end]
-                        history['operation']['matching_texts'].append(matching_text)
-                    else:
-                        history['operation']['matching_texts'].append(None)
+                    # if 'sentence' in doc:
+                    #     start = doc['start']
+                    #     end = doc['end']
+                    #     matching_text = doc['sentence'][start:end]
+                    #     history['operation']['matching_texts'].append(matching_text)
+                    # else:
+                    #     history['operation']['matching_texts'].append(None)
 
                     # accumulate the 'other' field
                     if 'report_id' == on:
@@ -988,23 +1041,24 @@ def mongo_process_operations(infix_tokens,
                 # this evaluation gets appended to the history as well
                 histories.append(history)
 
-                # copying makes no sense for n-way AND outside of a measurement
-                # context - FIX THIS
-                
-                # copy eligible fields (use the 0th element for the field list)
-                fields = ntuple[0].keys()
-                fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-                for f in fields_to_copy:
-                    # field0 = ntuple[0][f]
-                    # for j in range(1, len(ntuple)):
-                    #     fieldj = ntuple[j][f]
-                    #     if field0 != fieldj:
-                    #         print('\t[{0}]: Field {1} unequal: "{2}" <-> "{3}"'.
-                    #               format(j, f, field0, fieldj))
-                    if f in ntuple[0]:
-                        ret[f] = copy.deepcopy(ntuple[0][f])
-                    
-                # update job and phenotype fields
+                # add ntuple doc fields to the output doc as lists
+                field_map = {}
+                for doc in ntuple:
+                    fields = doc.keys()
+                    fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+                    for f in fields_to_copy:
+                        if f not in field_map:
+                            field_map[f] = [doc[f]]
+                        else:
+                            field_map[f].append(doc[f])
+
+                for k,v in field_map.items():
+                    ret[k] = copy.deepcopy(v)
+                            
+                # set the join field; same value for all ntuple entries
+                ret[on] = ntuple[0][on]
+
+                # update fields common to AND/OR
                 ret['job_id'] = job_id
                 ret['phenotype_id'] = phenotype_id
                 ret['owner'] = phenotype_owner
@@ -1014,59 +1068,52 @@ def mongo_process_operations(infix_tokens,
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
 
-                # For final result:
-                #     n-ary AND and n-ary OR need feature_1 feature_2 ... feature_n
-                #     Fill in whichever entries this doc has
-                #     Use text_1 text_2 ... text_n instead of sentences
-                #     Need other_1 other_2 ... other_n
-                #     _id_1 _id_2 ... _id_n
-                
                 if not is_final:
                     ret['history'] = copy.deepcopy(histories)
                 else:
                     ret['history'] = json_util.dumps(histories)
                     
-                    feature_list = expression.split(eval_result.operation)
-                    feature_list = [f.strip() for f in feature_list]
+                    # feature_list = expression.split(eval_result.operation)
+                    # feature_list = [f.strip() for f in feature_list]
 
-                    # get nlpql_feature_1, nlpql_feature_2, etc.
-                    for f in history['operation']['source_features']:
-                        if f in feature_list:
-                            index = feature_list.index(f)
+                    # # get nlpql_feature_1, nlpql_feature_2, etc.
+                    # for f in history['operation']['source_features']:
+                    #     if f in feature_list:
+                    #         index = feature_list.index(f)
 
-                            # _id fields
-                            col = '_id_{0}'.format(index+1)
-                            ret[col] = history['operation']['source_ids'][index]
+                    #         # _id fields
+                    #         col = '_id_{0}'.format(index+1)
+                    #         ret[col] = history['operation']['source_ids'][index]
                             
-                            # matching_text fields
-                            col = 'text_{0}'.format(index+1)
-                            ret[col] = history['operation']['matching_texts'][index]
+                    #         # # matching_text fields
+                    #         # col = 'text_{0}'.format(index+1)
+                    #         # ret[col] = history['operation']['matching_texts'][index]
 
-                            # other field
-                            if 'report_id' == on:
-                                col = 'subject_{0}'.format(index+1)
-                                ret[col] = history['operation']['subjects'][index]
-                            else:
-                                col = 'report_id_{0}'.format(index+1)
-                                ret[col] = history['operation']['report_ids'][index]
+                    #         # other field
+                    #         if 'report_id' == on:
+                    #             col = 'subject_{0}'.format(index+1)
+                    #             ret[col] = history['operation']['subjects'][index]
+                    #         else:
+                    #             col = 'report_id_{0}'.format(index+1)
+                    #             ret[col] = history['operation']['report_ids'][index]
                             
-                            # walk through history to find 'f' as the nlpql_feature
-                            found_it = False
-                            for k in reversed(range(len(histories)-1)):
-                                obj = histories[k]['operation']
-                                feature = obj['nlpql_feature']
-                                operator = obj['operator']
-                                if feature == f and operator != 'MATH':
-                                    found_it = True
-                                    col = 'nlpql_feature_{0}'.format(index+1)
-                                    values = obj['source_features']
-                                    ret[col] = ','.join(values)
-                                    # only go back one level
-                                    break
+                    #         # walk through history to find 'f' as the nlpql_feature
+                    #         found_it = False
+                    #         for k in reversed(range(len(histories)-1)):
+                    #             obj = histories[k]['operation']
+                    #             feature = obj['nlpql_feature']
+                    #             operator = obj['operator']
+                    #             if feature == f and operator != 'MATH':
+                    #                 found_it = True
+                    #                 col = 'nlpql_feature_{0}'.format(index+1)
+                    #                 values = obj['source_features']
+                    #                 ret[col] = ','.join(values)
+                    #                 # only go back one level
+                    #                 break
 
-                            if not found_it:
-                                # includes MATH ops also...
-                                ret['nlpql_feature_{0}'.format(index+1)] = f
+                    #         if not found_it:
+                    #             # includes MATH ops also...
+                    #             ret['nlpql_feature_{0}'.format(index+1)] = f
 
                 output.append(ret)
 
@@ -1119,13 +1166,13 @@ def mongo_process_operations(infix_tokens,
                 history['operation']['source_ids'].append(str(doc['_id']))
                 history['operation']['source_features'].append(doc['nlpql_feature'])
 
-                if 'sentence' in doc:
-                    start = doc['start']
-                    end = doc['end']
-                    matching_text = doc['sentence'][start:end]
-                    history['operation']['matching_texts'].append(matching_text)
-                else:
-                    history['operation']['matching_texts'].append(None)
+                # if 'sentence' in doc:
+                #     start = doc['start']
+                #     end = doc['end']
+                #     matching_text = doc['sentence'][start:end]
+                #     history['operation']['matching_texts'].append(matching_text)
+                # else:
+                #     history['operation']['matching_texts'].append(None)
 
                 # accumulate the 'other' field
                 if 'report_id' == on:
