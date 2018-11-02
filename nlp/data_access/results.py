@@ -288,7 +288,7 @@ def phenotype_stats(job_id: str, phenotype_final: bool):
         subjects = len(results)
         documents = 0
         for r in results:
-            subjects += r['count']
+            documents += int(r['count'])
         stats["subjects"] = subjects
         stats["results"] = documents
     return stats
