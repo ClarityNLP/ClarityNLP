@@ -914,13 +914,14 @@ def mongo_process_operations(infix_tokens,
             # single-row operations have no history to carry forward
             history = {
                 'operation' : {
-                    'docs' : [copy.deepcopy(doc)],
+                    #'docs' : [copy.deepcopy(doc)],
                     'nlpql_feature' : operation_name,
                     'operator' : 'MATH',
                     'expression' : expression,
                     'source_ids'  : [str(doc['_id'])],
                     'source_features' : [doc['nlpql_feature']],
-                    'matching_texts' : [],
+                    #'matching_texts' : [],
+                    'sentences' : [],
 
                     # placeholders for the 'other' field
                     'report_ids' : [],
@@ -935,7 +936,11 @@ def mongo_process_operations(infix_tokens,
             #     history['operation']['matching_texts'].append(sentence[start:end])
             # else:
             #     history['operation']['matching_texts'].append(None)
-
+            if 'sentence' in doc:
+                history['operation']['sentences'].append(doc['sentence'])
+            else:
+                history['operation']['sentences'].append(None)
+            
             # accumulate the 'other' field
             if 'report_id' == on:
                 history['operation']['subjects'].append(doc['subject'])
@@ -994,13 +999,14 @@ def mongo_process_operations(infix_tokens,
                 ret = {}
                 history = {
                     'operation' : {
-                        'docs' : [],
+                        #'docs' : [],
                         'nlpql_feature' : operation_name,
                         'operator' : '{0}'.format(eval_result.operation),
                         'expression' : expression,
                         'source_ids'  : [],
                         'source_features' : [],
-                        'matching_texts' : [],
+                        #'matching_texts' : [],
+                        'sentences' : [],
                         'report_ids' : [],
                         'subjects' : []
                     }
@@ -1021,7 +1027,7 @@ def mongo_process_operations(infix_tokens,
                     if 'history' in doc:
                         histories.extend(doc['history'])
 
-                    history['operation']['docs'].append(copy.deepcopy(doc))
+                    #history['operation']['docs'].append(copy.deepcopy(doc))
                     history['operation']['source_ids'].append(str(doc['_id']))
                     history['operation']['source_features'].append(doc['nlpql_feature'])
                     # if 'sentence' in doc:
@@ -1031,6 +1037,10 @@ def mongo_process_operations(infix_tokens,
                     #     history['operation']['matching_texts'].append(matching_text)
                     # else:
                     #     history['operation']['matching_texts'].append(None)
+                    if 'sentence' in doc:
+                        history['operation']['sentences'].append(doc['sentence'])
+                    else:
+                        history['operation']['sentences'].append(None)
 
                     # accumulate the 'other' field
                     if 'report_id' == on:
