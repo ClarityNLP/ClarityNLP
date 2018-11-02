@@ -628,7 +628,7 @@ def _sort_group_on_other(group, other):
     value_map = {}
     for i in range(len(group)):
         g = group[i]
-        key = tuple(g[other])
+        key = str(g[other])
         if key not in value_map:
             value_map[key] = [i]
         else:
@@ -1047,23 +1047,25 @@ def mongo_process_operations(infix_tokens,
                             col = '_id_{0}'.format(index+1)
                             ret[col] = history['operation']['source_ids'][index]
                             
-                            # walk through history to find 'f' as the nlpql_feature
-                            found_it = False
-                            for k in reversed(range(len(histories)-1)):
-                                obj = histories[k]['operation']
-                                feature = obj['nlpql_feature']
-                                operator = obj['operator']
-                                if feature == f and operator != 'MATH':
-                                    found_it = True
-                                    col = 'nlpql_feature_{0}'.format(index+1)
-                                    values = obj['source_features']
-                                    ret[col] = ','.join(values)
-                                    # only go back one level
-                                    break
+                            # # walk through history to find 'f' as the nlpql_feature
+                            # found_it = False
+                            # for k in reversed(range(len(histories)-1)):
+                            #     obj = histories[k]['operation']
+                            #     feature = obj['nlpql_feature']
+                            #     operator = obj['operator']
+                            #     if feature == f and operator != 'MATH':
+                            #         found_it = True
+                            #         col = 'nlpql_feature_{0}'.format(index+1)
+                            #         values = obj['source_features']
+                            #         ret[col] = ','.join(values)
+                            #         # only go back one level
+                            #         break
 
-                            if not found_it:
-                                # includes MATH ops also...
-                                ret['nlpql_feature_{0}'.format(index+1)] = f
+                            # if not found_it:
+                            #     # includes MATH ops also...
+                            #     ret['nlpql_feature_{0}'.format(index+1)] = f
+                            col = 'nlpql_feature_{0}'.format(index+1)
+                            ret[col] = f
 
                 output.append(ret)
 
