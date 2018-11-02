@@ -7,7 +7,7 @@ limit 1000;
 
  
 // Phenotype library name
-phenotype "SyntheticQueryTesting_953_NCT03355456_000000000100000000000000000" version "1";
+phenotype "SyntheticQuery_953" version "1";
 
 // Phenotype library description 
 description "Synthetically generated, paramaterized query; for computing benchark runtime stats";
@@ -22,8 +22,12 @@ include OHDSIHelpers version "1.0" called OHDSI;
 // ## Code Systems ##
 codesystem OMOP: "http://omop.org";
 
+//documentset Old:
+//    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]); 
+    
+// use exact MIMIC names in case report type mapper is not accesible
 documentset PotentiallyEligiblePatientsNotes:
-    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]); 
+    Clarity.createReportTypeList(["Nursing/other", "Nursing", "Physician ", "Discharge summary"]);
 
 // Gender inclusion criteria termset, if gender criteria present
 
@@ -50,5 +54,8 @@ define final Conditions:
 
 // Results
 
+
+// Clinical Trial ID: NCT03355456
+// Bit String: 000000000100000000000000000
 
 
