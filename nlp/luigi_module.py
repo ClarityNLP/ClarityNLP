@@ -114,6 +114,8 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
     doc_limit = config.get_limit(total_docs, pipeline_config)
     jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS, "pipeline:" + str(pipeline_id) +
                            ",document_limit:" + str(doc_limit))
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS, "pipeline:" + str(pipeline_id) +
+                           ",evaluated_document_size:" + str(min(doc_limit, total_docs)))
     ranges = range(0, (doc_limit + util.row_count), util.row_count)
     jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
 
