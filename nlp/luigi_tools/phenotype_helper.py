@@ -315,8 +315,12 @@ def is_value(test: str):
 
 
 def get_numeric_comparison_df(action, df, ent, attr, value_comp):
-    value_comp = float(value_comp)
-    new_df = df.query("(nlpql_feature == '%s') & (%s %s %f)" % (ent, attr, action, value_comp))
+    try:
+        value_comp = float(value_comp)
+        new_df = df.query("(nlpql_feature == '%s') & (%s %s %f)" % (ent, attr, action, value_comp))
+    except e:
+        new_df = df.query("(nlpql_feature == '%s') & (%s %s %s)" % (ent, attr, action, str(value_comp)))
+
     return new_df
 
 
