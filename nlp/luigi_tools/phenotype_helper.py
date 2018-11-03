@@ -618,6 +618,67 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             db.phenotype_results.insert_many(output)
             del output
 
+
+def flatten(l, ltypes=(list, tuple)):
+    """
+    Very clever non-recursive list flattener from
+    http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
+    based on code from Mike Fletcher's BasicTypes library, which has
+    this copyright notice and disclaimer:
+
+    BasicProperty and BasicTypes
+            Copyright (c) 2002-2003, Michael C. Fletcher
+            All rights reserved.
+
+    THIS SOFTWARE IS NOT FAULT TOLERANT AND SHOULD NOT BE USED IN ANY
+    SITUATION ENDANGERING HUMAN LIFE OR PROPERTY.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+        Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+        Redistributions in binary form must reproduce the above
+        copyright notice, this list of conditions and the following
+        disclaimer in the documentation and/or other materials
+        provided with the distribution.
+
+        The name of Michael C. Fletcher may not be used to endorse or
+        promote products derived from this software without specific
+        prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+    COPYRIGHT HOLDERS AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+    INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+    OF THE POSSIBILITY OF SUCH DAMAGE.
+
+    """
+
+    ltype = type(l)
+    l = list(l)
+    i = 0
+    while i < len(l):
+        while isinstance(l[i], ltypes):
+            if not l[i]:
+                l.pop(i)
+                i -= 1
+                break
+            else:
+                l[i:i + 1] = l[i]
+        i += 1
+    return ltype(l)
+
+
 def _sort_group_on_other(group, other):
     """
     If the 'other' field is a list, rearrange the document group g so that all
@@ -929,6 +990,11 @@ def mongo_process_operations(infix_tokens,
 
             # remove the copied doc['_id'] so that Mongo will assign a new one
             ret.pop('_id', None)
+
+            # flatten all nested lists in the final result
+            for k,v in ret.items():
+                if type(v) == list:
+                    ret[k] = flatten(v)
             
             output.append(ret)
 
@@ -1038,7 +1104,7 @@ def mongo_process_operations(infix_tokens,
                     feature_list = expression.split(eval_result.operation)
                     feature_list = [f.strip() for f in feature_list]
 
-                    # get nlpql_feature_1, nlpql_feature_2, etc.
+                    # get fields that become separate cols in the final result
                     for f in history['operation']['source_features']:
                         if f in feature_list:
                             index = feature_list.index(f)
@@ -1046,26 +1112,15 @@ def mongo_process_operations(infix_tokens,
                             # _id fields
                             col = '_id_{0}'.format(index+1)
                             ret[col] = history['operation']['source_ids'][index]
-                            
-                            # # walk through history to find 'f' as the nlpql_feature
-                            # found_it = False
-                            # for k in reversed(range(len(histories)-1)):
-                            #     obj = histories[k]['operation']
-                            #     feature = obj['nlpql_feature']
-                            #     operator = obj['operator']
-                            #     if feature == f and operator != 'MATH':
-                            #         found_it = True
-                            #         col = 'nlpql_feature_{0}'.format(index+1)
-                            #         values = obj['source_features']
-                            #         ret[col] = ','.join(values)
-                            #         # only go back one level
-                            #         break
 
-                            # if not found_it:
-                            #     # includes MATH ops also...
-                            #     ret['nlpql_feature_{0}'.format(index+1)] = f
+                            # nlpql_feature fields
                             col = 'nlpql_feature_{0}'.format(index+1)
                             ret[col] = f
+
+                    # flatten all nested lists in the final result
+                    for k,v in ret.items():
+                        if type(v) == list:
+                            ret[k] = flatten(v)
 
                 output.append(ret)
 
@@ -1116,30 +1171,25 @@ def mongo_process_operations(infix_tokens,
                 history['operation']['source_ids'].append(str(doc['_id']))
                 history['operation']['source_features'].append(doc['nlpql_feature'])
 
-                # if 'sentence' in doc:
-                #     start = doc['start']
-                #     end = doc['end']
-                #     matching_text = doc['sentence'][start:end]
-                #     history['operation']['matching_texts'].append(matching_text)
-                # else:
-                #     history['operation']['matching_texts'].append(None)
-
-                # # accumulate the 'other' field
-                # if 'report_id' == on:
-                #     history['operation']['subjects'].append(doc['subject'])
-                # else:
-                #     history['operation']['report_ids'].append(doc['report_ids'])
-                    
                 # this evaluation gets appended to the history as well
                 histories.append(history)
 
-                # copy eligible fields (use the 0th element for the field list)
+                # add ntuple doc fields to the output doc as lists
+                field_map = {}
                 fields = doc.keys()
                 fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
                 for f in fields_to_copy:
-                    if f in doc:
-                        ret[f] = copy.deepcopy(doc[f])
+                    if f not in field_map:
+                        field_map[f] = [doc[f]]
+                    else:
+                        field_map[f].append(doc[f])
 
+                for k,v in field_map.items():
+                    ret[k] = copy.deepcopy(v)
+                            
+                # set the join field; same value for all ntuple entries
+                ret[on] = ntuple[0][on]
+                
                 # update job and phenotype fields
                 ret['job_id'] = job_id
                 ret['phenotype_id'] = phenotype_id
@@ -1155,6 +1205,11 @@ def mongo_process_operations(infix_tokens,
                 else:
                     ret['history'] = json_util.dumps(histories)
 
+                    # flatten all nested lists in the final result
+                    for k,v in ret.items():
+                        if type(v) == list:
+                            ret[k] = flatten(v)
+                    
                 output.append(ret)
 
         if len(output) > 0:
