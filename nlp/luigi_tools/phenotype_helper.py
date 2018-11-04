@@ -621,7 +621,7 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
 
 def flatten(l, ltypes=(list, tuple)):
     """
-    Very clever non-recursive list flattener from
+    Non-recursive list flattener from
     http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
     based on code from Mike Fletcher's BasicTypes library, which has
     this copyright notice and disclaimer:
@@ -676,208 +676,233 @@ def flatten(l, ltypes=(list, tuple)):
             else:
                 l[i:i + 1] = l[i]
         i += 1
+        
     return ltype(l)
 
 
-def _sort_group_on_other(group, other):
-    """
-    If the 'other' field is a list, rearrange the document group g so that all
-    docs sharing the same 'other' field are adjacent. 
-    """
+# def _sort_group_on_other(group, other):
+#     """
+#     If the 'other' field is a list, rearrange the document group g so that all
+#     docs sharing the same 'other' field are adjacent. 
+#     """
 
-    # find unique lists
-    value_map = {}
-    for i in range(len(group)):
-        g = group[i]
-        key = str(g[other])
-        if key not in value_map:
-            value_map[key] = [i]
-        else:
-            value_map[key].append(i)
+#     # find unique lists
+#     value_map = {}
+#     for i in range(len(group)):
+#         g = group[i]
+#         key = str(g[other])
+#         if key not in value_map:
+#             value_map[key] = [i]
+#         else:
+#             value_map[key].append(i)
 
-    new_group = []
-    for k,indx_list in value_map.items():
-        for i in indx_list:
-            new_group.append(group[i])
+#     new_group = []
+#     for k,indx_list in value_map.items():
+#         for i in indx_list:
+#             new_group.append(group[i])
 
-    return new_group
+#     return new_group
         
             
-def _to_ntuples_AND_meas_context(and_group, n, other):
-    """
-    Convert a group of MongoDB result docs from an n-ary AND operation to
-    ntuples. Each member of the ntuple has a unique value of the n NLPQL
-    features.
+# def _to_ntuples_AND_meas_context(and_group, n, other):
+#     """
+#     Convert a group of MongoDB result docs from an n-ary AND operation to
+#     ntuples. Each member of the ntuple has a unique value of the n NLPQL
+#     features.
     
-    Each group and ntuple is a list of dicts.
-    """
+#     Each group and ntuple is a list of dicts.
+#     """
 
-    # sort on the 'other' field
-    group = []
-    for doc in and_group:
-        group.append(doc)
-    #group = sorted(group, key=lambda x: x[other])
-    group = _sort_group_on_other(group, other)
+#     # sort on the 'other' field
+#     group = []
+#     for doc in and_group:
+#         group.append(doc)
+#     #group = sorted(group, key=lambda x: x[other])
+#     group = _sort_group_on_other(group, other)
 
-    # compose ntuples with one value each of the n NLPQL features
-    ntuples = []
-    indices = [i for i in range(0, len(group))]
+#     # compose ntuples with one value each of the n NLPQL features
+#     ntuples = []
+#     indices = [i for i in range(0, len(group))]
 
-    while True:
-        features = set()
-        tuple_indices = []
-        for i in indices:
-            feature = group[i]['nlpql_feature']
-            if feature in features:
-                continue
-            features.add(feature)
-            tuple_indices.append(i)
+#     while True:
+#         features = set()
+#         tuple_indices = []
+#         for i in indices:
+#             feature = group[i]['nlpql_feature']
+#             if feature in features:
+#                 continue
+#             features.add(feature)
+#             tuple_indices.append(i)
 
-        if n != len(features):
-            break
-        else:
-            ntuple = [group[i] for i in tuple_indices]
-            ntuples.append(ntuple)
-            for i in tuple_indices:
-                indices.remove(i)
+#         if n != len(features):
+#             break
+#         else:
+#             ntuple = [group[i] for i in tuple_indices]
+#             ntuples.append(ntuple)
+#             for i in tuple_indices:
+#                 indices.remove(i)
                 
-    return ntuples
+#     return ntuples
 
 
-def _to_ntuples_AND(g, n, other):
+# def _to_ntuples_AND(g, n, other):
+#     """
+#     """
+
+#     # sort on the 'other' field
+#     group = []
+#     for doc in g:
+#         group.append(doc)
+#     #group = sorted(group, key=lambda x: x[other])
+#     group = _sort_group_on_other(group, other)
+
+#     # count the number of entries for each nlpql feature
+#     feature_map = {}
+#     for doc in group:
+#         feature = doc['nlpql_feature']
+#         if not feature in feature_map:
+#             feature_map[feature] = 1
+#         else:
+#             feature_map[feature] += 1
+
+#     max_count = 0
+#     for feature, count in feature_map.items():
+#         if count > max_count:
+#             max_count = count
+
+#     # assign doc indices to each feature
+#     feature_map = {}
+#     for i in range(len(group)):
+#         doc = group[i]
+#         feature = doc['nlpql_feature']
+#         if not feature in feature_map:
+#             # number of docs with this feature, current_index, index_list
+#             feature_map[feature] = (1, 0, [i])
+#         else:
+#             count, current_index, index_list = feature_map[feature]
+#             index_list.append(i)
+#             count += 1
+#             feature_map[feature] = (count, current_index, index_list)
+
+#     # Generate ntuples by assigning one element from each group until max_count
+#     # ntuples have been generated. Cycle the indices for each group. The
+#     # resulting set of ntuples will be members of the inner join set.
+#     # No values of the 'other' field will be lost by doing this, and this
+#     # simpler procedure captures all documents or patients with the stated
+#     # NLPQL conditions.
+
+#     ntuples = []
+#     while len(ntuples) < max_count:
+#         ntuple = []
+#         for feature, v in feature_map.items():
+#             feature_count = v[0]
+#             current_index = v[1]
+#             index_list    = v[2]
+#             ntuple.append(group[index_list[current_index]])
+#             current_index += 1
+#             if current_index >= feature_count:
+#                 current_index = 0
+#             feature_map[feature] = (feature_count, current_index, index_list)
+#         ntuples.append(ntuple)
+
+#     return ntuples
+
+
+# def _to_ntuples_OR(g, n, other):
+#     """
+#     """
+
+#     ntuple = []
+#     for doc in g:
+#         ntuple.append(doc)
+#     #ntuple = sorted(ntuple, key=lambda x: x[other])
+#     ntuple = _sort_group_on_other(ntuple, other)
+#     ntuples = [ [item] for item in ntuple]
+
+#     return ntuples
+
+
+
+# def _to_ntuples_OR_meas_context(or_group, n, other):
+#     """
+#     Convert a group of MongoDB result docs from an n-ary OR operation to
+#     ntuples. Each member of the ntuple has a unique value of the n NLPQL
+#     features. Identical nlpql_features for identical 'other' field values
+#     mean single-document ntuples.
+#     """
+
+#     group = []
+#     for doc in or_group:
+#         group.append(doc)
+#     #group = sorted(group, key=lambda x: x[other])
+#     group = _sort_group_on_other(group, other)
+
+#     doc_count = len(group)
+#     indices = [i for i in range(0, doc_count)]
+#     ntuples = []
+
+#     while True:
+#         feature_map = {}
+#         other_value = group[indices[0]][other]
+#         for i in indices:
+#             if other_value == group[i][other]:
+#                 feature = group[i]['nlpql_feature']
+#                 if not feature in feature_map:
+#                     d = collections.deque()
+#                     d.append(i)
+#                     feature_map[feature] = d
+#                 else:
+#                     feature_map[feature].append(i)
+#             else:
+#                 break
+
+#         # end of ntuple doc discovery for all docs having 'other' field
+#         # equal to 'other_value'; check for duplicates
+#         # could have duplicates across different nlpql_features
+#         while len(feature_map) > 0:
+#             ntuple = []
+#             remove_keys = []
+#             for k,d in feature_map.items():
+#                 index = d.popleft()
+#                 ntuple.append(group[index])
+#                 indices.remove(index)
+#                 if 0 == len(d):
+#                     remove_keys.append(k)
+#                 else:
+#                     feature_map[k] = d
+#             ntuples.append(ntuple)
+#             for k in remove_keys:
+#                 feature_map.pop(k, None)
+
+#         if 0 == len(indices):
+#             break
+
+#     return ntuples
+
+def flatten_nested_lists(ret):
     """
+    Remove nested lists in the given object and return the 
+    flattened equivalent.
     """
 
-    # sort on the 'other' field
-    group = []
-    for doc in g:
-        group.append(doc)
-    #group = sorted(group, key=lambda x: x[other])
-    group = _sort_group_on_other(group, other)
-
-    # count the number of entries for each nlpql feature
-    feature_map = {}
-    for doc in group:
-        feature = doc['nlpql_feature']
-        if not feature in feature_map:
-            feature_map[feature] = 1
-        else:
-            feature_map[feature] += 1
-
-    max_count = 0
-    for feature, count in feature_map.items():
-        if count > max_count:
-            max_count = count
-
-    # assign doc indices to each feature
-    feature_map = {}
-    for i in range(len(group)):
-        doc = group[i]
-        feature = doc['nlpql_feature']
-        if not feature in feature_map:
-            # number of docs with this feature, current_index, index_list
-            feature_map[feature] = (1, 0, [i])
-        else:
-            count, current_index, index_list = feature_map[feature]
-            index_list.append(i)
-            count += 1
-            feature_map[feature] = (count, current_index, index_list)
-
-    # Generate ntuples by assigning one element from each group until max_count
-    # ntuples have been generated. Cycle the indices for each group. The
-    # resulting set of ntuples will be members of the inner join set.
-    # No values of the 'other' field will be lost by doing this, and this
-    # simpler procedure captures all documents or patients with the stated
-    # NLPQL conditions.
-
-    ntuples = []
-    while len(ntuples) < max_count:
-        ntuple = []
-        for feature, v in feature_map.items():
-            feature_count = v[0]
-            current_index = v[1]
-            index_list    = v[2]
-            ntuple.append(group[index_list[current_index]])
-            current_index += 1
-            if current_index >= feature_count:
-                current_index = 0
-            feature_map[feature] = (feature_count, current_index, index_list)
-        ntuples.append(ntuple)
-
-    return ntuples
-
-
-def _to_ntuples_OR(g, n, other):
-    """
-    """
-
-    ntuple = []
-    for doc in g:
-        ntuple.append(doc)
-    #ntuple = sorted(ntuple, key=lambda x: x[other])
-    ntuple = _sort_group_on_other(ntuple, other)
-    ntuples = [ [item] for item in ntuple]
-
-    return ntuples
-
-
-
-def _to_ntuples_OR_meas_context(or_group, n, other):
-    """
-    Convert a group of MongoDB result docs from an n-ary OR operation to
-    ntuples. Each member of the ntuple has a unique value of the n NLPQL
-    features. Identical nlpql_features for identical 'other' field values
-    mean single-document ntuples.
-    """
-
-    group = []
-    for doc in or_group:
-        group.append(doc)
-    #group = sorted(group, key=lambda x: x[other])
-    group = _sort_group_on_other(group, other)
-
-    doc_count = len(group)
-    indices = [i for i in range(0, doc_count)]
-    ntuples = []
-
-    while True:
-        feature_map = {}
-        other_value = group[indices[0]][other]
-        for i in indices:
-            if other_value == group[i][other]:
-                feature = group[i]['nlpql_feature']
-                if not feature in feature_map:
-                    d = collections.deque()
-                    d.append(i)
-                    feature_map[feature] = d
-                else:
-                    feature_map[feature].append(i)
+    for k,v in ret.items():
+        if type(v) == list:
+            if 1 == len(v) and '' == v[0]:
+                ret[k] = None
             else:
-                break
+                flattened_list = flatten(v)
 
-        # end of ntuple doc discovery for all docs having 'other' field
-        # equal to 'other_value'; check for duplicates
-        # could have duplicates across different nlpql_features
-        while len(feature_map) > 0:
-            ntuple = []
-            remove_keys = []
-            for k,d in feature_map.items():
-                index = d.popleft()
-                ntuple.append(group[index])
-                indices.remove(index)
-                if 0 == len(d):
-                    remove_keys.append(k)
+                all_none = True
+                for item in flattened_list:
+                    if item is not None:
+                        all_none = False
+                        break
+
+                if all_none:
+                    ret[k] = None
                 else:
-                    feature_map[k] = d
-            ntuples.append(ntuple)
-            for k in remove_keys:
-                feature_map.pop(k, None)
-
-        if 0 == len(indices):
-            break
-
-    return ntuples
-    
+                    ret[k] = flattened_list
+                
 
 def mongo_process_operations(infix_tokens,
                              db,
@@ -991,10 +1016,14 @@ def mongo_process_operations(infix_tokens,
             # remove the copied doc['_id'] so that Mongo will assign a new one
             ret.pop('_id', None)
 
-            # flatten all nested lists in the final result
-            for k,v in ret.items():
-                if type(v) == list:
-                    ret[k] = flatten(v)
+            flatten_nested_lists(ret)
+            # # flatten all nested lists in the final result
+            # for k,v in ret.items():
+            #     if type(v) == list:
+            #         if 1 == len(v) and '' == v[0]:
+            #             ret[k] = None
+            #         else:
+            #             ret[k] = flatten(v)
             
             output.append(ret)
 
@@ -1024,15 +1053,26 @@ def mongo_process_operations(infix_tokens,
                 if len(g) < eval_result.n:
                     continue
 
-                if mongo_eval.MONGO_MEASUREMENT_CONTEXT:
-                    ntuples = _to_ntuples_AND_meas_context(g, eval_result.n, other)
-                else:
-                    ntuples = _to_ntuples_AND(g, eval_result.n, other)
+                ntuples = mongo_eval.to_ntuples_AND(g, eval_result.n, other)
+                
             else:
-                if mongo_eval.MONGO_MEASUREMENT_CONTEXT:
-                    ntuples = _to_ntuples_OR_meas_context(g, eval_result.n, other)
-                else:
-                    ntuples = _to_ntuples_OR(g, eval_result.n, other)
+
+                ntuples = mongo_eval.to_ntuples_OR(g, eval_result.n, other)
+                
+            # if mongo_eval.MONGO_OP_AND == eval_result.operation:
+            #     # need n elements for an AND ntuple (OR needs from 1..n)
+            #     if len(g) < eval_result.n:
+            #         continue
+
+            #     if mongo_eval.MONGO_MEASUREMENT_CONTEXT:
+            #         ntuples = _to_ntuples_AND_meas_context(g, eval_result.n, other)
+            #     else:
+            #         ntuples = _to_ntuples_AND(g, eval_result.n, other)
+            # else:
+            #     if mongo_eval.MONGO_MEASUREMENT_CONTEXT:
+            #         ntuples = _to_ntuples_OR_meas_context(g, eval_result.n, other)
+            #     else:
+            #         ntuples = _to_ntuples_OR(g, eval_result.n, other)
             
             print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:
@@ -1117,10 +1157,11 @@ def mongo_process_operations(infix_tokens,
                             col = 'nlpql_feature_{0}'.format(index+1)
                             ret[col] = f
 
-                    # flatten all nested lists in the final result
-                    for k,v in ret.items():
-                        if type(v) == list:
-                            ret[k] = flatten(v)
+                    flatten_nested_lists(ret)
+                    # # flatten all nested lists in the final result
+                    # for k,v in ret.items():
+                    #     if type(v) == list:
+                    #         ret[k] = flatten(v)
 
                 output.append(ret)
 
@@ -1205,10 +1246,11 @@ def mongo_process_operations(infix_tokens,
                 else:
                     ret['history'] = json_util.dumps(histories)
 
-                    # flatten all nested lists in the final result
-                    for k,v in ret.items():
-                        if type(v) == list:
-                            ret[k] = flatten(v)
+                    flatten_nested_lists(ret)
+                    # # flatten all nested lists in the final result
+                    # for k,v in ret.items():
+                    #     if type(v) == list:
+                    #         ret[k] = flatten(v)
                     
                 output.append(ret)
 
