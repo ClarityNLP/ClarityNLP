@@ -145,6 +145,7 @@ import sys
 import json
 import optparse
 import subprocess
+import collections
 from pymongo import MongoClient
 from collections import OrderedDict, namedtuple
 
@@ -177,7 +178,7 @@ MONGO_MEASUREMENT_CONTEXT = mongo_logic_ops.MEASUREMENT_CONTEXT
 # non-exported variables
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 
 _MODULE_NAME = 'mongo_eval.py'
 
