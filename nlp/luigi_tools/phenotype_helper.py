@@ -12,8 +12,8 @@ from pymongo import MongoClient
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations, mongo_eval, results
 from ohdsi import getCohort
 
-import json
-from bson import json_util, ObjectId
+#import json
+#from bson import json_util, ObjectId
 
 DEBUG_LIMIT = 1000
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
@@ -644,10 +644,9 @@ def flatten(l, ltypes=(list, tuple)):
 
 def flatten_nested_lists(ret):
     """
-    Remove nested lists in the given object and return the 
-    flattened equivalent. Does some special handling for
-    empty lists or lists containing all identical entries,
-    mainly to simplify the results when viewed in Excel.
+    Remove nested lists in the given object and return the flattened 
+    equivalent. Does some special handling for empty lists or lists containing
+    all identical entries, mainly to simplify the results when viewed in Excel.
     """
 
     for k,v in ret.items():
@@ -688,7 +687,8 @@ def mongo_process_operations(infix_tokens,
     match_filters['job_id'] = job_id
 
     operation_name = c['name']
-    if phenotype.context == 'Document':
+    context = phenotype.context.lower()
+    if 'document' == context:
         on = 'report_id'
         other = 'subject'
     else:
@@ -696,8 +696,11 @@ def mongo_process_operations(infix_tokens,
         other = 'report_id'
     expression = c['raw_text']
 
-    # evaluate the expression using Mongo aggregation
-    eval_result = mongo_eval.run(mongo_collection_obj, infix_tokens, on, match_filters)
+    # build and run a Mongo aggregation pipeline to evaluate the expression
+    eval_result = mongo_eval.run(mongo_collection_obj,
+                                 infix_tokens,
+                                 on,
+                                 match_filters)
     if mongo_eval.MONGO_OP_ERROR == eval_result.operation:
         # could not compute result
         print('mongo_process_operations error: ')
@@ -708,7 +711,7 @@ def mongo_process_operations(infix_tokens,
     output = list()
     is_final = c['final']
 
-    # these fields are not copied from current doc to result doc
+    # these fields are not copied from source doc to result doc
     NO_COPY_FIELDS = [
         '_id', 'job_id', 'phenotype_id', 'owner',
         'job_date', 'context_type', 'raw_definition_text',
