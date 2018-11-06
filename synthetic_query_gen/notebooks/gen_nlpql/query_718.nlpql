@@ -2,8 +2,6 @@
 
 // limit if any
 
-limit 1000;
-        
 
  
 // Phenotype library name
@@ -55,7 +53,7 @@ define final Medications:
 // Results
 
 
-// Clinical Trial ID: NCT02084654
+// Index: NCT02084654
 // Bit String: 000001100000000000100000000
 
 

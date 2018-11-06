@@ -2,8 +2,6 @@
 
 // limit if any
 
-limit 1000;
-        
 
  
 // Phenotype library name
@@ -55,7 +53,7 @@ define final RaceMatch:
 // Results
 
 
-// Clinical Trial ID: NCT01523990
+// Index: NCT01523990
 // Bit String: 100001100000000000000000000
 
 

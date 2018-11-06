@@ -2,8 +2,6 @@
 
 // limit if any
 
-limit 1000;
-        
 
  
 // Phenotype library name
@@ -70,7 +68,7 @@ define final SyntheticQueryResults:
     where Conditions AND Medications;
     
 
-// Clinical Trial ID: NCT00283361
+// Index: NCT00283361
 // Bit String: 000001101000000000000000001
 
 

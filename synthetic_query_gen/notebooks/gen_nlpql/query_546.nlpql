@@ -2,8 +2,6 @@
 
 // limit if any
 
-limit 1000;
-        
 
  
 // Phenotype library name
@@ -44,7 +42,7 @@ documentset PotentiallyEligiblePatientsNotes:
 // Results
 
 
-// Clinical Trial ID: NCT01049490
+// Index: NCT01049490
 // Bit String: 000000010001000000000000000
 
 

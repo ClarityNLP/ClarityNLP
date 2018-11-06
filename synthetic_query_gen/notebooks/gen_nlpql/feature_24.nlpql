@@ -1,0 +1,59 @@
+
+
+// limit if any
+
+
+ 
+// Phenotype library name
+phenotype "SingleFeature_24" version "1";
+
+// Phenotype library description 
+description "Synthetically generated, paramaterized query; for computing benchark runtime stats";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org";
+
+//documentset Old:
+//    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]); 
+    
+// use exact MIMIC names in case report type mapper is not accesible
+documentset PotentiallyEligiblePatientsNotes:
+    Clarity.createReportTypeList(["Nursing/other", "Nursing", "Physician ", "Discharge summary"]);
+
+// Gender inclusion criteria termset, if gender criteria present
+
+
+// Race inclusion criteria termset, if race criteria present
+
+termset Races:["white","caucasian","black","african american","asian","pacific islander","alaska native","native american", "native hawaiian"];
+
+define Race:
+    Clarity.RaceFinderTask({
+        documentset: [PotentiallyEligiblePatientsNotes],
+        termset:[Races]
+    });
+
+define final RaceMatch:
+    where Race.value_normalized == "native_american";
+        
+
+// Condition(s) inclusion criteria termset, if condition criteria present
+
+
+// Medication(s) inclusion criteria termset, if medication criteria present
+
+
+// Results
+
+
+// Index: 24
+// Bit String: 001000000000000000000000000
+
+
