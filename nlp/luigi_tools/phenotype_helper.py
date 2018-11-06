@@ -646,7 +646,7 @@ def flatten_nested_lists(ret):
     """
     Remove nested lists in the given object and return the 
     flattened equivalent. Does some special handling for
-    empty lists or lists containing all 'None' entries,
+    empty lists or lists containing all identical entries,
     mainly to simplify the results when viewed in Excel.
     """
 
@@ -667,7 +667,7 @@ def flatten_nested_lists(ret):
                     ret[k] = None
                 else:
                     ret[k] = flattened_list
-                
+
 
 def mongo_process_operations(infix_tokens,
                              db,
@@ -728,7 +728,7 @@ def mongo_process_operations(infix_tokens,
             # output doc
             ret = {}
             
-            # add ntuple doc fields to the output doc as lists
+            # add doc fields to the output doc as lists
             field_map = {}
             fields = doc.keys()
             fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
@@ -741,7 +741,7 @@ def mongo_process_operations(infix_tokens,
             for k,v in field_map.items():
                 ret[k] = copy.deepcopy(v)
 
-            # set the join field; same value for all ntuple entries
+            # set the join field explicitly
             ret[on] = doc[on]
             
             ret['job_id'] = job_id
@@ -753,9 +753,11 @@ def mongo_process_operations(infix_tokens,
             ret['nlpql_feature'] = operation_name
             ret['phenotype_final'] = c['final']
 
-            # remove the copied doc['_id'] so that Mongo will assign a new one
-            ret.pop('_id', None)
-
+            # add '_ids' and 'nlpql_features' cols to the final phenotype
+            if is_final:
+                ret['_id_ancestors'] = copy.deepcopy(doc['_id'])
+                ret['nlpql_feature_ancestors'] = copy.deepcopy(doc['nlpql_feature'])
+            
             flatten_nested_lists(ret)
             output.append(ret)
 
@@ -780,6 +782,8 @@ def mongo_process_operations(infix_tokens,
             print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
             group_counter += 1
 
+            # rearrange the docs in a group as ntuples (n == eval_result.n)
+            # all docs in a group share the same value of the join variable
             if mongo_eval.MONGO_OP_AND == eval_result.operation:
                 # need n elements for an AND ntuple (OR needs from 1..n)
                 if len(g) < eval_result.n:
@@ -791,6 +795,7 @@ def mongo_process_operations(infix_tokens,
             print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:
 
+                # each ntuple supplies the data for a result doc
                 ret = {}
                 history = {
                     'source_ids'  : [],
@@ -837,8 +842,8 @@ def mongo_process_operations(infix_tokens,
 
                 # add '_ids' and 'nlpql_features' cols to the final phenotype
                 if is_final:
-                    ret['_ids'] = copy.deepcopy(history['source_ids'])
-                    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
+                    ret['_id_ancestors'] = copy.deepcopy(history['source_ids'])
+                    ret['nlpql_feature_ancestors'] = copy.deepcopy(history['source_features'])
                     
                 flatten_nested_lists(ret)
                 output.append(ret)
@@ -866,21 +871,13 @@ def mongo_process_operations(infix_tokens,
                 # no concept of ntuples for SETDIFF, just take docs in order
 
                 ret = {}
-                history = {
-                    'source_ids'  : [],
-                    'source_features' : []
-                }
-
                 # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
                 #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
                 #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
                 #              doc['report_id'], doc['subject'], doc['start'],
                 #              doc['end']))
 
-                history['source_ids'].append(str(doc['_id']))
-                history['source_features'].append(doc['nlpql_feature'])
-
-                # add ntuple doc fields to the output doc as lists
+                # add doc fields to the output doc as lists
                 field_map = {}
                 fields = doc.keys()
                 fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
@@ -893,10 +890,9 @@ def mongo_process_operations(infix_tokens,
                 for k,v in field_map.items():
                     ret[k] = copy.deepcopy(v)
                             
-                # set the join field; same value for all ntuple entries
-                ret[on] = ntuple[0][on]
+                # set the join field explicitly
+                ret[on] = doc[on]
                 
-                # update job and phenotype fields
                 ret['job_id'] = job_id
                 ret['phenotype_id'] = phenotype_id
                 ret['owner'] = phenotype_owner
@@ -906,9 +902,10 @@ def mongo_process_operations(infix_tokens,
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
 
+                # add '_ids' and 'nlpql_features' cols to the final phenotype                
                 if is_final:
-                    ret['_ids'] = copy.deepcopy(history['source_ids'])
-                    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
+                    ret['_id_ancestors'] = copy.deepcopy(doc['_id'])
+                    ret['nlpql_feature_ancestors'] = copy.deepcopy(doc['nlpql_feature'])
                     
                 flatten_nested_lists(ret)                
                 output.append(ret)
