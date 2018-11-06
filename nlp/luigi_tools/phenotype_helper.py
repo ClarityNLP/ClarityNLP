@@ -793,10 +793,8 @@ def mongo_process_operations(infix_tokens,
 
                 ret = {}
                 history = {
-                    'operation' : {
-                        'source_ids'  : [],
-                        'source_features' : []
-                    }
+                    'source_ids'  : [],
+                    'source_features' : []
                 }
 
                 # accumulate the source doc _id and nlpql_feature fields
@@ -807,8 +805,8 @@ def mongo_process_operations(infix_tokens,
                     #              doc['report_id'], doc['subject'], doc['start'],
                     #              doc['end']))
 
-                    history['operation']['source_ids'].append(str(doc['_id']))
-                    history['operation']['source_features'].append(doc['nlpql_feature'])
+                    history['source_ids'].append(str(doc['_id']))
+                    history['source_features'].append(doc['nlpql_feature'])
                         
                 # add ntuple doc fields to the output doc as lists
                 field_map = {}
@@ -839,8 +837,8 @@ def mongo_process_operations(infix_tokens,
 
                 # add '_ids' and 'nlpql_features' cols to the final phenotype
                 if is_final:
-                    ret['_ids'] = copy.deepcopy(history['operation']['source_ids'])
-                    ret['nlpql_features'] = copy.deepcopy(history['operation']['source_features'])
+                    ret['_ids'] = copy.deepcopy(history['source_ids'])
+                    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
                     
                 flatten_nested_lists(ret)
                 output.append(ret)
@@ -869,10 +867,8 @@ def mongo_process_operations(infix_tokens,
 
                 ret = {}
                 history = {
-                    'operation' : {
-                        'source_ids'  : [],
-                        'source_features' : []
-                    }
+                    'source_ids'  : [],
+                    'source_features' : []
                 }
 
                 # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
@@ -881,8 +877,8 @@ def mongo_process_operations(infix_tokens,
                 #              doc['report_id'], doc['subject'], doc['start'],
                 #              doc['end']))
 
-                history['operation']['source_ids'].append(str(doc['_id']))
-                history['operation']['source_features'].append(doc['nlpql_feature'])
+                history['source_ids'].append(str(doc['_id']))
+                history['source_features'].append(doc['nlpql_feature'])
 
                 # add ntuple doc fields to the output doc as lists
                 field_map = {}
@@ -911,8 +907,8 @@ def mongo_process_operations(infix_tokens,
                 ret['phenotype_final'] = c['final']
 
                 if is_final:
-                    ret['_ids'] = copy.deepcopy(history['operation']['source_ids'])
-                    ret['nlpql_features'] = copy.deepcopy(history['operation']['source_features'])
+                    ret['_ids'] = copy.deepcopy(history['source_ids'])
+                    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
                     
                 flatten_nested_lists(ret)                
                 output.append(ret)
