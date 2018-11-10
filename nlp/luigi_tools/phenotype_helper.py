@@ -433,7 +433,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
 
     # Get the NLPQL expression and determine if Mongo aggregation can evaluate
     # it. If so, the Mongo evaluator will tokenize the expression and return
-    # the list of infix tokens.
+    # a list of infix tokens.
     expression = c['raw_text']
     
     infix_tokens = mongo_eval.is_mongo_computable(expression)
@@ -634,17 +634,17 @@ def flatten(l, ltypes=(list, tuple)):
     return ltype(l)
 
 
-def flatten_nested_lists(ret):
+def flatten_nested_lists(obj):
     """
-    Remove nested lists in the given object and return the flattened 
+    Remove nested lists in the given dict and return the flattened 
     equivalent. Does some special handling for empty lists or lists containing
     all identical entries, mainly to simplify the results when viewed in Excel.
     """
 
-    for k,v in ret.items():
+    for k,v in obj.items():
         if type(v) == list:
             if 1 == len(v) and '' == v[0]:
-                ret[k] = None
+                obj[k] = None
             else:
                 flattened_list = flatten(v)
 
@@ -655,17 +655,47 @@ def flatten_nested_lists(ret):
                         break
 
                 if all_none:
-                    ret[k] = None
+                    obj[k] = None
                 else:
-                    ret[k] = flattened_list
+                    obj[k] = flattened_list
 
 
+def remove_arrays(obj):
+    """
+    Remove arrays in the result dict by creating numbered fields for
+    the array elements.
+    """
+    to_insert = []
+    to_remove = []
+    
+    for k,v in obj.items():
+        if type(v) != list:
+            continue
+
+        elt_count = len(v)
+        if 1 == elt_count:
+            obj[k] = v[0]
+        else:
+            for i in range(elt_count):
+                field_name = '{0}_{1}'.format(k, i)
+                to_insert.append( (field_name, copy.deepcopy(v), i) )
+            to_remove.append(k)
+
+    for k in to_remove:
+        obj.pop(k, None)
+        #print('removed {0}'.format(k))
+    for k,v,i in to_insert:
+        obj[k] = v[i]
+        #print('inserted {0}'.format(k))
+
+                    
 def mongo_process_operations(infix_tokens,
                              db,
                              job_id,
                              phenotype: PhenotypeModel,
                              phenotype_id,
-                             phenotype_owner, c: PhenotypeOperations,
+                             phenotype_owner,
+                             c: PhenotypeOperations,
                              final=False):
     """
     Use MongoDB aggregation to evaluate NLPQL expressions.
@@ -750,10 +780,16 @@ def mongo_process_operations(infix_tokens,
 
             # add '_ids' and 'nlpql_features' cols to the final phenotype
             if is_final:
-                ret['_id_ancestors'] = copy.deepcopy(doc['_id'])
-                ret['nlpql_feature_ancestors'] = copy.deepcopy(doc['nlpql_feature'])
+                ret['_ids_1'] = copy.deepcopy(doc['_id'])
+                ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
+                #ret['_ids'] = copy.deepcopy(doc['_id'])
+                #ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
             
             flatten_nested_lists(ret)
+
+            if is_final:
+                remove_arrays(ret)
+                
             output.append(ret)
 
         if len(output) > 0:
@@ -792,12 +828,13 @@ def mongo_process_operations(infix_tokens,
 
                 # each ntuple supplies the data for a result doc
                 ret = {}
-                history = {
-                    'source_ids'  : [],
-                    'source_features' : []
-                }
+                #history = {
+                #    'source_ids'  : [],
+                #    'source_features' : []
+                #}
 
                 # accumulate the source doc _id and nlpql_feature fields
+                counter = 1
                 for doc in ntuple:
                     # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
                     #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
@@ -805,8 +842,13 @@ def mongo_process_operations(infix_tokens,
                     #              doc['report_id'], doc['subject'], doc['start'],
                     #              doc['end']))
 
-                    history['source_ids'].append(str(doc['_id']))
-                    history['source_features'].append(doc['nlpql_feature'])
+                    #history['source_ids'].append(str(doc['_id']))
+                    #history['source_features'].append(doc['nlpql_feature'])
+                    field_name = '_ids_{0}'.format(counter)
+                    ret[field_name] = doc['_id']
+                    field_name = 'nlpql_features_{0}'.format(counter)
+                    ret[field_name] = doc['nlpql_feature']
+                    counter += 1
                         
                 # add ntuple doc fields to the output doc as lists
                 field_map = {}
@@ -836,11 +878,15 @@ def mongo_process_operations(infix_tokens,
                 ret['phenotype_final'] = c['final']
 
                 # add '_ids' and 'nlpql_features' cols to the final phenotype
-                if is_final:
-                    ret['_id_ancestors'] = copy.deepcopy(history['source_ids'])
-                    ret['nlpql_feature_ancestors'] = copy.deepcopy(history['source_features'])
+                #if is_final:
+                #    ret['_ids'] = copy.deepcopy(history['source_ids'])
+                #    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
                     
                 flatten_nested_lists(ret)
+
+                if is_final:
+                    remove_arrays(ret)
+                    
                 output.append(ret)
 
         if len(output) > 0:
@@ -899,10 +945,14 @@ def mongo_process_operations(infix_tokens,
 
                 # add '_ids' and 'nlpql_features' cols to the final phenotype                
                 if is_final:
-                    ret['_id_ancestors'] = copy.deepcopy(doc['_id'])
-                    ret['nlpql_feature_ancestors'] = copy.deepcopy(doc['nlpql_feature'])
+                    ret['_ids'] = copy.deepcopy(doc['_id'])
+                    ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
                     
-                flatten_nested_lists(ret)                
+                flatten_nested_lists(ret)
+
+                if is_final:
+                    remove_arrays(ret)
+                    
                 output.append(ret)
 
         if len(output) > 0:
