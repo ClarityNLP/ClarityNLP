@@ -677,16 +677,15 @@ def remove_arrays(obj):
             obj[k] = v[0]
         else:
             for i in range(elt_count):
-                field_name = '{0}_{1}'.format(k, i)
+                # use 1-based indexing
+                field_name = '{0}_{1}'.format(k, i+1)
                 to_insert.append( (field_name, copy.deepcopy(v), i) )
             to_remove.append(k)
 
     for k in to_remove:
         obj.pop(k, None)
-        #print('removed {0}'.format(k))
     for k,v,i in to_insert:
         obj[k] = v[i]
-        #print('inserted {0}'.format(k))
 
                     
 def mongo_process_operations(infix_tokens,
@@ -778,12 +777,14 @@ def mongo_process_operations(infix_tokens,
             ret['nlpql_feature'] = operation_name
             ret['phenotype_final'] = c['final']
 
-            # add '_ids' and 'nlpql_features' cols to the final phenotype
+            # add source _id and nlpql_feature
             if is_final:
                 ret['_ids_1'] = copy.deepcopy(doc['_id'])
                 ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
-                #ret['_ids'] = copy.deepcopy(doc['_id'])
-                #ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
+            else:
+                # use same field names as for logic ops
+                ret['_ids'] = copy.deepcopy(doc['_id'])
+                ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
             
             flatten_nested_lists(ret)
 
@@ -828,13 +829,12 @@ def mongo_process_operations(infix_tokens,
 
                 # each ntuple supplies the data for a result doc
                 ret = {}
-                #history = {
-                #    'source_ids'  : [],
-                #    'source_features' : []
-                #}
+                history = {
+                    'source_ids'  : [],
+                    'source_features' : []
+                }
 
                 # accumulate the source doc _id and nlpql_feature fields
-                counter = 1
                 for doc in ntuple:
                     # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
                     #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
@@ -842,13 +842,8 @@ def mongo_process_operations(infix_tokens,
                     #              doc['report_id'], doc['subject'], doc['start'],
                     #              doc['end']))
 
-                    #history['source_ids'].append(str(doc['_id']))
-                    #history['source_features'].append(doc['nlpql_feature'])
-                    field_name = '_ids_{0}'.format(counter)
-                    ret[field_name] = doc['_id']
-                    field_name = 'nlpql_features_{0}'.format(counter)
-                    ret[field_name] = doc['nlpql_feature']
-                    counter += 1
+                    history['source_ids'].append(str(doc['_id']))
+                    history['source_features'].append(doc['nlpql_feature'])
                         
                 # add ntuple doc fields to the output doc as lists
                 field_map = {}
@@ -877,10 +872,23 @@ def mongo_process_operations(infix_tokens,
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
 
-                # add '_ids' and 'nlpql_features' cols to the final phenotype
-                #if is_final:
-                #    ret['_ids'] = copy.deepcopy(history['source_ids'])
-                #    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
+                # add source _ids and nlpql_features (1-based indexing)
+                source_count = len(history['source_ids'])
+                if is_final:
+                    for i in range(len(history['source_ids'])):
+                        field_name = '_ids_{0}'.format(i+1)
+                        ret[field_name] = history['source_ids'][i]
+                    for i in range(len(history['source_features'])):
+                        field_name = 'nlpql_features_{0}'.format(i+1)
+                        ret[field_name] = history['source_features'][i]
+
+                    # remove intermediate array fields
+                    ret.pop('_ids', None)
+                    ret.pop('nlpql_features', None)
+                else:
+                    # add intermediate array fields
+                    ret['_ids'] = copy.deepcopy(history['source_ids'])
+                    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
                     
                 flatten_nested_lists(ret)
 
@@ -943,8 +951,13 @@ def mongo_process_operations(infix_tokens,
                 ret['nlpql_feature'] = operation_name
                 ret['phenotype_final'] = c['final']
 
-                # add '_ids' and 'nlpql_features' cols to the final phenotype                
+                # add source _id and nlpql_features (only the set A features
+                # are available; the set B features have been removed)
                 if is_final:
+                    ret['_ids_1'] = copy.deepcopy(doc['_id'])
+                    ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
+                else:
+                    # use same field names as for logic ops
                     ret['_ids'] = copy.deepcopy(doc['_id'])
                     ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
                     
