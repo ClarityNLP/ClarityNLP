@@ -431,15 +431,24 @@ def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeMod
 def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
                        final=False):
 
+    try:
+        evaluator = util.expression_evaluator
+    except:
+        evaluator = 'pandas'        
+
     # Get the NLPQL expression and determine if Mongo aggregation can evaluate
     # it. If so, the Mongo evaluator will tokenize the expression and return
-    # a list of infix tokens.
+    # a list of infix tokens. If mongo cannot evaluate it, or if the user does
+    # not have an 'eval' entry in the 
     expression = c['raw_text']
-    
-    infix_tokens = mongo_eval.is_mongo_computable(expression)
-    if len(infix_tokens) > 0:
-        mongo_process_operations(infix_tokens, db, job, phenotype, phenotype_id, phenotype_owner, c, final)
+        
+    if 'mongo' == evaluator:    
+        infix_tokens = mongo_eval.is_mongo_computable(expression)
+        if len(infix_tokens) > 0:
+            print('Using mongo evaluator for expression "{0}"'.format(expression))
+            mongo_process_operations(infix_tokens, db, job, phenotype, phenotype_id, phenotype_owner, c, final)
     else:
+        print('Using pandas evaluator for expression "{0}"'.format(expression))
         pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
 
 
@@ -809,10 +818,10 @@ def mongo_process_operations(infix_tokens,
         print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
         
         doc_groups = eval_result.doc_groups
-        group_counter = 1
+        # group_counter = 1
         for g in doc_groups:
-            print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
-            group_counter += 1
+            # print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+            # group_counter += 1
 
             # rearrange the docs in a group as ntuples (n == eval_result.n)
             # all docs in a group share the same value of the join variable
@@ -824,7 +833,7 @@ def mongo_process_operations(infix_tokens,
             else:
                 ntuples = mongo_eval.to_ntuples_OR(g, eval_result.n, other)
                 
-            print('\tntuple count: {0}'.format(len(ntuples)))
+            # print('\tntuple count: {0}'.format(len(ntuples)))
             for ntuple in ntuples:
 
                 # each ntuple supplies the data for a result doc
@@ -911,10 +920,10 @@ def mongo_process_operations(infix_tokens,
         print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
 
         doc_groups = eval_result.doc_groups
-        group_counter = 1
+        # group_counter = 1
         for g in doc_groups:
-            print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
-            group_counter += 1
+            # print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+            # group_counter += 1
             for doc in g:
 
                 # no concept of ntuples for SETDIFF, just take docs in order
