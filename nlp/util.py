@@ -65,6 +65,7 @@ solr_report_date_field = read_property('SOLR_REPORT_DATE_FIELD', ('solr', 'date_
 solr_subject_field = read_property('SOLR_SUBJECT_FIELD', ('solr', 'subject_field'))
 solr_report_type_field = read_property('SOLR_REPORT_TYPE_FIELD', ('solr', 'type_field'))
 
+expression_evaluator = read_property('NLP_EXPRESSION_EVALUATOR', ('local', 'evaluator'))
 
 def cmp_2_key(mycmp):
     # https://bytes.com/topic/python/answers/844614-python-3-sorting-comparison-function

@@ -145,16 +145,40 @@ import sys
 import json
 import optparse
 import subprocess
+import collections
 from pymongo import MongoClient
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 if __name__ == '__main__':
     import mongo_logic_ops
 else:
     from data_access import mongo_logic_ops
 
+# results are returned as instances of this namedtuple type
+MONGO_EVAL_FIELDS = [
+    'operation',  # which operation was performed, see below
+    'n',          # value of n for n-ary logic ops
+    'doc_ids',    # list of all returned doc _id values
+    'doc_groups'  # list of lists for joined docs
+]
+MongoEvalResult = namedtuple('MongoEvalResult', MONGO_EVAL_FIELDS)
+
+# values for the 'mongo_op' field
+MONGO_OP_MATH    = 'MATH'
+MONGO_OP_AND     = 'AND'
+MONGO_OP_OR      = 'OR'
+MONGO_OP_SETDIFF = 'SETDIFF'
+MONGO_OP_NOT     = 'NOT'
+MONGO_OP_ERROR   = 'ERROR'
+
+MONGO_EVAL_ERROR = MongoEvalResult(MONGO_OP_ERROR, 0, [], [])
+MONGO_MEASUREMENT_CONTEXT = mongo_logic_ops.MEASUREMENT_CONTEXT
+
+
+# non-exported variables
+
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 
 _MODULE_NAME = 'mongo_eval.py'
 
@@ -236,31 +260,52 @@ _LEFT_PARENS     = '('
 _RIGHT_PARENS    = ')'
 _EMPTY_JSON      = '[]'
 _EMPTY_LIST      = []
-_UNKNOWN         = 'UNKNOWN'
-_OPERATOR        = 'OPERATOR'
-_IDENTIFIER      = 'IDENTIFIER'
-_VARIABLE        = 'VARIABLE'
-_NUMERIC_LITERAL = 'NUMERIC_LITERAL'
-_EXPR_MATH       = 'MATH'
-_EXPR_LOGIC      = 'LOGIC'
+_SINGLE_ROW_OP   = 'SINGLE_ROW_OP'
+_MULTI_ROW_OP    = 'MULTI_ROW_OP'
+_OPERATOR_AND    = 'and'
+_OPERATOR_OR     = 'or'
+_OPERATOR_NOT    = 'not'
 
 
 ###############################################################################
-def _is_pure_mathematical_expr(infix_tokens):
+def _to_mongo_op(logic_operator, nlpql_feature_count):
+    """
+    Convert the logic operator to one of the predefined constants.
+    """
+
+    operator = logic_operator.lower()
+
+    if _OPERATOR_AND == operator:
+        op_id = MONGO_OP_AND
+    elif _OPERATOR_OR == operator:
+        op_id = MONGO_OP_OR
+    elif _OPERATOR_NOT == operator:
+        if 2 == nlpql_feature_count:
+            op_id = MONGO_OP_SETDIFF
+        else:
+            op_id = MONGO_OP_NOT
+    else:
+        op_id = MONGO_OP_ERROR
+
+    return op_id
+        
+
+###############################################################################
+def _is_single_row_op(infix_tokens):
     """
     Return a Boolean result indicating whether the given infix expression
-    is a "pure mathematical" expression.
+    can be evaluated as a "single-row" operation.
 
-    Pure mathematical expressions consist entirely of terms of the form:
+    Pure single-row operations consist entirely of terms of the form:
 
             nlpql_feature.value
             operator
             numeric_literal
 
     These expressions involve a single nlpql_feature, so that all variables
-    can be found in the same 'row' of the intermediate result (mongo document).
-    The condition of being all in the same row means that no joins are needed
-    to evaluate the final result.
+    can be found in the same 'row' (mongo document) of the intermediate
+    results. The condition of being all in the same row means that no joins
+    are needed to evaluate the expression.
 
     """
 
@@ -281,7 +326,7 @@ def _is_pure_mathematical_expr(infix_tokens):
         if match:
             continue
 
-        # if here, not a pure mathematical expression
+        # if here, not a single-row operation
         return _EMPTY_LIST
 
     if 1 == len(nlpql_feature_set):
@@ -309,17 +354,18 @@ def _is_pure_mathematical_expr(infix_tokens):
 
 
 ###############################################################################
-def _is_logic_expr(infix_tokens):
+def _is_multi_row_op(infix_tokens):
     """
     Return a Boolean result indicating whether the given infix expression
-    is a "pure logic" expression.
+    is a "multi-row" operation.
 
-    Pure logic expressions consist entirely of terms of the form:
+    Multi-row operations consist entirely of terms of the form:
 
         identifier
         n-way 'and'
         n-way 'or'
-        A not B
+        A not B   (aka SETDIFF, everything in A but not also in B)
+        (perhaps later) not A
 
     These expressions do NOT involve numeric literals or terms of the form
     nlpql_feature.value.
@@ -330,10 +376,10 @@ def _is_logic_expr(infix_tokens):
     """
 
     if _TRACE:
-        print('_is_logic_expr: testing {0}'.format(infix_tokens))
+        print('_is_multi_row_op: testing {0}'.format(infix_tokens))
 
     operator_set = set()
-    identifier_set = set()
+    identifier_list = list() # list preserves operand order
     
     for token in infix_tokens:
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
@@ -341,61 +387,45 @@ def _is_logic_expr(infix_tokens):
         match = _regex_operator.match(token)
         if match:
             op_text = match.group().lower()
-            if 'and' == op_text or 'or' == op_text or 'not' == op_text:
+            if _OPERATOR_AND == op_text or _OPERATOR_OR == op_text or _OPERATOR_NOT == op_text:
                 operator_set.add(op_text)
                 continue
         match = _regex_identifier.match(token)
         if match:
-            identifier_set.add(match.group())
+            identifier_list.append(match.group())
             continue
 
-        # if here, not a pure logic expression
+        # if here, not a multi-row operation
         return _EMPTY_LIST
 
     if 1 == len(operator_set):
         operator = operator_set.pop()
 
         # n-way 'and', n-way 'or'
-        if 'and' == operator or 'or' == operator:
+        if _OPERATOR_AND == operator or _OPERATOR_OR == operator:
             new_infix_tokens = [operator]
-            new_infix_tokens.append(list(identifier_set))
+            new_infix_tokens.append(identifier_list)
             if _TRACE: print('\tfound n-way {0} expression'.format(operator))
             return new_infix_tokens
 
         # 'A not B'
-        elif 'not' == operator and 2 == len(identifier_set):
+        elif _OPERATOR_NOT == operator and 2 == len(identifier_list):
             new_infix_tokens = [operator]
-            new_infix_tokens.append(list(identifier_set))
+            new_infix_tokens.append(identifier_list)
             if _TRACE: print('\tfound "A not B" expression')
             return new_infix_tokens
+
+        # # not A (may not support this)
+        # elif _OPERATOR_NOT == operator and 1 == len(identifier_list):
+        #     new_infix_tokens = [operator]
+        #     new_infix_tokens.append(identifier_list) #list(identifier_set))
+        #     if _TRACE: print('\tfound "not A" expression')
+        #     return new_infix_tokens
+
         else:
             return _EMPTY_LIST
     else:
         return _EMPTY_LIST
-
-    
-###############################################################################
-def _get_token_type(token):
-    """
-    Test the form of the token and return whether it is a numeric literal,
-    operator, etc.
-
-    """
-
-    match = _regex_feature_and_value.match(token)
-    if match:
-        return _VARIABLE
-    match = _regex_numeric_literal.match(token)
-    if match:
-        return _NUMERIC_LITERAL
-    match = _regex_operator.match(token)
-    if match:
-        return _OPERATOR
-    match = _regex_identifier.match(token)
-    if match:
-        return _IDENTIFIER
-    
-    return UNKNOWN
 
 
 ###############################################################################
@@ -731,7 +761,7 @@ def _to_mongo_pipeline(postfix_tokens,
     # insert the filters into the aggregation pipeline
     mongo_commands = _filters_to_pipeline(mongo_commands, match_filters)
 
-    if _EXPR_MATH == expr_type:
+    if _SINGLE_ROW_OP == expr_type:
         # joins are not needed, can ignore join_field
         for token in postfix_tokens:
             if not _is_operator(token):
@@ -754,7 +784,7 @@ def _to_mongo_pipeline(postfix_tokens,
             print(err_msg)
             mongo_commands.append(_EMPTY_JSON)
 
-    elif _EXPR_LOGIC == expr_type:
+    elif _MULTI_ROW_OP == expr_type:
         # either an n-way 'AND' or n-way 'OR' expression
         operator = postfix_tokens[-1]
         print('here is operator: {0}'.format(operator))
@@ -763,7 +793,7 @@ def _to_mongo_pipeline(postfix_tokens,
 
 
 ###############################################################################
-def _mongo_evaluate(json_commands, mongo_collection_obj):
+def _mongo_evaluate_single_row(json_commands, mongo_collection_obj):
     """
     Execute the aggregation JSON command string and return a list of _ids of 
     all documents that satisfy the query.
@@ -775,12 +805,23 @@ def _mongo_evaluate(json_commands, mongo_collection_obj):
     # convert the json_command string to an object by evaluating it and
     # instantiating an OrderedDict (need to maintain argument order)
     pipeline_obj = [OrderedDict(ast.literal_eval(j)) for j in json_commands]
+
+    # cursor iterates over docs containing an _id field and a Boolean 'value'
     cursor = mongo_collection_obj.aggregate(pipeline_obj)
-            
+
     # keep all doc ids for which the aggregation result is True
     doc_ids = [doc['_id'] for doc in cursor if doc['value']]
 
-    return doc_ids    
+    # now query for the full documents
+    cursor = mongo_collection_obj.find({'_id' : {'$in' : doc_ids}})
+
+    # put all docs in a single group
+    group = []
+    for doc in cursor:
+        group.append(doc)
+
+    # return doc ids and an array of groups
+    return (doc_ids, [group])
 
 
 ###############################################################################
@@ -799,21 +840,256 @@ def is_mongo_computable(infix_expr):
     infix_expr = _insert_whitespace(infix_expr)
     infix_tokens = _tokenize(infix_expr)
 
-    new_infix_tokens = _is_pure_mathematical_expr(infix_tokens)
+    new_infix_tokens = _is_single_row_op(infix_tokens)
     if len(new_infix_tokens) > 0:
-        new_infix_tokens.append(_EXPR_MATH)
+        new_infix_tokens.append(_SINGLE_ROW_OP)
         if _TRACE:
-            print('\tREWRITTEN MATH EXPR: {0}'.format(new_infix_tokens))
+            print('\tREWRITTEN SINGLE-ROW OP: {0}'.format(new_infix_tokens))
         return new_infix_tokens
 
-    # new_infix_tokens = _is_logic_expr(infix_tokens)
-    # if len(new_infix_tokens) > 0:
-    #     new_infix_tokens.append(_EXPR_LOGIC)
-    #     if _TRACE:
-    #         print('\tREWRITTEN LOGIC EXPR: {0}'.format(new_infix_tokens))
-    #     return new_infix_tokens
+    new_infix_tokens = _is_multi_row_op(infix_tokens)
+    if len(new_infix_tokens) > 0:
+        new_infix_tokens.append(_MULTI_ROW_OP)
+        if _TRACE:
+            print('\tREWRITTEN MULTI_ROW_OP: {0}'.format(new_infix_tokens))
+        return new_infix_tokens
     
     return _EMPTY_LIST
+
+
+###############################################################################
+def _sort_group_on_other(group, other):
+    """
+    If the 'other' field is a list, rearrange the document group g so that all
+    docs sharing the same 'other' field are adjacent. 
+    """
+
+    # find unique lists
+    value_map = {}
+    for i in range(len(group)):
+        g = group[i]
+        key = str(g[other])
+        if key not in value_map:
+            value_map[key] = [i]
+        else:
+            value_map[key].append(i)
+
+    new_group = []
+    for k,indx_list in value_map.items():
+        for i in indx_list:
+            new_group.append(group[i])
+
+    return new_group
+
+
+###############################################################################            
+def _to_ntuples_AND_meas_context(and_group, n, other):
+    """
+    Convert a group of MongoDB result docs from an n-ary AND operation to
+    ntuples. Each member of the ntuple has a unique value of the n NLPQL
+    features.
+    
+    Each group and ntuple is a list of dicts.
+    """
+
+    # sort on the 'other' field
+    group = []
+    for doc in and_group:
+        group.append(doc)
+    #group = sorted(group, key=lambda x: x[other])
+    group = _sort_group_on_other(group, other)
+
+    # compose ntuples with one value each of the n NLPQL features
+    ntuples = []
+    indices = [i for i in range(0, len(group))]
+
+    while True:
+        features = set()
+        tuple_indices = []
+        for i in indices:
+            feature = group[i]['nlpql_feature']
+            if feature in features:
+                continue
+            features.add(feature)
+            tuple_indices.append(i)
+
+        if n != len(features):
+            break
+        else:
+            ntuple = [group[i] for i in tuple_indices]
+            ntuples.append(ntuple)
+            for i in tuple_indices:
+                indices.remove(i)
+                
+    return ntuples
+
+
+###############################################################################
+def _to_ntuples_AND(g, n, other):
+    """
+    """
+
+    # sort on the 'other' field
+    group = []
+    for doc in g:
+        group.append(doc)
+    #group = sorted(group, key=lambda x: x[other])
+    group = _sort_group_on_other(group, other)
+
+    # count the number of entries for each nlpql feature
+    feature_map = {}
+    for doc in group:
+        feature = doc['nlpql_feature']
+        if not feature in feature_map:
+            feature_map[feature] = 1
+        else:
+            feature_map[feature] += 1
+
+    max_count = 0
+    for feature, count in feature_map.items():
+        if count > max_count:
+            max_count = count
+
+    # assign doc indices to each feature
+    feature_map = {}
+    for i in range(len(group)):
+        doc = group[i]
+        feature = doc['nlpql_feature']
+        if not feature in feature_map:
+            # number of docs with this feature, current_index, index_list
+            feature_map[feature] = (1, 0, [i])
+        else:
+            count, current_index, index_list = feature_map[feature]
+            index_list.append(i)
+            count += 1
+            feature_map[feature] = (count, current_index, index_list)
+
+    # Generate ntuples by assigning one element from each group until max_count
+    # ntuples have been generated. Cycle the indices for each group. The
+    # resulting set of ntuples will be members of the inner join set.
+    # No values of the 'other' field will be lost by doing this, and this
+    # simpler procedure captures all documents or patients with the stated
+    # NLPQL conditions.
+
+    ntuples = []
+    while len(ntuples) < max_count:
+        ntuple = []
+        for feature, v in feature_map.items():
+            feature_count = v[0]
+            current_index = v[1]
+            index_list    = v[2]
+            ntuple.append(group[index_list[current_index]])
+            current_index += 1
+            if current_index >= feature_count:
+                current_index = 0
+            feature_map[feature] = (feature_count, current_index, index_list)
+        ntuples.append(ntuple)
+
+    return ntuples
+
+
+###############################################################################
+def _to_ntuples_OR(g, n, other):
+    """
+    """
+
+    ntuple = []
+    for doc in g:
+        ntuple.append(doc)
+    #ntuple = sorted(ntuple, key=lambda x: x[other])
+    ntuple = _sort_group_on_other(ntuple, other)
+    ntuples = [ [item] for item in ntuple]
+
+    return ntuples
+
+
+###############################################################################
+def _to_ntuples_OR_meas_context(or_group, n, other):
+    """
+    Convert a group of MongoDB result docs from an n-ary OR operation to
+    ntuples. Each member of the ntuple has a unique value of the n NLPQL
+    features. Identical nlpql_features for identical 'other' field values
+    mean single-document ntuples.
+    """
+
+    group = []
+    for doc in or_group:
+        group.append(doc)
+    #group = sorted(group, key=lambda x: x[other])
+    group = _sort_group_on_other(group, other)
+
+    doc_count = len(group)
+    indices = [i for i in range(0, doc_count)]
+    ntuples = []
+
+    while True:
+        feature_map = {}
+        other_value = group[indices[0]][other]
+        for i in indices:
+            if other_value == group[i][other]:
+                feature = group[i]['nlpql_feature']
+                if not feature in feature_map:
+                    d = collections.deque()
+                    d.append(i)
+                    feature_map[feature] = d
+                else:
+                    feature_map[feature].append(i)
+            else:
+                break
+
+        # end of ntuple doc discovery for all docs having 'other' field
+        # equal to 'other_value'; check for duplicates
+        # could have duplicates across different nlpql_features
+        while len(feature_map) > 0:
+            ntuple = []
+            remove_keys = []
+            for k,d in feature_map.items():
+                index = d.popleft()
+                ntuple.append(group[index])
+                indices.remove(index)
+                if 0 == len(d):
+                    remove_keys.append(k)
+                else:
+                    feature_map[k] = d
+            ntuples.append(ntuple)
+            for k in remove_keys:
+                feature_map.pop(k, None)
+
+        if 0 == len(indices):
+            break
+
+    return ntuples
+
+###############################################################################
+def to_ntuples_AND(group, n, other):
+    """
+    Regroup the set of all result docs ('group') that share the same value of
+    the join variable and construct n-member subsets of these docs for an
+    n-ary AND.
+    """
+
+    if MONGO_MEASUREMENT_CONTEXT:
+        ntuples =  _to_ntuples_AND_meas_context(group, n, other)
+    else:
+        ntuples = _to_ntuples_AND(group, n, other)
+
+    return ntuples
+
+
+###############################################################################
+def to_ntuples_OR(group, n, other):
+    """
+    Regroup the set of all result docs ('group') that share the same value of
+    the join variable and construct 1..n member subsets of these docs for an
+    n-ary OR.
+    """
+
+    if MONGO_MEASUREMENT_CONTEXT:
+        ntuples = _to_ntuples_OR_meas_context(group, n, other)
+    else:
+        ntuples = _to_ntuples_OR(group, n, other)
+
+    return ntuples
 
 
 ###############################################################################
@@ -825,7 +1101,7 @@ def run(mongo_collection_obj,
     """
     Evaluate the given infix expression, generate a MongoDB aggregation
     command from it, execute the command against the specified collection,
-    and return a list of _ids for all documents satisfying the expression.
+    and return a MongoEvalResult namedtuple with the results.
 
     The infix_expr is a string that is assumed to have survived the NLPQL
     parsing process, so the syntax is assumed to be correct.
@@ -838,6 +1114,20 @@ def run(mongo_collection_obj,
         mongo_client_obj     = MongoClient(mongo_host, mongo_port)
         mongo_db_obj         = mongo_client_obj[db_name]
         mongo_collection_obj = mongo_db_obj[collection_name]
+
+    Results:
+
+    For logical AND, there is an ntuple for each value of the join variable.
+    The ntuple contains the documents that were joined on that particular value.
+    The number of entries in each ntuple is n for an n-ary join.
+
+    For logical OR, there is a variable number of ntuples depending on how many
+    items were joined. Each ntuple can contain from 1 to n entries.
+
+    For logical A NOT B, there is an ntuple containing a single doc for each
+    value of the join variable in A but not in B.
+
+    For logical NOT, there is a single ntuple containing all result documents.
 
     """
 
@@ -852,37 +1142,44 @@ def run(mongo_collection_obj,
 
     # tokenize the input expression string and add nlpql_feature filters
     if str == type(infix_str_or_tokens):
-        infix_tokens = is_mongo_computable(infix_str_or_tokens)
-        if 0 == len(infix_tokens):
-            return []
+        tokens = is_mongo_computable(infix_str_or_tokens)
+        if 0 == len(tokens):
+            return MONGO_EVAL_ERROR
     else:
         assert list == type(infix_str_or_tokens)
-        infix_tokens = infix_str_or_tokens
+        tokens = infix_str_or_tokens
 
-    assert len(infix_tokens) > 0
-    assert _EXPR_MATH == infix_tokens[-1] or _EXPR_LOGIC == infix_tokens[-1]
+    assert len(tokens) > 0
+    assert _SINGLE_ROW_OP == tokens[-1] or _MULTI_ROW_OP == tokens[-1]
 
     # strip the expression type token
-    expr_type = infix_tokens[-1]
-    infix_tokens = infix_tokens[:-1]
+    expr_type = tokens[-1]
+    tokens = tokens[:-1]
 
     if _TRACE:
-        print('infix tokens before postfix in run: {0}'.format(infix_tokens))
+        print('tokens before postfix in run: {0}'.format(tokens))
 
-    if _EXPR_MATH == expr_type:
-        postfix_tokens = _infix_to_postfix(infix_tokens)
+    if _SINGLE_ROW_OP == expr_type:
+        postfix_tokens = _infix_to_postfix(tokens)
         mongo_pipeline = _to_mongo_pipeline(postfix_tokens,
                                             match_filters,
                                             expr_type,
                                             join_field)
 
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
-        doc_ids = _mongo_evaluate(mongo_pipeline, mongo_collection_obj)
+        ids, groups = _mongo_evaluate_single_row(mongo_pipeline,
+                                                 mongo_collection_obj)
+
+        mongo_eval_result = MongoEvalResult(operation  = MONGO_OP_MATH,
+                                            n          = 1,
+                                            doc_ids    = ids,
+                                            doc_groups = groups)
 
     else:
-        # the operator and nlpql features are stored in 'infix_tokens'
-        operator           = infix_tokens[0]
-        nlpql_feature_list = infix_tokens[1]
+        # the operator and nlpql features are stored in the 'tokens' list
+        operator           = tokens[0]
+        nlpql_feature_list = tokens[1]
+        feature_count      = len(nlpql_feature_list)
 
         mongo_pipeline = [
             {
@@ -892,29 +1189,72 @@ def run(mongo_collection_obj,
             }
         ]
 
-        mongo_pipeline = mongo_logic_ops.logic_expr_a_b(mongo_pipeline,
-                                                        operator,
-                                                        join_field,
-                                                        nlpql_feature_list)
+        if _OPERATOR_AND == operator or \
+           _OPERATOR_OR == operator  or \
+           (_OPERATOR_NOT == operator and 2 == feature_count): 
+            mongo_pipeline = mongo_logic_ops.logic_expr_a_b(mongo_pipeline,
+                                                            operator,
+                                                            join_field,
+                                                            nlpql_feature_list)
+        else:
+            assert 1 == feature_count
+            mongo_pipeline = mongo_logic_ops.logic_expr_not_a(mongo_pipeline,
+                                                              join_field,
+                                                              nlpql_feature_list[0])
 
         if _TRACE: print('mongo pipeline: {0}'.format(mongo_pipeline))
         cursor = mongo_collection_obj.aggregate(mongo_pipeline)
 
-        # keep all doc ids for which the aggregation result is True
-        doc_ids = [doc['_id'] for doc in cursor]
+        ids = []
+        groups = []
+        for agg_result in cursor:
+            ntuple = agg_result['ntuple']
+            groups.append(ntuple)
+            for t in ntuple:
+                ids.append(t['_id'])
 
-    return doc_ids
+        # convert operator to predefined constant
+        mongo_op = _to_mongo_op(operator, len(nlpql_feature_list))
+
+        mongo_eval_result = MongoEvalResult(operation  = mongo_op,
+                                            n          = feature_count,
+                                            doc_ids    = ids,
+                                            doc_groups = groups)
+
+        # print('mongo_eval: mongo_eval_result: ')
+        # print(mongo_eval_result)
+        # print()
+                                            
+    return mongo_eval_result
 
 
 ###############################################################################
 def _run_test_pipeline(mongo_collection_obj, pipeline):
     """
-    Run an aggregation pipeline for self-testing.
+    Run an aggregation pipeline for self-testing. Each aggregation result
+    contains a single field called 'ntuple', which is an array of intermediate
+    phenotype result documents.
     """
 
+    ids = []
+    groups = []
+
     cursor = mongo_collection_obj.aggregate(pipeline)
-    doc_ids = [doc['_id'] for doc in cursor]
-    return sorted(doc_ids)
+
+    for agg_result in cursor:
+        print('agg_result: {0}'.format(agg_result))
+        ntuple = agg_result['ntuple']
+        groups.append(ntuple)
+        for t in ntuple:
+            ids.append(t['_id'])
+
+    for g in groups:
+        print('\tgroup size: {0}'.format(len(g)))
+        for t in g:
+            print('\t\t{0}'.format(t))
+    print()
+            
+    return (sorted(ids), groups)
 
 
 ###############################################################################
@@ -929,7 +1269,7 @@ def _run_tests():
                                   stdout=subprocess.PIPE,
                                   universal_newlines=True)
     if 0 == len(grep_process.stdout):
-        print('mongo_eval: please start the mongod server for this test...')
+        print('mongo_eval: please start a local mongo server for this test...')
         return
 
     # a name that should be unique...
@@ -954,7 +1294,7 @@ def _run_tests():
         for elem in data:
             print(elem)
 
-    # test expressions for the math evaluator
+    # data for testing single-row operations
     # operators and operands MUST be separated by whitespace
     TEST_EXPRESSIONS = [
         'not (T.A >= 8)',
@@ -1000,12 +1340,12 @@ def _run_tests():
     for expr in TEST_EXPRESSIONS:
         if _TRACE: print('expression: {0}'.format(expr))
 
-        # no match filters needed for math testing
-        doc_ids = run(mongo_collection_obj, expr, 'report_id')
+        # run the single-row operation using MongoDB aggregation
+        mongo_eval_result = run(mongo_collection_obj, expr, 'report_id')
         
         if _TRACE: print('results: ')
 
-        # extract variable values from each doc, substitute, and evaluate
+        # now run the same expression using the Python evaluator
         expr_save = expr
         for doc in cursor:
             if _TRACE: print('\t{0}'.format(doc))
@@ -1035,8 +1375,9 @@ def _run_tests():
                 success = False
                 if _TRACE: print('\t\tCOULD NOT EVALUATE')
 
+            # compare MongoDB result and python result
             if success:
-                if doc['_id'] in doc_ids:
+                if doc['_id'] in mongo_eval_result.doc_ids:
                     if _TRACE: print('\t\tTRUE')
                     assert boolean_result
                 else:
@@ -1047,119 +1388,138 @@ def _run_tests():
 
     mongo_db_obj.drop_collection(COLLECTION_NAME)
 
-    # data for testing logic ops
+    # data for testing multi-row operations
     data = [
-        {'_id':1,  'nlpql_feature':'A', 'report_id':1, 'subject':1},
-        {'_id':2,  'nlpql_feature':'A', 'report_id':2, 'subject':2},
-        {'_id':3,  'nlpql_feature':'A', 'report_id':3, 'subject':3},
-        {'_id':4,  'nlpql_feature':'A', 'report_id':4, 'subject':4},
-        {'_id':5,  'nlpql_feature':'A', 'report_id':5, 'subject':5},
+        {'_id':1,  'nlpql_feature':'A', 'report_id':1, 'subject':1, 'sentence':'Hello1', 'start':1},
+        {'_id':2,  'nlpql_feature':'A', 'report_id':2, 'subject':2, 'sentence':'Hello2', 'start':2},
+        {'_id':3,  'nlpql_feature':'A', 'report_id':3, 'subject':3, 'sentence':'Hello3', 'start':3},
+        {'_id':4,  'nlpql_feature':'A', 'report_id':4, 'subject':4, 'sentence':'Hello4', 'start':4},
+        {'_id':5,  'nlpql_feature':'A', 'report_id':5, 'subject':5, 'sentence':'Hello5', 'start':5},
 
-        {'_id':6,  'nlpql_feature':'B', 'report_id':6, 'subject':1},
-        {'_id':7,  'nlpql_feature':'B', 'report_id':7, 'subject':2},
-        {'_id':8,  'nlpql_feature':'B', 'report_id':8, 'subject':3},
-        {'_id':9,  'nlpql_feature':'B', 'report_id':4, 'subject':4},
-        {'_id':10, 'nlpql_feature':'B', 'report_id':5, 'subject':5},
+        {'_id':6,  'nlpql_feature':'B', 'report_id':6, 'subject':1, 'sentence':'Hello6', 'start':1},
+        {'_id':7,  'nlpql_feature':'B', 'report_id':7, 'subject':2, 'sentence':'Hello7', 'start':2},
+        {'_id':8,  'nlpql_feature':'B', 'report_id':8, 'subject':3, 'sentence':'Hello8', 'start':3},
+        {'_id':9,  'nlpql_feature':'B', 'report_id':4, 'subject':4, 'sentence':'Hello4', 'start':4},
+        {'_id':10, 'nlpql_feature':'B', 'report_id':5, 'subject':5, 'sentence':'Hello5', 'start':5},
 
-        {'_id':11, 'nlpql_feature':'C', 'report_id':6, 'subject':1},
-        {'_id':12, 'nlpql_feature':'C', 'report_id':7, 'subject':2},
-        {'_id':13, 'nlpql_feature':'C', 'report_id':8, 'subject':3},
+        {'_id':11, 'nlpql_feature':'C', 'report_id':6, 'subject':1, 'sentence':'Hello6', 'start':1},
+        {'_id':12, 'nlpql_feature':'C', 'report_id':7, 'subject':2, 'sentence':'Hello7', 'start':2},
+        {'_id':13, 'nlpql_feature':'C', 'report_id':8, 'subject':3, 'sentence':'Hello8', 'start':3},
 
-        {'_id':14, 'nlpql_feature':'D', 'report_id':6, 'subject':1},
-        {'_id':15, 'nlpql_feature':'D', 'report_id':9, 'subject':2},
+        {'_id':14, 'nlpql_feature':'D', 'report_id':6, 'subject':1, 'sentence':'Hello6', 'start':1},
+        {'_id':15, 'nlpql_feature':'D', 'report_id':9, 'subject':2, 'sentence':'Hello9', 'start':2},
     ]
 
     mongo_collection_obj = mongo_db_obj[COLLECTION_NAME]
     mongo_db_obj.drop_collection(COLLECTION_NAME)
     result = mongo_collection_obj.insert_many(data)
 
-    # logical AND between features A and B, join on report_id
+    # logical AND between features A and B, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [4,5,9,10]
 
-    # logical AND between features A and B, join on subject
+    # logical AND between features A and B, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
+        assert doc_ids == [4,5,9,10]
+    else:
+        assert doc_ids == [1,2,3,4,5,6,7,8,9,10]
 
-    # logical AND between features C and D, join on report_id
+    # logical AND between features C and D, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'report_id',
                                           ['C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,14]
 
-    # logical AND between features B, C and D, join on subject
+    # logical AND between features B, C and D, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['B', 'C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == [6,7,11,12,14,15]
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
+        assert doc_ids == [6,11,14]
+    else:
+        assert doc_ids == [6,7,11,12,14,15]
 
-    # logical AND between features A, B, C and D, join on subject
+    # logical AND between features A, B, C and D, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'and', 'subject',
                                           ['A', 'B', 'C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == [1,2,6,7,11,12,14,15]
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
+        assert doc_ids == []
+    else:
+        assert doc_ids == [1,2,6,7,11,12,14,15]
 
-    # logical OR between features C and D
+    # logical OR between features C and D, document context
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', None,
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', 'report_id',
                                           ['C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [11,12,13,14,15]
 
-    # logical OR between features A, C, and D
+    # logical OR between features C and D, patient context
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', None,
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', 'subject',
+                                          ['C', 'D'])
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
+    assert doc_ids == [11,12,13,14,15]
+    
+    # logical OR between features A, C, and D, document context
+    pipeline = []
+    pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'or', 'report_id',
                                           ['A', 'C', 'D'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
 
-    # A not B, join on report_id
+    # A not B, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3]
 
-    # A not B, join on subject
+    # A not B, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['A', 'B'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
-    assert doc_ids == []
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
+    if mongo_logic_ops.MEASUREMENT_CONTEXT:
+        assert doc_ids == [1,2,3]
+    else:
+        assert doc_ids == []
 
-    # D not C, join on report_id
+    # D not C, document context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'report_id',
                                           ['D', 'C'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [15]
 
-    # B not C, join on subject
+    # B not C, patient context
     pipeline = []
     pipeline = mongo_logic_ops.logic_expr_a_b(pipeline, 'not', 'subject',
                                           ['B', 'C'])
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [9,10]
 
     # not B
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'B')
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'report_id', 'B')
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,11,12,13,14,15]
 
     # not D
     pipeline = []
-    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'D')
-    doc_ids = _run_test_pipeline(mongo_collection_obj, pipeline)
+    pipeline = mongo_logic_ops.logic_expr_not_a(pipeline, 'subject', 'D')
+    doc_ids, groups = _run_test_pipeline(mongo_collection_obj, pipeline)
     assert doc_ids == [1,2,3,4,5,6,7,8,9,10,11,12,13]
 
 

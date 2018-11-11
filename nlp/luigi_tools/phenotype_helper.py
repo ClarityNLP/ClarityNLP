@@ -1,5 +1,6 @@
 import datetime
 import sys
+import copy
 import traceback
 from functools import reduce
 import collections
@@ -11,7 +12,8 @@ from pymongo import MongoClient
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations, mongo_eval, results
 from ohdsi import getCohort
 
-
+#import json
+#from bson import json_util, ObjectId
 
 DEBUG_LIMIT = 1000
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
@@ -433,15 +435,24 @@ def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeMod
 def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
                        final=False):
 
+    try:
+        evaluator = util.expression_evaluator
+    except:
+        evaluator = 'pandas'        
+
     # Get the NLPQL expression and determine if Mongo aggregation can evaluate
     # it. If so, the Mongo evaluator will tokenize the expression and return
-    # the list of infix tokens.
+    # a list of infix tokens. If mongo cannot evaluate it, or if the user does
+    # not have an 'eval' entry in the 
     expression = c['raw_text']
-
-    infix_tokens = mongo_eval.is_mongo_computable(expression)
-    if len(infix_tokens) > 0:
-        mongo_process_operations(infix_tokens, db, job, phenotype, phenotype_id, phenotype_owner, c, final)
+        
+    if 'mongo' == evaluator:    
+        infix_tokens = mongo_eval.is_mongo_computable(expression)
+        if len(infix_tokens) > 0:
+            print('Using mongo evaluator for expression "{0}"'.format(expression))
+            mongo_process_operations(infix_tokens, db, job, phenotype, phenotype_id, phenotype_owner, c, final)
     else:
+        print('Using pandas evaluator for expression "{0}"'.format(expression))
         pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
 
 
@@ -613,13 +624,94 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             del output
 
 
+def flatten(l, ltypes=(list, tuple)):
+    """
+    Non-recursive list and tuple flattener from
+    http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
+    based on code from Mike Fletcher's BasicTypes library.
+    """
+    
+    ltype = type(l)
+    l = list(l)
+    i = 0
+    while i < len(l):
+        while isinstance(l[i], ltypes):
+            if not l[i]:
+                l.pop(i)
+                i -= 1
+                break
+            else:
+                l[i:i + 1] = l[i]
+        i += 1
+        
+    return ltype(l)
+
+
+def flatten_nested_lists(obj):
+    """
+    Remove nested lists in the given dict and return the flattened 
+    equivalent. Does some special handling for empty lists or lists containing
+    all identical entries, mainly to simplify the results when viewed in Excel.
+    """
+
+    for k,v in obj.items():
+        if type(v) == list:
+            if 1 == len(v) and '' == v[0]:
+                obj[k] = None
+            else:
+                flattened_list = flatten(v)
+
+                all_none = True
+                for item in flattened_list:
+                    if item is not None:
+                        all_none = False
+                        break
+
+                if all_none:
+                    obj[k] = None
+                else:
+                    obj[k] = flattened_list
+
+
+def remove_arrays(obj):
+    """
+    Remove arrays in the result dict by creating numbered fields for
+    the array elements.
+    """
+    to_insert = []
+    to_remove = []
+    
+    for k,v in obj.items():
+        if type(v) != list:
+            continue
+
+        elt_count = len(v)
+        if 1 == elt_count:
+            obj[k] = v[0]
+        else:
+            for i in range(elt_count):
+                # use 1-based indexing
+                field_name = '{0}_{1}'.format(k, i+1)
+                to_insert.append( (field_name, copy.deepcopy(v), i) )
+            to_remove.append(k)
+
+    for k in to_remove:
+        obj.pop(k, None)
+    for k,v,i in to_insert:
+        obj[k] = v[i]
+
+                    
 def mongo_process_operations(infix_tokens,
                              db,
                              job_id,
                              phenotype: PhenotypeModel,
                              phenotype_id,
-                             phenotype_owner, c: PhenotypeOperations,
+                             phenotype_owner,
+                             c: PhenotypeOperations,
                              final=False):
+    """
+    Use MongoDB aggregation to evaluate NLPQL expressions.
+    """
 
     client = MongoClient(util.mongo_host, util.mongo_port)
     mongo_db_obj = client[util.mongo_db]
@@ -628,19 +720,67 @@ def mongo_process_operations(infix_tokens,
     match_filters = dict()
     match_filters['job_id'] = job_id
 
-    try:
-        operation_name = c['name']
-        if phenotype.context == 'Document':
-            on = 'report_id'
-        else:
-            on = 'subject'
-        expression = c['raw_text']
-        mongo_ids = mongo_eval.run(mongo_collection_obj, infix_tokens, on, match_filters)
-        mongo_docs = results.lookup_phenotype_results_by_id(mongo_ids)
+    operation_name = c['name']
+    context = phenotype.context.lower()
+    if 'document' == context:
+        on = 'report_id'
+        other = 'subject'
+    else:
+        on = 'subject'
+        other = 'report_id'
+    expression = c['raw_text']
 
-        output = list()
-        for doc in mongo_docs['results']:
-            ret = doc
+    # build and run a Mongo aggregation pipeline to evaluate the expression
+    eval_result = mongo_eval.run(mongo_collection_obj,
+                                 infix_tokens,
+                                 on,
+                                 match_filters)
+    if mongo_eval.MONGO_OP_ERROR == eval_result.operation:
+        # could not compute result
+        print('mongo_process_operations error: ')
+        print('\tMONGO_OP_ERROR for operation {0}'.format(operation_name))
+        client.close()
+        return
+
+    output = list()
+    is_final = c['final']
+
+    # these fields are not copied from source doc to result doc
+    NO_COPY_FIELDS = [
+        '_id', 'job_id', 'phenotype_id', 'owner',
+        'job_date', 'context_type', 'raw_definition_text',
+        'nlpql_feature', 'phenotype_final', 'history'
+    ]
+
+    # the field to join on should not be copied
+    NO_COPY_FIELDS.append(on)
+    
+    if mongo_eval.MONGO_OP_MATH == eval_result.operation:
+
+        # single-row evaluation results, both intermediate and final
+        doc_groups = eval_result.doc_groups
+        assert 1 == len(doc_groups)
+        for doc in doc_groups[0]:
+
+            # output doc
+            ret = {}
+            
+            # add doc fields to the output doc as lists
+            field_map = {}
+            fields = doc.keys()
+            fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+            for f in fields_to_copy:
+                if f not in field_map:
+                    field_map[f] = [doc[f]]
+                else:
+                    field_map[f].append(doc[f])
+
+            for k,v in field_map.items():
+                ret[k] = copy.deepcopy(v)
+
+            # set the join field explicitly
+            ret[on] = doc[on]
+            
             ret['job_id'] = job_id
             ret['phenotype_id'] = phenotype_id
             ret['owner'] = phenotype_owner
@@ -650,22 +790,222 @@ def mongo_process_operations(infix_tokens,
             ret['nlpql_feature'] = operation_name
             ret['phenotype_final'] = c['final']
 
-            if '_id' in ret:
-                ret['orig_id'] = ret['_id']
-                ret.pop('_id', None)
+            # add source _id and nlpql_feature
+            if is_final:
+                ret['_ids_1'] = copy.deepcopy(doc['_id'])
+                ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
+            else:
+                # use same field names as for logic ops
+                ret['_ids'] = copy.deepcopy(doc['_id'])
+                ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
+            
+            flatten_nested_lists(ret)
 
+            if is_final:
+                remove_arrays(ret)
+                
             output.append(ret)
 
         if len(output) > 0:
             db.phenotype_results.insert_many(output)
         else:
-            print('mongo_process_operations: No phenotype matches on %s.' % expression)
+            print('mongo_process_operations (math): No phenotype matches on %s.' % expression)
+            
+    elif (mongo_eval.MONGO_OP_AND == eval_result.operation) or \
+         (mongo_eval.MONGO_OP_OR  == eval_result.operation):
+        
+        # multi-row evaluation result, n-ary AND, n-ary OR
+        print('           operation: {0}'.format(eval_result.operation))
+        print('                   n: {0}'.format(eval_result.n))
+        print('            is_final: {0}'.format(is_final))
+        print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+        print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+        
+        doc_groups = eval_result.doc_groups
+        # group_counter = 1
+        for g in doc_groups:
+            # print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+            # group_counter += 1
 
-    except Exception as e:
-        traceback.print_exc(file=sys.stdout)
-    finally:
-        client.close()
+            # rearrange the docs in a group as ntuples (n == eval_result.n)
+            # all docs in a group share the same value of the join variable
+            if mongo_eval.MONGO_OP_AND == eval_result.operation:
+                # need n elements for an AND ntuple (OR needs from 1..n)
+                if len(g) < eval_result.n:
+                    continue
+                ntuples = mongo_eval.to_ntuples_AND(g, eval_result.n, other)                
+            else:
+                ntuples = mongo_eval.to_ntuples_OR(g, eval_result.n, other)
+                
+            # print('\tntuple count: {0}'.format(len(ntuples)))
+            for ntuple in ntuples:
 
+                # each ntuple supplies the data for a result doc
+                ret = {}
+                history = {
+                    'source_ids'  : [],
+                    'source_features' : []
+                }
+
+                # accumulate the source doc _id and nlpql_feature fields
+                for doc in ntuple:
+                    # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                    #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                    #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                    #              doc['report_id'], doc['subject'], doc['start'],
+                    #              doc['end']))
+
+                    history['source_ids'].append(str(doc['_id']))
+                    history['source_features'].append(doc['nlpql_feature'])
+                        
+                # add ntuple doc fields to the output doc as lists
+                field_map = {}
+                for doc in ntuple:
+                    fields = doc.keys()
+                    fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+                    for f in fields_to_copy:
+                        if f not in field_map:
+                            field_map[f] = [doc[f]]
+                        else:
+                            field_map[f].append(doc[f])
+
+                for k,v in field_map.items():
+                    ret[k] = copy.deepcopy(v)
+                            
+                # set the join field; same value for all ntuple entries
+                ret[on] = ntuple[0][on]
+
+                # update fields common to AND/OR
+                ret['job_id'] = job_id
+                ret['phenotype_id'] = phenotype_id
+                ret['owner'] = phenotype_owner
+                ret['job_date'] = datetime.datetime.now()
+                ret['context_type'] = on
+                ret['raw_definition_text'] = expression
+                ret['nlpql_feature'] = operation_name
+                ret['phenotype_final'] = c['final']
+
+                # add source _ids and nlpql_features (1-based indexing)
+                source_count = len(history['source_ids'])
+                if is_final:
+                    for i in range(len(history['source_ids'])):
+                        field_name = '_ids_{0}'.format(i+1)
+                        ret[field_name] = history['source_ids'][i]
+                    for i in range(len(history['source_features'])):
+                        field_name = 'nlpql_features_{0}'.format(i+1)
+                        ret[field_name] = history['source_features'][i]
+
+                    # remove intermediate array fields
+                    ret.pop('_ids', None)
+                    ret.pop('nlpql_features', None)
+                else:
+                    # add intermediate array fields
+                    ret['_ids'] = copy.deepcopy(history['source_ids'])
+                    ret['nlpql_features'] = copy.deepcopy(history['source_features'])
+                    
+                flatten_nested_lists(ret)
+
+                if is_final:
+                    remove_arrays(ret)
+                    
+                output.append(ret)
+
+        if len(output) > 0:
+            db.phenotype_results.insert_many(output)
+        else:
+            print('mongo_process_operations ({0}): no phenotype matches on {1}.'.
+                  format(eval_result.operation, expression))
+
+    elif mongo_eval.MONGO_OP_SETDIFF == eval_result.operation:
+        # multi-row evaluation result, A NOT B (A SUBTRACT B)
+        print('           operation: {0}'.format(eval_result.operation))
+        print('            is_final: {0}'.format(is_final))
+        print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+        print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+
+        doc_groups = eval_result.doc_groups
+        # group_counter = 1
+        for g in doc_groups:
+            # print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+            # group_counter += 1
+            for doc in g:
+
+                # no concept of ntuples for SETDIFF, just take docs in order
+
+                ret = {}
+                # print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+                #       'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+                #       format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+                #              doc['report_id'], doc['subject'], doc['start'],
+                #              doc['end']))
+
+                # add doc fields to the output doc as lists
+                field_map = {}
+                fields = doc.keys()
+                fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+                for f in fields_to_copy:
+                    if f not in field_map:
+                        field_map[f] = [doc[f]]
+                    else:
+                        field_map[f].append(doc[f])
+
+                for k,v in field_map.items():
+                    ret[k] = copy.deepcopy(v)
+                            
+                # set the join field explicitly
+                ret[on] = doc[on]
+                
+                ret['job_id'] = job_id
+                ret['phenotype_id'] = phenotype_id
+                ret['owner'] = phenotype_owner
+                ret['job_date'] = datetime.datetime.now()
+                ret['context_type'] = on
+                ret['raw_definition_text'] = expression
+                ret['nlpql_feature'] = operation_name
+                ret['phenotype_final'] = c['final']
+
+                # add source _id and nlpql_features (only the set A features
+                # are available; the set B features have been removed)
+                if is_final:
+                    ret['_ids_1'] = copy.deepcopy(doc['_id'])
+                    ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
+                else:
+                    # use same field names as for logic ops
+                    ret['_ids'] = copy.deepcopy(doc['_id'])
+                    ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
+                    
+                flatten_nested_lists(ret)
+
+                if is_final:
+                    remove_arrays(ret)
+                    
+                output.append(ret)
+
+        if len(output) > 0:
+            db.phenotype_results.insert_many(output)
+        else:
+            print('mongo_process_operations ({0}): no phenotype matches on {1}.'.
+                  format(eval_result.operation, expression))
+
+    # elif mongo_eval.MONGO_OP_NOT == eval_result.operation:
+    #     # multi-row evaluation result, NOT A
+    #     print('           operation: {0}'.format(eval_result.operation))
+    #     print('                   n: {0}'.format(eval_result.n))
+    #     print('            is_final: {0}'.format(is_final))
+    #     print('           doc count: {0}'.format(len(eval_result.doc_ids)))
+    #     print('size of groups array: {0}'.format(len(eval_result.doc_groups)))
+
+    #     doc_groups = eval_result.doc_groups
+    #     group_counter = 1
+    #     for g in doc_groups:
+    #         print('\tgroup: {0} has {1} members'.format(group_counter, len(g)))
+    #         group_counter += 1
+    #         for doc in g:
+    #             print('\t\tdoc id: {0}, nlpql_feature: {1}, dimension_X: {2}, ' \
+    #                   'report_id: {3}, subject: {4}, start/end: [{5}, {6})'.
+    #                   format(doc['_id'], doc['nlpql_feature'], doc['dimension_X'],
+    #                          doc['report_id'], doc['subject'], doc['start'],
+    #                          doc['end']))
 
 
 def get_dependencies(po, deps: list):
