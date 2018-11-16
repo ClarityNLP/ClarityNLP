@@ -68,10 +68,10 @@ import sys
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 2
 
 # serializable result object
-EMPTY_FIELD = -1
+EMPTY_FIELD = None
 DATE_VALUE_FIELDS = ['text', 'start', 'end', 'year', 'month', 'day']
 DateValue = namedtuple('DateValue', DATE_VALUE_FIELDS)
 

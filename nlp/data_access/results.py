@@ -278,6 +278,20 @@ def phenotype_subjects(job_id: str, phenotype_final: bool):
 
     return results
 
+def phenotype_stats(job_id: str, phenotype_final: bool):
+    results = phenotype_subjects(job_id, phenotype_final)
+    stats = {
+        "subjects": 0,
+        "results": 0
+    }
+    if len(results) > 0:
+        subjects = len(results)
+        documents = 0
+        for r in results:
+            documents += int(r['count'])
+        stats["subjects"] = subjects
+        stats["results"] = documents
+    return stats
 
 def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     client = MongoClient(util.mongo_host, util.mongo_port)

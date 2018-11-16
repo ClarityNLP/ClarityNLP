@@ -1,0 +1,20 @@
+//phenotype name
+phenotype "Prostate Volume v3" version "1";
+
+//include Clarity main NLP libraries
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+documentset Docs:
+    Clarity.createDocumentSet({
+        "report_types":["Pathology"]
+    });
+
+termset Prostate:
+  ["prostate"];
+
+define final PSADimensions:
+  Clarity.MeasurementFinder({
+    cohort:PSAPatients,
+    termset:[Prostate]
+    });

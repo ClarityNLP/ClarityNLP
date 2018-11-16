@@ -1,0 +1,10 @@
+phenotype "Race Finder" version "1";
+include ClarityCore version "1.0" called Clarity;
+
+documentset DischargeSummaries:
+    Clarity.createReportTagList(["Discharge Summary"]);
+
+define RaceFinderFunction:
+    Clarity.RaceFinderTask({
+        documentset: [DischargeSummaries]
+    });

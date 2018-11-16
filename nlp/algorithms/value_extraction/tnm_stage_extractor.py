@@ -130,13 +130,13 @@ import optparse
 from collections import namedtuple
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 2
+VERSION_MINOR = 3
 
 # The 'TnmCode' namedtuple is the JSON-serializable object emitted by this
 # module. The fields in the JSON output are in the TNM_FIELDS list. Any
 # field that has the value EMPTY_FIELD should be ignored.
 
-EMPTY_FIELD = -1
+EMPTY_FIELD = None
 TNM_FIELDS = ['text', 'start', 'end',
               't_prefix', 't_code', 't_certainty', 't_suffixes', 't_mult',
               'n_prefix', 'n_code', 'n_certainty', 'n_suffixes',

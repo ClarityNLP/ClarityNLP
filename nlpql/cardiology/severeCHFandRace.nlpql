@@ -1,0 +1,66 @@
+
+phenotype "NYHA Class" version "1";
+
+//include Clarity  main NLP libraries
+include ClarityCore version "1.0" called Clarity;
+
+//termsets
+termset Orthopnea:
+  ["orthopnea","orthopnoea"];
+
+termset EjectionFractionTerms:
+  ["ef","ejection fraction","lvef"];
+
+termset NYHATerms:
+  ["nyha"];
+
+
+//documentsets
+documentset DischargeSummaries:
+    Clarity.createReportTagList(["Discharge Summary"]);
+
+
+//data extractions
+define hasOrthopnea:
+  Clarity.ProviderAssertion({
+    termset:[Orthopnea]
+    });
+
+define EjectionFraction:
+  Clarity.ValueExtraction({
+    termset:[EjectionFractionTerms],
+    minimum_value: "10",
+    maximum_value: "85"
+    });
+
+
+define NYHAClass34:
+  Clarity.ValueExtraction({
+    termset:[NYHATerms],
+    enum_list: ["3","4","iii","iv"];
+    });
+
+
+define Race:
+    Clarity.RaceFinderTask({
+        documentset: [DischargeSummaries]
+    });
+
+
+//logical context (Patient, Document)
+context Patient;
+
+define LowEF:
+    where EjectionFraction.value <= 30;
+
+define SevereCHF:
+    where NYHAClass34 OR LowEF;
+
+define BlackRace:
+    where Race.normalized_value = 'black';
+
+define final SevereCHFwithOrthopnea:
+    where SevereCHF AND hasOrthopnea;
+
+define final BlackSevereCHFPatient:
+    where SevereCHF AND BlackRace;

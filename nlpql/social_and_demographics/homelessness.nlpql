@@ -1,0 +1,41 @@
+// Phenotype library name
+phenotype "Homelessness Initial Set" version "1";
+
+/* Phenotype library description */
+description "Sample NLPQL to find notes that may be associated with patients experiencing homelessness.";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+// The ClarityCore library provides common functions for simplifying NLP pipeline creation
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
+
+
+// #Manual Term sets#
+// simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
+// can add expansion of structured concepts from terminologies as well with OMOPHelpers
+
+documentset PotentialHomelessnessNotes:
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
+
+termset PossibleHomelessness:
+[
+    "dispossessed","homeless","homeless person","roofless",
+    "shelter",
+    "exposure","vulnerability",
+    "cryopathy","frostbite",
+    "lack of access to care",
+    "evict","evicted","evicting","evicts",
+    "constructive eviction","dispossession","eviction","legal ouster"];
+
+
+define final isPotentiallyHomeless:
+  Clarity.ProviderAssertion({
+    termset: [PossibleHomelessness],
+    documentset: [PotentialHomelessnessNotes]
+  });

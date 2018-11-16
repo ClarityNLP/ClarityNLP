@@ -1,0 +1,14 @@
+//phenotype name
+phenotype "PFTTest" version "1";
+
+//include Clarity main NLP libraries
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+termset Terms:
+  ["FEV1", "FEV", "PFT", "pulmonary function test"];
+
+define final PFTTestPatients:
+  Clarity.PFTFinder({
+    termset:[Terms]
+    });

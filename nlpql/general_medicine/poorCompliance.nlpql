@@ -1,0 +1,39 @@
+
+
+// Phenotype library name
+phenotype "Poor Medication Compliance Initial Set" version "1";
+
+/* Phenotype library description */
+description "Sample NLPQL to find notes that may be associated with patients experiencing/exhibiting poor medication compliance.";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+// The ClarityCore library provides common functions for simplifying NLP pipeline creation
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
+
+
+// #Manual Term sets#
+// simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
+// can add expansion of structured concepts from terminologies as well with OMOPHelpers
+
+documentset PotentialPoorComplianceNotes:
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
+
+termset PossiblePoorCompliance:
+[
+    "abidance","complaisance","compliance","compliancy",
+    "adherence",
+    "expensive",
+    "afford","afforded","affording","affords"];
+
+define final isPotentiallyPoorCompliance:
+  Clarity.ProviderAssertion({
+    termset: [PossiblePoorCompliance],
+    documentset: [PotentialPoorComplianceNotes]
+  });

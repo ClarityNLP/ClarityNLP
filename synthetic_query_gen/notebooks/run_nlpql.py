@@ -2,17 +2,17 @@ import requests
 import time
 import sys
 
-max_workers = 5
+max_workers = 3
 max_jobs = 100
 cur_job = 0
 
-url = 'http://18.220.133.76:5000/'
+url = 'http://3.16.75.68:5000/'
 nlpql_url = url + 'nlpql'
 delete_url = url + 'delete_job/'
 
 
 def get_active_workers():
-    res = requests.get("http://18.220.133.76:8082/api/task_list?data={%22status%22:%22RUNNING%22}")
+    res = requests.get("http://3.16.75.68:8082/api/task_list?data={%22status%22:%22RUNNING%22}")
     if res.status_code == 200:
         json_res = res.json()
         keys = (json_res['response'].keys())
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     run_jobs = True
     max_jobs = 27
-    cur_job = 1
+    cur_job = 0
     filename = 'feature'
     if run_jobs:
         for i in range(max_jobs):

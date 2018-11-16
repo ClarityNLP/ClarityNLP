@@ -5,7 +5,8 @@ from .ColumbiaTransfusionTask import ColumbiaTransfusionTask
 from .TextStatsTask import *
 from .RaceFinderTask import RaceFinderTask
 from .GleasonScoreTask import GleasonScoreTask
-from .TermProximityTask import TermProximityTask
+from .EcogCriteriaTask import EcogCriteriaTask
 from .pft_value_extraction import *
+from .TNMStagerTask import TNMStagerTask
 
 

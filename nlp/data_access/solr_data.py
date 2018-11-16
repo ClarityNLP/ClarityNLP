@@ -60,23 +60,30 @@ def make_url(qry, fq, sort, start, rows, solr_url):
     return url
 
 
-def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids, job_results_filter):
+def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids, job_results_filter,
+            sources):
     new_fq = fq
 
     mapped_items = get_report_type_mappings(mapper_url, mapper_inst, mapper_key)
     subjects = list()
     documents = list()
 
+    if sources and len(sources) > 0:
+        if len(new_fq) > 0:
+            new_fq += ' AND '
+        sources_fq = util.solr_source_field + ': ("' + '" OR "'.join(sources) + '")'
+        new_fq += sources_fq
+
     if types and len(types) > 0:
         if len(new_fq) > 0:
             new_fq += ' AND '
-        report_type_fq = 'report_type: ("' + '" OR "'.join(types) + '")'
+        report_type_fq = util.solr_report_type_field + ': ("' + '" OR "'.join(types) + '")'
         new_fq += report_type_fq
 
     if len(report_type_query) > 0:
         if len(new_fq) > 0:
             new_fq += ' AND '
-        report_types = 'report_type: (' + report_type_query + ')'
+        report_types = util.solr_report_type_field  + ': (' + report_type_query + ')'
         new_fq += report_types
 
     if job_results_filter:
@@ -151,7 +158,7 @@ def make_post_body(qry, fq, sort, start, rows):
 
 def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
           sort='', start=0, rows=10, cohort_ids: list=None, types: list=None,
-          filter_query='', job_results_filters: dict=None,
+          filter_query='', job_results_filters: dict=None, sources=None,
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
 
     if tags is None:
@@ -162,10 +169,12 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
         types = list()
     if job_results_filters is None:
         job_results_filters = dict()
+    if sources is None:
+        sources = list()
 
     url = solr_url + '/select'
     fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
-                 job_results_filters)
+                 job_results_filters, sources)
     data = make_post_body(qry,  fq, sort, start, rows)
 
     print("Querying " + url)
@@ -189,7 +198,7 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
 
 def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
                    sort='', start=0, rows=10, cohort_ids: list=None, types: list=None,
-                   filter_query='', job_results_filters: dict=None,
+                   filter_query='', job_results_filters: dict=None, sources: list=None,
                    report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
 
     if tags is None:
@@ -200,10 +209,12 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
         types = list()
     if job_results_filters is None:
         job_results_filters = dict()
+    if sources is None:
+        sources = list()
     
     url = solr_url + '/select'
     fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
-                 job_results_filters)
+                 job_results_filters, sources)
     data = make_post_body(qry, fq, sort, start, rows)
 
     print("Querying to get counts " + url)

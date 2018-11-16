@@ -9,8 +9,7 @@ import sys
 import traceback
 import datetime
 from data_access import pipeline_config as config
-from data_access import solr_data
-
+from data_access import solr_data, phenotype_stats
 
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
 # didn't seem like it was with initial efforts
@@ -51,6 +50,17 @@ class PhenotypeTask(luigi.Task):
 
             data_access.update_job_status(str(self.job), util.conn_string, data_access.IN_PROGRESS,
                                           "Filtering Results")
+
+            stats = phenotype_stats(str(self.job), True)
+            intermediate_stats = phenotype_stats(str(self.job), False)
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS,
+                                          "intermediate_results_size:" + str(intermediate_stats["results"]))
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS,
+                                          "intermediate_subject_size:" + str(intermediate_stats["subjects"]))
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS,
+                                          "results_size:" + str(stats["results"]))
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS,
+                                          "subject_size:" + str(stats["subjects"]))
 
             with self.output().open('w') as outfile:
                 phenotype_helper.write_phenotype_results(db, self.job, phenotype, self.phenotype, self.phenotype)
@@ -94,10 +104,18 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
                                           mapper_url=util.report_mapper_url,
                                           mapper_key=util.report_mapper_key, solr_url=util.solr_url,
                                           types=pipeline_config.report_types, filter_query=pipeline_config.filter_query,
-                                          tags=pipeline_config.report_tags, report_type_query=pipeline_config.report_type_query,
+                                          tags=pipeline_config.report_tags,
+                                          report_type_query=pipeline_config.report_type_query,
+                                          sources=pipeline_config.sources,
                                           cohort_ids=pipeline_config.cohort,
                                           job_results_filters=pipeline_config.job_results)
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS, "pipeline:" + str(pipeline_id) +
+                           ",solr_document_size:" + str(total_docs))
     doc_limit = config.get_limit(total_docs, pipeline_config)
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS, "pipeline:" + str(pipeline_id) +
+                           ",document_limit:" + str(doc_limit))
+    jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS, "pipeline:" + str(pipeline_id) +
+                           ",evaluated_document_size:" + str(min(doc_limit, total_docs)))
     ranges = range(0, (doc_limit + util.row_count), util.row_count)
     jobs.update_job_status(str(job_id), util.conn_string, jobs.IN_PROGRESS, "Running batch tasks")
 
@@ -150,7 +168,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "10497"
+    p_id = "10554"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,

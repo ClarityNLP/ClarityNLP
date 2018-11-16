@@ -1,0 +1,47 @@
+
+// Phenotype library name
+phenotype "Insomnia Initial Set" version "1";
+
+/* Phenotype library description */
+description "Sample NLPQL to find notes that may be associated with patients experiencing insomnia.";
+
+// # Structured Data Model #
+datamodel OMOP version "5.3";
+
+// # Referenced libraries #
+// The ClarityCore library provides common functions for simplifying NLP pipeline creation
+include ClarityCore version "1.0" called Clarity;
+include OHDSIHelpers version "1.0" called OHDSI;
+
+// ## Code Systems ##
+codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
+
+
+// #Manual Term sets#
+// simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
+// can add expansion of structured concepts from terminologies as well with OMOPHelpers
+
+documentset PotentialInsomniaNotes:
+    Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
+
+termset PossibleInsomnia:
+[
+    "insomnia","sleeplessness",
+    "poor sleep",
+    "sas - sleep apnea syndrome","sleep apnea","sleep apnea syndrome",
+    "sleep apneic","sleep apnoea","sleep apnoea syndrome","sleep apnoeic","sleep has stopped breathing",
+    "sleep hypopnea","sleep hypopnoea","sleep not breathing","sleeping apnea",
+    "sleeping apneic","sleeping apnoea","sleeping apnoeic",
+    "tired",
+    "restless leg syndrome",
+    "RLS",
+    "daytime fatigue",
+    "fatigue","tiredness","weariness",
+    "low energy"
+];
+
+define final isPotentiallyInsomnia:
+  Clarity.ProviderAssertion({
+    termset: [PossibleInsomnia],
+    documentset: [PotentialInsomniaNotes]
+});

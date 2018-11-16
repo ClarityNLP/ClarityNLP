@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 from algorithms import run_tnm_stager_full
-from .task_utilities import BaseTask
+from tasks.task_utilities import BaseTask
 
 
 class TNMStagerTask(BaseTask):

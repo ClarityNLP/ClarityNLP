@@ -404,7 +404,7 @@ class ConceptGraph():
             outfile.write("\n")
         outfile.close()
 
-    def validate(self, db_extra = {}):
+    def validate(self, db_extra=None):
         """
         Check that the graph was constructed properly. Find the number of
         descendants of each node at level 0 and compare with results of
@@ -425,6 +425,8 @@ class ConceptGraph():
         number of additional entries for this level-0 cid.
 
         """
+        if db_extra is None:
+            db_extra = dict()
 
         # cid's of top-level atomic concepts; inital level value is index+1
         LEVEL_0_CIDS = [    1,    4,   18,   60,   63,  544,  961,

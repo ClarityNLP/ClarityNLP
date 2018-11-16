@@ -127,14 +127,14 @@ except Exception as e:
             EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 12
+VERSION_MINOR = 13
 
 # set to True to enable debug output
 TRACE = False
 
 # serializable result object; measurementList is an array of Value namedtuples
 
-EMPTY_FIELD = -1  # ignore any field with this value
+EMPTY_FIELD = None  # ignore any field with this value
 VALUE_RESULT_FIELDS = ['sentence', 'measurementCount', 'terms', 'querySuccess', 'measurementList']
 ValueResult = namedtuple('ValueResult', VALUE_RESULT_FIELDS)
 
