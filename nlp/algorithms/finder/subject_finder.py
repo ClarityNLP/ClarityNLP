@@ -208,14 +208,14 @@ from spacy import displacy
 nlp = spacy.load('en')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 5
+VERSION_MINOR = 6
 
 # set to True to enable debug output
 TRACE = False
 
 # serializable result object
 # 'measurementList' is an array of Measurement namedtuples
-EMPTY_FIELD = -1
+EMPTY_FIELD = None
 MEASUREMENT_RESULT_FIELDS = ['sentence', 'terms', 'querySuccess',
                              'measurementCount', 'measurementList']
 SubjectFinderResult = namedtuple('SubjectFinderResult', MEASUREMENT_RESULT_FIELDS)

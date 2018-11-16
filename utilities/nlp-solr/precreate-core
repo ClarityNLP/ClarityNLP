@@ -69,7 +69,7 @@ if [[ ! -d $coredir ]]; then
     }' http://localhost:8983/solr/$CORE/schema
 
     curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{"name":"report_date","type":"date","indexed":true,"stored":true},
+      "add-field":{"name":"report_date","type":"date","indexed":true,"stored":true,"default":"NOW"},
       "add-field":{"name":"report_id","type":"string","indexed":true,"stored":true},
       "add-field":{"name":"report_text","type":"searchText","indexed":true,"stored":true,"termPositions":true,"termVectors":true,"docValues":false,"required":true},
       "add-field":{"name":"source","type":"string","indexed":true,"stored":true},

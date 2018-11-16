@@ -1,0 +1,16 @@
+phenotype "Term Proximity Search" version "1";
+include ClarityCore version "1.0" called Clarity;
+
+documentset Docs:
+    Clarity.createDocumentSet({
+        "report_types":["Pathology"]
+    });
+
+define final TermProximityFunction:
+    Clarity.TermProximityTask({
+        documentset: [Docs],
+        "termset1": "prostate",
+        "termset2": "biopsy,biopsied,bx",
+        "word_distance": 5,
+        "any_order": "True"
+    });

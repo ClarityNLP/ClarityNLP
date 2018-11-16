@@ -3,6 +3,7 @@ from .jobs import *
 from .pipeline_config import get_pipeline_config, PipelineConfig, insert_pipeline_config
 from .base_model import *
 from .results import job_results, paged_phenotype_results, phenotype_subjects, phenotype_subject_results, \
-    lookup_phenotype_result_by_id, phenotype_feature_results, lookup_phenotype_results_by_id, phenotype_results_by_context
+    lookup_phenotype_result_by_id, phenotype_feature_results, lookup_phenotype_results_by_id, \
+    phenotype_results_by_context, phenotype_stats
 from .phenotype import *
 from .measurement_model import *

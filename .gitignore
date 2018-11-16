@@ -8,7 +8,12 @@ prod.env
 .idea/
 _build/
 _templates/
+__pycache__/
 !__init__.py
-nlp/notebooks/.ipynb_checkpoints
-nlp/notebooks/cooking/.ipynb_checkpoints
 synthetic_query_gen/notebooks/.ipynb_checkpoints
+.DS_STORE
+.ipynb_checkpoints
+notebooks/.ipynb_checkpoints
+notebooks/cooking/.ipynb_checkpoints
+project.cfg
+keys.py

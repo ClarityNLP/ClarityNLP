@@ -22,6 +22,15 @@ config.read(config_path)
 print('ClarityNLP notebook helpers loaded successfully!')
 
 
+def get_cohort_patients(cohort_id):
+    # http://18.220.133.76:5000/ohdsi_get_cohort?cohort_id=356
+    re = requests.get(url + 'ohdsi_get_cohort?cohort_id=' + str(cohort_id))
+    if re.ok:
+        return re.json()
+    else:
+        return {'error', 'Unable to fetch cohort'}
+
+
 def run_nlpql(nlpql):
     re = requests.post(nlpql_url, data=nlpql, headers={'content-type': 'text/plain'})
     global run_result

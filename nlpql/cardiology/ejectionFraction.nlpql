@@ -1,0 +1,21 @@
+//phenotype name
+phenotype "Ejection Fraction Values" version "1";
+
+//include Clarity main NLP libraries
+include ClarityCore version "1.0" called Clarity;
+
+termset EjectionFractionTerms:
+  ["ef","ejection fraction","lvef"];
+
+define EjectionFraction:
+  Clarity.ValueExtraction({
+    termset:[EjectionFractionTerms],
+    minimum_value: "10",
+    maximum_value: "85"
+    });
+
+//logical Context (Patient, Document)
+context Patient;
+
+define final LowEFPatient:
+    where EjectionFraction.value <= 30;

@@ -1,0 +1,59 @@
+phenotype "Atrial fibrillation" version "1";
+
+
+description "Josh Denny and Melissa Basford. Vanderbilt University. Atrial Fibrillation - Demonstration Project. PheKB; 2012 Available from: https://phekb.org/phenotype/78";
+
+documentset ECGDocs:
+    Clarity.createReportTypeList(["ECG", "EKG"]);
+
+termset AfibTerms:
+[
+"Atrial fibrillation",
+"Atrial fibrulation",
+"Atrial fabrillation",
+"Atrial fibrilation",
+"a fib",
+"afib",
+"atrial fib",
+"atr fibrillation",
+"atr fibrulation",
+"atr fabrillation",
+"atr fibrilation",
+"atr fib",
+"auricular fibrillation",
+"auricular fibrulation",
+"auricular fabrillation",
+"auricular fibrilation",
+"auricular fib",
+"aflutter",
+"atrial flutter",
+"427.31"
+];
+
+termset TransplantTerms:
+[
+"heart transplant",
+"heart transplanted",
+"heart transplantation",
+"cardiac transplant",
+"cardiac transplanted",
+"cardiac transplantation"
+];
+
+define patientsWithAfibTerms:
+  Clarity.ProviderAssertion({
+    termset:[AfibTerms],
+    documentset: [ECGDocs]
+    });
+
+define transplantPatients:
+  Clarity.ProviderAssertion({
+    termset:[TransplantTerms]
+    });
+
+define final baseAfibCases:
+    where patientsWithAfibTerms NOT transplantPatients;
+
+
+//define final possibleAfibCases:
+//   Clarity.ProviderAssertion({termset:[AfibTerms] });

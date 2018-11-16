@@ -28,7 +28,7 @@ class PipelineConfig(BaseModel):
     def __init__(self, config_type, name, terms: list=None, description='', limit=0, concept_code=-1,
                  owner='system', include_synonyms=False, include_descendants=False, include_ancestors=False,
                  report_tags: list=None, vocabulary='SNOMED', sections: list=None, report_type_query='',
-                 minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list=None,
+                 minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list=None, sources: list=None,
                  is_phenotype=False, report_types: list=None, custom_query='', filter_query='',
                  custom_arguments: dict=None, enum_list: list=None, final: bool=False, job_results: dict=None):
 
@@ -93,6 +93,10 @@ class PipelineConfig(BaseModel):
             self.job_results = dict()
         else:
             self.job_results = job_results
+        if sources is None:
+            self.sources = list()
+        else:
+            self.sources = sources
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
