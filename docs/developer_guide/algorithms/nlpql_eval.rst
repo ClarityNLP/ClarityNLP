@@ -19,9 +19,9 @@ An NLPQL mathematical expression is found in a ``define`` statement such as:
         where Temperature.value >= 100.4;
 
 The ``where`` portion of the statement is the mathematical expression. NLPQL
-mathematical expressions cause a numerical result to be computed from data
-contained in a single task result document. The numerical result
-gets written to a new MongoDB document.
+mathematical expressions produce a numerical result from data contained in a
+single task result document. The numerical result gets written to a new
+MongoDB document.
 
 An NLPQL logical expression is also found in a ``define`` statement and
 involves the logical operators ``AND``, ``OR``, and ``NOT``, such as:
@@ -83,6 +83,181 @@ and is a convenient technique for viewing results for testing.
 Example
 =======
 
-Here is an NLPQL file that will be used to illustrate these concepts:
+Here is an NLPQL file that will be used to illustrate these concepts. This
+is a modified version of the ``sepsis.nlpql`` sample file that omits
+the OMOP cohort and uses fewer terms. It also adds a 3-way AND for purposes
+of illustration.
 ::
+    limit 300;
+
+    // Phenotype library name
+    phenotype "Sepsis Lite" version "1";
+
+    include ClarityCore version "1.0" called Clarity;
+
+    documentset ProviderNotes:
+        Clarity.createReportTagList([
+            "Physician", "Nurse", "Note", "Discharge Summary"
+        ]);
+
+    termset RigorsTerms: [
+        "Rigors",
+        "Rigoring",
+        "Shivers",
+        "Shivering"
+    ];
+
+    termset DyspneaTerms: [
+        "Labored respiration",
+        "Shortness of breath",
+        "Short of breath",
+        "SOB",
+        "Respiration labored",
+        "Labored breathing",
+        "Dyspnea",
+        "Difficulty breathing"
+    ];
+
+    termset NauseaTerms: [
+        "Nausea",
+        "Nauseated",
+        "Nauseous",
+        "Queasy"
+    ];
+
+    termset VomitingTerms: [
+        "Vomiting",
+        "Vomited",
+        "Vomit",
+        "Emesis",
+        "Hyperemesis",
+        "N/V"
+    ];
+
+    termset TachycardiaTerms: [
+        "Tachycardia",
+        "Tachycardic",
+        "Rapid HR",
+        "Tachy"
+    ];
+
+    termset ShockTerms: [
+        "Shock"
+    ];
+
+    termset TempTerms: [
+        "temp",
+        "temperature",
+        "t"
+    ];
+
+    // nlpql_feature "hasRigors", pipeline_type "ProviderAssertion"
+    define hasRigors:
+        Clarity.ProviderAssertion({
+            termset: [RigorsTerms],
+            documentset: [ProviderNotes]
+        });
+
+    // nlpql_feature "hasDyspnea"
+    define hasDyspnea:
+        Clarity.ProviderAssertion({
+            termset: [DyspneaTerms],
+            documentset: [ProviderNotes]
+        });
+
+    // nlpql_feature "hasNausea"
+    define hasNausea:
+        Clarity.ProviderAssertion({
+            termset: [NauseaTerms],
+            documentset: [ProviderNotes]
+        });
+
+    // nlpql_feature "hasVomiting"
+    define hasVomiting:
+        Clarity.ProviderAssertion({
+            termset: [VomitingTerms],
+            documentset: [ProviderNotes]
+        });
+
+    // nlpql_feature "hasShock"
+    define hasShock:
+        Clarity.ProviderAssertion({
+            termset: [ShockTerms],
+            documentset: [ProviderNotes]
+        });
+
+    // nlpql_feature "hasTachycardia"
+    define hasTachycardia:
+        Clarity.ProviderAssertion({
+            termset: [TachycardiaTerms],
+            documentset: [ProviderNotes]
+        });
+
+    // nlpql_feature "Temperature", pipeline_type "ValueExtraction"
+    define Temperature:
+        Clarity.ValueExtraction({
+            termset:[TempTerms],
+            minimum_value: "96",
+            maximum_value: "106"
+        });
+
+    // patient context, want to find patient IDs ("subject" field)
+    context Patient;
+
+    // single-row mathematical expression, 
+    define hasFever:
+        where Temperature.value >= 100.4;
+
+    // multi-row logic expression
+    define hasDNV:
+        where hasDyspnea AND hasNausea AND hasVomiting;
+
+    // multi-row logic expression
+    define hasSepsisSymptoms:
+        where hasRigors OR hasDyspnea OR hasVomiting OR hasNausea OR hasShock OR hasTachycardia;
+
+    // multi-row logic expression
+    define final hasSepsis:
+        where hasFever AND hasSepsisSymptoms;
+
+    
+The NLPQL statements define a set of documents as well as several termsets
+related to sepsis. Following the termset list is a set of ProviderAssertions
+``hasRigors``, ``hasDypsnea``, etc. These each generate a set of
+``ProviderAssertion`` result documents having the fields listed in the
+"Results" section of the ``ProviderAssertion`` API documentation:
+https://claritynlp.readthedocs.io/en/latest/api_reference/nlpql/provider_assert.html.
+
+After the ProviderAssertions is a ``ValueExtraction`` task called
+``Temperature`` that searches the input documents for occurrences of
+``TempTerms`` and extracts the associated temperature values. This value
+extraction task generates a different set of result fields from the
+provider assertion tasks; these fields can be found in the API documentation
+for ``ValueExtraction``:
+https://claritynlp.readthedocs.io/en/latest/api_reference/nlpql/valueextractor.html.
+
+Following the ValueExtraction task is a ``context`` statement that sets the
+context to ``Patient``. The context is important for logic operations, and it
+controls the conditions for comparing two sets. We will have much more to say
+about context later in this document.
+
+The ``hasFever`` statement defines a mathematical expression that compares each
+extracted temperature value with ``100.4`` and generates a new result document
+if the condition is satisfied. This result document has its ``nlpql_feature``
+field set to ``hasFever``, and it includes the source fields from the
+``ValueExtraction`` result.
+
+Three logical expressions follow the ``hasFever`` definition. The first is a
+three-way logical AND, the second is a six-way logical OR, and the last is a
+two way AND defining the ``hasSepsis`` condition. These logic operators are
+applied to **sets** of results as a whole. The ``hasDNV`` expression is
+evaluated for **all** ``hasDyspnea``, ``hasNausea``, and ``hasVomiting``
+result documents, and a new document is generated only if any are found
+satisfying all three conditions simultaneously.
+
+The presence of the ``final`` modifier means that any ``hasSepsis`` results
+will be written to the ``main_results_csv`` file instead of the intermediate
+results CSV file.
+
+
 
