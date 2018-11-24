@@ -442,15 +442,16 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
 
     # Get the NLPQL expression and determine if Mongo aggregation can evaluate
     # it. If so, the Mongo evaluator will tokenize the expression and return
-    # a list of infix tokens. If mongo cannot evaluate it, or if the user does
-    # not have an 'eval' entry in the 
+    # a list of infix tokens and document fields required for evaluation. If
+    # empty lists are returned, use the Pandas evaluator.
     expression = c['raw_text']
         
     if 'mongo' == evaluator:    
-        infix_tokens = mongo_eval.is_mongo_computable(expression)
+        infix_tokens, field_list = mongo_eval.is_mongo_computable(expression)
         if len(infix_tokens) > 0:
             print('Using mongo evaluator for expression "{0}"'.format(expression))
-            mongo_process_operations(infix_tokens, db, job, phenotype, phenotype_id, phenotype_owner, c, final)
+            mongo_process_operations(infix_tokens, field_list, db, job,
+                                     phenotype, phenotype_id, phenotype_owner, c, final)
     else:
         print('Using pandas evaluator for expression "{0}"'.format(expression))
         pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
@@ -702,6 +703,7 @@ def remove_arrays(obj):
 
                     
 def mongo_process_operations(infix_tokens,
+                             field_list,
                              db,
                              job_id,
                              phenotype: PhenotypeModel,
@@ -717,8 +719,27 @@ def mongo_process_operations(infix_tokens,
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 
+    print('mongo_process_operations field_list: {0}'.format(field_list))
+
+    # the filters for the $match operation will produce something like this,
+    # for field_list = ['dimension_X', 'dimension_Y', 'dimension_Z']
+    
+    # db.phenotype_results.aggregate({
+    #    $match : {
+    #        "job_id":11116,
+    #        "dimension_X" : {$exists:true, $ne:null},
+    #        "dimension_Y" : {$exists:true, $ne:null},
+    #        "dimension_Z" : {$exists:true, $ne:null}
+    #    }
+    # });
+    
     match_filters = dict()
     match_filters['job_id'] = job_id
+
+    for f in field_list:
+        key = "{0}".format(f)
+        value = {"$exists":True, "$ne":None}
+        match_filters[key] = value
 
     operation_name = c['name']
     context = phenotype.context.lower()

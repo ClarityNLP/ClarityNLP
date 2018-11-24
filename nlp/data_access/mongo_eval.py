@@ -178,7 +178,7 @@ MONGO_MEASUREMENT_CONTEXT = mongo_logic_ops.MEASUREMENT_CONTEXT
 # non-exported variables
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 
 _MODULE_NAME = 'mongo_eval.py'
 
@@ -293,9 +293,6 @@ def _to_mongo_op(logic_operator, nlpql_feature_count):
 ###############################################################################
 def _is_single_row_op(infix_tokens):
     """
-    Return a Boolean result indicating whether the given infix expression
-    can be evaluated as a "single-row" operation.
-
     Pure single-row operations consist entirely of terms of the form:
 
             nlpql_feature.value
@@ -307,9 +304,14 @@ def _is_single_row_op(infix_tokens):
     results. The condition of being all in the same row means that no joins
     are needed to evaluate the expression.
 
+    Returns a tuple consisting of the list of infix tokens and the list
+    of nlpql_feature values, or two empty lists.
+
     """
 
     nlpql_feature_set = set()
+    value_set = set()
+    value_set.add('nlpql_feature')
     
     for token in infix_tokens:
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
@@ -318,6 +320,8 @@ def _is_single_row_op(infix_tokens):
         if match:
             nlpql_feature = match.group('nlpql_feature')
             nlpql_feature_set.add(nlpql_feature)
+            value = match.group('value')
+            value_set.add(value)
             continue
         match = _regex_operator.match(token)
         if match:
@@ -327,7 +331,7 @@ def _is_single_row_op(infix_tokens):
             continue
 
         # if here, not a single-row operation
-        return _EMPTY_LIST
+        return (_EMPTY_LIST, _EMPTY_LIST)
 
     if 1 == len(nlpql_feature_set):
         # return new tokens with the nlpql_feature prepended and stripped
@@ -348,17 +352,14 @@ def _is_single_row_op(infix_tokens):
             else:
                 new_infix_tokens.append(token)
         new_infix_tokens.append(')')
-        return new_infix_tokens
+        return (new_infix_tokens, list(value_set))
     else:
-        return EMPTY_LIST
+        return (_EMPTY_LIST, _EMPTY_LIST)
 
 
 ###############################################################################
 def _is_multi_row_op(infix_tokens):
     """
-    Return a Boolean result indicating whether the given infix expression
-    is a "multi-row" operation.
-
     Multi-row operations consist entirely of terms of the form:
 
         identifier
@@ -373,6 +374,9 @@ def _is_multi_row_op(infix_tokens):
     These expressions involve multiple nlpql_features, so that they span
     multiple 'rows' of the intermediate result file.
 
+    Returns a tuple containing the infix tokens and a single nlpql_feature
+    field, or two empty lists.
+
     """
 
     if _TRACE:
@@ -380,6 +384,7 @@ def _is_multi_row_op(infix_tokens):
 
     operator_set = set()
     identifier_list = list() # list preserves operand order
+    feature_list = ['nlpql_feature']
     
     for token in infix_tokens:
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
@@ -396,7 +401,7 @@ def _is_multi_row_op(infix_tokens):
             continue
 
         # if here, not a multi-row operation
-        return _EMPTY_LIST
+        return (_EMPTY_LIST, _EMPTY_LIST)
 
     if 1 == len(operator_set):
         operator = operator_set.pop()
@@ -406,14 +411,14 @@ def _is_multi_row_op(infix_tokens):
             new_infix_tokens = [operator]
             new_infix_tokens.append(identifier_list)
             if _TRACE: print('\tfound n-way {0} expression'.format(operator))
-            return new_infix_tokens
+            return (new_infix_tokens, feature_list)
 
         # 'A not B'
         elif _OPERATOR_NOT == operator and 2 == len(identifier_list):
             new_infix_tokens = [operator]
             new_infix_tokens.append(identifier_list)
             if _TRACE: print('\tfound "A not B" expression')
-            return new_infix_tokens
+            return (new_infix_tokens, feature_list)
 
         # # not A (may not support this)
         # elif _OPERATOR_NOT == operator and 1 == len(identifier_list):
@@ -423,9 +428,9 @@ def _is_multi_row_op(infix_tokens):
         #     return new_infix_tokens
 
         else:
-            return _EMPTY_LIST
+            return (_EMPTY_LIST, _EMPTY_LIST)
     else:
-        return _EMPTY_LIST
+        return (_EMPTY_LIST, _EMPTY_LIST)
 
 
 ###############################################################################
@@ -840,21 +845,21 @@ def is_mongo_computable(infix_expr):
     infix_expr = _insert_whitespace(infix_expr)
     infix_tokens = _tokenize(infix_expr)
 
-    new_infix_tokens = _is_single_row_op(infix_tokens)
+    new_infix_tokens, doc_fields = _is_single_row_op(infix_tokens)
     if len(new_infix_tokens) > 0:
         new_infix_tokens.append(_SINGLE_ROW_OP)
         if _TRACE:
             print('\tREWRITTEN SINGLE-ROW OP: {0}'.format(new_infix_tokens))
-        return new_infix_tokens
+        return (new_infix_tokens, doc_fields)
 
-    new_infix_tokens = _is_multi_row_op(infix_tokens)
+    new_infix_tokens, doc_fields = _is_multi_row_op(infix_tokens)
     if len(new_infix_tokens) > 0:
         new_infix_tokens.append(_MULTI_ROW_OP)
         if _TRACE:
             print('\tREWRITTEN MULTI_ROW_OP: {0}'.format(new_infix_tokens))
-        return new_infix_tokens
+        return (new_infix_tokens, doc_fields)
     
-    return _EMPTY_LIST
+    return (_EMPTY_LIST, _EMPTY_LIST)
 
 
 ###############################################################################
