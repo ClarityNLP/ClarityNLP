@@ -18,6 +18,13 @@ from data_access import solr_data
 doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
 pipeline_cache = LRUCache(maxsize=10000)
 init_cache = LRUCache(maxsize=1000)
+segment = segmentation.Segmentation()
+
+
+def document_sentences(doc):
+    txt = document_text(doc)
+    sentence_list = segment.parse_sentences(txt)
+    return sentence_list
 
 
 def document_text(doc, clean=True):
@@ -36,6 +43,7 @@ def document_text(doc, clean=True):
             return txt_val
     else:
         return ''
+
 
 def get_config_boolean(p_config, key, default=False):
     if key in p_config.custom_arguments:
@@ -156,7 +164,6 @@ class BaseTask(luigi.Task):
     docs = list()
     doc_dict = dict()
     pipeline_config = config.PipelineConfig('', '')
-    segment = segmentation.Segmentation()
 
     def get_lookup_key(self):
         return "%s_%d" % (self.task_name, randint(0, 10000))
@@ -252,9 +259,7 @@ class BaseTask(luigi.Task):
         return get_config_string(self.pipeline_config, key, default=default)
 
     def get_document_sentences(self, doc):
-        txt = self.get_document_text(doc)
-        sentence_list = self.segment.parse_sentences(txt)
-        return sentence_list
+        return document_sentences(doc)
 
 
 
