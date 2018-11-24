@@ -1,44 +1,66 @@
 import datetime
 import sys
 import traceback
+from random import randint
 
 import luigi
+from cachetools import LRUCache
 from pymongo import MongoClient
-from algorithms import segmentation
+
 import util
+from algorithms import segmentation
+from data_access import base_model
 from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
-from data_access import base_model
 
 doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
+pipeline_cache = LRUCache(maxsize=10000)
+init_cache = LRUCache(maxsize=1000)
 
 
-def get_config_boolean(pipeline_config, key, default=False):
-    if key in pipeline_config.custom_arguments:
+def document_text(doc, clean=True):
+    if doc and util.solr_text_field in doc:
+        txt = doc[util.solr_text_field]
+        if type(txt) == str:
+            txt_val = txt
+        elif type(txt) == list:
+            txt_val = ' '.join(txt)
+        else:
+            txt_val = str(txt)
+
+        if clean:
+            return txt_val.encode("ascii", errors="ignore").decode()
+        else:
+            return txt_val
+    else:
+        return ''
+
+def get_config_boolean(p_config, key, default=False):
+    if key in p_config.custom_arguments:
         try:
-            val = bool(pipeline_config.custom_arguments[key])
+            val = bool(p_config.custom_arguments[key])
         except Exception as ex:
             val = default
         return val
     return default
 
 
-def get_config_integer(pipeline_config, key, default=-1):
-    if key in pipeline_config.custom_arguments:
+def get_config_integer(p_config, key, default=-1):
+    if key in p_config.custom_arguments:
         try:
-            val = int(pipeline_config.custom_arguments[key])
+            val = int(p_config.custom_arguments[key])
         except Exception as ex:
             val = default
         return val
     return default
 
 
-def get_config_string(pipeline_config, key, default=''):
-    if key in pipeline_config.custom_arguments:
+def get_config_string(p_config, key, default=''):
+    if key in p_config.custom_arguments:
         try:
-            val = str(pipeline_config.custom_arguments[key])
+            val = str(p_config.custom_arguments[key])
         except Exception as ex:
             val = default
         return val
@@ -132,8 +154,15 @@ class BaseTask(luigi.Task):
     batch = luigi.IntParameter()
     task_name = "ClarityNLPLuigiTask"
     docs = list()
+    doc_dict = dict()
     pipeline_config = config.PipelineConfig('', '')
     segment = segmentation.Segmentation()
+
+    def get_lookup_key(self):
+        return "%s_%d" % (self.task_name, randint(0, 10000))
+
+    def pull_from_cache(self):
+        return False
 
     def run(self):
         task_family_name = str(self.task_family)
@@ -158,12 +187,14 @@ class BaseTask(luigi.Task):
                                             filter_query=self.pipeline_config.filter_query,
                                             cohort_ids=self.pipeline_config.cohort,
                                             job_results_filters=self.pipeline_config.job_results)
+                self.doc_dict =  {x[util.solr_report_id_field]: x for x in self.docs}
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)
                 temp_file.write("Done writing custom task!")
 
             self.docs = list()
+            self.doc_dict = dict()
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
@@ -204,22 +235,12 @@ class BaseTask(luigi.Task):
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         print("Implement your custom functionality here ")
 
-    def get_document_text(self, doc, clean=True):
-        if doc and util.solr_text_field in doc:
-            txt = doc[util.solr_text_field]
-            if type(txt) == str:
-                txt_val =  txt
-            elif type(txt) == list:
-                txt_val = ' '.join(txt)
-            else:
-                txt_val = str(txt)
+    def get_document_text_by_id(self, doc_id, clean=True):
+        doc = self.doc_dict[doc_id]
+        return self.get_document_text(doc, clean)
 
-            if clean:
-                return txt_val.encode("ascii", errors="ignore").decode()
-            else:
-                return txt_val
-        else:
-            return ''
+    def get_document_text(self, doc, clean):
+        return document_text(doc, clean)
 
     def get_boolean(self, key, default=False):
         return get_config_boolean(self.pipeline_config, key, default=default)

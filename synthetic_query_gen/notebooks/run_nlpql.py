@@ -2,7 +2,7 @@ import requests
 import time
 import sys
 
-max_workers = 3
+max_workers = 1
 max_jobs = 100
 cur_job = 0
 
@@ -28,7 +28,7 @@ def run_nlpql(i, filename='query'):
     res = requests.post(nlpql_url, data=nlpql, headers={'content-type': 'text/plain'})
     if res.ok:
         print("Running job %d" % i)
-        time.sleep(60)
+        time.sleep(30)
     else:
         print('Failed to run job %d' % i)
         sys.exit(1)
@@ -45,9 +45,9 @@ def cleanup(job_id):
 if __name__ == "__main__":
 
     run_jobs = True
-    max_jobs = 27
-    cur_job = 0
-    filename = 'feature'
+    max_jobs = 100
+    cur_job = 99
+    filename = 'query'
     if run_jobs:
         for i in range(max_jobs):
             if i < cur_job:
@@ -58,8 +58,8 @@ if __name__ == "__main__":
                     run_nlpql(i, filename=filename)
                 else:
                     while get_active_workers() >= max_workers:
-                        print('At max workers for job %d sleeping for 30 secs...' % i)
-                        time.sleep(30)
+                        print('At max workers for job %d sleeping for 15 secs...' % i)
+                        time.sleep(15)
                     run_nlpql(i, filename=filename)
     else:
         startid = 742
