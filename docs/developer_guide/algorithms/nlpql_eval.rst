@@ -338,3 +338,16 @@ examples above become:
         }
     }
 
+The completed aggregation pipeline stages are sent to MongoDB for evaluation.
+Mongo performs the initial filtering operation, applies the subsequent
+pipeline stages to all surviving documents, and sets the "value" Boolean
+result. A final query extracts the matching documents and writes new result
+documents with an ``nlpql_feature`` field equal to that of the single-row
+operation.
+
+Evaluation of Multi-Row Expressions
+===================================
+
+
+
+
