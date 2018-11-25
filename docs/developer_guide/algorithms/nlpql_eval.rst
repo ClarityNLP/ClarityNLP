@@ -161,3 +161,180 @@ matter.
 Evaluation of Single-Row Expressions
 ====================================
 
+The NLPQL front end parses the NLPQL file and generates a string of
+whitespace-separated tokens for each expression. The token string is passed
+to the evaluator which determines if it is a single-row expression (i.e. a
+mathematical expression described above), a multi-row expression, or something
+else that cannot be evaluated. If single-row, the string is tokenized and
+the nlpql_feature and field list are extracted.  For instance, consider
+these single-row expressions:
+::
+   where Temperature.value >= 100.4
+   where LesionMeasurement.dimension_X < 5 AND LesionMeasurement.dimension_Y < 5
+   
+The first expression has an ``nlpql_feature`` of ``Temperature`` and a field list
+containing the single entry ``value``. The second expression has an
+``nlpql_feature`` of ``LesionMeasurement`` and a field list consisting of the
+entries ``dimension_X`` and ``dimension_Y``.
+
+Initial Pipeline Stage
+----------------------
+
+The next task for the evaluator is to convert the expression into a sequence of
+MongoDB aggregation pipeline stages. This process involves the generation of an
+initial ``$match`` query to filter out everything but the data for the current
+job. The match query also checks for the existence of all entries in the field
+list and that they have non-null values. A simple existence check is not
+sufficient, since a null field actually exists and has the value ``null``.
+Computations cannot be performed on null fields, hence a check for existence
+and a non-null value is necessary. For the two examples above, the initial
+``$match`` query generates an initial pipeline stage that looks like this,
+assuming a job_id of 11116:
+::
+   // first example
+   {
+       $match : {
+           "job_id" : 11116,
+           "nlpql_feature" : {$exists:true, $ne:null},
+           "value"         : {$exists:true, $ne:null}
+       }
+   }
+
+   // second example
+   {
+       $match : {
+           "job_id" : 11116,
+           "nlpql_feature" : {$exists:true, $ne:null},
+           "dimension_X"   : {$exists:true, $ne:null},
+           "dimension_Y"   : {$exists:true, $ne:null}
+       }
+   }
+
+This ``$match`` pipeline stage runs first and performs coarse filtering on the
+data in the MongoDB result database. It finds only those task result documents
+matching the specified job_id, and it further restricts consideration to
+those documents having valid entries for the expression's fields.
+
+Note that the validity checks imply that any fields used in NLPQL expressions
+will only generate results if valid entries for those fields. For the
+LesionMeasurement statement above, if a task result measurement is missing the
+Y dimension, then the NLPQL statement will not generate a result for that
+particular measurment.
+
+Subsequent Pipeline Stages
+--------------------------
+
+After generation of the initial ``$match`` filter stage, the expression is
+further transformed so that additional MongoDB aggregation pipeline stages
+can be generated to evaluate it. The ``nlpql_feature`` is extracted and
+inserted as an additional matching operation. For the examples above, the
+expressions become:
+::
+   (nlpql_feature == Temperature) and (value >= 100.4)
+   (nlpql_feature == LesionMeasurement) and (dimension_X < 5 and dimension_Y < 5)
+
+In this form the variables used in each statement match those variables
+actually stored in the task result documents in MongoDB.
+
+The infix expressions in this form are next converted to postfix to remove
+any parentheses and to resolve operator precedence and associativity issues.
+The operator precedence levels match those of Python and are listed here for
+reference. Lower numbers imply lower precedence, so ``or`` has a lower
+precedence than ``and``, which has a lower precedence than ``=``, etc.
+
+========  ================
+Operator  Precedence Value
+========  ================
+or        1
+and       2
+not       3
+<         4
+<=        4
+>         4
+>=        4
+!=        4
+==        4
+\+        9
+\-        9
+\*        10
+/         10
+%         10
+^         12
+========  ================
+
+Conversion from infix to postfix is unambiguous if operator precedence and
+associativity are known. Operator precedence is given by the table above.
+All NLPQL operators are left-associative except for exponentiation, which is
+right-associative. The infix-to-postfix conversion algorithm is the standard
+one and can be found in the function ``_infix_to_postfix`` in the file
+``nlp/data_access/mongo_eval.py``.
+
+After conversion to postfix, the two expressions above become lists of tokens:
+::
+   'nlpql_feature', 'Temperature', '==', 'value', '100.4', '>=', 'and'
+   'nlpql_feature', 'LesionMeasurement', '==', 'dimension_X', '5', '<', 'dimension_Y', '5', '<', 'and', 'and'
+
+
+The postfix expressions are then 'evaluated' by a stack-based mechanism, which
+can be found in the function ``_to_mongo_pipeline`` in the file
+``nlp/data_access/mongo_eval.py``. The result of the evaluation process is
+**not** the actual expression value, but a set of MongoDB aggregation commands
+that tell MongoDB how to compute the result. The evaluation process is
+essentially string formatting that follows the aggregation syntax rules. More
+information about the aggregation pipeline can be found here:
+https://docs.mongodb.com/manual/aggregation/.
+
+The pipeline actually does a ``$project`` operation and creates a new document
+with a Boolean field called ``value``.  This field has a value of True or False
+according to whether the source document satisfied the mathematical expression.
+The ``_id`` field of the projected document matches that of the original.
+
+After generation of the MongoDB commands, the aggregation pipelines for the two
+examples above become:
+::
+    // (nlpql_feature == Temperature) and (value >= 100.4)
+    {
+       $match : {
+           "job_id" : 11116,
+           "nlpql_feature" : {$exists:true, $ne:null},
+           "value"         : {$exists:true, $ne:null}
+       }
+    },
+    {
+        "$project" : {
+            "value" : {
+                "$and" : [
+                    {"$eq"  : ["$nlpql_feature", "Temperature"]},
+                    {"$gte" : ["$value", 100.4]}
+                ]
+            }
+        }
+    }
+    
+    // (nlpql_feature == LesionMeasurement) and (dimension_X < 5 and dimension_Y < 5)
+    {
+        "$match" : {
+            "job_id" : 11116,
+            "nlpql_feature" : {$exists:true, $ne:null},
+            "dimension_X"   : {$exists:true, $ne:null},
+            "dimension_Y"   : {$exists:true, $ne:null}
+        }
+    },
+    {
+        "$project" : {
+            "value" : {
+                "$and" : [
+                    {
+                        "$eq" : ["$nlpql_feature", "LesionMeasurement"]
+                    },
+                    {
+                        "$and" : [
+                            {"$lt" : ["$dimension_X", 5]},
+                            {"$lt" : ["$dimension_Y", 5]}
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+
