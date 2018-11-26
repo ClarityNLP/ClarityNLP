@@ -14,27 +14,39 @@ follows:
 
 1. Parse the NLPQL file and determine which NLP tasks to run.
 2. Formulate a Solr query to find relevant source documents, partition the
-   source documents into subsets, and assign subsets to tasks.
+   source documents into batches, and assign batches to computational tasks.
 3. Run the tasks in parallel and write individual task results to MongoDB.
    Each individual result from an NLP task comprises a *task result document*
-   in the Mongo database. Here the term *document* is taken from MongoDB
-   parlance. Result documents consist of key-value pairs and should not be
-   confused with Solr source documents, which are electronic health records.
+   in the Mongo database. Here the term *document* is used in the MongoDB
+   sense, meaning an object containing key-value pairs. The MongoDB 'documents'
+   should not be confused with the Solr source documents, which are electronic
+   health records.
 4. Evaluate NLPQL expressions using the task result documents as the source
    data. Write expression evaluation results to MongoDB as separate result
    documents.
 
 We now turn our attention to the operations in step 4. We should state at the
 outset that the descriptions below apply to an expression evaluator based on
-MongoDB. This evaluator is currently in a testing phase and must be explicitly
-enabled by adding the following line to the project.cfg file in the ``[local]``
-section:
+MongoDB aggregation. This evaluator is currently in a testing phase and must
+be explicitly enabled by adding the following line to the project.cfg file in
+the ``[local]`` section:
 ::
    evaluator=mongo
 
 If this line is absent or is commented out with a `#` character, a Pandas-based
 evaluator will be used. The Pandas evaluator uses different techniques from
 those described below.
+
+So why use MongoDB aggregation to evaluate NLPQL expressions? The basic reason
+is that the data resides in MongoDB, and the aggregation framework provides
+a convenient and powerful mechanism on which to build an evaluation engine.
+Use of anything other than MongoDB requires a set of queries to extract the data
+from MongoDB; a possible network transmission if the Mongo instance is hosted
+remotely; ingest into another evaluation engine; computation of results;
+transmission back to the Mongo host; and insertion back into the database.
+Use of the aggregation framework should prove to be much more efficient, since
+all data is kept internal to MongoDB.
+
 
 NLPQL Expressions
 -----------------
@@ -55,8 +67,7 @@ in a **single** task result document. Since each task result document
 comprises a row in the intermediate results CSV file, the evaluation of
 mathematical expressions is also called a **single-row operation**.  The
 numerical result from the expression evaluation is written to a new MongoDB
-result document which has an ``_id`` field different from that of its source
-document.
+result document.
 
 An NLPQL logical expression is also found in a ``define`` statement and
 involves the logical operators ``AND``, ``OR``, and ``NOT``, such as:
@@ -65,11 +76,17 @@ involves the logical operators ``AND``, ``OR``, and ``NOT``, such as:
    define hasSepsis:
        where hasFever AND hasSepsisSymptoms;
 
-The ``where`` portion of the statement is the logical expression. NLPQL logical
-expressions use data from **one or more** task result documents and compute a
-new set of results, which get written back to MongoDB as new result documents.
-The evaluation of a logical expressions is also called a
-**multi-row operation**.
+The ``where`` portion of the statement is the logical expression. Logical
+expressions operate on high-level NLPQL features such as ``hasFever`` and
+``hasSepsisSymptoms``, not on individual variables such as
+``Temperature.value``. The presence of an ``nlpql_feature.variable_name``
+token indicates that the expression is actually single-row, not multi-row.
+
+NLPQL logical expressions use data from **one or more** task result documents
+and compute a new set of results. The results get written back to MongoDB as
+a set of new result documents. The evaluation of a logical expressions is also
+called a **multi-row operation**, since it typically consumes and generates
+multiple rows in the intermediate results CSV file.
 
 The evaluation mechanisms used for mathematical and logical operations are
 quite different. To fully understand the issues involved, it helps to 
@@ -118,11 +135,12 @@ looks similar to this:
 
 Here we see various items relevant to the job submission. Each submission
 receives a *job_id*, which is a unique numerical identifier for the run.
-ClarityNLP writes all results from all jobs to MongoDB, so the job_id is
+ClarityNLP writes all task results from all jobs to the ``phenotype_results``
+collection in a Mongo database named ``nlp``. The job_id is
 needed to distinguish the data belonging to each run.
 
 We also see URLs for 'intermediate' and 'main' phenotype results. These are
-convenience API functions that cause CSV files to be generated. The data in the
+convenience APIs that export the results to CSV files. The data in the
 intermediate result CSV file contains the output from each NLPQL
 task not marked as ``final``. The main result CSV contains the results
 from any final tasks or final expression evaluations. The CSV file can be
@@ -166,7 +184,7 @@ whitespace-separated tokens for each expression. The token string is passed
 to the evaluator which determines if it is a single-row expression (i.e. a
 mathematical expression described above), a multi-row expression, or something
 else that cannot be evaluated. If single-row, the string is tokenized and
-the nlpql_feature and field list are extracted.  For instance, consider
+the nlpql_feature and field list are extracted.  To illustrate, consider
 these single-row expressions:
 ::
    where Temperature.value >= 100.4
@@ -184,12 +202,13 @@ The next task for the evaluator is to convert the expression into a sequence of
 MongoDB aggregation pipeline stages. This process involves the generation of an
 initial ``$match`` query to filter out everything but the data for the current
 job. The match query also checks for the existence of all entries in the field
-list and that they have non-null values. A simple existence check is not
-sufficient, since a null field actually exists and has the value ``null``.
-Computations cannot be performed on null fields, hence a check for existence
-and a non-null value is necessary. For the two examples above, the initial
-``$match`` query generates an initial pipeline stage that looks like this,
-assuming a job_id of 11116:
+list and that they have non-null values. **A simple existence check is not**
+**sufficient**, since a null field actually exists but has a value that cannot
+be used for computation. Hence checks for existence and a non-null value are
+both necessary.
+
+For the two examples above, the initial ``$match`` query generates a pipeline
+filter stage that looks like this, assuming a job_id of 11116:
 ::
    // first example
    {
@@ -216,10 +235,10 @@ matching the specified job_id, and it further restricts consideration to
 those documents having valid entries for the expression's fields.
 
 Note that the validity checks imply that any fields used in NLPQL expressions
-will only generate results if valid entries for those fields. For the
+will only generate results if valid entries for those fields exist. For the
 LesionMeasurement statement above, if a task result measurement is missing the
-Y dimension, then the NLPQL statement will not generate a result for that
-particular measurment.
+Y dimension, the NLPQL statement will not generate a result for that
+particular measurment. The NLQPL example below will help make this clear.
 
 Subsequent Pipeline Stages
 --------------------------
@@ -228,19 +247,25 @@ After generation of the initial ``$match`` filter stage, the expression is
 further transformed so that additional MongoDB aggregation pipeline stages
 can be generated to evaluate it. The ``nlpql_feature`` is extracted and
 inserted as an additional matching operation. For the examples above, the
-expressions become:
+evaluator rewrites the expressions as:
 ::
    (nlpql_feature == Temperature) and (value >= 100.4)
    (nlpql_feature == LesionMeasurement) and (dimension_X < 5 and dimension_Y < 5)
 
-In this form the variables used in each statement match those variables
+In this form the variables used in each statement match the fields
 actually stored in the task result documents in MongoDB.
 
-The infix expressions in this form are next converted to postfix to remove
-any parentheses and to resolve operator precedence and associativity issues.
-The operator precedence levels match those of Python and are listed here for
-reference. Lower numbers imply lower precedence, so ``or`` has a lower
-precedence than ``and``, which has a lower precedence than ``=``, etc.
+Note that both of these expressions are in infix form. Direct evaluation of an
+infix expression is complicated by parenthesization and operator precedence
+issues. Evaluation of a mathematical expression is greatly simplified by first
+converting to postfix form. Postfix expressions require no parentheses, and a
+simple stack-based evaluator can be used to evaluate them directly.
+
+Accordingly, a conversion to postifx form takes place next. This conversion
+process requires an operator precedence table. The NLPQL operator precedence
+levels match those of Python and are listed here for reference. Lower numbers
+imply lower precedence, so ``or`` has a lower precedence than ``and``, which
+has a lower precedence than ``+``, etc.
 
 ========  ================
 Operator  Precedence Value
@@ -287,7 +312,9 @@ https://docs.mongodb.com/manual/aggregation/.
 The pipeline actually does a ``$project`` operation and creates a new document
 with a Boolean field called ``value``.  This field has a value of True or False
 according to whether the source document satisfied the mathematical expression.
-The ``_id`` field of the projected document matches that of the original.
+The ``_id`` field of the projected document matches that of the original, so
+that a simple query on these ``_id`` fields can be used to recover the desired
+documents.
 
 After generation of the MongoDB commands, the aggregation pipelines for the two
 examples above become:
@@ -344,6 +371,12 @@ pipeline stages to all surviving documents, and sets the "value" Boolean
 result. A final query extracts the matching documents and writes new result
 documents with an ``nlpql_feature`` field equal to that of the single-row
 operation.
+
+
+****
+< insert lesion_test.nlpql example here>
+*****
+
 
 Evaluation of Multi-Row Expressions
 ===================================
