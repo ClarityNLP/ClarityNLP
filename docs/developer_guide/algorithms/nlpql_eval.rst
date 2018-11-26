@@ -500,6 +500,66 @@ validate the Y-component.
 Evaluation of Multi-Row Expressions
 ===================================
 
+Multi-row expressions apply the logical operations ``AND``, ``OR``, and ``NOT``
+to **sets** of MongoDB result documents. Typically the sets are determined by
+the different values of the ``nlpql_feature`` field. In the lesion example above,
+a multi-row operation that looks for small or large 3D lesions would be written
+::
+   define has3DSmallOrLargeLesion:
+       where has3DLesionLt5mm OR has3DLesionGt30mm;
+
+This logical ``OR`` operates on two sets of results. The first set
+contains of all result documents in ``has3DLesionLt5mm``, and the second set
+contains all result documents in ``has3DLesionGt30mm``. The result of this
+logical OR is a new set of documents, each of which satisfies the logical
+OR condition individually.
+
+Document Filtering and Grouping
+-------------------------------
+
+Evaluation of an n-ary logical OR proceeds by filtering result documents by
+the job_id, similar to the process described above for single-row expressions.
+Next, an additional filter stage is applied that discards all documents whose
+``nlpql_feature`` value differs from those of the sets being OR'd together.
+Any documents that remain are grouped by value of the context variable, which
+is the document_id for a ``Document`` context, or the subject field for a
+``Patient`` context.
+
+Evaluation of an n-ary loggical AND proceeds similarly, except the number of
+documents in each group is counted. Any groups not having n members
+for an n-ary logical AND are discarded. Additionally, any groups containing
+duplicate nlpql_features are discarded as well. Only those document groups
+with n members and n different nlpql_features are kept.
+
+The logical NOT operation is used to compute set differences, such as in
+``A NOT B``.  This expression generates a result set that contains all
+documents in set A but not also in set B. Evaluation of a set difference
+proceeds by first filtering by the nlpql_feature fields, as described above
+for logical AND and OR. The records are grouped by the context variable
+(either the ``document_id`` or ``subject`` field), and then any documents
+having an nlpql_feature in set B are discarded.
+
+After these filtering operations the aggregation pipeline emits a set of
+documents grouped by **value** of the context variable. For a patient context,
+the documents are grouped by value of the ``subject`` field. For a document
+context, the documents are grouped by value of the ``report_id`` field. This
+grouping operation is similar to the grouping performed by a database join
+operation.
+
+Next, the documents in each group are sorted on the value of the 'other'
+context variable. Thus for a patient context the documents in each group are
+sorted on the ``report_id`` field. This sort operation generates subgroups
+of documents sharing the same value of the 'other' field.
+
+To summarize the state of the result documents at this point: all surviving
+documents have been filtered separated into groups. The members of each group
+all share identical values of the context variable. Within each group, the
+documents are further separated into subgroups. The documents in each subgroup
+have identical values of the 'other' context variable.
+
+NTuple Formation
+----------------
+
 
 
 
