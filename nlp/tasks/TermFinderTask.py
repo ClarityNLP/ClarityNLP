@@ -33,9 +33,15 @@ def get_finder(key):
 
 
 @cached(pipeline_cache)
-def get_term_matches(key, filters, document_id):
+def get_term_matches(key, document_id, sections, is_provider_assertion):
     finder_obj = get_finder(key)
-    # filter_json = json.loads(filters)
+
+    if is_provider_assertion:
+        filters = provider_assertion_filters
+    else:
+        filters = dict()
+    if sections:
+        filters[SECTIONS_FILTER] = json.loads(sections)
 
     objs = list()
     doc = get_document_by_id(document_id)
@@ -67,14 +73,15 @@ class TermFinderBatchTask(BaseTask):
 
     def run_custom_task(self, temp_file, mongo_client):
         pipeline_config = self.pipeline_config
-        filters = dict()
         if pipeline_config.sections and len(pipeline_config.sections) > 0:
-            filters[SECTIONS_FILTER] = pipeline_config.sections
+            sections = json.dumps(pipeline_config.sections)
+        else:
+            sections = None
 
         self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with TermFinder")
-        filters_str = json.dumps(filters)
+
         for doc in self.docs:
-            objs = get_term_matches(self.get_lookup_key(), filters, doc[util.solr_report_id_field])
+            objs = get_term_matches(self.get_lookup_key(), doc[util.solr_report_id_field], sections, False)
 
             for obj in objs:
                 self.write_result_data(temp_file, mongo_client, doc, obj)
@@ -94,15 +101,15 @@ class ProviderAssertionBatchTask(BaseTask):
     def run_custom_task(self, temp_file, mongo_client):
 
         pipeline_config = self.pipeline_config
-        pa_filters = provider_assertion_filters
         if pipeline_config.sections and len(pipeline_config.sections) > 0:
-            pa_filters[SECTIONS_FILTER] = pipeline_config.sections
+            sections = json.dumps(pipeline_config.sections)
+        else:
+            sections = None
 
         self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with ProviderAssertion")
 
-        filters = json.dumps(pa_filters)
         for doc in self.docs:
-            objs = get_term_matches(self.get_lookup_key(), filters, doc[util.solr_report_id_field])
+            objs = get_term_matches(self.get_lookup_key(), doc[util.solr_report_id_field], sections, True)
 
             for obj in objs:
                 self.write_result_data(temp_file, mongo_client, doc, obj)

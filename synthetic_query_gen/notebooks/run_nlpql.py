@@ -44,10 +44,10 @@ def cleanup(job_id):
 
 if __name__ == "__main__":
 
-    run_jobs = False
-    max_jobs = 100
+    run_jobs = True
+    max_jobs = 27
     cur_job = 0
-    filename = 'query'
+    filename = 'feature'
     if run_jobs:
         for i in range(max_jobs):
             if i < cur_job:
