@@ -22,6 +22,14 @@ config.read(config_path)
 print('ClarityNLP notebook helpers loaded successfully!')
 
 
+def load_file(filepath):
+    infile = open(filepath, "r")
+    if infile:
+        data = infile.read().replace('\n', '')
+    infile.close()
+    return data
+
+
 def get_cohort_patients(cohort_id):
     # http://18.220.133.76:5000/ohdsi_get_cohort?cohort_id=356
     re = requests.get(url + 'ohdsi_get_cohort?cohort_id=' + str(cohort_id))
@@ -29,6 +37,15 @@ def get_cohort_patients(cohort_id):
         return re.json()
     else:
         return {'error', 'Unable to fetch cohort'}
+    
+
+def run_nlpql_tester(nlpql):
+    re = requests.post(tester_url, data=nlpql, headers={'content-type': 'text/plain'})
+    if re.ok:
+        result = json.dumps(re.json(), indent=4)
+    else:
+        result = 'Invalid NLPQL'
+    return result
 
 
 def run_nlpql(nlpql):
