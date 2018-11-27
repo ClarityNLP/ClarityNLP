@@ -4,7 +4,7 @@ import traceback
 from random import randint
 
 import luigi
-from cachetools import LRUCache
+from cachetools import LRUCache, TTLCache, cached
 from pymongo import MongoClient
 
 import util
@@ -16,9 +16,15 @@ from data_access import pipeline_config as config
 from data_access import solr_data
 
 doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
-pipeline_cache = LRUCache(maxsize=10000)
+pipeline_cache = TTLCache(maxsize=5000, ttl=(24*60*60))
+document_cache = LRUCache(maxsize=5000)
 init_cache = LRUCache(maxsize=1000)
 segment = segmentation.Segmentation()
+
+
+@cached(document_cache)
+def get_document_by_id(document_id):
+    return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
 
 
 def document_sentences(doc):

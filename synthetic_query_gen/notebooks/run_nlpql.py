@@ -44,9 +44,9 @@ def cleanup(job_id):
 
 if __name__ == "__main__":
 
-    run_jobs = True
+    run_jobs = False
     max_jobs = 100
-    cur_job = 99
+    cur_job = 0
     filename = 'query'
     if run_jobs:
         for i in range(max_jobs):
@@ -62,6 +62,6 @@ if __name__ == "__main__":
                         time.sleep(15)
                     run_nlpql(i, filename=filename)
     else:
-        startid = 742
-        for i in range(startid, startid + 100):
+        startid = 140
+        for i in range(startid, startid + 200):
             cleanup(i)

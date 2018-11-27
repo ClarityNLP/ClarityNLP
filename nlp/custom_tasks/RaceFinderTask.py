@@ -24,9 +24,8 @@ import util
 import re
 from pymongo import MongoClient
 from collections import namedtuple
-from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences
+from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, get_document_by_id
 from cachetools import cached
-from data_access import solr_data
 
 str_sep = r'(\s-\s|-\s|\s-|\s)'
 str_word = r'\b[-a-z.\d]+'
@@ -119,7 +118,7 @@ def find_race(sentence_list):
 
 @cached(pipeline_cache)
 def get_race_for_document(document_id):
-    doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+    doc = get_document_by_id(document_id)
     # all sentences in this document
     sentence_list = document_sentences(doc)
 

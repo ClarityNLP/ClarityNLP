@@ -3,8 +3,8 @@ import json
 from cachetools import cached
 
 from algorithms import *
-from data_access import jobs, solr_data
-from .task_utilities import BaseTask, pipeline_cache, init_cache, document_text
+from data_access import jobs
+from .task_utilities import BaseTask, pipeline_cache, init_cache, document_text, get_document_by_id
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],
@@ -35,12 +35,12 @@ def get_finder(key):
 @cached(pipeline_cache)
 def get_term_matches(key, filters, document_id):
     finder_obj = get_finder(key)
-    filter_json = json.loads(filters)
+    # filter_json = json.loads(filters)
 
     objs = list()
-    doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+    doc = get_document_by_id(document_id)
     doc_text = document_text(doc, clean=True)
-    terms_found = finder_obj.get_term_full_text_matches(doc_text, filter_json)
+    terms_found = finder_obj.get_term_full_text_matches(doc_text, filters)
     for term in terms_found:
         obj = {
             "sentence": term.sentence,
@@ -74,7 +74,7 @@ class TermFinderBatchTask(BaseTask):
         self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with TermFinder")
         filters_str = json.dumps(filters)
         for doc in self.docs:
-            objs = get_term_matches(self.get_lookup_key(), filters_str, doc[util.solr_report_id_field])
+            objs = get_term_matches(self.get_lookup_key(), filters, doc[util.solr_report_id_field])
 
             for obj in objs:
                 self.write_result_data(temp_file, mongo_client, doc, obj)
