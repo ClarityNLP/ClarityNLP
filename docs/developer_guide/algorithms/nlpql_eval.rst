@@ -84,7 +84,7 @@ token indicates that the expression is actually single-row, not multi-row.
 
 NLPQL logical expressions use data from **one or more** task result documents
 and compute a new set of results. The results get written back to MongoDB as
-a set of new result documents. The evaluation of a logical expressions is also
+a set of new result documents. The evaluation of a logical expression is also
 called a **multi-row operation**, since it typically consumes and generates
 multiple rows in the intermediate results CSV file.
 
