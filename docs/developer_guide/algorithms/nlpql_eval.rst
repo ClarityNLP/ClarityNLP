@@ -509,7 +509,7 @@ a multi-row operation that looks for small or large 3D lesions would be written
        where has3DLesionLt5mm OR has3DLesionGt30mm;
 
 This logical ``OR`` operates on two sets of results. The first set
-contains of all result documents in ``has3DLesionLt5mm``, and the second set
+contains all result documents in ``has3DLesionLt5mm``, and the second set
 contains all result documents in ``has3DLesionGt30mm``. The result of this
 logical OR is a new set of documents, each of which satisfies the logical
 OR condition individually.
@@ -525,7 +525,7 @@ Any documents that remain are grouped by value of the context variable, which
 is the document_id for a ``Document`` context, or the subject field for a
 ``Patient`` context.
 
-Evaluation of an n-ary loggical AND proceeds similarly, except the number of
+Evaluation of an n-ary logical AND proceeds similarly, except the number of
 documents in each group is counted. Any groups not having n members
 for an n-ary logical AND are discarded. Additionally, any groups containing
 duplicate nlpql_features are discarded as well. Only those document groups
@@ -552,10 +552,10 @@ sorted on the ``report_id`` field. This sort operation generates subgroups
 of documents sharing the same value of the 'other' field.
 
 To summarize the state of the result documents at this point: all surviving
-documents have been filtered separated into groups. The members of each group
-all share identical values of the context variable. Within each group, the
-documents are further separated into subgroups. The documents in each subgroup
-have identical values of the 'other' context variable.
+documents have been filtered and separated into groups. The members of each
+group all share identical values of the context variable. Within each group,
+the documents are further separated into subgroups. The documents in each
+subgroup have identical values of the 'other' context variable.
 
 NTuple Formation
 ----------------
