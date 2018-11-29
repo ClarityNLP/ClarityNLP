@@ -1,4 +1,5 @@
 SELECT nj.nlp_job_id, nj.name, nj.spl[1] as job_type, nj.spl[3] as job_index, nj.status, nj.date_started, nj.date_ended,
+  case when nj.date_ended is not null then EXTRACT(MINUTE from (nj.date_ended - nj.date_started)) else 0 end as total_minutes,
   c.description as result_feature_count,
   d.description as result_patient_count,
   a.description as luigi_workers,
