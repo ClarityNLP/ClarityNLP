@@ -62,6 +62,6 @@ if __name__ == "__main__":
                         time.sleep(15)
                     run_nlpql(i, filename=filename)
     else:
-        startid = 140
-        for i in range(startid, startid + 200):
+        startid = 0
+        for i in range(startid, startid + 100):
             cleanup(i)
