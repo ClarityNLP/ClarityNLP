@@ -17,7 +17,7 @@ def read_property(env_name, config_tuple, default=''):
             property_name = config.get(config_tuple[0], config_tuple[1])
         if not property_name:
             property_name = default
-        if len(env_name) > 0:
+        if len(env_name) > 0 and 'PASSWORD' not in env_name:
             properties[env_name] = property_name
     except Exception as ex:
         print(ex)
@@ -92,7 +92,8 @@ solr_report_type_field = read_property('SOLR_REPORT_TYPE_FIELD', ('solr', 'type_
 
 expression_evaluator = read_property('NLP_EXPRESSION_EVALUATOR', ('local', 'evaluator'))
 
-use_memory_caching = read_boolean_property(read_property('USE_MEMORY_CACHING', ('optimizations', 'use_memory_cache')))
+use_memory_caching = read_boolean_property(read_property('USE_MEMORY_CACHING', ('optimizations', 'use_memory_cache'),
+                                                         default='true'))
 
 
 def cmp_2_key(mycmp):
