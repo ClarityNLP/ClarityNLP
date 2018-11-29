@@ -20,8 +20,7 @@ def lookup_key(pipeline_config, task_name):
                                   include_descendants, pipeline_config.include_synonyms, pipeline_config.vocabulary)
 
 
-@cached(init_cache)
-def get_finder(key):
+def _get_finder(key):
     vals = key.split('~')
     term_vals = vals[1].split('|')
     include_ancestors = bool(vals[2])
@@ -32,9 +31,16 @@ def get_finder(key):
     return finder_obj
 
 
-@cached(pipeline_cache)
-def get_term_matches(key, document_id, sections, is_provider_assertion):
-    finder_obj = get_finder(key)
+@cached(init_cache)
+def get_finder(key):
+    return _get_finder(key)
+
+
+def _get_term_matches(key, document_id, sections, is_provider_assertion):
+    if util.use_memory_caching:
+        finder_obj = get_finder(key)
+    else:
+        finder_obj = get_finder(key)
 
     if is_provider_assertion:
         filters = provider_assertion_filters
@@ -62,6 +68,11 @@ def get_term_matches(key, document_id, sections, is_provider_assertion):
     return objs
 
 
+@cached(pipeline_cache)
+def get_term_matches(key, document_id, sections, is_provider_assertion):
+    return _get_term_matches(key, document_id, sections, is_provider_assertion)
+
+
 class TermFinderBatchTask(BaseTask):
     task_name = "TermFinder"
 
@@ -69,7 +80,10 @@ class TermFinderBatchTask(BaseTask):
         return True
 
     def get_lookup_key(self):
-        return lookup_key(self.pipeline_config, self.task_name)
+        if not self.lookup_key or self.lookup_key == '':
+            key = lookup_key(self.pipeline_config, self.task_name)
+            self.lookup_key = key
+        return self.lookup_key
 
     def run_custom_task(self, temp_file, mongo_client):
         pipeline_config = self.pipeline_config
@@ -78,10 +92,12 @@ class TermFinderBatchTask(BaseTask):
         else:
             sections = None
 
-        self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with TermFinder")
-
+        key = self.get_lookup_key()
         for doc in self.docs:
-            objs = get_term_matches(self.get_lookup_key(), doc[util.solr_report_id_field], sections, False)
+            if util.use_memory_caching:
+                objs = get_term_matches(key, doc[util.solr_report_id_field], sections, False)
+            else:
+                objs = _get_term_matches(key, doc[util.solr_report_id_field], sections, False)
 
             for obj in objs:
                 self.write_result_data(temp_file, mongo_client, doc, obj)
@@ -106,10 +122,12 @@ class ProviderAssertionBatchTask(BaseTask):
         else:
             sections = None
 
-        self.write_log_data(jobs.IN_PROGRESS, "Finding Terms with ProviderAssertion")
-
+        key = self.get_lookup_key()
         for doc in self.docs:
-            objs = get_term_matches(self.get_lookup_key(), doc[util.solr_report_id_field], sections, True)
+            if util.use_memory_caching:
+                objs = get_term_matches(key, doc[util.solr_report_id_field], sections, False)
+            else:
+                objs = _get_term_matches(key, doc[util.solr_report_id_field], sections, False)
 
             for obj in objs:
                 self.write_result_data(temp_file, mongo_client, doc, obj)

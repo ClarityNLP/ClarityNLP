@@ -42,8 +42,9 @@ def get_report_type_mappings(url, inst, key):
                             tag_lookup_dict[lookup_tag] = list()
                         tag_lookup_dict[lookup_tag].append(rep['name'])
     except Exception as ex:
-        traceback.print_exc(file=sys.stderr)
-        print(ex)
+        if util.debug_mode:
+            traceback.print_exc(file=sys.stderr)
+            print(ex)
 
     return tag_lookup_dict
 
@@ -114,8 +115,9 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
                 if lookup_tag in mapped_items:
                     matched_reports.extend(mapped_items[lookup_tag])
             except Exception as e:
-                traceback.print_exc(file=sys.stderr)
-                print("Unable to map tag %s" % tag)
+                if util.debug_mode:
+                    traceback.print_exc(file=sys.stderr)
+                    print("Unable to map tag %s" % tag)
         if len(matched_reports) > 0:
             match_report_clause = '" OR "'.join(matched_reports)
             report_types = util.solr_report_type_field + ': ("' + match_report_clause + '")'
@@ -176,10 +178,11 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
                  job_results_filters, sources)
     data = make_post_body(qry,  fq, sort, start, rows)
-
-    print("Querying " + url)
     post_data = json.dumps(data, indent=4)
-    print(post_data)
+
+    if util.debug_mode:
+        print("Querying " + url)
+        print(post_data)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
@@ -216,10 +219,11 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
     fq = make_fq(types, tags, filter_query, mapper_url, mapper_inst, mapper_key, report_type_query, cohort_ids,
                  job_results_filters, sources)
     data = make_post_body(qry, fq, sort, start, rows)
-
-    print("Querying to get counts " + url)
     post_data = json.dumps(data)
-    print(post_data)
+
+    if util.debug_mode:
+        print("Querying to get counts " + url)
+        print(post_data)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
@@ -233,12 +237,12 @@ def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):
 
     url = solr_url + '/select'
     data = make_post_body("report_id:" + report_id, '', '', 0, 1)
-
-    print("Querying to get document " + url)
     post_data = json.dumps(data)
-    print(post_data)
 
-    # Getting ID for new cohort
+    if util.debug_mode:
+        print("Querying to get document " + url)
+        print(post_data)
+
     response = requests.post(url, headers=get_headers(), data=post_data)
     if response.status_code != 200:
         return {}

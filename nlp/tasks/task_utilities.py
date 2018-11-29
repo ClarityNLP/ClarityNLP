@@ -16,7 +16,7 @@ from data_access import pipeline_config as config
 from data_access import solr_data
 
 doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
-pipeline_cache = TTLCache(maxsize=5000, ttl=(24*60*60))
+pipeline_cache = LRUCache(maxsize=5000)
 document_cache = LRUCache(maxsize=5000)
 init_cache = LRUCache(maxsize=1000)
 segment = segmentation.Segmentation()
@@ -170,9 +170,10 @@ class BaseTask(luigi.Task):
     docs = list()
     doc_dict = dict()
     pipeline_config = config.PipelineConfig('', '')
+    lookup_key = ''
 
     def get_lookup_key(self):
-        return "%s_%d" % (self.task_name, randint(0, 10000))
+        return self.lookup_key
 
     def pull_from_cache(self):
         return False
@@ -190,7 +191,6 @@ class BaseTask(luigi.Task):
                                        self.batch)
 
                 self.pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
                 self.docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start,
                                             solr_url=util.solr_url,
                                             tags=self.pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
@@ -200,7 +200,7 @@ class BaseTask(luigi.Task):
                                             filter_query=self.pipeline_config.filter_query,
                                             cohort_ids=self.pipeline_config.cohort,
                                             job_results_filters=self.pipeline_config.job_results)
-                self.doc_dict =  {x[util.solr_report_id_field]: x for x in self.docs}
+                self.doc_dict = {x[util.solr_report_id_field]: x for x in self.docs}
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)

@@ -6,6 +6,7 @@ import util
 import sys
 import traceback
 from pymongo import MongoClient
+from datetime import datetime, timezone
 
 try:
     from .base_model import BaseModel
@@ -21,6 +22,7 @@ FAILURE = "FAILURE"
 WARNING = "WARNING"
 KILLED = "KILLED"
 STATS = "STATS"
+PROPERTIES = "PROPERTIES"
 
 
 class NlpJob(BaseModel):
@@ -46,17 +48,20 @@ def create_new_job(job: NlpJob, connection_string: str):
     cursor = conn.cursor()
 
     try:
+        dt = datetime.now()
         cursor.execute("""
-                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, pipeline_id, phenotype_id, date_started)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, current_timestamp) RETURNING nlp_job_id""",
-                       (job.name, job.job_type, job.description, job.owner, job.status, job.pipeline_id, job.phenotype_id))
+                INSERT INTO nlp.nlp_job (name, job_type, description, owner, status, pipeline_id, phenotype_id, 
+                    date_started)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING nlp_job_id""",
+                       (job.name, job.job_type, job.description, job.owner, job.status, job.pipeline_id,
+                        job.phenotype_id, dt))
 
         job_id = cursor.fetchone()[0]
 
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
-                VALUES (%s, 'Starting Job', current_timestamp, %s) RETURNING nlp_job_status_id""",
-                       (job.status, job_id))
+                VALUES (%s, 'Starting Job', %s, %s) RETURNING nlp_job_status_id""",
+                       (job.status, dt, job_id))
         conn.commit()
 
         return job_id
@@ -83,7 +88,10 @@ def get_job_status(job_id: int, connection_string: str):
         status = cursor.fetchone()[0]
         status_dict["status"] = status
 
-        cursor.execute("""SELECT status, description, date_updated, nlp_job_status_id from nlp.nlp_job_status where nlp_job_id = %s order by date_updated""",
+        cursor.execute("""
+            SELECT status, description, date_updated, nlp_job_status_id from nlp.nlp_job_status
+            where nlp_job_id = %s order by date_updated
+            """,
                        [job_id])
         updates = cursor.fetchall()
         for row in updates:
@@ -107,14 +115,20 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
     flag = -1 # To determine whether the update was successful or not
+    dt = datetime.now()
 
     try:
-        cursor.execute("""UPDATE nlp.nlp_job set status = %s where nlp_job_id = %s""", (updated_status, job_id))
+        if not updated_status.startswith(PROPERTIES) and not updated_status.startswith(STATS):
+            cursor.execute("""UPDATE nlp.nlp_job set status = %s where nlp_job_id = %s""", (updated_status, job_id))
 
         cursor.execute("""
                 INSERT INTO nlp.nlp_job_status (status, description, date_updated, nlp_job_id)
-                VALUES (%s, %s, current_timestamp, %s) RETURNING nlp_job_status_id""",
-                       (updated_status, description, job_id))
+                VALUES (%s, %s, %s, %s) RETURNING nlp_job_status_id""",
+                       (updated_status, description, dt, job_id))
+
+        if updated_status == COMPLETED or updated_status == FAILURE or updated_status == KILLED:
+            cursor.execute("""UPDATE nlp.nlp_job set date_ended = %s where nlp_job_id = %s""", (dt, job_id))
+
         flag = 1
         conn.commit()
 

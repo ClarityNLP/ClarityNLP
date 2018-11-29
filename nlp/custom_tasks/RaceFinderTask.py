@@ -116,8 +116,8 @@ def find_race(sentence_list):
 
 ###############################################################################
 
-@cached(pipeline_cache)
-def get_race_for_document(document_id):
+
+def _get_race_for_document(document_id):
     doc = get_document_by_id(document_id)
     # all sentences in this document
     sentence_list = document_sentences(doc)
@@ -134,6 +134,11 @@ def get_race_for_document(document_id):
     }
 
 
+@cached(pipeline_cache)
+def get_race_for_document(document_id):
+    return _get_race_for_document(document_id)
+
+
 class RaceFinderTask(BaseTask):
     """
     A custom task for finding a patient's race.
@@ -146,7 +151,10 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
-            obj = get_race_for_document(doc[util.solr_report_id_field])
+            if util.use_memory_caching:
+                obj = get_race_for_document(doc[util.solr_report_id_field])
+            else:
+                obj = _get_race_for_document(doc[util.solr_report_id_field])
 
             result_list = obj['results']
             sentence_list = obj['sentences']

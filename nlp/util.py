@@ -1,21 +1,45 @@
 import configparser
 from os import getenv, environ, path
+import sys
 
 SCRIPT_DIR = path.dirname(__file__)
 config = configparser.RawConfigParser()
 config.read(path.join(SCRIPT_DIR, 'project.cfg'))
+properties = dict()
 
 
-def read_property(env_name, config_tuple):
-    property_name = '-1'
+def read_property(env_name, config_tuple, default=''):
+    property_name = default
     try:
         if getenv(env_name):
             property_name = environ.get(env_name)
         else:
             property_name = config.get(config_tuple[0], config_tuple[1])
+        if not property_name:
+            property_name = default
+        if len(env_name) > 0:
+            properties[env_name] = property_name
     except Exception as ex:
         print(ex)
+        properties[env_name] = default
     return property_name
+
+
+def read_boolean_property(prop, default=False):
+    try:
+        if isinstance(prop, bool):
+            val = prop
+        else:
+            strval = str(prop).lower()
+            if strval == '1' or strval == 'true' or strval == 't':
+                val = True
+            elif strval == '0' or strval == 'false' or strval == 'f':
+                val = False
+            else:
+                val = default
+    except Exception as ex:
+        val = default
+    return val
 
 
 solr_url = read_property('NLP_SOLR_URL', ('solr', 'url'))
@@ -43,7 +67,8 @@ results_viewer_url = read_property('RESULTS_CLIENT_URL', ('results_client', 'url
 
 main_url = read_property('NLP_API_URL', ('main', 'url'))
 
-row_count = 25
+row_count = read_property('BATCH_SIZE', ('solr', 'batch_size'), default=25)
+
 delimiter = ','
 quote_character = '"'
 
@@ -66,6 +91,9 @@ solr_subject_field = read_property('SOLR_SUBJECT_FIELD', ('solr', 'subject_field
 solr_report_type_field = read_property('SOLR_REPORT_TYPE_FIELD', ('solr', 'type_field'))
 
 expression_evaluator = read_property('NLP_EXPRESSION_EVALUATOR', ('local', 'evaluator'))
+
+use_memory_caching = read_boolean_property(read_property('USE_MEMORY_CACHING', ('optimizations', 'use_memory_cache')))
+
 
 def cmp_2_key(mycmp):
     # https://bytes.com/topic/python/answers/844614-python-3-sorting-comparison-function

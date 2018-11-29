@@ -161,12 +161,18 @@ def get_default_config():
 def get_query(custom_query='', terms=None):
     if terms is None:
         terms = list()
+    query = ''
+    if len(terms) > 0:
+        query = util.solr_text_field + ':("' + '" OR "'.join(terms) + '")'
     if custom_query and len(custom_query) > 0:
-        return custom_query
-    elif terms is not None and len(terms) > 0:
-        return util.solr_text_field + ':("' + '" OR "'.join(terms) + '")'
+        if len(query) > 0:
+            query += " AND "
+        query += custom_query
+
+    if len(query) == 0:
+        return '*:*'
     else:
-        return '*'
+        return query
 
 
 def get_limit(doc_count, p_config: PipelineConfig):

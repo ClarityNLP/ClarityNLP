@@ -30,8 +30,7 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str=''):
         return {"success": False,
                 "error": "Failed to insert phenotype"}
 
-
-    job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
+    job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
                                              owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
                                              phenotype_id=p_id, pipeline_id=-1,
                                              date_started=datetime.datetime.now(),

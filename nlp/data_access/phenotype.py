@@ -88,12 +88,13 @@ class PhenotypeOperations(dict):
 class PhenotypeModel(BaseModel):
 
     # data_models maps to 'using'
-    def __init__(self, description: str = '', owner: str = 'claritynlp', context: str = 'Patient',
+    def __init__(self, name: str = '', description: str = '', owner: str = 'claritynlp', context: str = 'Patient',
                  population: str='All', phenotype=None, data_models: list = None, includes: list = None,
                  code_systems: list = None, value_sets: list = None, term_sets: list = None,
                  document_sets: list = None, data_entities: list = None, cohorts: list = None,
                  operations: list = None, debug=False, limit: int = 0, nlpql: str = ''):
         self.owner = owner
+        self.name = name
         self.description = description
         self.population = population
         self.context = context

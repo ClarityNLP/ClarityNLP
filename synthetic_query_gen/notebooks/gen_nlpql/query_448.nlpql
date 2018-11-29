@@ -7,7 +7,7 @@ limit 1000;
 
  
 // Phenotype library name
-phenotype "SyntheticQuery_WithLimit_448_Props|I2" version "1";
+phenotype "SyntheticQuery_WithLimit_448" version "1";
 
 // Phenotype library description 
 description "Synthetically generated, paramaterized query; for computing benchark runtime stats";
