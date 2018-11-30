@@ -36,12 +36,7 @@ def get_finder(key):
     return _get_finder(key)
 
 
-def _get_term_matches(key, document_id, sections, is_provider_assertion):
-    if util.use_memory_caching:
-        finder_obj = get_finder(key)
-    else:
-        finder_obj = get_finder(key)
-
+def _get_term_matches(document_id, sections, is_provider_assertion, finder_obj):
     if is_provider_assertion:
         filters = provider_assertion_filters
     else:
@@ -70,7 +65,8 @@ def _get_term_matches(key, document_id, sections, is_provider_assertion):
 
 @cached(pipeline_cache)
 def get_term_matches(key, document_id, sections, is_provider_assertion):
-    return _get_term_matches(key, document_id, sections, is_provider_assertion)
+    finder_obj = get_finder(key)
+    return _get_term_matches(document_id, sections, is_provider_assertion, finder_obj)
 
 
 class TermFinderBatchTask(BaseTask):
@@ -93,11 +89,15 @@ class TermFinderBatchTask(BaseTask):
             sections = None
 
         key = self.get_lookup_key()
+        if not util.use_memory_caching:
+            finder_obj = _get_finder(key)
+        else:
+            finder_obj = None
         for doc in self.docs:
             if util.use_memory_caching:
                 objs = get_term_matches(key, doc[util.solr_report_id_field], sections, False)
             else:
-                objs = _get_term_matches(key, doc[util.solr_report_id_field], sections, False)
+                objs = _get_term_matches(doc[util.solr_report_id_field], sections, False, finder_obj)
 
             for obj in objs:
                 self.write_result_data(temp_file, mongo_client, doc, obj)
@@ -123,11 +123,15 @@ class ProviderAssertionBatchTask(BaseTask):
             sections = None
 
         key = self.get_lookup_key()
+        if not util.use_memory_caching:
+            finder_obj = _get_finder(key)
+        else:
+            finder_obj = None
         for doc in self.docs:
             if util.use_memory_caching:
                 objs = get_term_matches(key, doc[util.solr_report_id_field], sections, False)
             else:
-                objs = _get_term_matches(key, doc[util.solr_report_id_field], sections, False)
+                objs = _get_term_matches(doc[util.solr_report_id_field], sections, False, finder_obj)
 
             for obj in objs:
                 self.write_result_data(temp_file, mongo_client, doc, obj)

@@ -11,6 +11,7 @@ max_jobs = 100
 cur_job = 0
 
 env_path = './synthetic_query_gen/notebooks/env_files'
+evaluated_env_path = './synthetic_query_gen/notebooks/evaluated_env/'
 target_env_path = './'
 ip = 'localhost'
 
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
     run_jobs = True
     if run_jobs:
-        files = [f for f in listdir(env_path) if isfile(join(env_path, f))]
+        files = sorted([f for f in listdir(env_path) if isfile(join(env_path, f))])
         current_env = target_env_path + '/.env'
         backup_env = target_env_path + '/.env.bak'
         call(["cp", current_env, backup_env])
@@ -89,14 +90,16 @@ if __name__ == "__main__":
             while get_active_workers() > 0:
                 print('jobs still running wait to shut down docker')
                 time.sleep(60)
+            call(["mv", sample_file, evaluated_env_path])
             print('shutting down docker')
             call(["docker-compose", "down"])
             print('sleeping for a minute')
             time.sleep(60)
         print('done; restoring backup')
-        call(["docker-compose", "up", "-d", "--build"])
         call(["cp", backup_env, current_env])
+        call(["docker-compose", "up", "-d", "--build"])
+
     else:
-        startid = 260
+        startid = 314
         for n in range(startid, startid + 100):
             cleanup(n)
