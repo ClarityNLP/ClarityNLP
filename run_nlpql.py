@@ -4,6 +4,7 @@ import sys
 from subprocess import call
 from os import listdir
 from os.path import isfile, join
+import time
 
 max_workers = 1
 max_jobs = 100
@@ -11,7 +12,7 @@ cur_job = 0
 
 env_path = './synthetic_query_gen/notebooks/env_files'
 target_env_path = './'
-ip = '3.16.75.68'
+ip = 'localhost'
 
 url = 'http://' + ip + ':5000/'
 nlpql_url = url + 'nlpql'
@@ -76,10 +77,14 @@ if __name__ == "__main__":
             print('running ' + file)
             sample_file = env_path + '/' + file
             call(['cp', sample_file, current_env])
-            # call(["docker-compose", "up", "-d", "--build"])
+            call(["docker-compose", "up", "-d", "--build"])
+            print('sleeping; running next')
+            time.sleep(180)
             job_runner('feature', 27, 0)
             job_runner('query', 100, 0)
-            # call(["docker-compose", "down"])
+            call(["docker-compose", "down"])
+            print('sleeping for a minute')
+            time.sleep(60)
         print('done; restoring backup')
         call(["docker-compose", "up", "-d", "--build"])
         call(["cp", backup_env, current_env])
