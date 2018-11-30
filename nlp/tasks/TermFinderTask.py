@@ -23,9 +23,9 @@ def lookup_key(pipeline_config, task_name):
 def _get_finder(key):
     vals = key.split('~')
     term_vals = vals[1].split('|')
-    include_ancestors = bool(vals[2])
-    include_descendants = bool(vals[3])
-    include_synonyms = bool(vals[4])
+    include_ancestors = vals[2] == "True"
+    include_descendants = vals[3] == "True"
+    include_synonyms = vals[4] == "True"
     vocab = vals[5]
     finder_obj = TermFinder(term_vals, include_synonyms, include_descendants, include_ancestors, vocab)
     return finder_obj
@@ -112,7 +112,10 @@ class ProviderAssertionBatchTask(BaseTask):
         return True
 
     def get_lookup_key(self):
-        return lookup_key(self.pipeline_config, self.task_name)
+        if not self.lookup_key or self.lookup_key == '':
+            key = lookup_key(self.pipeline_config, self.task_name)
+            self.lookup_key = key
+        return self.lookup_key
 
     def run_custom_task(self, temp_file, mongo_client):
 
