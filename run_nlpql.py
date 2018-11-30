@@ -9,8 +9,8 @@ max_workers = 1
 max_jobs = 100
 cur_job = 0
 
-env_path = './env_files'
-target_env_path = '/Users/charityhilton/repos/ClarityNLPOptimized'
+env_path = './synthetic_query_gen/notebooks/env_files'
+target_env_path = './'
 ip = '3.16.75.68'
 
 url = 'http://' + ip + ':5000/'
@@ -29,7 +29,7 @@ def get_active_workers():
 
 
 def run_nlpql(i, filename='query'):
-    file = open('./gen_nlpql/%s_%d.nlpql' % (filename, i), "r")
+    file = open('./synthetic_query_gen/notebooks/gen_nlpql/%s_%d.nlpql' % (filename, i), "r")
     nlpql = file.read()
 
     res = requests.post(nlpql_url, data=nlpql, headers={'content-type': 'text/plain'})
@@ -76,10 +76,10 @@ if __name__ == "__main__":
             print('running ' + file)
             sample_file = env_path + '/' + file
             call(['cp', sample_file, current_env])
-            call(["docker-compose", "up", "-d", "--build"])
+            # call(["docker-compose", "up", "-d", "--build"])
             job_runner('feature', 27, 0)
             job_runner('query', 100, 0)
-            call(["docker-compose", "down"])
+            # call(["docker-compose", "down"])
         print('done; restoring backup')
         call(["docker-compose", "up", "-d", "--build"])
         call(["cp", backup_env, current_env])
