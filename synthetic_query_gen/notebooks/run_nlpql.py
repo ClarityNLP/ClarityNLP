@@ -1,18 +1,25 @@
 import requests
 import time
 import sys
+from subprocess import call
+from os import listdir
+from os.path import isfile, join
 
 max_workers = 1
 max_jobs = 100
 cur_job = 0
 
-url = 'http://3.16.75.68:5000/'
+env_path = './env_files'
+target_env_path = '/Users/charityhilton/repos/ClarityNLPOptimized'
+ip = '3.16.75.68'
+
+url = 'http://' + ip + ':5000/'
 nlpql_url = url + 'nlpql'
 delete_url = url + 'delete_job/'
 
 
 def get_active_workers():
-    res = requests.get("http://3.16.75.68:8082/api/task_list?data={%22status%22:%22RUNNING%22}")
+    res = requests.get("http://" + ip + ":8082/api/task_list?data={%22status%22:%22RUNNING%22}")
     if res.status_code == 200:
         json_res = res.json()
         keys = (json_res['response'].keys())
@@ -22,7 +29,7 @@ def get_active_workers():
 
 
 def run_nlpql(i, filename='query'):
-    file = open('gen_nlpql/%s_%d.nlpql' % (filename, i), "r")
+    file = open('./gen_nlpql/%s_%d.nlpql' % (filename, i), "r")
     nlpql = file.read()
 
     res = requests.post(nlpql_url, data=nlpql, headers={'content-type': 'text/plain'})
@@ -42,26 +49,41 @@ def cleanup(job_id):
         print('delete the job ' + str(job_id))
 
 
+def job_runner(fname, jobs, current):
+    for i in range(jobs):
+        if i < current:
+            pass
+        else:
+            print('Attempting job %d' % i)
+            if get_active_workers() < max_workers:
+                run_nlpql(i, filename=fname)
+            else:
+                while get_active_workers() >= max_workers:
+                    print('At max workers for job %d sleeping for 15 secs...' % i)
+                    time.sleep(15)
+                run_nlpql(i, filename=fname)
+
+
 if __name__ == "__main__":
 
     run_jobs = True
-    max_jobs = 27
-    cur_job = 0
-    filename = 'feature'
     if run_jobs:
-        for i in range(max_jobs):
-            if i < cur_job:
-                pass
-            else:
-                print('Attempting job %d' % i)
-                if get_active_workers() < max_workers:
-                    run_nlpql(i, filename=filename)
-                else:
-                    while get_active_workers() >= max_workers:
-                        print('At max workers for job %d sleeping for 15 secs...' % i)
-                        time.sleep(15)
-                    run_nlpql(i, filename=filename)
+        files = [f for f in listdir(env_path) if isfile(join(env_path, f))]
+        current_env = target_env_path + '/.env'
+        backup_env = target_env_path + '/.env.bak'
+        call(["cp", current_env, backup_env])
+        for file in files:
+            print('running ' + file)
+            sample_file = env_path + '/' + file
+            call(['cp', sample_file, current_env])
+            call(["docker-compose", "up", "-d", "--build"])
+            job_runner('feature', 27, 0)
+            job_runner('query', 100, 0)
+            call(["docker-compose", "down"])
+        print('done; restoring backup')
+        call(["docker-compose", "up", "-d", "--build"])
+        call(["cp", backup_env, current_env])
     else:
-        startid = 0
-        for i in range(startid, startid + 100):
-            cleanup(i)
+        startid = 260
+        for n in range(startid, startid + 100):
+            cleanup(n)
