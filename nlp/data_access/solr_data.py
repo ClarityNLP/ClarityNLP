@@ -65,7 +65,6 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
             sources):
     new_fq = fq
 
-    mapped_items = get_report_type_mappings(mapper_url, mapper_inst, mapper_key)
     subjects = list()
     documents = list()
 
@@ -106,6 +105,7 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
             del patients
 
     if len(tags) > 0:
+        mapped_items = get_report_type_mappings(mapper_url, mapper_inst, mapper_key)
         if len(new_fq) > 0:
             new_fq += ' AND '
         matched_reports = list()

@@ -135,7 +135,9 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
         for df in doc_fields:
             if df not in data_fields:
                 data_fields[df] = ''
-
+    if "_id" in data_fields:
+        data_fields["_source_id"] = data_fields["_id"]
+        del data_fields["_id"]
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
 
     return inserted
