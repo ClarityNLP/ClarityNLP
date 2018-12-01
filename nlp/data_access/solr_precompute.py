@@ -48,7 +48,7 @@ def get_documents():
                               report_mapper_key, mapper_url=util.report_mapper_url)
     print(doc_size)
 
-    batch_size = 10
+    batch_size = 100
     n = 0
     while n < doc_size:
         print("on batch %d" % n)
@@ -79,9 +79,12 @@ def get_documents():
                 if updates:
                     ids.append(doc[util.solr_report_id_field])
                     updated_docs.append(doc)
-
+            print("**********")
             print('updating the following docs')
             print(ids)
+            print('\n')
+            print("%d/%d" % (len(ids), batch_size))
+            print("**********")
             data = json.dumps(updated_docs)
             response2 = requests.post(url, headers=headers, data=data)
 
