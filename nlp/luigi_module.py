@@ -9,7 +9,7 @@ import sys
 import traceback
 import datetime
 from data_access import pipeline_config as config
-from data_access import solr_data, phenotype_stats
+from data_access import solr_data, phenotype_stats, jobs
 
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
 # didn't seem like it was with initial efforts

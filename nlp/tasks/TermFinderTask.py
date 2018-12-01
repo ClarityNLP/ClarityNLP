@@ -1,10 +1,7 @@
-import json
-
 from cachetools import cached
 
 from algorithms import *
-from data_access import jobs
-from .task_utilities import BaseTask, pipeline_cache, init_cache, document_text, get_document_by_id
+from .task_utilities import BaseTask, pipeline_cache, init_cache, document_text, get_document_by_id, document_sections
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],
@@ -47,7 +44,8 @@ def _get_term_matches(document_id, sections, is_provider_assertion, finder_obj):
     objs = list()
     doc = get_document_by_id(document_id)
     doc_text = document_text(doc, clean=True)
-    terms_found = finder_obj.get_term_full_text_matches(doc_text, filters)
+    section_headers, section_texts = document_sections(doc)
+    terms_found = finder_obj.get_term_full_text_matches(doc_text, filters, section_headers, section_texts)
     for term in terms_found:
         obj = {
             "sentence": term.sentence,

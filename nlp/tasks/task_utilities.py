@@ -1,7 +1,6 @@
 import datetime
 import sys
 import traceback
-from random import randint
 
 import luigi
 from cachetools import LRUCache, TTLCache, cached
@@ -14,6 +13,11 @@ from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
+from algorithms.sec_tag import *
+
+sentences_key = "sentence_attrs"
+section_names_key = "section_name_attrs"
+section_text_key = "section_text_attrs"
 
 doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
 pipeline_cache = LRUCache(maxsize=5000)
@@ -27,10 +31,27 @@ def get_document_by_id(document_id):
     return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
 
 
+def document_sections(doc):
+    if util.use_precomputed_segmentation and section_names_key in doc:
+        return doc[section_names_key], doc[section_text_key]
+    else:
+        txt = document_text(doc)
+        section_headers, section_texts = [UNKNOWN], [txt]
+        try:
+            section_headers, section_texts = sec_tag_process(txt)
+        except Exception as e:
+            print(e)
+        names = [x.concept for x in section_headers]
+        return names, section_texts
+
+
 def document_sentences(doc):
-    txt = document_text(doc)
-    sentence_list = segment.parse_sentences(txt)
-    return sentence_list
+    if util.use_precomputed_segmentation and sentences_key in doc:
+        return doc[sentences_key]
+    else:
+        txt = document_text(doc)
+        sentence_list = segment.parse_sentences(txt)
+        return sentence_list
 
 
 def document_text(doc, clean=True):
@@ -266,6 +287,9 @@ class BaseTask(luigi.Task):
 
     def get_document_sentences(self, doc):
         return document_sentences(doc)
+
+    def get_document_sections(self, doc):
+        return document_sections(doc)
 
 
 

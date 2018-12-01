@@ -76,15 +76,15 @@ def get_matches(matcher, sentence: str, section='UNKNOWN', filters=None):
     return matches
 
 
-def get_full_text_matches(matchers, text: str, filters=None):
+def get_full_text_matches(matchers, text: str, filters=None, section_headers=None, section_texts=None):
     if filters is None:
         filters = {}
+    if section_headers is None:
+        section_headers = [UNKNOWN]
+    if section_texts is None:
+        section_texts = [text]
     found_terms = list()
-    section_headers, section_texts = [UNKNOWN], [text]
-    try:
-        section_headers, section_texts = sec_tag_process(text)
-    except Exception as e:
-        print(e)
+
     for idx in range(0, len(section_headers)):
         section_text = section_texts[idx]
         sentences = segmentor.parse_sentences(section_text)
@@ -92,7 +92,7 @@ def get_full_text_matches(matchers, text: str, filters=None):
 
         list_product = itertools.product(matchers, sentences)
         for l in list_product:
-            found = get_matches(l[0], l[1], section_headers[idx].concept, filters)
+            found = get_matches(l[0], l[1], section_headers[idx], filters)
             if found:
                 found_terms.extend(found)
     return found_terms
@@ -123,10 +123,14 @@ class TermFinder(BaseModel):
             term_matches.extend(cur)
         return term_matches
 
-    def get_term_full_text_matches(self, full_text: str, filters=None):
+    def get_term_full_text_matches(self, full_text: str, filters=None, section_headers=None, section_texts=None):
         if filters is None:
             filters = {}
-        return get_full_text_matches(self.matchers, full_text, filters)
+        if section_headers is None:
+            section_headers = [UNKNOWN]
+        if section_texts is None:
+            section_texts = [full_text]
+        return get_full_text_matches(self.matchers, full_text, filters, section_headers, section_texts)
 
 
 if __name__ == "__main__":
