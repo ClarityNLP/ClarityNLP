@@ -43,7 +43,7 @@ def get_report_type_mappings(url, inst, key):
                         tag_lookup_dict[lookup_tag].append(rep['name'])
     except Exception as ex:
         if util.debug_mode:
-            traceback.print_exc(file=sys.stderr)
+            # traceback.print_exc(file=sys.stderr)
             print(ex)
 
     return tag_lookup_dict

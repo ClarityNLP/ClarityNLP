@@ -9,7 +9,7 @@ import sys
 import traceback
 import datetime
 from data_access import pipeline_config as config
-from data_access import solr_data, phenotype_stats
+from data_access import solr_data, phenotype_stats, jobs
 
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
 # didn't seem like it was with initial efforts
@@ -170,7 +170,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "897"
+    p_id = "978"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,

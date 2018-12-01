@@ -94,6 +94,9 @@ expression_evaluator = read_property('NLP_EXPRESSION_EVALUATOR', ('local', 'eval
 
 use_memory_caching = read_boolean_property(read_property('USE_MEMORY_CACHING', ('optimizations', 'use_memory_cache'),
                                                          default='true'))
+use_precomputed_segmentation = read_boolean_property(read_property('USE_PRECOMPUTED_SEGMENTATION',
+                                                                   ('optimizations', 'use_precomputed_segmentation'),
+                                                                   default='false'))
 
 
 def cmp_2_key(mycmp):

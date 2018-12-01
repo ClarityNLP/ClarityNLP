@@ -1,6 +1,7 @@
 node_modules/
 .cache/
 .env
+.env.bak
 prod.env
 .bak
 .idea/codeStyles/Project.xml
