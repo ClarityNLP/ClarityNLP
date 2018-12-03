@@ -292,7 +292,7 @@ def phenotype_stats(job_id: str, phenotype_final: bool):
         stats["subjects"] = subjects
         stats["results"] = documents
     return stats
-
+import math
 def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -300,7 +300,15 @@ def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     try:
         query = {"job_id": int(job_id), "phenotype_final": phenotype_final, "subject": subject}
 
-        results = list(db["phenotype_results"].find(query))
+        temp = list(db["phenotype_results"].find(query))
+        for r in temp:
+            obj = r.copy()
+            for k in r.keys():
+                val = r[k]
+                if (isinstance(val, int) or isinstance(val, float)) and math.isnan(val):
+                    del obj[k]
+            results.append(obj)
+
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
     finally:
