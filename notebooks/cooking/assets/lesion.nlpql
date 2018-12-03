@@ -1,6 +1,6 @@
 limit 50;
-phenotype "LesionDemo" version "1";
-description "Find lesions of various sizes.";
+phenotype "Lesions1to2Cm" version "1";
+description "Find lesions with sizes ranging from 1 to 2 cm.";
 include ClarityCore version "1.0" called Clarity;
 
 documentset Docs:
