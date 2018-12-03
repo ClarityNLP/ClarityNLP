@@ -84,8 +84,8 @@ if __name__ == "__main__":
             print(files)
             print('current file:')
             print(file)
-            time.sleep(300)
-            job_runner('feature', 27, 0)
+            time.sleep(250)
+            # job_runner('feature', 27, 0)
             job_runner('query', 100, 0)
             while get_active_workers() > 0:
                 print('jobs still running wait to shut down docker')
@@ -100,6 +100,6 @@ if __name__ == "__main__":
         call(["docker-compose", "up", "-d", "--build"])
 
     else:
-        startid = 314
-        for n in range(startid, startid + 100):
+        startid = 295
+        for n in range(startid, startid + 500):
             cleanup(n)
