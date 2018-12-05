@@ -10,6 +10,7 @@ print('Initializing models for term finder...')
 section_tagger_init()
 c_text = Context()
 segmentor = Segmentation()
+spacy = segmentation_init()
 print('Done initializing models for term finder...')
 
 
@@ -87,7 +88,7 @@ def get_full_text_matches(matchers, text: str, filters=None, section_headers=Non
 
     for idx in range(0, len(section_headers)):
         section_text = section_texts[idx]
-        sentences = segmentor.parse_sentences(section_text)
+        sentences = segmentor.parse_sentences(section_text, spacy=spacy)
         # section_code = ".".join([str(i) for i in section_headers[idx].treecode_list])
 
         list_product = itertools.product(matchers, sentences)

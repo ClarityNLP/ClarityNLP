@@ -10,7 +10,7 @@ except Exception:
 
 segment = segmentation.Segmentation()
 
-solr_url = "http://3.16.75.68:8983/solr/sample"
+solr_url = "http://18.220.133.76:8983/solr/sample"
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
 section_text_key = "section_text_attrs"
@@ -20,7 +20,7 @@ headers = {
 }
 batch_size = 10
 doc_size = 0
-spacy = segmentation_init()
+spacy = segmentation_init(tries=2)
 
 
 def document_sentences(txt):
