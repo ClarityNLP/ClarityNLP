@@ -151,7 +151,7 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
-            if util.use_memory_caching:
+            if util.use_memory_caching == 'true':
                 obj = get_race_for_document(doc[util.solr_report_id_field])
             else:
                 obj = _get_race_for_document(doc[util.solr_report_id_field])

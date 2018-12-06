@@ -191,7 +191,6 @@ class BaseTask(luigi.Task):
     batch = luigi.IntParameter()
     task_name = "ClarityNLPLuigiTask"
     docs = list()
-    doc_dict = dict()
     pipeline_config = config.PipelineConfig('', '')
     lookup_key = ''
 
@@ -223,14 +222,14 @@ class BaseTask(luigi.Task):
                                             filter_query=self.pipeline_config.filter_query,
                                             cohort_ids=self.pipeline_config.cohort,
                                             job_results_filters=self.pipeline_config.job_results)
-                self.doc_dict = {x[util.solr_report_id_field]: x for x in self.docs}
+                for d in self.docs:
+                    document_cache[d[util.solr_report_id_field]] = d
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)
                 temp_file.write("Done writing custom task!")
 
             self.docs = list()
-            self.doc_dict = dict()
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
@@ -272,7 +271,7 @@ class BaseTask(luigi.Task):
         print("Implement your custom functionality here ")
 
     def get_document_text_by_id(self, doc_id, clean=True):
-        doc = self.doc_dict[doc_id]
+        doc = document_cache[doc_id]
         return self.get_document_text(doc, clean)
 
     def get_document_text(self, doc, clean=False):

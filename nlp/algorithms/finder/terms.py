@@ -103,7 +103,11 @@ class TermFinder(BaseModel):
 
     def __init__(self, match_terms,  include_synonyms=True,
                  include_descendants=False, include_ancestors=False,
-                 vocabulary='SNOMED'):
+                 vocabulary='SNOMED', filters=None):
+        if filters is None:
+            self.filters = {}
+        else:
+            self.filters = filters
         self.terms = match_terms
         self.matchers = []
         added = []
@@ -124,14 +128,12 @@ class TermFinder(BaseModel):
             term_matches.extend(cur)
         return term_matches
 
-    def get_term_full_text_matches(self, full_text: str, filters=None, section_headers=None, section_texts=None):
-        if filters is None:
-            filters = {}
+    def get_term_full_text_matches(self, full_text: str, section_headers=None, section_texts=None):
         if section_headers is None:
             section_headers = [UNKNOWN]
         if section_texts is None:
             section_texts = [full_text]
-        return get_full_text_matches(self.matchers, full_text, filters, section_headers, section_texts)
+        return get_full_text_matches(self.matchers, full_text, self.filters, section_headers, section_texts)
 
 
 if __name__ == "__main__":
