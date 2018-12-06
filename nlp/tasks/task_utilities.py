@@ -54,7 +54,7 @@ def document_sentences(doc):
         return sentence_list
 
 
-def document_text(doc, clean=True):
+def document_text(doc, clean=False):
     if doc and util.solr_text_field in doc:
         txt = doc[util.solr_text_field]
         if type(txt) == str:
@@ -275,7 +275,7 @@ class BaseTask(luigi.Task):
         doc = self.doc_dict[doc_id]
         return self.get_document_text(doc, clean)
 
-    def get_document_text(self, doc, clean):
+    def get_document_text(self, doc, clean=False):
         return document_text(doc, clean)
 
     def get_boolean(self, key, default=False):
