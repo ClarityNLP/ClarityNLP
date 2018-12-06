@@ -70,35 +70,35 @@ if __name__ == "__main__":
 
     run_jobs = True
     if run_jobs:
-        # files = sorted([f for f in listdir(env_path) if isfile(join(env_path, f))])
-        # current_env = target_env_path + '/.env'
-        # backup_env = target_env_path + '/.env.bak'
-        # call(["cp", current_env, backup_env])
-        # for file in files:
-        #     print('running ' + file)
-        #     sample_file = env_path + '/' + file
-        #     call(['cp', sample_file, current_env])
-        #     call(["docker-compose", "up", "-d", "--build"])
-        #     print('sleeping for 3 minutes; running next')
-        #     print('will evaluate the following files:')
-        #     print(files)
-        #     print('current file:')
-        #     print(file)
-        #     time.sleep(180)
-        #     # job_runner('feature', 27, 0)
-        #     job_runner('query', 100, 0)
-        #     while get_active_workers() > 0:
-        #         print('jobs still running wait to shut down docker')
-        #         time.sleep(120)
-        #     call(["mv", sample_file, evaluated_env_path])
-        #     print('shutting down docker')
-        #     call(["docker-compose", "down"])
-        #     print('sleeping for a minute')
-        #     time.sleep(60)
-        # print('done; restoring backup')
-        # call(["cp", backup_env, current_env])
-        # call(["docker-compose", "up", "-d", "--build"])
-        job_runner('query', 100, 0)
+        files = sorted([f for f in listdir(env_path) if isfile(join(env_path, f))])
+        current_env = target_env_path + '/.env'
+        backup_env = target_env_path + '/.env.bak'
+        call(["cp", current_env, backup_env])
+        for file in files:
+            print('running ' + file)
+            sample_file = env_path + '/' + file
+            call(['cp', sample_file, current_env])
+            call(["docker-compose", "up", "-d", "--build"])
+            print('sleeping for 3 minutes; running next')
+            print('will evaluate the following files:')
+            print(files)
+            print('current file:')
+            print(file)
+            time.sleep(180)
+            # job_runner('feature', 27, 0)
+            job_runner('query', 1000, 0)
+            while get_active_workers() > 0:
+                print('jobs still running wait to shut down docker')
+                time.sleep(120)
+            call(["mv", sample_file, evaluated_env_path])
+            print('shutting down docker')
+            call(["docker-compose", "down"])
+            print('sleeping for a minute')
+            time.sleep(60)
+        print('done; restoring backup')
+        call(["cp", backup_env, current_env])
+        call(["docker-compose", "up", "-d", "--build"])
+        # job_runner('query', 100, 0)
     else:
         startid = 295
         for n in range(startid, startid + 500):
