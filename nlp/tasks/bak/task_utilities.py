@@ -3,48 +3,99 @@ import sys
 import traceback
 
 import luigi
+from cachetools import LRUCache, TTLCache, cached
 from pymongo import MongoClient
-from algorithms import segmentation
+
 import util
+from algorithms import segmentation
+from data_access import base_model
 from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
-from data_access import base_model
 from algorithms.sec_tag import *
 
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
 section_text_key = "section_text_attrs"
-doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
 
+doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
+pipeline_cache = LRUCache(maxsize=5000)
+document_cache = LRUCache(maxsize=5000)
+init_cache = LRUCache(maxsize=1000)
 segment = segmentation.Segmentation()
 
 
-def get_config_boolean(pipeline_config, key, default=False):
-    if key in pipeline_config.custom_arguments:
+@cached(document_cache)
+def get_document_by_id(document_id):
+    return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+
+
+def document_sections(doc):
+    if util.use_precomputed_segmentation and section_names_key in doc:
+        return doc[section_names_key], doc[section_text_key]
+    else:
+        txt = document_text(doc)
+        section_headers, section_texts = [UNKNOWN], [txt]
         try:
-            val = bool(pipeline_config.custom_arguments[key])
+            section_headers, section_texts = sec_tag_process(txt)
+        except Exception as e:
+            print(e)
+        names = [x.concept for x in section_headers]
+        return names, section_texts
+
+
+def document_sentences(doc):
+    if util.use_precomputed_segmentation and sentences_key in doc:
+        return doc[sentences_key]
+    else:
+        txt = document_text(doc)
+        sentence_list = segment.parse_sentences(txt)
+        return sentence_list
+
+
+def document_text(doc, clean=False):
+    if doc and util.solr_text_field in doc:
+        txt = doc[util.solr_text_field]
+        if type(txt) == str:
+            txt_val = txt
+        elif type(txt) == list:
+            txt_val = ' '.join(txt)
+        else:
+            txt_val = str(txt)
+
+        if clean:
+            return txt_val.encode("ascii", errors="ignore").decode()
+        else:
+            return txt_val
+    else:
+        return ''
+
+
+def get_config_boolean(p_config, key, default=False):
+    if key in p_config.custom_arguments:
+        try:
+            val = bool(p_config.custom_arguments[key])
         except Exception as ex:
             val = default
         return val
     return default
 
 
-def get_config_integer(pipeline_config, key, default=-1):
-    if key in pipeline_config.custom_arguments:
+def get_config_integer(p_config, key, default=-1):
+    if key in p_config.custom_arguments:
         try:
-            val = int(pipeline_config.custom_arguments[key])
+            val = int(p_config.custom_arguments[key])
         except Exception as ex:
             val = default
         return val
     return default
 
 
-def get_config_string(pipeline_config, key, default=''):
-    if key in pipeline_config.custom_arguments:
+def get_config_string(p_config, key, default=''):
+    if key in p_config.custom_arguments:
         try:
-            val = str(pipeline_config.custom_arguments[key])
+            val = str(p_config.custom_arguments[key])
         except Exception as ex:
             val = default
         return val
@@ -84,7 +135,9 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
         for df in doc_fields:
             if df not in data_fields:
                 data_fields[df] = ''
-
+    if "_id" in data_fields:
+        data_fields["_source_id"] = data_fields["_id"]
+        del data_fields["_id"]
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
 
     return inserted
@@ -139,7 +192,13 @@ class BaseTask(luigi.Task):
     task_name = "ClarityNLPLuigiTask"
     docs = list()
     pipeline_config = config.PipelineConfig('', '')
-    segment = segmentation.Segmentation()
+    lookup_key = ''
+
+    def get_lookup_key(self):
+        return self.lookup_key
+
+    def pull_from_cache(self):
+        return False
 
     def run(self):
         task_family_name = str(self.task_family)
@@ -154,7 +213,6 @@ class BaseTask(luigi.Task):
                                        self.batch)
 
                 self.pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
-                jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
                 self.docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start,
                                             solr_url=util.solr_url,
                                             tags=self.pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
@@ -164,6 +222,8 @@ class BaseTask(luigi.Task):
                                             filter_query=self.pipeline_config.filter_query,
                                             cohort_ids=self.pipeline_config.cohort,
                                             job_results_filters=self.pipeline_config.job_results)
+                for d in self.docs:
+                    document_cache[d[util.solr_report_id_field]] = d
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)
@@ -210,22 +270,12 @@ class BaseTask(luigi.Task):
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         print("Implement your custom functionality here ")
 
-    def get_document_text(self, doc, clean=True):
-        if doc and util.solr_text_field in doc:
-            txt = doc[util.solr_text_field]
-            if type(txt) == str:
-                txt_val =  txt
-            elif type(txt) == list:
-                txt_val = ' '.join(txt)
-            else:
-                txt_val = str(txt)
+    def get_document_text_by_id(self, doc_id, clean=True):
+        doc = document_cache[doc_id]
+        return self.get_document_text(doc, clean)
 
-            if clean:
-                return txt_val.encode("ascii", errors="ignore").decode()
-            else:
-                return txt_val
-        else:
-            return ''
+    def get_document_text(self, doc, clean=False):
+        return document_text(doc, clean)
 
     def get_boolean(self, key, default=False):
         return get_config_boolean(self.pipeline_config, key, default=default)
@@ -237,25 +287,10 @@ class BaseTask(luigi.Task):
         return get_config_string(self.pipeline_config, key, default=default)
 
     def get_document_sentences(self, doc):
-        if util.use_precomputed_segmentation and sentences_key in doc:
-            return doc[sentences_key]
-        else:
-            txt = self.get_document_textdocument_text(doc)
-            sentence_list = segment.parse_sentences(txt)
-            return sentence_list
+        return document_sentences(doc)
 
     def get_document_sections(self, doc):
-        if util.use_precomputed_segmentation and section_names_key in doc:
-            return doc[section_names_key], doc[section_text_key]
-        else:
-            txt = self.get_document_text(doc)
-            section_headers, section_texts = [UNKNOWN], [txt]
-            try:
-                section_headers, section_texts = sec_tag_process(txt)
-            except Exception as e:
-                print(e)
-            names = [x.concept for x in section_headers]
-            return names, section_texts
+        return document_sections(doc)
 
 
 
