@@ -13,7 +13,7 @@ cur_job = 0
 env_path = './synthetic_query_gen/notebooks/env_files'
 evaluated_env_path = './synthetic_query_gen/notebooks/evaluated_env/'
 target_env_path = './'
-ip = '18.224.57.156'
+ip = 'localhost'
 
 url = 'http://' + ip + ':5000/'
 nlpql_url = url + 'nlpql'
