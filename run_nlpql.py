@@ -6,7 +6,7 @@ from os import listdir
 from os.path import isfile, join
 import time
 
-max_workers = 1
+max_workers = 4
 max_jobs = 100
 cur_job = 0
 
@@ -59,6 +59,7 @@ def job_runner(fname, jobs, current):
             print('Attempting job %d' % i)
             if get_active_workers() < max_workers:
                 run_nlpql(i, filename=fname)
+                time.sleep(60)
             else:
                 while get_active_workers() >= max_workers:
                     print('At max workers for job %d sleeping for 60 secs...' % i)
@@ -86,7 +87,7 @@ if __name__ == "__main__":
             print(file)
             time.sleep(180)
             # job_runner('feature', 27, 0)
-            job_runner('query', 1000, 0)
+            job_runner('query', 100, 0)
             while get_active_workers() > 0:
                 print('jobs still running wait to shut down docker')
                 time.sleep(120)
