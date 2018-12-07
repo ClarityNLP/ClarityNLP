@@ -82,6 +82,9 @@ use_memory_caching = read_property('USE_MEMORY_CACHING', ('optimizations', 'use_
 use_precomputed_segmentation = read_property('USE_PRECOMPUTED_SEGMENTATION',
                                              ('optimizations', 'use_precomputed_segmentation'),
                                              default='false')
+use_reordered_nlpql = read_property('USE_REORDERED_NLPQL',
+                                             ('optimizations', 'use_reordered_nlpql'),
+                                             default='false')
 
 
 def cmp_2_key(mycmp):

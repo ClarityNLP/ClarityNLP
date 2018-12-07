@@ -4,6 +4,13 @@ import pandas as pd
 import numpy as np
 from collections import OrderedDict
 
+SCRIPT_DIR = os.path.dirname(__file__)
+
+
+def reorder_query_default(parsed_query):
+    path = os.path.join(SCRIPT_DIR, "inclusion_criteria_ranked.csv")
+    return reorder_query(parsed_query, pd.read_csv(path, header=0))
+
 
 def reorder_query(parsed_query, downselection_df):
 
