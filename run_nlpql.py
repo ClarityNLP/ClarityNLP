@@ -6,7 +6,7 @@ from os import listdir
 from os.path import isfile, join
 import time
 
-max_workers = 1
+max_workers = 4
 max_jobs = 100
 cur_job = 0
 
@@ -59,10 +59,11 @@ def job_runner(fname, jobs, current):
             print('Attempting job %d' % i)
             if get_active_workers() < max_workers:
                 run_nlpql(i, filename=fname)
+                time.sleep(60)
             else:
                 while get_active_workers() >= max_workers:
-                    print('At max workers for job %d sleeping for 15 secs...' % i)
-                    time.sleep(15)
+                    print('At max workers for job %d sleeping for 60 secs...' % i)
+                    time.sleep(60)
                 run_nlpql(i, filename=fname)
 
 
@@ -79,17 +80,17 @@ if __name__ == "__main__":
             sample_file = env_path + '/' + file
             call(['cp', sample_file, current_env])
             call(["docker-compose", "up", "-d", "--build"])
-            print('sleeping for 5 minutes; running next')
+            print('sleeping for 3 minutes; running next')
             print('will evaluate the following files:')
             print(files)
             print('current file:')
             print(file)
-            time.sleep(250)
+            time.sleep(180)
             # job_runner('feature', 27, 0)
             job_runner('query', 100, 0)
             while get_active_workers() > 0:
                 print('jobs still running wait to shut down docker')
-                time.sleep(180)
+                time.sleep(120)
             call(["mv", sample_file, evaluated_env_path])
             print('shutting down docker')
             call(["docker-compose", "down"])
@@ -98,7 +99,7 @@ if __name__ == "__main__":
         print('done; restoring backup')
         call(["cp", backup_env, current_env])
         call(["docker-compose", "up", "-d", "--build"])
-
+        # job_runner('query', 100, 0)
     else:
         startid = 295
         for n in range(startid, startid + 500):

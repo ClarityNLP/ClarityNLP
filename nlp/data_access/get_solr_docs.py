@@ -7,7 +7,7 @@ except Exception:
 
 segment = segmentation.Segmentation()
 
-solr_url = "http://3.16.75.68:8983/solr/sample"
+solr_url = "http://18.224.57.156:8983/solr/sample"
 headers = {
     'Content-type': 'application/json',
 }

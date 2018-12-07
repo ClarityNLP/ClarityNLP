@@ -152,7 +152,6 @@ def make_post_body(qry, fq, sort, start, rows):
         data['sort'] = sort
     data['offset'] = start
     data['limit'] = rows
-    data['sort'] = util.solr_report_id_field + " ASC"
     data['params'] = {
         'wt': 'json'
     }

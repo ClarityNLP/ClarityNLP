@@ -20,12 +20,10 @@ Sample NLPQL, results written to the intermediate_results file:
         });
 """
 
-import util
 import re
 from pymongo import MongoClient
 from collections import namedtuple
-from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, get_document_by_id
-from cachetools import cached
+from tasks.task_utilities import BaseTask
 
 str_sep = r'(\s-\s|-\s|\s-|\s)'
 str_word = r'\b[-a-z.\d]+'
@@ -115,30 +113,6 @@ def find_race(sentence_list):
 
 
 ###############################################################################
-
-
-def _get_race_for_document(document_id):
-    doc = get_document_by_id(document_id)
-    # all sentences in this document
-    sentence_list = document_sentences(doc)
-
-    # all race results in this document
-    result_list = find_race(sentence_list)
-
-    if len(result_list) == 0:
-        sentence_list = list()
-
-    return {
-        'sentences': sentence_list,
-        'results': result_list
-    }
-
-
-@cached(pipeline_cache)
-def get_race_for_document(document_id):
-    return _get_race_for_document(document_id)
-
-
 class RaceFinderTask(BaseTask):
     """
     A custom task for finding a patient's race.
@@ -151,13 +125,13 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
-            if util.use_memory_caching:
-                obj = get_race_for_document(doc[util.solr_report_id_field])
-            else:
-                obj = _get_race_for_document(doc[util.solr_report_id_field])
 
-            result_list = obj['results']
-            sentence_list = obj['sentences']
+            # all sentences in this document
+            sentence_list = self.get_document_sentences(doc)
+
+            # all race results in this document
+            result_list = find_race(sentence_list)
+                
             if len(result_list) > 0:
                 for result in result_list:
                     obj = {

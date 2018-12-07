@@ -10,7 +10,7 @@ except Exception:
 
 segment = segmentation.Segmentation()
 
-solr_url = "http://3.16.75.68:8983/solr/sample"
+solr_url = "http://18.224.57.156:8983/solr/sample"
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
 section_text_key = "section_text_attrs"
@@ -18,7 +18,7 @@ url = solr_url + '/update?commit=true'
 headers = {
     'Content-type': 'application/json',
 }
-batch_size = 10
+batch_size = 1
 doc_size = 0
 spacy = segmentation_init()
 
@@ -104,7 +104,7 @@ def get_documents():
                               mapper_key=util.report_mapper_key, mapper_url=util.report_mapper_url)
 
     i = 0
-    while i < doc_size:
+    while i < (doc_size + 20):
         print("on batch %d" % i)
         pre_compute(i)
 
