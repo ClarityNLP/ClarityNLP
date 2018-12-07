@@ -1,5 +1,5 @@
 import os
-from nlp import nlpql
+import nlpql
 import pandas as pd
 import numpy as np
 from collections import OrderedDict
