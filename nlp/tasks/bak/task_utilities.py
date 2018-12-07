@@ -290,7 +290,8 @@ class BaseTask(luigi.Task):
         return document_sentences(doc)
 
     def get_document_sections(self, doc):
-        return document_sections(doc)
+        names, section_texts = document_sections(doc)
+        return names, section_texts
 
 
 

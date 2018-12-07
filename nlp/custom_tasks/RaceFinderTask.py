@@ -20,32 +20,34 @@ Sample NLPQL, results written to the intermediate_results file:
         });
 """
 
+import util
 import re
 from pymongo import MongoClient
 from collections import namedtuple
-from tasks.task_utilities import BaseTask
+from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, get_document_by_id
+from cachetools import cached
 
 str_sep = r'(\s-\s|-\s|\s-|\s)'
 str_word = r'\b[-a-z.\d]+'
 str_punct = r'[,.\s]*'
 str_words = r'(' + str_word + str_punct + r'){0,6}'
-str_person = r'\b(gentleman|gentlewoman|male|female|man|woman|person|'    +\
+str_person = r'\b(gentleman|gentlewoman|male|female|man|woman|person|' + \
              r'child|boy|girl|infant|baby|newborn|neonate|individual)\b'
-str_category = r'\b(american' + str_sep + r'indian|'                      +\
-               r'alaska' + str_sep + r'native|asian|'                     +\
-               r'african' + str_sep + r'american|black|negro|'            +\
-               r'native' + str_sep + r'hawaiian|'                         +\
-               r'other' + str_sep + r'pacific' + str_sep + r'islander|'   +\
-               r'pacific' + str_sep + r'islander|'                        +\
-               r'native' + str_sep + r'american|'                         +\
+str_category = r'\b(american' + str_sep + r'indian|' + \
+               r'alaska' + str_sep + r'native|asian|' + \
+               r'african' + str_sep + r'american|black|negro|' + \
+               r'native' + str_sep + r'hawaiian|' + \
+               r'other' + str_sep + r'pacific' + str_sep + r'islander|' + \
+               r'pacific' + str_sep + r'islander|' + \
+               r'native' + str_sep + r'american|' + \
                r'white|caucasian|european)'
 
 str_race1 = r'(\brace:?\s*)' + r'(?P<category>' + str_category + r')'
 regex_race1 = re.compile(str_race1, re.IGNORECASE)
-str_race2 = r'(?P<category>' + str_category + r')' + str_punct    +\
+str_race2 = r'(?P<category>' + str_category + r')' + str_punct + \
             str_words + str_person
 regex_race2 = re.compile(str_race2, re.IGNORECASE)
-str_race3 = str_person + str_punct + str_words + r'(?P<category>' +\
+str_race3 = str_person + str_punct + str_words + r'(?P<category>' + \
             str_category + r')'
 regex_race3 = re.compile(str_race3, re.IGNORECASE)
 REGEXES = [regex_race1, regex_race2, regex_race3]
@@ -62,12 +64,12 @@ def normalize(race_text):
     """
 
     NORM_MAP = {
-        'african american':'black',
-        'negro':'black',
-        'caucasian':'white',
-        'european':'white',
+        'african american': 'black',
+        'negro': 'black',
+        'caucasian': 'white',
+        'european': 'white',
     }
-    
+
     # convert to lowercase, remove dashes, collapse repeated whitespace
     race = race_text.lower()
     race = re.sub(r'[-]+', '', race)
@@ -77,7 +79,7 @@ def normalize(race_text):
         return NORM_MAP[race]
     else:
         return race
-    
+
 
 ###############################################################################
 def find_race(sentence_list):
@@ -97,7 +99,7 @@ def find_race(sentence_list):
             if match:
                 match_text = match.group('category')
                 start = match.start()
-                end   = match.end()
+                end = match.end()
                 normalized = normalize(match_text)
                 result = RaceFinderResult(i, start, end, match_text, normalized)
                 result_list.append(result)
@@ -108,16 +110,40 @@ def find_race(sentence_list):
         # patient's race.
         if found_match:
             break
-            
+
     return result_list
 
 
 ###############################################################################
+
+
+def _get_race_for_document(document_id):
+    doc = get_document_by_id(document_id)
+    # all sentences in this document
+    sentence_list = document_sentences(doc)
+
+    # all race results in this document
+    result_list = find_race(sentence_list)
+
+    if len(result_list) == 0:
+        sentence_list = list()
+
+    return {
+        'sentences': sentence_list,
+        'results': result_list
+    }
+
+
+@cached(pipeline_cache)
+def get_race_for_document(document_id):
+    return _get_race_for_document(document_id)
+
+
 class RaceFinderTask(BaseTask):
     """
     A custom task for finding a patient's race.
     """
-    
+
     # use this name in NLPQL
     task_name = "RaceFinderTask"
 
@@ -125,22 +151,22 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
+            if util.use_memory_caching == 'true':
+                obj = get_race_for_document(doc[util.solr_report_id_field])
+            else:
+                obj = _get_race_for_document(doc[util.solr_report_id_field])
 
-            # all sentences in this document
-            sentence_list = self.get_document_sentences(doc)
-
-            # all race results in this document
-            result_list = find_race(sentence_list)
-                
+            result_list = obj['results']
+            sentence_list = obj['sentences']
             if len(result_list) > 0:
                 for result in result_list:
                     obj = {
-                        'sentence':sentence_list[result.sentence_index],
-                        'start':result.start,
-                        'end':result.end,
-                        'value':result.race,
-                        'value_normalized':result.normalized_race,
+                        'sentence': sentence_list[result.sentence_index],
+                        'start': result.start,
+                        'end': result.end,
+                        'value': result.race,
+                        'value_normalized': result.normalized_race,
                     }
-            
+
                     self.write_result_data(temp_file, mongo_client, doc, obj)
 
