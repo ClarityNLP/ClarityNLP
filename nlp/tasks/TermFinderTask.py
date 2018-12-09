@@ -85,6 +85,23 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
     write_log_data(jobs.IN_PROGRESS, "Finding Terms with " + name)
 
     for doc in docs:
+        if util.use_dl_trained_terms == 'true':
+            # TODO implement other filters like synonyms, etc.
+            predictions = do_term_lookup(pipeline_config.terms, document_text(doc))
+            for p in predictions.keys():
+                val = predictions[p]
+                if val:
+                    obj = {
+                        "sentence": 'UNKNOWN',
+                        "section": 'UNKNOWN',
+                        "term": p.replace('is_', ''),
+                        "start": 0,
+                        "end": 0,
+                        "negation": 'UNKNOWN',
+                        "temporality": 'UNKNOWN',
+                        "experiencer": 'UNKNOWN'
+                    }
+                    write_result_data(temp_file, mongo_client, doc, obj)
         if util.use_memory_caching == 'true' or util.use_redis_caching == "true":
             if not json_filters:
                 json_filters = json.dumps(filters)

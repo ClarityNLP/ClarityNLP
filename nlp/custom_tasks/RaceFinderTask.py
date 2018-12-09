@@ -25,9 +25,13 @@ import re
 import json
 from pymongo import MongoClient
 from collections import namedtuple
-from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, get_document_by_id, redis_conn
+from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, document_text,\
+    get_document_by_id, redis_conn
 from cachetools import cached
+from algorithms import do_term_lookup
 
+race_terms = ["white","caucasian","black","african american","asian","pacific islander","alaska native",
+              "native american", "native hawaiian"]
 str_sep = r'(\s-\s|-\s|\s-|\s)'
 str_word = r'\b[-a-z.\d]+'
 str_punct = r'[,.\s]*'
@@ -168,19 +172,33 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
-            obj = get_race_data(doc[util.solr_report_id_field])
+            if util.use_dl_trained_terms:
+                predictions = do_term_lookup(race_terms, document_text(doc))
+                for p in predictions.keys():
+                    val = predictions[p]
+                    if val:
+                        obj = {
+                            "sentence": 'UNKNOWN',
+                            "value": p,
+                            'value_normalized': p.replace('is_', ''),
+                            "start": 0,
+                            "end": 0,
+                        }
+                        self.write_result_data(temp_file, mongo_client, doc, obj)
+            else:
+                obj = get_race_data(doc[util.solr_report_id_field])
 
-            result_list = obj['results']
-            sentence_list = obj['sentences']
-            if len(result_list) > 0:
-                for result in result_list:
-                    obj = {
-                        'sentence': sentence_list[result.sentence_index],
-                        'start': result.start,
-                        'end': result.end,
-                        'value': result.race,
-                        'value_normalized': result.normalized_race,
-                    }
+                result_list = obj['results']
+                sentence_list = obj['sentences']
+                if len(result_list) > 0:
+                    for result in result_list:
+                        obj = {
+                            'sentence': sentence_list[result.sentence_index],
+                            'start': result.start,
+                            'end': result.end,
+                            'value': result.race,
+                            'value_normalized': result.normalized_race,
+                        }
 
-                    self.write_result_data(temp_file, mongo_client, doc, obj)
+                        self.write_result_data(temp_file, mongo_client, doc, obj)
 
