@@ -22,9 +22,10 @@ Sample NLPQL, results written to the intermediate_results file:
 
 import util
 import re
+import json
 from pymongo import MongoClient
 from collections import namedtuple
-from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, get_document_by_id
+from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, get_document_by_id, redis_conn
 from cachetools import cached
 
 str_sep = r'(\s-\s|-\s|\s-|\s)'
@@ -117,7 +118,7 @@ def find_race(sentence_list):
 ###############################################################################
 
 
-def _get_race_for_document(document_id):
+def get_race_for_doc(document_id):
     doc = get_document_by_id(document_id)
     # all sentences in this document
     sentence_list = document_sentences(doc)
@@ -135,8 +136,24 @@ def _get_race_for_document(document_id):
 
 
 @cached(pipeline_cache)
-def get_race_for_document(document_id):
-    return _get_race_for_document(document_id)
+def _get_race_data(document_id):
+    return get_race_for_doc(document_id)
+
+
+def get_race_data(document_id):
+    if util.use_redis_caching == "true":
+        key = "raceFinder:" + str(document_id)
+        res = redis_conn.get(key)
+        if res:
+            return json.loads(res)
+        else:
+            res2 = get_race_for_doc(document_id)
+            redis_conn.set(key, json.dumps(res2))
+            return res2
+    elif util.use_memory_caching == "true":
+        return _get_race_data(document_id)
+    else:
+        return get_race_for_doc(document_id)
 
 
 class RaceFinderTask(BaseTask):
@@ -151,10 +168,7 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
-            if util.use_memory_caching == 'true':
-                obj = get_race_for_document(doc[util.solr_report_id_field])
-            else:
-                obj = _get_race_for_document(doc[util.solr_report_id_field])
+            obj = get_race_data(doc[util.solr_report_id_field])
 
             result_list = obj['results']
             sentence_list = obj['sentences']

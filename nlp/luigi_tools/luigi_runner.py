@@ -38,7 +38,7 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
 
 def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: int):
 
-    if util.use_reordered_nlpql == 'true' or util.used_chained_queries == 'true':
+    if util.use_reordered_nlpql == 'true' or util.use_chained_queries == 'true':
         phenotype_model = reorder_query_default(phenotype_model)
     pipelines = get_pipelines_from_phenotype(phenotype_model)
     pipeline_ids = []

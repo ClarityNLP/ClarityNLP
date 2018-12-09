@@ -2,7 +2,9 @@ import datetime
 import sys
 import traceback
 
+import json
 import luigi
+import redis
 from pymongo import MongoClient
 from algorithms import segmentation
 import util
@@ -14,6 +16,7 @@ from data_access import base_model
 from algorithms.sec_tag import *
 from cachetools import LRUCache, TTLCache, cached
 
+
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
 section_text_key = "section_text_attrs"
@@ -22,10 +25,27 @@ pipeline_cache = LRUCache(maxsize=5000)
 document_cache = LRUCache(maxsize=5000)
 init_cache = LRUCache(maxsize=1000)
 segment = segmentation.Segmentation()
+if util.use_redis_caching == "true":
+    redis_conn = redis.Redis(host=util.redis_hostname, port=util.redis_host_port, decode_responses=True)
+else:
+    redis_conn = None
+
 
 @cached(document_cache)
-def get_document_by_id(document_id):
+def _get_document_by_id(document_id):
     return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+
+
+def get_document_by_id(document_id):
+    doc = None
+    if util.use_memory_caching == "true":
+        doc = _get_document_by_id(document_id)
+    elif util.use_redis_caching == "true":
+        doc = json.loads(redis_conn.get("doc:" + document_id))
+    if not doc:
+        return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+    else:
+        return doc
 
 
 def document_sections(doc):
@@ -212,8 +232,13 @@ class BaseTask(luigi.Task):
                                             filter_query=self.pipeline_config.filter_query,
                                             cohort_ids=self.pipeline_config.cohort,
                                             job_results_filters=self.pipeline_config.job_results)
+
                 for d in self.docs:
-                    document_cache[d[util.solr_report_id_field]] = d
+                    doc_id = d[util.solr_report_id_field]
+                    if util.use_memory_caching == "true":
+                        document_cache[doc_id] = d
+                    if util.use_redis_caching == "true" and redis_conn:
+                        redis_conn.set("doc:" + doc_id, json.dumps(d))
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)

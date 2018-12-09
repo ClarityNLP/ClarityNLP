@@ -42,7 +42,7 @@ class PhenotypeTask(luigi.Task):
             n = 0
             first_de = None
             secondary_des = list()
-            if util.used_chained_queries == 'true':
+            if util.use_chained_queries == 'true':
                 for op in phenotype_config['operations']:
                     if op['action'] == 'AND':
                         actually_use_chaining = True
@@ -304,7 +304,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "1000"
+    p_id = "1002"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,
