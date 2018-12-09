@@ -1,7 +1,8 @@
 select nlp_job_id, name, job_type, job_index, status, date_started, date_ended, extract(HOUR from total_time) * 60 +
                                                                                 extract(MINUTE from total_time) as
   total_minutes, extract(SECOND from total_time) total_seconds,
-feature_count, patient_count, luigi_workers, batch_size, memory_caching, precomputed_segmentation, reordered_nlpql FROM
+feature_count, patient_count, luigi_workers, batch_size, memory_caching, precomputed_segmentation, reordered_nlpql,
+chained_queries FROM
 (SELECT nj.nlp_job_id, nj.name, nj.spl[1] as job_type, nj.spl[3] as job_index, nj.status, nj.date_started, nj.date_ended,
   ((case when nj.date_ended is null then current_timestamp else nj.date_ended end) - nj.date_started) as total_time,
 
@@ -11,7 +12,8 @@ feature_count, patient_count, luigi_workers, batch_size, memory_caching, precomp
   b.description as batch_size,
   e.description as memory_caching,
   h.description as precomputed_segmentation,
-  case when i.description is null then 'false' else i.description END  as reordered_nlpql
+  case when i.description is null then 'false' else i.description END  as reordered_nlpql,
+    case when j.description is null then 'false' else j.description END  as chained_queries
 
 from (select *, regexp_split_to_array(name, '_') as spl from nlp.nlp_job) as nj
 left JOIN nlp.nlp_job_status a on nj.nlp_job_id = a.nlp_job_id and a.status = 'PROPERTIES_LUIGI_WORKERS'
@@ -23,5 +25,6 @@ left JOIN nlp.nlp_job_status f on nj.nlp_job_id = f.nlp_job_id and f.status = 'S
 left JOIN nlp.nlp_job_status g on nj.nlp_job_id = g.nlp_job_id and g.status = 'STATS_INTERMEDIATE_SUBJECTS'
   left JOIN nlp.nlp_job_status h on nj.nlp_job_id = h.nlp_job_id and h.status = 'PROPERTIES_USE_PRECOMPUTED_SEGMENTATION'
   left join nlp.nlp_job_status i on nj.nlp_job_id = i.nlp_job_id and i.status = 'PROPERTIES_USE_REORDERED_NLPQL'
-order by nj.nlp_job_id) q1
+    left join nlp.nlp_job_status j on nj.nlp_job_id = j.nlp_job_id and j.status = 'PROPERTIES_USE_CHAINED_QUERIES'
+order by nj.nlp_job_id desc) q1
 ;
