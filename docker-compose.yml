@@ -21,9 +21,11 @@ services:
       - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
     volumes:
       - ./nlp:/api
-    command: ["/api/scripts/wait-for-it.sh", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
+    command: ["/api/scripts/wait-for-it.sh", "redis:6379", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
     extra_hosts: #for container --> host comms
       - "docker.local:172.16.123.1"
+    depends_on:
+      - redis
     env_file:
       - .env
 
@@ -183,14 +185,14 @@ services:
     environment:
       - "PORT=${RESULTS_CLIENT_HOST_PORT}"
       - "REACT_APP_LUIGI_URL=${LUIGI_URL}"
+      - CHOKIDAR_USEPOLLING=true
     ports:
       - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
       # - 35729:35729 #warm-reload websocket
     volumes:
       - './utilities/results-client:/usr/src/app'
       - /usr/src/app/node_modules
-    environment:
-      - CHOKIDAR_USEPOLLING=true
+
 
   swagger:
     container_name: MAPPER_Swagger_Docs

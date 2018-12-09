@@ -77,6 +77,9 @@ solr_report_date_field = read_property('SOLR_REPORT_DATE_FIELD', ('solr', 'date_
 solr_subject_field = read_property('SOLR_SUBJECT_FIELD', ('solr', 'subject_field'))
 solr_report_type_field = read_property('SOLR_REPORT_TYPE_FIELD', ('solr', 'type_field'))
 expression_evaluator = read_property('NLP_EXPRESSION_EVALUATOR', ('local', 'evaluator'))
+redis_hostname = read_property('REDIS_HOSTNAME', ('redis', 'hostname'))
+redis_host_port = read_property('REDIS_HOST_PORT', ('redis', 'host_port'))
+redis_container_port = read_property('REDIS_CONTAINER_PORT', ('redis', 'container_port'))
 use_memory_caching = read_property('USE_MEMORY_CACHING', ('optimizations', 'use_memory_cache'),
                                    default='true')
 use_precomputed_segmentation = read_property('USE_PRECOMPUTED_SEGMENTATION',
@@ -85,8 +88,12 @@ use_precomputed_segmentation = read_property('USE_PRECOMPUTED_SEGMENTATION',
 use_reordered_nlpql = read_property('USE_REORDERED_NLPQL',
                                              ('optimizations', 'use_reordered_nlpql'),
                                              default='false')
-used_chained_queries = read_property('USE_CHAINED_QUERIES',
-                                             ('optimizations', 'use_chained_queries'),
+use_chained_queries = read_property('USE_CHAINED_QUERIES',
+                                    ('optimizations', 'use_chained_queries'),
+                                    default='false')
+
+use_redis_caching = read_property('USE_REDIS_CACHING',
+                                             ('optimizations', 'use_redis_caching'),
                                              default='false')
 
 
