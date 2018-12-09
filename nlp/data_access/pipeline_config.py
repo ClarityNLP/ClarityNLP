@@ -30,7 +30,8 @@ class PipelineConfig(BaseModel):
                  report_tags: list=None, vocabulary='SNOMED', sections: list=None, report_type_query='',
                  minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list=None, sources: list=None,
                  is_phenotype=False, report_types: list=None, custom_query='', filter_query='',
-                 custom_arguments: dict=None, enum_list: list=None, final: bool=False, job_results: dict=None):
+                 custom_arguments: dict=None, enum_list: list=None, final: bool=False, job_results: dict=None,
+                 pipeline_id=-1, chained_query=None):
 
         # This code initializes mutable params in a manner that prevents the
         # "mutable default argument" bug. In this function the types of the
@@ -97,6 +98,8 @@ class PipelineConfig(BaseModel):
             self.sources = list()
         else:
             self.sources = sources
+        self.pipeline_id = pipeline_id
+        self.chained_query = chained_query
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
@@ -124,6 +127,30 @@ def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
         conn.close()
 
     return pipeline_id
+
+
+def update_pipeline_config(pipeline: PipelineConfig, connection_string: str):
+
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+
+    try:
+        if pipeline and pipeline['pipeline_id'] > -1:
+            pipeline_json = pipeline.to_json()
+            cursor.execute("""
+                           UPDATE nlp.pipeline_config SET config = %s WHERE pipeline_id = %s
+                          """, (pipeline_json, str(pipeline['pipeline_id'])))
+
+            conn.commit()
+            success = True
+    except Exception as ex:
+        print('failed to insert pipeline')
+        print(ex)
+        success = True
+    finally:
+        conn.close()
+
+    return success
 
 
 def get_pipeline_config(pipeline_id, connection_string):
