@@ -2,7 +2,7 @@ select nlp_job_id, name, job_type, job_index, status, date_started, date_ended, 
                                                                                 extract(MINUTE from total_time) as
   total_minutes, extract(SECOND from total_time) total_seconds,
 feature_count, patient_count, luigi_workers, batch_size, memory_caching, precomputed_segmentation, reordered_nlpql,
-chained_queries FROM
+chained_queries, redis_cache FROM
 (SELECT nj.nlp_job_id, nj.name, nj.spl[1] as job_type, nj.spl[3] as job_index, nj.status, nj.date_started, nj.date_ended,
   ((case when nj.date_ended is null then current_timestamp else nj.date_ended end) - nj.date_started) as total_time,
 
@@ -13,7 +13,8 @@ chained_queries FROM
   e.description as memory_caching,
   h.description as precomputed_segmentation,
   case when i.description is null then 'false' else i.description END  as reordered_nlpql,
-    case when j.description is null then 'false' else j.description END  as chained_queries
+    case when j.description is null then 'false' else j.description END  as chained_queries,
+   case when k.description is null then 'false' else k.description END  as redis_cache
 
 from (select *, regexp_split_to_array(name, '_') as spl from nlp.nlp_job) as nj
 left JOIN nlp.nlp_job_status a on nj.nlp_job_id = a.nlp_job_id and a.status = 'PROPERTIES_LUIGI_WORKERS'
@@ -26,5 +27,6 @@ left JOIN nlp.nlp_job_status g on nj.nlp_job_id = g.nlp_job_id and g.status = 'S
   left JOIN nlp.nlp_job_status h on nj.nlp_job_id = h.nlp_job_id and h.status = 'PROPERTIES_USE_PRECOMPUTED_SEGMENTATION'
   left join nlp.nlp_job_status i on nj.nlp_job_id = i.nlp_job_id and i.status = 'PROPERTIES_USE_REORDERED_NLPQL'
     left join nlp.nlp_job_status j on nj.nlp_job_id = j.nlp_job_id and j.status = 'PROPERTIES_USE_CHAINED_QUERIES'
+      left join nlp.nlp_job_status k on nj.nlp_job_id = k.nlp_job_id and k.status = 'PROPERTIES_USE_REDIS_CACHING'
 order by nj.nlp_job_id desc) q1
 ;
