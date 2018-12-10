@@ -95,6 +95,9 @@ use_chained_queries = read_property('USE_CHAINED_QUERIES',
 use_redis_caching = read_property('USE_REDIS_CACHING',
                                              ('optimizations', 'use_redis_caching'),
                                              default='false')
+use_dl_trained_terms = read_property('USE_DL_TRAINED_TERMS',
+                                             ('optimizations', 'use_dl_trained_terms'),
+                                             default='false')
 
 
 def cmp_2_key(mycmp):

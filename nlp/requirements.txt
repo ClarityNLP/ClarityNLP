@@ -27,3 +27,7 @@ sphinx==1.7.4
 sphinx-autobuild==0.7.1
 textacy[all]
 typing==3.6.2
+imbalanced-learn==0.4.3
+imblearn==0.0
+scikit-learn==0.20.1
+joblib==0.13.0
