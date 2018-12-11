@@ -22,7 +22,10 @@ SELECT
   precomputed_segmentation,
   reordered_nlpql,
   chained_queries,
-  redis_cache
+  redis_cache,
+  cache_hit_ratio,
+  cache_compute_count,
+  cache_query_count
 FROM
   (SELECT
      nj.nlp_job_id,
@@ -62,7 +65,10 @@ FROM
      ELSE j.description END                       AS chained_queries,
      CASE WHEN k.description IS NULL
        THEN 'false'
-     ELSE k.description END                       AS redis_cache
+     ELSE k.description END                       AS redis_cache,
+     l.description                                AS cache_hit_ratio,
+     m.description                                AS cache_compute_count,
+     n.description                                AS cache_query_count
 
    FROM (SELECT
            *,
@@ -80,6 +86,9 @@ FROM
      LEFT JOIN nlp.nlp_job_status i ON nj.nlp_job_id = i.nlp_job_id AND i.status = 'PROPERTIES_USE_REORDERED_NLPQL'
      LEFT JOIN nlp.nlp_job_status j ON nj.nlp_job_id = j.nlp_job_id AND j.status = 'PROPERTIES_USE_CHAINED_QUERIES'
      LEFT JOIN nlp.nlp_job_status k ON nj.nlp_job_id = k.nlp_job_id AND k.status = 'PROPERTIES_USE_REDIS_CACHING'
-   ORDER BY nj.nlp_job_id DESC) q1;
+     LEFT JOIN nlp.nlp_job_status l ON nj.nlp_job_id = l.nlp_job_id AND l.status = 'STATS_CACHE_QUERY_COUNTS'
+     LEFT JOIN nlp.nlp_job_status m ON nj.nlp_job_id = m.nlp_job_id AND m.status = 'STATS_CACHE_COMPUTE_COUNTS'
+     LEFT JOIN nlp.nlp_job_status n ON nj.nlp_job_id = n.nlp_job_id AND n.status = 'STATS_CACHE_HIT_RATIO'
+   ORDER BY nj.nlp_job_id) q1s;
 
 

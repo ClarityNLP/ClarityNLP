@@ -14,7 +14,7 @@ from data_access import pipeline_config as config
 from data_access import solr_data
 from data_access import base_model
 from algorithms.sec_tag import *
-from cachetools import LRUCache, cached
+from cachetools import LRUCache, cached, keys
 
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
@@ -246,7 +246,8 @@ class BaseTask(luigi.Task):
                 for d in self.docs:
                     doc_id = d[util.solr_report_id_field]
                     if util.use_memory_caching == "true":
-                        document_cache[doc_id] = d
+                        k = keys.hashkey(doc_id)
+                        document_cache[k] = d
                     if util.use_redis_caching == "true" and redis_conn:
                         redis_conn.set("doc:" + doc_id, json.dumps(d))
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
