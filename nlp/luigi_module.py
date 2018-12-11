@@ -141,6 +141,12 @@ class PhenotypeTask(luigi.Task):
                                           str(stats["results"]))
             data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_FINAL_SUBJECTS",
                                           str(stats["subjects"]))
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_QUERY_COUNTS",
+                                          str(util.get_cache_query_count()))
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_COMPUTE_COUNTS",
+                                          str(util.get_cache_compute_count()))
+            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_HIT_RATIO",
+                                          str(util.get_cache_hit_ratio()))
 
             for k in util.properties.keys():
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.PROPERTIES + "_" + k,
@@ -304,7 +310,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "1002"
+    p_id = "1000"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,

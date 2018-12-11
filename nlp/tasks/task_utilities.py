@@ -14,8 +14,7 @@ from data_access import pipeline_config as config
 from data_access import solr_data
 from data_access import base_model
 from algorithms.sec_tag import *
-from cachetools import LRUCache, TTLCache, cached
-
+from cachetools import LRUCache, cached
 
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
@@ -33,15 +32,26 @@ else:
 
 @cached(document_cache)
 def _get_document_by_id(document_id):
+    util.add_cache_compute_count()
     return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
 
 
 def get_document_by_id(document_id):
     doc = None
-    if util.use_memory_caching == "true":
+
+    if util.use_redis_caching == "true":
+        util.add_cache_query_count()
+        txt = redis_conn.get("doc:" + document_id)
+        if not txt:
+            util.add_cache_compute_count()
+            doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+            redis_conn.set("doc:" + document_id, json.dumps(doc))
+        else:
+            doc = json.loads(txt)
+    elif util.use_memory_caching == "true":
+        util.add_cache_query_count()
         doc = _get_document_by_id(document_id)
-    elif util.use_redis_caching == "true":
-        doc = json.loads(redis_conn.get("doc:" + document_id))
+
     if not doc:
         return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
     else:

@@ -141,20 +141,24 @@ def get_race_for_doc(document_id):
 
 @cached(pipeline_cache)
 def _get_race_data(document_id):
+    util.add_cache_compute_count()
     return get_race_for_doc(document_id)
 
 
 def get_race_data(document_id):
     if util.use_redis_caching == "true":
+        util.add_cache_query_count()
         key = "raceFinder:" + str(document_id)
         res = redis_conn.get(key)
         if res:
             return json.loads(res)
         else:
+            util.add_cache_compute_count()
             res2 = get_race_for_doc(document_id)
             redis_conn.set(key, json.dumps(res2))
             return res2
     elif util.use_memory_caching == "true":
+        util.add_cache_query_count()
         return _get_race_data(document_id)
     else:
         return get_race_for_doc(document_id)
@@ -172,7 +176,7 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
-            if util.use_dl_trained_terms:
+            if util.use_dl_trained_terms == "true":
                 predictions = do_term_lookup(race_terms, document_text(doc))
                 for p in predictions.keys():
                     val = predictions[p]
@@ -192,13 +196,22 @@ class RaceFinderTask(BaseTask):
                 sentence_list = obj['sentences']
                 if len(result_list) > 0:
                     for result in result_list:
-                        obj = {
-                            'sentence': sentence_list[result.sentence_index],
-                            'start': result.start,
-                            'end': result.end,
-                            'value': result.race,
-                            'value_normalized': result.normalized_race,
-                        }
+                        if isinstance(result, list):
+                            obj = {
+                                'sentence': sentence_list[result[0]],
+                                'start': result[1],
+                                'end': result[2],
+                                'value': result[3],
+                                'value_normalized': result[4],
+                            }
+                        else:
+                            obj = {
+                                'sentence': sentence_list[result.sentence_index],
+                                'start': result.start,
+                                'end': result.end,
+                                'value': result.race,
+                                'value_normalized': result.normalized_race,
+                            }
 
                         self.write_result_data(temp_file, mongo_client, doc, obj)
 

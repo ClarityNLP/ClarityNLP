@@ -23,6 +23,7 @@ def get_finder(terms, filters, include_synonyms, include_descendants, include_an
         terms = json.loads(terms)
     finder_obj = TermFinder(terms, include_synonyms, include_descendants, include_ancestors, vocabulary,
                             filters=filters)
+
     return finder_obj
 
 
@@ -54,21 +55,31 @@ def get_term_matches(doc_id, term_list, include_synonyms, include_descendants, i
 
 @cached(pipeline_cache)
 def _get_cached_terms(doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, filters):
+    util.add_cache_compute_count()
     return get_term_matches(doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, filters)
 
 
-def get_cached_terms(doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, filters):
+def get_cached_terms(name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
+                     filters, has_special_filters):
     if util.use_redis_caching == "true" and redis_conn:
-        hashed_list = [doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, filters]
-        hashed_str = 'termFinder:' + str(hash(frozenset(hashed_list)))
+        thing = '%s|%s|%r|%r|%r|%s' % (doc_id, term_list, include_synonyms, include_descendants,
+                                       include_ancestors, vocabulary)
+        if has_special_filters:
+            thing += ("|%s" + filters)
+        # hashed_str = 'termFinder:' + str(hash(frozenset(hashed_list)))
+        # TODO use better key method, some recoverable hash
+        hashed_str = name + ':' + thing
         res = redis_conn.get(hashed_str)
+        util.add_cache_query_count()
         if res:
             objs = json.loads(res)
         else:
+            util.add_cache_compute_count()
             objs = get_term_matches(doc_id, term_list, include_synonyms, include_descendants, include_ancestors,
                                     vocabulary, filters)
             redis_conn.set(hashed_str, json.dumps(objs))
     elif util.use_memory_caching == "true":
+        util.add_cache_query_count()
         objs = _get_cached_terms(doc_id, term_list, include_synonyms, include_descendants, include_ancestors,
                                  vocabulary, filters)
     else:
@@ -77,7 +88,8 @@ def get_cached_terms(doc_id, term_list, include_synonyms, include_descendants, i
     return objs
 
 
-def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, docs, write_log_data, write_result_data):
+def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, docs, write_log_data, write_result_data,
+                    has_special_filters):
     pipeline_config = pipeline_config
     term_matcher = None
     json_filters = None
@@ -107,10 +119,10 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                 json_filters = json.dumps(filters)
             if not json_terms:
                 json_terms = json.dumps(pipeline_config.terms)
-            objs = get_cached_terms(doc[util.solr_report_id_field], json_terms, pipeline_config.
+            objs = get_cached_terms(name, doc[util.solr_report_id_field], json_terms, pipeline_config.
                                     include_synonyms, pipeline_config
                                     .include_descendants, pipeline_config.include_ancestors, pipeline_config
-                                    .vocabulary, json_filters)
+                                    .vocabulary, json_filters, has_special_filters)
             for obj in objs:
                 write_result_data(temp_file, mongo_client, doc, obj)
         else:
@@ -142,10 +154,12 @@ class TermFinderBatchTask(BaseTask):
 
     def run_custom_task(self, temp_file, mongo_client):
         filters = dict()
+        special_filters = False
         if self.pipeline_config.sections and len(self.pipeline_config.sections) > 0:
             filters[SECTIONS_FILTER] = self.pipeline_config.sections
+            special_filters = True
         run_term_finder(self.task_name, filters, self.pipeline_config, temp_file, mongo_client, self.docs,
-                        self.write_log_data, self.write_result_data)
+                        self.write_log_data, self.write_result_data, special_filters)
 
 
 class ProviderAssertionBatchTask(BaseTask):
@@ -154,9 +168,11 @@ class ProviderAssertionBatchTask(BaseTask):
     def run_custom_task(self, temp_file, mongo_client):
         pipeline_config = self.pipeline_config
 
+        special_filters = False
         pa_filters = provider_assertion_filters
         if pipeline_config.sections and len(pipeline_config.sections) > 0:
             pa_filters[SECTIONS_FILTER] = pipeline_config.sections
+            special_filters = True
 
         run_term_finder(self.task_name, pa_filters, self.pipeline_config, temp_file, mongo_client, self.docs,
-                        self.write_log_data, self.write_result_data)
+                        self.write_log_data, self.write_result_data, special_filters)

@@ -98,6 +98,34 @@ use_redis_caching = read_property('USE_REDIS_CACHING',
 use_dl_trained_terms = read_property('USE_DL_TRAINED_TERMS',
                                              ('optimizations', 'use_dl_trained_terms'),
                                              default='false')
+# TODO this out a bit more, this is more for experimental evaluation
+cache_counts = {
+    'compute': 0,
+    'query': 0
+}
+
+
+def add_cache_compute_count():
+    cache_counts['compute'] += 1
+
+
+def add_cache_query_count():
+    cache_counts['query'] += 1
+
+
+def get_cache_compute_count():
+    return cache_counts['compute']
+
+
+def get_cache_query_count():
+    return cache_counts['query']
+
+
+def get_cache_hit_ratio():
+    if get_cache_query_count() == 0:
+        return 0.0
+    ratio = float(get_cache_query_count() - get_cache_compute_count()) / float(get_cache_query_count())
+    return ratio
 
 
 def cmp_2_key(mycmp):
