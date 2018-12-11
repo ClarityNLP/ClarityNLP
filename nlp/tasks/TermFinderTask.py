@@ -1,5 +1,9 @@
-import json
+from cachetools import cached
 
+from algorithms import *
+from data_access import jobs
+from .task_utilities import BaseTask, pipeline_cache, init_cache, get_document_by_id, document_text, document_sections, \
+    redis_conn
 from cachetools import cached
 
 from algorithms import *
@@ -16,25 +20,27 @@ SECTIONS_FILTER = "sections"
 
 
 @cached(init_cache)
-def get_finder(terms, filters, include_synonyms, include_descendants, include_ancestors, vocabulary):
-    if filters:
-        filters = json.loads(filters)
-    if terms:
-        terms = json.loads(terms)
-    finder_obj = TermFinder(terms, include_synonyms, include_descendants, include_ancestors, vocabulary,
+def get_finder(key):
+    type_name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, has_special_filters, filters = get_values_from_key(key)
+    finder_obj = TermFinder(term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
                             filters=filters)
 
     return finder_obj
 
 
-def get_term_matches(doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, filters):
+def get_term_matches(key):
+    type_name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, has_special_filters, filters = get_values_from_key(
+        key)
+
     objs = list()
     doc = get_document_by_id(doc_id)
     section_headers, section_texts = document_sections(doc)
     # all sentences in this document
     doc_text = document_text(doc)
 
-    finder_obj = get_finder(term_list, filters, include_synonyms, include_descendants, include_ancestors, vocabulary)
+    keys = key.split('|')
+    keys[1] = ''
+    finder_obj = get_finder('|'.join(keys))
 
     terms_found = finder_obj.get_term_full_text_matches(doc_text, section_headers, section_texts)
     for term in terms_found:
@@ -53,20 +59,52 @@ def get_term_matches(doc_id, term_list, include_synonyms, include_descendants, i
     return objs
 
 
+def setup_key(name, doc_id, term_list, include_synonyms, include_descendants,
+                                   include_ancestors, vocabulary, filters, has_special_filters):
+    if isinstance(term_list, list):
+        term_list = json.dumps(term_list)
+    if isinstance(filters, dict):
+        filters = json.dumps(filters)
+    thing = '%s|%s|%s|%r|%r|%r|%s|%r' % (name, doc_id, term_list, include_synonyms, include_descendants,
+                                   include_ancestors, vocabulary, has_special_filters)
+    if has_special_filters:
+        thing += ("|%s" + filters)
+    else:
+        thing += '|'
+    return thing
+
+
+def get_values_from_key(key):
+    keys = key.split('|')
+    type_name = keys[0]
+    doc_id = keys[1]
+    term_list = json.loads(keys[2])
+    include_synonyms = keys[3] == "True"
+    include_descendants = keys[4] == "True"
+    include_ancestors = keys[5] == "True"
+    vocabulary = keys[6]
+    has_special_filters = keys[7] == "True"
+    if len(keys[8]) > 0:
+        filters = json.loads(keys[8])
+    else:
+        if type_name == "ProviderAssertion":
+            filters = provider_assertion_filters
+        else:
+            filters = dict()
+    return type_name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, has_special_filters, filters
+
+
 @cached(pipeline_cache)
-def _get_cached_terms(doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, filters):
+def _get_cached_terms(key):
     util.add_cache_compute_count()
-    return get_term_matches(doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, filters)
+    return get_term_matches(key)
 
 
 def get_cached_terms(name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
                      filters, has_special_filters):
+    thing = setup_key(name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
+                     filters, has_special_filters)
     if util.use_redis_caching == "true" and redis_conn:
-        thing = '%s|%s|%r|%r|%r|%s' % (doc_id, term_list, include_synonyms, include_descendants,
-                                       include_ancestors, vocabulary)
-        if has_special_filters:
-            thing += ("|%s" + filters)
-        # hashed_str = 'termFinder:' + str(hash(frozenset(hashed_list)))
         # TODO use better key method, some recoverable hash
         hashed_str = name + ':' + thing
         res = redis_conn.get(hashed_str)
@@ -75,16 +113,13 @@ def get_cached_terms(name, doc_id, term_list, include_synonyms, include_descenda
             objs = json.loads(res)
         else:
             util.add_cache_compute_count()
-            objs = get_term_matches(doc_id, term_list, include_synonyms, include_descendants, include_ancestors,
-                                    vocabulary, filters)
+            objs = get_term_matches(thing)
             redis_conn.set(hashed_str, json.dumps(objs))
     elif util.use_memory_caching == "true":
         util.add_cache_query_count()
-        objs = _get_cached_terms(doc_id, term_list, include_synonyms, include_descendants, include_ancestors,
-                                 vocabulary, filters)
+        objs = _get_cached_terms(thing)
     else:
-        objs = get_term_matches(doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
-                                filters)
+        objs = get_term_matches(thing)
     return objs
 
 
@@ -92,8 +127,6 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     has_special_filters):
     pipeline_config = pipeline_config
     term_matcher = None
-    json_filters = None
-    json_terms = None
     write_log_data(jobs.IN_PROGRESS, "Finding Terms with " + name)
 
     for doc in docs:
@@ -115,14 +148,10 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     }
                     write_result_data(temp_file, mongo_client, doc, obj)
         if util.use_memory_caching == 'true' or util.use_redis_caching == "true":
-            if not json_filters:
-                json_filters = json.dumps(filters)
-            if not json_terms:
-                json_terms = json.dumps(pipeline_config.terms)
-            objs = get_cached_terms(name, doc[util.solr_report_id_field], json_terms, pipeline_config.
+            objs = get_cached_terms(name, doc[util.solr_report_id_field], pipeline_config.terms, pipeline_config.
                                     include_synonyms, pipeline_config
                                     .include_descendants, pipeline_config.include_ancestors, pipeline_config
-                                    .vocabulary, json_filters, has_special_filters)
+                                    .vocabulary, filters, has_special_filters)
             for obj in objs:
                 write_result_data(temp_file, mongo_client, doc, obj)
         else:

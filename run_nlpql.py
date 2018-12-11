@@ -13,6 +13,7 @@ cur_job = 0
 env_path = './synthetic_query_gen/notebooks/env_files'
 evaluated_env_path = './synthetic_query_gen/notebooks/evaluated_env/'
 target_env_path = './'
+#ip = '18.224.57.156'
 ip = 'localhost'
 
 url = 'http://' + ip + ':5000/'
@@ -102,6 +103,6 @@ if __name__ == "__main__":
         call(["docker-compose", "up", "-d", "--build"])
         # job_runner('query', 100, 0)
     else:
-        startid = 295
+        startid = 2352
         for n in range(startid, startid + 500):
             cleanup(n)

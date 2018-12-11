@@ -1,5 +1,6 @@
 import configparser
 from os import getenv, environ, path
+import redis
 
 SCRIPT_DIR = path.dirname(__file__)
 config = configparser.RawConfigParser()
@@ -104,27 +105,46 @@ cache_counts = {
     'query': 0
 }
 
+try:
+    redis_conn = redis.Redis(host=redis_hostname, port=redis_host_port, decode_responses=True)
+    redis_conn.set('clarity_cache_compute', 0)
+    redis_conn.set('clarity_cache_query', 0)
+except Exception as ex:
+    redis_conn = None
+
 
 def add_cache_compute_count():
-    cache_counts['compute'] += 1
+    if redis_conn:
+        redis_conn.incr('clarity_cache_compute', 1)
 
 
 def add_cache_query_count():
-    cache_counts['query'] += 1
+    if redis_conn:
+        redis_conn.incr('clarity_cache_query', 1)
 
 
 def get_cache_compute_count():
-    return cache_counts['compute']
+    if redis_conn:
+        return redis_conn.get('clarity_cache_compute')
+    else:
+        return 0
 
 
 def get_cache_query_count():
-    return cache_counts['query']
+    if redis_conn:
+        return redis_conn.get('clarity_cache_query')
+    else:
+        return 0
 
 
 def get_cache_hit_ratio():
-    if get_cache_query_count() == 0:
+    if not redis_conn:
         return 0.0
-    ratio = float(get_cache_query_count() - get_cache_compute_count()) / float(get_cache_query_count())
+    query_count = float(get_cache_query_count())
+    compute_count = float(get_cache_compute_count())
+    if query_count == 0.0:
+        return 0.0
+    ratio = (query_count - compute_count) / query_count
     return ratio
 
 
