@@ -66,9 +66,9 @@ FROM
      CASE WHEN k.description IS NULL
        THEN 'false'
      ELSE k.description END                       AS redis_cache,
-     l.description                                AS cache_hit_ratio,
+     l.description                                AS cache_query_count,
      m.description                                AS cache_compute_count,
-     n.description                                AS cache_query_count
+     n.description                                AS cache_hit_ratio
 
    FROM (SELECT
            *,
@@ -89,6 +89,6 @@ FROM
      LEFT JOIN nlp.nlp_job_status l ON nj.nlp_job_id = l.nlp_job_id AND l.status = 'STATS_CACHE_QUERY_COUNTS'
      LEFT JOIN nlp.nlp_job_status m ON nj.nlp_job_id = m.nlp_job_id AND m.status = 'STATS_CACHE_COMPUTE_COUNTS'
      LEFT JOIN nlp.nlp_job_status n ON nj.nlp_job_id = n.nlp_job_id AND n.status = 'STATS_CACHE_HIT_RATIO'
-   ORDER BY nj.nlp_job_id) q1s;
+   ORDER BY nj.nlp_job_id desc) q1s;
 
 
