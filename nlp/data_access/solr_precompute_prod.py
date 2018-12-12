@@ -18,7 +18,6 @@ url = solr_url + '/update?commit=true'
 headers = {
     'Content-type': 'application/json',
 }
-batch_size = 10
 doc_size = 0
 spacy = segmentation_init(tries=2)
 
@@ -46,11 +45,33 @@ def document_text(doc, clean=True):
         return ''
 
 
+def retry(docs, retry_field='sections'):
+    updated_docs = list()
+
+    for d in docs:
+        if retry_field == 'sections':
+            d[section_names_key] = []
+            d[section_text_key] = []
+        else:
+            d[sentences_key] = [document_text(d, clean=True)]
+        updated_docs.append(d)
+    data = json.dumps(updated_docs)
+    response2 = requests.post(url, headers=headers, data=data)
+
+    if response2.status_code == 200:
+        print('success!!!')
+    else:
+        print('fail: ', response2.reason)
+        print(response2.content)
+        if retry_field == 'sections':
+            retry(updated_docs, retry_field='sentences')
+
+
 def pre_compute(n):
     try:
         docs = query("-section_name_attrs:*", solr_url=solr_url, mapper_inst=util.report_mapper_inst,
                      mapper_key=util.report_mapper_key,
-                     mapper_url=util.report_mapper_url, start=n, rows=batch_size)
+                     mapper_url=util.report_mapper_url, start=n, rows=1)
         updated_docs = list()
         ids = list()
         for doc in docs:
@@ -76,22 +97,23 @@ def pre_compute(n):
                 ids.append(doc[util.solr_report_id_field])
                 updated_docs.append(doc)
         print("******************************")
-        print('updating the following docs')
-        print(ids)
-        print('\n')
-        print("%d/%d" % (len(ids), batch_size))
-        print('\n')
-        print("updated overall:")
-        pct = (float(n + batch_size) / float(doc_size)) * 100.0
-        print("%d/%d (%f pct)" % ((n + batch_size), doc_size, pct))
+        print('updating the following docs: ', ids)
+        if n % 10 == 0:
+            done_doc_size = query_doc_size("-section_name_attrs:*", solr_url=solr_url, mapper_inst=util.report_mapper_inst,
+                                      mapper_key=util.report_mapper_key, mapper_url=util.report_mapper_url)
+
+            pct = (float(done_doc_size) / float(doc_size)) * 100.0
+            print("updated overall: %d/%d (%f pct)" % (done_doc_size, doc_size, pct))
         print("******************************")
         data = json.dumps(updated_docs)
         response2 = requests.post(url, headers=headers, data=data)
 
         if response2.status_code == 200:
-            print('success')
+            print('success!!!')
         else:
-            print('fail')
+            print('fail: ', response2.reason)
+            print(response2.content)
+            retry(updated_docs)
     except Exception as ex:
         print('exception updating docs')
         return False
@@ -100,7 +122,7 @@ def pre_compute(n):
 
 def get_documents():
     global doc_size
-    doc_size = query_doc_size("-section_name_attrs:*", solr_url=solr_url, mapper_inst=util.report_mapper_inst,
+    doc_size = query_doc_size("*:*", solr_url=solr_url, mapper_inst=util.report_mapper_inst,
                               mapper_key=util.report_mapper_key, mapper_url=util.report_mapper_url)
 
     i = 0
@@ -108,7 +130,7 @@ def get_documents():
         print("on batch %d" % i)
         pre_compute(i)
 
-        i += batch_size
+        i += 1
 
 
 if __name__ == "__main__":

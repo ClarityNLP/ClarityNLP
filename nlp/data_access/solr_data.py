@@ -180,7 +180,7 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     data = make_post_body(qry,  fq, sort, start, rows)
     post_data = json.dumps(data, indent=4)
 
-    if util.debug_mode:
+    if util.debug_mode == "true":
         print("Querying " + url)
         print(post_data)
 
@@ -221,7 +221,7 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
     data = make_post_body(qry, fq, sort, start, rows)
     post_data = json.dumps(data)
 
-    if util.debug_mode:
+    if util.debug_mode == "true":
         print("Querying to get counts " + url)
         print(post_data)
 
@@ -239,7 +239,7 @@ def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):
     data = make_post_body("report_id:" + report_id, '', '', 0, 1)
     post_data = json.dumps(data)
 
-    if util.debug_mode:
+    if util.debug_mode == "true":
         print("Querying to get document " + url)
         print(post_data)
 

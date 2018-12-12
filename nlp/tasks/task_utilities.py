@@ -59,7 +59,7 @@ def get_document_by_id(document_id):
 
 
 def document_sections(doc):
-    if util.use_precomputed_segmentation == "true" and section_names_key in doc:
+    if util.use_precomputed_segmentation == "true" and section_names_key in doc and len(doc[section_names_key]) > 0:
         return doc[section_names_key], doc[section_text_key]
     else:
         txt = document_text(doc)
@@ -73,7 +73,7 @@ def document_sections(doc):
 
 
 def document_sentences(doc):
-    if util.use_precomputed_segmentation == "true" and sentences_key in doc:
+    if util.use_precomputed_segmentation == "true" and sentences_key in doc and len(doc[sentences_key]) > 0:
         return doc[sentences_key]
     else:
         txt = document_text(doc)
