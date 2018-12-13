@@ -1,17 +1,41 @@
 Custom Local Setup
 ==================
 
-Use this setup only when you are not using Docker, and just wish to run the main
-NLP Flask API standalone. You might do this if you already have a Solr, Postgres
-and MongoDB hosted elsewhere, or you don't want to host them locally.
+This page provides instructions on how to run ClarityNLP locally on your
+machine **without** having to use Docker. It is much simpler to use Docker,
+since everything is provided and configured for you. But if you want more
+control over your ClarityNLP installation and prefer to configure everything
+yourself, then these are the instructions you need.
+
+For now, we will assume that you want to install and run everything on
+a Mac laptop (we use Macs for development).
+
+Prerequisites
+-------------
+
+First of all, install the `Homebrew package manager <https://brew.sh>`_
+by following the instructions provided at the Homebrew website. We like to use
+Homebrew since it does not require sudo privileges to install or remove
+packages.
+
+Next install the latest stable version of python3. There are several options
+for installing python3. One option is to install it with Homebrew by running
+the command ``brew install python3``.
+
+Another option, the one we recommend if your system has the required disk space,
+is to install the `Anaconda <https://www.anaconda.com>`_ python distribution,
+which gives you numpy, scipy, matplotlib, and a full python-based numerical
+computing and machine learning stack. The installation package and instructions
+are provided at the Anaconda website. Important: make sure you download the
+installation package for the latest python3 release, **not** python 2.7.
 
 
-Note: These instructions are only needed if you are not installing via Docker
-(which is recommended). In that case, you can skip past this setup.
+Installing Additional Python Requirements
+-----------------------------------------
 
-Installing Requirements
------------------------
-
+After installing Homebrew and python3, open a terminal window and change
+directories to the ``ClarityNLP/nlp`` folder. Run these commands to install
+additional python packages required by ClarityNLP:
 ::
    
    pip3 install -r requirements.txt
@@ -19,24 +43,60 @@ Installing Requirements
    python3 -m spacy download en
    python3 -m spacy download en_core_web_md
 
-If you want to use conda, you can setup the environment using `spec-file.txt`.
-
-Install models:
-
+Next, install some additional model files required by the Natural Language
+Toolkit (nltk):
 ::
 
   python3 install_models.py
 
-Properties File
----------------
-In the ``ClarityNLP/nlp`` directory, copy `example.cfg` to `project.cfg` and
-update with your settings.
   
-Vocabulary
-----------
-ClarityNLP can access OMOP vocabulary data in a local PostgreSQL database. To
+Project Properties File
+-----------------------
+In the ``ClarityNLP/nlp`` directory, copy ``example.cfg`` to ``project.cfg``.
+We will update the different settings in this file as we proceed.
+  
+MongoDB
+-------
+  
+ClarityNLP writes results to `MongoDB <https://www.mongodb.com/>`_, so you need a MongoDB server running on
+your system. Use Homebrew to install MongoDB with this command:
+::
+   brew install mongodb
+
+After the installation finishes, run the command ``brew info mongodb``. This
+will display information about how to start the MongoDB server. You can either
+configure the server to start automatically each time your system reboots, or
+you can start the server manually. We will assume manual startup, which can be
+accomplished by opening another terminal window and running this command (which
+assumes the default path to the mongo config file):
+::
+   mongod --config /usr/local/etc/mongod.conf
+
+From a **different** terminal window, start the MongoDB client by running
+``mongo``. If the client launches successfully you should see a ``>`` prompt.
+Enter ``show databases`` at the prompt and press enter. The system should
+respond with at least the *admin* and *test* databases. If you see this your
+installation should be OK. You can stop the client by typing ``exit`` at the
+prompt. Stop the mongo server by running <CTRL>-C in the server window.
+
+MongoDB listens by default on port 27017, which is what we assume in these
+instructions. Make sure your ``project.cfg`` file contains the following
+entries in the ``[mongo]`` section:
+::
+   [mongo]
+   host=localhost
+   port=27017
+   db=nlp
+   working_index=job_id
+   working_collection=pipeline_temp
+
+  
+OMOP Vocabulary Files
+---------------------
+
+ClarityNLP accesses OMOP vocabulary data in a local PostgreSQL database. To
 setup the database, the vocabulary files must first be downloaded and unzipped,
-then copied into the database.
+then imported into the database.
 
 Follow these steps to download and unzip the vocabulary data. The zip file is
 approximately 0.5 GB in size and will take some time to download.
@@ -63,44 +123,47 @@ You should see the following files after unzipping:
    CONCEPT_RELATIONSHIP.csv
    DRUG_STRENGTH.csv
 
-Postgres
---------
+PostgreSQL
+----------
 
-To setup the Postgres database, first install postgresql if it is not already
-installed on your system. Instructions for downloading and installing the
-database can be found at the `PostgreSQL homepage <https://www.postgresql.org/>`_.
+Now we need to install and configure PostgreSQL. Perhaps the easiest option
+for MacOSX is to download and install
+`Postgres.app <https://postgresapp.com/>`_, which takes care of most of the
+setup and configuration for you. Download the .dmg file from the Postgres.app
+website, run the installer, and click `initialize` to create a new server.
 
-An important location for the postgres installation is the "data directory".
-For purposes of this guide we will assume that it is located at ``usr/local/var/postgres``.
-If that is NOT the location on your system, substitute the path to your
-postgres data directory in the following instructions.
+After everything is installed and running, you will see an elephant icon in
+the menu bar at the upper right portion of your screen. Click the icon and a
+menu will appear. The button in the lower right corner can be used to start
+and stop the database server. For now, click the button and stop the server.
 
-After installing the database, we need to shutdown the database server and edit
-the postgres config file. Check to see if the postgres server is running by
-opening a terminal and running the command ``pg_isready``.  If this command
-reports ``accepting connections``, it means that the server is running and it
-therefore needs to be stopped. Shutdown the server manually with this command:
-::
-    pg_ctl -D /usr/local/var/postgres stop
+Edit the PostgreSQL Config File
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Verify that the server has been stopped by running ``pg_isready`` once again.
-If the server has been stopped the command should report ``no response``.
+Click the elephant icon, click the ``Open Postgres`` menu item, and then click
+the ``Server Settings`` button on the dialog that appears. Note the location of
+the data directory, which defaults to
+``~/Library/Application Support/Postgres/var-11``. The ``postgresql.conf``
+file is located in the data directory and contains various important parameters
+that govern the operation of the database. We need to edit one of these params
+to make the data ingest process run more smoothly.
 
 Open a text editor, browse to the data directory, and open the file
-``postgresql.conf``. Search the file for the entry ``max_wal_size``. If the
-entry is commented out, uncomment it and set its value to at least 30GB. By
-doing this we prevent checkpoints from occurring too frequently and slowing
-down the data ingest process. Save the file after editing.
+``postgresql.conf``. Search the file for the entry ``max_wal_size``, which
+governs the size of the write-ahead log (hence the WAL acronym). If the
+entry is commented out, uncomment it and set its value to 30GB. By doing this
+we prevent checkpoints from occurring too frequently and slowing down the data
+ingest process. Save the file after editing.
 
-Restart the postgres server with this command:
-::
-    pg_ctl -D /usr/local/var/postgres start
+Then restart the server by clicking on the elephant icon and pressing the
+start button.
 
 Creating Accounts
 ^^^^^^^^^^^^^^^^^
 
 With the database server installed, configured, and running, we now need to
-create a user account. Open a terminal and browse to
+create a user account. Open a terminal and browse to this location in your
+local copy of the ClarityNLP git repo:
 ``ClarityNLP/utilities/nlp-postgres``. From this location run the following
 commands:
 ::
@@ -115,7 +178,7 @@ run these commands to setup the database:
 ::
    psql postgres -U mimic_v5
    CREATE DATABASE mimic_v5;
-   GRANT ALL PRIVILIGES ON DATABASE mimic_v5 to mimic_v5;
+   GRANT ALL PRIVILEGES ON DATABASE mimic_v5 to mimic_v5;
    \connect mimic_v5
    \i ddl/ddl.sql
    \i ddl/omop_vocab.sql
@@ -132,8 +195,9 @@ data into the database:
    \connect mimic_v5
    \i dml/copy_vocab.sql
 
-The data copying process could take a long time, possibly more than one
-hour. As the copy progresses, it should generate the following output:
+The data copying process could take a long time, possibly more than one hour,
+depending on the speed of your system. As the copy progresses, it should
+generate the following output:
 ::
    SET
    COPY 2465049
@@ -146,13 +210,14 @@ hour. As the copy progresses, it should generate the following output:
    COPY 321
    COPY 40
 
-After the copy finishes, log out with the command ``\q``.
+After the copying process finishes, log out with the command ``\q``.
 
-Update Property File
-^^^^^^^^^^^^^^^^^^^^
+Update Config Settings
+^^^^^^^^^^^^^^^^^^^^^^
 
-Open the file ``ClarityNLP/nlp/project.cfg`` in a text editor. Search the file
-for the ``[pg]`` section. Set the entries as follows:
+After completing all of these steps, open your ``project.cfg`` file again and
+update the settings to match your system. If you have followed the instructions
+as given, your ``[pg]`` section should look like this:
 ::
    [pg]
    host=localhost
@@ -161,22 +226,35 @@ for the ``[pg]`` section. Set the entries as follows:
    password=i3lworks
    port=5432
 
-Verify the value of the port by opening the postgres.conf file and searching for
-the ``port`` entry. Set the port value above to match the port number in the
-postgresql.conf file, even if the port entry in that file is commented out.
+Double-check the port number on your system by clicking on the elephant icon
+and selecting the ``Open Postgres`` menu item. You should see a database icon
+for the mimic_v5 database that you just configured. Click the icon so that it
+gets surrounded by the highlight square, then click the ``Server Settings...``
+button above it. Note the port number, and, if necessary, change the value in
+your project.cfg file to match it.
+   
 
 Solr
 ----
-Install and configure Solr by following the instructions on the
-Developer Guide/Technical Background/Solr page of this documentation.
+ClarityNLP uses `Solr <http://lucene.apache.org/solr/>`_ as its document store.
+Install Solr with Homebrew by running this command:
+::
+   brew install solr
 
-Ingest Data
-^^^^^^^^^^^
-TBD
+After the installation finishes, run the command ``brew info solr`` to see how
+to start Solr. You can either have it start on boot or on demand with the
+command
+::
+   solr start
+
+After starting Solr, follow the instructions at 
+`Custom Solr Setup <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/technical_background/solr.html>`_
+for configuring various field types required by ClarityNLP.
+
 
 Map Fields
 ^^^^^^^^^^
-The final task for configuring Solr is to setup a mapping of fields in your
+The next task for configuring Solr is to setup a mapping of fields in your
 data set to the fields that ClarityNLP expects. The minimal set of fields
 required by ClarityNLP is:
 
@@ -209,7 +287,7 @@ The data fields in your documents can be mapped to this set of fields in the
 should have these entries:
 ::
    [solr]
-   url=http://solr.hdap.gatech.edu:8983/solr/mimic
+   url=http://localhost:8983/solr/mimic
    text_field=report_text
    id_field=id
    report_id_field=report_id
@@ -229,6 +307,15 @@ remaining fields, assign the name of the closest matching field in your
 document set. It is important that each field be mapped.
 
 
+Ingest Data
+^^^^^^^^^^^
+
+Follow the instructions for ingesting documents `here <https://clarity-nlp.readthedocs.io/en/latest/setup/ingest/generic_ingestion.html>`_.
+
+Python scripts for ingesting some common document types can be found
+`here <https://github.com/ClarityNLP/Utilities>`_.
+
+
 Temp and Log Directories
 ------------------------
 Setup a temporary directory on your system, make sure that it is writable by
@@ -242,14 +329,25 @@ to be ``/tmp``, you would set the values in ``project.cfg`` to be:
    [log]
    dir=/tmp
 
-You can also use different locations for the temp and log directories if you
-want.
 
 Running Locally
 ---------------
 
-Running the Luigi Central Scheduler
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1. Start the MongoDB Server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Launch the the ``mongod`` server by supplying the path to your local config
+file as follows (this command uses the default config file):
+::
+   mongod --config /usr/local/etc/mongod.conf
+
+Verify that the mongo server is running by typing ``mongo`` into a terminal to
+start the mongo client. It should connect to the database and prompt for input.
+Exit the client by typing ``exit`` in the terminal.
+
+
+2. Start the Luigi Central Scheduler
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ClarityNLP uses Luigi to schedule and manage the data processing tasks. Luigi
 must be manually started each time you run.
@@ -265,48 +363,47 @@ section. Set the values as follows:
 
 Make sure that the ``home`` entry is set to the location of the luigi binary on
 your system. On a Linux or Mac system, you can find this path by running
-``which luigi``.
+``which luigi``. If you installed the Anaconda python3 distribution, this path
+should be ``/anaconda3/bin/luigi``.
 
-Next, open a terminal and enter this command to launch Luigi. You can replace
-the bracketed entries by ``pid``, ``logs``, and ``statefile`` if dedicated
-directories for these do not exist:
+We will run Luigi from a dedicated directory. Open a terminal window and create
+it with these commands:
 ::
-   luigid --background --pidfile <PATH_TO_PIDFILE> --logdir <PATH_TO_LOGDIR> --state-path <PATH_TO_STATEFILE>
+   cd ~/tmp
+   mkdir luigi
+   cd luigi
 
-Running MongoDB
-^^^^^^^^^^^^^^^
-
-If you run MongoDB locally, start the ``mongod`` server by supplying the path
-to your local config file as follows:
+Enter the next command to launch Luigi:
 ::
-   mongod --config /path/to/mongod.conf
+   luigid --pidfile pid --logdir logs --state-path statefile
 
-If you do not use a custom config file, omit the ``config`` argument.
+Luigi should start and the command prompt should become inactive.
 
-Verify that the mongo server is running by typing ``mongo`` into a terminal to
-start the mongo client. It should connect to the database and prompt for input.
-Exit the client by typing ``quit()`` in the terminal.
+You can stop Luigi by entering <CTRL>-C in this window.
 
-Runnning Postgres
-^^^^^^^^^^^^^^^^^
 
-If your Postgres server is not already running, start it using the ``pg_ctl``
-command above. Verify that your server is available by running ``pg_isready``.
-It should report ``accepting connections``.
+3. Start the Postgres Server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Ping Solr
-^^^^^^^^^
+If your Postgres server is not already running, start it by clicking the
+elephant icon and pressing the start button at the lower right of the popup
+menu. Open another terminal and verify that your server is available by
+running ``pg_isready``. It should report ``accepting connections``.
+
+
+4. Ping Solr
+^^^^^^^^^^^^
 
 Verify that you can communicate with your Solr instance by pinging it. Open a
 Web browser and visit the URL formed by appending ``/admin/ping`` to your Solr
 URL. For instance, using the example URL above, the ping URL would be:
-``http://solr.hdap.gatech.edu:8983/solr/mimic/admin/ping``. The Web browser
-should display a status of ``OK`` if it is connected. If you get an HTTP 404
-error, then recheck your URL.
+``http://localhost:8983/solr/mimic/admin/ping``. The Web browser should display
+a status of ``OK`` if it is connected. If you get an HTTP 404 error, recheck
+your URL.
 
 
-Run Flask app
-^^^^^^^^^^^^^
+5. Start the ClarityNLP Flask Webserver
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ClarityNLP uses Flask as the underlying web framework. From the
 ``ClarityNLP/nlp`` directory, launch the web server as follows:
@@ -315,7 +412,7 @@ ClarityNLP uses Flask as the underlying web framework. From the
    python3 -m flask run
 
 If you want to run Flask in development mode with an active debugger,
-use this command sequence:
+use this command sequence instead:
 ::
    export FLASK_APP=api.py
    export FLASK_ENV=development
@@ -333,3 +430,9 @@ When initialization is complete you should see output similar to this:
 
 At this point ClarityNLP is fully initialized and waiting for commands.
 
+Detailed instructions on how to run jobs with ClarityNLP can be found in
+our `Cooking with Clarity <https://github.com/ClarityNLP/ClarityNLP/tree/master/notebooks/cooking>`_
+sessions. These are `Jupyter <https://jupyter.org/>`_ notebooks presented in a
+tutorial format. Simply click on any of the ``.ipynb`` files to open the
+notebook in a Web browser. These notebooks provide in-depth explorations of
+topics relevant to computational phenotyping.
