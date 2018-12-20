@@ -16,9 +16,7 @@ WebEx: https://gtriconf.webex.com/join/charity.hilton
 ***
 
 ### Previous Cooking Sessions
-* 19 Dec 2018 - Cancelled
 * 5 Dec 2018 - Advanced NLPQL Processing, [Recording](https://youtu.be/_bPnHRL7GC4) | [Jupyter Notebook](https://github.com/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_120518.ipynb)
-* 21 Nov 2018 - Cancelled for Thanksgiving
 * 7 Nov 2018 - Getting ClarityNLP Up and Running in Your Environment, [Recording](https://youtu.be/0KaLZAZ5RjY) | [Jupyter Notebook](https://github.com/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_110718.ipynb)
 * 24 Oct 2018 - Custom API Integration, [Recording](https://youtu.be/H5johzKtc3M) | [Jupyter Notebook](https://github.com/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_102418.ipynb)
 * 10 Oct 2018 - OHDSI and ClarityNLP, [Recording](https://youtu.be/vNsym9ENPXU) | [Jupyter Notebook](https://nbviewer.jupyter.org/github/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_101018.ipynb)
