@@ -1782,7 +1782,7 @@ def expand_logical_result(eval_result, mongo_collection_obj):
         
         group_index += 1
                 
-    return oid_lists
+    return doc_map, oid_lists
     
     
 ###############################################################################
@@ -1931,7 +1931,7 @@ def evaluate_expressions(mongo_collection_obj,    # db.collection_name
                                      expr_obj.expr_text,
                                      mongo_collection_obj)
 
-            oid_lists = expand_logical_result(result, mongo_collection_obj)
+            doc_map, oid_lists = expand_logical_result(result, mongo_collection_obj)
             
             # write results to DB - TBD
             
