@@ -20,6 +20,7 @@ requests>=2.20.0
 requests-file==1.4.2
 requests-oauthlib==0.8.0
 simplejson==3.13.2
+sly==0.3
 spacy==2.0.9
 sphinx==1.7.4
 sphinx-autobuild==0.7.1
