@@ -64,11 +64,12 @@ EVAL_RESULT_FIELDS = [
     # list of strings, the postfix representation of the expression
     'postfix_tokens',
 
-    # _id values of all result documents that satisfy the expression
+    # list of _id values of all result documents that satisfy the expression
     'doc_ids',
 
-    # groups of _id values for logic expressions;
-    # there is one group per value of the context variable
+    # list of lists; each inner list is a group of _id values
+    # there is one group per value of the context variable, representing the
+    # docs found for that group
     'group_list',
 ]
 
