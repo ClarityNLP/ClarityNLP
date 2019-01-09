@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 """
 
-TODO: do a run using the hosted mongo, shorten variable names,
-      change test code to use remote mongo
-
-      Change MeasFinder to return None for unused measurement fields.
-      Returning -1 causes query errors.
-
-      Get support for '$' in nlpql feature names working
-      _str_identifier problem with \b and $
 
 """
 
@@ -22,11 +14,18 @@ from pymongo import MongoClient
 from collections import namedtuple
 from bson.objectid import ObjectId
 
-from data_access.expr_lexer  import NlpqlExpressionLexer
-from data_access.expr_parser import NlpqlExpressionParser
-from data_access.expr_parser import NLPQL_EXPR_OPSTRINGS
-from data_access.expr_parser import NLPQL_EXPR_OPSTRINGS_LC # lowercase
-from data_access.expr_parser import NLPQL_EXPR_LOGIC_OPERATORS
+if __name__ == '__main__':
+    from expr_lexer  import NlpqlExpressionLexer
+    from expr_parser import NlpqlExpressionParser
+    from expr_parser import NLPQL_EXPR_OPSTRINGS
+    from expr_parser import NLPQL_EXPR_OPSTRINGS_LC # lowercase
+    from expr_parser import NLPQL_EXPR_LOGIC_OPERATORS
+else:
+    from data_access.expr_lexer  import NlpqlExpressionLexer
+    from data_access.expr_parser import NlpqlExpressionParser
+    from data_access.expr_parser import NLPQL_EXPR_OPSTRINGS
+    from data_access.expr_parser import NLPQL_EXPR_OPSTRINGS_LC # lowercase
+    from data_access.expr_parser import NLPQL_EXPR_LOGIC_OPERATORS
 
 # expression types
 EXPR_TYPE_MATH    = 'math'
@@ -181,6 +180,7 @@ _R_TO_L_OPS = ['^'] # exponentiation
 _LEFT_PARENS  = '('
 _RIGHT_PARENS = ')'
 _CHAR_SPACE = ' '
+_EMPTY_STRING = ''
 
 
 ###############################################################################
@@ -1784,9 +1784,149 @@ def expand_logical_result(eval_result, mongo_collection_obj):
                 
     return doc_map, oid_lists
     
-    
+
 ###############################################################################
-def generate_expressions(final_nlpql_feature, nlpql_infix_expression):
+def _occurrence_count(pattern, text):
+    """
+    Return the number of occurrences of pattern in text.
+    """
+
+    count = 0
+    
+    pos = text.find(pattern)
+    while -1 != pos:
+        count += 1
+        pos = text.find(pattern, pos + len(pattern))
+
+    return count
+
+
+###############################################################################
+def is_valid(infix_expression, data_entities_list):
+    """
+
+    Check the expression and determine whether it can be evaluated with
+    this module. All tokens must be recognized entities. If a token is
+    unrecognized, try to separate it into a list of known data_entities
+    separated by logic operators. If that fails, the expression cannot be
+    evaluated.
+    """
+
+    if _TRACE: print('Called is_valid')
+    
+    infix_tokens = infix_expression.split()
+
+    # ensure that NLPQL feature tokens are valid data entities
+
+    new_tokens = []
+    for token in infix_tokens:
+        if _LEFT_PARENS == token or _RIGHT_PARENS == token:
+            new_tokens.append(token)
+            continue
+        match = _regex_variable.match(token)
+        if match:
+            new_tokens.append(token)
+            continue
+        if token in NLPQL_EXPR_OPSTRINGS:
+            new_tokens.append(token)
+            continue
+        match = _regex_numeric_literal.match(token)
+        if match:
+            new_tokens.append(token)
+            continue
+        if token in NLPQL_EXPR_LOGIC_OPERATORS:
+            new_tokens.append(token)
+            continue
+        match = _regex_nlpql_feature.match(token)
+        if not match:
+            print('\tTOKEN OF UNKNOWN TYPE: {0}'.format(token))
+            return (False, _EMPTY_STRING)
+        
+        matching_text = match.group()
+        if token in data_entities_list:
+            new_tokens.append(token)
+            continue
+        else:
+            # try to resolve into data_entity + logic_op + remainder
+            print('\tResolving: {0}'.format(token))
+            new_tokens.append(_LEFT_PARENS)
+            while True:
+                found_it = False
+                start_token = token
+                for de in data_entities_list:
+                    print('\tSearching for {0} in {1}'.format(de, token))
+                    if token.startswith(de):
+                        print('\t\tFound: {0}'.format(de))
+                        new_tokens.append(de)
+                        token = token[len(de):]
+                        print('\t\tRemaining token: ->{0}<-'.format(token))
+                        if len(token) > 0:
+                            # need logic op
+                            for lop in NLPQL_EXPR_LOGIC_OPERATORS:
+                                if token.startswith(lop):
+                                    print('\t\tFound logic op: {0}'.format(lop))
+                                    new_tokens.append(lop)
+                                    token = token[len(lop):]
+                                    print('\t\tRemaining token: ->{0}<-'.format(token))
+                                    found_it = True
+                        else:
+                            # no more text to match
+                            found_it = True        
+
+                        break
+                if not found_it or start_token == token:
+                    print('\tUNKNOWN NLPQL FEATURE: {0}'.format(matching_text))
+                    return (False, _EMPTY_STRING)
+
+                if 0 == len(token):
+                    # fix is complete
+                    new_tokens.append(_RIGHT_PARENS)
+                    break
+
+    # if here, resolved all the tokens
+    new_infix_expression = ' '.join(new_tokens)
+    print('\tNEW INFIX EXPRESSION: {0}'.format(new_infix_expression))
+    return (True, new_infix_expression)
+
+
+###############################################################################
+def parse_expression(nlpql_infix_expression, data_entities_list):
+    """
+    Parse the NLPQL expression and evaluate any literal subexpressions.
+    Check the result for validity. Return a fully-parenthesized expression
+    if the expression is valid and can be evaluated, or an empty string
+    if not.
+    """
+
+    if _TRACE: print('Called parse_expression')
+
+    lexer = NlpqlExpressionLexer()
+    parser = NlpqlExpressionParser()    
+    
+    # parse the infix expression and get a fully-parenthesized infix result
+    try:
+        infix_result = parser.parse(lexer.tokenize(nlpql_infix_expression))
+    except SyntaxError as e:
+        print('\tSyntaxError exception in nlpql_expression::generate_expressions')
+        print('\tmsg: {0}'.format(e.msg))
+        return _EMPTY_STRING
+        
+    if _TRACE: print('\tParse result: "{0}"'.format(infix_result))
+
+    # evaluate any subexpressions consisting only of numeric literals
+    infix_result = _evaluate_literals(infix_result)
+    if _TRACE: print('  Evaluated literals: "{0}"'.format(infix_result))
+
+    # check for validity and try to correct if invalid
+    ok, infix_result = is_valid(infix_result, data_entities_list)
+    if not ok:
+        return _EMPTY_STRING
+
+    return infix_result
+    
+
+###############################################################################
+def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_expression):
     """
     Parse the NLPQL expression, evaluate any literal subexpressions, and
     resolve whateve remains into a set of subexpressions of either
@@ -1796,25 +1936,9 @@ def generate_expressions(final_nlpql_feature, nlpql_infix_expression):
 
     if _TRACE: print('Called nlpql_expression::generate_expressions')
 
-    lexer = NlpqlExpressionLexer()
-    parser = NlpqlExpressionParser()    
+    # determine the expression type, need math, logic, or mixed
+    expr_type = _expr_type(parse_result)
     
-    # parse the infix expression and get a fully-parenthesized infix result
-    try:
-        infix_result = parser.parse(lexer.tokenize(nlpql_infix_expression))
-    except SyntaxError as e:
-        print('SyntaxError exception in nlpql_expression::generate_expressions')
-        print('msg: {0}'.format(e.msg))
-        return []
-        
-    if _TRACE: print('\tParse result: "{0}"'.format(infix_result))
-
-    # evaluate any subexpressions consisting only of numeric literals
-    infix_result = _evaluate_literals(infix_result)
-    if _TRACE: print('  Evaluated literals: "{0}"'.format(infix_result))
-
-    expr_type = _expr_type(infix_result)
-
     if EXPR_TYPE_UNKNOWN == expr_type:
         print('\tExpression has unknown type: "{0}"'.
               format(nlpql_infix_expression))
@@ -1827,7 +1951,7 @@ def generate_expressions(final_nlpql_feature, nlpql_infix_expression):
         expr_obj = ExpressionObject(
             expr_type     = EXPR_TYPE_MATH,
             nlpql_feature = final_nlpql_feature,
-            expr_text     = infix_result
+            expr_text     = parse_result
         )
         expression_object_list.append(expr_obj)
 
@@ -1835,14 +1959,14 @@ def generate_expressions(final_nlpql_feature, nlpql_infix_expression):
         expr_obj = ExpressionObject(
             expr_type     = EXPR_TYPE_LOGIC,
             nlpql_feature = final_nlpql_feature,
-            expr_text     = infix_result
+            expr_text     = parse_result
         )
         expression_object_list.append(expr_obj)
     
     elif EXPR_TYPE_MIXED == expr_type:
 
         # resolve mixed expressions into pure subexpressions
-        subexpressions, final_infix_expr = _resolve_mixed(infix_result)
+        subexpressions, final_infix_expr = _resolve_mixed(parse_result)
 
         # the new infix expression includes the subexpression temporaries
         final_infix_expr = _remove_unnecessary_parens(final_infix_expr)        
@@ -1946,7 +2070,14 @@ def _run_tests(job_id, context):
     Assumes that a ClarityNLP run has been completed using the 'data_gen.nlpql'
     NLPQL file. Enter the job_id for the data generation run on the command
     line.
+
+    Ensure that the data entities list matches those used for the run.
     """
+
+    DATA_ENTITIES_LIST = [
+        'hasRigors', 'hasDyspnea', 'hasNausea', 'hasVomiting', 'hasShock',
+        'hasTachycardia', 'Temperature', 'hasLesion', 'LesionMeasurement'
+    ]
 
     EXPRESSIONS = [
 
@@ -1980,12 +2111,13 @@ def _run_tests(job_id, context):
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
         # '((hasShock) AND (hasDyspnea))',
         # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
+        '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
         # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
         # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
         # ' hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701, 
         # '(hasRigors OR hasDyspnea) AND hasTachycardia', #286
         # 'hasRigors AND (hasTachycardia AND hasNausea)',
-        '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
+        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
 
         # # logical NOT is TBD; requires NLPQL feature dependencies
         # # 'hasRigors NOT hasNausea',
@@ -2025,8 +2157,14 @@ def _run_tests(job_id, context):
     for e in EXPRESSIONS:
         print('[{0:3}]: "{1}"'.format(counter, e))
 
+        parse_result = parse_expression(e, DATA_ENTITIES_LIST)
+        if 0 == len(parse_result):
+            print('\n*** parse_expression failed ***\n')
+            break
+        
         # generate a list of ExpressionObject primitives
-        expression_object_list = generate_expressions(final_nlpql_feature, e)
+        expression_object_list = generate_expressions(final_nlpql_feature,
+                                                      parse_result)
         if 0 == len(expression_object_list):
             print('\n*** generate_expressions failed ***\n')
             break

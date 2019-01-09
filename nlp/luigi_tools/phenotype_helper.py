@@ -433,6 +433,16 @@ def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeMod
             process_date_diff(de, db, job, phenotype, phenotype_id, phenotype_owner)
 
 
+def get_all_names(data_entities):
+
+    names = set()
+    for de in data_entities:
+        if 'name' in de:
+            names.add(de['name'])
+
+    return list(names)
+    
+            
 def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
                        final=False):
 
@@ -446,14 +456,26 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
 
     # the NLPQL feature name to assign to the result
     nlpql_feature = c['name']
-        
+
+    mongo_failed = False
     if 'mongo' == evaluator:
-        expr_list = expr_eval.generate_expressions(nlpql_feature, expression)
-        if len(expr_list) > 0:
-            print('Using mongo evaluator for expression "{0}"'.format(expression))
-            mongo_process_operations(expr_list, db, job, phenotype,
-                                     phenotype_id, phenotype_owner,c, final)
-    else:
+        print('Using mongo evaluator for expression "{0}"'.format(expression))
+        names = get_all_names(phenotype['data_entities'])
+        print('\tNAMES: {0}'.format(names))
+        parse_result = expr_eval.parse_expression(expression, names)
+        if 0 == len(parse_result):
+            print('\n*** Expression cannot be evaluated. ***\n')
+            mongo_failed = True
+        else:
+            expr_list = expr_eval.generate_expressions(nlpql_feature, parse_result)
+            if 0 == len(expr_list):
+                print('\t\n*** No subexpressions found! ***\n')
+                mongo_failed = True
+            else:
+                mongo_process_operations(expr_list, db, job, phenotype,
+                                         phenotype_id, phenotype_owner,c, final)
+                
+    if 'pandas' == evaluator or mongo_failed:
         print('Using pandas evaluator for expression "{0}"'.format(expression))
         pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
 

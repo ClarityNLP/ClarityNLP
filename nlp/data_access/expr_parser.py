@@ -12,7 +12,11 @@ the expression is 'hasFever AND hasSepsisSymptoms'.
 """
 
 from sly import Parser
-from data_access.expr_lexer import NlpqlExpressionLexer
+
+try:
+    from data_access.expr_lexer import NlpqlExpressionLexer
+except Exception as e:
+    from expr_lexer import NlpqlExpressionLexer
 
 # parser output format (either postfix or infix)
 _POSTFIX = False
@@ -39,7 +43,7 @@ _TOKEN_MAP = {
 }
 
 NLPQL_EXPR_OPERATORS       = _TOKEN_MAP.keys()
-NLPQL_EXPR_OPSTRINGS       = _TOKEN_MAP.values()
+NLPQL_EXPR_OPSTRINGS       = list(set(_TOKEN_MAP.values()))
 NLPQL_EXPR_OPSTRINGS_LC    = [op.lower() for op in NLPQL_EXPR_OPSTRINGS]
 NLPQL_EXPR_LOGIC_OPERATORS = ['or', 'OR', 'and', 'AND', 'not', 'NOT']
 
