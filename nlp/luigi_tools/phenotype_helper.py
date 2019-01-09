@@ -441,11 +441,10 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     except:
         evaluator = 'pandas'        
 
-    # Get the NLPQL expression and determine if Mongo aggregation can evaluate
-    # it. If so, the Mongo evaluator will tokenize the expression and return
-    # a list of infix tokens and document fields required for evaluation. If
-    # empty lists are returned, use the Pandas evaluator.
+    # the NLPQL expression to be evaluated
     expression    = c['raw_text']
+
+    # the NLPQL feature name to assign to the result
     nlpql_feature = c['name']
         
     if 'mongo' == evaluator:
@@ -859,7 +858,7 @@ def mongo_process_operations(expr_obj_list,
                         #              doc['end']))
                         history['source_ids'].append(str(oid))
                         history['source_features'].append(doc['nlpql_feature'])
-                        assert context_field_value = doc[context_field]
+                        assert context_field_value == doc[context_field]
                         
                     # add ntuple doc fields to the output doc as lists
                     field_map = {}
