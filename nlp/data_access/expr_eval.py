@@ -1802,14 +1802,13 @@ def _occurrence_count(pattern, text):
 
 
 ###############################################################################
-def is_valid(infix_expression, data_entities_list):
+def is_valid(infix_expression, name_list):
     """
 
     Check the expression and determine whether it can be evaluated with
     this module. All tokens must be recognized entities. If a token is
-    unrecognized, try to separate it into a list of known data_entities
-    separated by logic operators. If that fails, the expression cannot be
-    evaluated.
+    unrecognized, try to separate it into a list of known names separated by
+    logic operators. If that fails, the expression cannot be evaluated.
     """
 
     if _TRACE: print('Called is_valid')
@@ -1843,7 +1842,7 @@ def is_valid(infix_expression, data_entities_list):
             return (False, _EMPTY_STRING)
         
         matching_text = match.group()
-        if token in data_entities_list:
+        if token in name_list:
             new_tokens.append(token)
             continue
         else:
@@ -1853,12 +1852,12 @@ def is_valid(infix_expression, data_entities_list):
             while True:
                 found_it = False
                 start_token = token
-                for de in data_entities_list:
-                    print('\tSearching for {0} in {1}'.format(de, token))
-                    if token.startswith(de):
-                        print('\t\tFound: {0}'.format(de))
-                        new_tokens.append(de)
-                        token = token[len(de):]
+                for name in name_list:
+                    print('\tSearching for {0} in {1}'.format(name, token))
+                    if token.startswith(name):
+                        print('\t\tFound: {0}'.format(name))
+                        new_tokens.append(name)
+                        token = token[len(name):]
                         print('\t\tRemaining token: ->{0}<-'.format(token))
                         if len(token) > 0:
                             # need logic op
@@ -1890,7 +1889,7 @@ def is_valid(infix_expression, data_entities_list):
 
 
 ###############################################################################
-def parse_expression(nlpql_infix_expression, data_entities_list):
+def parse_expression(nlpql_infix_expression, name_list):
     """
     Parse the NLPQL expression and evaluate any literal subexpressions.
     Check the result for validity. Return a fully-parenthesized expression
@@ -1918,7 +1917,7 @@ def parse_expression(nlpql_infix_expression, data_entities_list):
     if _TRACE: print('  Evaluated literals: "{0}"'.format(infix_result))
 
     # check for validity and try to correct if invalid
-    ok, infix_result = is_valid(infix_result, data_entities_list)
+    ok, infix_result = is_valid(infix_result, name_list)
     if not ok:
         return _EMPTY_STRING
 
@@ -2074,7 +2073,7 @@ def _run_tests(job_id, context):
     Ensure that the data entities list matches those used for the run.
     """
 
-    DATA_ENTITIES_LIST = [
+    NAME_LIST = [
         'hasRigors', 'hasDyspnea', 'hasNausea', 'hasVomiting', 'hasShock',
         'hasTachycardia', 'Temperature', 'hasLesion', 'LesionMeasurement'
     ]
@@ -2157,7 +2156,7 @@ def _run_tests(job_id, context):
     for e in EXPRESSIONS:
         print('[{0:3}]: "{1}"'.format(counter, e))
 
-        parse_result = parse_expression(e, DATA_ENTITIES_LIST)
+        parse_result = parse_expression(e, NAME_LIST)
         if 0 == len(parse_result):
             print('\n*** parse_expression failed ***\n')
             break

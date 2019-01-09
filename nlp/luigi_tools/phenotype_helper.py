@@ -433,13 +433,22 @@ def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeMod
             process_date_diff(de, db, job, phenotype, phenotype_id, phenotype_owner)
 
 
-def get_all_names(data_entities):
+def get_all_names(phenotype: PhenotypeModel):
 
     names = set()
-    for de in data_entities:
-        if 'name' in de:
-            names.add(de['name'])
 
+    if 'data_entities' in phenotype:
+        data_entities = phenotype['data_entities']
+        for de in data_entities:
+            if 'name' in de:
+                names.add(de['name'])
+                
+    if 'operations' in phenotype:
+        operations = phenotype['operations']
+        for op in operations:
+            if 'name' in op:
+                names.add(op['name'])
+            
     return list(names)
     
             
@@ -460,7 +469,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     mongo_failed = False
     if 'mongo' == evaluator:
         print('Using mongo evaluator for expression "{0}"'.format(expression))
-        names = get_all_names(phenotype['data_entities'])
+        names = get_all_names(phenotype)
         print('\tNAMES: {0}'.format(names))
         parse_result = expr_eval.parse_expression(expression, names)
         if 0 == len(parse_result):
