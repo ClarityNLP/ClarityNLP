@@ -449,17 +449,11 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     nlpql_feature = c['name']
         
     if 'mongo' == evaluator:
-        expr_obj_list = expr_eval.generate_expressions(nlpql_feature, expression)
-        if len(expr_obj_list) > 0:
-            mongo_process_operations(expr_obj_list, db, job, phenotype,
-                                     phenotype_id, phenotype_owner, c, final)
-        #print('process_operations:: expr_object_list: {0}'.format(expr_obj_list))
-        #if len(expression_obj_list) > 0:
-        #infix_tokens, field_list = mongo_eval.is_mongo_computable(expression)
-        #if len(infix_tokens) > 0:
-        #    print('Using mongo evaluator for expression "{0}"'.format(expression))
-        #    mongo_process_operations(infix_tokens, field_list, db, job,
-        #                             phenotype, phenotype_id, phenotype_owner, c, final)
+        expr_list = expr_eval.generate_expressions(nlpql_feature, expression)
+        if len(expr_list) > 0:
+            print('Using mongo evaluator for expression "{0}"'.format(expression))
+            mongo_process_operations(expr_list, db, job, phenotype,
+                                     phenotype_id, phenotype_owner,c, final)
     else:
         print('Using pandas evaluator for expression "{0}"'.format(expression))
         pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
@@ -839,6 +833,8 @@ def mongo_process_operations(expr_obj_list,
             for ntuples in oid_list_of_lists:
                 for ntuple in ntuples:
                     assert isinstance(ntuple, list)
+                    if 0 == len(ntuple):
+                        continue
 
                     # each ntuple supplies the data for a result doc
                     ret = {}
@@ -847,6 +843,11 @@ def mongo_process_operations(expr_obj_list,
                         'source_features' : []
                     }
 
+                    # get the shared context field value for this ntuple
+                    oid = ntuple[0]
+                    doc = doc_map[oid]
+                    context_field_value = doc[context_field]
+                    
                     # accumulate the source _id and nlpql_feature fields
                     for oid in ntuple:
                         # get the doc associated with this _id
@@ -858,6 +859,7 @@ def mongo_process_operations(expr_obj_list,
                         #              doc['end']))
                         history['source_ids'].append(str(oid))
                         history['source_features'].append(doc['nlpql_feature'])
+                        assert context_field_value = doc[context_field]
                         
                     # add ntuple doc fields to the output doc as lists
                     field_map = {}
@@ -874,8 +876,8 @@ def mongo_process_operations(expr_obj_list,
                     for k,v in field_map.items():
                         ret[k] = copy.deepcopy(v)
 
-                    # set the join field; same value for all ntuple entries
-                    ret[context_field] = context_field #ntuple[0][context_field]
+                    # set the context field value; same value for all ntuple entries
+                    ret[context_field] = context_field_value
 
                     # update fields common to AND/OR
                     ret['job_id'] = job_id
@@ -918,9 +920,9 @@ def mongo_process_operations(expr_obj_list,
                 print('mongo_process_operations (logic): no phenotype matches on {0}.'.
                       format(expression))
                     
-        print('********** RESULT FROM PHENOTYPE_HELPER: **********')
-        print(result)
-        print('***************************************************')
+        # print('********** RESULT FROM PHENOTYPE_HELPER: **********')
+        # print(result)
+        # print('***************************************************')
         
     client.close()
             
