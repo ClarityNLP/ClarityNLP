@@ -469,13 +469,23 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     mongo_failed = False
     if 'mongo' == evaluator:
         print('Using mongo evaluator for expression "{0}"'.format(expression))
+
+        # get the names of the phenotype's data_entities and operations
         names = get_all_names(phenotype)
         print('\tNAMES: {0}'.format(names))
+
+        # Parse the expression and return a fully-parenthesized version
+        # that uses mnemonics for the operators. The evaluator will attempt
+        # to resolve any unknown tokens into concatenated names and logic
+        # operators. If it finds a token that it cannot resolve into known
+        # names it returns an empty list. An empty list is also returned
+        # if the expression cannot be evaluated for some other reason.
         parse_result = expr_eval.parse_expression(expression, names)
         if 0 == len(parse_result):
             print('\n*** Expression cannot be evaluated. ***\n')
             mongo_failed = True
         else:
+            # generate a list of expr_eval.ExpressionObject items
             expr_list = expr_eval.generate_expressions(nlpql_feature, parse_result)
             if 0 == len(expr_list):
                 print('\t\n*** No subexpressions found! ***\n')
