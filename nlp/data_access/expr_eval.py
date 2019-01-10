@@ -33,8 +33,11 @@ EXPR_TYPE_LOGIC   = 'logic'
 EXPR_TYPE_MIXED   = 'mixed' # math+logic or math with different NLPQL features
 EXPR_TYPE_UNKNOWN = 'unknown'
 
+# unsupported operator strings (should match entries in NLPQL_EXPR_OPSTRINGS)
+EXPR_UNSUPPORTED_OPSTRINGS = ['NOT']
+
 # expression object, contains info on a primitive expression to be evaluated
-EXPRESSION_OBJ_FIELDS = [
+EXPR_OBJ_FIELDS = [
     # one of the EXPR_TYPE_ constants
     'expr_type',
 
@@ -45,10 +48,10 @@ EXPRESSION_OBJ_FIELDS = [
     'expr_text'
 ]
 
-ExpressionObject = namedtuple('ExpressionObject', EXPRESSION_OBJ_FIELDS)
+ExpressionObject = namedtuple('ExpressionObject', EXPR_OBJ_FIELDS)
 
 # result from an individual expression evaluation
-EVAL_RESULT_FIELDS = [
+EXPR_RESULT_FIELDS = [
 
     # one of the EXPR_TYPE_ constants
     'expr_type',
@@ -72,7 +75,7 @@ EVAL_RESULT_FIELDS = [
     'group_list',
 ]
 
-EvalResult = namedtuple('EvalResult', EVAL_RESULT_FIELDS)
+EvalResult = namedtuple('EvalResult', EXPR_RESULT_FIELDS)
 
 
 _VERSION_MAJOR = 0
@@ -1802,21 +1805,25 @@ def _occurrence_count(pattern, text):
 
 
 ###############################################################################
-def is_valid(infix_expression, name_list):
+def is_valid(parse_result, name_list):
     """
-
     Check the expression and determine whether it can be evaluated with
     this module. All tokens must be recognized entities. If a token is
     unrecognized, try to separate it into a list of known names separated by
     logic operators. If that fails, the expression cannot be evaluated.
+
+    Assumption: the expression parser has already parsed the expression,
+    and that the infix parse result is used in this function.
+
+    This function returns an empty string if it finds an unrecognized token.
+    Otherwise it returns an infix string for further processing.
     """
 
     if _TRACE: print('Called is_valid')
     
-    infix_tokens = infix_expression.split()
+    infix_tokens = parse_result.split()
 
-    # ensure that NLPQL feature tokens are valid data entities
-
+    # check each token and ensure that it can be recognized as an expected form
     new_tokens = []
     for token in infix_tokens:
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
@@ -1827,27 +1834,29 @@ def is_valid(infix_expression, name_list):
             new_tokens.append(token)
             continue
         if token in NLPQL_EXPR_OPSTRINGS:
+            if token in EXPR_UNSUPPORTED_OPSTRINGS:
+                print('\n*** Unsupported operator: "{0}" ***\n'.format(token))
+                return _EMPTY_STRING
             new_tokens.append(token)
             continue
         match = _regex_numeric_literal.match(token)
         if match:
             new_tokens.append(token)
             continue
-        if token in NLPQL_EXPR_LOGIC_OPERATORS:
-            new_tokens.append(token)
-            continue
         match = _regex_nlpql_feature.match(token)
         if not match:
             print('\tTOKEN OF UNKNOWN TYPE: {0}'.format(token))
-            return (False, _EMPTY_STRING)
+            return _EMPTY_STRING
         
         matching_text = match.group()
         if token in name_list:
             new_tokens.append(token)
             continue
         else:
-            # try to resolve into data_entity + logic_op + remainder
-            print('\tResolving: {0}'.format(token))
+            # this token was unrecognized
+            # try to resolve into known_name + logic_op + remainder
+            print('\tUnrecognized token: "{0}", resolving...'.format(token))
+            # parenthesize its replacement, if any
             new_tokens.append(_LEFT_PARENS)
             while True:
                 found_it = False
@@ -1873,9 +1882,10 @@ def is_valid(infix_expression, name_list):
                             found_it = True        
 
                         break
+                    
                 if not found_it or start_token == token:
-                    print('\tUNKNOWN NLPQL FEATURE: {0}'.format(matching_text))
-                    return (False, _EMPTY_STRING)
+                    print('\tResolution failed for token "{0}"'.format(matching_text))
+                    return _EMPTY_STRING
 
                 if 0 == len(token):
                     # fix is complete
@@ -1885,7 +1895,7 @@ def is_valid(infix_expression, name_list):
     # if here, resolved all the tokens
     new_infix_expression = ' '.join(new_tokens)
     print('\tNEW INFIX EXPRESSION: {0}'.format(new_infix_expression))
-    return (True, new_infix_expression)
+    return new_infix_expression
 
 
 ###############################################################################
@@ -1917,8 +1927,8 @@ def parse_expression(nlpql_infix_expression, name_list):
     if _TRACE: print('  Evaluated literals: "{0}"'.format(infix_result))
 
     # check for validity and try to correct if invalid
-    ok, infix_result = is_valid(infix_result, name_list)
-    if not ok:
+    infix_result = is_valid(infix_result, name_list)
+    if 0 == len(infix_result):
         return _EMPTY_STRING
 
     return infix_result
@@ -2081,7 +2091,7 @@ def _run_tests(job_id, context):
     EXPRESSIONS = [
 
         # # pure math expressions
-        # 'Temperature.value >= 100.4',
+        'Temperature.value >= 100.4',
         # 'Temperature.value >= 1.004e2',
         # '100.4 <= Temperature.value',
         # '(Temperature.value >= 100.4)',
@@ -2110,7 +2120,7 @@ def _run_tests(job_id, context):
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
         # '((hasShock) AND (hasDyspnea))',
         # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
-        '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
+        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
         # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
         # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
         # ' hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701, 

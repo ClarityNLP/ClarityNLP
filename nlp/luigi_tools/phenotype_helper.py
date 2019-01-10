@@ -461,7 +461,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
         evaluator = 'pandas'        
 
     # the NLPQL expression to be evaluated
-    expression    = c['raw_text']
+    expression = c['raw_text']
 
     # the NLPQL feature name to assign to the result
     nlpql_feature = c['name']
@@ -472,7 +472,6 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
 
         # get the names of the phenotype's data_entities and operations
         names = get_all_names(phenotype)
-        print('\tNAMES: {0}'.format(names))
 
         # Parse the expression and return a fully-parenthesized version
         # that uses mnemonics for the operators. The evaluator will attempt
