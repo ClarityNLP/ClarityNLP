@@ -2092,7 +2092,7 @@ def _run_tests(job_id, context):
     EXPRESSIONS = [
 
         # # pure math expressions
-        # 'Temperature.value >= 100.4',
+        'Temperature.value >= 100.4',
         # 'Temperature.value >= 1.004e2',
         # '100.4 <= Temperature.value',
         # '(Temperature.value >= 100.4)',
@@ -2136,7 +2136,7 @@ def _run_tests(job_id, context):
 
         # mixed math and logic
         # 'hasNausea AND Temperature.value >= 100.4',
-        '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
+        # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
         # 'LesionMeasurement.dimension_X > 10 AND LesionMeasurement.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
         #'LesionMeasurement.dimension_X > 10 OR LesionMeasurement.dimension_X < 30 OR hasRigors OR hasTachycardia or hasDyspnea',
         # '((Temperature.value >= 100.4) AND (hasRigors AND hasTachycardia AND hasNausea))',
