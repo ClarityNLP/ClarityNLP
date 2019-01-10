@@ -2124,7 +2124,7 @@ def _run_tests(job_id, context):
         # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
         # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
         # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
-        # ' hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701, 
+        # 'hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701,
         # '(hasRigors OR hasDyspnea) AND hasTachycardia', #286
         # 'hasRigors AND (hasTachycardia AND hasNausea)',
         # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
@@ -2136,7 +2136,7 @@ def _run_tests(job_id, context):
 
         # mixed math and logic
         # 'hasNausea AND Temperature.value >= 100.4',
-        '(hasRigors OR hasDyspnea OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature)' #(Temperature.value >= 10)',
+        '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
         # 'LesionMeasurement.dimension_X > 10 AND LesionMeasurement.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
         #'LesionMeasurement.dimension_X > 10 OR LesionMeasurement.dimension_X < 30 OR hasRigors OR hasTachycardia or hasDyspnea',
         # '((Temperature.value >= 100.4) AND (hasRigors AND hasTachycardia AND hasNausea))',
