@@ -2,6 +2,150 @@
 """
 
 
+
+OVERVIEW:
+
+
+
+The code in this module evaluates mathematical and logical expressions that
+appear in NLPQL 'define' statements. The expression is the part of the
+statement that follows the 'where' keyword.  For instance, in this define
+statement
+
+    define hasFever:
+        where Temperature.value >= 100.4;
+
+the expression portion is the string 'Temperature.value >= 100.4'.
+
+NLPQL expressions evaluate to a Boolean result. The expressions can be linked
+by comparison or logical operators and they can be parenthesized in the usual
+way to enforce precedence or evaluation order. Some examples:
+
+    Temperature.value >= 97.7 AND Temperature.value <= 99.5
+    hasRigors AND (hasDyspnea or hasTachycardia)
+    LesionMeasurement.dimension_X > 10 and hasSepsis
+    etc.
+
+There are many more examples towards the end of this file in the _run_tests
+function.
+
+The expression is assumed to have already been validated by the NLPQL parser,
+which means that parentheses are balanced, the operators and variables are
+known, and that the statement obeys valid mathematical syntax.
+
+This module converts the expression to a set of MongoDB aggregation commands
+and executes the command against a MongoDB collection. The document ids of all
+documents satisfying the expression are returned to the caller in a list or in
+a list of lists, depending on the expression type.
+
+
+
+USAGE:
+
+(FIX THIS - TBD)
+
+There is a single exported function called 'run' having this signature:
+
+
+    run(mongo_collection_obj, infix_expr)
+
+
+The 'mongo_collection_obj' argument is a pymongo object representing the
+desired collection. This object can be created externally to this module as
+follows:
+
+    mongo_client_obj     = pymongo.MongoClient(mongo_host, mongo_port)
+    mongo_db_obj         = mongo_client_obj[db_name]
+    mongo_collection_obj = mongo_db_obj[collection_name]
+
+The collection object is created externally to avoid the penalty of recreation
+for each expression evaluation.
+
+The 'infix_expr' argument is an infix string with whitespace separating
+operators and operands. The expressions above are valid input, as is this:
+
+    'D > A + (B * C)'
+
+This next expression is invalid, since the '*' operator has no whitespace 
+surrounding it:
+
+    'D > A + (B*C)'
+
+No assumptions are made about spaces separating parentheses from the operators
+and operands.  So any of these forms are acceptable:
+
+    'D > A + ( B * C )'
+    'D > A + (B * C )'
+    'D > A + ( B * C)'
+
+
+The 'run' function returns a list of MongoDB document ids (the _id field) for
+all documents that satisfy the expression.
+
+Given a list of document IDs, the full documents can be retrieved from the
+database with this query:
+
+    cursor = collection.find({'_id' : {'$in' : doc_id_list}})
+
+
+
+TESTING:
+
+
+
+Run the self-tests from the command line as follows:
+
+    python3 ./mongo_eval.py --selftest
+
+No output should be generated if all tests pass.
+
+The command line interface also accepts expressions and prints the associated
+MongoDB aggregation command to stdout.  For instance, the command
+
+    python3 ./mongo_eval.py --expression  'D > A + (B * C)'
+
+generates this output:
+
+Expression: D > A + (B * C)
+   Postfix: ['D', 'A', 'B', 'C', '*', '+', '>']
+   Command: 
+{
+    "$project": {
+        "value": {
+            "$gt": [
+                "$D",
+                {
+                    "$add": [
+                        "$A",
+                        {
+                            "$multiply": [
+                                "$B",
+                                "$C"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+
+
+Help for the command line interface can be obtained via this command:
+
+    python3 ./mongo_eval --help
+
+Extensive debugging info can be generated with the --debug option.
+
+
+
+LIMITATIONS:
+
+
+Currently only mathematical operations are supported. Database operations
+involving syntax such as 'predicate IS NOT? NULL',
+'predicate NOT? LIKE predicate (STRING)?' are not yet supported.
+
 """
 
 import re
@@ -1805,7 +1949,7 @@ def _occurrence_count(pattern, text):
 
 
 ###############################################################################
-def is_valid(parse_result, name_list):
+def is_valid(parse_result, name_list=None):
     """
     Check the expression and determine whether it can be evaluated with
     this module. All tokens must be recognized entities. If a token is
@@ -1847,13 +1991,19 @@ def is_valid(parse_result, name_list):
         if not match:
             print('\tTOKEN OF UNKNOWN TYPE: {0}'.format(token))
             return _EMPTY_STRING
-        
-        matching_text = match.group()
-        if token in name_list:
+
+        # if here, the token matched the format for an NLPQL feature
+
+        # validate the token against the list of known names, if possible
+        if name_list is not None and token in name_list:
+            new_tokens.append(token)
+            continue
+        elif name_list is None:
+            # accept all tokens if no list to validate against
             new_tokens.append(token)
             continue
         else:
-            # this token was unrecognized
+            # the token was not found in the list of known names
             # try to resolve into known_name + logic_op + remainder
             print('\tUnrecognized token: "{0}", resolving...'.format(token))
             # parenthesize its replacement, if any
@@ -1884,7 +2034,7 @@ def is_valid(parse_result, name_list):
                         break
                     
                 if not found_it or start_token == token:
-                    print('\tResolution failed for token "{0}"'.format(matching_text))
+                    print('\tResolution failed for token "{0}"'.format(token))
                     return _EMPTY_STRING
 
                 if 0 == len(token):
@@ -1899,7 +2049,7 @@ def is_valid(parse_result, name_list):
 
 
 ###############################################################################
-def parse_expression(nlpql_infix_expression, name_list):
+def parse_expression(nlpql_infix_expression, name_list=None):
     """
     Parse the NLPQL expression and evaluate any literal subexpressions.
     Check the result for validity. Return a fully-parenthesized expression
@@ -2092,7 +2242,7 @@ def _run_tests(job_id, context):
     EXPRESSIONS = [
 
         # # pure math expressions
-        'Temperature.value >= 100.4',
+        # 'Temperature.value >= 100.4',
         # 'Temperature.value >= 1.004e2',
         # '100.4 <= Temperature.value',
         # '(Temperature.value >= 100.4)',
@@ -2121,7 +2271,7 @@ def _run_tests(job_id, context):
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
         # '((hasShock) AND (hasDyspnea))',
         # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
-        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
+        '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
         # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
         # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
         # 'hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701,
@@ -2134,7 +2284,7 @@ def _run_tests(job_id, context):
         # # 'hasRigors NOT (hasNausea OR hasTachycardia)',
         # # 'hasSepsis NOT hasRigors' # how to do this properly
 
-        # mixed math and logic
+        # mixed math and logic (cannot fully evaluate with this test code)
         # 'hasNausea AND Temperature.value >= 100.4',
         # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
         # 'LesionMeasurement.dimension_X > 10 AND LesionMeasurement.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
