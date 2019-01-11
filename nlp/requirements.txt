@@ -9,6 +9,7 @@ inflect==0.3.1
 jobtastic==2.0.0
 kazoo==2.4.0
 luigi>=2.8.0
+msgpack>=0.3.0,<0.6
 nltk==3.2.5
 numpy==1.14.0
 pandas==0.21.1
