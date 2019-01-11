@@ -754,7 +754,7 @@ def _remove_unnecessary_parens(infix_expression):
     was nonessential and can be removed.
     """
 
-    if _TRACE: print('Called nlpql_expression::_remove_unnecessary_parens')
+    if _TRACE: print('Called _remove_unnecessary_parens')
     
     # return if no parens
     pos = infix_expression.find(_LEFT_PARENS)
@@ -1082,7 +1082,7 @@ def _resolve_mixed(infix_expression):
     is a pure logic expression involving the substituted symbols.
     """
 
-    if _TRACE: print('Called nlpql_expression::_resolve_mixed')
+    if _TRACE: print('Called _resolve_mixed')
 
     tokens = infix_expression.split()
 
@@ -1263,7 +1263,7 @@ def _convert_variables(infix_expr):
     evaluated via MongoDB aggregation.
     """
 
-    if _TRACE: print('Called nlpql_expression::_convert_variables')
+    if _TRACE: print('Called _convert_variables')
     
     variables, nlpql_feature_set, field_set = _extract_variables(infix_expr)
     if _TRACE: print('\tVARIABLES: {0}'.format(variables))
@@ -1326,7 +1326,7 @@ def _mongo_math_format(operator, op1, op2=None):
     """
 
     if _TRACE:
-        print('Called nlpql_expression::_mongo_math_format with operator ' +\
+        print('Called _mongo_math_format with operator ' +\
               '"{0}", op1: "{1}", op2: "{2}"'.format(operator, op1, op2))
     
     if 'not' == operator:
@@ -1354,7 +1354,7 @@ def _eval_math_expr(job_id,
     """
 
     if _TRACE:
-        print('Called nlpql_expression::_eval_math_expr')
+        print('Called _eval_math_expr')
         print('\tExpression: "{0}"'.format(infix_expr))
     
     # get rid of extraneous parentheses
@@ -1488,7 +1488,7 @@ def _eval_logic_expr(job_id,
     """
 
     if _TRACE:
-        print('Called nlpql_expression::_eval_logic_expr')
+        print('Called _eval_logic_expr')
         print('\tExpression: "{0}"'.format(infix_expr))
     
     assert 'subject' == context_field or 'document' == context_field
@@ -2086,7 +2086,7 @@ def parse_expression(nlpql_infix_expression, name_list=None):
     try:
         infix_result = parser.parse(lexer.tokenize(nlpql_infix_expression))
     except SyntaxError as e:
-        print('\tSyntaxError exception in nlpql_expression::generate_expressions')
+        print('\tSyntaxError exception in parse')
         print('\tmsg: {0}'.format(e.msg))
         return _EMPTY_STRING
         
@@ -2113,7 +2113,7 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
     of ExpressionObject namedtuples.
     """
 
-    if _TRACE: print('Called nlpql_expression::generate_expressions')
+    if _TRACE: print('Called generate_expressions')
 
     # determine the expression type, need math, logic, or mixed
     expr_type = _expr_type(parse_result)
