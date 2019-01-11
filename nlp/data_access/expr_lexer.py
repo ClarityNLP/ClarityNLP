@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+A basic lexer for NLPQL expressions.
 """
 
 from sly import Lexer

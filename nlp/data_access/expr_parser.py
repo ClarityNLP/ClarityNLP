@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 A parser for NLPQL expressions. An NLPQL expression is everything in an NLPQL
-define statement after the 'where' and before the semicolon.
+'define' statement after the 'where' and before the semicolon.
 
 For instance, in the define statement:
 
     define hasSepsis:
-    where hasFever AND hasSepsisSymptoms;
+        where hasFever AND hasSepsisSymptoms;
 
 the expression is 'hasFever AND hasSepsisSymptoms'.
 """
