@@ -5,9 +5,23 @@ Overview
 ========
 
 In this section we describe the mechanisms that ClarityNLP uses to evaluate
-NLPQL expressions. NLPQL expressions can either be mathematical or logical in
-nature. Expression evaluation takes place after ClarityNLP tasks have finished
-running and have written their individual results to MongoDB.
+NLPQL expressions. NLPQL expressions are found in ``define`` statments:
+::
+   define hasFever:
+       where Temperature.value >= 100.4;
+
+   define hasSymptoms:
+       where hasFever AND (hasDyspnea OR hasTachycardia);
+       
+The expressions are the strings in each statement between the ``where`` keyword
+and the semicolon:
+::
+   Temperature.value >= 100.4
+
+   hasFever AND (hasDyspnea OR hasTachycardia)
+
+NLPQL expressions can either be mathematical or logical in nature, as these
+examples illustrate.
 
 Recall that the processing stages for a ClarityNLP job proceed roughly as
 follows:
@@ -17,7 +31,7 @@ follows:
    source documents into batches, and assign batches to computational tasks.
 3. Run the tasks in parallel and write individual task results to MongoDB.
    Each individual result from an NLP task comprises a *task result document*
-   in the Mongo database. Here the term *document* is used in the MongoDB
+   in the Mongo database. The term *document* is used here in the MongoDB
    sense, meaning an object containing key-value pairs. The MongoDB 'documents'
    should not be confused with the Solr source documents, which are electronic
    health records.
@@ -25,42 +39,71 @@ follows:
    data. Write expression evaluation results to MongoDB as separate result
    documents.
 
-We now turn our attention to the operations in step 4. We should state at the
-outset that the descriptions below apply to an expression evaluator based on
-MongoDB aggregation. This evaluator is currently in a testing phase and must
-be explicitly enabled by adding the following line to the project.cfg file in
-the ``[local]`` section:
+Thus ClarityNLP evaluates expressions **after** all tasks have finished running
+and have written their individual results to MongoDB. The expression evaluator
+consumes this task data and uses it to generate new results from the expression
+statements.
+
+We now turn our attention to a description of how the expression evaluator
+works. We should state at the outset that the descriptions below apply to the
+expression evaluator built on MongoDB aggregation. This evaluator is currently
+in a testing phase and must be explicitly enabled by adding the following line
+to the ``project.cfg`` file in the ``[local]`` section:
 ::
+   [local]
    evaluator=mongo
 
-If this line is absent or is commented out with a `#` character, a Pandas-based
-evaluator will be used. The Pandas evaluator uses different techniques from
+A Pandas-based evaluator will be used if this line is absent or is commented
+out with a `#` character. The Pandas evaluator uses different techniques from
 those described below.
 
-So why use MongoDB aggregation to evaluate NLPQL expressions? The basic reason
-is that the data resides in MongoDB, and the aggregation framework provides
-a convenient and powerful mechanism on which to build an evaluation engine.
-Use of anything other than MongoDB requires a set of queries to extract the data
-from MongoDB; a possible network transmission if the Mongo instance is hosted
-remotely; ingest into another evaluation engine; computation of results;
-transmission back to the Mongo host; and insertion back into the database.
-Use of the aggregation framework should prove to be much more efficient, since
-all data is kept internal to MongoDB.
+Why use MongoDB aggregation to evaluate NLPQL expressions? The basic reason
+is that the data already resides in MongoDB, and the aggregation framework
+provides a convenient and powerful mechanism on which to build an evaluation
+engine. Use of anything other than MongoDB would require the following steps;
+
+- Run a set of queries to extract the data from MongoDB
+- Transmit the query results across a network if the Mongo instance is hosted
+  remotely
+- Ingest the query results into another evaluation engine
+- Use the data to evaluate the NLPQL expressions and generate results
+- Transmit the result data back to the Mongo host
+- Insert the result data into MongoDB.
+   
+Use of the aggregation framework should prove to be much more efficient than
+this process, since all data remains inside MongoDB.
 
 
-NLPQL Expressions
------------------
+NLPQL Expression Types
+======================
 
-An NLPQL mathematical expression is found in a ``define`` statement such as:
+In the descriptions below we refer to NLPQL variables, which have the
+form ``nlpql_feature.field_name``. The NLPQL feature is a label introduced in a
+``define`` statement. Thus ``Temperature`` and ``hasSymptoms`` would be the
+NLPQL features in the examples above. The ``field_name`` is the name of a
+result variable associated with the NLPQL feature.
+
+1. Simple Mathematical Expressions
+-------------------------------------
+
+A simple mathematical expression is a string containing NLPQL variables,
+operators, or numeric literals. For instance:
 ::
-   define hasFever:
-        where Temperature.value >= 100.4;
+   Temperature.value >= 100.4
+   (Meas.dimension_X > 5) AND (Meas.dimension_X < 20)
+   (0 == Temperature.value % 20) OR (1 == Temperature.value % 20)
 
-The ``where`` portion of the statement is the mathematical expression. These
-expressions feature mathematical operations on variables of the form
-``nlpql_feature.variable_name`` such as ``Temperature.value``,
-``LesionMeasurement.dimension_X``, etc. They can also include numeric literals
-such as ``100.4``.
+The variables in a simple mathematical expression all refer to a **single**
+NLPQL feature.
+
+2. Simple Logical Expressions
+-----------------------------
+
+3. Mixed Expressions
+--------------------
+
+
+
 
 NLPQL mathematical expressions produce a numerical result from data contained
 in a **single** task result document. Since each task result document
