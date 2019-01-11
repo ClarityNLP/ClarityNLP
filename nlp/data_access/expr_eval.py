@@ -248,7 +248,7 @@ _VERSION_MINOR = 1
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
-_TRACE = True
+_TRACE = False
 
 # quoted string literal
 _str_string_literal = r'\A[\'\"][^\'\"]+[\'\"]\Z'
@@ -1903,22 +1903,22 @@ def expand_logical_result(eval_result, mongo_collection_obj):
         # assign indices to each feature
         feature_list, feature_map = build_feature_map(group, doc_map)
 
-        #if _TRACE:
-        print('\n\n<<Group index: {0}>>'.format(group_index))
-        print('Expression: "{0}"'.format(eval_result.expr_text))
-        print('   Postfix: {0}'.format(eval_result.postfix_tokens))
-        for oid in group:
-            doc = doc_map[oid]
-            feature = doc['nlpql_feature']
-            subj = doc['subject']
-            rid = doc['report_id']
-            print('\t{0}: {1:16}\tsubject: {2}\treport_id: {3}'.
-                  format(oid, feature, subj, rid))
-        for feature, feature_count in feature_list:
-            doc_count, current_index, index_list = feature_map[feature]
-            assert doc_count == len(index_list)
-            print("\tIndices of feature '{0}': {1}".format(feature, index_list))
-        print()
+        if _TRACE:
+            print('\n\n<<Group index: {0}>>'.format(group_index))
+            print('Expression: "{0}"'.format(eval_result.expr_text))
+            print('   Postfix: {0}'.format(eval_result.postfix_tokens))
+            for oid in group:
+                doc = doc_map[oid]
+                feature = doc['nlpql_feature']
+                subj = doc['subject']
+                rid = doc['report_id']
+                print('\t{0}: {1:16}\tsubject: {2}\treport_id: {3}'.
+                      format(oid, feature, subj, rid))
+            for feature, feature_count in feature_list:
+                doc_count, current_index, index_list = feature_map[feature]
+                assert doc_count == len(index_list)
+                print("\tIndices of feature '{0}': {1}".format(feature, index_list))
+            print()
 
         # 'evaluate' the postfix expression and generate the result set
 
@@ -1933,20 +1933,20 @@ def expand_logical_result(eval_result, mongo_collection_obj):
             
         oid_lists.append(oid_list)
         
-        #if _TRACE:
-        print('RESULTS: ')
-        for l in oid_list:
-            assert isinstance(l, list)
-            suffixes = []
-            features = []
-            for oid in l:
-                doc = doc_map[oid]
-                oid_suffix = str(oid)[-4:]
-                doc_feature = doc['nlpql_feature']
-                suffixes.append(oid_suffix)
-                features.append(doc_feature)
-            zipped = list(zip(suffixes, features))
-            print('\t{0}'.format(zipped))
+        if _TRACE:
+            print('RESULTS: ')
+            for l in oid_list:
+                assert isinstance(l, list)
+                suffixes = []
+                features = []
+                for oid in l:
+                    doc = doc_map[oid]
+                    oid_suffix = str(oid)[-4:]
+                    doc_feature = doc['nlpql_feature']
+                    suffixes.append(oid_suffix)
+                    features.append(doc_feature)
+                zipped = list(zip(suffixes, features))
+                print('\t{0}'.format(zipped))
         
         group_index += 1
                 
@@ -2065,7 +2065,7 @@ def is_valid(parse_result, name_list=None):
 
     # if here, resolved all the tokens
     new_infix_expression = ' '.join(new_tokens)
-    print('\tNEW INFIX EXPRESSION: {0}'.format(new_infix_expression))
+    if _TRACE: print('\tNEW INFIX EXPRESSION: {0}'.format(new_infix_expression))
     return new_infix_expression
 
 
