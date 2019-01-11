@@ -2271,7 +2271,7 @@ def _run_tests(job_id, context_var):
     EXPRESSIONS = [
 
         # # pure math expressions
-        # 'Temperature.value >= 100.4',
+        'Temperature.value >= 100.4',
         # 'Temperature.value >= 1.004e2',
         # '100.4 <= Temperature.value',
         # '(Temperature.value >= 100.4)',
@@ -2306,7 +2306,7 @@ def _run_tests(job_id, context_var):
         # 'hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701,
         # '(hasRigors OR hasDyspnea) AND hasTachycardia', #286
         # 'hasRigors AND (hasTachycardia AND hasNausea)',
-        '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
+        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
 
         # # logical NOT is TBD; requires NLPQL feature dependencies
         # # 'hasRigors NOT hasNausea',
@@ -2391,7 +2391,7 @@ def _get_version():
 def _show_help():
     print(_get_version())
     print("""
-    USAGE: python3 ./{0} --jobid <integer> [-hcvz]
+    USAGE: python3 ./{0} --jobid <integer> [-cdhv]
 
     OPTIONS:
 
@@ -2402,23 +2402,22 @@ def _show_help():
     FLAGS:
 
         -h, --help           Print this information and exit.
+        -d, --debug          Enable debug output.
         -v, --version        Print version information and exit.
-        -z, --selftest       Run tests and exit.
 
     """.format(_MODULE_NAME))
 
 
 ###############################################################################
 if __name__ == '__main__':
-    
+
     optparser = optparse.OptionParser(add_help_option=False)
-    #optparser.add_option('-f', '--file', action='store', dest='filepath')
     optparser.add_option('-c', '--context', action='store', dest='context')
     optparser.add_option('-j', '--jobid', action='store', dest='job_id')
+    optparser.add_option('-d', '--debug', action='store_true',
+                         dest='debug', default=False)
     optparser.add_option('-v', '--version',
                          action='store_true', dest='get_version')
-    optparser.add_option('-z', '--selftest',
-                         action='store_true', dest='selftest', default=False)
     optparser.add_option('-h', '--help',
                          action='store_true', dest='show_help', default=False)
 
@@ -2432,6 +2431,9 @@ if __name__ == '__main__':
         print(_get_version())
         sys.exit(0)
 
+    if opts.debug:
+        _TRACE = True
+
     if opts.job_id is None:
         print('The job_id (-j command line option) must be provided.')
         sys.exit(-1)
@@ -2442,7 +2444,5 @@ if __name__ == '__main__':
     if opts.context is not None:
         context = opts.context
         
-    if opts.selftest:
-        _run_tests(job_id, context)
-        sys.exit(0)
+    _run_tests(job_id, context)
         
