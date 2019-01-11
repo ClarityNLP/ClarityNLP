@@ -8,22 +8,21 @@ OVERVIEW:
 
 
 The code in this module evaluates mathematical and logical expressions that
-appear in NLPQL 'define' statements. The expression is the part of the
-statement that follows the 'where' keyword.  For instance, in this define
-statement
+appear in NLPQL 'define' statements. The 'expression' is the part of the
+statement that follows the 'where' keyword.  For instance, in the statement
 
     define hasFever:
         where Temperature.value >= 100.4;
 
 the expression portion is the string 'Temperature.value >= 100.4'.
 
-NLPQL expressions evaluate to a Boolean result. The expressions can be linked
-by comparison or logical operators and they can be parenthesized in the usual
-way to enforce precedence or evaluation order. Some examples:
+NLPQL expressions evaluate to a Boolean result. Expressions can be combined
+with logical operators and they can be parenthesized in the usual way to
+enforce precedence or evaluation order. Some examples:
 
     Temperature.value >= 97.7 AND Temperature.value <= 99.5
-    hasRigors AND (hasDyspnea or hasTachycardia)
-    LesionMeasurement.dimension_X > 10 and hasSepsis
+    hasRigors AND (hasDyspnea OR hasTachycardia)
+    LesionMeasurement.dimension_X > 10 AND Temperature.value > 98.6
     etc.
 
 There are many more examples towards the end of this file in the _run_tests
@@ -34,24 +33,80 @@ which means that parentheses are balanced, the operators and variables are
 known, and that the statement obeys valid mathematical syntax.
 
 This module converts the expression to a set of MongoDB aggregation commands
-and executes the command against a MongoDB collection. The document ids of all
-documents satisfying the expression are returned to the caller in a list or in
-a list of lists, depending on the expression type.
+and executes the command against a MongoDB collection. The ObjectId (_id) of
+each document satisfying the expression is returned to the caller.
 
 
 
 USAGE:
 
-(FIX THIS - TBD)
-
-There is a single exported function called 'run' having this signature:
 
 
-    run(mongo_collection_obj, infix_expr)
+Step 1:
 
+The first thing to do when using this module is to parse the infix epression
+string. Do this by making a call to the parse_expression function:
+
+    parse_result = parse_expression(infix_expression, name_list)
+
+The 'name_list' is an optional list argument that is used to validate the
+tokens in the infix expression. NLPQL 'define' statements create new labels
+and define them using combinations of existing labels. In the 'hasFever'
+example above, the 'hasFever' label is defined using the existing label
+'Temperature'. The name_list contains all such labels and is used to verify
+that all string tokens are valid.
+
+The 'parse_result' is a fully-parenthesized string with the operator symbols
+replaced by string mnemonics and a space character inserted between the tokens.
+So the expression 'Temperature.value >= 100.4' would be returned from the
+expression parser as
+
+    '( Temperature.value GE 100.4 )'
+
+If the expression is invalid or cannot be evaluated, then an empty string is
+returned and relevant information is written to the runtime log.
+
+
+Step 2:
+
+The next step following a successful parse is to generate a list of
+ExpressionObject namedtuples from the parse result. These are defined below
+and are self-contained descriptions of an evaluation run. Some input
+expressions may be decomposed into simpler subexpressions, and in such
+cases the list of ExpressionObjects contains all such subexpressions.
+
+Generate this list by calling 'generate_expressions':
+
+    expression_obj_list = generate_expressions(nlpql_feature, parse_result)
+
+The 'nlpql_feature' is the name to assign to the result of the evaluation,
+such as 'hasFever' in the example above. The 'parse_result' is the nonempty
+string returned by 'parse_expression'.
+
+The 'expression_obj_list' returned by the function is the list of
+ExpressionObject namedtuples mentioned previously. Users do not need to access
+or interpret the members of this namedtuple.
+
+
+Step 3:
+
+The final step is to evaluate each of the (sub)expressions in the
+expression_list. This can be done as follows:
+
+    for expr_obj in expression_obj_list:
+
+        result = evaluate_expression(expr_obj, 
+                                     job_id,
+                                     context_field,
+                                     mongo_collection_obj)
+
+The job_id is an integer assigned by the ClarityNLP runtime.
+
+The context_field is a string that has a value of either 'document' for a
+document context or 'subject' for a patient context.
 
 The 'mongo_collection_obj' argument is a pymongo object representing the
-desired collection. This object can be created externally to this module as
+desired collection. This object can be created externally to the module as
 follows:
 
     mongo_client_obj     = pymongo.MongoClient(mongo_host, mongo_port)
@@ -61,31 +116,19 @@ follows:
 The collection object is created externally to avoid the penalty of recreation
 for each expression evaluation.
 
-The 'infix_expr' argument is an infix string with whitespace separating
-operators and operands. The expressions above are valid input, as is this:
-
-    'D > A + (B * C)'
-
-This next expression is invalid, since the '*' operator has no whitespace 
-surrounding it:
-
-    'D > A + (B*C)'
-
-No assumptions are made about spaces separating parentheses from the operators
-and operands.  So any of these forms are acceptable:
-
-    'D > A + ( B * C )'
-    'D > A + (B * C )'
-    'D > A + ( B * C)'
-
-
-The 'run' function returns a list of MongoDB document ids (the _id field) for
-all documents that satisfy the expression.
+This function returns an EvalResult namedtuple, which is defined below. This
+namedtuple contains a list of the ObjectId (_id) values for all documents that
+satisfy the expression.
 
 Given a list of document IDs, the full documents can be retrieved from the
 database with this query:
 
     cursor = collection.find({'_id' : {'$in' : doc_id_list}})
+
+Each document can be accessed by iteration:
+
+    for doc in cursor:
+        # do something with doc
 
 
 
@@ -93,57 +136,35 @@ TESTING:
 
 
 
-Run the self-tests from the command line as follows:
+This module can be used to evaluate expression strings, but it first requires
+a run of ClarityNLP to load some data into MongoDB. One could write an NLPQL
+file that only runs basic tasks such as the value extractor, the measurement
+finder, and various provider assertions. This file does not necesarily need to
+include any expressions.
 
-    python3 ./mongo_eval.py --selftest
+Add your desired expression to the list in _run_tests, then evaluate it using
+the data from your ClarityNLP run. You will need to know the job_id to do this.
+Use this command:
 
-No output should be generated if all tests pass.
-
-The command line interface also accepts expressions and prints the associated
-MongoDB aggregation command to stdout.  For instance, the command
-
-    python3 ./mongo_eval.py --expression  'D > A + (B * C)'
-
-generates this output:
-
-Expression: D > A + (B * C)
-   Postfix: ['D', 'A', 'B', 'C', '*', '+', '>']
-   Command: 
-{
-    "$project": {
-        "value": {
-            "$gt": [
-                "$D",
-                {
-                    "$add": [
-                        "$A",
-                        {
-                            "$multiply": [
-                                "$B",
-                                "$C"
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-}
+    python3 ./expr_eval.py -j <job_id> --selftest
 
 
 Help for the command line interface can be obtained via this command:
 
     python3 ./mongo_eval --help
 
-Extensive debugging info can be generated with the --debug option.
+Extensive debugging info can be generated by setting the _TRACE variable
+to True.
 
 
 
 LIMITATIONS:
 
 
-Currently only mathematical operations are supported. Database operations
-involving syntax such as 'predicate IS NOT? NULL',
+
+The 'not' operator is not supported.
+
+Database operations involving syntax such as 'predicate IS NOT? NULL',
 'predicate NOT? LIKE predicate (STRING)?' are not yet supported.
 
 """
@@ -1321,10 +1342,10 @@ def _mongo_math_format(operator, op1, op2=None):
 
         
 ###############################################################################
-def eval_math_expr(job_id,
-                   final_nlpql_feature,
-                   infix_expr,
-                   mongo_collection_obj):
+def _eval_math_expr(job_id,
+                    final_nlpql_feature,
+                    infix_expr,
+                    mongo_collection_obj):
     """
     Generate a MongoDB aggregation pipeline to evaluate the given math
     expression, supplied in infix form.
@@ -1334,7 +1355,7 @@ def eval_math_expr(job_id,
     """
 
     if _TRACE:
-        print('Called nlpql_expression::eval_math_expr')
+        print('Called nlpql_expression::_eval_math_expr')
         print('\tExpression: "{0}"'.format(infix_expr))
     
     # get rid of extraneous parentheses
@@ -1451,11 +1472,11 @@ def _mongo_logic_format(operator, operands):
 
 
 ###############################################################################
-def eval_logic_expr(job_id,
-                    context_field,
-                    final_nlpql_feature,
-                    infix_expr,
-                    mongo_collection_obj):
+def _eval_logic_expr(job_id,
+                     context_field,
+                     final_nlpql_feature,
+                     infix_expr,
+                     mongo_collection_obj):
     """
     Generate a MongoDB aggregation pipeline to evaluate the given logical
     expression, supplied in infix form.
@@ -1468,7 +1489,7 @@ def eval_logic_expr(job_id,
     """
 
     if _TRACE:
-        print('Called nlpql_expression::eval_logic_expr')
+        print('Called nlpql_expression::_eval_logic_expr')
         print('\tExpression: "{0}"'.format(infix_expr))
     
     assert 'subject' == context_field or 'document' == context_field
@@ -2170,61 +2191,69 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
 
 
 ###############################################################################
-def evaluate_expressions(mongo_collection_obj,    # db.collection_name
-                         job_id,                  # assigned job id
-                         context_var,             # either 'patient' or 'document'
-                         expression_object_list): # result of 'generate_expressions'
+def evaluate_expression(expr_obj,
+                        job_id,
+                        context_field,
+                        mongo_collection_obj):
+    """
+    Evaluate a single ExpressionObject namedtuple.
+    """
+
+    if _TRACE: print('Called evaluate_expression')
+
+    assert EXPR_TYPE_MATH == expr_obj.expr_type or \
+        EXPR_TYPE_LOGIC == expr_obj.expr_type
+
+    if EXPR_TYPE_MATH == expr_obj.expr_type:
+        result = _eval_math_expr(job_id,
+                                 expr_obj.nlpql_feature,
+                                 expr_obj.expr_text,
+                                 mongo_collection_obj)
+
+    else:
+        result = _eval_logic_expr(job_id,
+                                  context_field,
+                                  expr_obj.nlpql_feature,
+                                  expr_obj.expr_text,
+                                  mongo_collection_obj)
+
+    return result
+
+
+###############################################################################
+def _evaluate_expressions(mongo_collection_obj,    # db.collection_name
+                          job_id,                  # assigned job id
+                          context_field,           # either 'subject' or 'report_id'
+                          expression_object_list): # result of 'generate_expressions'
     """
     Evaluate the expression object list returned by 'generate_expressions'.
     """
 
-    if _TRACE: print('Called nlpql_expression::evaluate_expressions')
-
-    # must either be a patient or document context
-    context_var = context_var.lower()
-    assert 'patient' == context_var or 'document' == context_var
-
-    if 'patient' == context_var:
-        context_field = 'subject'
-    else:
-        context_field = 'report_id'
+    if _TRACE: print('Called _evaluate_expressions')
 
     # return a list of EvalResult namedtuples (defined at top of file)
     result_list = []
     
     for expr_obj in expression_object_list:
 
-        assert EXPR_TYPE_MATH == expr_obj.expr_type or \
-            EXPR_TYPE_LOGIC == expr_obj.expr_type
-        
-        if EXPR_TYPE_MATH == expr_obj.expr_type:
-            result = eval_math_expr(job_id,
-                                    expr_obj.nlpql_feature,
-                                    expr_obj.expr_text,
-                                    mongo_collection_obj)
-        
-            # write results to db - TBD
-            
-            result_list.append(result)
-        
-        elif EXPR_TYPE_LOGIC == expr_obj.expr_type:
-            result = eval_logic_expr(job_id,
+        result = evaluate_expression(expr_obj,
+                                     job_id,
                                      context_field,
-                                     expr_obj.nlpql_feature,
-                                     expr_obj.expr_text,
                                      mongo_collection_obj)
-
+        
+        if EXPR_TYPE_LOGIC == result.expr_type:
+            
             doc_map, oid_lists = expand_logical_result(result, mongo_collection_obj)
             
             # write results to DB - TBD
             
-            result_list.append(result)
+        result_list.append(result)
         
     return result_list
 
 
 ###############################################################################
-def _run_tests(job_id, context):
+def _run_tests(job_id, context_var):
     """
     Assumes that a ClarityNLP run has been completed using the 'data_gen.nlpql'
     NLPQL file. Enter the job_id for the data generation run on the command
@@ -2271,13 +2300,13 @@ def _run_tests(job_id, context):
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
         # '((hasShock) AND (hasDyspnea))',
         # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
-        '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
+        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
         # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
         # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
         # 'hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701,
         # '(hasRigors OR hasDyspnea) AND hasTachycardia', #286
         # 'hasRigors AND (hasTachycardia AND hasNausea)',
-        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
+        '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
 
         # # logical NOT is TBD; requires NLPQL feature dependencies
         # # 'hasRigors NOT hasNausea',
@@ -2312,6 +2341,15 @@ def _run_tests(job_id, context):
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 
     final_nlpql_feature = 'my_nlpql_feature'
+
+    # must either be a patient or document context
+    context_var = context_var.lower()
+    assert 'patient' == context_var or 'document' == context_var
+
+    if 'patient' == context_var:
+        context_field = 'subject'
+    else:
+        context_field = 'report_id'
     
     counter = 1
     for e in EXPRESSIONS:
@@ -2330,10 +2368,10 @@ def _run_tests(job_id, context):
             break
 
         # evaluate the ExpressionObjects in the list
-        eval_results = evaluate_expressions(mongo_collection_obj,
-                                            job_id,
-                                            context,
-                                            expression_object_list)
+        eval_results = _evaluate_expressions(mongo_collection_obj,
+                                             job_id,
+                                             context_field,
+                                             expression_object_list)
         if 0 == len(eval_results):
             print('\n*** evaluate_expressions FAILED ***\n')
             break
