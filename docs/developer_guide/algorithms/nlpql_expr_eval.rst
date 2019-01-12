@@ -46,9 +46,11 @@ statements.
 
 We now turn our attention to a description of how the expression evaluator
 works. We should state at the outset that the descriptions below apply to the
-expression evaluator built on MongoDB aggregation. This evaluator is currently
-in a testing phase and must be explicitly enabled by adding the following line
-to the ``project.cfg`` file in the ``[local]`` section:
+expression evaluator built on
+`MongoDB aggregation <https://docs.mongodb.com/manual/aggregation/>`_. This
+evaluator is currently in a testing phase and must be explicitly enabled by
+adding the following line to the ``project.cfg`` file in the ``[local]``
+section:
 ::
    [local]
    evaluator=mongo
@@ -58,9 +60,9 @@ out with a `#` character. The Pandas evaluator uses different techniques from
 those described below.
 
 Why use MongoDB aggregation to evaluate NLPQL expressions? The basic reason
-is that the data already resides in MongoDB, and the aggregation framework
-provides a convenient and powerful mechanism on which to build an evaluation
-engine. Use of anything other than MongoDB would require the following steps;
+is that the data resides in a Mongo collection, and it is more efficient to
+evaluate expressions using capabilities provided by MongoDB than to use
+something else. Use of a non-Mongo evaluator would require us to:
 
 - Run a set of queries to extract the data from MongoDB
 - Transmit the query results across a network if the Mongo instance is hosted
@@ -70,8 +72,8 @@ engine. Use of anything other than MongoDB would require the following steps;
 - If MongoDB is hosted remotely, transmit the results back to the Mongo host
 - Insert the results into MongoDB.
    
-Use of the aggregation framework should prove to be much more efficient than
-this process, since all data remains inside MongoDB.
+Evaluation via the MongoDB aggregation framework should prove to be much more
+efficient than this process, since all data remains inside MongoDB.
 
 
 NLPQL Expression Types
@@ -112,14 +114,14 @@ parentheses, and the logic operators ``AND`` and/or ``OR``. For instance:
 ::
    hasRigors OR hasDyspnea
    hasFever AND (hasDyspnea OR hasTachycardia)
-   (hasShock or hasDyspnea) AND (hasTachycardia OR hasNausea)
+   (hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)
 
-Logic expression operate on high-level NLPQL features, **not** on numeric
+Logic expressions operate on high-level NLPQL features, **not** on numeric
 literals or NLPQL variables. The presence of a numeric literal or NLPQL
 variable indicates that the expression is either a mathematical expression
 or possibly invalid.
 
-Simple logic expressions produce a reuslt from data contained in one or more
+Simple logic expressions produce a result from data contained in one or more
 task result documents. The result from the expression evaluation is written to
 one or more new MongoDB result documents (the details will be explained below).
    
@@ -128,7 +130,7 @@ one or more new MongoDB result documents (the details will be explained below).
 
 A *mixed* expression is a string containing either:
 
-- A mathematical expression **and** a logical expression
+- A mathematical expression **and** a logic expression
 - A mathematical expression using variables involving two or more NLPQL features
 
 For instance:
@@ -143,8 +145,9 @@ For instance:
    Temperature.value >= 100.4 AND (hasRigors OR hasNausea) AND (LesionMeasurement.dimension_X >= 15)
 
 The evaluation mechanisms used for mathematical, logic, and mixed expressions
-are quite different. To fully understand the issues involved, it helps to 
-understand the structure of the 'intermediate' and 'final' phenotype results.
+are quite different. To fully understand the issues involved, it is helpful to
+first understand the meaning of the 'intermediate' and 'final' phenotype
+results.
 
 Phenotype Result CSV Files
 --------------------------
@@ -191,7 +194,8 @@ Here we see various items relevant to the job submission. Each submission
 receives a *job_id*, which is a unique numerical identifier for the run.
 ClarityNLP writes all task results from all jobs to the ``phenotype_results``
 collection in a Mongo database named ``nlp``. The job_id is
-needed to distinguish the data belonging to each run.
+needed to distinguish the data belonging to each run. Results can be extracted
+directly from the database by issuing `MongoDB queries <https://docs.mongodb.com/manual/tutorial/query-documents/>`_.
 
 We also see URLs for 'intermediate' and 'main' phenotype results. These are
 convenience APIs that export the results to CSV files. The data in the
@@ -201,7 +205,7 @@ from any final tasks or final expression evaluations. The CSV file can be
 viewed in Excel or in another spreadsheet application.
 
 Each NLP task generates a result document distinguished by a particular value
-of the ``nlpql_feature`` field. For instance, the statement
+of the ``nlpql_feature`` field. The *define* statement
 ::
    define hasFever:
         where Temperature.value >= 100.4;
@@ -209,14 +213,14 @@ of the ``nlpql_feature`` field. For instance, the statement
 generates a set of rows in the intermediate CSV file with the
 ``nlpql_feature`` field set to ``hasFever``.  The NLP tasks
 ::
-    // nlpql_feature `hasRigors`
+    // nlpql_feature 'hasRigors'
     define hasRigors:
         Clarity.ProviderAssertion({
             termset: [RigorsTerms],
             documentset: [ProviderNotes]
         });
 
-    // nlpql_feature `hasDyspnea`
+    // nlpql_feature 'hasDyspnea
     define hasDyspnea:
         Clarity.ProviderAssertion({
             termset: [DyspneaTerms],
@@ -230,24 +234,91 @@ as listed in the source NLPQL file. The presence of these nlpql_feature
 blocks makes locating the results of each NLP task a relatively simple
 matter.
 
-Evaluation of Single-Row Expressions
-====================================
+Expression Evaluation Algorithms
+================================
 
-The NLPQL front end parses the NLPQL file and generates a string of
-whitespace-separated tokens for each expression. The token string is passed
-to the evaluator which determines if it is a single-row expression (i.e. a
-mathematical expression described above), a multi-row expression, or something
-else that cannot be evaluated. If single-row, the string is tokenized and
-the nlpql_feature and field list are extracted.  To illustrate, consider
-these single-row expressions:
+Expression Tokenization and Parsing
+-----------------------------------
+
+The NLPQL front end parses the NLPQL file and sends the raw expression text
+to the evaluator (``nlp/data_access/expr_eval.py``). The evaluator module
+parses the expression text and converts it to a fully-parenthesized token
+string. The tokens are separated by whitespace and all operators are replaced
+by string mnemonics (such as ``GE`` for the operator ``>=``, ``LT`` for the
+operator ``<``, etc.).
+
+If the expression includes any subexpressions involving numeric literals, they
+are evaluated at this stage and the literal subexpression replaced with the
+result.
+
+Validity Checks
+---------------
+
+The evaluator then runs validity checks on each token. If it finds a token that
+it does not recognize, it tries to resolve it into a series of known NLPQL
+features separated by logic operators. For instance, if the evaluator were
+to encounter the token ``hasRigorsANDhasDyspnea`` under circumstances in which
+only ``hasRigors`` and ``hasDyspnea`` were valid NLPQL features, it would
+replace this single token with the string ``hasRigors AND hasDyspnea``.  If it
+cannot perform the separation (such as with the token
+``hasRigorsA3NDhasDyspnea``) it reports an error and writes error information
+into the log file.
+
+If the validity checks pass, the evaluator next determines the expression type.
+The valid types are ``EXPR_TYPE_MATH``, ``EXPR_TYPE_LOGIC``, and
+``EXPR_TYPE_MIXED``. If the expression type cannot be determined, the evaluator
+reports an error and writes error information into the log file.
+
+Subexpression Substitution
+--------------------------
+
+If the expression is of mixed type, the evaluator locates all simple math
+subexpressions contained within and replaces them with temporary NLPQL feature
+names, thereby converting math subexpressions to logic subexpressions. The
+substitution process continues until all mathematical
+subexpressions have been replaced with substitute NLPQL features, at which
+point the expression type becomes ``EXPR_TYPE_LOGIC``.
+
+To illustrate the substitution process, consider one of the examples from
+above:
 ::
-   where Temperature.value >= 100.4
-   where LesionMeasurement.dimension_X < 5 AND LesionMeasurement.dimension_Y < 5
-   
-The first expression has an ``nlpql_feature`` of ``Temperature`` and a field list
-containing the single entry ``value``. The second expression has an
-``nlpql_feature`` of ``LesionMeasurement`` and a field list consisting of the
-entries ``dimension_X`` and ``dimension_Y``.
+   Temperature.value >= 100.4 AND (hasRigors OR hasNausea) AND (LesionMeasurement.dimension_X >= 15)
+
+This expression is of mixed type, since it contains the mathematical
+subexpression ``Temperature.value >= 100.4``, the logic subexpression
+``(hasRigors OR hasNausea)``, and the mathematical subexpression
+``(LesionMeasurement.dimension_X >= 15)``. The NLPQL features in each math
+subexpression also differ.
+
+The evaluator identifies the Temperature subexpression and replaces it with a
+substitute NLPQL feature, ``m0`` (for instance). This transforms the original
+expression into:
+::
+   (m0) AND (hasRigors OR hasNausea) AND (LesionMeasurement.dimension_X >= 15)
+
+Now only one mathematical subexpression remains.
+
+The evaluator again makes a substitution ``m1`` for the remaining mathematical
+subexpression, which converts the original into
+::
+   (m0) AND (hasRigors OR hasNausea) AND (m1)
+
+This is now a pure logic expression.
+
+Thus the substitution process transforms the original mixed-type
+expression into three subexpressions, each of which is of simple math
+or simple logic type:
+::
+   subexpression 1 (m0): 'Temperature.value >= 100.4'
+   subexpression 2 (m1): 'LesionMeasurement.dimension_X >= 15'
+   subexpression 3:      '(m0) AND (hasRigors OR hasNausea) AND (m1)'
+
+By evaluating each subexpression in order, the result of evaluating the
+original mixed-type expression can be achieved.
+
+Evaluation of Mathematical Expressions
+======================================
+
 
 Initial Pipeline Stage
 ----------------------
@@ -551,8 +622,8 @@ expression. This result neither appears in the result set for
 validate the Y-component.
 
 
-Evaluation of Multi-Row Expressions
-===================================
+Evaluation of Logic Expressions
+===============================
 
 Multi-row expressions apply the logical operations ``AND``, ``OR``, and ``NOT``
 to **sets** of MongoDB result documents. Typically the sets are determined by
