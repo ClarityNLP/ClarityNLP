@@ -477,3 +477,39 @@ documents with an ``nlpql_feature`` field equal to the label from the
 Evaluation of Logic Expressions
 ===============================
 
+The evaluation process for logic expressions proceeds similarly to that for
+mathematical expressions. Unnecessary parentheses are removed and the
+expression is converted to postfix.
+
+Detection of n-ary AND and OR
+-----------------------------
+
+After the postfix conversion a pattern matcher looks for instances of n-ary
+``AND`` and/or ``OR`` in the set of postfix tokens. An n-ary ``OR`` would look
+like this, for n == 4:
+::
+   // infix
+   hasRigors OR hasDyspnea OR hasTachycardia OR hasNausea
+
+   // postfix
+   hasRigors hasDyspnea OR hasTachycardia OR hasNausea OR
+
+The n-value refers to the number of operands.  All such n-ary instances are
+replaced with a variant form of the operator that includes the count. The
+reason for this is that n-ary ``AND`` and ``OR`` can be handled easily by the
+aggregation pipeline, and their use simplifies the pipeline construction
+process. For this example, the rewritten postfix form becomes:
+::
+   hasRigors hasDyspnea hasTachycardia hasNausea OR4
+
+Generation of the Aggregation Pipeline
+--------------------------------------
+
+initial match on job id and features
+match for explicitly mentioned NLPQL features
+group operation with reduced documents
+feature_set
+unwind
+sort
+group again
+
