@@ -1,0 +1,12 @@
+,drug_name,n,reason,token_0,token_1,token_2,token_3,notaecandidateindication_in_pos_0,notaecandidatecontraindication_in_pos_0,notaecandidatepreexistingconditionorriskfactor_in_pos_0,row_sum
+262,seroquel,4.0,notaecandidatepreexistingconditionorriskfactor,leukopenia/,notaecandidatepreexistingconditionorriskfactor,should,have,0,0,0,0
+663,risperdal,4.0,notaecandidatepreexistingconditionorriskfactor,leukopenia/,notaecandidatepreexistingconditionorriskfactor,should,have,0,0,0,0
+853,istodax,4.0,notaecandidateindication,refractory,extranodal,nk/,notaecandidateindication,0,0,0,0
+930,celebrex,4.0,notaecandidatepreexistingconditionorriskfactor,in,the,post-,notaecandidatepreexistingconditionorriskfactor,0,0,0,0
+931,celebrex,4.0,notaecandidatepreexistingconditionorriskfactor,the,post-,notaecandidatepreexistingconditionorriskfactor,period,0,0,0,0
+932,celebrex,4.0,notaecandidatepreexistingconditionorriskfactor,post-,notaecandidatepreexistingconditionorriskfactor,period,were,0,0,0,0
+934,celebrex,4.0,notaecandidatepreexistingconditionorriskfactor,first,year,post-,notaecandidatepreexistingconditionorriskfactor,0,0,0,0
+935,celebrex,4.0,notaecandidatepreexistingconditionorriskfactor,year,post-,notaecandidatepreexistingconditionorriskfactor,was,0,0,0,0
+936,celebrex,4.0,notaecandidatepreexistingconditionorriskfactor,post-,notaecandidatepreexistingconditionorriskfactor,was,20,0,0,0,0
+938,celebrex,4.0,notaecandidatepreexistingconditionorriskfactor,first,year,post-,notaecandidatepreexistingconditionorriskfactor,0,0,0,0
+978,latuda,4.0,notaecandidatepreexistingconditionorriskfactor,leukopenia/,notaecandidatepreexistingconditionorriskfactor,should,have,0,0,0,0
