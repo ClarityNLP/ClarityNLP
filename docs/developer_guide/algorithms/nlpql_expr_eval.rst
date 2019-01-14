@@ -403,7 +403,7 @@ Generation of the Aggregation Pipeline
 
 The next task for the evaluator is to convert the expression into a sequence of
 MongoDB aggregation pipeline stages. This process involves the generation of an
-initial `match <https://docs.mongodb.com/manual/reference/operator/aggregation/match/>`_
+initial `$match <https://docs.mongodb.com/manual/reference/operator/aggregation/match/>`_
 query to filter out everything but the data for the current job. The match query
 also checks for the existence of all entries in the field list and that they
 have non-null values. **A simple existence check is not sufficient**, since a
@@ -438,7 +438,7 @@ aggregation syntax rules. More information about the aggregation pipeline can
 be found `here <https://docs.mongodb.com/manual/aggregation/>`_.
 
 The pipeline actually does a
-`project <https://docs.mongodb.com/manual/reference/operator/aggregation/project/>`_
+`$project <https://docs.mongodb.com/manual/reference/operator/aggregation/project/>`_
 operation and creates a new document with a Boolean field called ``value``.
 This field has a value of True or False according to whether the source
 document satisfied the mathematical expression. The ``_id`` field of the
@@ -476,4 +476,280 @@ documents with an ``nlpql_feature`` field equal to the label from the
 
 Evaluation of Logic Expressions
 ===============================
+
+The initial stages of the evaluation process for logic expressions proceed
+similarly to those for mathematical expressions. Unnecessary parentheses are
+removed and the expression is converted to postfix.
+
+Detection of n-ary AND and OR
+-----------------------------
+
+After the postfix conversion, a pattern matcher looks for instances of n-ary
+``AND`` and/or ``OR`` in the set of postfix tokens. An n-ary ``OR`` would look
+like this, for n == 4:
+::
+   // infix
+   hasRigors OR hasDyspnea OR hasTachycardia OR hasNausea
+
+   // postfix
+   hasRigors hasDyspnea OR hasTachycardia OR hasNausea OR
+
+The n-value refers to the number of operands.  All such n-ary instances are
+replaced with a variant form of the operator that includes the count. The
+reason for this is that n-ary ``AND`` and ``OR`` can be handled easily by the
+aggregation pipeline, and their use simplifies the pipeline construction
+process. For this example, the rewritten postfix form would become:
+::
+   hasRigors hasDyspnea hasTachycardia hasNausea OR4
+
+Generation of the Aggregation Pipeline
+--------------------------------------
+
+As with mathematical expressions, the logic expression aggregation pipeline
+begins with an initial stage that filters on the job_id and checks that the
+``nlpql_feature`` field exists and is non-null. No explicit field checks are
+needed since logic expressions do not use NLPQL variables. For a job_id of
+12345, this inital filter stage is:
+::
+   {
+       "$match": {
+           "job_id":12345
+           "nlpql_feature": {"$exists":True, "$ne":None}
+       }
+   }
+
+Following this is another filter stage that removes all docs not having the
+desired NLPQL features. For the original logic expression example above:
+::
+   hasFever AND (hasDyspnea OR hasTachycardia)
+
+this second filter stage would look like this:
+::
+   {
+       "$match": {
+           "nlpql_feature": {"$in": ['hasFever', 'hasDyspnea', 'hasTachycardia']}
+       }
+   }
+
+Grouping by Value of the Context Variable
+-----------------------------------------
+
+The next stage in the logic pipeline is to group documents by the **value** of
+the context field. Recall that NLPQL files specify a context of either
+'document' or 'patient', meaning that a document-centric or patient-centric
+view of the results is desired. In a document context, ClarityNLP needs to
+examine all data pertaining to a given document. In a patient context, it needs
+to examine all data pertaining to a given patient.
+
+The grouping operation collects all such data (the ClarityNLP task result
+documents) that pertain to a given document or a given patient. Documents are
+distinguished by their ``report_id`` field, and patients are distinguished by
+their patient IDs, which are stored in the ``subject`` field. **You can**
+**think of these groups as being the 'evidence' for a given document or for**
+**a given patient.** If the patient has the conditions expressed in the NLPQL
+file, the evidence for it will reside in the group for that patient.
+
+As part of the grouping operation ClarityNLP also generates a **set** of NLPQL
+features for each group. This set is called the **feature_set** and it will be
+used to evaluate the expression logic for the group as a whole.
+
+The grouping pipeline stage looks like this:
+::
+   {
+       "$group": {
+           "_id": "${0}".format(context_field),
+
+           # save only these four fields from each doc; more efficient
+           # than saving entire doc, uses less memory
+           "ntuple": {
+               "$push": {
+                   "_id": "$_id",
+                   "nlpql_feature": "$nlpql_feature",
+                   "subject": "$subject",
+                   "report_id": "$report_id"
+               }
+           }, 
+           "feature_set": {"$addToSet": "$nlpql_feature"}
+       }
+   }
+
+Here we see the
+`$group <https://docs.mongodb.com/manual/reference/operator/aggregation/group/>`_
+operator grouping the documents on the value of the context field. An
+**ntuple** array is generated for each different value of the context variable.
+This is the 'evidence' as discussed above. Only the essential fields for each
+document are used, which reduces memory consumption and improves efficiency.
+We also see the generation of the feature set for each group, in which each
+NLPQL feature for the group's documents is added to the set.
+
+At the conclusion of this pipeline stage, each group has two fields: an
+``ntuple`` array that contains the relevant data for each document in the
+group, and a ``feature_set`` field that contains the distinct features for
+the group.
+
+Logic Operation Stage
+---------------------
+
+After the grouping operation, the logic operations of the expression are
+applied to the elements of the feature set. If a particular patient
+satisfies the ``hasFever`` condition, then at least one document in that
+patient's group will have an NLPQL feature field with the value of
+``hasFever``. Since all the distinct values of the NLPQL features for the
+group are stored in the feature set, the feature set must also have an element
+equal to ``hasFever``.
+
+A check for set membership using aggregation syntax is expressed as:
+::
+   {"$in": ["hasFever", "$feature_set"]}
+
+This construct means to use the
+`$in <https://docs.mongodb.com/manual/reference/operator/aggregation/in/>`_
+operator to test whether ``feature_set`` contains the element ``hasFever``.
+The ``$in`` operator returns a Boolean result.
+
+A successful test for feature set membership means that the patient has
+the stated feature.
+
+The evaluator implements the expression logic by translating it into a series
+of set membership tests. For our example above, the logic operation pipeline
+stage becomes:
+::
+   {
+       '$match': {
+           '$expr': {
+               '$and': [
+                   {'$in': ['hasFever', '$feature_set']},
+                   {
+                       '$or': [
+                           {'$in': ['hasDyspnea', '$feature_set']},
+                           {'$in': ['hasTachycardia', '$feature_set']}
+                       ]
+                   }
+               ]
+           }
+       }
+   }
+
+Once again we have a match operation to filter the documents. Only those
+documents satisfying the expression logic will survive the filter. The
+`$expr <https://docs.mongodb.com/manual/reference/operator/query/expr/index.html>`_
+operator allows the use of aggregation syntax in contexts where the standard
+MongoDB query syntax would be required.
+
+Following that we see a series of logic operations for our expression
+``hasFever AND (hasDyspnea OR hasTachycardia)``.  The inner ``$or`` operation
+tests the feature set for membership of ``hasDyspnea`` and ``hasTachycardia``.
+If either or both are present, the ``$or`` operator returns True. The result of
+the ``$or`` is then used in an ``$and`` operation which tests the feature set
+for the presence of ``hasFever``. If it is also present, the ``$and`` operator
+returns True as well, and the document in question survives the filter operation.
+
+To summarize the evaluation process so far: ClarityNLP converts infix logic
+expressions to postfix form and groups the documents by value of the context
+variable. It uses a stack-based postfix evaluation mechanism to generate the
+aggregation statements for the expression logic. Each logic operation is
+converted to a test for the presence of an NLPQL feature in the feature set.
+
+Document Sorting and Regrouping
+-------------------------------
+
+After the logic pipeline stage the evaluator sorts the documents in each group
+on the value of the 'other' context variable. For a document context, the
+documents in each surviving group would be sorted on the value of the patient
+IDs, which are stored in the ``subject`` field. For a patient context, the
+surviving groups would be sorted on the value of the document IDs, which are
+stored in the ``report_id`` field. The sort is performed in the aggregation
+pipeline to avoid having to do it externally.
+
+To sort the documents the groups must first be temporarily `unwound`, sorted,
+then regrouped. The
+`$unwind <https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/>`_
+operator is used to flatten the ``$ntuple`` array so that the documents can
+be sorted with the
+`$sort <https://docs.mongodb.com/manual/reference/operator/aggregation/sort/>`_
+operator. Following the sort, the documents are regrouped as before, this time
+on the ``_id`` values for the previous groups. The ``$ntuple`` array is
+reconstructed, but this time its members will be sorted on the value of the
+'other' context variable. The ``$feature_set`` is also reconstructed. The
+pipeline stages for these operations are:
+::
+   # sort on 'other' context variable (compared as strings)
+   {"$unwind": "$ntuple"},
+   {"$sort": {sort_field: 1}},
+
+   # Restore the previous groups and feature_sets
+   {
+       "$group": {
+           "_id": "$_id",
+           "ntuple": {"$push": "$ntuple"},
+           "feature_set": {"$addToSet": "$ntuple.nlpql_feature"}
+       }
+   }
+
+With these operations the pipeline is complete. The full pipeline for our
+example is:
+::
+   // pipeline for hasFever AND (hasDyspnea OR hasTachycardia)
+
+   // filter documents on job_id and check validity of the nlpql_feature field
+   {
+       "$match": {
+           "job_id":12345
+           "nlpql_feature": {"$exists":True, "$ne":None}
+       }
+   },
+
+   // filter docs on the desired NLPQL feature values
+   {
+       "$match": {
+           "nlpql_feature": {"$in": ['hasFever', 'hasDyspnea', 'hasTachycardia']}
+       }
+   },
+
+   // group docs by value of context variable, construct feature set
+   {
+       "$group": {
+           "_id": "${0}".format(context_field),
+           "ntuple": {
+               "$push": {
+                   "_id": "$_id",
+                   "nlpql_feature": "$nlpql_feature",
+                   "subject": "$subject",
+                   "report_id": "$report_id"
+               }
+           }, 
+           "feature_set": {"$addToSet": "$nlpql_feature"}
+       }
+   },
+
+   // perform expression logic on the feature set
+   {
+       '$match': {
+           '$expr': {
+               '$and': [
+                   {'$in': ['hasFever', '$feature_set']},
+                   {
+                       '$or': [
+                           {'$in': ['hasDyspnea', '$feature_set']},
+                           {'$in': ['hasTachycardia', '$feature_set']}
+                       ]
+                   }
+               ]
+           }
+       }
+   },
+
+   // sort on the 'other' context field value, regroup
+   {"$unwind": "$ntuple"},
+   {"$sort": {sort_field: 1}},
+   {
+       "$group": {
+           "_id": "$_id",
+           "ntuple": {"$push": "$ntuple"},
+           "feature_set": {"$addToSet": "$ntuple.nlpql_feature"}
+       }
+   }
+
+Result Generation
+-----------------
 
