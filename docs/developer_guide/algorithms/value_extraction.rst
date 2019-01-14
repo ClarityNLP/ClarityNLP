@@ -1,3 +1,5 @@
+.. _general-value-extraction:
+
 General Value Extraction
 ************************
 

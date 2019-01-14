@@ -9,8 +9,9 @@ inflect==0.3.1
 jobtastic==2.0.0
 kazoo==2.4.0
 luigi>=2.8.0
+msgpack>=0.3.0,<0.6
 nltk==3.2.5
-numpy==1.13.3
+numpy==1.14.0
 pandas==0.21.1
 psycopg2==2.7.3.2
 pymongo==3.6.0
@@ -20,6 +21,7 @@ requests>=2.20.0
 requests-file==1.4.2
 requests-oauthlib==0.8.0
 simplejson==3.13.2
+sly==0.3
 spacy==2.0.9
 sphinx==1.7.4
 sphinx-autobuild==0.7.1
