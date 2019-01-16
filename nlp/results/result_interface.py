@@ -6,9 +6,6 @@ def writeResultFeedback(host, port, database, data):
 
         # Parsing info
         job_id = data['job_id']
-        patient_id = data['patient_id']
-        is_correct = data['is_correct']
-        comments = data['comments']
         result_id = data['result_id']
 
         # connecting to the Mongo DB

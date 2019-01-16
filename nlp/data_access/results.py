@@ -56,7 +56,7 @@ def phenotype_feedback_results(job: str):
             query = {"job_id": int(job)}
 
             results = db['result_feedback'].find(query)
-            columns = sorted(['comments', 'feature', 'is_correct', 'job_id', 'patient_id', 'report_id', 'result_id'])
+            columns = sorted(['comments', 'feature', 'is_correct', 'job_id', 'subject', 'report_id', 'result_id'])
 
             for res in results:
                 keys = list(res.keys())
