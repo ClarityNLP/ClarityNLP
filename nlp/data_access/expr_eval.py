@@ -1594,25 +1594,23 @@ def _eval_logic_expr(job_id,
         # do logic ops on the nlpql feature set for this patient or doc
         op_stage,
 
-        # sort on 'other' context variable (compared as strings)
-        {"$unwind": "$ntuple"},
-        {"$sort": {sort_field: 1}},
-
-        # Regroup using the _ids from the previous grouping, which will
-        # reconstruct the original grouping by value of the context variable.
-        # Also recover the ntuple and feature_set arrays from the
-        # original grouping.
-        {
-            "$group": {
-                "_id": "$_id",
-                "ntuple": {"$push": "$ntuple"},
-                "feature_set": {"$addToSet": "$ntuple.nlpql_feature"}
-            }
-        },
-
-        #{"$unwind": "$ntuple"},
-        #{"$replaceRoot": {"newRoot": "$ntuple"}}
+        # *** sorting on the other field is unnecessary ***
         
+        # # sort on 'other' context variable (compared as strings)
+        # {"$unwind": "$ntuple"},
+        # {"$sort": {sort_field: 1}},
+
+        # # Regroup using the _ids from the previous grouping, which will
+        # # reconstruct the original grouping by value of the context variable.
+        # # Also recover the ntuple and feature_set arrays from the
+        # # original grouping.
+        # {
+        #     "$group": {
+        #         "_id": "$_id",
+        #         "ntuple": {"$push": "$ntuple"},
+        #         "feature_set": {"$addToSet": "$ntuple.nlpql_feature"}
+        #     }
+        # },
     ]
 
     if _TRACE:
