@@ -651,41 +651,8 @@ variable. It uses a stack-based postfix evaluation mechanism to generate the
 aggregation statements for the expression logic. Each logic operation is
 converted to a test for the presence of an NLPQL feature in the feature set.
 
-Document Sorting and Regrouping
--------------------------------
-
-After the logic pipeline stage the evaluator sorts the documents in each group
-on the value of the 'other' context variable. For a document context, the
-documents in each surviving group would be sorted on the value of the patient
-IDs, which are stored in the ``subject`` field. For a patient context, the
-surviving groups would be sorted on the value of the document IDs, which are
-stored in the ``report_id`` field. The sort is performed in the aggregation
-pipeline to avoid having to do it externally.
-
-To sort the documents the groups must first be temporarily `unwound`, sorted,
-then regrouped. The
-`$unwind <https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/>`_
-operator is used to flatten the ``$ntuple`` array so that the documents can
-be sorted with the
-`$sort <https://docs.mongodb.com/manual/reference/operator/aggregation/sort/>`_
-operator. Following the sort, the documents are regrouped as before, this time
-on the ``_id`` values for the previous groups. The ``$ntuple`` array is
-reconstructed as well. The sort ensures that, when reconstructed, the members
-are sorted by value of the 'other' context variable. The ``$feature_set`` is
-also reconstructed. The pipeline stages for these operations are:
-::
-   # sort on 'other' context variable (compared as strings)
-   {"$unwind": "$ntuple"},
-   {"$sort": {sort_field: 1}},
-
-   # restore the previous groups and feature_sets
-   {
-       "$group": {
-           "_id": "$_id",
-           "ntuple": {"$push": "$ntuple"},
-           "feature_set": {"$addToSet": "$ntuple.nlpql_feature"}
-       }
-   }
+Final Aggregation Pipeline
+--------------------------
 
 With these operations the pipeline is complete. The full pipeline for our
 example is:
@@ -738,19 +705,141 @@ example is:
                ]
            }
        }
-   },
-
-   // sort on the 'other' context field value, regroup
-   {"$unwind": "$ntuple"},
-   {"$sort": {sort_field: 1}},
-   {
-       "$group": {
-           "_id": "$_id",
-           "ntuple": {"$push": "$ntuple"},
-           "feature_set": {"$addToSet": "$ntuple.nlpql_feature"}
-       }
    }
 
 Result Generation
 -----------------
+
+After constructing a math or logic aggregation pipeline, the evaluator runs the
+pipeline and receives the results from MongoDB. The result set is either a list
+of document ObjectID values (``_id``) for a math expression or an ObjectId list
+with group info for logic expressions.  For math expressions, the documents
+whose ``_id`` values appear in the list are queried and written out as the
+result set. These documents have their ``nlpql_feature`` field set to that
+of the ``define`` statement that contained the expression.
+
+For logic expressions the process is more complex. To help explain what the
+evaluator does we present here a representation of the grouped documents after
+running the pipeline above, for the expression
+``hasFever AND (hasDyspnea OR hasTachycardia)``:
+
++--------------------------+------------------+---------+-------------+
+|    ObjectId (_id)        |  nlpql_feature   | subject | report_id   |
++--------------------------+------------------+---------+-------------+
+| 5c2e9e3431ab5b05db3430e1 |   hasDyspnea     |  19054  | 798209      |
++--------------------------+------------------+---------+-------------+
+| 5c2e9e3431ab5b05db3430e2 |   hasDyspnea     |  19054  | 798209      |
++--------------------------+------------------+---------+-------------+
+|5c2e9e3431ab5b05db3430e3  |   hasDyspnea     |  19054  | 798209      |
++--------------------------+------------------+---------+-------------+
+|5c2e9e3431ab5b05db3430e4  |   hasDyspnea     |  19054  | 798209      |
++--------------------------+------------------+---------+-------------+
+|5c2e9ec931ab5b05db343efa  |   hasDyspnea     |  19054  | 1303796     |
++--------------------------+------------------+---------+-------------+
+|5c2ea2bd31ab5b05db34868c  |   hasTachycardia |  19054  | 1699977     |
++--------------------------+------------------+---------+-------------+
+|5c2ea2bd31ab5b05db34868d  |   hasTachycardia |  19054  | 1699977     |
++--------------------------+------------------+---------+-------------+
+|5c2ea35a31ab5b05db348f19  |   hasTachycardia |  19054  | 1802359     |
++--------------------------+------------------+---------+-------------+
+|5c2ea3a531ab5b05db3492f6  |   hasTachycardia |  19054  | 1905337     |
++--------------------------+------------------+---------+-------------+
+|5c2ea42431ab5b05db34998c  |   hasTachycardia |  19054  | 1802375     |
++--------------------------+------------------+---------+-------------+
+|5c2ea42431ab5b05db34998d  |   hasTachycardia |  19054  | 1802375     |
++--------------------------+------------------+---------+-------------+
+|5c2eb55831ab5b05db35097b  |   hasFever       |  19054  | ['1264178'] |
++--------------------------+------------------+---------+-------------+
+|5c2eb55831ab5b05db350d45  |   hasFever       |  19054  | ['1699944'] |
++--------------------------+------------------+---------+-------------+
+|5c2eb55831ab5b05db350d46  |   hasFever       |  19054  | ['1699944'] |
++--------------------------+------------------+---------+-------------+
+
+Here we see a representation of the document group for patient 19054. This
+group of documents can be considered to be the "evidence" for this patient.
+In the ObjectID column are the MongoDB ObjectID values for each task result
+document or mathematical result document. The ``nlpql_feature`` column
+shows which NLPQL feature ClarityNLP found for that document. The ``subject``
+column shows that all documents in the group belong to patient 19054, and the
+``report_id`` column shows the document identifier.
+
+We see that patient 19054 has five instances of ``hasDyspnea``, six instances
+of ``hasTachycardia``, and three instances of ``hasFever``. You can consider
+this group as being composed of three subgroups with five, six, and three
+elements each.
+
+ClarityNLP presents result documents in a "flattened" format. For each NLPQL
+label introduced in a "define" statement, ClarityNLP generates a set of result
+documents containing that label in the ``nlpql_feature`` field. Each result
+document also contains a record of the source documents that were used as
+evidence for that label.
+
+Flattening of the Result Group
+------------------------------
+
+To flatten these results and generate a set of output documents labeled by the
+``hasSymptoms`` NLPQL feature (from the original "define" statement),
+ClarityNLP essentially has two options:
+
+- generate **all possible ways** to derive ``hasSymptoms`` from this data
+- generate the **minimum number of ways** to derive ``hasSymptoms`` from this
+  data (while not ignoring any data)
+
+The **maximal** result set can be generated by the following reasoning. First,
+in how many ways can patient 19054 satisfy the condition
+``hasDyspnea OR hasTachycardia``? From the data in the table, there are five
+ways to satisfy the ``hasDyspnea`` condition and six ways to satisfy the
+``hasTachycardia`` condition, for a total of 5 + 6 = 11 ways. Then, for
+**each** of these ways, there are three ways for the patient to satisfy the
+condition ``hasFever``. Thus there are a total of 3 * (5 + 6) = 3 * 11 = 33
+ways for this patient to satisfy the condition
+``hasFever AND (hasDyspnea OR hasTachycardia)``, which would result in the
+generation of 33 output documents under a maximal representation.
+
+The **minimal** result set can be generated by the following reasoning.
+We have seen that there are 11 ways for this patient to satisfy the condition
+``hasDyspnea OR hasTachycardia``.  Each of these must be paired with a
+``hasFever``, from the logical ``AND`` operator in the expression. By repeating
+each of the ``hasFever`` entries, we can "tile" the output and pair a
+``hasFever`` with one of the 11 others. This procedure generates a result set
+containing only 11 entries instead of 33. It uses all of the output data, and
+it **minimizes** data redundancy.
+
+In general, the cardinalities of the sets of NLPQL features connected by
+logical ``OR`` are added together to compute the number of possible results.
+For features connected by logical ``AND``, the cardinalities are multiplied
+to get the total number of possiblilities under a maximal representation (this
+is the Cartesian product). Under a minimal representation, the cardinality of
+the result is equal to the maximum cardinality of the constitutent subsets.
+
+So which output representation does ClarityNLP use?
+
+**ClarityNLP uses the minimal representation of the output data.**
+
+Here is what the result set looks like using a minimal representation. Each
+of the 11 elements contains a pair of documents, one with the feature
+``hasFever`` and the other having either ``hasDyspnea`` or ``hasTachycardia``,
+as required by the expression. We show only the last four hex digits of the
+ObjectID for clarity:
+::
+   // expression: hasFever AND (hasDyspnea OR hasTachycardia)
+   
+   ('097b', 'hasFever'), ('30e1', 'hasDyspnea')
+   ('0d45', 'hasFever'), ('30e2', 'hasDyspnea')
+   ('0d46', 'hasFever'), ('30e3', 'hasDyspnea')
+   ('097b', 'hasFever'), ('30e4', 'hasDyspnea')
+   ('0d45', 'hasFever'), ('3efa', 'hasDyspnea')
+   ('0d46', 'hasFever'), ('868c', 'hasTachycardia')
+   ('097b', 'hasFever'), ('868d', 'hasTachycardia')
+   ('0d45', 'hasFever'), ('8f19', 'hasTachycardia')
+   ('0d46', 'hasFever'), ('92f6', 'hasTachycardia')
+   ('097b', 'hasFever'), ('998c', 'hasTachycardia')
+   ('0d45', 'hasFever'), ('998d', 'hasTachycardia')
+
+Note that the three ``hasFever`` entries repeat three times, followed by
+another repeat of the first two entries to make a total of 11. Each of these
+is paired with one of the five ``hasDyspnea`` entries or one of the
+six ``hasTachycardia`` entries.  No data for this patient has been lost,
+and the result is 11 documents in a flattened format satisfying the
+logic of the original expression.
 
