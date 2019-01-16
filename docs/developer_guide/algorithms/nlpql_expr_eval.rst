@@ -65,11 +65,12 @@ evaluate expressions using MongoDB capabilities than to use something else.
 Use of a non-Mongo evaluator requires ClarityNLP to:
 
 - Run a set of queries to extract the data from MongoDB
-- Transmit the query results across a network if the Mongo instance is hosted
-  remotely
+- Transmit the query results across a network (if the Mongo instance is hosted
+  remotely)
 - Ingest the query results into another evaluation engine
 - Evaluate the NLPQL expressions and generate results
-- If MongoDB is hosted remotely, transmit the results back to the Mongo host
+- Transmit the results back to the Mongo host (if the Mongo instance is hosted
+  remotely)
 - Insert the results into MongoDB.
    
 Evaluation via the MongoDB aggregation framework should prove to be much more
@@ -209,7 +210,7 @@ of the ``nlpql_feature`` field. The *define* statement
         where Temperature.value >= 100.4;
 
 generates a set of rows in the intermediate CSV file with the
-``nlpql_feature`` field set to ``hasFever``.  The NLP tasks
+nlpql_feature field set to ``hasFever``.  The NLP tasks
 ::
     // nlpql_feature 'hasRigors'
     define hasRigors:
@@ -226,7 +227,7 @@ generates a set of rows in the intermediate CSV file with the
         });
 
 generate two blocks of rows in the CSV file, the first block having the
-``nlpql_feature`` field set to ``hasRigors`` and the next block having it
+nlpql_feature field set to ``hasRigors`` and the next block having it
 set to ``hasDyspnea``.  The different nlpql_feature blocks appear in order
 as listed in the source NLPQL file. The presence of these nlpql_feature
 blocks makes locating the results of each NLP task a relatively simple
@@ -329,7 +330,7 @@ removed without affecting the result. The evaluator detects changes in the
 result by converting the expression with a pair of parentheses removed to
 postfix, then comparing the postfix form with that of the original. If the
 postfix expressions match, that pair of parentheses was non-essential and
-could be removed. The postfix form of the expression has no parentheses, as
+can be discarded. The postfix form of the expression has no parentheses, as
 described below.
 
 Conversion to Explicit Form
@@ -414,10 +415,10 @@ For the ``hasFever`` example, the initial match query generates a pipeline
 filter stage that looks like this, assuming a job_id of 12345:
 ::
    {
-       $match : {
-           "job_id" : 12345,
-           "nlpql_feature" : {$exists:true, $ne:null},
-           "value"         : {$exists:true, $ne:null}
+       "$match": {
+           "job_id": 12345,
+           "nlpql_feature": {"$exists":True, "$ne":None},
+           "value"        : {"$exists":True, "$ne":None}
        }
    }
 
@@ -449,10 +450,10 @@ The final aggregation pipeline for our example becomes:
 ::
     // (nlpql_feature == Temperature) and (value >= 100.4)
     {
-       $match : {
-           "job_id" : 12345
-           "nlpql_feature" : {$exists:true, $ne:null},
-           "value"         : {$exists:true, $ne:null}
+       "$match": {
+           "job_id":12345
+           "nlpql_feature": {"$exists":True, "$ne":None},
+           "value"        : {"$exists":True, "$ne":None}
        }
     },
     {
@@ -669,15 +670,15 @@ be sorted with the
 `$sort <https://docs.mongodb.com/manual/reference/operator/aggregation/sort/>`_
 operator. Following the sort, the documents are regrouped as before, this time
 on the ``_id`` values for the previous groups. The ``$ntuple`` array is
-reconstructed, but this time its members will be sorted on the value of the
-'other' context variable. The ``$feature_set`` is also reconstructed. The
-pipeline stages for these operations are:
+reconstructed as well. The sort ensures that, when reconstructed, the members
+are sorted by value of the 'other' context variable. The ``$feature_set`` is
+also reconstructed. The pipeline stages for these operations are:
 ::
    # sort on 'other' context variable (compared as strings)
    {"$unwind": "$ntuple"},
    {"$sort": {sort_field: 1}},
 
-   # Restore the previous groups and feature_sets
+   # restore the previous groups and feature_sets
    {
        "$group": {
            "_id": "$_id",
@@ -689,7 +690,7 @@ pipeline stages for these operations are:
 With these operations the pipeline is complete. The full pipeline for our
 example is:
 ::
-   // pipeline for hasFever AND (hasDyspnea OR hasTachycardia)
+   // aggregation pipeline for hasFever AND (hasDyspnea OR hasTachycardia)
 
    // filter documents on job_id and check validity of the nlpql_feature field
    {
@@ -706,7 +707,7 @@ example is:
        }
    },
 
-   // group docs by value of context variable, construct feature set
+   // group docs by value of context variable and create feature set
    {
        "$group": {
            "_id": "${0}".format(context_field),
