@@ -343,7 +343,7 @@ def _run_tests(job_id, context_var, mongohost, port, debug=False):
     EXPRESSIONS = [
 
         # # pure math expressions
-        # 'Temperature.value >= 100.4',
+        'Temperature.value >= 100.4',
         # 'Temperature.value >= 1.004e2',
         # '100.4 <= Temperature.value',
         # '(Temperature.value >= 100.4)',
@@ -380,7 +380,7 @@ def _run_tests(job_id, context_var, mongohost, port, debug=False):
         # '(hasRigors OR hasDyspnea) AND hasTachycardia', #286
         # 'hasRigors AND (hasTachycardia AND hasNausea)',
         # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
-        'hasFever AND (hasDyspnea OR hasTachycardia)',
+        # 'hasFever AND (hasDyspnea OR hasTachycardia)',
 
         # # logical NOT is TBD; requires NLPQL feature dependencies
         # # 'hasRigors NOT hasNausea',
