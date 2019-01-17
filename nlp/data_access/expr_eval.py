@@ -173,6 +173,7 @@ import os
 import sys
 import copy
 import string
+import hashlib
 import optparse
 from pymongo import MongoClient
 from collections import namedtuple
@@ -243,7 +244,7 @@ EvalResult = namedtuple('EvalResult', EXPR_RESULT_FIELDS)
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -920,15 +921,15 @@ def _decode_operator(token):
         
 
 ###############################################################################
-def _is_temp_feature(token):
+def _is_temp_feature(label):
     """
-    Returns a Boolean indicating whether the string token is the label for
-    a temporary NLPQL feature. Temp labels are created in _make_temp_feature,
+    Returns a Boolean indicating whether the string label is that of a
+    temporary NLPQL feature. Temp labels are created in _make_temp_feature,
     so the code in both of these functions needs to be consistent.
     """
 
-    matchobj = re.match(r'\Am\d+_', token)
-    return matchobj is not None and _is_nlpql_feature(token)
+    matchobj = re.match(r'\Am\d+_[a-fA-F0-9]+\Z', label)
+    return matchobj is not None and _is_nlpql_feature(label)
     
 
 ###############################################################################
@@ -941,32 +942,32 @@ def _make_temp_feature(counter, token_list):
     If this code is changed, the code in _is_temp_feature needs to be changed
     to match.
 
-    This function creates a new label and _is_temp_feature recognizes it.
+    The new label consists of a prefix followed by the MD5 hash of the tokens
+    joined with an underscore. The prefix includes a counter, and the hash is
+    converted to hex for the final result.
+
+    The benefit of using a hash is that we avoid exceeding the MongoDB limit
+    on string length. Simply using a fixed-length slice of the joined strings
+    is not adequate, since lengthy expressions may use the same variables and
+    not differ until beyond the slice point.
     """
 
     if _TRACE: print('Called _make_temp_feature')
-    print('\t   tokens: {0}'.format(token_list))
+    print('\t    tokens: {0}'.format(token_list))
 
-    # generate a valid NLPQL feature name from the tokens
-    new_tokens = []
-    for token in token_list:
-        if _is_variable(token):
-            # replace the '.' with an underscore
-            token = re.sub(r'\.', '_', token)
-        elif _is_numeric_literal(token):
-            # replacd the '.' with '_point_'
-            token = re.sub(r'\.', 'point', token)
-        # operators have the form PLUS, MINUS, etc.
-        new_tokens.append(token)
+    # join the strings with an underscore and compute the MD5 hash
+    joined = '_'.join(token_list)
 
-    label = '_'.join(new_tokens)
-    print('\tNew label: {0}'.format(label))
+    md5 = hashlib.md5()
+    md5.update(joined.encode())
+    hexdigest = md5.hexdigest()
+
+    label = 'm{0}_{1}'.format(counter, hexdigest)
+    if _TRACE: print('\t New label: {0}'.format(label))
+
     assert _is_nlpql_feature(label)
-    return 'm{0}_{1}'.format(counter, label)
-
-    
-    #oid = str(ObjectId())
-    #return 'm{0}_{1}'.format(counter, oid)
+    assert _is_temp_feature(label)
+    return label
 
 
 ###############################################################################
@@ -2281,7 +2282,8 @@ def _run_tests(job_id, context_var):
         # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581, 590 results
         # '0 == Temperature.value % 20',          # temp == 100, 145 results
         # '(LesionMeasurement.dimension_X <= 5) OR (LesionMeasurement.dimension_X >= 45)',
-        # 'LesionMeasurement.dimension_X > 15 AND LesionMeasurement.dimension_X < 30',
+        # 'LesionMeasurement.dimension_X > 15 AND LesionMeasurement.dimension_X < 30',             # 1174 results
+        # '((LesionMeasurement.dimension_X) > (15)) AND (((LesionMeasurement.dimension_X) < (30)))', # 1174 results
 
         # # math involving multiple NLPQL features
         # 'LesionMeasurement.dimension_X > 15 AND LesionMeasurement.dimension_X < 30 OR (Temperature.value >= 100.4)',
