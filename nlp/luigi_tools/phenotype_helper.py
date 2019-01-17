@@ -820,6 +820,9 @@ def mongo_process_operations(expr_obj_list,
                 # set the context field explicitly
                 ret[context_field] = doc[context_field]
 
+                # store the expression text explicitly
+                # ret['nlpql_expr'] = expr_obj.expr_text
+
                 ret['job_id'] = job_id
                 ret['phenotype_id'] = phenotype_id
                 ret['owner'] = phenotype_owner
@@ -906,6 +909,9 @@ def mongo_process_operations(expr_obj_list,
 
                     # set the context field value; same value for all ntuple entries
                     ret[context_field] = context_field_value
+
+                    # store the expression text explicitly
+                    # ret['nlpql_expr'] = expr_obj.expr_text
 
                     # update fields common to AND/OR
                     ret['job_id'] = job_id

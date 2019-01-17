@@ -179,18 +179,18 @@ from pymongo import MongoClient
 from collections import namedtuple
 from bson.objectid import ObjectId
 
-if __name__ == '__main__':
-    from expr_lexer  import NlpqlExpressionLexer
-    from expr_parser import NlpqlExpressionParser
-    from expr_parser import NLPQL_EXPR_OPSTRINGS
-    from expr_parser import NLPQL_EXPR_OPSTRINGS_LC # lowercase
-    from expr_parser import NLPQL_EXPR_LOGIC_OPERATORS
-else:
+try:
     from data_access.expr_lexer  import NlpqlExpressionLexer
     from data_access.expr_parser import NlpqlExpressionParser
     from data_access.expr_parser import NLPQL_EXPR_OPSTRINGS
     from data_access.expr_parser import NLPQL_EXPR_OPSTRINGS_LC # lowercase
     from data_access.expr_parser import NLPQL_EXPR_LOGIC_OPERATORS
+except ImportError:
+    from expr_lexer  import NlpqlExpressionLexer
+    from expr_parser import NlpqlExpressionParser
+    from expr_parser import NLPQL_EXPR_OPSTRINGS
+    from expr_parser import NLPQL_EXPR_OPSTRINGS_LC # lowercase
+    from expr_parser import NLPQL_EXPR_LOGIC_OPERATORS
 
 # expression types
 EXPR_TYPE_MATH    = 'math'
@@ -242,6 +242,12 @@ EXPR_RESULT_FIELDS = [
 
 EvalResult = namedtuple('EvalResult', EXPR_RESULT_FIELDS)
 
+# regex that identifies a temporary NLPQL feature
+# 32 hex digits in the MD5 hash, needs to be exportable
+regex_temp_nlpql_feature = re.compile(r'\A(math|logic)\d+_[a-fA-F0-9]{32}\Z')
+
+# identifies a temp logic feature, not exported
+_regex_temp_nlpql_logic_feature = re.compile(r'\Alogic\d+_[a-fA-F0-9]{32}\Z')
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
@@ -349,6 +355,9 @@ _LEFT_PARENS  = '('
 _RIGHT_PARENS = ')'
 _CHAR_SPACE = ' '
 _EMPTY_STRING = ''
+
+_TMP_FEATURE_MATH  = 0
+_TMP_FEATURE_LOGIC = 1
 
 
 ###############################################################################
@@ -928,12 +937,12 @@ def _is_temp_feature(label):
     so the code in both of these functions needs to be consistent.
     """
 
-    matchobj = re.match(r'\Am\d+_[a-fA-F0-9]+\Z', label)
+    matchobj = regex_temp_nlpql_feature.match(label)
     return matchobj is not None and _is_nlpql_feature(label)
     
 
 ###############################################################################
-def _make_temp_feature(counter, token_list):
+def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
     """
     Create a unique NLPQL feature name for a mathematical subexpression.
     This new name becomes the 'nlpql_feature' label that gets substituted
@@ -962,7 +971,10 @@ def _make_temp_feature(counter, token_list):
     md5.update(joined.encode())
     hexdigest = md5.hexdigest()
 
-    label = 'm{0}_{1}'.format(counter, hexdigest)
+    if _TMP_FEATURE_MATH == math_or_logic:
+        label = 'math{0}_{1}'.format(counter, hexdigest)
+    else:
+        label = 'logic{0}_{1}'.format(counter, hexdigest)
     if _TRACE: print('\t New label: {0}'.format(label))
 
     assert _is_nlpql_feature(label)
@@ -1742,7 +1754,8 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
 
     # list of lists of _id values; each sublist is a group of result docs
     oid_list = []
-    
+
+    counter = 0
     for token in postfix_tokens:
         match = _regex_logic_operator.match(token)
         if not match:
@@ -1762,13 +1775,13 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                 for i in range(n):
                     operand = stack.pop()
                     operands.append(operand)
-                    new_feature_name = operand + new_feature_name
                 operands.reverse()
                 if _TRACE: print('\tOperands: {0}'.format(operands))
 
                 # construct a new feature name for this operation
-                new_feature_name = 'OID_' + new_feature_name + operator
+                new_feature_name = _make_temp_feature(counter, operands, _TMP_FEATURE_LOGIC)
                 if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
+                counter += 1
 
                 # An 'ntuple' is a group of result documents; it is one of the
                 # inner lists in the result list-of-lists that this function
@@ -1777,7 +1790,8 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                 ntuples = []
                 if 'or' == operator:
                     for feature in operands:
-                        if not feature.startswith('OID_'):
+                        match = _regex_temp_nlpql_logic_feature.match(feature)
+                        if not match:
                             # simple feature
                             if feature in feature_map:
                                 oids = _get_docs_with_feature(feature, feature_map, group)
@@ -2192,11 +2206,17 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
 def evaluate_expression(expr_obj,
                         job_id,
                         context_field,
-                        mongo_collection_obj):
+                        mongo_collection_obj,
+                        debug=False):
     """
     Evaluate a single ExpressionObject namedtuple.
     """
 
+    global _TRACE
+    
+    if debug:
+        _TRACE = True
+    
     if _TRACE: print('Called evaluate_expression')
 
     assert EXPR_TYPE_MATH == expr_obj.expr_type or \
@@ -2251,7 +2271,7 @@ def _evaluate_expressions(mongo_collection_obj,    # db.collection_name
 
 
 ###############################################################################
-def _run_tests(job_id, context_var):
+def _run_tests(job_id, context_var, mongohost, port):
     """
     Assumes that a ClarityNLP run has been completed using the 'data_gen.nlpql'
     NLPQL file. Enter the job_id for the data generation run on the command
@@ -2336,7 +2356,7 @@ def _run_tests(job_id, context_var):
     ]
 
     # connect to ClarityNLP mongo collection nlp.phenotype_results
-    mongo_client_obj = MongoClient()
+    mongo_client_obj = MongoClient(mongohost, port)
     mongo_db_obj = mongo_client_obj['nlp']
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 
@@ -2391,13 +2411,15 @@ def _get_version():
 def _show_help():
     print(_get_version())
     print("""
-    USAGE: python3 ./{0} --jobid <integer> [-cdhv]
+    USAGE: python3 ./{0} --jobid <integer> [-cdhvmp]
 
     OPTIONS:
 
         -j, --jobid    <integer>   job_id of data in MongoDB
         -c, --context  <string>    either 'patient' or 'document'
                                    (default is patient)
+        -m, --mongohost            IP address of remote MongoDB host
+        -p, --port                 port number for remote MongoDB host
 
     FLAGS:
 
@@ -2420,6 +2442,8 @@ if __name__ == '__main__':
                          action='store_true', dest='get_version')
     optparser.add_option('-h', '--help',
                          action='store_true', dest='show_help', default=False)
+    optparser.add_option('-m', '--mongohost', action='store', dest='mongohost')
+    optparser.add_option('-p', '--port', action='store', dest='port')
 
     opts, other = optparser.parse_args(sys.argv)
 
@@ -2438,11 +2462,19 @@ if __name__ == '__main__':
         print('The job_id (-j command line option) must be provided.')
         sys.exit(-1)
 
+    mongohost = 'localhost'
+    if opts.mongohost is not None:
+        mongohost = opts.mongohost
+
+    port = 27017
+    if opts.port is not None:
+        port = int(opts.port)
+        
     job_id = int(opts.job_id)
 
     context = 'patient'
     if opts.context is not None:
         context = opts.context
         
-    _run_tests(job_id, context)
+    _run_tests(job_id, context, mongohost, port)
         
