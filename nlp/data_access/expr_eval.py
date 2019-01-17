@@ -961,8 +961,9 @@ def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
     not differ until beyond the slice point.
     """
 
-    if _TRACE: print('Called _make_temp_feature')
-    print('\t    tokens: {0}'.format(token_list))
+    if _TRACE:
+        print('Called _make_temp_feature')
+        print('\t    tokens: {0}'.format(token_list))
 
     # join the strings with an underscore and compute the MD5 hash
     joined = '_'.join(token_list)
@@ -975,7 +976,9 @@ def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
         label = 'math{0}_{1}'.format(counter, hexdigest)
     else:
         label = 'logic{0}_{1}'.format(counter, hexdigest)
-    if _TRACE: print('\t New label: {0}'.format(label))
+        
+    if _TRACE:
+        print('\t New label: {0}'.format(label))
 
     assert _is_nlpql_feature(label)
     assert _is_temp_feature(label)
