@@ -1,6 +1,6 @@
 Cooking with ClarityNLP is meant to focus on hands-on walkthroughs of building NLPQL phenotypes, incorporating new algorithms, and validating cohorts using the ClarityNLP platform. 
 
-Each week we’ll take 1-2 examples and walk through them as a group. Send along any clinical outcomes, NLP algorithms, or other things you’d like to see used as examples by filling out [this form](https://goo.gl/forms/eYm6eWHtSy0VZk9w2).
+Each week we’ll take 1-2 examples and walk through them as a group. Send along any clinical outcomes, NLP algorithms, or other things you’d like to see used as examples by filling out [this form](https://goo.gl/forms/eYm6eWHtSy0VZk9w2). You can also reach out to us by joining our [Slack](https://join.slack.com/t/claritynlp/shared_invite/enQtNTE5NTUzNzk4MTk5LTFmNWY1NWVmZTA4Yjc5MDUwNTRhZTBmNTA0MWM0ZDNmYjdlNTAzYmViYzAzMTkwZDkzODA2YTJhYzQ1ZTliZTQ).
 
 ***
 
