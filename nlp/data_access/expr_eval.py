@@ -342,6 +342,16 @@ _TMP_FEATURE_LOGIC = 1
 
 
 ###############################################################################
+def enable_debug():
+    """
+    Enable debug output.
+    """
+
+    global _TRACE
+    _TRACE = True
+    
+
+###############################################################################
 def _extract_variables(infix_expression):
     """
     Returns all unique variables (of the form nlpql_feature.field) from
@@ -1157,7 +1167,7 @@ def _resolve_mixed(infix_expression):
 
 
 ###############################################################################
-def _print_math_results(doc_ids, mongo_collection_obj):
+def _print_math_results(doc_ids, mongo_collection_obj, nlpql_feature):
     """
     Write results from evaluation of a math pipeline to stdout.
     """
@@ -1165,7 +1175,7 @@ def _print_math_results(doc_ids, mongo_collection_obj):
     # query for the desired documents
     cursor = mongo_collection_obj.find({'_id': {'$in': doc_ids}})
 
-    print('RESULTS: ')
+    print('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
     count = 0
     for doc in cursor:
         print('{0:5}\t_id: {1}, value: {2}'.
@@ -1175,7 +1185,10 @@ def _print_math_results(doc_ids, mongo_collection_obj):
 
         
 ###############################################################################
-def _print_logic_results(group_list, doc_ids, mongo_collection_obj):
+def _print_logic_results(group_list,
+                         doc_ids,
+                         mongo_collection_obj,
+                         nlpql_feature):
     """
     Write results from evaluation of a logic pipeline to stdout.
     """
@@ -1198,7 +1211,7 @@ def _print_logic_results(group_list, doc_ids, mongo_collection_obj):
         all_doc_groups.append(doc_group)
 
     # print info for the groups
-    print('RESULTS: ')
+    print('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
     count = 0
     for group in all_doc_groups:
         for doc in group:
@@ -1423,7 +1436,7 @@ def _eval_math_expr(job_id,
     doc_ids = _run_math_pipeline(pipeline, mongo_collection_obj)
 
     if _TRACE:
-        _print_math_results(doc_ids, mongo_collection_obj)
+        _print_math_results(doc_ids, mongo_collection_obj, final_nlpql_feature)
 
     result = EvalResult(
         expr_type      = EXPR_TYPE_MATH,
@@ -1618,7 +1631,7 @@ def _eval_logic_expr(job_id,
     group_list, doc_ids = _run_logic_pipeline(pipeline, mongo_collection_obj)
 
     #if _TRACE:
-    #    _print_logic_results(group_list, doc_ids, mongo_collection_obj)
+    #    _print_logic_results(group_list, doc_ids, mongo_collection_obj, final_nlpql_feature)
 
     result = EvalResult(
         expr_type      = EXPR_TYPE_LOGIC,
@@ -2104,7 +2117,7 @@ def parse_expression(nlpql_infix_expression, name_list=None):
     
 
 ###############################################################################
-def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_expression):
+def generate_expressions(final_nlpql_feature, parse_result):
     """
     Parse the NLPQL expression, evaluate any literal subexpressions, and
     resolve whateve remains into a set of subexpressions of either
@@ -2192,17 +2205,11 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
 def evaluate_expression(expr_obj,
                         job_id,
                         context_field,
-                        mongo_collection_obj,
-                        debug=False):
+                        mongo_collection_obj):
     """
     Evaluate a single ExpressionObject namedtuple.
     """
 
-    global _TRACE
-    
-    if debug:
-        _TRACE = True
-    
     if _TRACE: print('Called evaluate_expression')
 
     assert EXPR_TYPE_MATH == expr_obj.expr_type or \
