@@ -135,30 +135,11 @@ Each document can be accessed by iteration:
 TESTING:
 
 
-
-This module can be used to evaluate expression strings interactively, but it
-first requires a run of ClarityNLP to load some data into MongoDB. One could
-write an NLPQL file that only runs basic tasks such as the value extractor,
-the measurement finder, and various provider assertions. This file does not
-necesarily need to include any expressions.
-
-Add your desired expression to the list in _run_tests, then evaluate it using
-the data from your ClarityNLP run. You will need to know the job_id to do this.
-Use this command:
-
-    python3 ./expr_eval.py -j <job_id> [--debug]
-
-
-Help for the command line interface can be obtained via this command:
-
-    python3 ./expr_eval --help
-
-Extensive debugging info can be generated with the --debug option.
+Test code has been moved to 'expr_tester.py'.
 
 
 
 LIMITATIONS:
-
 
 
 The 'not' operator is not supported. You will need to use positive logic.
@@ -1942,7 +1923,9 @@ def expand_logical_result(eval_result, mongo_collection_obj):
             feature = eval_result.postfix_tokens[0]
             if _TRACE: print('SINGLE FEATURE: {0}'.format(feature))
             oid_list = _get_docs_with_feature(feature, feature_map, group)
-            oid_list = [oid_list]
+            if _TRACE: print('OID LIST: {0}'.format(oid_list))
+            # a single NLPQL feature means single-document groups
+            oid_list = [[oid] for oid in oid_list]
         else:
             oid_list = _generate_logical_result(eval_result, group, doc_map, feature_map)
             
