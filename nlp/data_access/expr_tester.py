@@ -16,6 +16,7 @@ import optparse
 import datetime
 from pymongo import MongoClient
 from collections import namedtuple
+from bson import ObjectId
 
 import expr_eval
 
@@ -106,7 +107,7 @@ def remove_arrays(obj):
     for k,v,i in to_insert:
         obj[k] = v[i]
 
-
+        
 ###############################################################################
 def evaluate_expressions(expr_obj_list,
                          mongo_collection_obj,
@@ -118,9 +119,9 @@ def evaluate_expressions(expr_obj_list,
     nlp/luigi_tools/phenotype_helper.mongo_process_operations
     """
 
-    print('process_expressions expr_object_list: ')
-    for expr_obj in expr_obj_list:
-        print(expr_obj)
+    #print('process_expressions expr_object_list: ')
+    #for expr_obj in expr_obj_list:
+    #    print(expr_obj)
 
     phenotype_id    = TEST_ID
     phenotype_owner = TEST_ID
@@ -135,6 +136,8 @@ def evaluate_expressions(expr_obj_list,
         'nlpql_feature', 'phenotype_final', 'history'
     ]
 
+    all_output_docs = []
+    
     for expr_obj in expr_obj_list:
 
         # evaluate the (sub)expression in expr_obj
@@ -306,7 +309,12 @@ def evaluate_expressions(expr_obj_list,
             else:
                 print('mongo_process_operations (logic): no phenotype matches on {0}.'.
                       format(expression))
-                    
+
+        # save the expr object and the results
+        all_output_docs.append( (expr_obj, output_docs))
+
+    return all_output_docs
+
 
 ###############################################################################
 def _delete_prev_results(job_id, mongo_collection_obj):
@@ -325,9 +333,40 @@ def _delete_prev_results(job_id, mongo_collection_obj):
     print('Removed {0} docs with temp NLPQL features from a previous run.'.
           format(result.deleted_count))
     
-                
+
 ###############################################################################
-def _run_tests(job_id, context_var, mongohost, port, debug=False):
+def banner_print(msg):
+    """
+    Print the message centered in a border of stars.
+    """
+
+    MIN_WIDTH = 79
+
+    n = len(msg)
+    
+    if n < MIN_WIDTH:
+        ws = (MIN_WIDTH - 2 - n) // 2
+    else:
+        ws = 1
+
+    ws_left = ws
+    ws_right = ws
+
+    # add extra space on right to balance if even
+    if 0 == n % 2:
+        ws_right = ws+1
+
+    star_count = 1 + ws_left + n + ws_right + 1
+        
+    print('{0}'.format('*'*star_count))
+    print('{0}{1}{2}'.format('*', ' '*(star_count-2), '*'))
+    print('{0}{1}{2}{3}{4}'.format('*', ' '*ws_left, msg, ' '*ws_right, '*'))
+    print('{0}{1}{2}'.format('*', ' '*(star_count-2), '*'))
+    print('{0}'.format('*'*star_count))
+    
+    
+###############################################################################
+def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
     """
     Include all NLPQL names from data_gen.nlpql in the following list.
     """
@@ -343,8 +382,8 @@ def _run_tests(job_id, context_var, mongohost, port, debug=False):
     EXPRESSIONS = [
 
         # # pure math expressions
-        'Temperature.value >= 100.4',
-        # 'Temperature.value >= 1.004e2',
+        # 'Temperature.value >= 100.4',
+        # 'Temperature.value >= 1.0004e2',
         # '100.4 <= Temperature.value',
         # '(Temperature.value >= 100.4)',
         # 'Temperature.value == 100.4', # 28 results
@@ -390,7 +429,7 @@ def _run_tests(job_id, context_var, mongohost, port, debug=False):
         # mixed math and logic (cannot fully evaluate with this test code)
         # 'hasNausea AND Temperature.value >= 100.4',
         # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
-        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
+        'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
         # 'Lesion.dimension_X > 10 OR Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia or hasDyspnea',
         # '((Temperature.value >= 100.4) AND (hasRigors AND hasTachycardia AND hasNausea))',
         # 'Temperature.value >= 100.4 OR hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea',
@@ -446,16 +485,77 @@ def _run_tests(job_id, context_var, mongohost, port, debug=False):
             break
 
         # evaluate the ExpressionObjects in the list
-        evaluate_expressions(expression_object_list,
-                             mongo_collection_obj,
-                             job_id,
-                             context_field,
-                             debug)
+        results = evaluate_expressions(expression_object_list,
+                                       mongo_collection_obj,
+                                       job_id,
+                                       context_field,
+                                       debug)
 
-        print('[{0:3}]: "{1}"'.format(counter, e))
-        for eo in expression_object_list:
-            print('\t{0}'.format(eo))
+        #print('{0}'.format('*'*79))
+        #print('\n[{0:3}]\tExpression: "{1}"'.format(counter, e))
+        banner_print(e)
+        for expr_obj, output_docs in results:
+            print()
+            print('Subexpression type: {0}'.format(expr_obj.expr_type))
+            print('      Result count: {0}'.format(len(output_docs)))
+            print('Subexpression text: {0}'.format(expr_obj.expr_text))
+            print('     NLPQL feature: {0}'.format(expr_obj.nlpql_feature))
+            print('Results: ')
+
+            n = len(output_docs)
+            if 0 == len:
+                continue
+            if expr_eval.EXPR_TYPE_MATH == expr_obj.expr_type:
+                for k in range(n):
+                    if k < num or k > n-num:
+                        doc = output_docs[k]
+                        print('\t[{0:6}]: {1} {2} {3}'.
+                              format(k, doc['_id'], doc['nlpql_feature'], doc['value']))
+
+            else:
         
+                # get all but the final five chars of the ObjectId
+                # all other chars should be identical for all docs
+                oid = output_docs[0]['_id']
+                oid_prefix = str(oid)[:-5]
+                print(' ObjectID prefix: {0}'.format(oid_prefix))
+                for k in range(n):
+                    if k < num or k > n-num:
+                        doc = output_docs[k]
+                        #print(doc)
+                        # display final five chars of oid
+                        ids = doc['_ids']
+                        #print('ids: {0}'.format(ids))
+                        ids_short = [oid[-5:] for oid in ids]
+
+                        # get these source docs
+                        oid_list = [ObjectId(oid) for oid in ids]
+                        cursor = mongo_collection_obj.find({'_id': {'$in': oid_list}})
+
+                        doc_map = {}
+                        for c in cursor:
+                            oid = str(c['_id'])
+                            doc_map[oid] = c
+                            #print('c: {0}'.format(c))
+
+                        #print('doc_map: {0}'.format(doc_map))
+
+                        values_or_terms = []
+                        for oid in ids:
+                            doc2 = doc_map[oid]
+                            if 'value' in doc2:
+                                val = doc2['value']
+                                # math subexpression
+                                values_or_terms.append(val)
+                            else:
+                                # logic subexpression
+                                term = doc2['term']
+                                values_or_terms.append(term)
+
+                        print('\t[{0:6}]: {1} {2} {3}'.
+                              format(k, ids_short, doc['nlpql_features'], values_or_terms))#doc['term']))
+                    
+                
         counter += 1
         print()
 
@@ -471,7 +571,7 @@ def _get_version():
 def _show_help():
     print(_get_version())
     print("""
-    USAGE: python3 ./{0} --jobid <integer> [-cdhvmp]
+    USAGE: python3 ./{0} --jobid <integer> [-cdhvmpn]
 
     OPTIONS:
 
@@ -480,6 +580,10 @@ def _show_help():
                                    (default is patient)
         -m, --mongohost            IP address of remote MongoDB host
         -p, --port                 port number for remote MongoDB host
+
+        -n, --num                  Number of results to display at start and
+                                   end of results array (the number of results
+                                   displayed is 2 * n). Default is n == 16.                     
 
     FLAGS:
 
@@ -504,6 +608,7 @@ if __name__ == '__main__':
                          action='store_true', dest='show_help', default=False)
     optparser.add_option('-m', '--mongohost', action='store', dest='mongohost')
     optparser.add_option('-p', '--port', action='store', dest='port')
+    optparser.add_option('-n', '--num', action='store', dest='num')
 
     opts, other = optparser.parse_args(sys.argv)
 
@@ -536,6 +641,10 @@ if __name__ == '__main__':
     context = 'patient'
     if opts.context is not None:
         context = opts.context
+
+    num = 16
+    if opts.num is not None:
+        num = int(opts.num)
         
-    _run_tests(job_id, context, mongohost, port, debug)
+    _run_tests(job_id, context, mongohost, port, num, debug)
 
