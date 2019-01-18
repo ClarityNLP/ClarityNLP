@@ -8,14 +8,15 @@ Each week we’ll take 1-2 examples and walk through them as a group. Send along
 Cooking with ClarityNLP Sessions occur every 2 weeks on Wednesdays at 11ET. 
 WebEx: https://gtriconf.webex.com/join/charity.hilton
 
-* 2 Jan 2019 - Cancelled
-* 16 Jan 2019 - 
+* 30 Jan 2019 - ClarityNLP on FHIR
+* 13 Feb 2019 - 
 
 
 
 ***
 
 ### Previous Cooking Sessions
+* 16 Jan 2019 - Analyzing FDA Drug Labels for Adverse Events, [Recording](https://youtu.be/8BoB3-uiDk8) | [Jupyter Notebook](https://github.com/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_011619.ipynb)
 * 5 Dec 2018 - Advanced NLPQL Processing, [Recording](https://youtu.be/_bPnHRL7GC4) | [Jupyter Notebook](https://github.com/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_120518.ipynb)
 * 7 Nov 2018 - Getting ClarityNLP Up and Running in Your Environment, [Recording](https://youtu.be/0KaLZAZ5RjY) | [Jupyter Notebook](https://github.com/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_110718.ipynb)
 * 24 Oct 2018 - Custom API Integration, [Recording](https://youtu.be/H5johzKtc3M) | [Jupyter Notebook](https://github.com/ClarityNLP/ClarityNLP/blob/master/notebooks/cooking/Cooking_with_ClarityNLP_102418.ipynb)
