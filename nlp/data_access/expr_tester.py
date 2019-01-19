@@ -5,6 +5,20 @@ This is a program for testing the ClarityNLP NLPQL expression evaluator.
 It assumes that a run of the NLPQL file 'data_gen.nlpql' has already been
 performed. You will need to know the job_id from that run to use this code.
 
+Add your desired expression to the list in _run_tests, then evaluate it using
+the data from your ClarityNLP run. You will need to know the job_id to do this.
+Use this command:
+
+    python3 ./expr_tester.py -j <job_id> [--debug]
+
+
+Help for the command line interface can be obtained via this command:
+
+    python3 ./expr_tester.py --help
+
+Extensive debugging info can be generated with the --debug option.
+
+
 """
 
 import re
@@ -24,8 +38,12 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 _MODULE_NAME   = 'expr_tester.py'
 
-TEST_ID            = 'EXPR_TEST'
-TEST_NLPQL_FEATURE = 'EXPR_TEST'
+_TRACE = False
+
+_TEST_ID            = 'EXPR_TEST'
+_TEST_NLPQL_FEATURE = 'EXPR_TEST'
+
+_HISTORY_FIELD = 'history'
 
 
 ###############################################################################
@@ -61,6 +79,9 @@ def flatten_nested_lists(obj):
     """
 
     for k,v in obj.items():
+        # don't flatten the history field
+        if _HISTORY_FIELD == k:
+            continue
         if type(v) == list:
             if 1 == len(v) and '' == v[0]:
                 obj[k] = None
@@ -108,12 +129,305 @@ def remove_arrays(obj):
         obj[k] = v[i]
 
         
+# ###############################################################################
+# def evaluate_expressions(expr_obj_list,
+#                          mongo_collection_obj,
+#                          job_id,
+#                          context_field):
+#     """
+#     Nearly identical to
+#     nlp/luigi_tools/phenotype_helper.mongo_process_operations
+#     """
+
+#     #print('process_expressions expr_object_list: ')
+#     #for expr_obj in expr_obj_list:
+#     #    print(expr_obj)
+
+#     phenotype_id    = _TEST_ID
+#     phenotype_owner = _TEST_ID
+#     is_final        = False
+        
+#     assert 'subject' == context_field or 'report_id' == context_field
+
+#     # these fields are not copied from source doc to result doc
+#     NO_COPY_FIELDS = [
+#         '_id', 'job_id', 'phenotype_id', 'owner',
+#         'job_date', 'context_type', 'raw_definition_text',
+#         'nlpql_feature', 'phenotype_final', 'history',
+#         '_ids', 'nlpql_features'
+#     ]
+
+#     all_output_docs = []
+    
+#     for expr_obj in expr_obj_list:
+
+#         # evaluate the (sub)expression in expr_obj
+#         result = expr_eval.evaluate_expression(expr_obj,
+#                                                job_id,
+#                                                context_field,
+#                                                mongo_collection_obj)
+            
+#         # query MongoDB to get result docs
+#         cursor = mongo_collection_obj.find({'_id': {'$in': result.doc_ids}})
+
+#         # generate output docs
+#         output_docs = []
+
+#         if expr_eval.EXPR_TYPE_MATH == result.expr_type:
+
+#             expression = expr_obj.expr_text
+            
+#             # no document groups for math results
+#             for doc in cursor:
+
+#                 # output doc
+#                 ret = {}
+                
+#                 # add doc fields to the output doc as lists
+#                 field_map = {}
+#                 fields = doc.keys()
+#                 fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+#                 for f in fields_to_copy:
+#                     if f not in field_map:
+#                         field_map[f] = [doc[f]]
+#                     else:
+#                         field_map[f].append(doc[f])
+
+#                 for k,v in field_map.items():
+#                     ret[k] = copy.deepcopy(v)
+
+#                 # set the context field explicitly
+#                 ret[context_field] = doc[context_field]
+
+#                 # store the expression text explicitly
+#                 # ret['nlpql_expr'] = expr_obj.expr_text
+                
+#                 ret['job_id'] = job_id
+#                 ret['phenotype_id'] = phenotype_id
+#                 ret['owner'] = phenotype_owner
+#                 ret['job_date'] = datetime.datetime.now()
+#                 ret['context_type'] = context_field
+#                 ret['raw_definition_text'] = result.expr_text
+#                 ret['nlpql_feature'] = result.nlpql_feature
+#                 ret['phenotype_final'] = is_final
+
+#                 # math documents do not have prior _ids or nlpql_features fieds
+#                 assert '_ids' not in doc
+#                 assert 'nlpql_features' not in doc
+
+#                 # add source _id and nlpql_feature
+#                 if is_final:
+#                     ret['_ids_1'] = copy.deepcopy(str(doc['_id']))
+#                     ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
+#                 else:
+#                     # use same field names as for logic ops
+#                     ret['_ids'] = copy.deepcopy(str(doc['_id']))
+#                     ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
+
+#                 flatten_nested_lists(ret)
+
+#                 if is_final:
+#                     remove_arrays(ret)
+
+#                 output_docs.append(ret)
+
+#             if len(output_docs) > 0:
+#                 mongo_collection_obj.insert_many(output_docs)
+#             else:
+#                 print('mongo_process_operations (math): No phenotype matches on %s.' % expression)
+
+#         else:
+
+#             assert expr_eval.EXPR_TYPE_LOGIC == result.expr_type
+
+#             expression = expr_obj.expr_text
+            
+#             doc_map, oid_list_of_lists = expr_eval.expand_logical_result(result,
+#                                                                          mongo_collection_obj)
+
+#             # an 'ntuple' is a list of _id values
+#             for ntuples in oid_list_of_lists:
+#                 for ntuple in ntuples:
+#                     assert isinstance(ntuple, list)
+#                     if 0 == len(ntuple):
+#                         continue
+
+#                     # each ntuple supplies the data for a result doc
+#                     ret = {}
+#                     history = {
+#                         'source_ids'  : [],
+#                         'source_features' : []
+#                     }
+
+#                     # get the shared context field value for this ntuple
+#                     oid = ntuple[0]
+#                     doc = doc_map[oid]
+#                     context_field_value = doc[context_field]
+                    
+#                     # include the present ntuple in the history
+#                     for oid in ntuple:
+#                         # get the doc associated with this _id
+#                         doc = doc_map[oid]
+#                         # history['source_ids'].append(str(oid))
+#                         # history['source_features'].append(doc['nlpql_features'])
+
+#                         # carry forward the history for this doc, if any
+#                         history_ids = []
+#                         history_features = []
+#                         if '_ids' in doc:
+#                             history_ids.append(str(doc['_ids']))
+#                         if 'nlpql_features' in doc:
+#                             print('HISTORIC NLPQL_FEATURES: {0}'.format(doc['nlpql_features']))
+#                             history_features.append(doc['nlpql_features'])
+
+#                         # include the present doc in the history
+#                         history_ids.append(str(oid))
+#                         history_features.append(doc['nlpql_feature'])
+                            
+#                         #history['source_ids'].append(str(oid))
+#                         #history['source_features'].append(doc['nlpql_feature'])
+
+#                         history['source_ids'].append(copy.deepcopy(history_ids))
+#                         history['source_features'].append(copy.deepcopy(history_features))
+                        
+#                         assert context_field_value == doc[context_field]
+                        
+#                     # add ntuple doc fields to the output doc as lists
+#                     field_map = {}
+#                     for oid in ntuple:
+#                         doc = doc_map[oid]
+#                         fields = doc.keys()
+#                         fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+#                         for f in fields_to_copy:
+#                             if f not in field_map:
+#                                 field_map[f] = [doc[f]]
+#                             else:
+#                                 field_map[f].append(doc[f])
+
+#                     for k,v in field_map.items():
+#                         ret[k] = copy.deepcopy(v)
+
+#                     # set the context field value; same value for all ntuple entries
+#                     ret[context_field] = context_field_value
+
+#                     # store the expression text explicitly
+#                     # ret['nlpql_expr'] = expr_obj.expr_text
+                    
+#                     # update fields common to AND/OR
+#                     ret['job_id'] = job_id
+#                     ret['phenotype_id'] = phenotype_id
+#                     ret['owner'] = phenotype_owner
+#                     ret['job_date'] = datetime.datetime.now()
+#                     ret['context_type'] = context_field
+#                     ret['raw_definition_text'] = result.expr_text
+#                     ret['nlpql_feature'] = result.nlpql_feature
+#                     ret['phenotype_final'] = is_final
+
+#                     # add source _ids and nlpql_features (1-based indexing)
+#                     source_count = len(history['source_ids'])
+#                     if is_final:
+#                         for i in range(len(history['source_ids'])):
+#                             field_name = '_ids_{0}'.format(i+1)
+#                             ret[field_name] = history['source_ids'][i]
+#                         for i in range(len(history['source_features'])):
+#                             field_name = 'nlpql_features_{0}'.format(i+1)
+#                             ret[field_name] = history['source_features'][i]
+
+#                         # remove intermediate array fields
+#                         ret.pop('_ids', None)
+#                         ret.pop('nlpql_features', None)
+#                     else:
+#                         # add intermediate array fields
+#                         ret['_ids'] = copy.deepcopy(history['source_ids'])
+#                         ret['nlpql_features'] = copy.deepcopy(history['source_features'])
+
+#                     flatten_nested_lists(ret)
+
+#                     if is_final:
+#                         remove_arrays(ret)
+
+#                     output_docs.append(ret)
+
+#             if len(output_docs) > 0:
+#                 mongo_collection_obj.insert_many(output_docs)
+#             else:
+#                 print('mongo_process_operations (logic): no phenotype matches on {0}.'.
+#                       format(expression))
+
+#         # save the expr object and the results
+#         all_output_docs.append( (expr_obj, output_docs))
+
+#     return all_output_docs
+
+###############################################################################
+def extract_value(data):
+    """
+    If data is a single-element list, return element 0. If data is not a
+    list, just return the data.
+    """
+
+    if isinstance(data, list):
+        assert 1 == len(data)
+        return data[0]
+    else:
+        return data
+    
+
+###############################################################################
+def init_history(source_doc):
+    """
+    Initialize the history depending on the pipeline type. The history is a
+    list of tuples of this form:
+
+        (pipeline_type, str(_id), nlnpql_feature, values...)
+
+    Returns a tuple for the given source document.
+
+    """
+
+    #if _TRACE:
+    #    print('Called init_history')
+    
+    #assert _HISTORY_FIELD not in source_doc
+    
+    source_nlpql_feature = source_doc['nlpql_feature']
+    
+    if 'pipeline_type' in source_doc:
+        pipeline_type = extract_value(source_doc['pipeline_type'])
+        oid = str(source_doc['_id'])
+
+        #if _TRACE: print('\tpipeline_type: {0}'.format(pipeline_type))
+            
+        if 'ProviderAssertion' == pipeline_type:
+            # get the 'term' field
+            term = extract_value(source_doc['term'])
+            tup = ('ProviderAssertion', oid, source_nlpql_feature, term)
+
+        elif 'ValueExtractor' == pipeline_type:
+            # get the value field
+            value = extract_value(source_doc['value'])
+            tup = ('ValueExtractor', oid, source_nlpql_feature, value)
+
+        elif 'MeasurementFinder' == pipeline_type:
+            # get the measurement dimensions
+            x = extract_value(source_doc['dimension_X'])
+            y = extract_value(source_doc['dimension_Y'])
+            z = extract_value(source_doc['dimension_Z'])
+
+            tup = ('MeasurementFinder', oid, source_nlpql_feature, x, y, z)
+
+        else:
+            # just use the oid
+            tup = (oid)
+
+    return tup
+
+
 ###############################################################################
 def evaluate_expressions(expr_obj_list,
                          mongo_collection_obj,
                          job_id,
-                         context_field,
-                         debug=False):
+                         context_field):
     """
     Nearly identical to
     nlp/luigi_tools/phenotype_helper.mongo_process_operations
@@ -123,8 +437,8 @@ def evaluate_expressions(expr_obj_list,
     #for expr_obj in expr_obj_list:
     #    print(expr_obj)
 
-    phenotype_id    = TEST_ID
-    phenotype_owner = TEST_ID
+    phenotype_id    = _TEST_ID
+    phenotype_owner = _TEST_ID
     is_final        = False
         
     assert 'subject' == context_field or 'report_id' == context_field
@@ -133,7 +447,8 @@ def evaluate_expressions(expr_obj_list,
     NO_COPY_FIELDS = [
         '_id', 'job_id', 'phenotype_id', 'owner',
         'job_date', 'context_type', 'raw_definition_text',
-        'nlpql_feature', 'phenotype_final', 'history'
+        'nlpql_feature', 'phenotype_final', _HISTORY_FIELD,
+        '_ids', 'nlpql_features'
     ]
 
     all_output_docs = []
@@ -144,8 +459,7 @@ def evaluate_expressions(expr_obj_list,
         result = expr_eval.evaluate_expression(expr_obj,
                                                job_id,
                                                context_field,
-                                               mongo_collection_obj,
-                                               debug)
+                                               mongo_collection_obj)
             
         # query MongoDB to get result docs
         cursor = mongo_collection_obj.find({'_id': {'$in': result.doc_ids}})
@@ -191,22 +505,31 @@ def evaluate_expressions(expr_obj_list,
                 ret['nlpql_feature'] = result.nlpql_feature
                 ret['phenotype_final'] = is_final
 
+                # math documents do not have prior _ids or nlpql_features fieds
+                assert '_ids' not in doc
+                assert 'nlpql_features' not in doc
+
+                # math documents do not have prior history
+                assert _HISTORY_FIELD not in doc
+                
                 # add source _id and nlpql_feature
                 if is_final:
-                    ret['_ids_1'] = copy.deepcopy(doc['_id'])
+                    ret['_ids_1'] = copy.deepcopy(str(doc['_id']))
                     ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
                 else:
                     # use same field names as for logic ops
-                    ret['_ids'] = copy.deepcopy(doc['_id'])
+                    ret['_ids'] = copy.deepcopy(str(doc['_id']))
                     ret['nlpql_features'] = copy.deepcopy(doc['nlpql_feature'])
-
+                    history_entry = init_history(doc)
+                    ret[_HISTORY_FIELD] = [copy.deepcopy(history_entry)]
+                    
                 flatten_nested_lists(ret)
 
                 if is_final:
                     remove_arrays(ret)
 
                 output_docs.append(ret)
-
+                
             if len(output_docs) > 0:
                 mongo_collection_obj.insert_many(output_docs)
             else:
@@ -230,22 +553,54 @@ def evaluate_expressions(expr_obj_list,
 
                     # each ntuple supplies the data for a result doc
                     ret = {}
-                    history = {
+                    old_history = {
                         'source_ids'  : [],
                         'source_features' : []
                     }
+
+                    history = []
 
                     # get the shared context field value for this ntuple
                     oid = ntuple[0]
                     doc = doc_map[oid]
                     context_field_value = doc[context_field]
-                    
-                    # accumulate the source _id and nlpql_feature fields
+
+                    # include the present ntuple in the history
                     for oid in ntuple:
                         # get the doc associated with this _id
                         doc = doc_map[oid]
-                        history['source_ids'].append(str(oid))
-                        history['source_features'].append(doc['nlpql_feature'])
+                        # history['source_ids'].append(str(oid))
+                        # history['source_features'].append(doc['nlpql_features'])
+
+                        # carry forward the history for this doc, if any
+                        history_ids = []
+                        history_features = []
+                        if '_ids' in doc:
+                            history_ids.append(str(doc['_ids']))
+                        if 'nlpql_features' in doc:
+                            history_features.append(doc['nlpql_features'])
+
+                        if _HISTORY_FIELD in doc:
+                            # mongo converts tuples to lists, so convert back to tuple
+                            for history_field in doc[_HISTORY_FIELD]:
+                                assert isinstance(history_field, list)
+                                tup = tuple(history_field)
+                                history.append(tup)
+                            
+                        # include the present doc in the history
+                        history_ids.append(str(oid))
+                        history_features.append(doc['nlpql_feature'])
+
+                        # get history tuple for this doc
+                        history_entry = init_history(doc)
+                        history.append(history_entry)
+                        
+                        #history['source_ids'].append(str(oid))
+                        #history['source_features'].append(doc['nlpql_feature'])
+
+                        old_history['source_ids'].append(copy.deepcopy(history_ids))
+                        old_history['source_features'].append(copy.deepcopy(history_features))
+                        
                         assert context_field_value == doc[context_field]
                         
                     # add ntuple doc fields to the output doc as lists
@@ -278,24 +633,25 @@ def evaluate_expressions(expr_obj_list,
                     ret['raw_definition_text'] = result.expr_text
                     ret['nlpql_feature'] = result.nlpql_feature
                     ret['phenotype_final'] = is_final
-
+                    
                     # add source _ids and nlpql_features (1-based indexing)
-                    source_count = len(history['source_ids'])
+                    source_count = len(old_history['source_ids'])
                     if is_final:
-                        for i in range(len(history['source_ids'])):
+                        for i in range(len(old_history['source_ids'])):
                             field_name = '_ids_{0}'.format(i+1)
-                            ret[field_name] = history['source_ids'][i]
-                        for i in range(len(history['source_features'])):
+                            ret[field_name] = old_history['source_ids'][i]
+                        for i in range(len(old_history['source_features'])):
                             field_name = 'nlpql_features_{0}'.format(i+1)
-                            ret[field_name] = history['source_features'][i]
+                            ret[field_name] = old_history['source_features'][i]
 
                         # remove intermediate array fields
                         ret.pop('_ids', None)
                         ret.pop('nlpql_features', None)
                     else:
                         # add intermediate array fields
-                        ret['_ids'] = copy.deepcopy(history['source_ids'])
-                        ret['nlpql_features'] = copy.deepcopy(history['source_features'])
+                        ret['_ids'] = copy.deepcopy(old_history['source_ids'])
+                        ret['nlpql_features'] = copy.deepcopy(old_history['source_features'])
+                        ret[_HISTORY_FIELD] = copy.deepcopy(history)
 
                     flatten_nested_lists(ret)
 
@@ -316,6 +672,7 @@ def evaluate_expressions(expr_obj_list,
     return all_output_docs
 
 
+
 ###############################################################################
 def _delete_prev_results(job_id, mongo_collection_obj):
     """
@@ -324,7 +681,7 @@ def _delete_prev_results(job_id, mongo_collection_obj):
 
     # delete all assigned results from a previous run of this code
     result = mongo_collection_obj.delete_many({"job_id":job_id,
-                                               "nlpql_feature":TEST_NLPQL_FEATURE})
+                                               "nlpql_feature":_TEST_NLPQL_FEATURE})
     print('Removed {0} result docs from a previous run.'.
           format(result.deleted_count))
 
@@ -371,12 +728,14 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
     Include all NLPQL names from data_gen.nlpql in the following list.
     """
 
+    global _TRACE
+    
     NAME_LIST = [
         'hasRigors', 'hasDyspnea', 'hasNausea', 'hasVomiting', 'hasShock',
         'hasTachycardia', 'hasLesion', 'Temperature', 'Lesion',
-        'hasFever', 'hasSepsisSymptoms', 'hasSepsis',
-        'hasLesionAndSepsisSymptoms', 'hasLesionAndTemperature',
-        'hasAllThree'
+        'hasFever', 'hasSepsisSymptoms', 'hasTempAndSepsisSymptoms',
+        'hasSepsis', 'hasLesionAndSepsisSymptoms', 'hasLesionAndTemp',
+        'hasLesionTempAndSepsisSymptoms'
     ]
 
     EXPRESSIONS = [
@@ -407,6 +766,9 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
 
         # # pure logic expressions
         # 'hasTachycardia',
+        # 'hasSepsis',
+        # 'hasTempAndSepsisSymptoms',
+        # 'Temperature AND hasSepsisSymptoms',
         # 'hasTachycardia AND hasShock', # subjects 14894, 20417
         # 'hasTachycardia OR hasShock',
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
@@ -426,10 +788,10 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
         # # 'hasRigors NOT (hasNausea OR hasTachycardia)',
         # # 'hasSepsis NOT hasRigors' # how to do this properly
 
-        # mixed math and logic (cannot fully evaluate with this test code)
-        # 'hasNausea AND Temperature.value >= 100.4',
+        # mixed math and logic 
+        'hasNausea AND Temperature.value >= 100.4',
         # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
-        'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
+        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
         # 'Lesion.dimension_X > 10 OR Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia or hasDyspnea',
         # '((Temperature.value >= 100.4) AND (hasRigors AND hasTachycardia AND hasNausea))',
         # 'Temperature.value >= 100.4 OR hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea',
@@ -453,7 +815,7 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
     mongo_db_obj = mongo_client_obj['nlp']
     mongo_collection_obj = mongo_db_obj['phenotype_results']
     
-    final_nlpql_feature = TEST_NLPQL_FEATURE
+    final_nlpql_feature = _TEST_NLPQL_FEATURE
 
     # must either be a patient or document context
     context_var = context_var.lower()
@@ -467,7 +829,11 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
     # cleanup so that database only contains data generated by data_gen.nlpql
     # not from previous runs of this test code
     _delete_prev_results(job_id, mongo_collection_obj)
-        
+
+    if debug:
+        expr_eval.enable_debug()
+        _TRACE = True
+    
     counter = 1
     for e in EXPRESSIONS:
         print('[{0:3}]: "{1}"'.format(counter, e))
@@ -488,27 +854,27 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
         results = evaluate_expressions(expression_object_list,
                                        mongo_collection_obj,
                                        job_id,
-                                       context_field,
-                                       debug)
+                                       context_field)
 
-        #print('{0}'.format('*'*79))
-        #print('\n[{0:3}]\tExpression: "{1}"'.format(counter, e))
         banner_print(e)
         for expr_obj, output_docs in results:
             print()
+            print('Subexpression text: {0}'.format(expr_obj.expr_text))
             print('Subexpression type: {0}'.format(expr_obj.expr_type))
             print('      Result count: {0}'.format(len(output_docs)))
-            print('Subexpression text: {0}'.format(expr_obj.expr_text))
             print('     NLPQL feature: {0}'.format(expr_obj.nlpql_feature))
             print('Results: ')
 
             n = len(output_docs)
-            if 0 == len:
+            if 0 == n:
+                print('\tNone.')
                 continue
+
             if expr_eval.EXPR_TYPE_MATH == expr_obj.expr_type:
                 for k in range(n):
                     if k < num or k > n-num:
                         doc = output_docs[k]
+                        #print(doc)
                         print('\t[{0:6}]: {1} {2} {3}'.
                               format(k, doc['_id'], doc['nlpql_feature'], doc['value']))
 
@@ -522,38 +888,43 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
                 for k in range(n):
                     if k < num or k > n-num:
                         doc = output_docs[k]
-                        #print(doc)
+                        print(doc)
                         # display final five chars of oid
                         ids = doc['_ids']
-                        #print('ids: {0}'.format(ids))
                         ids_short = [oid[-5:] for oid in ids]
 
-                        # get these source docs
-                        oid_list = [ObjectId(oid) for oid in ids]
-                        cursor = mongo_collection_obj.find({'_id': {'$in': oid_list}})
+                        # # get source docs having these ObjectIds
+                        # oid_list = [ObjectId(oid) for oid in ids]
+                        # cursor = mongo_collection_obj.find({'_id': {'$in': oid_list}})
 
-                        doc_map = {}
-                        for c in cursor:
-                            oid = str(c['_id'])
-                            doc_map[oid] = c
-                            #print('c: {0}'.format(c))
+                        # doc_map = {}
+                        # for c in cursor:
+                        #     oid = str(c['_id'])
+                        #     doc_map[oid] = c
+                        #     #print('c: {0}'.format(c))
 
-                        #print('doc_map: {0}'.format(doc_map))
+                        # #print('doc_map: {0}'.format(doc_map))
 
-                        values_or_terms = []
-                        for oid in ids:
-                            doc2 = doc_map[oid]
-                            if 'value' in doc2:
-                                val = doc2['value']
-                                # math subexpression
-                                values_or_terms.append(val)
-                            else:
-                                # logic subexpression
-                                term = doc2['term']
-                                values_or_terms.append(term)
-
-                        print('\t[{0:6}]: {1} {2} {3}'.
-                              format(k, ids_short, doc['nlpql_features'], values_or_terms))#doc['term']))
+                        # values_or_terms = []
+                        # for oid in ids:
+                        #     doc2 = doc_map[oid]
+                        #     print('doc  nlpql_features: {0}'.format(doc['nlpql_features']))
+                        #     print(doc2)
+                        #     print('doc2 nlpql_features: {0}'.format(doc2['nlpql_features']))
+                        #     if 'value' in doc2:
+                        #         val = doc2['value']
+                        #         # math subexpression
+                        #         values_or_terms.append(val)
+                        #     else:
+                        #         # logic subexpression
+                        #         term = doc2['term']
+                        #         values_or_terms.append(term)
+                        
+                        if 'nlpql_features' in doc:
+                            history = doc['nlpql_features']
+                        
+                        print('\t[{0:6}]: {1} {2}'.
+                              format(k, ids_short, history))
                     
                 
         counter += 1
