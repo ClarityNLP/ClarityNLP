@@ -222,9 +222,16 @@ def _evaluate_expressions(expr_obj_list,
     ]
 
     all_output_docs = []
+    is_final_save = is_final
     
     for expr_obj in expr_obj_list:
 
+        # the is_final flag only applies to the last subexpression
+        if expr_obj != expr_obj_list[-1]:
+            is_final = False
+        else:
+            is_final = is_final_save
+        
         # evaluate the (sub)expression in expr_obj
         result = expr_eval.evaluate_expression(expr_obj,
                                                job_id,
@@ -272,14 +279,18 @@ def _evaluate_expressions(expr_obj_list,
                 ret['nlpql_feature'] = result.nlpql_feature
                 ret['phenotype_final'] = is_final
 
-                # math documents do not have prior history
+                # use the pipeline_type field to record the type of expression
+                ret['pipeline_type'] = 'EvalMathExpr'
+                
+                # documents for math operations are generated from
+                # ValueExtractor and other tasks, hence no history field
                 assert _HISTORY_FIELD not in doc
                 
                 # add source _id and nlpql_feature
                 if is_final:
-                    pass
-                    #ret['_ids_1'] = copy.deepcopy(str(doc['_id']))
-                    #ret['nlpql_features_1'] = copy.deepcopy(doc['nlpql_feature'])
+                    # really need to construct the output doc from the history
+                    ret['_ids_1'] = str(doc['_id'])
+                    ret['nlpql_features_1'] = doc['nlpql_feature']
                 else:
                     history_entry = init_history(doc)
                     ret[_HISTORY_FIELD] = [history_entry]
@@ -368,20 +379,20 @@ def _evaluate_expressions(expr_obj_list,
                     ret['raw_definition_text'] = result.expr_text
                     ret['nlpql_feature'] = result.nlpql_feature
                     ret['phenotype_final'] = is_final
+
+                    # use the pipeline_type field to record the type of expression
+                    ret['pipeline_type'] = 'EvalLogicExpr'
                     
                     # add source _ids and nlpql_features (1-based indexing)
                     if is_final:
-                        pass
-                        #for i in range(len(old_history['source_ids'])):
-                        #    field_name = '_ids_{0}'.format(i+1)
-                        #    ret[field_name] = old_history['source_ids'][i]
-                        #for i in range(len(old_history['source_features'])):
-                        #    field_name = 'nlpql_features_{0}'.format(i+1)
-                        #    ret[field_name] = old_history['source_features'][i]
-
-                        # remove intermediate array fields
-                        #ret.pop('_ids', None)
-                        #ret.pop('nlpql_features', None)
+                        # really need to construct the output doc from the history
+                        for i in range(len(history)):
+                            history_elt = history[i]
+                            assert isinstance(history_elt, tuple)
+                            field_name = '_ids_{0}'.format(i+1)
+                            ret[field_name] = history_elt.oid
+                            field_name = 'nlpql_features_{0}'.format(i+1)
+                            ret[field_name] = history_elt.nlpql_feature
                     else:
                         # udpate the history
                         ret[_HISTORY_FIELD] = copy.deepcopy(history)
@@ -528,7 +539,8 @@ def _run_tests(job_id,
         # # 'hasSepsis NOT hasRigors' # how to do this properly
 
         # mixed math and logic 
-        'hasNausea AND Temperature.value >= 100.4',
+        # 'hasNausea AND Temperature.value >= 100.4',
+        # 'Lesion.dimension < 10 OR hasRigors',
         # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
         # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
         # 'Lesion.dimension_X > 10 OR Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia or hasDyspnea',
@@ -537,7 +549,7 @@ def _run_tests(job_id,
         # 'hasRigors AND hasTachycardia AND hasDyspnea AND hasNausea AND Temperature.value >= 100.4',
         # 'hasRigors OR (hasTachycardia AND hasDyspnea) AND Temperature.value >= 100.4',
         # 'hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea AND Temperature.value >= 100.4',
-        # 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
+        'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 20 AND Lesion.dimension_X > 35 OR hasNausea and hasDyspnea',
         # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 OR hasNausea and hasDyspnea',
         # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 AND hasNausea OR hasDyspnea',
@@ -629,9 +641,10 @@ def _run_tests(job_id,
                         print('[{0:6}]: Document {1}, NLPQL feature {2}:'.
                               format(k, str(doc['_id']),
                                      expr_obj.nlpql_feature))
-                        #print(doc)
 
-                        if _HISTORY_FIELD in doc:
+                        if is_final:
+                            print(doc)
+                        else:
                             history = doc[_HISTORY_FIELD]
                             for tup in history:
                                 if isinstance(tup.data, float):
@@ -646,7 +659,7 @@ def _run_tests(job_id,
                                 else:
                                     context_str = 'report_id: {0}'.format(tup.report_id)
 
-                                print('\t_id: {0}, pipeline: {1:20} '  \
+                                print('\t_id: {0}, operation: {1:20} '  \
                                       'nlpql_feature: {2:40} {3} ' \
                                       'data: {4} '.
                                       format(tup.oid, tup.pipeline_type,
