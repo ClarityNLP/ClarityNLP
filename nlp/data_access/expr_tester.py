@@ -36,10 +36,6 @@ import expr_eval
 import expr_result
 from expr_result import HISTORY_FIELD
 
-#HISTORY_ELT_FIELDS = ['oid', 'pipeline_type', 'nlpql_feature',
-#                      'data', 'subject', 'report_id']
-#HistoryElt = namedtuple('HistoryElt', HISTORY_ELT_FIELDS)
-
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 _MODULE_NAME   = 'expr_tester.py'
@@ -48,156 +44,6 @@ _TRACE = False
 
 _TEST_ID            = 'EXPR_TEST'
 _TEST_NLPQL_FEATURE = 'EXPR_TEST'
-
-#_HISTORY_FIELD = 'history'
-
-# ###############################################################################
-# def flatten(l, ltypes=(list, tuple)):
-#     """
-#     Non-recursive list and tuple flattener from
-#     http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
-#     based on code from Mike Fletcher's BasicTypes library.
-#     """
-    
-#     ltype = type(l)
-#     l = list(l)
-#     i = 0
-#     while i < len(l):
-#         while isinstance(l[i], ltypes):
-#             if not l[i]:
-#                 l.pop(i)
-#                 i -= 1
-#                 break
-#             else:
-#                 l[i:i + 1] = l[i]
-#         i += 1
-        
-#     return ltype(l)
-
-
-# ###############################################################################
-# def flatten_nested_lists(obj):
-#     """
-#     Remove nested lists in the given dict and return the flattened 
-#     equivalent. Does some special handling for empty lists or lists containing
-#     all identical entries, mainly to simplify the results when viewed in Excel.
-#     """
-
-#     for k,v in obj.items():
-#         # don't flatten the history field
-#         if _HISTORY_FIELD == k:
-#             continue
-#         if type(v) == list:
-#             if 1 == len(v) and '' == v[0]:
-#                 obj[k] = None
-#             else:
-#                 flattened_list = flatten(v)
-
-#                 all_none = True
-#                 for item in flattened_list:
-#                     if item is not None:
-#                         all_none = False
-#                         break
-
-#                 if all_none:
-#                     obj[k] = None
-#                 else:
-#                     obj[k] = flattened_list
-
-
-# ###############################################################################
-# def remove_arrays(obj):
-#     """
-#     Remove arrays in the result dict by creating numbered fields for
-#     the array elements.
-#     """
-#     to_insert = []
-#     to_remove = []
-    
-#     for k,v in obj.items():
-#         if type(v) != list:
-#             continue
-
-#         elt_count = len(v)
-#         if 1 == elt_count:
-#             obj[k] = v[0]
-#         else:
-#             for i in range(elt_count):
-#                 # use 1-based indexing
-#                 field_name = '{0}_{1}'.format(k, i+1)
-#                 to_insert.append( (field_name, copy.deepcopy(v), i) )
-#             to_remove.append(k)
-
-#     for k in to_remove:
-#         obj.pop(k, None)
-#     for k,v,i in to_insert:
-#         obj[k] = v[i]
-
-
-# ###############################################################################
-# def extract_value(data):
-#     """
-#     If data is a single-element list, return element 0. If data is not a
-#     list, just return the data.
-#     """
-
-#     if isinstance(data, list):
-#         assert 1 == len(data)
-#         return data[0]
-#     else:
-#         return data
-
-
-# ###############################################################################
-# def init_history(source_doc):
-#     """
-#     Initialize the history depending on the pipeline type. The history is a
-#     list of tuples of this form:
-
-#         (pipeline_type, str(_id), nlnpql_feature, values...)
-
-#     Returns a HistoryElt namedtuple for the given source document.
-
-#     """
-
-#     source_nlpql_feature = source_doc['nlpql_feature']
-    
-#     if 'pipeline_type' in source_doc:
-#         pipeline_type = extract_value(source_doc['pipeline_type'])
-#         oid = str(source_doc['_id'])
-
-#         subject = source_doc['subject']
-#         report_id = source_doc['report_id']
-
-#         if 'ProviderAssertion' == pipeline_type:
-#             # return the term as the data
-#             data = extract_value(source_doc['term'])
-
-#         elif 'ValueExtractor' == pipeline_type:
-#             # return the extracted value as the data
-#             data = extract_value(source_doc['value'])
-
-#         elif 'MeasurementFinder' == pipeline_type:
-#             # return the measurement dimensions as the data
-#             x = extract_value(source_doc['dimension_X'])
-#             y = extract_value(source_doc['dimension_Y'])
-#             z = extract_value(source_doc['dimension_Z'])
-#             data = [x, y, z]
-
-#         else:
-#             # no data
-#             data = None
-
-#     history_elt = HistoryElt(
-#         oid           = oid,
-#         pipeline_type = pipeline_type,
-#         nlpql_feature = source_nlpql_feature,
-#         data          = data,
-#         subject       = subject,
-#         report_id     = report_id
-#     )
-
-#     return history_elt
 
 
 ###############################################################################
@@ -215,13 +61,6 @@ def _evaluate_expressions(expr_obj_list,
     phenotype_owner = _TEST_ID
         
     assert 'subject' == context_field or 'report_id' == context_field
-
-    # these fields are not copied from source doc to result doc
-    NO_COPY_FIELDS = [
-        '_id', 'job_id', 'phenotype_id', 'owner',
-        'job_date', 'context_type', 'raw_definition_text',
-        'nlpql_feature', 'phenotype_final', HISTORY_FIELD
-    ]
 
     all_output_docs = []
     is_final_save = is_final

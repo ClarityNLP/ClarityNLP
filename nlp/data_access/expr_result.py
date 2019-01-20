@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+This module generates the MongoDB result documents that contain the output
+from NLPQL expression evaluation.
+
+For import only.
 """
 
 import copy
