@@ -67,7 +67,7 @@ def _evaluate_expressions(expr_obj_list,
     
     for expr_obj in expr_obj_list:
 
-        # the is_final flag only applies to the last subexpression
+        # the 'is_final' flag only applies to the last subexpression
         if expr_obj != expr_obj_list[-1]:
             is_final = False
         else:
@@ -82,196 +82,42 @@ def _evaluate_expressions(expr_obj_list,
         # query MongoDB to get result docs
         cursor = mongo_collection_obj.find({'_id': {'$in': eval_result.doc_ids}})
 
-        # generate output docs
-        output_docs = []
-
-        phenotype_data = {
-            'job_id':job_id,
-            'phenotype_id':phenotype_id,
-            'owner':phenotype_owner,
-            'context_field':context_field,
-            'is_final':is_final
-        }
+        phenotype_info = expr_result.PhenotypeInfo(
+            job_id = job_id,
+            phenotype_id = phenotype_id,
+            owner = phenotype_owner,
+            context_field = context_field,
+            is_final = is_final
+        )
         
         if expr_eval.EXPR_TYPE_MATH == eval_result.expr_type:
 
-            expression = expr_obj.expr_text
-
             output_docs = expr_result.to_math_result_docs(eval_result,
-                                                          phenotype_data,
+                                                          phenotype_info,
                                                           cursor)
-            
-            # # no document groups for math results
-            # for doc in cursor:
-
-            #     # output doc
-            #     ret = {}
-                
-            #     # add doc fields to the output doc as lists
-            #     field_map = {}
-            #     fields = doc.keys()
-            #     fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-            #     for f in fields_to_copy:
-            #         if f not in field_map:
-            #             field_map[f] = [doc[f]]
-            #         else:
-            #             field_map[f].append(doc[f])
-
-            #     for k,v in field_map.items():
-            #         ret[k] = copy.deepcopy(v)
-
-            #     # set the context field explicitly
-            #     ret[context_field] = doc[context_field]
-
-            #     ret['job_id'] = phenotype_data['job_id'] #job_id
-            #     ret['phenotype_id'] = phenotype_data['phenotype_id'] #phenotype_id
-            #     ret['owner'] = phenotype_data['owner'] #phenotype_owner
-            #     ret['job_date'] = datetime.datetime.now()
-            #     ret['context_type'] = phenotype_data['context_field'] #context_field
-            #     ret['raw_definition_text'] = eval_result.expr_text
-            #     ret['nlpql_feature'] = eval_result.nlpql_feature
-            #     ret['phenotype_final'] = phenotype_data['is_final'] #is_final
-
-            #     # use the pipeline_type field to record the type of expression
-            #     ret['pipeline_type'] = 'EvalMathExpr'
-                
-            #     # documents for math operations are generated from
-            #     # ValueExtractor and other tasks, hence no history field
-            #     assert HISTORY_FIELD not in doc
-                
-            #     # add source _id and nlpql_feature
-            #     if is_final:
-            #         # really need to construct the output doc from the history
-            #         ret['_ids_1'] = str(doc['_id'])
-            #         ret['nlpql_features_1'] = doc['nlpql_feature']
-            #     else:
-            #         history_entry = init_history(doc)
-            #         ret[HISTORY_FIELD] = [history_entry]
-                    
-            #     flatten_nested_lists(ret)
-
-            #     if is_final:
-            #         remove_arrays(ret)
-
-            #     output_docs.append(ret)
-                
-            if len(output_docs) > 0:
-                mongo_collection_obj.insert_many(output_docs)
-            else:
-                print('mongo_process_operations (math): No phenotype matches on %s.' % expression)
-
         else:
-
             assert expr_eval.EXPR_TYPE_LOGIC == eval_result.expr_type
 
-            expression = expr_obj.expr_text
-
-            output_docs = expr_result.to_logic_result_docs(eval_result,
-                                                           phenotype_data,
-                                                           mongo_collection_obj)
+            # flatten the result set into a set of Mongo documents
+            doc_map, oid_list_of_lists = expr_eval.flatten_logical_result(eval_result,
+                                                                          mongo_collection_obj)
             
-            # doc_map, oid_list_of_lists = expr_eval.expand_logical_result(result,
-            #                                                              mongo_collection_obj)
-
-            # # an 'ntuple' is a list of _id values
-            # for ntuples in oid_list_of_lists:
-            #     for ntuple in ntuples:
-            #         assert isinstance(ntuple, list)
-            #         if 0 == len(ntuple):
-            #             continue
-
-            #         # each ntuple supplies the data for a result doc
-            #         ret = {}
-            #         history = []
-
-            #         # get the shared context field value for this ntuple
-            #         oid = ntuple[0]
-            #         doc = doc_map[oid]
-            #         context_field_value = doc[context_field]
-
-            #         # include the present ntuple in the history
-            #         for oid in ntuple:
-            #             # get the doc associated with this _id
-            #             doc = doc_map[oid]
-
-            #             # carry forward the history for this doc, if any
-            #             if _HISTORY_FIELD in doc:
-            #                 # mongo converts tuples to lists, so convert to namedtuple
-            #                 for elt in doc[_HISTORY_FIELD]:
-            #                     assert isinstance(elt, list)
-            #                     tup = HistoryElt(elt[0], elt[1], elt[2],
-            #                                      elt[3], elt[4], elt[5])
-            #                     history.append(tup)
-                            
-            #             # include the present doc in the history
-            #             history_entry = init_history(doc)
-            #             history.append(history_entry)
-                        
-            #             assert context_field_value == doc[context_field]
-                        
-            #         # add ntuple doc fields to the output doc as lists
-            #         field_map = {}
-            #         for oid in ntuple:
-            #             doc = doc_map[oid]
-            #             fields = doc.keys()
-            #             fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-            #             for f in fields_to_copy:
-            #                 if f not in field_map:
-            #                     field_map[f] = [doc[f]]
-            #                 else:
-            #                     field_map[f].append(doc[f])
-
-            #         for k,v in field_map.items():
-            #             ret[k] = copy.deepcopy(v)
-
-            #         # set the context field value; same value for all ntuple entries
-            #         ret[context_field] = context_field_value
-
-            #         # update fields common to AND/OR
-            #         ret['job_id'] = job_id
-            #         ret['phenotype_id'] = phenotype_id
-            #         ret['owner'] = phenotype_owner
-            #         ret['job_date'] = datetime.datetime.now()
-            #         ret['context_type'] = context_field
-            #         ret['raw_definition_text'] = eval_result.expr_text
-            #         ret['nlpql_feature'] = eval_result.nlpql_feature
-            #         ret['phenotype_final'] = is_final
-
-            #         # use the pipeline_type field to record the type of expression
-            #         ret['pipeline_type'] = 'EvalLogicExpr'
-                    
-            #         # add source _ids and nlpql_features (1-based indexing)
-            #         if is_final:
-            #             # really need to construct the output doc from the history
-            #             for i in range(len(history)):
-            #                 history_elt = history[i]
-            #                 assert isinstance(history_elt, tuple)
-            #                 field_name = '_ids_{0}'.format(i+1)
-            #                 ret[field_name] = history_elt.oid
-            #                 field_name = 'nlpql_features_{0}'.format(i+1)
-            #                 ret[field_name] = history_elt.nlpql_feature
-            #         else:
-            #             # udpate the history
-            #             ret[_HISTORY_FIELD] = copy.deepcopy(history)
-
-            #         flatten_nested_lists(ret)
-
-            #         if is_final:
-            #             remove_arrays(ret)
-
-            #         output_docs.append(ret)
-
-            if len(output_docs) > 0:
-                mongo_collection_obj.insert_many(output_docs)
-            else:
-                print('mongo_process_operations (logic): no phenotype matches on {0}.'.
-                      format(expression))
+            output_docs = expr_result.to_logic_result_docs(eval_result,
+                                                           phenotype_info,
+                                                           doc_map,
+                                                           oid_list_of_lists)
+            
+        if len(output_docs) > 0:
+            mongo_collection_obj.insert_many(output_docs)
+        else:
+            print('mongo_process_operations ({0}): ' \
+                  'no phenotype matches on {1}.'.format(expr_eval.expr_type,
+                                                        expr_eval.expr_text))
 
         # save the expr object and the results
         all_output_docs.append( (expr_obj, output_docs))
 
     return all_output_docs
-
 
 
 ###############################################################################
@@ -380,7 +226,7 @@ def _run_tests(job_id,
         # 'hasTachycardia OR hasShock',
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
         # '((hasShock) AND (hasDyspnea))',
-        # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
+        ##'((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
         # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
         # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
         # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
@@ -389,11 +235,6 @@ def _run_tests(job_id,
         # 'hasRigors AND (hasTachycardia AND hasNausea)',
         # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
         # 'hasFever AND (hasDyspnea OR hasTachycardia)',
-
-        # # logical NOT is TBD; requires NLPQL feature dependencies
-        # # 'hasRigors NOT hasNausea',
-        # # 'hasRigors NOT (hasNausea OR hasTachycardia)',
-        # # 'hasSepsis NOT hasRigors' # how to do this properly
 
         # mixed math and logic 
         # 'hasNausea AND Temperature.value >= 100.4',

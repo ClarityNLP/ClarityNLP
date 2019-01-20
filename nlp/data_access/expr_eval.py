@@ -1868,14 +1868,14 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
     
 
 ###############################################################################
-def expand_logical_result(eval_result, mongo_collection_obj):
+def flatten_logical_result(eval_result, mongo_collection_obj):
     """
     Generate the groups of MongoDB _id values representing the result set.
     Most of the work is done by _generate_logical_result(), which has more
     explanation in its docstring and in its code.
     """
 
-    if _TRACE: print('Called expand_logical_result')
+    if _TRACE: print('Called flatten_logical_result')
     
     assert EXPR_TYPE_LOGIC == eval_result.expr_type
 

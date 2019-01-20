@@ -10,11 +10,15 @@ import copy
 import datetime
 from collections import namedtuple
 
-import expr_eval
-
-HISTORY_ELT_FIELDS = ['oid', 'pipeline_type', 'nlpql_feature',
-                      'data', 'subject', 'report_id']
+HISTORY_ELT_FIELDS = [
+    'oid', 'pipeline_type', 'nlpql_feature', 'data', 'subject', 'report_id'
+]
 HistoryElt = namedtuple('HistoryElt', HISTORY_ELT_FIELDS)
+
+PHENOTYPE_INFO_FIELDS = [
+    'job_id', 'phenotype_id', 'owner', 'context_field', 'is_final'
+]
+PhenotypeInfo = namedtuple('PhenotypeInfo', PHENOTYPE_INFO_FIELDS)
 
 HISTORY_FIELD = 'history'
 
@@ -176,14 +180,16 @@ def init_history(source_doc):
 
 
 ###############################################################################
-def to_math_result_docs(eval_result, phenotype_data, cursor):
+def to_math_result_docs(eval_result, phenotype_info, cursor):
     """
+    Generate the MongoDB documents that contain the results from evaluation
+    of a pure NLPQL mathematical expression.
     """
 
     output_docs = []
 
-    is_final      = phenotype_data['is_final']
-    context_field = phenotype_data['context_field']
+    is_final      = phenotype_info.is_final
+    context_field = phenotype_info.context_field
 
     for doc in cursor:
 
@@ -206,14 +212,14 @@ def to_math_result_docs(eval_result, phenotype_data, cursor):
         # set the context field explicitly
         ret[context_field] = doc[context_field]
 
-        ret['job_id'] = phenotype_data['job_id'] #job_id
-        ret['phenotype_id'] = phenotype_data['phenotype_id'] #phenotype_id
-        ret['owner'] = phenotype_data['owner'] #phenotype_owner
-        ret['job_date'] = datetime.datetime.now()
-        ret['context_type'] = context_field
+        ret['job_id']              = phenotype_info.job_id
+        ret['phenotype_id']        = phenotype_info.phenotype_id
+        ret['owner']               = phenotype_info.owner
+        ret['job_date']            = datetime.datetime.now()
+        ret['context_type']        = context_field
         ret['raw_definition_text'] = eval_result.expr_text
-        ret['nlpql_feature'] = eval_result.nlpql_feature
-        ret['phenotype_final'] = is_final
+        ret['nlpql_feature']       = eval_result.nlpql_feature
+        ret['phenotype_final']     = is_final
 
         # use the pipeline_type field to record the type of expression
         ret['pipeline_type'] = 'EvalMathExpr'
@@ -243,18 +249,20 @@ def to_math_result_docs(eval_result, phenotype_data, cursor):
 
 
 ###############################################################################
-def to_logic_result_docs(eval_result, phenotype_data, mongo_collection_obj):
+def to_logic_result_docs(eval_result,
+                         phenotype_info,
+                         doc_map,
+                         oid_list_of_lists):
     """
+    Generate the MongoDB documents that contain the results from evaluation
+    of a pure NLPQL logical expression.
     """
 
     output_docs = []
 
-    is_final      = phenotype_data['is_final']
-    context_field = phenotype_data['context_field']
+    is_final      = phenotype_info.is_final
+    context_field = phenotype_info.context_field
     
-    doc_map, oid_list_of_lists = expr_eval.expand_logical_result(eval_result,
-                                                                 mongo_collection_obj)
-
     # an 'ntuple' is a list of _id values
     for ntuples in oid_list_of_lists:
         for ntuple in ntuples:
@@ -310,14 +318,14 @@ def to_logic_result_docs(eval_result, phenotype_data, mongo_collection_obj):
             ret[context_field] = context_field_value
 
             # update fields common to AND/OR
-            ret['job_id'] = phenotype_data['job_id']
-            ret['phenotype_id'] = phenotype_data['phenotype_id']
-            ret['owner'] = phenotype_data['owner']
-            ret['job_date'] = datetime.datetime.now()
-            ret['context_type'] = context_field
+            ret['job_id']              = phenotype_info.job_id
+            ret['phenotype_id']        = phenotype_info.phenotype_id
+            ret['owner']               = phenotype_info.owner
+            ret['job_date']            = datetime.datetime.now()
+            ret['context_type']        = context_field
             ret['raw_definition_text'] = eval_result.expr_text
-            ret['nlpql_feature'] = eval_result.nlpql_feature
-            ret['phenotype_final'] = is_final
+            ret['nlpql_feature']       = eval_result.nlpql_feature
+            ret['phenotype_final']     = is_final
 
             # use the pipeline_type field to record the type of expression
             ret['pipeline_type'] = 'EvalLogicExpr'
