@@ -33,10 +33,12 @@ from collections import namedtuple
 from bson import ObjectId
 
 import expr_eval
+import expr_result
+from expr_result import HISTORY_FIELD
 
-HISTORY_ELT_FIELDS = ['oid', 'pipeline_type', 'nlpql_feature',
-                      'data', 'subject', 'report_id']
-HistoryElt = namedtuple('HistoryElt', HISTORY_ELT_FIELDS)
+#HISTORY_ELT_FIELDS = ['oid', 'pipeline_type', 'nlpql_feature',
+#                      'data', 'subject', 'report_id']
+#HistoryElt = namedtuple('HistoryElt', HISTORY_ELT_FIELDS)
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
@@ -47,155 +49,155 @@ _TRACE = False
 _TEST_ID            = 'EXPR_TEST'
 _TEST_NLPQL_FEATURE = 'EXPR_TEST'
 
-_HISTORY_FIELD = 'history'
+#_HISTORY_FIELD = 'history'
 
-###############################################################################
-def flatten(l, ltypes=(list, tuple)):
-    """
-    Non-recursive list and tuple flattener from
-    http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
-    based on code from Mike Fletcher's BasicTypes library.
-    """
+# ###############################################################################
+# def flatten(l, ltypes=(list, tuple)):
+#     """
+#     Non-recursive list and tuple flattener from
+#     http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
+#     based on code from Mike Fletcher's BasicTypes library.
+#     """
     
-    ltype = type(l)
-    l = list(l)
-    i = 0
-    while i < len(l):
-        while isinstance(l[i], ltypes):
-            if not l[i]:
-                l.pop(i)
-                i -= 1
-                break
-            else:
-                l[i:i + 1] = l[i]
-        i += 1
+#     ltype = type(l)
+#     l = list(l)
+#     i = 0
+#     while i < len(l):
+#         while isinstance(l[i], ltypes):
+#             if not l[i]:
+#                 l.pop(i)
+#                 i -= 1
+#                 break
+#             else:
+#                 l[i:i + 1] = l[i]
+#         i += 1
         
-    return ltype(l)
+#     return ltype(l)
 
 
-###############################################################################
-def flatten_nested_lists(obj):
-    """
-    Remove nested lists in the given dict and return the flattened 
-    equivalent. Does some special handling for empty lists or lists containing
-    all identical entries, mainly to simplify the results when viewed in Excel.
-    """
+# ###############################################################################
+# def flatten_nested_lists(obj):
+#     """
+#     Remove nested lists in the given dict and return the flattened 
+#     equivalent. Does some special handling for empty lists or lists containing
+#     all identical entries, mainly to simplify the results when viewed in Excel.
+#     """
 
-    for k,v in obj.items():
-        # don't flatten the history field
-        if _HISTORY_FIELD == k:
-            continue
-        if type(v) == list:
-            if 1 == len(v) and '' == v[0]:
-                obj[k] = None
-            else:
-                flattened_list = flatten(v)
+#     for k,v in obj.items():
+#         # don't flatten the history field
+#         if _HISTORY_FIELD == k:
+#             continue
+#         if type(v) == list:
+#             if 1 == len(v) and '' == v[0]:
+#                 obj[k] = None
+#             else:
+#                 flattened_list = flatten(v)
 
-                all_none = True
-                for item in flattened_list:
-                    if item is not None:
-                        all_none = False
-                        break
+#                 all_none = True
+#                 for item in flattened_list:
+#                     if item is not None:
+#                         all_none = False
+#                         break
 
-                if all_none:
-                    obj[k] = None
-                else:
-                    obj[k] = flattened_list
+#                 if all_none:
+#                     obj[k] = None
+#                 else:
+#                     obj[k] = flattened_list
 
 
-###############################################################################
-def remove_arrays(obj):
-    """
-    Remove arrays in the result dict by creating numbered fields for
-    the array elements.
-    """
-    to_insert = []
-    to_remove = []
+# ###############################################################################
+# def remove_arrays(obj):
+#     """
+#     Remove arrays in the result dict by creating numbered fields for
+#     the array elements.
+#     """
+#     to_insert = []
+#     to_remove = []
     
-    for k,v in obj.items():
-        if type(v) != list:
-            continue
+#     for k,v in obj.items():
+#         if type(v) != list:
+#             continue
 
-        elt_count = len(v)
-        if 1 == elt_count:
-            obj[k] = v[0]
-        else:
-            for i in range(elt_count):
-                # use 1-based indexing
-                field_name = '{0}_{1}'.format(k, i+1)
-                to_insert.append( (field_name, copy.deepcopy(v), i) )
-            to_remove.append(k)
+#         elt_count = len(v)
+#         if 1 == elt_count:
+#             obj[k] = v[0]
+#         else:
+#             for i in range(elt_count):
+#                 # use 1-based indexing
+#                 field_name = '{0}_{1}'.format(k, i+1)
+#                 to_insert.append( (field_name, copy.deepcopy(v), i) )
+#             to_remove.append(k)
 
-    for k in to_remove:
-        obj.pop(k, None)
-    for k,v,i in to_insert:
-        obj[k] = v[i]
-
-
-###############################################################################
-def extract_value(data):
-    """
-    If data is a single-element list, return element 0. If data is not a
-    list, just return the data.
-    """
-
-    if isinstance(data, list):
-        assert 1 == len(data)
-        return data[0]
-    else:
-        return data
+#     for k in to_remove:
+#         obj.pop(k, None)
+#     for k,v,i in to_insert:
+#         obj[k] = v[i]
 
 
-###############################################################################
-def init_history(source_doc):
-    """
-    Initialize the history depending on the pipeline type. The history is a
-    list of tuples of this form:
+# ###############################################################################
+# def extract_value(data):
+#     """
+#     If data is a single-element list, return element 0. If data is not a
+#     list, just return the data.
+#     """
 
-        (pipeline_type, str(_id), nlnpql_feature, values...)
+#     if isinstance(data, list):
+#         assert 1 == len(data)
+#         return data[0]
+#     else:
+#         return data
 
-    Returns a HistoryElt namedtuple for the given source document.
 
-    """
+# ###############################################################################
+# def init_history(source_doc):
+#     """
+#     Initialize the history depending on the pipeline type. The history is a
+#     list of tuples of this form:
 
-    source_nlpql_feature = source_doc['nlpql_feature']
+#         (pipeline_type, str(_id), nlnpql_feature, values...)
+
+#     Returns a HistoryElt namedtuple for the given source document.
+
+#     """
+
+#     source_nlpql_feature = source_doc['nlpql_feature']
     
-    if 'pipeline_type' in source_doc:
-        pipeline_type = extract_value(source_doc['pipeline_type'])
-        oid = str(source_doc['_id'])
+#     if 'pipeline_type' in source_doc:
+#         pipeline_type = extract_value(source_doc['pipeline_type'])
+#         oid = str(source_doc['_id'])
 
-        subject = source_doc['subject']
-        report_id = source_doc['report_id']
+#         subject = source_doc['subject']
+#         report_id = source_doc['report_id']
 
-        if 'ProviderAssertion' == pipeline_type:
-            # return the term as the data
-            data = extract_value(source_doc['term'])
+#         if 'ProviderAssertion' == pipeline_type:
+#             # return the term as the data
+#             data = extract_value(source_doc['term'])
 
-        elif 'ValueExtractor' == pipeline_type:
-            # return the extracted value as the data
-            data = extract_value(source_doc['value'])
+#         elif 'ValueExtractor' == pipeline_type:
+#             # return the extracted value as the data
+#             data = extract_value(source_doc['value'])
 
-        elif 'MeasurementFinder' == pipeline_type:
-            # return the measurement dimensions as the data
-            x = extract_value(source_doc['dimension_X'])
-            y = extract_value(source_doc['dimension_Y'])
-            z = extract_value(source_doc['dimension_Z'])
-            data = [x, y, z]
+#         elif 'MeasurementFinder' == pipeline_type:
+#             # return the measurement dimensions as the data
+#             x = extract_value(source_doc['dimension_X'])
+#             y = extract_value(source_doc['dimension_Y'])
+#             z = extract_value(source_doc['dimension_Z'])
+#             data = [x, y, z]
 
-        else:
-            # no data
-            data = None
+#         else:
+#             # no data
+#             data = None
 
-    history_elt = HistoryElt(
-        oid           = oid,
-        pipeline_type = pipeline_type,
-        nlpql_feature = source_nlpql_feature,
-        data          = data,
-        subject       = subject,
-        report_id     = report_id
-    )
+#     history_elt = HistoryElt(
+#         oid           = oid,
+#         pipeline_type = pipeline_type,
+#         nlpql_feature = source_nlpql_feature,
+#         data          = data,
+#         subject       = subject,
+#         report_id     = report_id
+#     )
 
-    return history_elt
+#     return history_elt
 
 
 ###############################################################################
@@ -218,7 +220,7 @@ def _evaluate_expressions(expr_obj_list,
     NO_COPY_FIELDS = [
         '_id', 'job_id', 'phenotype_id', 'owner',
         'job_date', 'context_type', 'raw_definition_text',
-        'nlpql_feature', 'phenotype_final', _HISTORY_FIELD
+        'nlpql_feature', 'phenotype_final', HISTORY_FIELD
     ]
 
     all_output_docs = []
@@ -233,74 +235,86 @@ def _evaluate_expressions(expr_obj_list,
             is_final = is_final_save
         
         # evaluate the (sub)expression in expr_obj
-        result = expr_eval.evaluate_expression(expr_obj,
-                                               job_id,
-                                               context_field,
-                                               mongo_collection_obj)
+        eval_result = expr_eval.evaluate_expression(expr_obj,
+                                                    job_id,
+                                                    context_field,
+                                                    mongo_collection_obj)
             
         # query MongoDB to get result docs
-        cursor = mongo_collection_obj.find({'_id': {'$in': result.doc_ids}})
+        cursor = mongo_collection_obj.find({'_id': {'$in': eval_result.doc_ids}})
 
         # generate output docs
         output_docs = []
 
-        if expr_eval.EXPR_TYPE_MATH == result.expr_type:
+        phenotype_data = {
+            'job_id':job_id,
+            'phenotype_id':phenotype_id,
+            'owner':phenotype_owner,
+            'context_field':context_field,
+            'is_final':is_final
+        }
+        
+        if expr_eval.EXPR_TYPE_MATH == eval_result.expr_type:
 
             expression = expr_obj.expr_text
+
+            output_docs = expr_result.to_math_result_docs(eval_result,
+                                                          phenotype_data,
+                                                          cursor)
             
-            # no document groups for math results
-            for doc in cursor:
+            # # no document groups for math results
+            # for doc in cursor:
 
-                # output doc
-                ret = {}
+            #     # output doc
+            #     ret = {}
                 
-                # add doc fields to the output doc as lists
-                field_map = {}
-                fields = doc.keys()
-                fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-                for f in fields_to_copy:
-                    if f not in field_map:
-                        field_map[f] = [doc[f]]
-                    else:
-                        field_map[f].append(doc[f])
+            #     # add doc fields to the output doc as lists
+            #     field_map = {}
+            #     fields = doc.keys()
+            #     fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+            #     for f in fields_to_copy:
+            #         if f not in field_map:
+            #             field_map[f] = [doc[f]]
+            #         else:
+            #             field_map[f].append(doc[f])
 
-                for k,v in field_map.items():
-                    ret[k] = copy.deepcopy(v)
+            #     for k,v in field_map.items():
+            #         ret[k] = copy.deepcopy(v)
 
-                # set the context field explicitly
-                ret[context_field] = doc[context_field]
+            #     # set the context field explicitly
+            #     ret[context_field] = doc[context_field]
 
-                ret['job_id'] = job_id
-                ret['phenotype_id'] = phenotype_id
-                ret['owner'] = phenotype_owner
-                ret['job_date'] = datetime.datetime.now()
-                ret['context_type'] = context_field
-                ret['raw_definition_text'] = result.expr_text
-                ret['nlpql_feature'] = result.nlpql_feature
-                ret['phenotype_final'] = is_final
+            #     ret['job_id'] = phenotype_data['job_id'] #job_id
+            #     ret['phenotype_id'] = phenotype_data['phenotype_id'] #phenotype_id
+            #     ret['owner'] = phenotype_data['owner'] #phenotype_owner
+            #     ret['job_date'] = datetime.datetime.now()
+            #     ret['context_type'] = phenotype_data['context_field'] #context_field
+            #     ret['raw_definition_text'] = eval_result.expr_text
+            #     ret['nlpql_feature'] = eval_result.nlpql_feature
+            #     ret['phenotype_final'] = phenotype_data['is_final'] #is_final
 
-                # use the pipeline_type field to record the type of expression
-                ret['pipeline_type'] = 'EvalMathExpr'
+            #     # use the pipeline_type field to record the type of expression
+            #     ret['pipeline_type'] = 'EvalMathExpr'
                 
-                # documents for math operations are generated from
-                # ValueExtractor and other tasks, hence no history field
-                assert _HISTORY_FIELD not in doc
+            #     # documents for math operations are generated from
+            #     # ValueExtractor and other tasks, hence no history field
+            #     assert HISTORY_FIELD not in doc
                 
-                # add source _id and nlpql_feature
-                if is_final:
-                    # really need to construct the output doc from the history
-                    ret['_ids_1'] = str(doc['_id'])
-                    ret['nlpql_features_1'] = doc['nlpql_feature']
-                else:
-                    history_entry = init_history(doc)
-                    ret[_HISTORY_FIELD] = [history_entry]
+            #     # add source _id and nlpql_feature
+            #     if is_final:
+            #         # really need to construct the output doc from the history
+            #         ret['_ids_1'] = str(doc['_id'])
+            #         ret['nlpql_features_1'] = doc['nlpql_feature']
+            #     else:
+            #         history_entry = init_history(doc)
+            #         ret[HISTORY_FIELD] = [history_entry]
                     
-                flatten_nested_lists(ret)
+            #     flatten_nested_lists(ret)
 
-                if is_final:
-                    remove_arrays(ret)
+            #     if is_final:
+            #         remove_arrays(ret)
 
-                output_docs.append(ret)
+            #     output_docs.append(ret)
                 
             if len(output_docs) > 0:
                 mongo_collection_obj.insert_many(output_docs)
@@ -309,100 +323,104 @@ def _evaluate_expressions(expr_obj_list,
 
         else:
 
-            assert expr_eval.EXPR_TYPE_LOGIC == result.expr_type
+            assert expr_eval.EXPR_TYPE_LOGIC == eval_result.expr_type
 
             expression = expr_obj.expr_text
+
+            output_docs = expr_result.to_logic_result_docs(eval_result,
+                                                           phenotype_data,
+                                                           mongo_collection_obj)
             
-            doc_map, oid_list_of_lists = expr_eval.expand_logical_result(result,
-                                                                         mongo_collection_obj)
+            # doc_map, oid_list_of_lists = expr_eval.expand_logical_result(result,
+            #                                                              mongo_collection_obj)
 
-            # an 'ntuple' is a list of _id values
-            for ntuples in oid_list_of_lists:
-                for ntuple in ntuples:
-                    assert isinstance(ntuple, list)
-                    if 0 == len(ntuple):
-                        continue
+            # # an 'ntuple' is a list of _id values
+            # for ntuples in oid_list_of_lists:
+            #     for ntuple in ntuples:
+            #         assert isinstance(ntuple, list)
+            #         if 0 == len(ntuple):
+            #             continue
 
-                    # each ntuple supplies the data for a result doc
-                    ret = {}
-                    history = []
+            #         # each ntuple supplies the data for a result doc
+            #         ret = {}
+            #         history = []
 
-                    # get the shared context field value for this ntuple
-                    oid = ntuple[0]
-                    doc = doc_map[oid]
-                    context_field_value = doc[context_field]
+            #         # get the shared context field value for this ntuple
+            #         oid = ntuple[0]
+            #         doc = doc_map[oid]
+            #         context_field_value = doc[context_field]
 
-                    # include the present ntuple in the history
-                    for oid in ntuple:
-                        # get the doc associated with this _id
-                        doc = doc_map[oid]
+            #         # include the present ntuple in the history
+            #         for oid in ntuple:
+            #             # get the doc associated with this _id
+            #             doc = doc_map[oid]
 
-                        # carry forward the history for this doc, if any
-                        if _HISTORY_FIELD in doc:
-                            # mongo converts tuples to lists, so convert to namedtuple
-                            for elt in doc[_HISTORY_FIELD]:
-                                assert isinstance(elt, list)
-                                tup = HistoryElt(elt[0], elt[1], elt[2],
-                                                 elt[3], elt[4], elt[5])
-                                history.append(tup)
+            #             # carry forward the history for this doc, if any
+            #             if _HISTORY_FIELD in doc:
+            #                 # mongo converts tuples to lists, so convert to namedtuple
+            #                 for elt in doc[_HISTORY_FIELD]:
+            #                     assert isinstance(elt, list)
+            #                     tup = HistoryElt(elt[0], elt[1], elt[2],
+            #                                      elt[3], elt[4], elt[5])
+            #                     history.append(tup)
                             
-                        # include the present doc in the history
-                        history_entry = init_history(doc)
-                        history.append(history_entry)
+            #             # include the present doc in the history
+            #             history_entry = init_history(doc)
+            #             history.append(history_entry)
                         
-                        assert context_field_value == doc[context_field]
+            #             assert context_field_value == doc[context_field]
                         
-                    # add ntuple doc fields to the output doc as lists
-                    field_map = {}
-                    for oid in ntuple:
-                        doc = doc_map[oid]
-                        fields = doc.keys()
-                        fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
-                        for f in fields_to_copy:
-                            if f not in field_map:
-                                field_map[f] = [doc[f]]
-                            else:
-                                field_map[f].append(doc[f])
+            #         # add ntuple doc fields to the output doc as lists
+            #         field_map = {}
+            #         for oid in ntuple:
+            #             doc = doc_map[oid]
+            #             fields = doc.keys()
+            #             fields_to_copy = [f for f in fields if f not in NO_COPY_FIELDS]
+            #             for f in fields_to_copy:
+            #                 if f not in field_map:
+            #                     field_map[f] = [doc[f]]
+            #                 else:
+            #                     field_map[f].append(doc[f])
 
-                    for k,v in field_map.items():
-                        ret[k] = copy.deepcopy(v)
+            #         for k,v in field_map.items():
+            #             ret[k] = copy.deepcopy(v)
 
-                    # set the context field value; same value for all ntuple entries
-                    ret[context_field] = context_field_value
+            #         # set the context field value; same value for all ntuple entries
+            #         ret[context_field] = context_field_value
 
-                    # update fields common to AND/OR
-                    ret['job_id'] = job_id
-                    ret['phenotype_id'] = phenotype_id
-                    ret['owner'] = phenotype_owner
-                    ret['job_date'] = datetime.datetime.now()
-                    ret['context_type'] = context_field
-                    ret['raw_definition_text'] = result.expr_text
-                    ret['nlpql_feature'] = result.nlpql_feature
-                    ret['phenotype_final'] = is_final
+            #         # update fields common to AND/OR
+            #         ret['job_id'] = job_id
+            #         ret['phenotype_id'] = phenotype_id
+            #         ret['owner'] = phenotype_owner
+            #         ret['job_date'] = datetime.datetime.now()
+            #         ret['context_type'] = context_field
+            #         ret['raw_definition_text'] = eval_result.expr_text
+            #         ret['nlpql_feature'] = eval_result.nlpql_feature
+            #         ret['phenotype_final'] = is_final
 
-                    # use the pipeline_type field to record the type of expression
-                    ret['pipeline_type'] = 'EvalLogicExpr'
+            #         # use the pipeline_type field to record the type of expression
+            #         ret['pipeline_type'] = 'EvalLogicExpr'
                     
-                    # add source _ids and nlpql_features (1-based indexing)
-                    if is_final:
-                        # really need to construct the output doc from the history
-                        for i in range(len(history)):
-                            history_elt = history[i]
-                            assert isinstance(history_elt, tuple)
-                            field_name = '_ids_{0}'.format(i+1)
-                            ret[field_name] = history_elt.oid
-                            field_name = 'nlpql_features_{0}'.format(i+1)
-                            ret[field_name] = history_elt.nlpql_feature
-                    else:
-                        # udpate the history
-                        ret[_HISTORY_FIELD] = copy.deepcopy(history)
+            #         # add source _ids and nlpql_features (1-based indexing)
+            #         if is_final:
+            #             # really need to construct the output doc from the history
+            #             for i in range(len(history)):
+            #                 history_elt = history[i]
+            #                 assert isinstance(history_elt, tuple)
+            #                 field_name = '_ids_{0}'.format(i+1)
+            #                 ret[field_name] = history_elt.oid
+            #                 field_name = 'nlpql_features_{0}'.format(i+1)
+            #                 ret[field_name] = history_elt.nlpql_feature
+            #         else:
+            #             # udpate the history
+            #             ret[_HISTORY_FIELD] = copy.deepcopy(history)
 
-                    flatten_nested_lists(ret)
+            #         flatten_nested_lists(ret)
 
-                    if is_final:
-                        remove_arrays(ret)
+            #         if is_final:
+            #             remove_arrays(ret)
 
-                    output_docs.append(ret)
+            #         output_docs.append(ret)
 
             if len(output_docs) > 0:
                 mongo_collection_obj.insert_many(output_docs)
@@ -645,7 +663,7 @@ def _run_tests(job_id,
                         if is_final:
                             print(doc)
                         else:
-                            history = doc[_HISTORY_FIELD]
+                            history = doc[HISTORY_FIELD]
                             for tup in history:
                                 if isinstance(tup.data, float):
 
