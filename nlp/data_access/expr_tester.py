@@ -82,6 +82,7 @@ def _evaluate_expressions(expr_obj_list,
         # query MongoDB to get result docs
         cursor = mongo_collection_obj.find({'_id': {'$in': eval_result.doc_ids}})
 
+        # initialize for MongoDB result document generation
         phenotype_info = expr_result.PhenotypeInfo(
             job_id = job_id,
             phenotype_id = phenotype_id,
@@ -89,7 +90,8 @@ def _evaluate_expressions(expr_obj_list,
             context_field = context_field,
             is_final = is_final
         )
-        
+
+        # generate result documents
         if expr_eval.EXPR_TYPE_MATH == eval_result.expr_type:
 
             output_docs = expr_result.to_math_result_docs(eval_result,
