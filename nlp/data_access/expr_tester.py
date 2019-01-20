@@ -199,10 +199,11 @@ def init_history(source_doc):
 
 
 ###############################################################################
-def evaluate_expressions(expr_obj_list,
-                         mongo_collection_obj,
-                         job_id,
-                         context_field):
+def _evaluate_expressions(expr_obj_list,
+                          mongo_collection_obj,
+                          job_id,
+                          context_field,
+                          is_final):
     """
     Nearly identical to
     nlp/luigi_tools/phenotype_helper.mongo_process_operations
@@ -210,7 +211,6 @@ def evaluate_expressions(expr_obj_list,
 
     phenotype_id    = _TEST_ID
     phenotype_owner = _TEST_ID
-    is_final        = False
         
     assert 'subject' == context_field or 'report_id' == context_field
 
@@ -456,7 +456,13 @@ def banner_print(msg):
     
     
 ###############################################################################
-def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
+def _run_tests(job_id,
+               context_var,
+               mongohost,
+               port,
+               num,
+               is_final,
+               debug=False):
     """
     Include all NLPQL names from data_gen.nlpql in the following list.
     """
@@ -584,10 +590,11 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
             break
 
         # evaluate the ExpressionObjects in the list
-        results = evaluate_expressions(expression_object_list,
-                                       mongo_collection_obj,
-                                       job_id,
-                                       context_field)
+        results = _evaluate_expressions(expression_object_list,
+                                        mongo_collection_obj,
+                                        job_id,
+                                        context_field,
+                                        is_final)
 
         banner_print(e)
         for expr_obj, output_docs in results:
@@ -619,23 +626,32 @@ def _run_tests(job_id, context_var, mongohost, port, num, debug=False):
                 for k in range(n):
                     if k < num or k > n-num:
                         doc = output_docs[k]
-                        print('[{0:6}]: Document {1}:'.format(k, str(doc['_id'])))
+                        print('[{0:6}]: Document {1}, NLPQL feature {2}:'.
+                              format(k, str(doc['_id']),
+                                     expr_obj.nlpql_feature))
                         #print(doc)
 
                         if _HISTORY_FIELD in doc:
                             history = doc[_HISTORY_FIELD]
                             for tup in history:
                                 if isinstance(tup.data, float):
-                                    tup_string = '{0:<10}'.format(tup.data)
+
+                                # format data depending on whether float or string
+                                    data_string = '{0:<10}'.format(tup.data)
                                 else:
-                                    tup_string = '{0}'.format(tup.data)
-                                #print('TUP: {0}'.format(tup))
-                                print('\t_id: {0}, pipeline_type: {1:20} '  \
-                                      'nlpql_feature: {2:40} subject: {3} ' \
-                                      'report_id: {4} data: {5} '.
+                                    data_string = '{0}'.format(tup.data)
+
+                                if 'subject' == context_field:
+                                    context_str = 'subject: {0}'.format(tup.subject)
+                                else:
+                                    context_str = 'report_id: {0}'.format(tup.report_id)
+
+                                print('\t_id: {0}, pipeline: {1:20} '  \
+                                      'nlpql_feature: {2:40} {3} ' \
+                                      'data: {4} '.
                                       format(tup.oid, tup.pipeline_type,
-                                             tup.nlpql_feature, tup.subject,
-                                             tup.report_id, tup_string))
+                                             tup.nlpql_feature, context_str,
+                                             data_string))
                     elif k == num:
                         print('\t...')
                 
@@ -673,6 +689,8 @@ def _show_help():
         -h, --help           Print this information and exit.
         -d, --debug          Enable debug output.
         -v, --version        Print version information and exit.
+        -i, --isfinal        Generate NLPQL 'final' result. Default is to
+                             generate an 'intermediate' result.
 
     """.format(_MODULE_NAME))
 
@@ -689,6 +707,8 @@ if __name__ == '__main__':
                          action='store_true', dest='get_version')
     optparser.add_option('-h', '--help',
                          action='store_true', dest='show_help', default=False)
+    optparser.add_option('-i', '--isfinal',
+                         action='store_true', dest='isfinal', default=False)
     optparser.add_option('-m', '--mongohost', action='store', dest='mongohost')
     optparser.add_option('-p', '--port', action='store', dest='port')
     optparser.add_option('-n', '--num', action='store', dest='num')
@@ -710,6 +730,7 @@ if __name__ == '__main__':
     if opts.job_id is None:
         print('The job_id (-j command line option) must be provided.')
         sys.exit(-1)
+    job_id = int(opts.job_id)
 
     mongohost = 'localhost'
     if opts.mongohost is not None:
@@ -718,8 +739,8 @@ if __name__ == '__main__':
     port = 27017
     if opts.port is not None:
         port = int(opts.port)
-        
-    job_id = int(opts.job_id)
+
+    is_final = opts.isfinal
 
     context = 'patient'
     if opts.context is not None:
@@ -729,5 +750,5 @@ if __name__ == '__main__':
     if opts.num is not None:
         num = int(opts.num)
         
-    _run_tests(job_id, context, mongohost, port, num, debug)
+    _run_tests(job_id, context, mongohost, port, num, is_final, debug)
 
