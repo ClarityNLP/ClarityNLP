@@ -154,7 +154,6 @@ import os
 import sys
 import copy
 import string
-import hashlib
 import optparse
 from pymongo import MongoClient
 from collections import namedtuple
@@ -231,10 +230,18 @@ EvalResult = namedtuple('EvalResult', EXPR_RESULT_FIELDS)
 
 # regex that identifies a temporary NLPQL feature
 # 32 hex digits in the MD5 hash, needs to be exportable
-regex_temp_nlpql_feature = re.compile(r'\A(math|logic)\d+_[a-fA-F0-9]{32}\Z')
-
+regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
+    
 # identifies a temp logic feature, not exported
-_regex_temp_nlpql_logic_feature = re.compile(r'\Alogic\d+_[a-fA-F0-9]{32}\Z')
+_regex_temp_nlpql_logic_feature = re.compile(r'\Alogic_\d+_\d+\Z')
+
+
+# # regex that identifies a temporary NLPQL feature
+# # 32 hex digits in the MD5 hash, needs to be exportable
+# regex_temp_nlpql_feature = re.compile(r'\A(math|logic)\d+_[a-fA-F0-9]{32}\Z')
+
+# # identifies a temp logic feature, not exported
+# _regex_temp_nlpql_logic_feature = re.compile(r'\Alogic\d+_[a-fA-F0-9]{32}\Z')
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
@@ -941,7 +948,7 @@ def _is_temp_feature(label):
     
 
 ###############################################################################
-def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
+def _make_temp_feature(counter, token_list, expr_index, math_or_logic=_TMP_FEATURE_MATH):
     """
     Create a unique NLPQL feature name for a mathematical subexpression.
     This new name becomes the 'nlpql_feature' label that gets substituted
@@ -959,23 +966,28 @@ def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
     is not adequate, since lengthy expressions may use the same variables and
     not differ until beyond the slice point.
     """
-
+    
     if _TRACE:
         print('Called _make_temp_feature')
         print('\t    tokens: {0}'.format(token_list))
+        print('\texpr_index: {0}, counter: {1}'.format(expr_index, counter))
 
-    # join the strings with an underscore and compute the MD5 hash
-    joined = '_'.join(token_list)
+    # # join the strings with an underscore and compute the MD5 hash
+    # joined = '_'.join(token_list)
+    # md5 = hashlib.md5()
+    # md5.update(joined.encode())
+    # hexdigest = md5.hexdigest()
 
-    md5 = hashlib.md5()
-    md5.update(joined.encode())
-    hexdigest = md5.hexdigest()
+    # if _TMP_FEATURE_MATH == math_or_logic:
+    #     label = 'math{0}_{1}'.format(counter, hexdigest)
+    # else:
+    #     label = 'logic{0}_{1}'.format(counter, hexdigest)
 
     if _TMP_FEATURE_MATH == math_or_logic:
-        label = 'math{0}_{1}'.format(counter, hexdigest)
+        label = 'math_{0}_{1}'.format(expr_index, counter)
     else:
-        label = 'logic{0}_{1}'.format(counter, hexdigest)
-        
+        label = 'logic_{0}_{1}'.format(expr_index, counter)
+    
     if _TRACE:
         print('\t New label: {0}'.format(label))
 
@@ -985,7 +997,7 @@ def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
 
 
 ###############################################################################
-def _merge_math_tokens(tokens, math_expressions, counter):
+def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
     """
     Replace two distinct pure math expressions (represented by tokens such as
     m0 or m1) with a compound pure math expression represented by a single
@@ -1048,7 +1060,9 @@ def _merge_math_tokens(tokens, math_expressions, counter):
                             expr_tokens[j] = expr
                             del math_expressions[m]
                     nlpql_expression = ' '.join(expr_tokens)
-                    nlpql_feature = _make_temp_feature(counter, saved_tokens)
+                    nlpql_feature = _make_temp_feature(counter,
+                                                       saved_tokens,
+                                                       expr_index)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
 
@@ -1127,7 +1141,9 @@ def _resolve_mixed(infix_expression, expr_index):
                 else:
                     # push replacement token with no parens
                     feature = feature_set.pop()
-                    nlpql_feature = _make_temp_feature(counter, expr_tokens)
+                    nlpql_feature = _make_temp_feature(counter,
+                                                       expr_tokens,
+                                                       expr_index)
                     stack.append(nlpql_feature)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
@@ -1150,7 +1166,10 @@ def _resolve_mixed(infix_expression, expr_index):
     # do a max of 10 iterations to combine subexpressions
     for k in range(10):
         tokens = new_infix_expr.split()
-        new_infix_expr, counter = _merge_math_tokens(tokens, math_expressions, counter)
+        new_infix_expr, counter = _merge_math_tokens(tokens,
+                                                     math_expressions,
+                                                     expr_index,
+                                                     counter)
         if prev == new_infix_expr:
             break
         else:
@@ -1374,7 +1393,7 @@ def _eval_math_expr(job_id,
 
     if _TRACE:
         print('Called _eval_math_expr')
-        print('\tExpression: "{0}"'.format(infix_expr))
+        print('\tExpression: "{0}"'.format(expr_obj.expr_text))
 
     final_nlpql_feature = expr_obj.nlpql_feature
     infix_expr = expr_obj.expr_text
@@ -1513,7 +1532,7 @@ def _eval_logic_expr(job_id,
 
     if _TRACE:
         print('Called _eval_logic_expr')
-        print('\tExpression: "{0}"'.format(infix_expr))
+        print('\tExpression: "{0}"'.format(expr_obj.expr_text))
 
     final_nlpql_feature = expr_obj.nlpql_feature
     infix_expr = expr_obj.expr_text
@@ -1794,7 +1813,10 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                 if _TRACE: print('\tOperands: {0}'.format(operands))
 
                 # construct a new feature name for this operation
-                new_feature_name = _make_temp_feature(counter, operands, _TMP_FEATURE_LOGIC)
+                new_feature_name = _make_temp_feature(counter,
+                                                      operands,
+                                                      eval_result.expr_index,
+                                                      _TMP_FEATURE_LOGIC)
                 if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
                 counter += 1
 
@@ -1809,7 +1831,9 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                         if not match:
                             # simple feature
                             if feature in feature_map:
-                                oids = _get_docs_with_feature(feature, feature_map, group)
+                                oids = _get_docs_with_feature(feature,
+                                                              feature_map,
+                                                              group)
                                 for oid in oids:
                                     # each OR'd feature is an ntuple in itself
                                     ntuples.append([oid])

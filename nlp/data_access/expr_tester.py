@@ -228,7 +228,7 @@ def _run_tests(job_id,
         # 'hasTachycardia OR hasShock',
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
         # '((hasShock) AND (hasDyspnea))',
-        '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
+        # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
         # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
         # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
         # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
@@ -249,7 +249,7 @@ def _run_tests(job_id,
         # 'hasRigors AND hasTachycardia AND hasDyspnea AND hasNausea AND Temperature.value >= 100.4',
         # 'hasRigors OR (hasTachycardia AND hasDyspnea) AND Temperature.value >= 100.4',
         # 'hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea AND Temperature.value >= 100.4',
-        ### 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
+        'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 20 AND Lesion.dimension_X > 35 OR hasNausea and hasDyspnea',
         # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 OR hasNausea and hasDyspnea',
         # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 AND hasNausea OR hasDyspnea',
