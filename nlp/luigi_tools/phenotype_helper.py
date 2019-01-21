@@ -695,7 +695,6 @@ def mongo_process_operations(expr_obj_list,
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 
-    all_output_docs = []
     is_final_save = c['final']
     
     for expr_obj in expr_obj_list:
@@ -746,11 +745,8 @@ def mongo_process_operations(expr_obj_list,
             mongo_collection_obj.insert_many(output_docs)
         else:
             print('mongo_process_operations ({0}): ' \
-                  'no phenotype matches on {1}.'.format(eval_result.expr_type,
-                                                        eval_result.expr_text))
-
-        # save the expr object and the results
-        all_output_docs.append( (expr_obj, output_docs))
+                  'no phenotype matches on "{1}".'.format(eval_result.expr_type,
+                                                          eval_result.expr_text))
 
     client.close()
 
