@@ -235,16 +235,8 @@ regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
 # identifies a temp logic feature, not exported
 _regex_temp_nlpql_logic_feature = re.compile(r'\Alogic_\d+_\d+\Z')
 
-
-# # regex that identifies a temporary NLPQL feature
-# # 32 hex digits in the MD5 hash, needs to be exportable
-# regex_temp_nlpql_feature = re.compile(r'\A(math|logic)\d+_[a-fA-F0-9]{32}\Z')
-
-# # identifies a temp logic feature, not exported
-# _regex_temp_nlpql_logic_feature = re.compile(r'\Alogic\d+_[a-fA-F0-9]{32}\Z')
-
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -972,17 +964,6 @@ def _make_temp_feature(counter, token_list, expr_index, math_or_logic=_TMP_FEATU
         print('\t    tokens: {0}'.format(token_list))
         print('\texpr_index: {0}, counter: {1}'.format(expr_index, counter))
 
-    # # join the strings with an underscore and compute the MD5 hash
-    # joined = '_'.join(token_list)
-    # md5 = hashlib.md5()
-    # md5.update(joined.encode())
-    # hexdigest = md5.hexdigest()
-
-    # if _TMP_FEATURE_MATH == math_or_logic:
-    #     label = 'math{0}_{1}'.format(counter, hexdigest)
-    # else:
-    #     label = 'logic{0}_{1}'.format(counter, hexdigest)
-
     if _TMP_FEATURE_MATH == math_or_logic:
         label = 'math_{0}_{1}'.format(expr_index, counter)
     else:
@@ -1380,8 +1361,6 @@ def _mongo_math_format(operator, op1, op2=None):
 ###############################################################################
 def _eval_math_expr(job_id,
                     expr_obj,
-                    #final_nlpql_feature,
-                    #infix_expr,
                     mongo_collection_obj):
     """
     Generate a MongoDB aggregation pipeline to evaluate the given math
@@ -1516,8 +1495,6 @@ def _mongo_logic_format(operator, operands):
 def _eval_logic_expr(job_id,
                      context_field,
                      expr_obj,
-                     #final_nlpql_feature,
-                     #infix_expr,
                      mongo_collection_obj):
     """
     Generate a MongoDB aggregation pipeline to evaluate the given logical
@@ -2271,16 +2248,12 @@ def evaluate_expression(expr_obj,
     if EXPR_TYPE_MATH == expr_obj.expr_type:
         result = _eval_math_expr(job_id,
                                  expr_obj,
-                                 #expr_obj.nlpql_feature,
-                                 #expr_obj.expr_text,
                                  mongo_collection_obj)
 
     else:
         result = _eval_logic_expr(job_id,
                                   context_field,
                                   expr_obj,
-                                  #expr_obj.nlpql_feature,
-                                  #expr_obj.expr_text,
                                   mongo_collection_obj)
 
     return result

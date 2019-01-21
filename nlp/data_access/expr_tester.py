@@ -37,7 +37,7 @@ import expr_result
 from expr_result import HISTORY_FIELD
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME   = 'expr_tester.py'
 
 _TRACE = False
@@ -239,7 +239,7 @@ def _run_tests(job_id,
         # 'hasFever AND (hasDyspnea OR hasTachycardia)',
 
         # mixed math and logic 
-        # 'hasNausea AND Temperature.value >= 100.4',
+        'hasNausea AND Temperature.value >= 100.4',
         # 'Lesion.dimension < 10 OR hasRigors',
         # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
         # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
@@ -249,7 +249,7 @@ def _run_tests(job_id,
         # 'hasRigors AND hasTachycardia AND hasDyspnea AND hasNausea AND Temperature.value >= 100.4',
         # 'hasRigors OR (hasTachycardia AND hasDyspnea) AND Temperature.value >= 100.4',
         # 'hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea AND Temperature.value >= 100.4',
-        'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
+        ### 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 20 AND Lesion.dimension_X > 35 OR hasNausea and hasDyspnea',
         # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 OR hasNausea and hasDyspnea',
         # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 AND hasNausea OR hasDyspnea',
