@@ -173,6 +173,7 @@ def banner_print(msg):
     
 ###############################################################################
 def _run_tests(job_id,
+               command_line_expression,
                context_var,
                mongohost,
                port,
@@ -287,6 +288,11 @@ def _run_tests(job_id,
     
     counter = 1
     for e in EXPRESSIONS:
+
+        # override with expression from the command line, if any
+        if command_line_expression is not None:
+            e = command_line_expression
+
         print('[{0:3}]: "{1}"'.format(counter, e))
 
         parse_result = expr_eval.parse_expression(e, NAME_LIST)
@@ -371,6 +377,10 @@ def _run_tests(job_id,
         counter += 1
         print()
 
+        # exit if user provided an expression on the command line
+        if command_line_expression is not None:
+            break
+
     return True
 
 
@@ -383,7 +393,7 @@ def _get_version():
 def _show_help():
     print(_get_version())
     print("""
-    USAGE: python3 ./{0} --jobid <integer> [-cdhvmpn]
+    USAGE: python3 ./{0} --jobid <integer> [-cdhvmpne]
 
     OPTIONS:
 
@@ -391,11 +401,16 @@ def _show_help():
         -c, --context  <string>    either 'patient' or 'document'
                                    (default is patient)
         -m, --mongohost            IP address of remote MongoDB host
+                                   (default is localhost)
         -p, --port                 port number for remote MongoDB host
+                                   (default is 27017)
 
         -n, --num                  Number of results to display at start and
                                    end of results array (the number of results
-                                   displayed is 2 * n). Default is n == 16.                     
+                                   displayed is 2 * n). Default is n == 16.
+
+        -e, --expr                 NLPQL expression to evaluate.
+                                   (default is to use a test expression from this file)
 
     FLAGS:
 
@@ -425,6 +440,7 @@ if __name__ == '__main__':
     optparser.add_option('-m', '--mongohost', action='store', dest='mongohost')
     optparser.add_option('-p', '--port', action='store', dest='port')
     optparser.add_option('-n', '--num', action='store', dest='num')
+    optparser.add_option('-e', '--expr', action='store', dest='expr')
 
     opts, other = optparser.parse_args(sys.argv)
 
@@ -462,6 +478,10 @@ if __name__ == '__main__':
     num = 16
     if opts.num is not None:
         num = int(opts.num)
+
+    expr = None
+    if opts.expr is not None:
+        expr = opts.expr
         
-    _run_tests(job_id, context, mongohost, port, num, is_final, debug)
+    _run_tests(job_id, expr, context, mongohost, port, num, is_final, debug)
 
