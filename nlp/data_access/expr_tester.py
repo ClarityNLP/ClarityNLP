@@ -37,7 +37,7 @@ import expr_result
 from expr_result import HISTORY_FIELD
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME   = 'expr_tester.py'
 
 _TRACE = False
@@ -385,6 +385,39 @@ def _run_tests(job_id,
 
 
 ###############################################################################
+def _parse_file(filepath):
+    """
+    Read the NLPQL file and extract associated NLPQL features and expressions.
+    Return a list of (nlpql_feature, expression) tuples.
+    """
+
+    str_define_statement = r'\bdefine\s(?P<feature>[^:]+):\swhere\s(?P<expr>[^;]+);'
+    regex_define_statement = re.compile(str_define_statement, re.IGNORECASE)
+    
+    with open(filepath, 'rt') as infile:
+        text = infile.read()
+
+    # replace newlines with spaces to prevent regex problems
+    text = re.sub(r'\n', ' ', text)
+
+    # replace repeated spaces with a single space
+    text = re.sub(r'\s+', ' ', text)
+
+    print('FILE TEXT: ')
+    print(text)
+
+    results = []
+    
+    iterator = regex_define_statement.finditer(text)
+    for match in iterator:
+        nlpql_feature = match.group('feature').strip()
+        expression    = match.group('expr').strip()
+        results.append( (nlpql_feature, expression) )
+
+    return results
+        
+
+###############################################################################
 def _get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
 
@@ -393,7 +426,7 @@ def _get_version():
 def _show_help():
     print(_get_version())
     print("""
-    USAGE: python3 ./{0} --jobid <integer> [-cdhvmpne]
+    USAGE: python3 ./{0} --jobid <integer> [-cdhvmpnef]
 
     OPTIONS:
 
@@ -409,9 +442,14 @@ def _show_help():
                                    end of results array (the number of results
                                    displayed is 2 * n). Default is n == 16.
 
+        -f, --file                 NLPQL file to process. Must contain only 
+                                   define statements. If this option is present
+                                   the -e option cannot be used.
+
         -e, --expr                 NLPQL expression to evaluate.
                                    (default is to use a test expression from this file)
-
+                                   If this option is present the -f option
+                                   cannot be used.
     FLAGS:
 
         -h, --help           Print this information and exit.
@@ -441,6 +479,7 @@ if __name__ == '__main__':
     optparser.add_option('-p', '--port', action='store', dest='port')
     optparser.add_option('-n', '--num', action='store', dest='num')
     optparser.add_option('-e', '--expr', action='store', dest='expr')
+    optparser.add_option('-f', '--file', action='store', dest='filepath')
 
     opts, other = optparser.parse_args(sys.argv)
 
@@ -481,7 +520,26 @@ if __name__ == '__main__':
 
     expr = None
     if opts.expr is not None:
-        expr = opts.expr
-        
+        if opts.filepath is not None:
+            print('Options -e and -f are mutually exclusive.')
+            sys.exit(-1)
+        else:
+            expr = opts.expr
+
+    filepath = None
+    if opts.filepath is not None:
+        if opts.expr is not None:
+            print('Options -e and -f are mutually exclusive.')
+            sys.exit(-1)
+        else:
+            filepath = opts.filepath
+            if not os.path.exists(filepath):
+                print('File not found: "{0}"'.format(filepath))
+                sys.exit(-1)
+            tuple_list = _parse_file(filepath)
+            print('FEATURE-EXPRESSION TUPLES: ')
+            print(tuple_list)
+            sys.exit(0)
+            
     _run_tests(job_id, expr, context, mongohost, port, num, is_final, debug)
 
