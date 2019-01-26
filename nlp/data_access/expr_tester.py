@@ -391,13 +391,17 @@ def _parse_file(filepath):
     """
 
     str_context_statement = r'context\s(?P<context>[^;]+);'
-    regex_context_statement = re.compile(str_context_statement, re.IGNORECASE)
+    regex_context_statement = re.compile(str_context_statement)
     
-    str_define_statement = r'\bdefine\s(?P<feature>[^:]+):\swhere\s(?P<expr>[^;]+);'
+    str_define_statement = r'\bdefine\s(?P<feature>[^:]+):\s' +\
+                           r'where\s(?P<expr>[^;]+);'
     regex_define_statement = re.compile(str_define_statement, re.IGNORECASE)
     
     with open(filepath, 'rt') as infile:
         text = infile.read()
+
+    # strip comments
+    text = re.sub(r'//[^\n]+\n', ' ', text)
 
     # replace newlines with spaces for regex simplicity
     text = re.sub(r'\n', ' ', text)
@@ -407,10 +411,12 @@ def _parse_file(filepath):
 
     tuple_list = []
 
+    # extract the context
     match = regex_context_statement.search(text)
     if match:
         context = match.group('context').strip()
-    
+
+    # extract NLPQL features and associated expressions
     iterator = regex_define_statement.finditer(text)
     for match in iterator:
         nlpql_feature = match.group('feature').strip()
