@@ -332,9 +332,14 @@ def _run_tests(job_id,
                     if k < num or k > n-num:
                         doc = output_docs[k]
                         #print(doc)
+                        if 'history' in doc:
+                            assert 1 == len(doc['history'])
+                            data_field = doc['history'][0].data
+                        else:
+                            data_field = doc['value']
                         print('\t[{0:6}]: {1} {2} {3} {4} {5}'.
                               format(k, doc['_id'], doc['nlpql_feature'],
-                                     doc['value'], doc['subject'],
+                                     data_field, doc['subject'],
                                      doc['report_id']))
                     elif k == num:
                         print('\t...')
@@ -393,7 +398,7 @@ def _parse_file(filepath):
     str_context_statement = r'context\s(?P<context>[^;]+);'
     regex_context_statement = re.compile(str_context_statement)
     
-    str_define_statement = r'\bdefine\s(?P<feature>[^:]+):\s' +\
+    str_define_statement = r'\bdefine\s(final\s)?(?P<feature>[^:]+):\s' +\
                            r'where\s(?P<expr>[^;]+);'
     regex_define_statement = re.compile(str_define_statement, re.IGNORECASE)
     
