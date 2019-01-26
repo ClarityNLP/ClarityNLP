@@ -135,12 +135,12 @@ def _delete_prev_results(job_id, mongo_collection_obj):
     # delete all assigned results from a previous run of this code
     result = mongo_collection_obj.delete_many({"job_id":job_id,
                                                "nlpql_feature":_TEST_NLPQL_FEATURE})
-    print('Removed {0} result docs from a previous run.'.
+    print('Removed {0} result docs with the test feature.'.
           format(result.deleted_count))
 
     # delete all temp results from a previous run of this code
     result = mongo_collection_obj.delete_many({"nlpql_feature":expr_eval.regex_temp_nlpql_feature})
-    print('Removed {0} docs with temp NLPQL features from a previous run.'.
+    print('Removed {0} docs with temp NLPQL features.'.
           format(result.deleted_count))
     
 
@@ -548,6 +548,15 @@ if __name__ == '__main__':
     mongo_client_obj = MongoClient(mongohost, port)
     mongo_db_obj = mongo_client_obj['nlp']
     mongo_collection_obj = mongo_db_obj['phenotype_results']
+
+    # delete any data having NLPQL features defined in the file
+    if filepath is not None:
+        for nlpql_feature, expression in file_data.feat_expr_list:
+
+            result = mongo_collection_obj.delete_many({"job_id":job_id,
+                                                       "nlpql_feature":nlpql_feature})
+            print('Removed {0} docs with NLPQL feature {1}.'.
+                  format(result.deleted_count, nlpql_feature))
 
     if filepath is None:
         # command-line expression uses the test feature
