@@ -46,6 +46,10 @@ _TEST_ID            = 'EXPR_TEST'
 _TEST_NLPQL_FEATURE = 'EXPR_TEST'
 
 
+_FILE_DATA_FIELDS = ['context', 'feat_expr_list']
+FileData = namedtuple('FileData', _FILE_DATA_FIELDS)
+
+
 ###############################################################################
 def _evaluate_expressions(expr_obj_list,
                           mongo_collection_obj,
@@ -173,10 +177,12 @@ def banner_print(msg):
     
 ###############################################################################
 def _run_tests(job_id,
+               final_nlpql_feature,
                command_line_expression,
                context_var,
-               mongohost,
-               port,
+               mongo_collection_obj,
+               #mongohost,
+               #port,
                num,
                is_final,
                debug=False):
@@ -262,13 +268,6 @@ def _run_tests(job_id,
         #'This is junk and should cause a parser exception',
     ]
 
-    # connect to ClarityNLP mongo collection nlp.phenotype_results
-    mongo_client_obj = MongoClient(mongohost, port)
-    mongo_db_obj = mongo_client_obj['nlp']
-    mongo_collection_obj = mongo_db_obj['phenotype_results']
-    
-    final_nlpql_feature = _TEST_NLPQL_FEATURE
-
     # must either be a patient or document context
     context_var = context_var.lower()
     assert 'patient' == context_var or 'document' == context_var
@@ -295,7 +294,7 @@ def _run_tests(job_id,
 
         print('[{0:3}]: "{1}"'.format(counter, e))
 
-        parse_result = expr_eval.parse_expression(e, NAME_LIST)
+        parse_result = expr_eval.parse_expression(e)#, NAME_LIST)
         if 0 == len(parse_result):
             print('\n*** parse_expression failed ***\n')
             break
@@ -387,34 +386,41 @@ def _run_tests(job_id,
 ###############################################################################
 def _parse_file(filepath):
     """
-    Read the NLPQL file and extract associated NLPQL features and expressions.
-    Return a list of (nlpql_feature, expression) tuples.
+    Read the NLPQL file and extract the context, nlpql_features, and 
+    associated expressions. Returns a FileData namedtuple.
     """
 
+    str_context_statement = r'context\s(?P<context>[^;]+);'
+    regex_context_statement = re.compile(str_context_statement, re.IGNORECASE)
+    
     str_define_statement = r'\bdefine\s(?P<feature>[^:]+):\swhere\s(?P<expr>[^;]+);'
     regex_define_statement = re.compile(str_define_statement, re.IGNORECASE)
     
     with open(filepath, 'rt') as infile:
         text = infile.read()
 
-    # replace newlines with spaces to prevent regex problems
+    # replace newlines with spaces for regex simplicity
     text = re.sub(r'\n', ' ', text)
 
     # replace repeated spaces with a single space
     text = re.sub(r'\s+', ' ', text)
 
-    print('FILE TEXT: ')
-    print(text)
+    tuple_list = []
 
-    results = []
+    match = regex_context_statement.search(text)
+    if match:
+        context = match.group('context').strip()
     
     iterator = regex_define_statement.finditer(text)
     for match in iterator:
         nlpql_feature = match.group('feature').strip()
         expression    = match.group('expr').strip()
-        results.append( (nlpql_feature, expression) )
+        tuple_list.append( (nlpql_feature, expression) )
 
-    return results
+    return FileData(
+        context = context,
+        feat_expr_list = tuple_list
+    )
         
 
 ###############################################################################
@@ -536,10 +542,34 @@ if __name__ == '__main__':
             if not os.path.exists(filepath):
                 print('File not found: "{0}"'.format(filepath))
                 sys.exit(-1)
-            tuple_list = _parse_file(filepath)
-            print('FEATURE-EXPRESSION TUPLES: ')
-            print(tuple_list)
-            sys.exit(0)
-            
-    _run_tests(job_id, expr, context, mongohost, port, num, is_final, debug)
+            file_data = _parse_file(filepath)
 
+    # connect to ClarityNLP mongo collection nlp.phenotype_results
+    mongo_client_obj = MongoClient(mongohost, port)
+    mongo_db_obj = mongo_client_obj['nlp']
+    mongo_collection_obj = mongo_db_obj['phenotype_results']
+
+    if filepath is None:
+        # command-line expression uses the test feature
+        final_nlpql_feature = _TEST_NLPQL_FEATURE
+    
+        _run_tests(job_id,
+                   final_nlpql_feature,
+                   expr,
+                   context,
+                   mongo_collection_obj,
+                   num,
+                   is_final,
+                   debug)
+    else:
+        context = file_data.context
+        for nlpql_feature, expression in file_data.feat_expr_list:
+            _run_tests(job_id,
+                       nlpql_feature,
+                       expression,
+                       context,
+                       mongo_collection_obj,
+                       num,
+                       is_final,
+                       debug)
+            
