@@ -1513,8 +1513,8 @@ def _eval_logic_expr(job_id,
 
     final_nlpql_feature = expr_obj.nlpql_feature
     infix_expr = expr_obj.expr_text
-        
-    assert 'subject' == context_field or 'document' == context_field
+
+    assert 'subject' == context_field or 'report_id' == context_field
 
     if 'subject' == context_field:
         other_context_field = 'report_id'
