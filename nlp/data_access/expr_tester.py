@@ -337,10 +337,16 @@ def _run_tests(job_id,
                             data_field = doc['history'][0].data
                         else:
                             data_field = doc['value']
-                        print('\t[{0:6}]: {1} {2} {3} {4} {5}'.
+
+                        if 'subject' == context_field:
+                            context_str = 'subject: {0:8}'.format(doc['subject'])
+                        else:
+                            context_str = 'report_id: {0:8}'.format(doc['report_id'])
+                            
+                        print('\t[{0:6}]: _id: {1} nlpql_feature: {2:16} ' \
+                              '{3} data: {4}'.
                               format(k, doc['_id'], doc['nlpql_feature'],
-                                     data_field, doc['subject'],
-                                     doc['report_id']))
+                                     context_str, data_field))
                     elif k == num:
                         print('\t...')
 
@@ -365,12 +371,12 @@ def _run_tests(job_id,
                                     data_string = '{0}'.format(tup.data)
 
                                 if 'subject' == context_field:
-                                    context_str = 'subject: {0}'.format(tup.subject)
+                                    context_str = 'subject: {0:8}'.format(tup.subject)
                                 else:
-                                    context_str = 'report_id: {0}'.format(tup.report_id)
+                                    context_str = 'report_id: {0:8}'.format(tup.report_id)
 
-                                print('\t_id: {0}, operation: {1:20} '  \
-                                      'nlpql_feature: {2:40} {3} ' \
+                                print('\t_id: {0} operation: {1:20} '  \
+                                      'nlpql_feature: {2:16} {3} ' \
                                       'data: {4} '.
                                       format(tup.oid, tup.pipeline_type,
                                              tup.nlpql_feature, context_str,
