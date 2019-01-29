@@ -126,7 +126,7 @@ services:
     hostname: ${INGEST_CLIENT_HOSTNAME}
     build:
       context: ./utilities/ingest-client
-      dockerfile: Dockerfile.opt
+      dockerfile: Dockerfile
     ports:
       - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
 
@@ -181,7 +181,7 @@ services:
     hostname: ${RESULTS_CLIENT_HOSTNAME}
     build:
       context: ./utilities/results-client
-      dockerfile: Dockerfile.opt
+      dockerfile: Dockerfile
     environment:
       - "PORT=${RESULTS_CLIENT_HOST_PORT}"
       - "REACT_APP_LUIGI_URL=${LUIGI_URL}"
