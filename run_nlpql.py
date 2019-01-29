@@ -1,10 +1,10 @@
-import requests
-import time
 import sys
-from subprocess import call
+import time
 from os import listdir
 from os.path import isfile, join
-import time
+from subprocess import call
+
+import requests
 
 max_workers = 4
 max_jobs = 100
@@ -13,8 +13,8 @@ cur_job = 0
 env_path = './synthetic_query_gen/notebooks/env_files'
 evaluated_env_path = './synthetic_query_gen/notebooks/evaluated_env/'
 target_env_path = './'
-#ip = '18.224.57.156'
-ip = 'localhost'
+# ip = '18.224.57.156'
+ip = '18.220.133.76'
 
 url = 'http://' + ip + ':5000/'
 nlpql_url = url + 'nlpql'
@@ -70,7 +70,7 @@ def job_runner(fname, jobs, current):
 
 if __name__ == "__main__":
 
-    run_jobs = True
+    run_jobs = False
     if run_jobs:
         files = sorted([f for f in listdir(env_path) if isfile(join(env_path, f))])
         current_env = target_env_path + '/.env'
@@ -104,6 +104,7 @@ if __name__ == "__main__":
         call(["docker-compose", "up", "-d", "--build"])
         # job_runner('query', 100, 0)
     else:
-        startid = 2352
-        for n in range(startid, startid + 500):
+        ids = [
+               ]
+        for n in ids:
             cleanup(n)

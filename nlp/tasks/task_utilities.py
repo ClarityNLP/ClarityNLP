@@ -4,7 +4,6 @@ import traceback
 
 import json
 import luigi
-import redis
 from pymongo import MongoClient
 from algorithms import segmentation
 import util
@@ -24,10 +23,6 @@ pipeline_cache = LRUCache(maxsize=5000)
 document_cache = LRUCache(maxsize=5000)
 init_cache = LRUCache(maxsize=1000)
 segment = segmentation.Segmentation()
-if util.use_redis_caching == "true":
-    redis_conn = redis.Redis(host=util.redis_hostname, port=util.redis_host_port, decode_responses=True)
-else:
-    redis_conn = None
 
 
 @cached(document_cache)
@@ -41,11 +36,11 @@ def get_document_by_id(document_id):
 
     if util.use_redis_caching == "true":
         util.add_cache_query_count()
-        txt = redis_conn.get("doc:" + document_id)
+        txt = util.get_from_redis_cache("doc:" + document_id)
         if not txt:
             util.add_cache_compute_count()
             doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
-            redis_conn.set("doc:" + document_id, json.dumps(doc))
+            util.write_to_redis_cache("doc:" + document_id, json.dumps(doc))
         else:
             doc = json.loads(txt)
     elif util.use_memory_caching == "true":
@@ -248,8 +243,8 @@ class BaseTask(luigi.Task):
                     if util.use_memory_caching == "true":
                         k = keys.hashkey(doc_id)
                         document_cache[k] = d
-                    if util.use_redis_caching == "true" and redis_conn:
-                        redis_conn.set("doc:" + doc_id, json.dumps(d))
+                    if util.use_redis_caching == "true":
+                        util.write_to_redis_cache("doc:" + doc_id, json.dumps(d))
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)

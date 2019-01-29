@@ -26,7 +26,7 @@ import json
 from pymongo import MongoClient
 from collections import namedtuple
 from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, document_text,\
-    get_document_by_id, redis_conn
+    get_document_by_id
 from cachetools import cached
 from algorithms import do_term_lookup
 
@@ -149,13 +149,13 @@ def get_race_data(document_id):
     if util.use_redis_caching == "true":
         util.add_cache_query_count()
         key = "raceFinder:" + str(document_id)
-        res = redis_conn.get(key)
+        res = util.get_from_redis_cache(key)
         if res:
             return json.loads(res)
         else:
             util.add_cache_compute_count()
             res2 = get_race_for_doc(document_id)
-            redis_conn.set(key, json.dumps(res2))
+            util.write_to_redis_cache(key, json.dumps(res2))
             return res2
     elif util.use_memory_caching == "true":
         util.add_cache_query_count()

@@ -2,14 +2,12 @@ from cachetools import cached
 
 from algorithms import *
 from data_access import jobs
-from .task_utilities import BaseTask, pipeline_cache, init_cache, get_document_by_id, document_text, document_sections, \
-    redis_conn
+from .task_utilities import BaseTask, pipeline_cache, init_cache, get_document_by_id, document_text, document_sections
 from cachetools import cached
 
 from algorithms import *
 from data_access import jobs
-from .task_utilities import BaseTask, pipeline_cache, init_cache, get_document_by_id, document_text, document_sections, \
-    redis_conn
+from .task_utilities import BaseTask, pipeline_cache, init_cache, get_document_by_id, document_text, document_sections
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],
@@ -104,17 +102,17 @@ def get_cached_terms(name, doc_id, term_list, include_synonyms, include_descenda
                      filters, has_special_filters):
     thing = setup_key(name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
                      filters, has_special_filters)
-    if util.use_redis_caching == "true" and redis_conn:
+    if util.use_redis_caching == "true":
         # TODO use better key method, some recoverable hash
         hashed_str = name + ':' + thing
-        res = redis_conn.get(hashed_str)
+        res = util.get_from_redis_cache(hashed_str)
         util.add_cache_query_count()
         if res:
             objs = json.loads(res)
         else:
             util.add_cache_compute_count()
             objs = get_term_matches(thing)
-            redis_conn.set(hashed_str, json.dumps(objs))
+            util.write_to_redis_cache(hashed_str, json.dumps(objs))
     elif util.use_memory_caching == "true":
         util.add_cache_query_count()
         objs = _get_cached_terms(thing)
@@ -130,23 +128,23 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
     write_log_data(jobs.IN_PROGRESS, "Finding Terms with " + name)
 
     for doc in docs:
-        if util.use_dl_trained_terms == 'true':
-            # TODO implement other filters like synonyms, etc.
-            predictions = do_term_lookup(pipeline_config.terms, document_text(doc))
-            for p in predictions.keys():
-                val = predictions[p]
-                if val:
-                    obj = {
-                        "sentence": 'UNKNOWN',
-                        "section": 'UNKNOWN',
-                        "term": p.replace('is_', ''),
-                        "start": 0,
-                        "end": 0,
-                        "negation": 'UNKNOWN',
-                        "temporality": 'UNKNOWN',
-                        "experiencer": 'UNKNOWN'
-                    }
-                    write_result_data(temp_file, mongo_client, doc, obj)
+        # if util.use_dl_trained_terms == 'true':
+        #     # TODO implement other filters like synonyms, etc.
+        #     predictions = do_term_lookup(pipeline_config.terms, document_text(doc))
+        #     for p in predictions.keys():
+        #         val = predictions[p]
+        #         if val:
+        #             obj = {
+        #                 "sentence": 'UNKNOWN',
+        #                 "section": 'UNKNOWN',
+        #                 "term": p.replace('is_', ''),
+        #                 "start": 0,
+        #                 "end": 0,
+        #                 "negation": 'UNKNOWN',
+        #                 "temporality": 'UNKNOWN',
+        #                 "experiencer": 'UNKNOWN'
+        #             }
+        #             write_result_data(temp_file, mongo_client, doc, obj)
         if util.use_memory_caching == 'true' or util.use_redis_caching == "true":
             objs = get_cached_terms(name, doc[util.solr_report_id_field], pipeline_config.terms, pipeline_config.
                                     include_synonyms, pipeline_config
@@ -172,7 +170,8 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     "end": term.end,
                     "negation": term.negex,
                     "temporality": term.temporality,
-                    "experiencer": term.experiencer
+                    "experiencer": term.experiencer,
+                    "value": (term.negex == "Affirmed")
                 }
 
                 write_result_data(temp_file, mongo_client, doc, obj)

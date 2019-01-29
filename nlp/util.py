@@ -8,6 +8,7 @@ config.read(path.join(SCRIPT_DIR, 'project.cfg'))
 properties = dict()
 delimiter = ','
 quote_character = '"'
+EXPIRE_TIME_SECONDS = 604800
 
 
 def read_property(env_name, config_tuple, default=''):
@@ -111,6 +112,18 @@ try:
     redis_conn.set('clarity_cache_query', 0)
 except Exception as ex:
     redis_conn = None
+
+
+def write_to_redis_cache(key, value):
+    if redis_conn:
+        redis_conn.set(key, value)
+        redis_conn.expire(key, EXPIRE_TIME_SECONDS)
+
+
+def get_from_redis_cache(key):
+    if redis_conn:
+        return redis_conn.get(key)
+    return None
 
 
 def add_cache_compute_count():
