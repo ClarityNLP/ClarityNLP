@@ -1,6 +1,7 @@
 node_modules/
 .cache/
 .env
+.env.bak
 prod.env
 .bak
 .idea/codeStyles/Project.xml
@@ -10,6 +11,7 @@ _build/
 _templates/
 __pycache__/
 !__init__.py
+synthetic_query_gen/notebooks/.ipynb_checkpoints
 .DS_STORE
 .ipynb_checkpoints
 notebooks/.ipynb_checkpoints

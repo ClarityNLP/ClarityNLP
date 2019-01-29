@@ -1,4 +1,5 @@
 antlr4-python3-runtime==4.7.1
+cachetools==2.1.0
 commonmark==0.5.4
 flask==0.12.4
 flask-autodoc==0.1.2
@@ -15,6 +16,7 @@ psycopg2==2.7.3.2
 pymongo==3.6.0
 pytest==3.3.2
 recommonmark==0.4.0
+redis==3.0.1
 requests>=2.20.0
 requests-file==1.4.2
 requests-oauthlib==0.8.0
@@ -26,3 +28,7 @@ sphinx-autobuild==0.7.1
 textacy[all]
 tornado>=4.0,<5
 typing==3.6.2
+imbalanced-learn==0.4.3
+imblearn==0.0
+scikit-learn==0.20.1
+joblib==0.13.0
