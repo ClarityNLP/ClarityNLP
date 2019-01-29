@@ -1,0 +1,38 @@
+limit 50;
+phenotype "Lesions1to2Cm" version "1";
+description "Find lesions with sizes ranging from 1 to 2 cm.";
+include ClarityCore version "1.0" called Clarity;
+
+documentset Docs:
+    Clarity.createDocumentSet({
+        "report_types":["Radiology"]
+    });
+
+// lesion terms
+termset LesionTerms: [
+    "lesion", "growth", "mass", "malignancy", "tumor",
+    "neoplasm", "nodule", "cyst", "focus of enhancement",
+    "echodensity", "hyperechogenic focus"
+];
+
+// lesion measurements
+define LesionMeasurement:
+    Clarity.MeasurementFinder({
+        documentset: [Docs],
+        termset: [LesionTerms]
+    });
+
+// we want to find patients, so use 'Patient' context
+context Patient;
+
+define xBetween10and20mm:
+    where LesionMeasurement.dimension_X >= 10 AND LesionMeasurement.dimension_X <= 20;
+
+define xyBetween10and20mm:
+    where LesionMeasurement.dimension_X >= 10 AND LesionMeasurement.dimension_X <= 20 AND
+          LesionMeasurement.dimension_Y >= 10 AND LesionMeasurement.dimension_Y <= 20;
+
+define xyzBetween10and20mm:
+    where LesionMeasurement.dimension_X >= 10 AND LesionMeasurement.dimension_X <= 20 AND
+          LesionMeasurement.dimension_Y >= 10 AND LesionMeasurement.dimension_Y <= 20 AND
+          LesionMeasurement.dimension_Z >= 10 AND LesionMeasurement.dimension_Z <= 20;

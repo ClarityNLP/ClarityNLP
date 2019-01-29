@@ -140,3 +140,7 @@ We can check if the job is *COMPLETED* via the `status_endpoint`.
 ### Full ClarityNLP Documentation
 You can read the full ClarityNLP documentation here:
 [Read the Docs](http://claritynlp.readthedocs.io/en/latest/).
+
+
+### Slack
+Connect with us on [Slack](https://join.slack.com/t/claritynlp/shared_invite/enQtNTE5NTUzNzk4MTk5LTFmNWY1NWVmZTA4Yjc5MDUwNTRhZTBmNTA0MWM0ZDNmYjdlNTAzYmViYzAzMTkwZDkzODA2YTJhYzQ1ZTliZTQ).

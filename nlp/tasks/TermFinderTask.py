@@ -3,11 +3,6 @@ from cachetools import cached
 from algorithms import *
 from data_access import jobs
 from .task_utilities import BaseTask, pipeline_cache, init_cache, get_document_by_id, document_text, document_sections
-from cachetools import cached
-
-from algorithms import *
-from data_access import jobs
-from .task_utilities import BaseTask, pipeline_cache, init_cache, get_document_by_id, document_text, document_sections
 
 provider_assertion_filters = {
     'negex': ["Affirmed"],

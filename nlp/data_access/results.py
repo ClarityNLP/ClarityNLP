@@ -31,12 +31,57 @@ page_size = 100
 def job_results(job_type: str, job: str):
     if job_type == 'pipeline':
         return pipeline_results(job)
-    elif job_type == 'phenotype':
+    elif job_type == 'phenotype' or job_type == 'cohort':
         return phenotype_results(job)
-    elif job_type == 'phenotype_intermediate':
+    elif job_type == 'phenotype_intermediate' or job_type == 'features':
         return phenotype_intermediate_results(job)
+    elif job_type == 'annotations':
+        return phenotype_feedback_results(job)
     else:
         return generic_results(job, job_type)
+
+
+def phenotype_feedback_results(job: str):
+    job_type = 'annotations'
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    today = datetime.today().strftime('%m_%d_%Y_%H%M')
+    filename = '/tmp/job_feedback%s_%s_%s.csv' % (job, job_type, today)
+    try:
+        with open(filename, 'w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile, delimiter=util.delimiter, quotechar=util.quote_character,
+                                    quoting=csv.QUOTE_MINIMAL)
+
+            header_written = False
+            query = {"job_id": int(job)}
+
+            results = db['result_feedback'].find(query)
+            columns = sorted(['comments', 'feature', 'is_correct', 'job_id', 'subject', 'report_id', 'result_id'])
+
+            for res in results:
+                keys = list(res.keys())
+                if not header_written:
+                    length = len(columns)
+                    csv_writer.writerow(columns)
+                    header_written = True
+
+                output = [''] * length
+                i = 0
+                for key in columns:
+                    if key in keys:
+                        val = res[key]
+                        output[i] = val
+                    else:
+                        output[i] = ''
+                    i += 1
+                csv_writer.writerow(output)
+
+    except Exception as e:
+        print(e)
+    finally:
+        client.close()
+
+    return filename
 
 
 def pipeline_results(job: str):
@@ -292,7 +337,7 @@ def phenotype_stats(job_id: str, phenotype_final: bool):
         stats["subjects"] = subjects
         stats["results"] = documents
     return stats
-
+import math
 def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -300,7 +345,15 @@ def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     try:
         query = {"job_id": int(job_id), "phenotype_final": phenotype_final, "subject": subject}
 
-        results = list(db["phenotype_results"].find(query))
+        temp = list(db["phenotype_results"].find(query))
+        for r in temp:
+            obj = r.copy()
+            for k in r.keys():
+                val = r[k]
+                if (isinstance(val, int) or isinstance(val, float)) and math.isnan(val):
+                    del obj[k]
+            results.append(obj)
+
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
     finally:

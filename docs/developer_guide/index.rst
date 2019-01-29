@@ -60,4 +60,11 @@ Building Custom Task Algorithms
 
    custom/custom
 
+NLPQL Expression Evaluation Algorithms
+--------------------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   algorithms/nlpql_expr_eval
 

@@ -6,9 +6,7 @@ def writeResultFeedback(host, port, database, data):
 
         # Parsing info
         job_id = data['job_id']
-        patient_id = data['patient_id']
-        is_correct = data['is_correct']
-        comments = data['comments']
+        result_id = data['result_id']
 
         # connecting to the Mongo DB
         client = MongoClient(host, port)
@@ -19,14 +17,14 @@ def writeResultFeedback(host, port, database, data):
         collection = db['result_feedback']
 
         # checking if the result exists in Mongo
-        query = {'job_id':job_id, 'patient_id':patient_id}
+        query = {'result_id':result_id}
         existing_entry = collection.find_one(query)
         if existing_entry is None:
             # Writing a new result to Mongo
             collection.insert_one(data)
         else:
             # Updating existing result in Mongo
-            updated_entry = {'job_id':job_id, 'patient_id':patient_id, 'is_correct':is_correct, 'comments':comments}
+            updated_entry = data
             element = {"$set": updated_entry}
             collection.update_one(query, element)
 
