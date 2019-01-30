@@ -135,30 +135,11 @@ Each document can be accessed by iteration:
 TESTING:
 
 
-
-This module can be used to evaluate expression strings interactively, but it
-first requires a run of ClarityNLP to load some data into MongoDB. One could
-write an NLPQL file that only runs basic tasks such as the value extractor,
-the measurement finder, and various provider assertions. This file does not
-necesarily need to include any expressions.
-
-Add your desired expression to the list in _run_tests, then evaluate it using
-the data from your ClarityNLP run. You will need to know the job_id to do this.
-Use this command:
-
-    python3 ./expr_eval.py -j <job_id> [--debug]
-
-
-Help for the command line interface can be obtained via this command:
-
-    python3 ./expr_eval --help
-
-Extensive debugging info can be generated with the --debug option.
+Test code has been moved to 'expr_tester.py'.
 
 
 
 LIMITATIONS:
-
 
 
 The 'not' operator is not supported. You will need to use positive logic.
@@ -173,7 +154,6 @@ import os
 import sys
 import copy
 import string
-import hashlib
 import optparse
 from pymongo import MongoClient
 from collections import namedtuple
@@ -210,7 +190,10 @@ EXPR_OBJ_FIELDS = [
     'nlpql_feature',
 
     # (string) the raw text of the infix expression to be evaluated
-    'expr_text'
+    'expr_text',
+
+    # (integer) index of this expression in the phenotype
+    'expr_index'
 ]
 
 ExpressionObject = namedtuple('ExpressionObject', EXPR_OBJ_FIELDS)
@@ -228,6 +211,9 @@ EXPR_RESULT_FIELDS = [
     # string, the text of the expression that was evaluated
     'expr_text',
 
+    # (integer) index of this expression in the phenotype
+    'expr_index',
+
     # list of strings, the postfix representation of the expression
     'postfix_tokens',
 
@@ -244,13 +230,13 @@ EvalResult = namedtuple('EvalResult', EXPR_RESULT_FIELDS)
 
 # regex that identifies a temporary NLPQL feature
 # 32 hex digits in the MD5 hash, needs to be exportable
-regex_temp_nlpql_feature = re.compile(r'\A(math|logic)\d+_[a-fA-F0-9]{32}\Z')
-
+regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
+    
 # identifies a temp logic feature, not exported
-_regex_temp_nlpql_logic_feature = re.compile(r'\Alogic\d+_[a-fA-F0-9]{32}\Z')
+_regex_temp_nlpql_logic_feature = re.compile(r'\Alogic_\d+_\d+\Z')
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -359,6 +345,18 @@ _EMPTY_STRING = ''
 _TMP_FEATURE_MATH  = 0
 _TMP_FEATURE_LOGIC = 1
 
+_EXPR_INDEX = 0
+
+
+###############################################################################
+def enable_debug():
+    """
+    Enable debug output.
+    """
+
+    global _TRACE
+    _TRACE = True
+    
 
 ###############################################################################
 def _extract_variables(infix_expression):
@@ -942,7 +940,7 @@ def _is_temp_feature(label):
     
 
 ###############################################################################
-def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
+def _make_temp_feature(counter, token_list, expr_index, math_or_logic=_TMP_FEATURE_MATH):
     """
     Create a unique NLPQL feature name for a mathematical subexpression.
     This new name becomes the 'nlpql_feature' label that gets substituted
@@ -960,23 +958,17 @@ def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
     is not adequate, since lengthy expressions may use the same variables and
     not differ until beyond the slice point.
     """
-
+    
     if _TRACE:
         print('Called _make_temp_feature')
         print('\t    tokens: {0}'.format(token_list))
-
-    # join the strings with an underscore and compute the MD5 hash
-    joined = '_'.join(token_list)
-
-    md5 = hashlib.md5()
-    md5.update(joined.encode())
-    hexdigest = md5.hexdigest()
+        print('\texpr_index: {0}, counter: {1}'.format(expr_index, counter))
 
     if _TMP_FEATURE_MATH == math_or_logic:
-        label = 'math{0}_{1}'.format(counter, hexdigest)
+        label = 'math_{0}_{1}'.format(expr_index, counter)
     else:
-        label = 'logic{0}_{1}'.format(counter, hexdigest)
-        
+        label = 'logic_{0}_{1}'.format(expr_index, counter)
+    
     if _TRACE:
         print('\t New label: {0}'.format(label))
 
@@ -986,7 +978,7 @@ def _make_temp_feature(counter, token_list, math_or_logic=_TMP_FEATURE_MATH):
 
 
 ###############################################################################
-def _merge_math_tokens(tokens, math_expressions, counter):
+def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
     """
     Replace two distinct pure math expressions (represented by tokens such as
     m0 or m1) with a compound pure math expression represented by a single
@@ -1049,7 +1041,9 @@ def _merge_math_tokens(tokens, math_expressions, counter):
                             expr_tokens[j] = expr
                             del math_expressions[m]
                     nlpql_expression = ' '.join(expr_tokens)
-                    nlpql_feature = _make_temp_feature(counter, saved_tokens)
+                    nlpql_feature = _make_temp_feature(counter,
+                                                       saved_tokens,
+                                                       expr_index)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
 
@@ -1081,7 +1075,7 @@ def _merge_math_tokens(tokens, math_expressions, counter):
     
 
 ###############################################################################
-def _resolve_mixed(infix_expression):
+def _resolve_mixed(infix_expression, expr_index):
     """
     'Resolve' the mixed-type expression by performing substitutions for the
     math expressions, then combining the math expressions where possible.
@@ -1128,7 +1122,9 @@ def _resolve_mixed(infix_expression):
                 else:
                     # push replacement token with no parens
                     feature = feature_set.pop()
-                    nlpql_feature = _make_temp_feature(counter, expr_tokens)
+                    nlpql_feature = _make_temp_feature(counter,
+                                                       expr_tokens,
+                                                       expr_index)
                     stack.append(nlpql_feature)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
@@ -1151,7 +1147,10 @@ def _resolve_mixed(infix_expression):
     # do a max of 10 iterations to combine subexpressions
     for k in range(10):
         tokens = new_infix_expr.split()
-        new_infix_expr, counter = _merge_math_tokens(tokens, math_expressions, counter)
+        new_infix_expr, counter = _merge_math_tokens(tokens,
+                                                     math_expressions,
+                                                     expr_index,
+                                                     counter)
         if prev == new_infix_expr:
             break
         else:
@@ -1176,7 +1175,7 @@ def _resolve_mixed(infix_expression):
 
 
 ###############################################################################
-def _print_math_results(doc_ids, mongo_collection_obj):
+def _print_math_results(doc_ids, mongo_collection_obj, nlpql_feature):
     """
     Write results from evaluation of a math pipeline to stdout.
     """
@@ -1184,7 +1183,7 @@ def _print_math_results(doc_ids, mongo_collection_obj):
     # query for the desired documents
     cursor = mongo_collection_obj.find({'_id': {'$in': doc_ids}})
 
-    print('RESULTS: ')
+    print('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
     count = 0
     for doc in cursor:
         print('{0:5}\t_id: {1}, value: {2}'.
@@ -1194,7 +1193,10 @@ def _print_math_results(doc_ids, mongo_collection_obj):
 
         
 ###############################################################################
-def _print_logic_results(group_list, doc_ids, mongo_collection_obj):
+def _print_logic_results(group_list,
+                         doc_ids,
+                         mongo_collection_obj,
+                         nlpql_feature):
     """
     Write results from evaluation of a logic pipeline to stdout.
     """
@@ -1217,7 +1219,7 @@ def _print_logic_results(group_list, doc_ids, mongo_collection_obj):
         all_doc_groups.append(doc_group)
 
     # print info for the groups
-    print('RESULTS: ')
+    print('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
     count = 0
     for group in all_doc_groups:
         for doc in group:
@@ -1358,8 +1360,7 @@ def _mongo_math_format(operator, op1, op2=None):
         
 ###############################################################################
 def _eval_math_expr(job_id,
-                    final_nlpql_feature,
-                    infix_expr,
+                    expr_obj,
                     mongo_collection_obj):
     """
     Generate a MongoDB aggregation pipeline to evaluate the given math
@@ -1371,8 +1372,11 @@ def _eval_math_expr(job_id,
 
     if _TRACE:
         print('Called _eval_math_expr')
-        print('\tExpression: "{0}"'.format(infix_expr))
-    
+        print('\tExpression: "{0}"'.format(expr_obj.expr_text))
+
+    final_nlpql_feature = expr_obj.nlpql_feature
+    infix_expr = expr_obj.expr_text
+        
     # get rid of extraneous parentheses
     infix_expr = _remove_unnecessary_parens(infix_expr)
 
@@ -1442,12 +1446,13 @@ def _eval_math_expr(job_id,
     doc_ids = _run_math_pipeline(pipeline, mongo_collection_obj)
 
     if _TRACE:
-        _print_math_results(doc_ids, mongo_collection_obj)
+        _print_math_results(doc_ids, mongo_collection_obj, final_nlpql_feature)
 
     result = EvalResult(
         expr_type      = EXPR_TYPE_MATH,
         nlpql_feature  = final_nlpql_feature,
         expr_text      = infix_expr,
+        expr_index     = expr_obj.expr_index,
         postfix_tokens = copy.deepcopy(postfix_tokens),
         doc_ids        = copy.deepcopy(doc_ids),
         group_list     = [] # no groups for math expressions
@@ -1489,8 +1494,7 @@ def _mongo_logic_format(operator, operands):
 ###############################################################################
 def _eval_logic_expr(job_id,
                      context_field,
-                     final_nlpql_feature,
-                     infix_expr,
+                     expr_obj,
                      mongo_collection_obj):
     """
     Generate a MongoDB aggregation pipeline to evaluate the given logical
@@ -1505,9 +1509,12 @@ def _eval_logic_expr(job_id,
 
     if _TRACE:
         print('Called _eval_logic_expr')
-        print('\tExpression: "{0}"'.format(infix_expr))
-    
-    assert 'subject' == context_field or 'document' == context_field
+        print('\tExpression: "{0}"'.format(expr_obj.expr_text))
+
+    final_nlpql_feature = expr_obj.nlpql_feature
+    infix_expr = expr_obj.expr_text
+
+    assert 'subject' == context_field or 'report_id' == context_field
 
     if 'subject' == context_field:
         other_context_field = 'report_id'
@@ -1637,12 +1644,13 @@ def _eval_logic_expr(job_id,
     group_list, doc_ids = _run_logic_pipeline(pipeline, mongo_collection_obj)
 
     #if _TRACE:
-    #    _print_logic_results(group_list, doc_ids, mongo_collection_obj)
+    #    _print_logic_results(group_list, doc_ids, mongo_collection_obj, final_nlpql_feature)
 
     result = EvalResult(
         expr_type      = EXPR_TYPE_LOGIC,
         nlpql_feature  = final_nlpql_feature,
         expr_text      = infix_expr,
+        expr_index     = expr_obj.expr_index,
         postfix_tokens = copy.deepcopy(postfix_tokens), 
         doc_ids        = copy.deepcopy(doc_ids),
         group_list     = copy.deepcopy(group_list)
@@ -1782,7 +1790,10 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                 if _TRACE: print('\tOperands: {0}'.format(operands))
 
                 # construct a new feature name for this operation
-                new_feature_name = _make_temp_feature(counter, operands, _TMP_FEATURE_LOGIC)
+                new_feature_name = _make_temp_feature(counter,
+                                                      operands,
+                                                      eval_result.expr_index,
+                                                      _TMP_FEATURE_LOGIC)
                 if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
                 counter += 1
 
@@ -1797,7 +1808,9 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                         if not match:
                             # simple feature
                             if feature in feature_map:
-                                oids = _get_docs_with_feature(feature, feature_map, group)
+                                oids = _get_docs_with_feature(feature,
+                                                              feature_map,
+                                                              group)
                                 for oid in oids:
                                     # each OR'd feature is an ntuple in itself
                                     ntuples.append([oid])
@@ -1874,14 +1887,14 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
     
 
 ###############################################################################
-def expand_logical_result(eval_result, mongo_collection_obj):
+def flatten_logical_result(eval_result, mongo_collection_obj):
     """
     Generate the groups of MongoDB _id values representing the result set.
     Most of the work is done by _generate_logical_result(), which has more
     explanation in its docstring and in its code.
     """
 
-    if _TRACE: print('Called expand_logical_result')
+    if _TRACE: print('Called flatten_logical_result')
     
     assert EXPR_TYPE_LOGIC == eval_result.expr_type
 
@@ -1942,7 +1955,9 @@ def expand_logical_result(eval_result, mongo_collection_obj):
             feature = eval_result.postfix_tokens[0]
             if _TRACE: print('SINGLE FEATURE: {0}'.format(feature))
             oid_list = _get_docs_with_feature(feature, feature_map, group)
-            oid_list = [oid_list]
+            if _TRACE: print('OID LIST: {0}'.format(oid_list))
+            # a single NLPQL feature means single-document groups
+            oid_list = [[oid] for oid in oid_list]
         else:
             oid_list = _generate_logical_result(eval_result, group, doc_map, feature_map)
             
@@ -2121,7 +2136,7 @@ def parse_expression(nlpql_infix_expression, name_list=None):
     
 
 ###############################################################################
-def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_expression):
+def generate_expressions(final_nlpql_feature, parse_result):
     """
     Parse the NLPQL expression, evaluate any literal subexpressions, and
     resolve whateve remains into a set of subexpressions of either
@@ -2129,7 +2144,11 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
     of ExpressionObject namedtuples.
     """
 
-    if _TRACE: print('Called generate_expressions')
+    global _EXPR_INDEX
+    
+    if _TRACE:
+        print('Called generate_expressions')
+        print('\tExpression index: {0}'.format(_EXPR_INDEX))    
 
     # determine the expression type, need math, logic, or mixed
     expr_type = _expr_type(parse_result)
@@ -2146,7 +2165,8 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
         expr_obj = ExpressionObject(
             expr_type     = EXPR_TYPE_MATH,
             nlpql_feature = final_nlpql_feature,
-            expr_text     = parse_result
+            expr_text     = parse_result,
+            expr_index    = _EXPR_INDEX
         )
         expression_object_list.append(expr_obj)
 
@@ -2154,14 +2174,15 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
         expr_obj = ExpressionObject(
             expr_type     = EXPR_TYPE_LOGIC,
             nlpql_feature = final_nlpql_feature,
-            expr_text     = parse_result
+            expr_text     = parse_result,
+            expr_index    = _EXPR_INDEX
         )
         expression_object_list.append(expr_obj)
     
     elif EXPR_TYPE_MIXED == expr_type:
 
         # resolve mixed expressions into pure subexpressions
-        subexpressions, final_infix_expr = _resolve_mixed(parse_result)
+        subexpressions, final_infix_expr = _resolve_mixed(parse_result, _EXPR_INDEX)
 
         # the new infix expression includes the subexpression temporaries
         final_infix_expr = _remove_unnecessary_parens(final_infix_expr)        
@@ -2177,7 +2198,8 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
                 expr_obj = ExpressionObject(
                     expr_type     = subexpr_type,
                     nlpql_feature = sub_feature,
-                    expr_text     = sub_expr                    
+                    expr_text     = sub_expr,
+                    expr_index    = _EXPR_INDEX
                 )
                 expression_object_list.append(expr_obj)
             else:
@@ -2190,18 +2212,22 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
         expr_obj = ExpressionObject(
             expr_type     = EXPR_TYPE_LOGIC,
             nlpql_feature = final_nlpql_feature,
-            expr_text     = final_infix_expr
+            expr_text     = final_infix_expr,
+            expr_index    = _EXPR_INDEX
         )
         expression_object_list.append(expr_obj)
         
         if _TRACE:
             print('SUBEXPRESSION TABLE: ')
             for expr_obj in expression_object_list:
-                print("\t\tnlpql_feature: {0}, expr_type: {1}, expression: '{2}'".
+                print("\t\tnlpql_feature: {0}, expr_type: {1}, expr_index: {2}, expression: '{3}'".
                       format(expr_obj.nlpql_feature,
                              expr_obj.expr_type,
+                             expr_obj.expr_index,
                              expr_obj.expr_text))
-                
+
+    _EXPR_INDEX += 1
+    
     return expression_object_list
 
 
@@ -2209,17 +2235,11 @@ def generate_expressions(final_nlpql_feature, parse_result): #infix_nlpql_infix_
 def evaluate_expression(expr_obj,
                         job_id,
                         context_field,
-                        mongo_collection_obj,
-                        debug=False):
+                        mongo_collection_obj):
     """
     Evaluate a single ExpressionObject namedtuple.
     """
 
-    global _TRACE
-    
-    if debug:
-        _TRACE = True
-    
     if _TRACE: print('Called evaluate_expression')
 
     assert EXPR_TYPE_MATH == expr_obj.expr_type or \
@@ -2227,15 +2247,13 @@ def evaluate_expression(expr_obj,
 
     if EXPR_TYPE_MATH == expr_obj.expr_type:
         result = _eval_math_expr(job_id,
-                                 expr_obj.nlpql_feature,
-                                 expr_obj.expr_text,
+                                 expr_obj,
                                  mongo_collection_obj)
 
     else:
         result = _eval_logic_expr(job_id,
                                   context_field,
-                                  expr_obj.nlpql_feature,
-                                  expr_obj.expr_text,
+                                  expr_obj,
                                   mongo_collection_obj)
 
     return result

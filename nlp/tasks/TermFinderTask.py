@@ -37,7 +37,8 @@ class TermFinderBatchTask(BaseTask):
                     "end": term.end,
                     "negation": term.negex,
                     "temporality": term.temporality,
-                    "experiencer": term.experiencer
+                    "experiencer": term.experiencer,
+                    "value": True
                 }
                 self.write_result_data(temp_file, mongo_client, doc, obj)
 
@@ -70,7 +71,8 @@ class ProviderAssertionBatchTask(BaseTask):
                     "end": term.end,
                     "negation": term.negex,
                     "temporality": term.temporality,
-                    "experiencer": term.experiencer
+                    "experiencer": term.experiencer,
+                    "value": True
                 }
 
                 self.write_result_data(temp_file, mongo_client, doc, obj)

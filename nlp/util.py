@@ -43,7 +43,7 @@ results_viewer_url = read_property('RESULTS_CLIENT_URL', ('results_client', 'url
 
 main_url = read_property('NLP_API_URL', ('main', 'url'))
 
-row_count = 25
+row_count = 10
 delimiter = ','
 quote_character = '"'
 
