@@ -1,5 +1,3 @@
-import datetime
-
 from flask import request, Blueprint
 from luigi_tools import phenotype_helper, luigi_runner
 from data_access import *
@@ -30,11 +28,10 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str=''):
         return {"success": False,
                 "error": "Failed to insert phenotype"}
 
-
-    job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.description, description=p_cfg.description,
+    job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
                                              owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
                                              phenotype_id=p_id, pipeline_id=-1,
-                                             date_started=datetime.datetime.now(),
+                                             date_started=datetime.now(),
                                              job_type='PHENOTYPE'), util.conn_string)
 
     pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id)
@@ -103,7 +100,7 @@ def pipeline():
         job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name=p_cfg.name, description=p_cfg.description,
                                                  owner=p_cfg.owner, status=jobs.STARTED, date_ended=None,
                                                  phenotype_id=-1, pipeline_id=p_id,
-                                                 date_started=datetime.datetime.now(),
+                                                 date_started=datetime.now(),
                                                  job_type='PIPELINE'), util.conn_string)
 
         luigi_runner.run_pipeline(p_cfg.config_type, str(p_id), job_id, p_cfg.owner)

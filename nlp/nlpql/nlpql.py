@@ -145,15 +145,18 @@ def handle_phenotype_name(context, phenotype: PhenotypeModel):
     print('phenotype_name')
     previous = ''
     phenotype_def = None
+    name = ''
     for c in context.getChildren():
         if previous == 'phenotype':
-            desc = c.getText()
+            desc = c.getText().replace('"', '').strip()
             phenotype_def = PhenotypeDefine(desc, previous)
+            name = desc
         elif type(c) == nlpql_parserParser.VersionContext:
             version = c.getChild(1).getText().strip('"')
             phenotype_def['version'] = version
 
         previous = c.getText()
+    phenotype.name = name
     phenotype.phenotype = phenotype_def
 
 
