@@ -86,17 +86,14 @@ use_memory_caching = read_property('USE_MEMORY_CACHING', ('optimizations', 'use_
                                    default='true')
 use_precomputed_segmentation = read_property('USE_PRECOMPUTED_SEGMENTATION',
                                              ('optimizations', 'use_precomputed_segmentation'),
-                                             default='false')
+                                             default='true')
 use_reordered_nlpql = read_property('USE_REORDERED_NLPQL',
                                              ('optimizations', 'use_reordered_nlpql'),
                                              default='false')
-use_chained_queries = read_property('USE_CHAINED_QUERIES',
-                                    ('optimizations', 'use_chained_queries'),
-                                    default='false')
 
 use_redis_caching = read_property('USE_REDIS_CACHING',
                                              ('optimizations', 'use_redis_caching'),
-                                             default='false')
+                                             default='true')
 
 # TODO this out a bit more, this is more for experimental evaluation
 cache_counts = {

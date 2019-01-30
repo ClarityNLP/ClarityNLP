@@ -28,7 +28,6 @@ from collections import namedtuple
 from tasks.task_utilities import BaseTask, pipeline_cache, document_sentences, document_text,\
     get_document_by_id
 from cachetools import cached
-from algorithms import do_term_lookup
 
 race_terms = ["white","caucasian","black","african american","asian","pacific islander","alaska native",
               "native american", "native hawaiian"]
