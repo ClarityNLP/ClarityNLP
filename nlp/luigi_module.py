@@ -30,7 +30,6 @@ class PhenotypeTask(luigi.Task):
         phenotype_config['phenotype_id'] = int(self.phenotype)
 
         print("getting ready to execute pipelines...")
-        actually_use_chaining = False
         print(pipeline_ids)
         if len(pipeline_ids) > 0:
             configs = dict()
@@ -46,24 +45,7 @@ class PhenotypeTask(luigi.Task):
             update_phenotype_model(phenotype_config, util.conn_string)
             for pipeline_config in configs.values():
                 pipeline_id = pipeline_config['pipeline_id']
-                if actually_use_chaining and first_de:
-                    if first_de == pipeline_config['name']:
-                        tasks.append(PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
-                                                  pipelinetype=pipeline_config.config_type))
-                        dependent_pipeline_ids = list()
-                        for de in secondary_des:
-                            secondary_pipeline = configs[de]
-                            dependent_pipeline_ids.append(secondary_pipeline['pipeline_id'])
-                        # tasks.append(ChainedPipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
-                        #                                  pipelinetype=pipeline_config.config_type, first_de=first_de,
-                        #                                  dependent_pipeline_ids=
-                        #                                  dependent_pipeline_ids))
-                            tasks.append(PipelineTask(pipeline=secondary_pipeline.pipeline_id, job=self.job,
-                                                      owner=self.owner,
-                                                      pipelinetype=secondary_pipeline.config_type))
-
-                else:
-                    tasks.append(PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
+                tasks.append(PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
                                               pipelinetype=pipeline_config.config_type))
         print(tasks)
 
@@ -178,55 +160,6 @@ def run_pipeline(pipeline, pipelinetype, job, owner):
 
     jobs.update_job_status(str(job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % pipelinetype)
 
-
-class ChainedPipelineTask(luigi.Task):
-    pipeline = luigi.IntParameter()
-    job = luigi.IntParameter()
-    owner = luigi.Parameter()
-    pipelinetype = luigi.Parameter()
-    first_de = luigi.Parameter()
-    dependent_pipeline_ids = luigi.Parameter()
-    solr_query = '*:*'
-    dependent_tasks = list()
-    done_requires = False
-
-    def requires(self):
-
-        try:
-
-            self.solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job,
-                                                                                               self
-                                                                                               .owner)
-
-            self.dependent_tasks.append(PipelineTask(pipeline=self.pipeline, job=self.job, owner=self.owner,
-                                                     pipelinetype=self.pipelinetype))
-
-            for sde in self.dependent_pipeline_ids:
-                pipeline_config = data_access.get_pipeline_config(sde, util.conn_string)
-                self.dependent_tasks.append(PipelineTask(pipeline=sde, job=self.job, owner=self.owner,
-                                                         pipelinetype=pipeline_config.config_type))
-            self.done_requires = True
-            return self.dependent_tasks
-
-        except Exception as ex:
-            traceback.print_exc(file=sys.stderr)
-            jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
-        return list()
-
-    def run(self):
-        run_pipeline(self.pipeline, self.pipelinetype, self.job, self.owner)
-
-    def complete(self):
-        # status = jobs.get_job_status(str(self.job), util.conn_string)
-        # return status['status'] == jobs.COMPLETED or status['status'] == jobs.WARNING or status['status'] == jobs.FAILURE
-        if not self.done_requires:
-            return False
-        else:
-            for t in self.dependent_tasks:
-                comp = t.complete()
-                print(comp)
-            return False
 
 
 class PipelineTask(luigi.Task):

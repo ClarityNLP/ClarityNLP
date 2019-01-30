@@ -92,7 +92,7 @@ class PhenotypeModel(BaseModel):
                  population: str='All', phenotype=None, data_models: list = None, includes: list = None,
                  code_systems: list = None, value_sets: list = None, term_sets: list = None,
                  document_sets: list = None, data_entities: list = None, cohorts: list = None,
-                 operations: list = None, debug=False, limit: int = 0, nlpql: str = '', chained_queries=False,
+                 operations: list = None, debug=False, limit: int = 0, nlpql: str = '',
                  phenotype_id=1):
         self.owner = owner
         self.name = name
@@ -139,7 +139,6 @@ class PhenotypeModel(BaseModel):
         self.debug = debug
         self.limit = limit
         self.nlpql = nlpql
-        self.chained_queries = chained_queries
         self.phenotype_id = phenotype_id
 
 
