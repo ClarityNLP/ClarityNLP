@@ -176,42 +176,28 @@ class RaceFinderTask(BaseTask):
 
         # for each document in the NLPQL-specified doc set
         for doc in self.docs:
-            if util.use_dl_trained_terms == "true":
-                predictions = do_term_lookup(race_terms, document_text(doc))
-                for p in predictions.keys():
-                    val = predictions[p]
-                    if val:
+            obj = get_race_data(doc[util.solr_report_id_field])
+
+            result_list = obj['results']
+            sentence_list = obj['sentences']
+            if len(result_list) > 0:
+                for result in result_list:
+                    if isinstance(result, list):
                         obj = {
-                            "sentence": 'UNKNOWN',
-                            "value": p,
-                            'value_normalized': p.replace('is_', ''),
-                            "start": 0,
-                            "end": 0,
+                            'sentence': sentence_list[result[0]],
+                            'start': result[1],
+                            'end': result[2],
+                            'value': result[3],
+                            'value_normalized': result[4],
                         }
-                        self.write_result_data(temp_file, mongo_client, doc, obj)
-            else:
-                obj = get_race_data(doc[util.solr_report_id_field])
+                    else:
+                        obj = {
+                            'sentence': sentence_list[result.sentence_index],
+                            'start': result.start,
+                            'end': result.end,
+                            'value': result.race,
+                            'value_normalized': result.normalized_race,
+                        }
 
-                result_list = obj['results']
-                sentence_list = obj['sentences']
-                if len(result_list) > 0:
-                    for result in result_list:
-                        if isinstance(result, list):
-                            obj = {
-                                'sentence': sentence_list[result[0]],
-                                'start': result[1],
-                                'end': result[2],
-                                'value': result[3],
-                                'value_normalized': result[4],
-                            }
-                        else:
-                            obj = {
-                                'sentence': sentence_list[result.sentence_index],
-                                'start': result.start,
-                                'end': result.end,
-                                'value': result.race,
-                                'value_normalized': result.normalized_race,
-                            }
-
-                        self.write_result_data(temp_file, mongo_client, doc, obj)
+                    self.write_result_data(temp_file, mongo_client, doc, obj)
 

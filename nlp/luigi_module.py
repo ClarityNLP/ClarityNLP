@@ -42,52 +42,6 @@ class PhenotypeTask(luigi.Task):
             n = 0
             first_de = None
             secondary_des = list()
-            if util.use_chained_queries == 'true':
-                for op in phenotype_config['operations']:
-                    if op['action'] == 'AND':
-                        actually_use_chaining = True
-                        first_de = op['data_entities'][0]
-                        first_pipeline = configs[first_de]
-                        secondary_des = op['data_entities'][1:]
-                        name = "DownselectedCohort" + str(n)
-
-                        cohort = dict()
-                        cohort['name'] = name
-                        cohort['named_arguments'] = dict()
-                        cohort['named_arguments']['pipeline_id'] = first_pipeline['pipeline_id']
-                        cohort['declaration'] = 'cohort'
-                        cohort['funct'] = 'getJobResults'
-                        cohort['library'] = 'Clarity'
-
-                        found = False
-                        for c in phenotype_config['cohorts']:
-                            if name == c['name']:
-                                found = True
-                        if not found:
-                            phenotype_config['cohorts'].append(cohort)
-                        for de in secondary_des:
-                            secondary_pipeline = configs[de]
-                            job_res_config = dict()
-                            job_res_config['context'] = 'document'
-                            job_res_config['pipeline_id'] = secondary_pipeline['pipeline_id']
-                            secondary_pipeline['job_results'][name] = job_res_config
-                            secondary_pipeline['chained_query'] = name
-                            configs[de] = secondary_pipeline
-                            update_pipeline_config(secondary_pipeline, util.conn_string)
-                            o = 0
-                            for de2 in phenotype_config['data_entities']:
-                                if de == de2['name']:
-                                    cohorts = phenotype_config['data_entities'][o]['named_arguments']['cohort']
-                                    if name in cohorts:
-                                        continue
-                                    if 'cohort' not in phenotype_config['data_entities'][o]['named_arguments']:
-                                        phenotype_config['data_entities'][o]['named_arguments']['cohort'] = [name]
-                                    else:
-                                        phenotype_config['data_entities'][o]['named_arguments']['cohort'].append(name)
-                                o += 1
-                        n += 1
-
-                phenotype_config.chained_queries = actually_use_chaining
 
             update_phenotype_model(phenotype_config, util.conn_string)
             for pipeline_config in configs.values():
