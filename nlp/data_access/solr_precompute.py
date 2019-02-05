@@ -9,7 +9,7 @@ except Exception:
     from solr_data import query, query_doc_size
 
 segment = segmentation.Segmentation()
-batch_size = 10
+batch_size = 1
 solr_url = "http://18.220.133.76:8983/solr/sample"
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
@@ -19,7 +19,7 @@ headers = {
     'Content-type': 'application/json',
 }
 doc_size = 0
-spacy = segmentation_init(tries=2)
+spacy = segmentation_init()
 
 
 def document_sentences(txt):
@@ -91,16 +91,15 @@ def pre_compute(n):
             if updates:
                 ids.append(doc[util.solr_report_id_field])
                 updated_docs.append(doc)
-
+        print("******************************")
         print('updating the following docs: ', ids)
-        if n % 10 == 0:
-            print("******************************")
+        if n % 5 == 0:
             done_doc_size = query_doc_size("sentence_attrs:*", solr_url=solr_url, mapper_inst=util.report_mapper_inst,
                                       mapper_key=util.report_mapper_key, mapper_url=util.report_mapper_url)
 
             pct = (float(done_doc_size) / float(doc_size)) * 100.0
             print("updated overall: %d/%d (%f pct)" % (done_doc_size, doc_size, pct))
-            print("******************************")
+
         data = json.dumps(updated_docs)
         response2 = requests.post(url, headers=headers, data=data)
 
@@ -110,6 +109,7 @@ def pre_compute(n):
             print('fail: ', response2.reason)
             print(response2.content)
             retry(updated_docs)
+        print("******************************")
     except Exception as ex:
         print('exception updating docs')
         return False
