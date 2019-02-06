@@ -15,6 +15,7 @@ DESCRIPTION: 'description';
 DATAMODEL: 'datamodel';
 INCLUDE: 'include';
 CALLED: 'called';
+CODE: 'code';
 CODE_SYSTEM: 'codesystem';
 VALUE_SET: 'valueset';
 TERM_SET: 'termset';

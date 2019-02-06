@@ -93,13 +93,14 @@ class PhenotypeModel(BaseModel):
                  code_systems: list = None, value_sets: list = None, term_sets: list = None,
                  document_sets: list = None, data_entities: list = None, cohorts: list = None,
                  operations: list = None, debug=False, limit: int = 0, nlpql: str = '',
-                 phenotype_id=1):
+                 phenotype_id=1, valid=True):
         self.owner = owner
         self.name = name
         self.description = description
         self.population = population
         self.context = context
         self.phenotype = phenotype
+        self.valid = valid
         if data_models is None:
             self.data_models = list()
         else:
@@ -363,7 +364,9 @@ def get_sample_phenotype():
                                     "documentsets": [
                                         'ProviderNotes',
                                         "Radiology"
-                                    ]
+                                    ],
+                                    "code": "91302008",
+                                    "codesystem": "SNOMED"
                                 })
     #
     # transfusionEvent = PhenotypeEntity('transfusionEvent', 'define',

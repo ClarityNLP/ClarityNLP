@@ -144,6 +144,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     data_fields["nlpql_feature"] = (prefix + p_config.name)
     data_fields["inserted_date"] = datetime.datetime.now()
     data_fields["concept_code"] = p_config.concept_code
+    data_fields["concept_code_system"] = p_config.concept_code_system
     data_fields["phenotype_final"] = (phenotype_final or p_config.final)
 
     if doc:
