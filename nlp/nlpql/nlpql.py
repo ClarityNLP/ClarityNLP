@@ -583,7 +583,8 @@ def handle_expression(expr):
         "has_errors": has_errors,
         "errors": errors,
         "warnings": unknown,
-        "phenotype": p
+        "phenotype": p,
+        "valid": not has_errors and not has_warnings
     }
 
 
@@ -593,8 +594,6 @@ def run_nlpql_parser(nlpql_txt: str):
     parser = nlpql_parserParser(stream)
     tree = parser.validExpression()
     res = handle_expression(tree)
-    if res['has_errors'] or res['has_warnings']:
-        del res["phenotype"]
     return res
 
 

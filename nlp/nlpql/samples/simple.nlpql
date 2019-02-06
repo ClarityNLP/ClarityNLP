@@ -69,7 +69,9 @@ define hasAllergy:
   Clarity.ProviderAssertion({
     cohort:PlateletTransfusionPatients,
     termset: [AllergyTerms],
-    documentset: [ProviderNotes]
+    documentset: [ProviderNotes],
+    code: "1234",
+    codesystem: "mycodesystem"
   });
 
 

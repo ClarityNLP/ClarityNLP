@@ -88,16 +88,19 @@ class PhenotypeOperations(dict):
 class PhenotypeModel(BaseModel):
 
     # data_models maps to 'using'
-    def __init__(self, description: str = '', owner: str = 'claritynlp', context: str = 'Patient',
+    def __init__(self, name: str = '', description: str = '', owner: str = 'claritynlp', context: str = 'Patient',
                  population: str='All', phenotype=None, data_models: list = None, includes: list = None,
                  code_systems: list = None, value_sets: list = None, term_sets: list = None,
                  document_sets: list = None, data_entities: list = None, cohorts: list = None,
-                 operations: list = None, debug=False, limit: int = 0, nlpql: str = ''):
+                 operations: list = None, debug=False, limit: int = 0, nlpql: str = '',
+                 phenotype_id=1, valid=True):
         self.owner = owner
+        self.name = name
         self.description = description
         self.population = population
         self.context = context
         self.phenotype = phenotype
+        self.valid = valid
         if data_models is None:
             self.data_models = list()
         else:
@@ -137,6 +140,7 @@ class PhenotypeModel(BaseModel):
         self.debug = debug
         self.limit = limit
         self.nlpql = nlpql
+        self.phenotype_id = phenotype_id
 
 
 def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
@@ -196,6 +200,30 @@ def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
         conn.close()
 
     return p_id
+
+
+def update_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+
+    try:
+        if 'phenotype_id' not in phenotype or phenotype['phenotype_id'] < 0:
+            return False
+        p_json = phenotype.to_json()
+        cursor.execute("""
+                      UPDATE nlp.phenotype set config=%s WHERE phenotype_id = %s
+                      """, (p_json, str(phenotype.phenotype_id)))
+
+        conn.commit()
+        success = True
+    except Exception as ex:
+        print('failed to insert phenotype')
+        traceback.print_exc(file=sys.stdout)
+        success = False
+    finally:
+        conn.close()
+
+    return success
 
 
 def phenotype_structure(phenotype_id: int, connection_string: str):
@@ -336,7 +364,9 @@ def get_sample_phenotype():
                                     "documentsets": [
                                         'ProviderNotes',
                                         "Radiology"
-                                    ]
+                                    ],
+                                    "code": "91302008",
+                                    "codesystem": "SNOMED"
                                 })
     #
     # transfusionEvent = PhenotypeEntity('transfusionEvent', 'define',

@@ -212,6 +212,8 @@ identifierPair:
     ;
 
 named:
+    CODE |
+    CODE_SYSTEM |
     MIN_VALUE|
     MAX_VALUE|
     ENUM_LIST|

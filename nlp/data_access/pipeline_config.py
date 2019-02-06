@@ -25,7 +25,7 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, terms: list=None, description='', limit=0, concept_code=-1,
+    def __init__(self, config_type, name, terms: list=None, description='', limit=0, concept_code='', concept_code_system='',
                  owner='system', include_synonyms=False, include_descendants=False, include_ancestors=False,
                  report_tags: list=None, vocabulary='SNOMED', sections: list=None, report_type_query='',
                  minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list=None, sources: list=None,
@@ -52,6 +52,7 @@ class PipelineConfig(BaseModel):
         self.description = description
         self.limit = limit
         self.concept_code = concept_code
+        self.concept_code_system = concept_code_system
         self.owner = owner
         self.include_synonyms = include_synonyms
         self.include_descendants = include_descendants

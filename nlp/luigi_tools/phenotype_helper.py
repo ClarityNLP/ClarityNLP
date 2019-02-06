@@ -129,8 +129,8 @@ def get_item_by_key(dictionary, keys: list):
 def map_arguments(pipeline: PipelineConfig, e, all_terms):
     for k in e.keys():
         if not (
-                k == 'owner' or k == 'limit' or k == 'owner' or k == "name" or k == "config_type" or k == "terms" or
-                k == "cohort" or k == "job_results"):
+                k == 'owner' or k == 'limit' or k == "name" or k == "config_type" or k == "terms" or
+                k == "cohort" or k == "job_results" or k =="concept_code" or k == "concept_code_system"):
             if k in pipeline_keys:
                 try:
                     pipeline[k] = e[k]
@@ -216,6 +216,22 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         else:
             terms = list()
 
+        if 'code' in e['named_arguments']:
+            code = e['named_arguments']["code"]
+        elif 'concept_code' in e['named_arguments']:
+            code = e['named_arguments']["concept_code"]
+        else:
+            code = ''
+
+        if 'code_system' in e['named_arguments']:
+            code_system = e['named_arguments']["code_system"]
+        elif 'concept_code_system' in e['named_arguments']:
+            code_system = e['named_arguments']["concept_code_system"]
+        elif 'codesystem' in e['named_arguments']:
+            code_system = e['named_arguments']["codesystem"]
+        else:
+            code_system = ''
+
         if 'cohort' in e['named_arguments']:
             cohort, job_results_filter = get_cohort_items(e['named_arguments']['cohort'], cohorts, job_results)
         elif 'cohorts' in e['named_arguments']:
@@ -242,6 +258,8 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   sources=sources,
                                   custom_query=query,
                                   filter_query=fq,
+                                  concept_code=code,
+                                  concept_code_system=code_system,
                                   is_phenotype=True)
         map_arguments(pipeline, e, all_terms)
         map_arguments(pipeline, e['named_arguments'], all_terms)
