@@ -5,7 +5,7 @@ Each week we’ll take 1-2 examples and walk through them as a group. Send along
 ***
 
 ### Schedule
-Cooking with ClarityNLP Sessions occur every 2 weeks on Wednesdays at 11ET. 
+Cooking with ClarityNLP Sessions occur every month on Wednesdays at 11ET. 
 WebEx: https://gtriconf.webex.com/join/charity.hilton
 
 * 27 Feb 2019 - 
