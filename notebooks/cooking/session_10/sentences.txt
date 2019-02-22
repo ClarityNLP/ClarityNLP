@@ -1,0 +1,898 @@
+allowed provided patient had a remission duration of 1 year after administration of any established multi agent chemotherapy regimen eg cvp <regimen> or rituximab in combination with <regimen>
+any other hemorrhage bleeding event ctcae grade 3 within the 12 weeks prior to the first dose <regimen>
+<regimen> r chemotherapy
+no known allergy or hypersensitivity to <regimen> 101 or its components
+hbv core antibody igg anti hbc antibody positive patients with documented hbv reactivation definite or presumptive occurring during treatment at least two cycles of r <regimen> or <regimen> or within 12 months after the last dose of rituximab
+any hemorrhage or bleeding event grade 4 within 4 weeks of start of <regimen> non healing wound ulcer or bone fracture 21
+the only exception is the emergency use of a short course of corticosteroids equivalent of dexamethasone 40 milligram per day for a maximum of 4 days before <regimen>
+90 g l total bilirubin 2 x upper limit of normal 1 5 x uln for <regimen> ast sgot and alt sgpt
+bevacizumab or <regimen> patients may have received a maximum of 12 cycles of <regimen> or <regimen>
+history of hypersensitivity to tmz or any of its excipients or to dacarbazine <regimen>
+previously treated by low dose <regimen> for active disease requiring treatment per iwcll criteria
+patients planning to receive <regimen> or having already received <regimen> and having signed consent to enroll in the registry within 14 calendar days after surgery for treatment of central nervous system cns tumor s or are currently enrolled in another study where they received <regimen>
+patients with advanced stage chl treated with <regimen> at the british columbia cancer agency bcca
+refractory to obinutuzumab defined as progression or relapse 12 months of receiving <regimen> or 24 months of receiving an obinutuzumab containing regimen
+prior treatment with <regimen> or single agent irinotecan is prohibited within six weeks of enrollment
+patients undergo chemotherapy of <regimen>
+patient had systemic chemotherapy eg sorafenib doxorubicin immunotherapy or biologic therapy or radiotherapy for hcc or treatment with <regimen> 101 5
+pre or post operative chemoradiation and at least 3 months of adjuvant systemic chemotherapy equivalent to 6 cycles of leucovorin calcium fluorouracil and oxaliplatin <regimen> or infusional fluorouracil 5fu
+prior treatment with <regimen> is allowed if it has been at least 3 months from placement
+subject has received daratumumab or other anti cd38 therapies within 6 months before start of treatment however patients treated with <regimen> in compassionate use program or after european medicines agency ema approval and have progressive disease during daratumumab after previous response or unresponsive disease to daratumumab progressive disease after cycle 1 less than minimal response after cycle 2 or less than partial response after cycle 3 may be included in part b non secretory myeloma systemic amyloid light chain al amyloidosis or plasma cell leukemia 2 0x109 l circulating plasma cells by standard differential or
+for patients who receive first line <regimen> or sorafenib based combination patients must have received at least 14 days of sorafenib treatment with the lowest dosage of 400 mg per day
+prior pombace <regimen> bep or gamec are allowed
+history of allergic reactions attributed to compounds of similar chemical or biologic composition to temozolomide or <regimen> history of gastrointestinal disease or significant bowel resection that could interfere with drug absorption
+dacarbazine <regimen>
+and or bcr abl positive includes patients initiated on first course of <regimen> before cytogenetics known
+male patients with female partners must have had a prior vasectomy or agree to use an adequate method of contraception ie double barrier method condom plus spermicidal agent starting with the first dose of study therapy through 6 months 180 days after the last dose of durvalumab and tremelimumab combination therapy or 90 days after <regimen> is discontinued whichever is longer
+patients must have recovered from the toxicity of prior therapy specifically there must be at least a 3 month interval from the completion of the most recent course of radiation therapy at least a 3 month interval from the implantation of <regimen> s at least a 3 week interval from the completion of a non nitrosourea containing chemotherapy regimen and at least a 6 week interval from the completion of a nitrosourea containing chemo regimen
+be actively receiving <regimen> on the previous study within 14 days of study entry and demonstrating clinical benefit complete response cr partial response pr stable disease sd of continued use or
+confirmation of true progressive disease rather than radiation necrosis by positron emission tomography thallium scanning mri spectroscopy or surgical documentation required for patients who received prior interstitial brachytherapy <regimen> or stereotactic radiosurgery
+relapsed or refractory dlbcl in which all participants must have received at least one potentially curative established immunochemotherapy lymphoma regimen that contained rituximab egr <regimen> <regimen> r <regimen> r <regimen> participants must also have failed or be ineligible for salvage high dose therapy
+prior polifeprosan 20 with carmustine implant <regimen> allowed at discretion of principal investigator
+adenocarcinoma of the breast planned to receive a minimum of 2 cycles of <regimen>
+patients suitable for intensive treatment eg hyperfractionated cyclophosphamide vincristine doxorubicin hydrochloride and dexamethasone with high dose methotrexate and cytarabine <regimen>
+<regimen> fr pcr br etc 3 fludarabine refractory understand and voluntarily sign an informed consent form able to adhere to the study visit schedule and other protocol requirements
+patients with early breast cancer planned to receive 3 weekly or dose dense anthracycline cyclophosphamide combination or 3 weekly taxane containing chemotherapy regimen or patients with nhl planned to receive r <regimen> 14 or r <regimen> 21 immunochemotherapy as 1st line treatment with the indication for g csf prophylaxis with pegfilgrastim for the prevention of fn and reduction in cin duration
+only dose reductions for vincristine are allowed during r <regimen> central nervous system prophylaxis by intrathecal therapy is allowed
+double hit dlbcl mantle cell lymphoma any transformed low grade b cell lymphomas or grade 3 follicular lymphoma grade 3a or 3b who were refractory to <regimen> like or any anthracycline based chemotherapy or relapsed after at least one prior combination chemotherapeutic regimen and who are deemed candidates for a salvage type chemotherapy
+contraindication to any of the components of the <regimen> chemotherapy regimen as per investigators judgement
+treated with bis chloroethylnitrosourea etoposide cytarabine and cyclophosphamide <regimen> or bis chloroethylnitrosourea etoposide cytarabine and melphalan beam lymphoma diagnosis melphalan myeloma diagnosis before stem cell transplantation sct
+hypersensitivity to temozolomide or to any ingredients contained in the drug formulation and dacarbazine <regimen>
+inclusion criteria age 12 months through 18 years history of asthma defined as 2 or more prior physician visits at which bronchodilators were prescribed persistent symptoms identified by an asthma control tool based on the naepp guidelines and developed and validated by a multidisciplinary team of clinicians from <regimen> allergy pulmonary medicine general pediatrics and emergency medicine
+cd25 all stages of <regimen> expressing adult t cell leukemia except smoldering are eligible patients with chronic lymphomatous or acute adult t cell leukemia atl are eligible
+persistent lymphoma and stable disease after at least 2 cycles of <regimen> like or any anthracycline base chemotherapy or at least 1 full cycle of <regimen> like chemotherapy part a and b
+patients with a history of cns involvement by lymphoma or with relapsed primary cns lymphoma will be eligible for <regimen> arm
+cisplatin vinblastine dacarbazine <regimen> interferon and interleukin 2
+patients enrolling onto arm a gemcitabine and nab paclitaxel or arm b <regimen> are allowed to have up to two prior lines of systemic therapy with adjuvant therapy counted as one line of therapy as long as disease recurrence occurred 6 months of last dose of therapy
+renal transplant recipient currently on csa or <regimen> and prednisolone based
+patients must have relapsed or progressed after r <regimen> chemotherapy or equivalent
+initiation of second line chemotherapy not consisting of <regimen>
+vincristine ifosfamide doxorubicin etoposide <regimen> with concomitant sodium 2 mercaptoethane sulfonate mesna according to local standards
+major surgical procedure open biopsy or significant traumatic injury within 28 days before start of day 1 of treatment with <regimen> radiotherapy within 4 weeks prior to first dose of <regimen> active cardiac disease including any of the following
+excluded prior therapies include prior high dose aldesleukin sorafenib and <regimen>
+have received therapy other than r <regimen> for lymphoma
+previously treated with 5 fu based chemotherapy in the form of <regimen> <regimen> or <regimen> plus bevacizumab
+allergy to blue <regimen>
+treatment planned with adriamycin bleamycin vinblastine dacarbazine <regimen> or bleomycin etoposide
+a history of known human immunodeficiency virus hiv hepatitis b virus hbv or hepatitis c virus hcv infection history or clinical evidence of brain metastases or leptomeningeal disease any other malignancy from which the patient has been disease free for less than 5 years with the exception of adequately treated and cured basal or squamous cell skin cancer superficial bladder cancer or carcinoma in situ of the cervix treatment with <regimen> within 6 months before start of study treatment with ipilimumab within 6 months before start of study hypersensitivity to <regimen> concomitant use of drugs known to alter cardiac conduction chronic use of corticosteroids used in the management of cancer or non cancer related illness
+treatment nave except for prior radiation or a single cycle of <regimen>
+patients 18 years of age with a hematologic malignancy other than aplastic anemia or primary myelofibrosis scheduled to undergo ric allogeneic sct with a peripheral blood stem cell graft from an unrelated donor using <regimen> conditioning and <regimen> mtx gvhd prophylaxis
+at least 6 weeks two doses must have passed since the last chemotherapy administration while in treatment with bevacizumab alone in order to consider <regimen> as maintenance therapy
+planning to receive <regimen>
+patients with all histopathologic subtypes of <regimen> expressing nhl are eligible
+in second complete remission or higher or in first remission with poor risk factors including any of the following preparative <regimen> or 2
+recurrent disease radiosurgery including gamma knife linear accelerator based radiosurgery cyberknife and placement of <regimen> presence of any other active malignancy or prior history of malignancy except for basal cell carcinoma of the skin
+having received r <regimen> immuno chemotherapy
+exclusion criteria serious intercurrent medical illnesses which would interfere with the ability of the patient to carry out the treatment program pregnant or breastfeeding women patients who have uncontrolled active infection patients who have received another investigational product within the longer of 14 days or 5 half lives of the previous product any history of adverse reaction or hypersensitivity to <regimen> part
+patients receiving either bolus or 48 hr infusion <regimen> cyclophosphamide 750 mg m 2 iv day 1 doxorubicin 25 mg m 2 day iv given as bolus infusion or over 48 hours continuous infusion days 1 2 vincristine 2 mg iv day 1 prednisone po 100 mg 5 days or bolus or 48 hr infusion r <regimen> rituximab 375mg m 2 on day 1 <regimen> as above
+capecitabine and irinotecan <regimen> naive for bvz
+fludarabine phosphate cyclophosphamide and rituximab <regimen>
+having no prior chemotherapy immunotherapy or radiotherapy except for one cycle of <regimen> or r <regimen>
+oa subjects treated with only one of the following tacs at initial placement defined as the time of the first application of a <regimen> method 1
+use of steroid eye drops starting at the time of <regimen> administration is allowed
+written informed consent male or female patient 18 years of age confirmed diagnosis of colorectal cancer chemotherapy nave patient patient scheduled to receive a <regimen> or <regimen> chemotherapy regimen according to the following scheme and dosage 1st cycle agent dose route duration days oxaliplatin or irinotecan 85 180 mg m2 i v infusion 2h 1 folinicacid leucovorin
+diagnosis of hodgkin s lymphoma failing or relapsing after first line chemotherapy <regimen> avbd <regimen>
+women of childbearing potential definition wocbp must have a negative serum or urine pregnancy test performed within 14 days prior to initiation of <regimen> any
+indication for treatment with a combination including <regimen> <regimen> associated to an anti vegf drug avastin
+inclusion criteria at randomization patients on <regimen> mmf steroids
+induction chemotherapy with r <regimen> should also be completed at the participating centre but exceptions can be made according to the discretion of the centre s primary investigator
+patients with pheochromocytoma arterial thrombotic or embolic events such as cerebrovascular accident including transient ischemic attacks or pulmonary embolism within the 6 months before start of <regimen> ongoing infection
+patients must either receive 4 cycles of anthracycline for a total dose of 240 mg m2 or six cycles of <regimen> for a total dose of 300 mg m2 or trastuzumab
+in part ii subjects still have to undergo at least 2 planned cycles with <regimen>
+previous <regimen> treatment for patients who will be included in the <regimen> cohort apart from <regimen> treatment in an adjuvant setting
+susceptible to allergies or allergic to anyactive ingredients or excipients in the trial including <regimen> or murine source products ormedication including <regimen> including active ingredients or excipients or rat source products or heterogeneous proteins
+cr relapsed within 1 year following completion of front line <regimen> or <regimen> relapsed at any time following front line <regimen> <regimen> or other hybrid eligible
+bp1001 with concurrent <regimen> dose expansion cohorts enrollment in the dose expansion cohorts
+newly initiated with <regimen> as their first line therapy for previously untreated advanced melanoma between june 2015 and june 2016
+any hemorrhage or bleeding event grade 4 within 4 weeks of start of <regimen> patients with diarrhea ctcae v4 grade 2
+female patients who are pregnant or breastfeeding or female patients of reproductive potential who are not willing to employ effective birth control from screening to 180 days after the last dose of durvalumab tremelimumab combination therapy or 90 days after the last dose of <regimen> whichever is the longer time period
+scheduled to receive adjuvant paclitaxel carboplatin for ovarian or endometrial cancer or <regimen> for colorectal cancer
+<regimen> with 100 microspheres according to usual clinical practice
+subject has had prior therapies with dacarbazine <regimen> or tmz containing regimens
+intended to receive r <regimen> every 14 or 21 days for minimum 3 cycles with rituximab planned to be given with <regimen> on day 1 or fractionated over days 1 and 21
+patients relapsing within 12 months of completing adjuvant <regimen> will also be considered eligible
+patients enrolling onto arm a gemcitabine with nab paclitaxel are allowed to have prior <regimen> in combination with bbi608 in the metastatic setting
+patients are allowed to have received prior treatment with <regimen> if patients are currently receiving treatment with <regimen> the subject must have documented disease progression
+stage ii iii or iv patients who received <regimen> or <regimen> induction chemotherapy for 6 cycles confirmed response as more than pr or pr after induction therapy and who are ineligible for transplantation
+based chemotherapeutic regimen containing carboplatin cisplatin or another organoplatinum compound must have had at least 1 prior paclitaxel based chemotherapeutic <regimen> or 2 prior chemotherapy regimens containing platinum and paclitaxel allowed recovered from toxic effects
+placement of <regimen> in the resection cavity significant amount of hemorrhage within the resection cavity seen on immediate post operative scan 4
+patients eligible for erbitux and <regimen> treatment k ras wild type tumour
+<regimen> srl
+patients with other cancers excluding nonmelanomatous skin cancers or carcinoma in situ <regimen> placement at the time of surgery tab tab
+subject must be receiving a calcineurin inhibitor cni based cyclosporine csa any formulation or tacrolimus <regimen>
+histologically or cytologically confirmed solid malignancy that is metastatic or unresectable for which <regimen> irinotecan 5 fluorouracil and leucovorin treatment is appropriate
+histologically proven adenocarcinoma of the colon or rectum planned to receive a minimum of 2 cycles of <regimen>
+prior treatment previously untreated or who received a maximum of one cycle of combination chemotherapy ier <regimen> <regimen> or r <regimen> within 4 weeks of study entry except patients who require dose reduction after the first cycle of off study <regimen>
+intent to continue <regimen>
+prior radioimmunotherapy radiation therapy or any other nhl therapy except first line <regimen> r
+female breast cancer patients receiving adjuvant <regimen> chemotherapy
+ra patients eligible to subcutaneous <regimen>
+gemzar tarceva and 5 fu or xeloda oxaliplatin taxotere and <regimen> are permitted
+patients who were treated with 5fu and leucovorin in the adjuvant setting or with 5fu and leucovorin lv or and <regimen> regimen for metastatic setting may be eligible for this trial
+ann arbor stage ii iii or iv dlbcl according to the real who classification from initial diagnosis made prior to starting <regimen> r therapy
+with recurrent or relapsed dlbcl after r <regimen> like theraphy as the firstline therapy
+prior treatment with 5 fu leucovorin oxaliplatin and irinotecan <regimen> treatment with any of the components as separate regimens is allowable
+post renal transplant on stable <regimen> ir for at least 6 months who are converting to <regimen> xr regardless of indication
+foscarnet cidofovir <regimen> acyclovir valaciclovir famciclovir penciclovir lobucavir antisense compound
+adjuvant therapy with <regimen> or 5 fu capecitabine
+in patients receiving <regimen> oxaliplatin is sometimes discontinued due to toxicity or as part of maintenance therapy strategy
+patients receiving bv plus <regimen> as first line treatment
+contra indications for systemic therapy with bevacizumab avastin chemotherapy <regimen>
+neo adjuvant treatment with docetaxel doxorubicin and cyclophosphamide <regimen> completed one year before inclusion
+histologically confirmed relapsed or refractory hodgkin s disease relapsed after prior first line treatment with at least 2 regimens such as mechlorethamine vincristine procarbazine and prednisone <regimen>
+clinically significant ascites any anti tumor treatment except <regimen> as the first line therapy for pancreatic adenocarcinoma before enrollment
+treatment with drugs other than <regimen>
+exclusion criteria patients with following treatment prior to <regimen> chemotherapy immunotherapy or biologic systemic anticancer therapy within 28 days of study entry
+patients with following treatment prior to <regimen> chemotherapy immunotherapy or biologic systemic anticancer therapy within 21 days of study entry 42 days for mitomycin and nitrosoureas prior taxanes radiation therapy within 28 days 3 months for bone marrow exposure 20 hormonal therapy within 4 weeks
+failed flu cy rituximab <regimen> combination chemotherapy at any time point or
+severe illness or organ dysfunction involving the heart kidney liver or other organ system egactive infection clinically relevant impairment of cardiac function severe heart failure cardiac insufficiency unstable angina pectoris or history of recent myocardial infarction which in the opinion of the investigator precludes treatment with <regimen>
+any other condition that according to investigator criteria contraindicates <regimen>
+patients must have failed relapsed or refractory front line standard anthracycline containing regimen such as <regimen> <regimen> or <regimen>
+has a diagnosis of immunodeficiency or is receiving systemic steroid therapy or any other form of immunosuppressive therapy within 7 days prior to the first dose of <regimen> treatment
+<regimen> or immunotherapy with a checkpoint inhibitor will be considered a line of treatment
+patient has achieved cr or partial response pr per per investigator s assessment following completion of <regimen> based therapy and has had radiological assessment within 21 days prior to randomization
+requires treatment with oxaliplatin as part of a <regimen> regimen
+measurable disease must have failed the following regimens mechlorethamine vincristine procarbazine and prednisone <regimen> and doxorubicin bleomycin vinblastine and dacarbazine <regimen>
+any contraindication for <regimen> chemotherapy regimen
+have received at least one treatment of either <regimen> or gemcitabine abraxane based regimens in both neoadjuvant and adjuvant setting
+a history of a hypersensitivity reaction to any of temozolomide s components or to dacarbazine <regimen>
+patients with relapsed or refractory diffuse large b cell lymphoma who have previously received r <regimen> or equivalent chemo immunotherapy and high dose chemotherapy with stem cell rescue or who are ineligible for high dose therapy with stem cell rescue
+hiv positive or infectious hepatitis type a b or c candidates eligible for intensive rescue therapies ex r <regimen> plus alemtuzumab allogenic transplant
+any other active infection viral fungal or bacterial requiring systemic therapy history of allogeneic tissue solid organ transplant diagnosis of immunodeficiency or patient is receiving chronic systemic steroid therapy or any other form of immunosuppressive therapy within 7 days prior to the first dose of <regimen> treatment
+cd20 positive b cell non hodgkin s lymphoma treatment with rituximab and <regimen> or cop performance status 0 or 1 according to the who scale appendix
+patients with histological or cytological confirmation of lymphoma who are previously untreated and are scheduled to receive <regimen> alone
+radiotherapy before <regimen> induction regimen
+allow previous administration of up to one course of <regimen> and or fda approved tki
+serious or uncontrolled medical condition such as presence of abnormal or clinically significant cardiac disease such as acute myocardial infarction or unstable angina within 6 months prior to initiation of treatment with <regimen> imatinib serious neurological or psychological conditions such as dementia or epilepsy or uncontrolled active infection
+all patients receiving treatment with <regimen> for locally advanced or metastatic nsclc either first line in patients with an activating mutation of the receptor egf r or patients with stable disease after 4 cycles of standard first line chemotherapy with platinum or after failure of at least one prior chemotherapy regimen
+patient has known allergy or hypersensitivity to <regimen> 101 doxorubicin epirubicin other anthracyclines anthracenediones or any of the components used in the study drug formulations
+in accelerated phase or greater preparative <regimen> or 2
+first line treatment of dlbcl must have been 6 cycles of standard r chop21 r <regimen> or <regimen> r chemotherapy
+patient with a history of classical hl relapsed refractory which received <regimen> regimen as induction therapy before high dose chemotherapy with ahsct
+histological documentation of aggressive b cell nhl planned to receive systemic anticancer therapy with at least 6 cycles of r <regimen> 21 according to local standards 5
+have reached a cr or pr after first line treatment with at least 6 cycles of r <regimen> 14 regimens and up to 8 cycles of r chop21
+patients must have progressed on one or more prior chemotherapy treatment regimens including at least one trial of a 5 fu oxaliplatin based therapy <regimen> in combination with bevacizumab
+standard dose of bevacizumab 5 mg kg may be administered prior to <regimen> infusion per investigator decision for as long as permanent decision to include or exclude bevacizumab is made prior to patient randomization
+patients with gilbert s syndrome or who are found to be homozygous for the ugt1a1 allele who will receive <regimen> are eligible
+nonrecovery from the toxic effects of <regimen> r therapy
+have had at least 1 prior treatment for all gi tumors except for small bowel adenocarcinoma as <regimen> can be considered standard first line therapy for that particular tumor
+recipient of frontline multi agent chemotherapy for example <regimen> dose adjusted <regimen> <regimen> rice <regimen> investigational agent etc eligible patients will have recently received 4 months from end of treatment assessment be actively receiving or planned to receive frontline chemotherapy in near future within 3 months of signing consent a frontline therapy program can include different sequential phases of treatment including high dose therapy and autologous stem cell transplantation
+de novo diffuse large b cell lymphoma that fails to achieve a pet negative complete response to primary rituximab and anthracycline based multi agent chemotherapy and at least maintains stable disease after salvage chemotherapy or present double triple hit features defined by overexpression by standard immunohistochemistry of c myc plus bcl2 and or bcl6 or presence of chromosomal translocations as detected by break apart fish involving igh myc plus igh bcl2 and or igh bcl6 and who only received standard chemoimmunotherapy with rituximab cyclophosphamide vincristine and prednisone r <regimen> for induction and present at least stable disease after consolidation or salvage chemotherapy
+female patients who are pregnant or breastfeeding or male or female patients of reproductive potential who are not willing to employ effective birth control from screening to 90 days after the last dose of <regimen> or180 days after the last dose of durvalumab tremelimumab combination therapy
+histologically or cytologically proven solid tumour for which cpt 11 given by the <regimen> regimen is indicated and prescribed by the attending physician
+refractory disease or relapse after at least one prior chemotherapy regimen typically a minimum of 6 cycles of <regimen> presence of measurable disease by physical examination ct or ct pet scan
+minimum of 4 weeks since any major surgery completion of radiation or completion of all prior systemic anticancer therapy and 6 months since adjuvant <regimen> therapy adequately recovered from the acute toxicities of any prior therapy including neuropathy should be grade 1
+patients must have been treated with 6 or more cycles of first line <regimen> chemotherapy and have achieved a pr cru or cr patients
+patients who received pre phase therapy for the purpose of improving performance status prior to initiating r <regimen> are eligible
+to have received first line treatment with bevacizumab in combination with chemotherapy with the three drugs 5fu leucovorin lv irinotecan and oxaliplatin <regimen> and
+participants must have never received previous r <regimen> treatment
+patients must also be able to tolerate standard <regimen> reduced dosing of <regimen> at enrollment is exclusionary
+patients with transformed ctcl eligible for <regimen> regimen
+have a history of hypersensitivity to dacarbazine <regimen>
+subjects must have progressed after receiving at least one cycle of <regimen> or tmz containing regimen
+prior rituximab or other monoclonal immunotherapy permitted and eligible for <regimen>
+subjects scheduled to receive cetuximab and <regimen>
+patients 18 years of age with a hematologic malignancy other than aplastic anemia or primary myelofibrosis scheduled to undergo ric allogeneic sct with a peripheral blood stem cell graft using fludarabine busulfan <regimen> conditioning and tacrolimus methotrexate <regimen> mtx
+group a post induction therapy patients who have received only one prior treatment regimen eg vad <regimen> blt d mp bird or dvd with at least 20 patients having received a revlimid based regimen or group b 1st line of therapy patients with relapsed refractory multiple myeloma who have received two or more prior treatment regimens
+imatinib transient dose adjustments due to adverse event aes are allowed with a maximum of 2 weeks interruption of treatment with imatinib cumulative within the 3 month period before randomization <regimen> must have been started within 6 months of cp cml diagnosis ph bcr abl detection
+investigator considers <regimen> appropriate
+for relapsed or refractory participants recruited in obinutuzumab <regimen> regimen prior use of anthracyclines
+eligible for rt after r <regimen>
+10 0 g dl are shown at least 3 cycles after starting r <regimen> rituximab cyclophosphamide adriamycin vincristine prednisolone
+avastin or erbitux 1 cycle defined as 2 doses of <regimen>
+pregnant females active uncontrolled hemorrhage at the time of <regimen> placement diagnosis of pre existing bleeding disorder known allergy or hypersensitivity to polyvinyl polyurethane acrylic or acrylic adhesive subjects with fistulas subjects who have been enrolled in this study previously documented history of child pugh turcot liver dysfunction
+d1 q 3 weekly <regimen>
+active infectious disease or any other medical condition which might put the patient at significant risk to tolerate 6 courses of <regimen> chemotherapy eg recent myocardial infarction
+exclusion criteria history of severe and uncontrolled allergic reactions to bevacizumab prior treatment with <regimen> or bevacizumab within the preceding 4 weeks patients currently receiving or have received anticancer therapies within 4 weeks of the start of study treatment including chemotherapy radiation therapy antibody based therapy etc
+excluded within the past 60 days ganciclovir foscarnet fiac fiau cmv hyperimmune globulin cmv monoclonal antibody or <regimen>
+fresh tumor tissue must be provided for all subjects for biomarker analysis before within 14 days prior to treatment start and during on day 10 of the <regimen> and the last day of the treatment with pazopanib day 70 treatment with investigational product asservation in rnalater for kryo asservation and for cell cultures
+capecitabine and oxaliplatin <regimen>
+exclusion criteria participation in a center for injury research and prevention at <regimen> teen driving study within the past 6 months unable to follow study procedures
+patients with de novo refractory disease progression of disease as best response at 1st line therapy with <regimen> avastin
+subject is scheduled to undergo 4 cycles of tc or <regimen> chemotherapy taxotere doxorubicin and cyclophosphamide 75 50 and 600 mg m2 respectively
+such therapies should include regimens containing oxaliplatin and irinotecan in combination with a fluoropyrimidine if appropriate eg <regimen> and <regimen> or their variants subjects that are unable to receive oxaliplatin and or irinotecan due to allergy or hypersensitivity or due to concerns regarding the side effects of oxaliplatin and or irinotecan will be allowed to receive less than two lines of standard therapies prior to enrollment to this study
+hodgkin s or non hodgkin s lymphoma failed at least 1 conventional second or third generation regimen eg <regimen>
+received 3 previous anticancer regimens prior to enrollment received prior r <regimen> therapy
+during the run in period of 6 months starting from the date of the first randomization in the trial in case of direct randomization into maintenance phase patient must have been treated in first line by 6 8 cycles of r <regimen>
+live within 40 minutes from study clinic at <regimen> or 60 minutes at geisinger
+known hypersensitivity reactions to temozolomide dacarbazine <regimen> hydroxychloroquine 4 aminoquinoline rapamune sirolimus rapamycin or their analogs
+contraindication to any drug contained in the r <regimen> rituximab cyclophosphamide doxorubicin vincristine prednisone
+fp xp ts 1 cisplatin <regimen>
+the patients who underwent surgery for pathologically diagnosed early breast cancer high risk stage ii or stage iii or completely resected stage iv and anticipated to undergo adjuvant chemotherapy with <regimen> regimen docetaxel doxorubicin and cyclophosphamide
+primary invasive breast carcinoma with lymph node positive with curative surgery with <regimen> chemotherapy
+1 course of <regimen> doxorubicin bleomycin vinblastine and dacarbazine allowed and will be considered the first course
+having received immuno chemotherapy r <regimen>
+patient must have received 1 prior course of chemotherapy <regimen> regimen for metastatic disease
+adjuvant <regimen> within the last 6 months is considered a line of therapy
+grade 2 according to nci common terminology criteria for adverse events version 4 0 ctcae v 4 0 known history of human immunodeficiency virus hiv infection presence of acute or chronic liver disease renal disease or pancreatitis known history of chronic hepatitis b or c symptomatic metastatic brain or meningeal tumors unless the patient is 6 months from definitive therapy has a negative imaging study within 4 weeks of <regimen> initiation and is clinically stable with respect to the tumor at the time of study entry
+one prior cycle of <regimen> for ptcl allowed
+having failed first line treatment with <regimen> based chemotherapy full recovery from all prior therapies
+or r <regimen> infusion on cycle 1 day 1
+are contraindicated for chemoradiotherapy crt hypersensitivity or contraindication to the drug s associated with the planned choice of systemic chemotherapy <regimen> <regimen> or single agent 5 fu or capecitabine as stated in the smpc for each of the drugs
+contra indication to any drug included in the r <regimen> regimen
+patients who have undergone or will undergo <regimen> for hcc delivered by the surefire precision infusion system
+if a participant has received subsequent anticancer therapy salvage therapy the participant must have a wash out period defined as 2 weeks or 5 pharmacokinetic half lives of the treatment whichever is longer before the planned start date of <regimen>
+prior <regimen> xp <regimen> or sp s 1 cisplatin treatment could be eligible but prior taxane are ineligible
+candidate for systemic therapy with <regimen> bvz
+previously untreated nhl suitable for <regimen> r <regimen> treatment
+patients treated with substances with potential interaction with <regimen> particularly potent inhibitors of cyp3a4 such as telaprevir boceprevir ritonavir ketoconazole voriconazole itraconazole telithromycin or clarithromycin or inducers of cyp3a4 such as rifampin or rifabutin
+at least 10 of each patient s malignant cells from peripheral blood lymph node skin or other extranodal sites must react with anti <regimen> as determined by immunofluorescent or immunoperoxidase staining
+subject must have relapsed following or be refractory to 1 standard treatments such as fludarabine based regimens f fc fr <regimen> alkylator chlorambucil bendamustine based regimens or bruton s tyrosine kinase inhibitor ibrutinib or relapsed or refractory indolent non hodgkin lymphoma or aggressive non hodgkin lymphoma for waves 1 2 or 3 unless otherwise indicated
+patients on cni <regimen> or csa myfortic steroids
+first line chemotherapy with <regimen> or tmz as monotherapy group me1
+prior treatment previously untreated or has received a maximum of one cycle of any combination chemotherapy egcyclophosphamide doxorubicin vincristine prednisone <regimen> <regimen> <regimen> doxorubicin cyclophosphamide cytarabine vincristine methotrexate etoposide ifosfamide cytarabine methotrexate <regimen> ivac <regimen> within 4 weeks of study entry
+disease progression after anthracycline and or taxane regimen therapy and candidate for <regimen> patients previously treated by capecitabine containing regimen should response to the chemotherapy containing capecitabine and progressed at least 4 months after the last capecitabine treatment karnofsky score more than 70ecog 0 2 normal functions with heart liver renal and bone marrow 8
+history of severe hypersensitivity reaction to capecitabine 5 fu temozolomide or <regimen> will be excluded ieanaphylaxis or anaphylactoid reactions
+patient must have progressed or be refractory to prior anthracycline containing chemotherapy egr <regimen> <regimen> r etc
+patients who underwent <regimen>
+secondary resectable hepatic metastasis converted by <regimen> 4 regimen 2
+<regimen> mycophenolate mofetil mmf
+continuous 5 fu containing regimens such as folfox6 and <regimen> are allowed as both the 5 fu bolus as well as the oxaliplatin and irinotecan administration is completed on day 1 of chemotherapy
+patients with newly diagnosed acute lymphoid leukemia who approve to get induction chemotherapy with <regimen> vincristine prednisolone daunorubicin l asparaginase <regimen> cyclophosphamide vincristine prednisolone daunorubicin l asparaginase or r <regimen> rituximab cyclophosphamide vincristine adriamycin dexamethasone
+treated with <regimen> or r <regimen> on ecog e4494
+subject treated by chemotherapy induced ovarian failure including alkylant agents except less than 8 <regimen>
+patients with a history of severe hypersensitivity reaction to capecitabine 5 fu temozolomide or <regimen> will be excluded ieanaphylaxis or anaphylactoid reactions
+leucovorin fluorouracil and irinotecan <regimen>
+ongoing or planned first line treatment with 6 cycles of <regimen> <regimen> plus cetuximab
+for male or female patient of child producing potential must agree to use contraception or take measures to avoid pregnancy during the study and for 180 days for female and male patients of the final <regimen> dose
+prior polifeprosan 20 with carmustine implant <regimen> allowed
+patients who are still pet scan positive mid therapy with r <regimen> but have turned negative after completion of therapy
+<regimen> cycle delay is also permitted
+any history of allergy or intolerance to dacarbazine <regimen>
+in part i subjects still have to undergo at least 1 planned cycle with <regimen>
+acceptable first line molecular targeted therapies include 1 <regimen> and sorafenib based combination 2 anti angiogenic therapy including brivanib linifanib pazopanib bevacizumab dovitinib tki258 and vargatef bibf1120
+patients planned to be treated with r <regimen> 14 ie
+patients eligible for <regimen> or <regimen> therapy
+a prephase to reduce tumor burden prior to start of r <regimen> is allowed
+such therapies should include regimens containing oxaliplatin and irinotecan in combination with a fluoropyrimidine if appropriate eg <regimen> and <regimen> or their variants
+having received a bortezomib containing regimen vtd <regimen> vrd or pad in patients with pcl for a minimum of 4 cycles with pr
+have a carmustine implant eg <regimen> have uncontrolled hypertension sbp 140 mmhg or dbp 90 mmhg for more than 1 week
+subject must have relapsed following or be refractory to standard treatments such as r <regimen> <regimen> or fludarabine based regimens
+outpatients on <regimen> a
+history of known hypersensitivity to s cerevisiae bevacizumab or any component of <regimen> or <regimen>
+gastric cancer patients received postoprative adjuvant chemotherapy of eight cycles of <regimen>
+receipt of neoadjuvant or adjuvant <regimen> therapy
+contraindication to any of the individual components of <regimen> cyclophosphamide vincristine doxorubicin and prednisone including prior anthracycline treatment
+intent to proceed with either <regimen> consolidation or allogeneic stem cell transplantation at the discretion of the treating physician for lam 2 5
+ecog performance status 2 myelosuppressive chemotherapy naive scheduled to receive and anticipated to complete the following chemotherapy <regimen>
+prior chemotherapy within the last 5 years prior rtx of the head receiving concurrent investigational agents or has received an investigational agent within the past 30 days prior to the first dose of cilengitide prior systemic antiangiogenic therapy placement of <regimen> at surgery inability to undergo gd mri
+placement of <regimen> at surgery
+locally advanced pancreatic adenocarcinoma patients must have received <regimen> or gemcitabine
+must have recovered from toxicity of prior therapy at least 6 months after <regimen> at least 8 weeks after hematopoietic stem cell transplant at least 4 weeks after any cytotoxic chemotherapy or any systemic investigational agent at least 6 weeks after nitrosoureas at least 2 weeks after vincristine or non cytotoxic chemotherapy
+doxorubicin bleomycin vinblastine and dacarbazine <regimen> <regimen> abv stanford 5 or refractory to a second line regimen such as mesna ifosfamide mitoxantrone and etoposide mine etoposide methylprednisolone high dose cytarabine and cisplatin
+3 below are eligible for the trial treatment planned to include standard <regimen> administered either every three weeks 100 mg m2 for 3 doses with concomitant radiation delivered as a continuous course of imrt with single daily fractions of 2 0 to 2 2 gy with a cumulative radiation dose between 60 gy and 72 gy
+failure to achieve cr within 6 months in newly diagnosed patients with intensive doxorubicin treatment relapse patients who are sensitive to doxorubicin or <regimen> chemotherapies
+first line palliative treatment with cytotoxic agents will be started <regimen> <regimen> capecitabine paclitaxel or docetaxel
+operative chemotherapy planned using oxaliplatin based chemotherapy regimen including <regimen> <regimen> and oxcap regimens age greater than or equal to 18 years 4
+women of childbearing potential wocbp must have a negative serum or urine pregnancy test performed within 14 days prior to initiation of <regimen>
+for this reason women of child bearing potential and men must agree to use adequate contraception hormonal or barrier method of birth control abstinence prior to study entry for the duration of study participation and up to 180 days after the last dose of durvalumab tremelimumab combination therapy or 90 days after the last dose of <regimen> whichever is the longer time period
+prior polifeprosan 20 with carmustine implant <regimen> or gliasite brachytherapy
+no prior chemotherapy except 1 course of preinduction chemotherapy eg <regimen> cyclophosphamide doxorubicin vincristine and prednisone or a related regimen
+patients who are scheduled to start <regimen> based on the atezolizumab package insert and the optimal use promotion guideline
+r <regimen>
+prior tmz or <regimen> is only allowed in those patients enrolled into the prior chemotherapy cohort
+<regimen> is acceptable
+current failure of 1st line anti cancer therapy with an oxaliplatin and bevacizumab based regimen or patients relapsing within 12 months of completing adjuvant <regimen>
+histologically the first large scaled b cell lymphoma patient diagnosis time 65 years old or older patients planning r <regimen> chemotherapy
+patient receiving <regimen> chemotherapy
+performance score of at least 60 by karnofsky adequate major organ system function as demonstrated by left ventricular ejection fraction of at least 40 myeloablative <regimen> reduced intensity regimen 3 left ventricular ejection fraction of at least 30 nonmyeloablative regimen 2
+no prior chemotherapy for hodgkin s disease except single course of <regimen> doxorubicin bleomycin vinblastine and dacarbazine within 35 days of study endocrine therapy
+previous attendance in the active treatment groups any <regimen> classes ever taken or cbt in the past 3 years
+left ventricular ejection fraction lvef 50 by multiple gated acquisition scan muga or cardiac echocardiogram echo prior for any patient to be treated with rituximab cyclophosphamide doxorubicin vincristine prednisolone r <regimen>
+suitable to receive <regimen> regimen as first line metastatic treatment
+because there is an unknown but potential risk for adverse events in nursing infants secondary to treatment of the mother with <regimen> breastfeeding must be discontinued for eligibility
+complete metabolic remission deauville 1 3 after 6 8 cycles of r <regimen> according to the lugano criteria
+this includes 3 6 cycles of <regimen> cyclophosphamide doxorubicin vincristine prednisone or an equivalent <regimen> like regimen
+subjects followed within the <regimen> cardiology division
+scheduled to receive 6 months of oxaliplatin based adjuvant chemotherapy at a dose of 85 mg m of oxaliplatin every 2 weeks simplified <regimen> 4 regimen
+adult patients at least 19 years of age with metastatic colorectal cancer who are planned to receive bevacizumab or cetuximab in combination with <regimen> regimen as first line treatment patients who will receive irinotecan a component of <regimen> regimen using camtop injection
+other components of the <regimen> such as polifeprosan polymer
+only participants whose lymphoma is untreated are allowed for the dose finding portion for the dose expansion cohort both untreated and participants who have received a maximum of one cycle of combination chemotherapy including rituximab containing regimens r cyclophosphamide doxorubicin hydrochloride vincristine sulfate prednisone <regimen> and <regimen> prior are eligible the start of previous chemotherapy cycle must occur at least 21 days prior and 28 days maximum to beginning treatment under this protocol and such cycle will count towards the maximum of 6 cycles under this study iecycle off study will count as cycle 1
+<regimen> therapy is appropriate for the patient and is recommended by the investigator
+must have available computed tomography ct scans of the chest abdomen and pelvis and a bone marrow biopsy that were performed within 56 days prior to the start of <regimen> in addition they must have written documentation ie copies of original medical notes and radiographic reports describing the pre <regimen> staging evaluation the number of cycles of <regimen> administered the dose of each agent the start and stop dates of each cycle and the post <regimen> response evaluation
+unfit for full dose <regimen> chemotherapy
+contraindication to any drug contained in the r <regimen> combination chemotherapy
+planned surgery for other diseases placement of <regimen> at surgery
+patients who have demonstrated a previous hypersensitivity to bcnu or any other component of the <regimen>
+if a mentee caregiver has more than one child currently enrolled in <regimen> ehs then all their eligible children will be enrolled in the study
+willing to provide informed consent for study participation authorize the release of their previous 12 month medical records from their pcp for review and de identified data entry by <regimen> into an electronic study database
+men treated or enrolled on this protocol must also agree to use adequate contraception prior to the study for the duration of study participation and 6 months after completion of durvalumab tremelimumab administration or 90 days after the last dose of <regimen> whichever is the longer time period
+patients enrolled at the dana farber cancer institute must be receiving <regimen> chemotherapy to be eligible since they will be enrolled in the pharmacokinetics sub study
+adjuvant or neoadjuvant chemotherapy with docetaxel regimens <regimen> or anthracyclines followed by docetaxel 100 mg m2 x 4
+patients who received chemotherapy <regimen> including bevacizumab
+scheduled to receive anthracycline based therapy of the <regimen> <regimen> type
+patients treated with low dose <regimen> within prospective clinical trials
+inclusion criteria patients with cyto histological diagnosis of stomach adenocarcinoma and gastric esophageal junction in stages iii and iv which are tributaries of the <regimen> chemotherapy scheme
+inability to tolerate the <regimen> regimen according to investigator s judgement
+dlbcl patients that will be eligible in front line treatment for a combination of anthracycline based chemotherapy plus anti cd20 monoclonal antibody rituximab r <regimen> 14 r <regimen> 21 r mini <regimen> r <regimen> <regimen> patients
+<regimen> <regimen> <regimen> or <regimen>
+planned to start trastuzumab based neo adjuvant therapy <regimen> or <regimen> or dose dense <regimen> or docetaxel cyclophosphamide trastuzumab or docetaxel carboplatin trastuzumab or weekly paclitaxel with trastuzumab
+failure of first line systemic chemotherapy with a platinum containing combination regimen consisting of <regimen> or cisplatin gemcitabine with cisplatin dosed at 60 mg m2 or higher per cycle
+treated with r <regimen> associated with an experimental drug polatuzumab tazemetostat venetoclax entospletinib lenalidomide ibrutinib anti pd1 anti pdl1
+follicular lymphoma patients previously treated with the combination of rituximab and chemotherapy r <regimen> r <regimen> fludarabine having received rituximab maintenance refractory to a first line excluding radiotherapy or relapsed after having achieved any response to previous treatment 4
+ac fa <regimen> fa tv fv
+contraindication to receive any of the individual components of <regimen> rituximab or obinutuzumab
+patients who are feasible for treatment with <regimen> prior adjuvant or palliative treatment is allowed
+patients enrolling onto arm b <regimen> are allowed to have prior gemcitabine with nab paclitaxel in combination with bbi608 in the metastatic setting
+methotrexate etoposide ifosfamide <regimen> regimen for patients 25 years doxorubicin cisplatin ifosfamide api ai regimen for patients 26 50 years
+major surgical procedure open biopsy or significant traumatic injury within 28 days prior to day 1 of <regimen> bevacizumab initiation or anticipation of need for major surgical procedure during the course of the study core biopsy or other minor surgical procedure excluding placement of a vascular access device within 7 days prior to day 1 of <regimen> bevacizumab initiation history of abdominal fistula or gastrointestinal perforation within 6 months prior to day 1 of <regimen> bevacizumab initiation serious non healing wound active ulcer or untreated bone fracture proteinuria as demonstrated by
+patients with badly chemotherapy complications who can finish the whole <regimen> treatment course
+may have had any prior chemotherapy regimen including any gemcitabine based regimen or <regimen>
+have a plan by treating physician to receive <regimen> or <regimen> avastin
+exclusion criteria liver directed therapy chemoembolization radioembolization bland embolization ablative therapy within 4 weeks of <regimen>
+patients must have a treatment plan to include r <regimen> or r <regimen> followed by radiotherapy
+one prior line of therapy defined as either one non transplant regimen such as <regimen> <regimen> or <regimen> one autologous stem cell transplant or one regimen of non transplant induction therapy followed by a single autologous stem cell transplant without hematologic progression between induction and autologous stem cell transplant asct
+for patients receiving r <regimen> <regimen> may be administered starting on day 2 at the discretion of the treating physician age
+newly diagnosed de novo dlbcl or primary mediastinal b cell lymphoma that will be treated with an anthracycline containing regimen rituximab cyclophosphamide doxorubicin hydrochloride prednisone r <regimen> or equivalent
+iv previously treated with at least one line of prior therapy <regimen> or <regimen> like measurable disease age 19
+progressive disease despite at least 1 cycle of <regimen> like or any anthracycline base chemotherapy or at least 1 cycle part a or a and b of <regimen> like chemotherapy
+presence of bulky lymph nodes 5 cm after second line f fc <regimen> b br
+previous treatment for metastatic disease is limited to <regimen> bevacizumab
+patients who progress after 1st line therapy with <regimen> avastin
+disease progression during or following treatment with at least one platinum containing regimen eg gemcitabine and cisplatin gc methotrexate vinblastine doxorubicin and cisplatin <regimen> carboplatin and gemcitabine carbogem etc
+first line irinotecan based <regimen> or <regimen> cetuximab containing therapy producing at least a partial response
+patients with measurable or evaluable disease according to the response evaluation criteria in solid tumors patients eligible for second line therapy after failing first line therapy with the regimen <regimen>
+second line oxaliplatin based <regimen> <regimen> or <regimen> bevacizumab containing therapy
+histopathologically confirmed cd20 positive b cell non hodgkin lymphoma disease for whom r <regimen> rituximab cyclophosphamide doxorubicin vincristine and prednisone is an appropriate therapy diffuse large b cell lymphoma mantle cell lymphoma or follicular lymphoma for the expansion cohort at least 1 cohort will only include patients with newly diagnosed diffuse large b cell lymphoma
+previous <regimen> treatment in the last 6 months prior to study entry
+previous antineoplastic treatment other than the 6 cycles of <regimen> for the initial treatment of dlbcl
+tumoural volume by <regimen> 500 cc
+newly diagnosed stage iii iv dlbcl considered poor candidates for r <regimen>
+patient is treatment nave or currently receiving front line chemotherapy with <regimen> or gemcitabine abraxane and has stable disease
+<regimen> or <regimen> administered at the following minimum dosages over this 12 week period
+pt 1 5 x uln unless subject is receiving anticoagulant therapy as long as pt or ptt is within therapeutic range of intended use of anticoagulants or patient has disseminated intravascular coagulation deemed by investigator to be due to leukemia activated partial thromboplastin time aptt 1 5 x uln unless subject is receiving anticoagulant therapy as long as pt or ptt is within therapeutic range of intended use of anticoagulants or patient has disseminated intravascular coagulation deemed by investigator to be due to leukemia female subject of childbearing potential should have a negative urine or serum pregnancy within 72 hours prior to receiving the first dose of <regimen> treatment and again prior to d1 of pembrolizumab treatment
+6 cycles of immunochemotherapy for example rituximab chemotherapy <regimen> or <regimen> like and must have relapsed or refractory disease at the time of trial entry
+5 fluorouracil these include combinations such as fluorouracil oxaliplatin and leucovorin calcium <regimen> <regimen> bevacizumab <regimen> cetuximab
+child is a patient at one of the <regimen> center for children and women clinics
+disease relapse within 12 months after completing therapy with a regimen containing flu or another nucleoside analog 2 failed flu cyclophosphamide cy rituximab <regimen> combination chemotherapy at any time point or 3 have 17p deletion cytogenetic abnormality patients should have received induction chemotherapy but could be transplanted in first 1st cr
+seen for follow up oncology care at <regimen> or penn
+received and failed potentially curative chemotherapeutic regimens eg <regimen> <regimen> or <regimen>
+de buenos aires infusion of high dose cyclophosphamide for conducting msch prior bmt gatla and <regimen> in the period 2015 2017
+contraindicative to any drug in <regimen>
+patients must have progressed systemically on arm 2 of this study <regimen>
+be scheduled to receive <regimen> regimen as adjuvant therapy subjects who meet the conditions at screening test as follows
+patients who were administered 4 6 cycles of cisplatin based first line chemotherapy gp gemcitabine cisplatin classic <regimen> methotrexate vinblastine doxorubicin cisplatin or dose dense <regimen> and were planned to undergo regular surveillance 4
+for advanced stage iii iv hodgkin disease patients must have failed an adriamycin containing regimen <regimen> or an alternative non cross resistant regimen egmopp
+planned treatment with r <regimen> chemotherapy
+known hypersensitivity to any of the components of <regimen>
+prior chemotherapy with <regimen>
+patient naive to any chemotherapy treatment re ceiving a 1st chemotherapy line of <regimen> rcop vtd vd or mpt type from the adult hematology department
+cns metastases or carcinomatous meningitis ocular melanoma known hypersensitivity to any excipients of tracleer prior therapy with bosentan use of therapy with another investigational drug within 4 weeks of the start of dosing with bosentan or plan to receive such treatment during the study known drug or alcohol dependence or any other factor that will interfere with the conduct of the study any standard contraindications for the use of <regimen> as per australian package insert
+systemic chemotherapy indication compatible with the <regimen> bevacizumab combination
+patients with grade 2 neuropathy who will receive <regimen> are eligible
+and or bcr abl positive includes patients initiated on first course of <regimen> before cytogenetics known these groups will be analyzed separately
+previous treatment with chemotherapy or radiation with the exception of up to 1 cycle of <regimen> chemotherapy
+subject with a history of kelodial scar formation a known sensitivity to light photosensitivity or is taking medication that makes the skin more sensitive to light including non steroidal anti inflammatory agents eg aspirins ibuprofens acetaminophen tetracyclines phenothiazines thiazide diuretics sulfonyluraes sulfonamides <regimen> fluorouracil vinblastine griseofulvin alpha hydroxi acids ahas beta hydroxi acids bhas retin a accutane and or topical retinoids
+prior <regimen> or single agent irinotecan is prohibited
+treated on resort trial ecog e4402 comprising <regimen> and then randomized to rituximab maintenance therapy or retreatment with rituximab upon disease relapse
+alkylating substances busulfan carmustine chlorambucil cisplatin cyclophosphamide dacarbazine <regimen> lomustine mechlormethamine melphalan streptozotocin tiothepa uracil mustard
+the dose of ara c in cycles containing <regimen> should be reduced in the following cases the hematopoietic recovery in the previous cycle has been longer than 28 days
+exclusion criteria detected del 17p or tp53 mutation refractoriness to <regimen> br transformation of cll to aggressive nhl richter s transformation
+those who had initiated <regimen> <regimen> but stopped oxaliplatin because of intolerable toxicity are also eligible
+history of severe allergic or anaphylactic reactions to humanized or murine monoclonal antibodies or known sensitivity or allergy to murine products or to any component of <regimen> or obinutuzumab
+coronary vasculopathy grade 1 or 2 cav 1 or 2 associated with <regimen> fevg dysfunction 45 or abnormality of completion of restrictive type
+subjects who are expected to receive toxicity test at least once after <regimen> treatment
+lack of pet scans performed in accordance with inclusin criteria during <regimen> treatment
+no prior chemotherapy except for <regimen> gem abrax or gem cap
+previously implanted <regimen> may be eligible
+bevacizumab or <regimen> which includes chemotherapy prior to and post hepatic resection
+<regimen> study 16 012631
+failed <regimen> or pentostatin cyclophosphamide rituximab pcr combination chemotherapy at any time point
+all clinical staff who participate in resuscitation events in <regimen> s icu or ed
+patients aged 18 years old with advanced or metastatic solid tumor in whom standard anticancer therapies have been exhausted and who are amenable for a <regimen> according to the discretion of the principal investigators and previously treated with a cumulative dose of anthracyclines 300 mg m2
+patients previously treated with continuous infusion 5 fu or any schedule of <regimen> dacarbazine which are similar to capecitabine and temozolomide respectively will be excluded
+previous <regimen> treatment for patients who will be included in the <regimen> cohort
+scheduled to receive <regimen>
+patients must have been detected with an activating egfr mutation at baseline and must have yet progressed on erlotinib gefitinib or <regimen> in daily dose of 150 mg 250 mg or 40 mg respectively
+presence of peripheral neuropathy grade 2 arm idelalisib nab paclitaxel and arm idelalisib <regimen>
+patients with any locally advanced or metastatic gastrointestinal malignancy which <regimen> is indicated for treatment
+17 013895 adolescent has sibling enrolled in irb 18 parent criteria inclusion criteria parent or legal guardian of a teen age 13 to 15 years at their upcoming well child visit at a <regimen> primary care practice exclusion criteria
+eligible for 5fu lv or <regimen> chemotherapy
+patient is eligible for low dose cytarabine <regimen> treatment
+cyclophosphamide doxorubicin vincristine and prednisone <regimen>
+known hypersensitivity to 5 fluorouracil leucovorin or oxaliplatin arm idelalisib <regimen> their metabolites or formulation excipients
+first line treatment with an irinotecan based regimen eg <regimen>
+patients receiving corticosteroids must be on a stable dose for at least three weeks before receiving yttrium 90 labeled humanized anti <regimen> 90y hat on this study
+previously treated with <regimen> or cetuximab based combination therapy
+patients on <regimen> or combined treatment with a biological agent or patients on biological treatment monotherapy who show or have ever shown intolerance or poor compliance or safety issues with methotrexate
+induction <regimen> up to 4 cycles
+at least 3 months since prior polifeprosan 20 with carmustine implant <regimen> endocrine therapy
+pgy 1 or 2 in pediatrics at <regimen> st christopher s hospital for children or a i dupont hospital for children
+past hypersensitivity reaction to temozolomide or <regimen>
+patients who have been treated with <regimen> regimen for metastatic setting may be eligible for this trial
+cell diffuse large cell large cell immunoblastic lymphoblastic small noncleaved cell disease has relapsed following or is resistant to primary anthracycline containing combination chemotherapy objective response to salvage <regimen> chemotherapy required ineligible for bone marrow transplantation
+known hypersensitivity reactions to temozolomide nitrosoureas or any other components of the <regimen>
+unable to receive r <regimen> chemotherapy
+scheduled to receive <regimen> chemotherapy with individual oxaliplatin doses of 85 mg m 2 per cycle given in 2 week cycles egmodified m
+histological or cytologically confirmed solid tumor in a patient for whom the study chemotherapy regimen vincristine plus ifosfamide plus doxorubicin plus etoposide <regimen> vincristine plus doxorubicin plus cyclophosphamide alternating with ifosfamide plus etoposide vdc ie ifosfamide plus vincristine plus actinomycin d iva or ifosfamide plus vincristine plus adriamycin ivad is considered an appropriate treatment
+history of hypersensitivity reaction to temozolomide or a history of hypersensitivity to <regimen>
+to be treated with adjuvant <regimen> chemotherapy
+serum total bilirubin 2 0 mg dl 34 mol l except in patients with hemolytic anemia or with gilbert syndrome calculated creatinine clearance of 50 ml min for patients who will have dhaox chemotherapy or 70 ml min for patients who will have <regimen> chemotherapy
+140 90 mmhg on more than 2 antihypertensive medications myocardial infarction severe angina or unstable angina within 12 weeks prior to start of cycle 1 of <regimen> bevacizumab cetuximab administration history of serious ventricular arrhythmia ie ventricular tachycardia or ventricular fibrillation
+patients on <regimen> must have adequate cardiac function as demonstrated by normal ejection fractions ef on multi gated acquisition scan muga scan or echocardiogram performed within the last 3 months of eligibility sign off
+subjects will be excluded from the treatment with irinotecan or <regimen> if administration of their chemotherapy would be inconsistent with the current local labeling for example in regard to contraindications warnings precautions or special provisions for that chemotherapy
+<regimen> comprising leucovorin calcium fluorouracil and oxaliplatin 2 week course
+<regimen> irb 15 011732 and or <regimen> irb
+patients must be able to receive full doses of <regimen> in the opinion of the treating investigator with the exception of cisplatin
+prior chemotherapy with combination of capecitabine or 5 flourouracil 5 fu and temozolomide or dacarbazine <regimen> will be excluded patients can have had prior therapies up to 3 prior chemotherapy regimens such as streptozocin anthracyclines irinotecan etoposide or a platinum agent including single agent capecitabine or 5fu or temozolomide or <regimen>
+i iv for ovarian cancer stage ii iv endometrial cancer or stage iii high risk stage ii for colorectal cancer scheduled to receive adjuvant paclitaxel carboplatin for ovarian or endometrial cancer or <regimen> for colorectal cancer age 20 years old 5
+off <regimen> treatment for more than 70 days prior to treatment on study prior chemotherapy for metastatic pancreatic cancer other than <regimen> or adjuvant therapy
+mibg scintigraphy positive at diagnosis and after induction chemotherapy pre <regimen> evaluation 4
+cd20 positive diffuse large b cell lymphoma lbcl of any stage including subtypes mediastinal large b cell centroblastic immunoblastic t cell rich b cell and anaplastic b cell lymphoma who will receive standard r <regimen> as first line chemotherapy will be included
+at least one measurable or evaluable lesion in the first line chemotherapy 5 fu based regimen ecf eof eox <regimen> <regimen> with the efficacy evaluation of non pd
+attend their infant s up to 1 month old primary care visit at a <regimen> primary care network site
+grade 2 according to nci common terminology criteria for adverse events version 4 0 ctcae v 4 0 known history of human immunodeficiency virus hiv infection known history of chronic hepatitis b or c patients with seizure disorder requiring medication symptomatic metastatic brain or meningeal tumors unless the patient is 6 months from definitive therapy has a negative imaging study within 4 weeks of <regimen> initiation and is clinically stable with respect to the tumor at the time of study entry
+inclusion criteria patients enrolled in the big 1 trial at diagnosis patients achieving first cr crp cri after induction or salvage therapy within 15 days before r4 vos favorable or intermediate risk aml patients as stratified with big 1 prognostic classification patients randomized to r2 <regimen> arm intermediate dose cytarabine 5
+prior systemic therapy in the metastatic setting is allowed for as long as the therapy contained bbi608 in combination with either gemcitabine and nab paclitaxel or <regimen> toxicities
+systemic therapy with sorafenib or other systemic chemotherapeutic agent s less than 1 week prior to first planned <regimen>
+patients who had received at least two cycles of rituximab <regimen> or <regimen> as a primary treatment patients with a history of previous exposure to hbv
+known dihydropyrimidine dehydrogenase dpd deficiency major surgical procedure open biopsy or significant traumatic injury within 28 days before start of day 1 of treatment with <regimen>
+patients with histological diagnosis of persistent recurrent cervical cancer local and or systemic with disease measurable by physical examination and <regimen> required confirmation by biopsy of the recurrence or persistence only if lesion is single less than 2 cm and or has no sharp edges
+indication of treatment according to the <regimen>
+candidate for systemic therapy with <regimen> <regimen> plus bevacizumab
+patients with all and cml ineligible for <regimen> conditioning
+5 x upper limit of normal 3 x uln for <regimen> creatinine within normal institutional limits or creatinine clearance
+patients who come to <regimen> for a clinically indicated mri
+exclusion criteria patients with contraindication to use <regimen> chemotherapy and pelvic radiation
+<regimen> docetaxel adriamycin cyclophosphamide
+prior treatment with dacarbazine <regimen> or temozolomide tmz
+for those patients who have had <regimen> last dose must be greater than 90 days prior to beginning study treatment
+intent to treat the patient with a leucovorin calcium fluorouracil and oxaliplatin <regimen> chemotherapy regimen containing fluorouracil 5 fu leucovorin and oxaliplatin according to clinical standard practice the intent should be to dose oxaliplatin at 85 mg m 2 on an every 2 week basis
+negative serum human chorionic gonadotropin hcg pregnancy test within 72 hours of day 1 of treatment with <regimen> in women of child bearing potential
+all subjects unsuitable for chemoimmunotherapy with <regimen> in the opinion of the investigator
+8 cycles of <regimen> like chemotherapy as 1st line induction treatment
+treatment failure of <regimen> cohort a or rituximab plus any concurrent or sequentially administered chemotherapy regimen cohort b for treatment of ptld
+mm only prior treatment with dna damaging agents or cytotoxic chemotherapy including carboplatin cisplatin fotemustine paclitaxel vincristine tmz and <regimen>
+this can be assessed before inclusion for example a test trial with similar size solid tablet such as tic <regimen>
+inclusion criteria age 18 65 relapsed refractory disease after receiving one line of standard chemoimmunotherapy r <regimen> ga <regimen> r <regimen> like diffuse large b cell lymphoma at relapse
+pregnant or breastfeeding female primary ocular melanoma primary mucosal melanoma use of any investigational or other anti cancer drug within 28 days or 5 half lives whichever is longer preceding the first dose of <regimen> and l19 il2 prior radiation to a target lesion unless there has been clear progression of the lesion since radiotherapy 6
+at least 10 of the cells obtained from lymph node or extranodal sites must react with anti cluster of differentiation 25 cd25 anti <regimen> on immunofluorescent or immunoperoxidase staining
+either <regimen> or <regimen> is allowed
+exclusion criteria patients who had received chemotherapy other than r <regimen> or <regimen> after diagnosis 2
+will receive neoadjuvant treatment using <regimen> or chemoradiotherapy
+cd20 positive diffuse large b cell lymphoma undergoing treatment with systemic rituximab in combination with <regimen> <regimen> or epoch and deemed high risk of cns relapse and eligible for central nervous system prophylaxis with intrathecal therapy
+any contraindication for application of <regimen> or high dose
+histologically confirmed new diagnosis of ptcl eligible for <regimen> regimen measurable disease based on cheson 2007 criteria eastern cooperative oncology group ecog performance status
+any co morbid disease or condition or event that in the investigator s judgment would place the patient at undue risk that would preclude the safe use of <regimen>
+prior regimens may include <regimen> bevacizumab <regimen> bevacizumab or cetuximab if kras wild type or panitumumab if kras wilt type other prior regimens may include 5 fu or capecitabine bevacizumab irinotecan cetuximab or panitumumab <regimen> ziv aflibercept or ramucirumab
+of 0 or 1 life expectancy of 6 months after enrollment patients who have given written consent to take part in the study after detailed explanation of the study prior to enrollment inclusion criteria for randomization patients who have received 6 cycles of <regimen> panitumumab combination therapy patients who are assessed at ecog p s of 0 1 in the 6th cycle
+histological confirmation of relapsed refractory diffuse large b cell lymphoma after prior rituximab and anthracycline containing systemic treatment regimen such as r <regimen> rituximab cyclophosphamide doxorubicin vincristine and prednisone <regimen> rituximab etoposide phosphate prednisone vincristine sulfate cyclophosphamide doxorubicin hydrochloride r <regimen> rituximab cyclophosphamide vincristine sulfate doxorubicin hydrochloride dexamethasone etc
+women of childbearing potential must have a pregnancy test performed a maximum of 7 days before start of <regimen> treatment and a negative result must be documented before start of treatment
+hiv positive patients on combination antiretroviral therapy are ineligible because of the potential for pharmacokinetic interactions with <regimen> in
+x uln arm single agent idelalisib and arm idelalisib <regimen> aspartate transaminase ast sgot alanine transaminase alt sgpt
+contraceptive use must be continued until at least 30 days after the last administration of adi peg 20 and at least 90 days after the last administration of <regimen> for
+planned to start docetaxel component of fec d or ac d or first cycle of dose dense ac t tc fec d or <regimen> chemotherapy
+eligible are the cancers for which gemcitabine has been approved in 4 week schedule 1 000mg m2 weekly for 3weeks followed by 1 week rest at the 4th week including non small cell lung cancer pancreatic cancer biliary cancer and urothelial cancer to which <regimen> is considered to be appropriate
+patients on trastuzumab should continue <regimen> per standard of care the dosing and schedule of trastuzumab should follow standard guidelines as described below trastuzumab 2mg kg iv weekly or trastuzumab 6mg kg iv
+female patients who are pregnant or breastfeeding or male or female patients of reproductive potential who are not willing to employ effective birth control from screening to 180 days after the last dose of durvalumab tremelimumab combination therapy or 90 days after the last dose of <regimen> whichever is the longer time period
+previously treated with chemotherapy regimen containing rituximab r <regimen> or r <regimen>
+non response to the maximum tolerated dose of <regimen> for at least 3 months
+prior enrollment on the clinical trial of <regimen> versus promace <regimen> 81 c 0166 or short course <regimen> 87 c 0180 for the treatment of previously untreated aggressive lymphomas
+initiation of a first line of chemotherapy by <regimen> or gemcitabine or in combination with nab paclitaxel
+for patients with rhgg the patient intends to undergo treatment with the <regimen> at the time of planned resection ie on study surgery or has received the <regimen> 30 days from the date of planned resection
+<regimen> <regimen> rgcvp high grade transformation from low grade lymphoma egfollicular lymphoma lymphoplasmacytic lymphoma chronic lymphocytic leukaemia is permitted
+planned for first line systemic therapy with <regimen> or gp either in routine care or in combination with an investigational agent s within a clinical trial
+presence of abnormal or clinically significant cardiac disease such as acute myocardial infarction or unstable angina within 6 months prior to initiation of treatment with lr <regimen> grade iii or iv heart failure uncontrolled hypertension or history of poor compliance with antihypertensive treatment uncontrolled treated arrhythmias except with the exception of extra systoles or minor conduction abnormalities
+20 000 ul hydroxyurea can be overlapped with 5 azacytidine in selected cases after consultation with the study chair hydroxyurea must be discontinued before the initiation of the <regimen> mitoxantrone chemotherapy
+for patients who are enrolled into the arm of <regimen> plus bevacizumab they must have metastatic colorectal cancer with predominant hepatic metastases
+<regimen> 10
+stable metastatic pancreatic cancer after 8 12 doses of <regimen> 3
+patient is 60 years of age or older at time of randomization histologically confirmed ann arbor stage ii iii or iv dlbcl or fcl grade 3b according to the real who classification from initial diagnosis made prior to starting r <regimen> therapy results from a pre r <regimen> marrow shall be available for review
+in phase 1b patients with a history of poor <regimen> tolerability as manifested by inability to tolerate standard therapeutic doses ie at minimum patients must have tolerated an oxaliplatin dose of 85 mg m2 and a 5fu dose of 2400 mg m2
+inclusion criteria patients with a diagnosis of all ll or burkitt s receiving induction chemotherapy with <regimen> any variant of <regimen> or augmented bfm at md anderson cancer center
+previous treatment up to one cycle of standard pretreatment with cop <regimen> or steroids permitted and latter mandatory to decrease tumor burden and or improve performance status
+50 by multiple gated acquisition scan muga or cardiac echocardiogram echo prior for any patient to be treated with r <regimen>
+<regimen> with sd duration
+previously untreated hodgkin s disease patients who are scheduled to receive standard <regimen> chemo
+history of hypersensitivity reaction to temozolomide or a history of hypersensitivity to <regimen> or hydrogel
+treatment with r <regimen> or r <regimen> like regimens transplant
+patients who discontinue prior ipilimumab nivolumab or <regimen> for toxicity are excluded
+operative chemotherapy combining methotrexate etoposide ifosfamide <regimen> regimen for patients 25 years doxorubicin cisplatin ifosfamide api ai regimen for patients
+subjects receiving chemotherapy with concurrent anthracycline and taxane at or <regimen>
+4 to 8 cycles r <regimen> like total of 8x rituximab
+the patients are defined as locally advanced pancreatic cancer according to nccn guideline the patients prescribed <regimen> based neoadjuvant therapy
+history of anaphylaxis or known intolerance to atropine sulphate or loperamide or appropriate antiemetics to be administered in conjunction with <regimen>
+patients will need to fulfill the same inclusion criteria for the clinical trial according to section 2 4 1 plus the following receive <regimen> mtx as the sole gvhd prophylaxis approach receive the same regimens as specified in table 2 5 year of transplant from 2010 to 2013 exclusion criteria for the controls karnofsky performance score 70 data for all eligible patients will be used to constitute the control database for this study
+patients who have received 1 prior treatment with il13 pe38qqr or 2 <regimen> or 3 any intracerebral investigational agent
+contraindication to any of the individual components of <regimen> including prior receipt of anthracyclines
+patients may enroll anytime within the first 2 cycles of <regimen> or after pet 2
+<regimen> bone marrow transplant
+previously untreated all burkitt s lymphoma or lymphoblastic leukemia receiving induction chemotherapy with <regimen> or variants of the <regimen> regimen
+patient for whom a decision of treatment with <regimen> has been taken in the frame of its marketing authorization
+hodgkin s disease patients who relapse after radiation therapy alone or in combination with novantrone oncovin velban and prednisone novp and previously untreated patients with stage iii and iv who are eligible for standard <regimen> therapy
+patients whose therapy was switched to r <regimen> after initial treatment with r <regimen> because of aggressive disease will also be eligible for the study
+allogeneic hematopoietic stem cell transplantation allo hsct eligible meeting institutional criteria participants planned medical care should include acute graft versus host disease agvhd prophylaxis with a combination of calcineurin inhibitor cni cyclosporine cys or tacrolimus <regimen> and methotrexate mtx or cni and mycophenolate mofetil mmf with the exception of antithymocyte globulin atg antithymocyte globulin fresenius atg f or thymoglobulin all other therapies approved or investigational for graft versus host disease gvhd prophylaxis are excluded
+no prior chemotherapy for brain tumor except polifeprosan 20 with carmustine implant <regimen>
+unstable angina angina symptoms at rest new onset angina begun within the last 3 months myocardial infarction less than 6 months before start of day 1 of <regimen>
+histologically diagnosed non hodgkin s lymphoma patients treated by <regimen> regimen or r rituximab <regimen> regimen at 215 days interval
+whichever is shortest other locoregional therapy eg radiofrequency ablation rfa tace transarterial chemoembolization tare transarterial radioembolization <regimen> drug eluting bead transarterial chemoembolization
+adult age 18 and older who has decision making authority for <regimen> patient who has been referred to the pediatric advanced care team pact for palliative care services and with a child ren age 6 11 years who is a sibling of the patient
+patients in remission following <regimen> induction therapy who are receiving consolidation treatment
+<regimen> chemotherapy
+ac doxorubicin and vinorelbine or <regimen> in the presence of 1 patient risk factor 65 yrs extensive bone marrow involvement or prior extensive radiotherapy on bone tissue
+intended initial treatment to include 2 cycles of r <regimen> <regimen> or r <regimen> using standard doses and schedule
+<regimen> r
+incapable to fulfill <regimen>
+patients who have a treatment plan based on <regimen> anti egfr or <regimen> anti egfr as first line treatment of mcrc
+for patients enrolling onto arm b <regimen> or arm c <regimen> known hypersensitivity to 5 fluorouracil leucovorin known dihydropyrimidine dehydrogenase dpd deficiency known hypersensitivity to oxaliplatin or other platinum containing compounds known hypersensitivity to irinotecan uncontrolled seizure disorder active neurological disease or known cns disease
+failure of at least one prior chemotherapy regimen of <regimen> and or temozolomide with without interleukin 2 il 2
+received one prior line of chemotherapy for metastatic pancreatic ductal adenocarcinoma arm idelalisib <regimen> only
+all stages of <regimen> expressing t cell leukemia and lymphoma eligible except stage
+disease progression during or following treatment with at least one platinum containing regimen eg gemcitabine and cisplatin gc methotrexate vinblastine doxorubicin and cisplatin <regimen> carbogem etc
+adriamycin bleomycin vinblastine and dacarbazine baseline <regimen> bleomycin etoposide adriamycin cyclophosphamide oncovin procarbazine and prednisone or escalated <regimen> or other induction regimens
+cytologically confirmed measurable and or evaluable advanced stage iii iv colorectal cancer that can be accurately assessed by ct mri scan recist v1 1 for which regimen of <regimen> bevacizumab cetuximab is arranged by the investigator subjects may be treatment nave or may have received therapy for colorectal cancer 4
+scheduled for treatment with first line chemotherapy either <regimen> b <regimen> b or capecitabine b
+medical oncologist agrees that two week window is appropriate safe prior to start of <regimen> for trial candidate
+all <regimen> primary care
+<regimen> homogenous strongly expressing peripheral blood mononuclear cells pbmc in the peripheral blood will be deemed to have measurable disease
+has at least two planned consecutive 21 day cycles with 75 mg m2 <regimen>
+because patients with immune deficiency are at increased risk of lethal infections when treated with marrow suppressive therapy hiv positive patients receiving combination anti retroviral therapy are excluded from the study because of possible pharmacokinetic interactions with <regimen> appropriate
+patients who have received prior chemotherapy other than first line <regimen> patients
+must have progressed on or after <regimen> in the randomized phase 2 portion of the study or progressed or experienced unacceptable toxicity on sorafenib prior to enrollment on the study
+cohort 3 subjects must be receiving <regimen> for at least 6 months prior to administration of the first vaccine dose
+<regimen> low grade
+renal transplant recipients that will receive <regimen> as part of their immunosuppressive therapy
+the patient must meet one of the following criteria age 65 considered by the investigator to be ineligible for front line <regimen> combination chemotherapy due to reasons of
+treatment with corticosteroids csa or <regimen>
+cyclophosphamide doxorubicin hydrochloride vincristine and prednisone <regimen> and cyclophosphamide vincristine and prednisone cvp or <regimen> with rituximab <regimen> r and cvp with rituximab <regimen> is considered
+previous treatment with <regimen> or tmz
+have been used <regimen> as an adjuvant therapy
+sensitivity to temozolomide nitrosoureas or <regimen>
+lymphoma patients receiving ice ifosfamide carboplatin etoposide <regimen> dose adjusted rituximab etoposide prednisone vincristine cyclophosphamide doxorubicin and other inpatient lymphoma regimens
+prior therapy with 5 azacytidine or decitabine or <regimen> or mitoxantrone would be allowed in patients with relapsed refractory disease unless the prior therapy was identical to the schema schedule proposed in this study
+patients with a pathological or clinical diagnosis of pancreatic cancer and beginning or continuing <regimen> chemotherapy
+adjuvant chemotherapy with <regimen> or <regimen> for more than four months 5 15 days prior recruit meet the following criteria
+treatment naive except for prior radiation or a single cycle of <regimen>
+non resectable metastatic melanoma of low burden disease and normal ldh who have undergone at least two treatment lines including chemotherapy <regimen> temodal taxanes platinum compounds anti ctla 4 ipilimumab and b raf inhibitor if harboring the v600e braf mutation in their tumor
+contraindication to any of the individual components of chemotherapy as per local prescribing information of the selected chemotherapy combination fc <regimen> or bendamustine
+known hypersensitivity to <regimen>
+previous receipt of any anthracycline contraindication to any of the individual components of <regimen> cyclophosphamide vincristine doxorubicin and prednisone
+anti cancer chemotherapy or biologic therapy within the lesser of i 21 days or ii the usual cycle length of the regimen eg14 days for <regimen> prior to the first planned dose of bbi608 placebo
+suitable for and expected to benefit from <regimen>
+up to 5 of the 15 patients will be allowed to have had other approved or investigational drugs after prior progression of <regimen>
+the <regimen> chemotherapy should consist of standard doses of each agent although dose reduction is permitted
+since the objective of the study is the assessment of safety eligible subjects may have any type of lymphoma hodgkin s or non hodgkin s t cell or b cell as long as the scheduled therapy is <regimen> alone
+histologically proven advanced stage carcinoma where de gramont <regimen> or <regimen> 6 regimen is indicated
+failed at least 1 regimen containing rituximab and <regimen> cyclophosphamide doxorubicin vincristine and prednisone unless anthracyclines are contraindicated in addition to another salvage regimen unless it is determined by the treating physician that it is to the patient s best interest to receive valproic acid after the first relapse
+the following exclusion criteria are relevant for patients who will be treated with rgx 202 01 plus <regimen> per protocol on both dose escalation and dose expansion cohorts the patient has known dihydropyrimidine dehydrogenase dpd deficiency or is on treatment with dpd inhibitors including sorivudine or its chemically related analogues such as brivudine within 4 weeks prior to the start of <regimen> treatment
+concurrent investigational corticosteroid therapy or any other anti cancer treatments such as chemotherapy radiation biologic or investigational therapies while receiving protocol therapy other than one cycle <regimen> r allowed based on current diagnosis clinical condition and availability feasibility of initiating genasense other than chronic steroid use for another indication for stage i ii or as clinically indicated involved field irradiation as per standard practice is accepted
+have a history of hypersensitivity reaction or intolerance to temozolomide or dacarbazine <regimen>
+treatment with experimental drugs in combination with <regimen>
+exclusion criteria investigator predicted life expectancy of less than two months investigator predicted inability to tolerate <regimen> treatment adverse effects for less than two months prior anthracycline treatment with a cumulative dose exceeding 450 mg m2 calculated based on doxorubicin equivalents
+male or female subjects age 18 to 80 years inclusive with any international prognostic index score treated with 6 or more cycles of first line <regimen> chemotherapy and achieved a pr cru or cr
+patients who have received chemotherapy for pancreatic cancer other than up to 4 cycles of <regimen>
+in the setting of metastatic disease requiring local palliation only radiosensitizing doses of 5 fu or <regimen> are permitted
+if younger than 40 there must be comorbidities which preclude the patient to undergo <regimen> conditioning regimen
+patients will be enrolled on this trial after resection of hepatic metastases combined with <regimen> or <regimen>
+patients who progressed despite prior therapy with <regimen> 5fu and oxaliplatin plus bevacizumab or <regimen> capecitabine and oxaliplatin plus bevacizumab
+written informed consent histologically or cytologically confirmed adenocarcinoma of the pancreas metastatic or locally advanced disease that is considered unresectable measurable assessable disease according to recist v 1 1 documented disease progression on first line <regimen> negative pregnancy test
+patients must have a mri consistent with a who grade iv primary malignant glioma glioblastoma multiforme or gliosarcoma and be candidates for surgical resection with <regimen> placement
+patients must have received at least one prior standard cytotoxic regimen such as <regimen> or epoch or b
+willing to undergo ugt1a1 genotyping negative pregnancy test urine or serum within 7 day prior to day 1 of <regimen> in women of childbearing potential women of childbearing potential and male subjects must agree to use adequate contraception for the duration of study participation
+primary care pediatric practices within the <regimen> care network
+as long as the treatment is erlotinib or <regimen> patients can receive multiple regimens of either or both treatments but one of the regimens should be for at least 12 weeks
+<regimen> within 14 days prior to starting combination therapy is allowed for crossover subjects in cohort a
+cross over to <regimen>
+scheduled to receive 6 cycles of standard r <regimen> rituximab cyclophosphamide doxorubicin vincristine prednisone chemotherapy as first line treatment inclusion criteria for patients in remission following chemotherapy
+subjects enrolled on the combination therapy phase must not meet the above exclusion criteria and must be eligible to receive docetaxel or <regimen> cetuximab or erlotinib per most current prescribing information or at the discretion of the investigator
+known hypersensitivity to any of the study drugs study drug classes excipients in the formulation or to dacarbazine <regimen>
+prior cytotoxic chemotherapy for metastatic disease except prior gemcitabine or <regimen> 5fu leucovorin irinotecan oxaliplatin
+received 6 cycles 3 months 12 weeks of first line therapy with <regimen> or <regimen> plus bevacizumab for metastatic crc patients
+treated by rituximab <regimen> or rituximab mini <regimen>
+subjects previously treated with <regimen> or tmz
+cetuximab based chemotherapy monotherapy combination therapy with cytotoxic chemotherapy such as <regimen> <regimen> irinotecan <regimen> <regimen> first line second line or third line are all eligible
+vincristine <regimen> chemotherapy
+cyclophosphamide hydroxydaunomycin oncovin and prednisone <regimen> regimen or taxanes based regimen
+treatment plan to receive standard <regimen>
+patients must have received a front line standard anthracycline containing regimen such as <regimen> <regimen> or <regimen>
+cohort 2 subjects must be receiving <regimen> for at least 6 months prior to administration of the first vaccine dose
+prior radiation prior biological therapy or prior chemotherapy other than first line <regimen>
+hodgkin s disease patients who relapse after radiation therapy alone and previously untreated patients with stage ii bulky iii and iv who are eligible for <regimen>
+or patients who develop metastatic disease within 9 months of adjuvant <regimen> for stage ii or iii colon cancer measurable disease defined as at least 1 unidimensionally measurable lesion on a ct scan as defined by recist 1 1
+patient has a known hypersensitivity to prograf <regimen> hco 60 cellcept mmf zenapax or corticosteroids
+colorectal cancer receiving a <regimen> regimen
+the previous treatment must have included <regimen> alone or in combination
+contra indication to any drug included in the <regimen> regimen
+pancreatic adenocarcinoma for which treatment with folfox6 <regimen> <regimen> or irinotecan would be acceptable as determined by the investigator
+prior treatment with <regimen> temozolomide or other chemotherapeutic regimens
+received <regimen> chemotherapy and got cr before radiotherapy
+receiving adjuvant chemotherapy with <regimen> 5 fu leucovorin oxaliplatin regimen
+be previously chemotherapy treated all patients may have received up to two prior lines of chemotherapy excludes systemic therapy for recurrent advanced disease as long as one of those regimens was platinum based it is anticipated that patients would have been previously treated with <regimen> or gc or variations of these standard frontline regimens
+<regimen> mtx
+patients with de novo aggressive b cell lymphoma must have relapsed or progressed or have biopsy proven refractory disease after 1 prior line of therapy r <regimen> chemotherapy or equivalent patients with histological transformation from low grade lymphoma may have had up to 3 prior treatment regimens
+chemotherapy with the <regimen> 4 regimen the current standard treatment it can be modified in the future in the two groups
+patients undergo postoperative adjuvant treatments except chemotherapy of <regimen>
+currently prescribed one of the following adjuvant chemotherapy regimens iv 5 fluorouracil 5 fu leucovorin lv capecitabine <regimen> 5 fu lv oxaliplatin <regimen> capecitabine and oxaliplatin
+68 69 r <regimen> chemoimmunotherapy may be given every 14 days or every 21 days
+previous adjuvant <regimen> based chemotherapy is allowed
+patient with a diagnosis of hcc is receiving <regimen>
+those patients who enroll just after completing bevacizumab plus <regimen> or <regimen>
+first line chemotherapy regimen with a fluoropyrimidine and irinotecan <regimen> cetuximab with initial partial or complete response and progressive disease pd with pd 6 weeks after the last administration of cetuximab
+known hypersensitivity reactions to temozolomide nitrosoureas or any components of the <regimen>
+bevacizumab or <regimen>
+the patient will have to have received at least one cycle of bevacizumab in combination with <regimen> bevacizumab as part of the first line treatment
+documented refractoriness to an <regimen> regimen
+subject meets the criteria per investigator s institution to receive soc r chemotherapy ie r <regimen>
+are itraconazole and fluconazole for treatment or prevention of fungal infection hydrocortisone and dexamethasone for treatment of nausea vomiting fluid retention and methylprednisolone as a part of the <regimen> regimen
+intent to proceed with <regimen> consolidation for lam vaf 2 5
+histologically confirmed diffuse large b cell lymphoma treated with r <regimen> rituximab cyclophosphamide adriamycin vincristine prednisolone chemotherapy 2
+eligible to a treatment by immunochemotherapy like r <regimen> r <regimen> or r <regimen> like
+however this study may be used as 2nd line treatment of patients who progressed on or were intolerant of 1st line <regimen> prior
+not amenable to curative surgical therapy for whom <regimen> can be considered a standard treatment
+subjects may receive steroids as prophylactic anti emetics per the <regimen> or gemcitabine nab paclitaxel regimen
+histological or cytological documentation of adenocarcinoma of the colon or rectum and patient scheduled to begin <regimen> for treatment of their metastatic disease patients taking statins at the time of enrollment are permitted
+academic primary care pediatric practices within the <regimen> care network
+treatment with <regimen> x 4 early stage
+prior anti lymphoma chemotherapy except steroids radiotherapy for urgent palliation one prior cycle of <regimen> or up to 2 prior cycles of <regimen>
+participants must have histologically documented diagnosis of nhl and exhausted options considered standard of care as defined in the world health organization classification scheme and relapsed following or be refractory to standard treatments such as r <regimen> <regimen> or fludarabine based regimens
+subject intends to undergo treatment with the <regimen> at the time of this surgery
+prior systemic or intravitreal <regimen> drug
+hypersensitivity to dacarbazine <regimen>
+exclusion criteria types of multiple myeloma previously shown to be irresponsive to <regimen> during the last 6 months plasma cell leukemia subject with positive hepatitis panel including hepatitis b surface antigen hbsag and or anti hepatitis b core antibodies and or hepatitis c virus antibody anti hcv and or a positive hiv antibody screen severe abnormal organ function function or laboratory results at the time of the screening visit
+cyclophosphamide and doxorubicin ac taxotere doxorubicin and cyclophosphamide <regimen> taxotere and cyclophosphamide tc or taxotere carboplatin and trastuzamab tch prior to registration
+inclusion criteria women with diagnosis of breast cancer undergoing adjuvant neoadjuvant chemotherapy with either fec fac <regimen> or ec docetaxel combinations 3 18 years of age performance status 0 2 ability to provide written informed consent
+patients receiving prograf stable and stable <regimen> trough concentrations between 5 10ng ml non interrupted oral dose for at least 10 days steady state conditions
+<regimen> homogeneous strongly expressing peripheral blood mononuclear cell pbmc in the peripheral blood will be deemed to have measurable disease
+<regimen>
+<regimen> br requiring further treatment
+100 000 mm 3 platelets 75 000 required for patients who received cycle 1 of <regimen> prior to registration
+patients foreseen for chemotherapy with <regimen> in second or further line treatment
+1 500 microliter mcl tki258 <regimen> phase 1 protocol version 3 3
+histologically confirmed adult t cell leukemia lymphoma atl or cutaneous t cell lymphoma ctcl reactivity of at least 10 of peripheral blood lymph node or dermal malignant cells with anti <regimen> as determined by immunofluorescent staining or soluble il 2 receptor level greater than 1 500 u required
+treatment with <regimen> or cetuximab within 12 months
+untreated for metastatic colorectal cancer or progression on any first line 5 fu containing regimen such as <regimen> or <regimen>
+females of childbearing potential who are sexually active with a non sterilized male partner and non sterilized male subjects who are sexually active with a female partner of childbearing potential must be willing to use 2 methods of effective contraception from time of screening through 180 days after receipt of the final dose of durvalumab tremelimumab combination therapy or 90 days after receipt of the final dose of <regimen> whichever is the longer time period
+a when adjuvant therapy including oxaliplatin was previously used at least 9 courses of <regimen> 2 weeks regimens 6 courses of <regimen> 3 week regimen or 750mg m 2 cumulative consumption of oxaliplatin are required
+acute lymphoid leukemia patients receiving <regimen> r cyclophosphamide vincristine doxorubicin dexamethasone methotrexate cytarabine rituximab
+first line in combination with <regimen> folinic acid leucovorin fluorouracil 5fu oxaliplatin or second line in combination with <regimen> folinic acid leucovorin 5fu irinotecan in subjects who have received first line fluoropyrimidine based chemotherapy excluding irinotecan for treatment of wild type ras mcrc per approved prescribing information
+first <regimen> course started before december 31st 2007
+progression following at least twelve weeks of treatment with single agent erlotinib or in combination with other experimental agents during which time the patients experienced a clinical benefit as assessed by his her treating physician and corroborated by radiographic assessment at least one ct scan following at least 4 weeks of <regimen> demonstrating stable disease or response on erlotinib therapy
+other types of lymphomas egb cell lymphoma contraindication to any drug contained in the three chemotherapy regimens r <regimen> r fc r dha tested positive for hiv active hepatitis b
+these patients would be enrolled in a high dose protocol using carmustine etoposide cytarabine and cytoxan <regimen> with autologous hematopoietic rescue
+failure requiring hemo or peritoneal dialysis dehydration according to nci ctc v 4 0 grade 1 substance abuse medical psychological or social conditions that may interfere with the patient s participation in the study or evaluation of the study results known hypersensitivity to any of the study drugs study drug classes or excipients in the formulation interstitial lung disease with ongoing signs and symptoms at the time of informed consent inability to swallow oral medications any malabsorption condition unresolved toxicity higher than ctcae v 4 0 grade 1 attributed to any prior therapy procedure excluding alopecia and oxaliplatin induced neurotoxicity which must be grade 2 patients unable or unwilling to discontinue and substitute if necessary use of prohibited drugs for at least 30 days prior to day 1 of <regimen> initiation see appendix b for list of prohibited drugs
+subjects with recurrent locally advanced unresectable or metastatic adenocarcinoma of the pancreas who have progressed after primary therapy with <regimen> or <regimen> like regimen or were intolerant of it
+patients on consolidation chemo regimens like <regimen> and <regimen> type b with expected duration of neutropenia anc 500 ml of at least 10 days
+<regimen> they should have received 8 cycles
+the maximum tolerated dose mtd for <regimen> in patients with hepatocellular cancer was found to be 600 mg daily
+t cell histiocyte rich dlbcl subject is considered an appropriate candidate per investigator assessment for induction therapy with 6 cycles of r <regimen> 21 immunochemotherapy
+b cell non hodgkins lymphoma nhl planned to receive at least 2 cycles of <regimen> 14 <regimen> 14 <regimen> di 14 <regimen> or <regimen> 21
+the patient must be enrolled within 56 days of the first day of the last cycle of <regimen> chemotherapy and within 35 days following response evaluation after <regimen> chemotherapy
+<regimen> fr pcr fludarabine or alemtuzumab based regimen or bendamustine based regimen prior to study enrollment
+live vaccine within 30 days prior to the first dose of <regimen> treatment or during study treatment
+at a minimum such therapies should include regimens containing oxaliplatin and irinotecan in combination with a fluoropyrimidine eg <regimen> and <regimen> or their variants
+leucovorin fluorouracil and oxaliplatin <regimen>
+patients should receive at least 4 cycles of r <regimen> chemotherapy
+contraindication to any component of <regimen> regimen
+age greater than or equal to 18 years newly diagnosed all or ll receiving chemotherapy with augmented bfm <regimen> or any variant of <regimen>
+patient administering <regimen> 6 folinic acid 400 mg m2 1 day oxaliplatin 85 mg m2 1 day 5 fluorouracil 400 mg m2 bolus 2400 mg m2 continuous infusion 48 hours
+patients previously treated with continuous infusion 5 fu or any schedule of <regimen> which are similar to capecitabine and temozolomide respectively will be excluded
+first relapse from a complete response or complete response unconfirmed after a front line chemotherapy regimen eg <regimen> like regimen
+pre phase therapy with prednisolone and or vincristine for one week duration prior to commencement of cycle 1 of r <regimen> is permissible
+expected to receive <regimen> as adjuvant chemotherapy 4
+exclusion criteria reduced intensity conditioning regimen for both <regimen> <regimen> regimens
+ras wild type metastatic colorectal cancer patients candidate to receive <regimen> or <regimen> plus panitumumab or <regimen> or <regimen> plus cetuximab as upfront treatment as per clinical practice
+patients who are in the opinion of their treating oncologist unable to undergo r <regimen> chemotherapy
+with deletion of chromosome 7 or short arm of chromosome 5 preparative <regimen> or 2
+14 or 21 or r <regimen> or r <regimen> of 6 cycles
+alcl alk with ipi score less than 2 at initial diagnosis and cr after <regimen> based therapy
+scheduled for oxaliplatin treatment in <regimen> based chemotherapy regimen
+inclusion criteria male and female patients age 0 to 18 years old spinal surgery at <regimen> between 4 1 07 and 3 31 08 complete compurecord anesthesia documentation use of propofol and remifentanil infusions as primary anesthetic technique
+treatment with another chemotherapy than r <regimen> or <regimen> r
+one two courses of r <regimen> combination as upfront therapy are admitted in patients with large amount
+inclusion criteria 1 18 age 65 relapsed refractory disease after receiving one line of standard r <regimen> like chemotherapy diffuse large b cell lymphoma at relapse
+no prior chemotherapy for the brain tumor except polifeprosan 20 with carmustine implant <regimen>
+inclusion criteria diagnosed as primary hcc primary icc or secondary liver cancer confirmed by pathological findings clinical features or radiographic examinations according to american association for the study of the liver diseases aasld guidelines age above 18 years about to receive <regimen> treatment with callispheres according to clinical needs and patients willing
+for lapc or mpc <regimen> gemcitabine or gemcitabine nab paclitaxel
+be designated to receive cytotoxic chemotherapy including one or more of the following agents r <regimen> <regimen> liposomal doxorubicin caelyx or liposomal daunorubicin daunoxome or paclitaxel
+until the initiation of round 2 <regimen> exceptions
+prior neoadjuvant <regimen>
+previously treated with a fludarabine plus alemtuzumab <regimen> regimen for b cll
+women of child bearing potential and men must agree to use adequate contraception hormonal or barrier method of birth control abstinence prior to study entry and for the duration of study participation should a woman become pregnant or suspect she is pregnant while she or her partner is participating in this study she should inform her treating physician immediately men treated or enrolled on this protocol must also agree to use adequate contraception prior to the study for the duration of study participation and 4 months after completion of <regimen> or in combination with gsk2141795 administration
+subject has prior severe allergic reaction or intolerance to any component of <regimen>
+significant prior doxorubicin 240 mg m2 or anthracycline exposure that would preclude the safe administration of <regimen> chemotherapy as described in the protocol
+<regimen> irb 15 011732 and or <regimen> irb 17 013895
+received at least one combination chemotherapy regimen with rituximab such as r <regimen> r <regimen> or equivalent
+the mtd for <regimen> in patients with hepatocellular cancer was found to be 600 mg daily therefore enrollment for these patients will be limited to pazopanib dose levels at or below 600 mg
+no previous treatment with dacarbazine <regimen> or tmz containing regimens for the phase 2 cohort 4 mtnbc only histologically confirmed metastatic triple negative breast cancer
+scheduled to undergo elective surgery at <regimen> american society of anesthesiologists asa physical status
+patients with all stages of <regimen> expressing ctcl are eligible with the exception of stage ia
+failed flu cyclophosphamide cy rituximab <regimen> combination chemotherapy at any time point
+gross total resection partial resection gbm surgery placement of <regimen>
+male subjects must agree to use an adequate method of contraception starting with d1 of <regimen> through 120 days after the last dose of study therapy
+the target population is patients with metastatic colorectal adenocarcinoma who are sufficiently robust to undergo at least 3 cycles of oxaliplatin based chemotherapy <regimen> or <regimen>
+reactivation of latent infection has been reported with the use of bortezomib in this population along obviously with the well recognised reactivation following r <regimen> for these patient safety reasons these patients should be excluded
+subject has follicular lymphoma or marginal zone lymphoma that has progressed after at least 2 lines of treatment with combination chemoimmunotherapy egr bendamustine r <regimen>
+scheduled to receive r <regimen> chemotherapy
+prior anthracycline containing combination chemotherapy required prior salvage <regimen> chemotherapy required endocrine therapy
+fdg pet positivity after two cycles of <regimen> treatment 5
+<regimen> prograf or advagraf corticosteroids and either mmf cellcept ec mps myfortic aza imuran or srl rapamune at the baseline visit
+have disease that responds to <regimen>
+known hypersensitivity to any temozolomide component or to dacarbazine <regimen>
+the effects of tki258 and <regimen> on the developing human fetus are unknown
+peripheral neuropathy grade 1 histologic diagnosis different from hodgkin lymphoma first line treatment with <regimen> compressive symptoms caused by the presence of lymphoma patients treated previously with any anti cd30 antibody
+known hypersensitivity to srl or its derivatives macrolide antibiotics corticosteroids <regimen> or mmf
+the patient has gastric gastroesophageal junction biliary pancreatic small bowel or colorectal cancer and has previously received the <regimen> regimen at any point in the past with evidence of disease progression within 8 weeks
+pathologically confirmed pancreatic adenocarcinoma patients with locally advanced or distant metastasis status patients who had undergone primary chemotherapy with previous <regimen> and whose disease progress was confirmed patients whose consent was obtained non insurance agreement 2
+the effects of <regimen> on the developing human fetus are unknown
+exclusion criteria received chemotherapy within last 3 month prior to screening or expected to receive any chemotherapy other than <regimen> and or immunotherapy between screening and 30 days after last planned study drug administration any clinically significant findings on history or examination that in the opinion of the investigator would preclude administration of <regimen> chemotherapy in the full dose including abnormal liver function inadequate cardiac function or clinically significant cardiac disease neuropathy or other disease prior bone marrow or peripheral blood hematopoietic stem cell transplant
+paraffin block of the lesions available for immunohistochemical analysis candidate for <regimen> salvage therapy evidence of at least one lesion with a diameter of 1 5 cm age of over 20 years eastern cooperative oncology group performance status ecog less than or equal to 2
+for relapsed patients two lines of a standard chemotherapy bep or ep in first line treatment <regimen> or vip in second line treatment
+wocbp must be willing to abstain from heterosexual activity or to use at least 1 highly effective method of contraception from the time of informed consent until 180 days after durvalumab and tremelimumab combination therapy is stopped or 90 days after <regimen> treatment is discontinued whichever is longer
+platelet count 100 x 109 l unless due to splenomegaly bone marrow involvement with lymphoma or due to initiation of r <regimen> chemotherapy
+subjects must have received at least 3 cycles of <regimen> like or any anthracycline base chemotherapy or at least 2 full cycles of <regimen> like chemotherapy
+person who is confirmed as colorectal cancer through histological and image diagnosis and scheduled for adjuvant or palliative therapy with <regimen> 6 regimen
+recently completed r <regimen> therapy and achieved remission
+entry criteria specific for dose escalation phase part a subjects with cd20 positive histologically or cytologically confirmed diffuse large b cell lymphoma dlbcl including transformed low grade lymphoma who have relapsed or refractory disease following at least two prior standard treatment regimens eg r <regimen> or similar first lineregimen and at least one second line salvage regimen and or autologous stem cell transplant asct in chemotherapy sensitive patients with the following
+participants who have received prior neoadjuvant therapy and who now have metastatic disease must have received 1 of the following for their metastatic disease <regimen> nanoparticle albumin bound paclitaxel gemcitabine ts 1
+the patient is a candidate for <regimen>
+patients should be monitored for supratherapeutic toxic levels of sirolimus and plx3397 as bone marrow suppression including anemia neutropenia and thrombocytopenia have been reported in patients receiving <regimen> these adverse effects may be exacerbated in combination with plx3397 for which patients will be closely monitored
+patients who have failed initial salvage chemotx regimens including high dose tx chemotx with stem cell support pomb ace tx <regimen> or vip must have one or more of the following check all that apply
+history of anaphylaxis or known intolerance to atropine sulphate or loperamide or appropriate antiemetics to be administered in conjunction with <regimen> irinotecan 5 fluorouracil leucovorin
+prior treatment with <regimen> adjuvant
+major concurrent illness which could worsen following treatment with anti <regimen>
+all stages of <regimen> expressing adult t cell leukemia except smoldering are eligible patients with chronic lymphoma or acute acute t cell leukemia lymphoma atl are eligible
+mean qt interval corrected for heart rate using fridericia s formula qtcf 470 ms calculated from 3 ecgs within 15 minutes at 5 minutes apart for <regimen> and durvalumab tremelimumab combination studies this criterion can be removed
+the patient is enrolled in an interventional clinical trial in which treatment for cns tumor s is managed through a protocol that excludes <regimen> treatment
+patients receiving chemotherapy other than vac <regimen> and cddp doxorubicin
+to 2 0 x normal myeloablative <regimen> reduced intensity regimen 3
+patients with previously untreated diffuse large b cell lymphoma dlbcl who are scheduled to receive rituximab 375 mg m 2 plus <regimen> cyclophosphamide hydroxydaunorubicin also called doxorubicin or adriamycin oncovin vincristine prednisone or prednisolone chemotherapy or previously untreated follicular non hodgkin lymphoma nhl who are scheduled to receive rituximab 375 mg m 2 plus cvp cyclophosphamide vincristine prednisolone chemotherapy
+women of childbearing potential must have a pregnancy test performed a maximum of 7 days before start of atorvastatin and <regimen> treatment and a negative result must be documented before start of treatment with atorvastatin or <regimen> whichever is received first by patient
+inclusion criteria patients with a diagnosis of previously untreated aggressive non hodgkin s lymphoma including patients with mantle cell lymphoma who will be or are receiving treatment with r <regimen> and r ara c mtx patients
+or if their pet scan after 2 cycles of <regimen> is positive
+in the opinion of their treating oncology investigator are candidates for at least 4 cycles of chemotherapy with <regimen> docetaxel doxorubicin cyclophosphamide
+known allergic reactions against any component of <regimen> regimen
+for mcrc <regimen> <regimen> bevacizumab <regimen> <regimen> bevacizumab
+diagnosis of non hodgkin s lymphoma where therapy with <regimen> plus rituximab is considered
+<regimen> or 2 before surgery would be medically inappropriate tumor of the oropharynx tumor involvement of the following sites or any of these signs or symptoms likely to be associated with t4b
+other than <regimen> first line treatment preceding patient s inclusion
+patients who received 6 cycles of first line therapy with <regimen> or <regimen> plus bevacizumab for recurrent crc that has relapsed at least 12 months after completion of adjuvant therapy will also be included
+progressive disease after at least 1 standard chemotherapy or chemoimmunotherapy regimen eg dacarbazine or <regimen>
+known hypersensitivity to any component of tmz or decarbazine <regimen>
+verification of bone marrow status must be performed at the time of response evaluation following <regimen> chemotherapy and within 56 days of study enrollment
+failed <regimen> combination chemotherapy at any time point
+the subject is pregnant or breast feeding the subject intends to undergo treatment with the <regimen> at the time of this surgery or has received the <regimen> 30 days from w1d1 surgery
+in pr or cr after 1 2 other salvage chemotherapy regimens eg 3 courses of dexamethasone high dose cytarabine and cisplatin <regimen> 2 courses of cyclophosphamide mechlorethamine vincristine procarbazine and prednisone <regimen>
+absolute neutrophil count 1 5 x 109 l unless due to bone marrow involvement with lymphoma or due to initiation of r <regimen> chemotherapy
+documented advanced stage non hematologic malignancy for whom <regimen> is a reasonable treatment option
+all subjects must have a confirmed diagnosis of malignancy and receiving highly emetogenic chemotherapy first time vac <regimen> and cddp doxorubicin
+failed flu cy cyclophosphamide rituximab <regimen> combination chemotherapy at any time point or
+acyclovir interferon or any investigational drug that might have anti hsv activity eg 256u87 <regimen> bvdarau trifluridine patients with the following prior condition are excluded previous participation in the study
+patients that achieved a complete cr or partial response pr after 6th r <regimen> chemotherapy
+patients scheduled to receive the first line first cycle <regimen> 5 fu oxaliplatin leucovorin or <regimen> 5 fu irinotecan leucovorin
+have recurred or progressed within 6 months of the last cycle of <regimen>
+patients who have started <regimen> for more than 14 days before giving their informed consent
+patients with known hypersensitivity to any component of the chemotherapy <regimen>
+each patient or their legally acceptable representative must sign an informed consent form icf indicating that he or she understands the purpose of and procedures required for the study and are willing to participate in the study patients eligible for autologous stem cell transplantation asct for whom r <regimen> or <regimen> is an acceptable therapy regarding the investigator s opinion measurable disease defined by at least one single node or tumor lesion 1 5 cm patients who received prior therapy with at least one but no more than two lines therapies for b cell lymphoma except for patients included in group c during the expansion part of the study
+patients with advanced incurable solid malignancy who are likely to benefit from <regimen>
+known hypersensitive to <regimen>
+recovery from <regimen> toxicities
+hepatocellular carcinoma for which treatment with folfox6 or <regimen> would be acceptable as determined by the investigator
+patients who had failed first line treatment with either <regimen> capecitabine combined with oxaliplatin or <regimen> 5 fluorouracil leucovorin with oxaliplatin
+previously participated in another <regimen> driving simulator study
+all <regimen> primary care pediatric and ent sites are eligible for participation
+patient is currently receiving treatment with dabrafenib <regimen> or combination within a novartis or former gsk sponsored study which has fulfilled the requirements for the primary objective
+aged 18 or above diagnosed with aegc and were prescribed with either <regimen> based or <regimen> based chemotherapy treatment
+methotrexate mtx high dose cytarabine <regimen> cyclophosphamide vincristine doxorubicin and dexamethasone <regimen> bortezomib thalidomide dexamethasone and 4 day continuous infusions of cisplatin doxorubicin cyclophosphamide and etoposide <regimen>
+for patients who are her2 positive and will be treated on the trastuzumab <regimen> cohort left ventricular function 50
+any patient in whom the investigator considers <regimen> appropriate
+contraindications to <regimen>
+the patient must have completed at least 4 months of adjuvant chemotherapy ie <regimen> <regimen> or other such as 5 fluorouracil leucovorin oxaliplatin <regimen> 5 fluorouracil leucovorin 5fu lv capecitabine
+no selection will be made based on other medical problems or laboratory values except as they affect the patient s eligibility to receive standard r <regimen> chemotherapy as determined by the treating physician
+for this reason women of child bearing potential and men must agree to use adequate contraception hormonal or barrier method of birth control abstinence prior to study entry for the duration of study participation and 6 months after completion of durvalumab tremelimumab administration or 90 days after the last dose of <regimen> whichever is the longer time period
+previous intolerance to either mmf <regimen> scr 200umol l informed consent unavailable
+b exclusion from the additional population scheduled to receive any concomitant chemotherapeutic agent other than <regimen> or <regimen> agents
+treatment with <regimen> <regimen> and biotherapy anti egfr epidermal growth factor receptor erbitux planned patient already enrolled in an other clinical trial with another first line of chemotherapy
+first line treatment 6 cycles of r <regimen> 2x r or 6 cycles of <regimen> r 2xr
+primary refractory disease as defined by progression while receiving or within 6 months of completion of a chemoimmunotherapy regimen such as fludarabine cyclophosphamide and rituximab <regimen> or pentostatin cyclophosphamide and rituximab pcr
+prior treatment with <regimen> as first line treatment to which the patient is deemed resistant or intolerant
+patient must have a medical oncology consult and be recommended to receive one of the following regimens cyclophosphamide and doxorubicin ac taxotere doxorubicin and cyclophosphamide <regimen> taxotere and cyclophosphamide tc or taxotere carboplatin and trastuzumab tch prior to registration
+exception administration on short time of glucocorticoids 7 days one administration of vincristine or cyclophosphamide one cycle of <regimen> urgent administration of the another cytostatics
+female subject diagnosed with breast carcinoma and will receive docetaxel treatment according to standard hospital protocol <regimen> regimen or male subject diagnosed with metastatic castration resistant prostate carcinoma and will receive docetaxel treatment according to standard hospital protocol prodoc regimen
+subjects refractory to <regimen> as last therapy are permitted
+subject must have relapsed following or be refractory to standard treatments such as fludarabine based regimens f fc fr <regimen> or alkylator chlorambucil bendamustine based regimens
+subjects receiving <regimen> <regimen> cytoxan hydroxyrubicin adriamycin oncovin vincristine etoposide prednisone chemotherapy or
+fiau fiac foscarnet cmv hyperimmune globulin iv immune globulin cmv monoclonal antibody <regimen>
+patients already receiving treatment with <regimen>
+previous treatment with <regimen> or other chemotherapy regimen containing both cladribine and cytarabine
+known allergies to <regimen>
+melphalan 140 mg m2 or 200 mg m2 beam <regimen> <regimen> or cbv
+patients who are going to receive <regimen> or chase treatment regimen
+i12 female patients must either be of non reproductive potential ie postmenopausal 12 months with no menses without an alternative medical cause or history of hysterectomy or history of bilateral tubal ligation or history of bilateral oophorectomy or must have a negative serum pregnancy test upon study entry within 72 hours before study drug start i13 fertile men with a female partner of childbearing potential must agree to use male codom plus spermicide and childbearing potential women must have agreed to use at least one highly effective contraceptive method during treatment on this trial and for up to 180 days after the last of dose of durvalumab tremelimumab or 90 days after the last dose of <regimen> whichever is the longer period i14 patient should understand sign and date the written voluntary informed consent form prior to any protocol specific procedures performed
+<regimen> <regimen> patient characteristics
+for cohort 2 disease progression during or following treatment with at least one platinum containing regimen eg gc <regimen> carbogem carboplatin paclitaxel for inoperable locally advanced or metastatic urothelial carcinoma or disease recurrence as defined by regimen is defined as patients receiving at least one cycle of a platinum containing regimen with response assessment
+prior <regimen> or <regimen> therapy and prior bone marrow or pbpc transplant
+newly diagnosed relapsed or progressing disease after 1 prior treatment with a non platinum based chemotherapy eg <regimen>
+women of child bearing potential must agree to use adequate contraception hormonal or barrier method of birth control abstinence prior to study entry for the duration of study participation and for 5 months 150 days after the last dose of atezolizumab 6 months after the last dose of bevacizumab and 6 months after the last dose of <regimen> men with female partners of child bearing potential must agree to use adequate contraception prior to the study for the duration of study participation and for 6 months after the last dose of bevacizumab and 6 months after the last dose of <regimen>
+histologically proven diffuse large b cell or follicular b cell non hodgkin s lymphoma for which chemotherapy with rituximab <regimen> chemotherapy is considered treatment of choice
+cholangiocarcinoma for which treatment with folfox6 or <regimen> would be acceptable as determined by the investigator
+100 mmhg subjects with a history of hypertension must have been on stable doses of anti hypertensive drugs for 4 weeks prior to start of cycle 1 of <regimen> bevacizumab cetuximab administration uncontrolled hypertension blood pressure
+any variation of <regimen> r <regimen> 14 r <regimen> 21 is acceptable
+patients with recurrent metastatic liver lesions from colorectal cancer who progressed on either <regimen> or <regimen>
+scheduled to receive first line chemotherapy <regimen> bevacizumab or <regimen> bevacizumab for metastatic disease
+no prior chemotherapy for lymphoma except for a single course of <regimen> <regimen> r
+patients must be considered ineligible for rituximab cyclophosphamide doxorubicin hydrochloride vincristine sulfate and prednisone r <regimen> standard therapy to be ineligible for r <regimen> patients must meet at least one of the following criteria are met
+failed <regimen> doxorubicin bleomycin vinblastine and dacarbazine and received salvage chemotherapy with at least 1 salvage combination regimen
+prior treatment with alkylating agents including tmz and <regimen>
+for patients addressed by the bearman model iewithin 16 days of sct and conditioned with either bu cy <regimen> or cbv there must be a 30 or greater risk of severe vod see appendix b
+patients who have completed at least one dose of ipilimumab nivolumab and progress or have completed the 4 doses of ipilimumab nivolumab and progress during <regimen> maintenance are eligible unless they have received additional treatment s for their renal cell carcinoma prior to registration
+undergoing microlaryngoscopy bronchoscopy esophagoscopy and esophageal ph probe placement at <regimen>
+<regimen> cohort anti pd 1 pd l1 nave patients who have received 1 to 2 prior lines of cytotoxic chemotherapy including a platinum doublet containing regimen expansion cohort s
+planned local low dose radiation therapy <regimen> at the department of radiation oncology universittsklinikum erlangen
+planned to start either fec d ac d dose dense ac t <regimen> or tc chemotherapy in the adjuvant or neoadjuvant setting
+are under <regimen> for treatment of colon or breast cancer at a regimen of 2 weeks on and 1 week off 14 7 and a daily doses between 2000 and 2500 mg m2
+have failed adequate initial therapy lenalidomide bortezomib dexamethasone rvd thalidomide bortezomib and dexamethasone tvd or cyclophosphamide bortezomib and dexamethasone <regimen>
+referred to <regimen> for the performance of the clinically indicated vcug examination
+fit for full dose <regimen> as initial treatment
+non sterilized male patients who are sexually active with a female partner of childbearing potential must use a male condom plus spermicide from screening through 180 days after receipt of the final dose of durvalumab tremelimumab combination therapy or 90 days after receipt of the final dose of <regimen>
+patients must have failed front line standard anthracycline containing regimen such as <regimen> <regimen> or <regimen>
+<regimen> pet fmri mammography endoscopy and colonoscopy
+the investigator believes the subject is tolerating treatment with oral <regimen> and continued oral azacitidine treatment is of benefit to the subject
+female subjects who are breast feeding should discontinue nursing prior to the first dose of study treatment and from screening to 90 days after the last dose of <regimen> or 180 days after the last dose of durvalumab tremelimumab combination therapy
+clinical level of <regimen> as indicated by a score of 13 or greater on the severity subscale of the fcri range 0 36
+histologically or cytologically confirmed locally advanced or metastatic pancreatic adenocarcinoma colorectal adenocarcinoma gastric adenocarcinoma cholangiocarcinoma gall bladder adenocarcinoma ampullary carcinoma adenocarcinoma of unclear primary with a gastrointestinal primary suspected or other primary gastrointestinal malignancy for which the treating physician feels that <regimen> is a reasonable therapeutic option
+patient in the first cycle of chemotherapy in adjuvant <regimen> regimen
+for participants who will be receiving cyclophosphamide doxorubicin vincristine and prednisone <regimen> left ventricular ejection fraction lvef less than 50 by multiple gated acquisition muga scan or echocardiogram
+1 histologically proven and unresectable locally advanced recurrent or metastatic squamous cell anal carcinoma presence of a target lesion on ct scan assessed by recist v1 1 criteria patient eligible to the <regimen> regimen 6
+at the initial stage of therapy received standard r <regimen> regimen and complete remission after the first course of treatment
+gastric gej or esophageal adenocarcinoma for which treatment with folfox6 <regimen> <regimen> or irinotecan would be acceptable as determined by the investigator
+clinically fit patients to receive the <regimen> chemotherapy scheme
+prior chemotherapy within the last 5 years prior rtx of the head except for low dose rtx for tinea capitis receiving concurrent investigational agents or has received an investigational agent within the past 30 days prior to the first dose of cilengitide prior systemic anti angiogenic therapy placement of <regimen> at surgery planned surgery for other diseases history of recent peptic ulcer disease endoscopically proven gastric ulcer duodenal ulcer or esophageal ulcer within 6 months of enrollment history of malignancy
+planned graft versus host disease gvhd prophylaxis consisting of tacrolimus <regimen> methotrexate mtx or <regimen> sirolimus srl
+willing to receive <regimen> intervention villages
+<regimen> regimen as adjuvant therapy 4
+patient must be a candidate to receive at least 2 doses of <regimen> chemotherapy
+the post <regimen> response evaluation must include a ct scan of the chest abdomen and pelvis gallium scan is optional for patients who have palpable cervical lymphadenopathy a ct scan of the neck must be performed following <regimen> chemotherapy
+prior treatment with anti neoplastic biologic or chemotherapy for recurrent or metastatic disease except one course of adjuvant immunotherapy and or adjuvant chemotherapy other than <regimen>
+treatment plan to receive standard <regimen> administered either every three weeks
+treatment with cetuximab in first line chemotherapy combined with <regimen> or <regimen>
+<regimen> after progression to adjuvant <regimen> occurred on treatment or within 6 months after treatment completion
+<regimen> myeloablative mel thiotepa fludarabine
+patients must have recurrent or refractory intermediate grade or high grade non burkitt s non hodgkin s lymphoma nhl or hodgkin s disease and be scheduled for a minimum of 2 cycles of <regimen> dexamethasone high dose cytarabine and cisplatin chemotherapy
+previous chemotherapies with <regimen> regimen
+or <regimen>
+chronic systemic steroid use including <regimen> therapy or as part of any regular cancer treatment however steroids used as prophylaxis for nausea and vomiting are allowed to prevent rash with alimta low dose dexamethasone will be allowed
+r <regimen> or <regimen> for dlbcl cohort 2
+patient has received any prior cytotoxic chemotherapy for pancreatic cancer with the exception of patients who progressed on or were intolerant of 1st line <regimen> prior
+known hypersensitivity to any component of <regimen>
+nave for their pancreatic cancer body weight 30kg for <regimen> or durvalumab novel
+prior treatment with 5 azacytidine followed immediately by <regimen> and mitoxantrone as proposed in this study note
+<regimen> <regimen> or
+related to <regimen>
+known hypersensitivity to dacarbazine <regimen>
+v1 1 histologically or cytologically confirmed gi malignancy for which <regimen> is considered an appropriate treatment eg gastric cancer gc colorectal carcinoma pancreatic adenocarcinoma
+intrathecal morphine group all patients with idiopathic scoliosis aged 11 through and including 18 who present to <regimen> for posterior spinal fusion
+papvd asd svd vsd avsd <regimen> apw pda or a combination of these
+patients with a pathological or clinical diagnosis of pancreatic cancer and beginning or continuing <regimen> or gemcitabine based chemotherapy
+eligible patients will have stable disease on <regimen> at fda approved doses after a minimum duration of erlotinib therapy of 2 months
+subjects with k ras mutation positive colorectal cancer will be excluded from receiving <regimen> cetuximab
+patients with metastatic disease who are eligible for first line <regimen> chemotherapy
+age 18 and 70 years patients classified as having ra according to the 1987 acr classification criteria inadequate clinical response to <regimen> defined as moderate high active disease after oral or s c
+previous treatments such as surgery radiofrequency ablation transarterial liver embolization somatostatin analogs interferon everolimus or other targeted therapy peptide receptor radionuclide treatment prrt and chemotherapy platin etoposide <regimen> paclitaxel or docetaxel are allowed
+other severe medical conditions contraindication of <regimen> paclitaxel and gemcitabine 3
+unstable angina angina symptoms at rest new onset angina begun within the last 3 months myocardial infarction less than 6 months before start of day 1 of <regimen> cardiac arrhythmias requiring anti arrhythmic therapy beta blockers or digoxin are permitted
+primary refractory to or in first relapse after first line therapy with r <regimen> or r <regimen>
+subjects in the combination therapy cohorts must meet the above inclusion criteria and be eligible to receive paclitaxel or <regimen> per most current prescribing information or at the discretion of the investigator
+inclusion criteria male or female 18 years of age at time of consent has an eastern cooperative oncology group ecog performance status of 0 1 or 2 has histologically confirmed diffuse large b cell lymphoma dlbcl primary mediastinal b cell lymphoma pmbcl marginal zone lymphoma mzl mantle cell lymphoma mcl or histologically and or cytologically confirmed advanced or metastatic solid tumor and have relapsed or refractory disease following at least two lines of prior standard therapy including alkylator anthracycline unless anthracycline based chemotherapy is contraindicated anti cd20 based therapy r <regimen> rituximab doxorubicin cyclophosphamide vincristine and prednisolone or prednisone or equivalent and must be considered unable to benefit from intensification treatment with autologous hematopoietic stem cell transplantation asct as defined by meeting at least one of the following criteria relapsed following or refractory to
+contraindicative to any drug in <regimen> or to anthracycline patients with diabetes and intolerant to the prednisone in this study
+chemotherapy regimens containing <regimen> tmz and or cisplatin
+eligible for <regimen>
+disease relapsed after refractory or failing to achieve a pr after two or more cycles of intensive salvage chemotherapy r <regimen> or other or disease relapsed after autologous stem cell transplantation
+these patients are given nove <regimen> as frontline therapy at princess margaret hospital
+history of allergic reaction attributed to compounds of similar chemical or biologic composition to gleevec or any component of the <regimen> regimen
+r <regimen> chemotherapy
+5 fluorouracil leucovorin with oxaliplatin <regimen> or <regimen> a treatment with trastuzumab is allowed in association
+measurable disease on cross section imaging that is at least 1 5 cm in the longest diameter and measurable in two perpendicular dimensions appropriate candidate for systemic immune chemotherapy such as the standard <regimen> 6 cycles as determined by the treating physician age
+pulmonary function test pft demonstrating an adjusted diffusion capacity of least 50 predicted value for hemoglobin concentration myeloablative <regimen> reduced intensity regimen 3
+received <regimen> within 6 weeks before starting regorafenib
+donor evaluation and collection procedure as per <regimen> standard operating procedures sop
+qualified for an application of <regimen> cetuximab treatment
+for schedule 3 advanced metastatic tumors for which <regimen> is appropriate or advanced metastatic tumors that may be sensitive to each component of <regimen> or sensitive to topoisomerase 1 inhibitors including pancreatic colorectal esophageal gastric bladder or ovarian cancer triple negative breast cancer small cell lung cancer sclc cholangiocarcinoma among others
+receiving cyclosporine csa or tacrolimus <regimen> since the first month post transplant
+prior therapy with systemic <regimen> or conventional chemotherapy iebendamustine cvp cyclophosphamide vincristine sulfate prednisone or other rituximab for indolent non hodgkin s lymphoma nhl maintenance extended use rituximab will count as 1 line of systemic therapy
+i or ii mandatory pet scan performed at diagnosis patients treated with first line <regimen> and pet scan positive after 2 cycles deauville score 4 6
+inclusion criteria for patients undergoing r <regimen>
+subject is taking medication known to induce photosensitivity including non steroidal anti inflammatory agents tetracyclines phenothiazines thiazide diuretics sulfonylureas sulfonamides dacarbazine <regimen> fluorouracil vinblastine and griseofulvin within 4 weeks of therapy
+history of anaphylactic reaction or known intolerance to atropine sulfate or to loperamide or to antiemetics administered in association with <regimen>
+caregiver enrollment in <regimen> ehs requires the following children are 0 3 years old expectant mothers are also eligible to enroll
+treated with at least one <regimen> or <regimen> derived doxorubicin containing regimen
+cns central nervous system ascertained hypersensitivity to any component of investigational product or <regimen> bevacizumab cetuximab that the subject will be treated any of the following hematologic abnormalities hemoglobin 10 0 g dl 2
