@@ -19,11 +19,13 @@ bleomycin
 bortezomib
 brentuximab
 busulfan
+bvz
 capecitabine
 carboplatin
 carmustine
 carfilzomib
 cetuximab
+ciclosporin
 chlorambucil
 cemiplimab
 cisplatin
@@ -47,7 +49,9 @@ edoxaban
 enoxaparin
 epirubicin
 erlotinib
+etanercept
 etoposide
+everolimus
 filgrastim
 fluorouracil
 fludarabine
@@ -55,12 +59,15 @@ folic acid
 gefitinib
 gemcitabine
 g csf
+halofuginone
+hydroxychloroquine
 hydroxyurea
 ibrutinib
 idarubicin
 idealisib
 ifosfamide
 imatinib
+infliximab
 interleukin 2
 ipilimumab
 irinotecan
@@ -75,6 +82,8 @@ mercaptopurine
 methotrexate
 mitomycin
 mitoxantrone
+mmf
+mycophenolate mofetil
 nab paclitaxel
 nivolumab
 obinutuzumab
@@ -84,6 +93,7 @@ paclitaxel
 panitumumab
 pazopanib
 pemetrexed
+pentostatin
 pertuzumab
 pomalidomide
 prednisolone
@@ -96,9 +106,11 @@ sirolimus
 sorafenib
 streptozocin
 sunitinib
+tacrolimus
 tegafur
 temozolomide
 thalidomide
+tmz
 tocilizumab
 topotecan
 trametinib

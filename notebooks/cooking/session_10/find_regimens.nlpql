@@ -380,12 +380,12 @@ termset RegimenTerms: [
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//                          Provider Assertions
+//                          Tasks
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 define hasRegimenTerm:
-    Clarity.ProviderAssertion({
+    Clarity.TermFinder({
         termset: [RegimenTerms],
         documentset: [Docs]
     });
