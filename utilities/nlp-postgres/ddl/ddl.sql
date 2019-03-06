@@ -1,7 +1,11 @@
 CREATE SCHEMA nlp;
 
-CREATE TABLE nlp.pipeline_config
-(
+CREATE TABLE nlp.nlpql_library (
+	nlpql_id bigserial not null,
+	nlpql_raw text
+);
+
+CREATE TABLE nlp.pipeline_config (
 	pipeline_id bigserial not null
 		constraint pipeline_config_pkey
 			primary key,
@@ -18,9 +22,7 @@ CREATE UNIQUE INDEX nlp_pipeline_config_pipeline_id_uindex
 	on nlp.pipeline_config (pipeline_id)
 ;
 
-
-CREATE TABLE nlp.nlp_job
-(
+CREATE TABLE nlp.nlp_job (
     nlp_job_id BIGSERIAL PRIMARY KEY NOT NULL,
 		job_type VARCHAR(100),
     name VARCHAR(512),
@@ -32,10 +34,10 @@ CREATE TABLE nlp.nlp_job
     date_started TIMESTAMP,
     date_ended TIMESTAMP
 );
+
 CREATE UNIQUE INDEX nlp_job_nlp_job_id_uindex ON nlp.nlp_job (nlp_job_id);
 
-create table nlp.nlp_job_status
-(
+create table nlp.nlp_job_status (
 	nlp_job_status_id bigserial not null
 		constraint nlp_job_status_pkey
 			primary key,
@@ -43,14 +45,13 @@ create table nlp.nlp_job_status
 	description text,
 	date_updated timestamp not null,
 	nlp_job_id bigint
-)
-;
+);
 
 create unique index nlp_job_status_nlp_job_status_id_uindex
 	on nlp.nlp_job_status (nlp_job_status_id)
 ;
-create table nlp.phenotype
-(
+
+create table nlp.phenotype (
 	phenotype_id bigserial not null
 		constraint phenotype_pkey
 			primary key,
@@ -61,8 +62,7 @@ create table nlp.phenotype
 	nlpql text,
 	date_created timestamp not null,
 	date_updated timestamp
-)
-;
+);
 
 create unique index phenotype_phenotype_id_uindex
 	on nlp.phenotype (phenotype_id)
@@ -72,13 +72,10 @@ create index phenotype_name_index
 	on nlp.phenotype (name)
 ;
 
-
-create table nlp.phenotype_mapping
-(
+create table nlp.phenotype_mapping (
 	phenotype_id bigint not null,
 	pipeline_id bigint not null
-)
-;
+);
 
 create index phenotype_mapping_phenotype_id_index
 	on nlp.phenotype_mapping (phenotype_id)
