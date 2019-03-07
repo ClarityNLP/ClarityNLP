@@ -127,8 +127,14 @@ services:
     build:
       context: ./utilities/ingest-client
       dockerfile: Dockerfile
+    environment:
+      - CHOKIDAR_USEPOLLING=true
     ports:
       - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
+      - 35729:35729 #warm-reload websocket
+    volumes:
+      - './utilities/ingest-client:/app'
+      - '/app/node_modules'
 
   mapper-api:
     container_name: MAPPER_API
@@ -183,16 +189,13 @@ services:
       context: ./utilities/results-client
       dockerfile: Dockerfile
     environment:
-      - "PORT=${RESULTS_CLIENT_HOST_PORT}"
-      - "REACT_APP_LUIGI_URL=${LUIGI_URL}"
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
-      # - 35729:35729 #warm-reload websocket
+      - 35729:35729 #warm-reload websocket
     volumes:
-      - './utilities/results-client:/usr/src/app'
-      - /usr/src/app/node_modules
-
+      - './utilities/results-client:/app'
+      - '/app/node_modules'
 
   swagger:
     container_name: MAPPER_Swagger_Docs
