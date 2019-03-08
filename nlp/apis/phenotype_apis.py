@@ -58,6 +58,14 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = ''):
     return output
 
 
+def parse_nlpql(nlpql: str):
+    nlpql_results = run_nlpql_parser(nlpql)
+    if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+        return json.dumps(nlpql_results)
+    else:
+        return nlpql_results['phenotype'].to_json()
+
+
 @phenotype_app.route('/phenotype', methods=['POST'])
 @auto.doc(groups=['public', 'private', 'phenotypes'])
 def phenotype():
@@ -82,10 +90,11 @@ def nlpql():
         if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
             return json.dumps(nlpql_results)
         else:
-            nlpql_id = library.create_new_nlpql(library.NLPQL(
-                nlpql_id=-1, nlpql_raw=raw_nlpql), util.conn_string)
             p_cfg = nlpql_results['phenotype']
             phenotype_info = post_phenotype(p_cfg, raw_nlpql)
+            nlpql_json = parse_nlpql(raw_nlpql)
+            nlpql_id = library.create_new_nlpql(library.NLPQL(
+                nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
             return json.dumps(phenotype_info, indent=4)
 
     return "Please POST text containing NLPQL."
@@ -155,13 +164,8 @@ def phenotype_id(phenotype_id: int):
 @phenotype_app.route("/nlpql_tester", methods=["POST"])
 @auto.doc(groups=['public', 'private', 'phenotypes'])
 def nlpql_tester():
-    """POST to test NLPQL parsing"""
     if request.method == 'POST' and request.data:
-        nlpql_results = run_nlpql_parser(request.data.decode("utf-8"))
-        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
-            return json.dumps(nlpql_results)
-        else:
-            return nlpql_results['phenotype'].to_json()
+        return parse_nlpql(request.data.decode("utf-8"))
 
     return "Please POST text containing NLPQL."
 

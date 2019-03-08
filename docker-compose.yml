@@ -212,7 +212,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
-      - 35729:35729 #warm-reload websocket
+      # - 35729:35729 #warm-reload websocket
     volumes:
       - "./utilities/results-client:/app"
       - "/app/node_modules"
@@ -225,3 +225,30 @@ services:
       - "API_URL=${MAPPER_SWAGGER_API_URL}"
     ports:
       - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
+
+  dashboard-api:
+    container_name: DASHBOARD_API
+    hostname: ${DASHBOARD_API_HOSTNAME}
+    build:
+      context: ./utilities/dashboard-client
+      dockerfile: Dockerfile
+    ports:
+      - "${DASHBOARD_API_HOST_PORT}:${DASHBOARD_API_CONTAINER_PORT}"
+    volumes:
+      - "./utilities/dashboard-client:/app"
+      - "/app/node_modules"
+
+  dashboard-client:
+    container_name: DASHBOARD_CLIENT
+    hostname: ${DASHBOARD_CLIENT_HOSTNAME}
+    build:
+      context: ./utilities/dashboard-client/client
+      dockerfile: Dockerfile
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "${DASHBOARD_CLIENT_HOST_PORT}:${DASHBOARD_CLIENT_CONTAINER_PORT}"
+      - 35729:35729 #warm-reload websocket
+    volumes:
+      - "./utilities/dashboard-client/client:/app"
+      - "/app/node_modules"
