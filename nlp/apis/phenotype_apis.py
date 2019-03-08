@@ -93,7 +93,7 @@ def nlpql():
             p_cfg = nlpql_results['phenotype']
             phenotype_info = post_phenotype(p_cfg, raw_nlpql)
             nlpql_json = parse_nlpql(raw_nlpql)
-            nlpql_id = library.create_new_nlpql(library.NLPQL(nlpql_name=nlqpl_json.name,
+            nlpql_id = library.create_new_nlpql(library.NLPQL(nlpql_name=p_cfg.name,
                                                               nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
             return json.dumps(phenotype_info, indent=4)
 
@@ -176,10 +176,6 @@ def nlpql_expander():
     """POST to expand NLPQL termset macros"""
     if request.method == 'POST' and request.data:
         nlpql_results = expand_nlpql_macros(request.data.decode("utf-8"))
-        # if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
-        #     return json.dumps(nlpql_results)
-        # else:
-        #     return nlpql_results['phenotype']
         return nlpql_results
 
     return "Please POST text containing NLPQL."

@@ -28,7 +28,7 @@ def create_new_nlpql(nlpql: NLPQL, connection_string: str):
     try:
         dt = datetime.now()
         cursor.execute("""
-                INSERT INTO nlp.nlpql_library (nlqpl_name, nlpql_raw, nlpql_json, date_added)
+                INSERT INTO nlp.nlpql_library (nlpql_name, nlpql_raw, nlpql_json, date_added)
                 VALUES (%s, %s, %s, %s) RETURNING nlpql_id""",
                        (nlpql.name, nlpql.raw, nlpql.json, dt))
         nlpql_id = cursor.fetchone()[0]
