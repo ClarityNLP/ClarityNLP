@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 volumes:
   mapper-pgdata:
@@ -10,9 +10,8 @@ volumes:
   ingest-mongodata:
 
 services:
-
   nlp-api:
-    container_name: 'NLP_API'
+    container_name: "NLP_API"
     hostname: ${NLP_API_HOSTNAME}
     build:
       context: ./nlp
@@ -21,7 +20,19 @@ services:
       - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
     volumes:
       - ./nlp:/api
-    command: ["/api/scripts/wait-for-it.sh", "redis:6379", "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}", "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}", "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}", "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}", "--timeout=1800", "--", "python3", "api.py"]
+    command:
+      [
+        "/api/scripts/wait-for-it.sh",
+        "redis:6379",
+        "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}",
+        "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}",
+        "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}",
+        "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}",
+        "--timeout=1800",
+        "--",
+        "python3",
+        "api.py",
+      ]
     extra_hosts: #for container --> host comms
       - "docker.local:172.16.123.1"
     depends_on:
@@ -30,16 +41,16 @@ services:
       - .env
 
   scheduler:
-    container_name: 'LUIGI_SCHEDULER'
+    container_name: "LUIGI_SCHEDULER"
     hostname: ${SCHEDULER_HOSTNAME}
-    image: 'axiom/docker-luigi:2.7.1'
+    image: "axiom/docker-luigi:2.7.1"
     ports:
       - "${SCHEDULER_HOST_PORT}:${SCHEDULER_CONTAINER_PORT}"
     env_file:
       - .env
 
   nlp-solr:
-    container_name: 'NLP_SOLR'
+    container_name: "NLP_SOLR"
     hostname: ${NLP_SOLR_HOSTNAME}
     build:
       context: ./utilities/nlp-solr
@@ -47,14 +58,14 @@ services:
     ports:
       - "${NLP_SOLR_HOST_PORT}:${NLP_SOLR_CONTAINER_PORT}"
     volumes:
-      - 'nlp-solrdata:/opt/solr/server/solr/mycores'
+      - "nlp-solrdata:/opt/solr/server/solr/mycores"
     environment:
       - SOLR_HEAP=4096m
     env_file:
       - .env
 
   nlp-mongo:
-    container_name: 'NLP_MONGO'
+    container_name: "NLP_MONGO"
     image: mongo
     hostname: ${NLP_MONGO_HOSTNAME}
     environment:
@@ -64,13 +75,13 @@ services:
     ports:
       - "${NLP_MONGO_HOST_PORT}:${NLP_MONGO_CONTAINER_PORT}"
     volumes:
-      - './utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js'
-      - 'nlp-mongodata:/data/db'
+      - "./utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js"
+      - "nlp-mongodata:/data/db"
     env_file:
       - .env
 
   nlp-postgres:
-    container_name: 'NLP_POSTGRES'
+    container_name: "NLP_POSTGRES"
     hostname: ${NLP_PG_HOSTNAME}
     build:
       context: ./utilities/nlp-postgres
@@ -82,7 +93,7 @@ services:
     ports:
       - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
     volumes:
-      - 'nlp-pgdata:/var/lib/postgresql/data/'
+      - "nlp-pgdata:/var/lib/postgresql/data/"
     env_file:
       - .env
 
@@ -99,7 +110,16 @@ services:
     depends_on:
       # - ingest-pg
       - redis
-    command: ["/app/wait-for-it.sh", "redis:6379", "ingest-mongo:27017", "--timeout=1800", "--", "pm2-dev", "process.json"]
+    command:
+      [
+        "/app/wait-for-it.sh",
+        "redis:6379",
+        "ingest-mongo:27017",
+        "--timeout=1800",
+        "--",
+        "pm2-dev",
+        "process.json",
+      ]
     environment:
       - NODE_ENV=development
       - JOB_TYPES=ingest
@@ -111,7 +131,7 @@ services:
   ingest-mongo:
     image: mongo:3.4.14
     hostname: ${INGEST_MONGO_HOSTNAME}
-    container_name: '${INGEST_MONGO_CONTAINER_NAME}'
+    container_name: "${INGEST_MONGO_CONTAINER_NAME}"
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
@@ -119,7 +139,7 @@ services:
     ports:
       - "${INGEST_MONGO_HOST_PORT}:${INGEST_MONGO_CONTAINER_PORT}"
     volumes:
-      - 'ingest-mongodata:/data/db'
+      - "ingest-mongodata:/data/db"
 
   ingest-client:
     container_name: INGEST_CLIENT
@@ -131,10 +151,10 @@ services:
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
-      - 35729:35729 #warm-reload websocket
+      # - 35729:35729 #warm-reload websocket
     volumes:
-      - './utilities/ingest-client:/app'
-      - '/app/node_modules'
+      - "./utilities/ingest-client:/app"
+      - "/app/node_modules"
 
   mapper-api:
     container_name: MAPPER_API
@@ -161,7 +181,7 @@ services:
       - "${MAPPER_CLIENT_HOST_PORT}:${MAPPER_CLIENT_CONTAINER_PORT}"
 
   mapper-pg:
-    container_name: 'MAPPER_POSTGRES'
+    container_name: "MAPPER_POSTGRES"
     hostname: ${MAPPER_PG_HOSTNAME}
     image: postgres
     environment:
@@ -171,7 +191,7 @@ services:
     ports:
       - "${MAPPER_PG_HOST_PORT}:${MAPPER_PG_CONTAINER_PORT}"
     volumes:
-      - 'mapper-pgdata:/var/lib/postgresql/data/'
+      - "mapper-pgdata:/var/lib/postgresql/data/"
 
   redis:
     container_name: REDIS
@@ -180,7 +200,7 @@ services:
     ports:
       - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
     volumes:
-    - 'redisdata:/data'
+      - "redisdata:/data"
 
   results-client:
     container_name: RESULTS_CLIENT
@@ -192,16 +212,31 @@ services:
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
-      - 35729:35729 #warm-reload websocket
+      # - 35729:35729 #warm-reload websocket
     volumes:
-      - './utilities/results-client:/app'
-      - '/app/node_modules'
+      - "./utilities/results-client:/app"
+      - "/app/node_modules"
 
   swagger:
     container_name: MAPPER_Swagger_Docs
     hostname: ${MAPPER_SWAGGER_HOSTNAME}
     image: swaggerapi/swagger-ui
     environment:
-    - "API_URL=${MAPPER_SWAGGER_API_URL}"
+      - "API_URL=${MAPPER_SWAGGER_API_URL}"
     ports:
       - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
+
+  dashboard-client:
+    container_name: DASHBOARD_CLIENT
+    hostname: ${DASHBOARD_CLIENT_HOSTNAME}
+    build:
+      context: ./utilities/dashboard-client
+      dockerfile: Dockerfile
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "${DASHBOARD_CLIENT_HOST_PORT}:${DASHBOARD_CLIENT_CONTAINER_PORT}"
+      - 35729:35729 #warm-reload websocket
+    volumes:
+      - "./utilities/dashboard-client:/app"
+      - "/app/node_modules"
