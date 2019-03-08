@@ -15,7 +15,8 @@ except Exception as e:
 
 
 class NLPQL(BaseModel):
-    def __init__(self, nlpql_raw, nlpql_json):
+    def __init__(self, nlpql_name, nlpql_raw, nlpql_json):
+        self.name = nlpql_name
         self.raw = nlpql_raw
         self.json = nlpql_json
 
@@ -27,9 +28,9 @@ def create_new_nlpql(nlpql: NLPQL, connection_string: str):
     try:
         dt = datetime.now()
         cursor.execute("""
-                INSERT INTO nlp.nlpql_library (nlpql_raw, nlpql_json, date_added)
-                VALUES (%s, %s, %s) RETURNING nlpql_id""",
-                       (nlpql.raw, nlpql.json, dt))
+                INSERT INTO nlp.nlpql_library (nlqpl_name, nlpql_raw, nlpql_json, date_added)
+                VALUES (%s, %s, %s, %s) RETURNING nlpql_id""",
+                       (nlpql.name, nlpql.raw, nlpql.json, dt))
         nlpql_id = cursor.fetchone()[0]
         conn.commit()
 
@@ -40,3 +41,20 @@ def create_new_nlpql(nlpql: NLPQL, connection_string: str):
         conn.close()
 
     return -1
+
+
+def get_library(connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    library = list()
+
+    try:
+        cursor.execute("""SELECT * FROM nlp.nlpql_library""")
+        library = cursor.fetchall()
+        return library
+    except Exception as ex:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+
+    return library
