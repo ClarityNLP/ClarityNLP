@@ -92,6 +92,9 @@ if [[ ! -d $coredir ]]; then
     if [[ $CORE == 'sample' ]]; then
       /opt/solr/bin/post -c $CORE /sample.csv
       echo "finished uploading sample.csv"
+
+      /opt/solr/bin/post -c $CORE /sample2.csv
+      echo "finished uploading sample2.csv"
     fi
 
     stop-local-solr
