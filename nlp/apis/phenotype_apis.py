@@ -92,9 +92,6 @@ def nlpql():
         else:
             p_cfg = nlpql_results['phenotype']
             phenotype_info = post_phenotype(p_cfg, raw_nlpql)
-            nlpql_json = parse_nlpql(raw_nlpql)
-            nlpql_id = library.create_new_nlpql(library.NLPQL(nlpql_name=p_cfg.name,
-                                                              nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
             return json.dumps(phenotype_info, indent=4)
 
     return "Please POST text containing NLPQL."

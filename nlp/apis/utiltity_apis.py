@@ -172,6 +172,7 @@ def library():
     """Get all NLPQL in NLPQL Library"""
     if request.method == 'GET':
         library = get_library(util.conn_string)
-        return json.dumps(library, indent=4, sort_keys=True, default=str)
+        response = json.dumps(library, indent=4, sort_keys=True, default=str)
+        return response
     else:
         return Response('Only GET requests are supported', status=400, mimetype='application/json')
