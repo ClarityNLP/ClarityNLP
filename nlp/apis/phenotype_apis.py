@@ -109,8 +109,12 @@ def addQuery():
         else:
             p_cfg = nlpql_results['phenotype']
             nlpql_json = parse_nlpql(raw_nlpql)
-            nlpql_id = library.create_new_nlpql(library.NLPQL(nlpql_name=p_cfg.name,
-                                                              nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
+            try:
+                nlpql_id = library.create_new_nlpql(library.NLPQL(nlpql_name=p_cfg.name,
+                                                                  nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
+            except Exception as e:
+                return json.dumps(e, indent=4)
+
             return json.dumps(nlpql_id, indent=4)
 
     return "Please POST text containing NLPQL."

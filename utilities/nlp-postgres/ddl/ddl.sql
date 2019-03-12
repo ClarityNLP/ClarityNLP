@@ -2,7 +2,7 @@ CREATE SCHEMA nlp;
 
 CREATE TABLE nlp.nlpql_library (
 	nlpql_id bigserial primary key not null,
-	nlpql_name varchar(100),
+	nlpql_name varchar(100) unique,
 	nlpql_raw text,
 	nlpql_json text,
 	date_added timestamp
