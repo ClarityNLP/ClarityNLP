@@ -1,0 +1,15 @@
+{
+    "apps": [
+        {
+            "name": "DASHBOARD API",
+            "script": "./index.js",
+            "watch": true,
+            "autorestart": true,
+            "ignore_watch": ["node_modules", ".tmp"],
+            "watch_options": {
+                "usePolling": true,
+                "interval": 500
+            }
+        }
+    ]
+}

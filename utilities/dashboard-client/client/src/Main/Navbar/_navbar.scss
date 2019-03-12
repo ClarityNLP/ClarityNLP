@@ -1,0 +1,47 @@
+.top_nav {
+    position: fixed;
+    height: $nav_height !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-shadow: 0 1px 5px rgba(10, 10, 10, 0.2);
+}
+
+.side_nav {
+    background-color: $purple;
+    height: $full_height;
+    width: $nav_width;
+    position: fixed;
+
+    a {
+        color: white;
+    }
+
+    .nav-links {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+        .nav-link {
+            display: block;
+            height: 100px;
+            padding: 20px 5px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(108, 79, 143, 1);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+
+            .link-icon {
+                display: block;
+            }
+
+            &:hover,
+            &:focus,
+            &:active {
+                background-color: #60467f;
+            }
+
+            &.active {
+                background-color: #60467f;
+                pointer-events: none;
+            }
+        }
+    }
+}

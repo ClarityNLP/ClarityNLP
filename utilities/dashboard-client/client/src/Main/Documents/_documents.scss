@@ -1,0 +1,24 @@
+.documents {
+    height: 50%;
+    padding-bottom: 0.75rem;
+
+    .card_columns {
+        height: 100%;
+    }
+
+    .document_pie_chart {
+        height: 100%;
+
+        svg {
+            height: 100%;
+            width: 100%;
+        }
+
+        .column {
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+    }
+}
+
+@import "./PieChart/pie";

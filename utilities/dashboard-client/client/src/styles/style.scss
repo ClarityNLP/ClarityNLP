@@ -1,0 +1,17 @@
+@import "util/reset";
+@import "util/normalize";
+
+// Set ClarityNLP brand colors
+$purple: #79589f;
+$nav_width: 100px;
+$nav_height: 52px;
+$full_height: calc(100vh - 52px);
+$full_width: calc(100vw - 100px);
+
+// Update Bulma's global variables
+$primary: $purple;
+$link: $purple;
+
+@import "../../node_modules/bulma/bulma.sass";
+
+@import "../Main/main";

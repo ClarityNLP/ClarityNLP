@@ -1,0 +1,44 @@
+.card-container {
+    .card {
+        height: 100%;
+        border-radius: 15px;
+
+        .card-header {
+            height: 48px;
+            border-radius: 15px 15px 0px 0;
+
+            .expand_button {
+                background-color: transparent;
+                border: none;
+                border-radius: 15px;
+                color: $purple;
+            }
+        }
+
+        .card-content {
+            overflow: hidden;
+            height: calc(100% - 110px);
+        }
+
+        .card-footer {
+            height: 62px;
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+        }
+    }
+
+    &.expanded {
+        padding: 0.75rem;
+        width: $full_width;
+        height: $full_height;
+        position: fixed;
+        top: $nav_height;
+        left: $nav_width;
+        z-index: 2;
+    }
+
+    ul {
+        list-style-type: none;
+    }
+}

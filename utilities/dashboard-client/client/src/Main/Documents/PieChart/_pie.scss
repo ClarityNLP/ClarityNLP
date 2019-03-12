@@ -1,0 +1,16 @@
+.color {
+    display: inline-block;
+    height: 15px;
+    width: 15px;
+    margin-right: 10px;
+}
+
+.pie_legend {
+    overflow: scroll;
+    height: 100%;
+
+    .legend_row {
+        margin: 0;
+        box-shadow: 0 1px 1px rgba(10, 10, 10, 0.3);
+    }
+}

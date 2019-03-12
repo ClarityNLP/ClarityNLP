@@ -1,0 +1,12 @@
+.results {
+    height: 100%;
+
+    .results_container {
+        height: 100%;
+        overflow: scroll;
+
+        .job_row {
+            cursor: pointer;
+        }
+    }
+}
