@@ -100,6 +100,25 @@ def nlpql():
     return "Please POST text containing NLPQL."
 
 
+@phenotype_app.route("/add_query", methods=["POST"])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def addQuery():
+    """POST to add NLPQL to library"""
+    if request.method == 'POST' and request.data:
+        raw_nlpql = request.data.decode("utf-8")
+        nlpql_results = run_nlpql_parser(raw_nlpql)
+        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+            return json.dumps(nlpql_results)
+        else:
+            p_cfg = nlpql_results['phenotype']
+            nlpql_json = parse_nlpql(raw_nlpql)
+            nlpql_id = library.create_new_nlpql(library.NLPQL(nlpql_name=p_cfg.name,
+                                                              nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
+            return json.dumps(nlpql_id, indent=4)
+
+    return "Please POST text containing NLPQL."
+
+
 @phenotype_app.route('/pipeline', methods=['POST'])
 @auto.doc(groups=['public', 'private', 'phenotypes'])
 def pipeline():
