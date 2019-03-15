@@ -115,6 +115,17 @@ def get_job_stats(job_id: int):
         return "Failed to get job stats" + str(e)
 
 
+@utility_app.route('/performance/<int:job_id>', methods=['GET'])
+@auto.doc(groups=['public', 'private', 'utilities'])
+def get_job_performance(job_id: int):
+    """GET current job performance"""
+    try:
+        perf = phenotype_performance_results(str(job_id))
+        return json.dumps(perf, indent=4)
+    except Exception as e:
+        return "Failed to get job stats" + str(e)
+
+
 @utility_app.route('/document/<string:report_id>', methods=['GET'])
 @auto.doc(groups=['private'])
 def get_document_by_id(report_id: str):
