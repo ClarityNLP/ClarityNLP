@@ -108,10 +108,12 @@ def addQuery():
             return json.dumps(nlpql_results)
         else:
             p_cfg = nlpql_results['phenotype']
-            nlpql_json = parse_nlpql(raw_nlpql)
+            nlpql_json = p_cfg.to_json()
+            nlpql_name = p_cfg.name
+            nlpql_version = "version"
             try:
-                nlpql_id = library.create_new_nlpql(library.NLPQL(nlpql_id=p_cfg.name, nlpql_name=p_cfg.name,
-                                                                  nlpql_version=p_cfg.phenotype.version, nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
+                nlpql_id = library.create_new_nlpql(library.NLPQL(
+                    nlpql_name=nlpql_name, nlpql_version=nlpql_version, nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
             except Exception as e:
                 return json.dumps(e, indent=4)
 
