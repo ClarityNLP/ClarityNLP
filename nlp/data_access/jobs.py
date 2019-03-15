@@ -10,9 +10,11 @@ from datetime import datetime, timezone
 
 try:
     from .base_model import BaseModel
+    from .results import phenotype_stats
 except Exception as e:
     print(e)
     from base_model import BaseModel
+    from results import phenotype_stats
 
 
 STARTED = "STARTED"
@@ -232,7 +234,87 @@ def query_phenotype_job_by_id(job_id: str, connection_string: str):
     return job
 
 
+def get_job_performance(job_id: int, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    performance = {
+        "status": "UNKNOWN",
+        "total_time_as_seconds": 0.0,
+        "total_time_as_minutes": 0.0,
+        "total_time_as_hours": 0.0,
+        "final_results": 0,
+        "final_subjects": 0,
+        "intermediate_results": 0,
+        "intermediate_subjects": 0
+    }
+
+    try:
+        cursor.execute("""SELECT status from nlp.nlp_job where nlp_job_id = %s""",
+                       [job_id])
+
+        status = cursor.fetchone()[0]
+        performance["status"] = status
+
+        cursor.execute("""
+            SELECT status, description, date_updated, nlp_job_status_id from nlp.nlp_job_status
+            where nlp_job_id = %s order by date_updated
+            """,
+                       [job_id])
+        updates = cursor.fetchall()
+
+        started = None
+        ended = None
+        counts_found = 0
+        for row in updates:
+            status_name = row[0]
+            status_date = row[2]
+            status_value = row[1]
+            if not ended or status_date > ended:
+                ended = status_date
+
+            if status_name == 'STARTED':
+                started = status_date
+            elif status_name == 'STATS_FINAL_SUBJECTS':
+                performance['final_subjects'] = status_value
+                counts_found += 1
+            elif status_name == 'STATS_FINAL_RESULTS':
+                performance['final_results'] = status_value
+                counts_found += 1
+            elif status_name == 'STATS_INTERMEDIATE_SUBJECTS':
+                performance['intermediate_subjects'] = status_value
+                counts_found += 1
+            elif status_name == 'STATS_INTERMEDIATE_RESULTS':
+                performance['intermediate_results'] = status_value
+                counts_found += 1
+
+        if counts_found == 0:
+            intermediate_stats = phenotype_stats(str(job_id), False)
+            stats = phenotype_stats(str(job_id), True)
+
+            performance['intermediate_subjects'] = intermediate_stats["subjects"]
+            performance['intermediate_results'] = intermediate_stats["results"]
+
+            performance['final_subjects'] = stats["subjects"]
+            performance['final_results'] = stats["results"]
+
+        if started and ended:
+            runtime = ended - started
+            performance['total_time_as_seconds'] = runtime.total_seconds()
+            performance['total_time_as_minutes'] = performance['total_time_as_seconds']/60
+            performance['total_time_as_hours'] = performance['total_time_as_minutes']/60
+            print(runtime)
+    except Exception as ex:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+
+    return performance
+
+
 if __name__ == "__main__":
     conn_string = util.conn_string
-    status = get_job_status(117, conn_string)
-    print(json.dumps(status, indent=4))
+    # status = get_job_status(117, conn_string)
+    res = get_job_performance(200, conn_string)
+    print(json.dumps(res, indent=4))
+
+
