@@ -15,8 +15,10 @@ except Exception as e:
 
 
 class NLPQL(BaseModel):
-    def __init__(self, nlpql_name, nlpql_raw, nlpql_json):
+    def __init__(self, nlpql_name, nlpql_version, nlpql_raw, nlpql_json):
         self.name = nlpql_name
+        self.version = nlpql_version
+        self.id = nlpql_name + nlpql_version
         self.raw = nlpql_raw
         self.json = nlpql_json
 
@@ -28,9 +30,9 @@ def create_new_nlpql(nlpql: NLPQL, connection_string: str):
     try:
         dt = datetime.now()
         cursor.execute("""
-                INSERT INTO nlp.nlpql_library (nlpql_name, nlpql_raw, nlpql_json, date_added)
-                VALUES (%s, %s, %s, %s) RETURNING nlpql_id""",
-                       (nlpql.name, nlpql.raw, nlpql.json, dt))
+                INSERT INTO nlp.nlpql_library (nlpql_id, nlpql_name, nlpql_version, nlpql_raw, nlpql_json, date_added)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING nlpql_id""",
+                       (nlpql.id, nlpql.name, nlpql.version, nlpql.raw, nlpql.json, dt))
         nlpql_id = cursor.fetchone()[0]
         conn.commit()
 

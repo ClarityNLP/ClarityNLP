@@ -1,14 +1,13 @@
 CREATE SCHEMA nlp;
 
 CREATE TABLE nlp.nlpql_library (
-	nlpql_id bigserial primary key not null,
-	nlpql_name varchar(100) unique,
+	nlpql_id varchar(100) unique,
+	nlpql_name varchar(100),
+	nlpql_version bigint,
 	nlpql_raw text,
 	nlpql_json text,
 	date_added timestamp
 );
-
-CREATE UNIQUE INDEX nlpql_library_nlpql_id_uindex ON nlp.nlpql_library (nlpql_id);
 
 CREATE TABLE nlp.pipeline_config (
 	pipeline_id bigserial not null
