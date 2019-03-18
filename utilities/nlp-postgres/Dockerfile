@@ -1,4 +1,4 @@
-FROM postgres
+FROM postgres:10.6
 
 RUN apt-get update && apt-get -y install wget && apt-get -y install zip unzip
 
