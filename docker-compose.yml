@@ -1,5 +1,9 @@
 version: "3"
 
+networks:
+  clarity:
+    driver: bridge
+
 volumes:
   mapper-pgdata:
   redisdata:
@@ -10,44 +14,106 @@ volumes:
   ingest-mongodata:
 
 services:
+  identity-provider:
+    container_name: 'IDENTITY_PROVIDER'
+    build:
+      context: ./identity-provider
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+    networks:
+      - clarity
+
+  identity-and-access-proxy:
+    container_name: 'IDENTITY_AND_ACCESS_PROXY'
+    build:
+      context: ./identity-and-access-proxy
+      dockerfile: Dockerfile
+    ports:
+      - "6010:6010"
+    networks:
+      - clarity
+
   nlp-api:
     container_name: "NLP_API"
     hostname: ${NLP_API_HOSTNAME}
     build:
       context: ./nlp
       dockerfile: Dockerfile
-    ports:
-      - "${NLP_API_HOST_PORT}:${NLP_API_CONTAINER_PORT}"
+    expose:
+      - "${NLP_API_CONTAINER_PORT}"
     volumes:
+      - ./scripts/wait-for-it-extra.sh:/wait-for-it-extra.sh
       - ./nlp:/api
-    command:
-      [
-        "/api/scripts/wait-for-it.sh",
-        "redis:6379",
-        "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}",
-        "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}",
-        "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}",
-        "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}",
-        "--timeout=1800",
-        "--",
-        "python3",
-        "api.py",
-      ]
+    command: [
+      "/wait-for-it-extra.sh",
+      "${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}",
+      "${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}",
+      "${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}",
+      "${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}",
+      "--timeout=60",
+      "--",
+      "python3",
+      "api.py"
+    ]
+    environment:
+      - NLP_API_TMP_DIR=${NLP_API_TMP_DIR}
+      - NLP_API_LOG_DIR=${NLP_API_LOG_DIR}
+      - NLP_SOLR_URL=${NLP_SOLR_URL}
+      - NLP_API_DEBUG_MODE=${NLP_API_DEBUG_MODE}
+      - NLP_EXPRESSION_EVALUATOR=${NLP_EXPRESSION_EVALUATOR}
+      - NLP_API_URL=${NLP_API_URL}
+      - BATCH_SIZE=${BATCH_SIZE}
+      - RESULTS_CLIENT_URL=${RESULTS_URL}
+      - USE_MEMORY_CACHING=${USE_MEMORY_CACHING}
+      - USE_PRECOMPUTED_SEGMENTATION=${USE_PRECOMPUTED_SEGMENTATION}
+      - USE_REORDERED_NLPQL=${USE_REORDERED_NLPQL}
+      - USE_REDIS_CACHING=${USE_REDIS_CACHING}
+      - OHDSI_WEBAPI_URL=${OHDSI_WEBAPI_URL}
+      - SOLR_TEXT_FIELD=${SOLR_TEXT_FIELD}
+      - SOLR_ID_FIELD=${SOLR_ID_FIELD}
+      - SOLR_REPORT_ID_FIELD=${SOLR_REPORT_ID_FIELD}
+      - SOLR_SOURCE_FIELD=${SOLR_SOURCE_FIELD}
+      - SOLR_REPORT_DATE_FIELD=${SOLR_REPORT_DATE_FIELD}
+      - SOLR_SUBJECT_FIELD=${SOLR_SUBJECT_FIELD}
+      - SOLR_REPORT_TYPE_FIELD=${SOLR_REPORT_TYPE_FIELD}
+      - NLP_PG_HOSTNAME=${NLP_PG_HOSTNAME}
+      - NLP_PG_DATABASE=${NLP_PG_DATABASE}
+      - NLP_PG_USER=${NLP_PG_USER}
+      - NLP_PG_PASSWORD=${NLP_PG_PASSWORD}
+      - NLP_PG_CONTAINER_PORT=${NLP_PG_CONTAINER_PORT}
+      - NLP_MONGO_HOSTNAME=${NLP_MONGO_HOSTNAME}
+      - NLP_MONGO_CONTAINER_PORT=${NLP_MONGO_CONTAINER_PORT}
+      - NLP_MONGO_DATABASE=${NLP_MONGO_DATABASE}
+      - NLP_MONGO_WORKING_INDEX=${NLP_MONGO_WORKING_INDEX}
+      - NLP_MONGO_WORKING_COLLECTION=${NLP_MONGO_WORKING_COLLECTION}
+      - LUIGI_SCHEDULER_URL=${LUIGI_SCHEDULER_URL}
+      - LUIGI_URL=${LUIGI_URL}
+      - LUIGI_WORKERS=${LUIGI_WORKERS}
+      - MAPPER_API_URL=${MAPPER_API_URL}
+      - MAPPER_API_KEY=${MAPPER_API_KEY}
+      - MAPPER_API_INSTITUTE=${MAPPER_API_INSTITUTE}
+      - REDIS_HOSTNAME=${REDIS_HOSTNAME}
+      - REDIS_HOST_PORT=${REDIS_HOST_PORT}
+      - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
+    networks:
+      - clarity
     extra_hosts: #for container --> host comms
       - "docker.local:172.16.123.1"
     depends_on:
       - redis
-    env_file:
-      - .env
 
   scheduler:
     container_name: "LUIGI_SCHEDULER"
     hostname: ${SCHEDULER_HOSTNAME}
-    image: "axiom/docker-luigi:2.7.1"
-    ports:
-      - "${SCHEDULER_HOST_PORT}:${SCHEDULER_CONTAINER_PORT}"
-    env_file:
-      - .env
+    image: 'axiom/docker-luigi:2.7.1'
+    expose:
+      - "${SCHEDULER_CONTAINER_PORT}"
+    networks:
+      - clarity
 
   nlp-solr:
     container_name: "NLP_SOLR"
@@ -55,14 +121,14 @@ services:
     build:
       context: ./utilities/nlp-solr
       dockerfile: Dockerfile
-    ports:
-      - "${NLP_SOLR_HOST_PORT}:${NLP_SOLR_CONTAINER_PORT}"
+    expose:
+      - "${NLP_SOLR_CONTAINER_PORT}"
     volumes:
       - "nlp-solrdata:/opt/solr/server/solr/mycores"
     environment:
-      - SOLR_HEAP=4096m
-    env_file:
-      - .env
+      - SOLR_HEAP=${SOLR_HEAP}
+    networks:
+      - clarity
 
   nlp-mongo:
     container_name: "NLP_MONGO"
@@ -72,13 +138,16 @@ services:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
       - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
-    ports:
-      - "${NLP_MONGO_HOST_PORT}:${NLP_MONGO_CONTAINER_PORT}"
+      - MONGO_INITDB_ROOT_USERNAME=${NLP_MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${NLP_MONGO_PASSWORD}
+    expose:
+      - "${NLP_MONGO_CONTAINER_PORT}"
     volumes:
       - "./utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js"
+      - "./utilities/nlp-mongo/users.js:/docker-entrypoint-initdb.d/users.js"
       - "nlp-mongodata:/data/db"
-    env_file:
-      - .env
+    networks:
+      - clarity
 
   nlp-postgres:
     container_name: "NLP_POSTGRES"
@@ -90,56 +159,71 @@ services:
       POSTGRES_USER: ${NLP_PG_USER}
       POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
       POSTGRES_DB: ${NLP_PG_DATABASE}
-    ports:
-      - "${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}"
+    expose:
+      - "${NLP_PG_CONTAINER_PORT}"
     volumes:
       - "nlp-pgdata:/var/lib/postgresql/data/"
-    env_file:
-      - .env
+    networks:
+      - clarity
 
   ingest-api:
     container_name: INGEST_API
     hostname: ${INGEST_API_HOSTNAME}
     build: ./utilities/ingest-api
     volumes:
+      - ./scripts/wait-for-it-extra.sh:/wait-for-it-extra.sh
       - ./utilities/ingest-api:/app
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
       - ingest-files:/var/lib/ingest-files
-    ports:
-      - "${INGEST_API_HOST_PORT}:${INGEST_API_CONTAINER_PORT}"
+    expose:
+      - "${INGEST_API_CONTAINER_PORT}"
     depends_on:
-      # - ingest-pg
+      - ingest-mongo
       - redis
-    command:
-      [
-        "/app/wait-for-it.sh",
-        "redis:6379",
-        "ingest-mongo:27017",
-        "--timeout=1800",
-        "--",
-        "pm2-dev",
-        "process.json",
-      ]
+    entrypoint: [
+      "/wait-for-it-extra.sh",
+      "${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}",
+      "${INGEST_MONGO_HOSTNAME}:${INGEST_MONGO_CONTAINER_PORT}",
+      "--timeout=60",
+      "--",
+      "pm2-dev",
+      "process.json"
+    ]
     environment:
       - NODE_ENV=development
       - JOB_TYPES=ingest
-    extra_hosts: #for container --> host comms
-      - "docker.local:172.16.123.1"
-    env_file:
-      - .env
+      - NLP_SOLR_HOSTNAME=${NLP_SOLR_HOSTNAME}
+      - NLP_SOLR_CONTAINER_PORT=${NLP_SOLR_CONTAINER_PORT}
+      - NLP_CORE_NAME=${NLP_CORE_NAME}
+      - NLP_SOLR_URL_TOP_LEVEL=${NLP_SOLR_URL_TOP_LEVEL}
+      - INGEST_MONGO_USERNAME=${INGEST_MONGO_USERNAME}
+      - INGEST_MONGO_PASSWORD=${INGEST_MONGO_PASSWORD}
+      - INGEST_MONGO_HOSTNAME=${INGEST_MONGO_HOSTNAME}
+      - INGEST_MONGO_CONTAINER_PORT=${INGEST_MONGO_CONTAINER_PORT}
+      - INGEST_MONGO_DATABASE=${INGEST_MONGO_DATABASE}
+      - BASE_URL=${BASE_URL}
+      - INGEST_CLIENT_HOST_PORT=${INGEST_CLIENT_HOST_PORT}
+      - INGEST_API_LOG_LEVEL=${INGEST_API_LOG_LEVEL}
+    networks:
+      - clarity
 
   ingest-mongo:
-    image: mongo:3.4.14
+    image: mongo:3.4.2
     hostname: ${INGEST_MONGO_HOSTNAME}
     container_name: "${INGEST_MONGO_CONTAINER_NAME}"
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
       - MONGO_INITDB_DATABASE=${INGEST_MONGO_DATABASE}
-    ports:
-      - "${INGEST_MONGO_HOST_PORT}:${INGEST_MONGO_CONTAINER_PORT}"
+      - MONGO_INITDB_ROOT_USERNAME=${INGEST_MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${INGEST_MONGO_PASSWORD}
+    expose:
+    - "${INGEST_MONGO_CONTAINER_PORT}"
     volumes:
+      - ./utilities/ingest-mongo/users.js:/docker-entrypoint-initdb.d/users.js:ro
       - "ingest-mongodata:/data/db"
+    networks:
+      - clarity
 
   ingest-client:
     container_name: INGEST_CLIENT
@@ -150,7 +234,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
     ports:
-      - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
+      - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}" #TODO -- revisit live reload...
       # - 35729:35729 #warm-reload websocket
     volumes:
       - "./utilities/ingest-client:/app"
@@ -163,15 +247,17 @@ services:
     volumes:
       - ./utilities/mapper-api:/app
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
-    ports:
-      - "${MAPPER_API_HOST_PORT}:${MAPPER_API_CONTAINER_PORT}"
+    expose:
+    - "${MAPPER_API_CONTAINER_PORT}"
     depends_on:
       - mapper-pg
       - redis
     environment:
       - NODE_ENV=development
+    networks:
+      - clarity
 
-  mapper-client:
+  mapper-client: # --> TODO revisit
     container_name: MAPPER_CLIENT
     hostname: ${MAPPER_CLIENT_HOSTNAME}
     build:
@@ -183,24 +269,28 @@ services:
   mapper-pg:
     container_name: "MAPPER_POSTGRES"
     hostname: ${MAPPER_PG_HOSTNAME}
-    image: postgres
+    image: postgres:10.6
     environment:
       POSTGRES_USER: ${MAPPER_PG_USER}
       POSTGRES_PASSWORD: ${MAPPER_PG_PASSWORD}
       POSTGRES_DB: ${MAPPER_PG_DATABASE}
-    ports:
-      - "${MAPPER_PG_HOST_PORT}:${MAPPER_PG_CONTAINER_PORT}"
+    expose:
+      - "${MAPPER_PG_CONTAINER_PORT}"
     volumes:
       - "mapper-pgdata:/var/lib/postgresql/data/"
+    networks:
+      - clarity
 
   redis:
     container_name: REDIS
     hostname: ${REDIS_HOSTNAME}
     image: redis:4.0.10
-    ports:
-      - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
+    expose:
+      - "${REDIS_CONTAINER_PORT}"
     volumes:
-      - "redisdata:/data"
+    - "redisdata:/data"
+    networks:
+      - clarity
 
   results-client:
     container_name: RESULTS_CLIENT
@@ -217,15 +307,6 @@ services:
       - "./utilities/results-client:/app"
       - "/app/node_modules"
 
-  swagger:
-    container_name: MAPPER_Swagger_Docs
-    hostname: ${MAPPER_SWAGGER_HOSTNAME}
-    image: swaggerapi/swagger-ui
-    environment:
-      - "API_URL=${MAPPER_SWAGGER_API_URL}"
-    ports:
-      - "${MAPPER_SWAGGER_HOST_PORT}:${MAPPER_SWAGGER_CONTAINER_PORT}"
-
   dashboard-client:
     container_name: DASHBOARD_CLIENT
     hostname: ${DASHBOARD_CLIENT_HOSTNAME}
@@ -236,7 +317,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "${DASHBOARD_CLIENT_HOST_PORT}:${DASHBOARD_CLIENT_CONTAINER_PORT}"
-      - 35729:35729 #warm-reload websocket
+      # - 35729:35729 #warm-reload websocket
     volumes:
       - "./utilities/dashboard-client/client:/app"
       - "/app/node_modules"

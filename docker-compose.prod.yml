@@ -2,7 +2,7 @@ version: '3'
 
 volumes:
   mapper-pgdata:
-  mapper-redisdata:
+  redisdata:
   nlp-solrdata:
   nlp-pgdata:
   nlp-mongodata:
@@ -91,12 +91,17 @@ services:
     build: ./utilities/ingest-api
     ports:
       - "${INGEST_API_HOST_PORT}:${INGEST_API_CONTAINER_PORT}"
-    depends_on:
-      # - ingest-pg
-      - redis
     environment:
       - NODE_ENV=production
-    command: "pm2-runtime app.js"
+      - JOB_TYPES=ingest
+    command:
+      - /app/wait-for-it.sh
+      - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
+      - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
+      - --timeout=1800
+      - --
+      - pm2-runtime
+      - app.js
     env_file:
       - .env
 
@@ -122,44 +127,44 @@ services:
     ports:
       - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}"
 
-  mapper-api:
-    container_name: MAPPER_API
-    hostname: ${MAPPER_API_HOSTNAME}
-    build: ./utilities/mapper-api
-    ports:
-      - "${MAPPER_API_HOST_PORT}:${MAPPER_API_CONTAINER_PORT}"
-    depends_on:
-      - mapper-pg
-      - redis
-    environment:
-      - NODE_ENV=production
-    command: "pm2-runtime app.js"
-    env_file:
-      - .env
+  # mapper-api:
+  #   container_name: MAPPER_API
+  #   hostname: ${MAPPER_API_HOSTNAME}
+  #   build: ./utilities/mapper-api
+  #   ports:
+  #     - "${MAPPER_API_HOST_PORT}:${MAPPER_API_CONTAINER_PORT}"
+  #   depends_on:
+  #     - mapper-pg
+  #     - redis
+  #   environment:
+  #     - NODE_ENV=production
+  #   command: "pm2-runtime app.js"
+  #   env_file:
+  #     - .env
 
-  mapper-pg:
-    container_name: 'MAPPER_POSTGRES'
-    hostname: ${MAPPER_PG_HOSTNAME}
-    image: postgres
-    environment:
-      POSTGRES_USER: ${MAPPER_PG_USER}
-      POSTGRES_PASSWORD: ${MAPPER_PG_PASSWORD}
-      POSTGRES_DB: ${MAPPER_PG_DATABASE}
-    ports:
-      - "${MAPPER_PG_HOST_PORT}:${MAPPER_PG_CONTAINER_PORT}"
-    volumes:
-      - 'mapper-pgdata:/var/lib/postgresql/data/'
-    env_file:
-      - .env
+  # mapper-pg:
+  #   container_name: 'MAPPER_POSTGRES'
+  #   hostname: ${MAPPER_PG_HOSTNAME}
+  #   image: postgres
+  #   environment:
+  #     POSTGRES_USER: ${MAPPER_PG_USER}
+  #     POSTGRES_PASSWORD: ${MAPPER_PG_PASSWORD}
+  #     POSTGRES_DB: ${MAPPER_PG_DATABASE}
+  #   ports:
+  #     - "${MAPPER_PG_HOST_PORT}:${MAPPER_PG_CONTAINER_PORT}"
+  #   volumes:
+  #     - 'mapper-pgdata:/var/lib/postgresql/data/'
+  #   env_file:
+  #     - .env
 
   redis:
-    container_name: MAPPER_REDIS
-    hostname: ${MAPPER_REDIS_HOSTNAME}
-    image: redis:3.2.0
+    container_name: REDIS
+    hostname: ${REDIS_HOSTNAME}
+    image: redis:4.0.10
     ports:
-      - "${MAPPER_REDIS_HOST_PORT}:${MAPPER_REDIS_CONTAINER_PORT}"
+      - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
     volumes:
-      - 'mapper-redisdata:/data'
+      - 'redisdata:/data'
     env_file:
       - .env
 

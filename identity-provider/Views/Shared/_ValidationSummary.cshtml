@@ -1,0 +1,6 @@
+﻿@if (ViewContext.ModelState.IsValid == false)
+{
+    <div class="login-validation notification is-danger">
+      <div asp-validation-summary="All" class="danger"></div>
+    </div>
+}
