@@ -1,5 +1,6 @@
 import csv
 import os
+import math
 import sys
 import traceback
 from datetime import datetime
@@ -39,6 +40,48 @@ def job_results(job_type: str, job: str):
         return phenotype_feedback_results(job)
     else:
         return generic_results(job, job_type)
+
+
+def phenotype_performance_results(job: str):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+
+    performance = {
+        'total_answered': 0,
+        'total_correct': 0,
+        'total_incorrect': 0,
+        'accuracy_score': 0.0,
+        'total_comments': 0
+    }
+    try:
+        query = {"job_id": int(job)}
+
+        has_comments = 0
+        count = 0
+        correct = 0
+        results = db['result_feedback'].find(query)
+        # ['comments', 'feature', 'is_correct', 'job_id', 'subject', 'report_id', 'result_id']
+        for res in results:
+            if len(res['comments']) > 0:
+                has_comments += 1
+            else:
+                count += 1
+                if res['is_correct'] == 'true' or res['is_correct'] == 'True':
+                    correct += 1
+
+        if count > 0:
+            performance['accuracy_score'] = float((correct * 1.0) / (count * 1.0))
+        else:
+            performance['accuracy_score'] = 0.0
+        performance['total_incorrect'] = count - correct
+        performance['total_correct'] = correct
+        performance['total_answered'] = count
+        performance['total_comments'] = has_comments
+    except Exception as e:
+        print(e)
+    finally:
+        client.close()
+    return performance
 
 
 def phenotype_feedback_results(job: str):
@@ -337,7 +380,7 @@ def phenotype_stats(job_id: str, phenotype_final: bool):
         stats["subjects"] = subjects
         stats["results"] = documents
     return stats
-import math
+
 def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -403,4 +446,6 @@ def remove_tmp_file(filename):
 
 
 if __name__ == "__main__":
-    job_results("pipeline", "97")
+    # job_results("pipeline", "97")
+    results = phenotype_performance_results("2152")
+    print(results)
