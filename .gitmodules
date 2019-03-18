@@ -19,3 +19,6 @@
 [submodule "utilities/export-api"]
 	path = utilities/export-api
 	url = https://github.com/ClarityNLP/ClarityNLPExportResults.git
+[submodule "utilities/dashboard-client"]
+	path = utilities/dashboard-client
+	url = https://github.com/ClarityNLP/dashboard-client.git
