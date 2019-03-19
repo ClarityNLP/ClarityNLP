@@ -1,0 +1,9 @@
+ phenotype "Prostate Cancer Term Proximity" version "1";
+
+define final TermProximityFunction:
+    Clarity.TermProximityTask({
+        "termset1": "prostate",
+        "termset2": "cancer, Gleason, Gleason's, Gleasons,adenocarcinoma, carcinoma",
+        "word_distance": 6,
+        "any_order": "False"
+    });
