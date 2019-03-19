@@ -110,7 +110,7 @@ def addQuery():
             p_cfg = nlpql_results['phenotype']
             nlpql_json = p_cfg.to_json()
             nlpql_name = p_cfg.name
-            nlpql_version = "version"
+            nlpql_version = p_cfg.phenotype['version']
             try:
                 nlpql_id = library.create_new_nlpql(library.NLPQL(
                     nlpql_name=nlpql_name, nlpql_version=nlpql_version, nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
