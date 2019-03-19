@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "name": "asp.net",
+  "private": true,
+  "main": "Styles/main.scss",
+  "scripts": {
+    "css-build": "node-sass --omit-source-map-url Styles/custom-bulma.scss wwwroot/css/custom-bulma.css",
+    "css-watch": "npm run css-build -- --watch",
+    "start": "npm run css-watch"
+  },
+  "devDependencies": {
+    "bulma": "0.7.2",
+    "gulp": "3.9.1",
+    "gulp-less": "3.3.0",
+    "gulp-sass": "3.1.0",
+    "node-sass": "^4.11.0"
+  }
+}
