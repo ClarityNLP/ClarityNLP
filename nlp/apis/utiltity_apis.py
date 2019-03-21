@@ -107,23 +107,23 @@ def get_job_status(job_id: int):
         return "Failed to get job status" + str(e)
 
 
-@utility_app.route('/stats/<int:job_id>', methods=['GET'])
+@utility_app.route('/stats/<string:job_ids>', methods=['GET'])
 @auto.doc(groups=['public', 'private', 'utilities'])
-def get_job_stats(job_id: int):
+def get_job_stats(job_ids: str):
     """GET current job stats"""
     try:
-        perf = jobs.get_job_performance(job_id, util.conn_string)
+        perf = jobs.get_job_performance(job_ids.split(','), util.conn_string)
         return json.dumps(perf, indent=4)
     except Exception as e:
         return "Failed to get job stats" + str(e)
 
 
-@utility_app.route('/performance/<int:job_id>', methods=['GET'])
+@utility_app.route('/performance/<string:job_ids>', methods=['GET'])
 @auto.doc(groups=['public', 'private', 'utilities'])
-def get_job_performance(job_id: int):
+def get_job_performance(job_ids: str):
     """GET current job performance"""
     try:
-        perf = phenotype_performance_results(str(job_id))
+        perf = phenotype_performance_results(job_ids.split(','))
         return json.dumps(perf, indent=4)
     except Exception as e:
         return "Failed to get job stats" + str(e)
