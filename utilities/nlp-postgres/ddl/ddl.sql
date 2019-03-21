@@ -88,3 +88,5 @@ create table nlp.phenotype_mapping (
 create index phenotype_mapping_phenotype_id_index
 	on nlp.phenotype_mapping (phenotype_id)
 ;
+
+CREATE extension tablefunc;

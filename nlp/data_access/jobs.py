@@ -189,12 +189,25 @@ def query_phenotype_jobs(status: str, connection_string: str):
                             and jb.status = %s 
                             order by jb.date_started DESC""",
                            [status])
+
         rows = cursor.fetchall()
+
         for row in rows:
             name = row['phenotype_name']
             if not name or name.strip() == '':
                 name = "Phenotype %s" % str(row['phenotype_id'])
                 row['phenotype_name'] = name
+            started = row['date_started']
+            ended = row['date_ended']
+            if started and ended:
+                runtime = ended - started
+                row['total_time_as_seconds'] = runtime.total_seconds()
+                row['total_time_as_minutes'] = row['total_time_as_seconds'] / 60
+                row['total_time_as_hours'] = row['total_time_as_minutes'] / 60
+            else:
+                row['total_time_as_seconds'] = 0.0
+                row['total_time_as_minutes'] = 0.0
+                row['total_time_as_hours'] = 0.0
             jobs.append(row)
         return jobs
     except Exception as ex:
@@ -302,7 +315,6 @@ def get_job_performance(job_id: int, connection_string: str):
             performance['total_time_as_seconds'] = runtime.total_seconds()
             performance['total_time_as_minutes'] = performance['total_time_as_seconds']/60
             performance['total_time_as_hours'] = performance['total_time_as_minutes']/60
-            print(runtime)
     except Exception as ex:
         traceback.print_exc(file=sys.stdout)
     finally:
