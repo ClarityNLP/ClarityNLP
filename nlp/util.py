@@ -1,6 +1,7 @@
 import configparser
 from os import getenv, environ, path
 import redis
+from pymongo import MongoClient
 
 SCRIPT_DIR = path.dirname(__file__)
 config = configparser.RawConfigParser()
@@ -20,7 +21,7 @@ def read_property(env_name, config_tuple, default=''):
             property_name = config.get(config_tuple[0], config_tuple[1])
         if not property_name:
             property_name = default
-        if len(env_name) > 0 and 'PASSWORD' not in env_name:
+        if len(env_name) > 0 and 'PASSWORD' not in env_name and 'KEY' not in env_name and 'USERNAME' not in env_name:
             properties[env_name] = property_name
     except Exception as ex:
         print(ex)
@@ -57,6 +58,8 @@ mongo_port = int(read_property('NLP_MONGO_CONTAINER_PORT', ('mongo', 'port')))
 mongo_db = read_property('NLP_MONGO_DATABASE', ('mongo', 'db'))
 mongo_working_index = read_property('NLP_MONGO_WORKING_INDEX', ('mongo', 'working_index'))
 mongo_working_collection = read_property('NLP_MONGO_WORKING_COLLECTION', ('mongo', 'working_collection'))
+mongo_username = read_property('NLP_MONGO_USERNAME', ('mongo', 'username'))
+mongo_password = read_property('NLP_MONGO_PASSWORD', ('mongo', 'password'))
 tmp_dir = read_property('NLP_API_TMP_DIR', ('tmp', 'dir'))
 log_dir = read_property('NLP_API_LOG_DIR', ('log', 'dir'))
 luigi_scheduler = read_property('LUIGI_SCHEDULER_URL', ('luigi', 'scheduler'))
@@ -166,3 +169,26 @@ def cmp_2_key(mycmp):
             return mycmp(self.obj, other.obj)
 
     return K
+
+def mongo_client(host=None, port=None, username=None, password=None):
+
+    if not host:
+        host = mongo_host
+
+    if not port:
+        port = mongo_port
+
+    if not username:
+        username = mongo_username
+
+    if not password:
+        password = mongo_password
+
+    print('Mongo port: {}; host: {}'.format(port, host))
+    if username and len(username) > 0 and password and len(password) > 0:
+        print('authenticated mongo')
+        return MongoClient(host=host, port=port, username=username,
+                password=password)
+    else:
+        print('unauthenticated mongo')
+        return MongoClient(host, port)

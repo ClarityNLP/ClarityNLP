@@ -181,8 +181,7 @@ def write_nlpql_feedback():
     """Write NLPQL feedback"""
     if request.method == 'POST':
         data = request.get_json()
-        response = writeResultFeedback(
-            util.mongo_host, util.mongo_port, util.mongo_db, data)
+        response = writeResultFeedback(data)
         return response
     else:
         return Response('Only POST requests are supported', status=400, mimetype='application/json')

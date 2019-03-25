@@ -20,7 +20,7 @@ class PhenotypeTask(luigi.Task):
     phenotype = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
 
     def requires(self):
         register_tasks()
@@ -53,7 +53,7 @@ class PhenotypeTask(luigi.Task):
 
     def run(self):
         print('dependencies done; run phenotype reconciliation')
-        client = MongoClient(util.mongo_host, util.mongo_port)
+        client = util.mongo_client()
 
         try:
             data_access.update_job_status(str(self.job), util.conn_string, data_access.IN_PROGRESS,

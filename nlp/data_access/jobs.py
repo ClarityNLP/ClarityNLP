@@ -145,7 +145,7 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
 
 def delete_job(job_id: str, connection_string: str):
     conn = psycopg2.connect(connection_string)
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
 
     cursor = conn.cursor()
     flag = -1 # To determine whether the update was successful or not

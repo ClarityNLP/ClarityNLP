@@ -1,7 +1,8 @@
 from pymongo import MongoClient
 from flask import Response
+import util
 
-def writeResultFeedback(host, port, database, data):
+def writeResultFeedback(data):
     try:
 
         # Parsing info
@@ -9,8 +10,8 @@ def writeResultFeedback(host, port, database, data):
         result_id = data['result_id']
 
         # connecting to the Mongo DB
-        client = MongoClient(host, port)
-        db = client[database]
+        client = util.mongo_client()
+        db = client[util.mongo_db]
 
         # checking if the results collection exists
         # if collection doesn't exist, creating
