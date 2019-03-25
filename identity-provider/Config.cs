@@ -1,4 +1,4 @@
-﻿// Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
+// Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
@@ -19,25 +19,13 @@ namespace IdentityServer
                 new TestUser
                 {
                     SubjectId = "1",
-                    Username = "alice",
-                    Password = "password",
+                    Username = "admin",
+                    Password = "admin",
 
                     Claims = new []
                     {
-                        new Claim("name", "Alice"),
-                        new Claim("website", "https://alice.com")
-                    }
-                },
-                new TestUser
-                {
-                    SubjectId = "2",
-                    Username = "bob",
-                    Password = "password",
-
-                    Claims = new []
-                    {
-                        new Claim("name", "Bob"),
-                        new Claim("website", "https://bob.com")
+                        new Claim("name", "Admin"),
+                        new Claim("website", "https://www.hdap.gatech.edu")
                     }
                 }
             };

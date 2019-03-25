@@ -17,6 +17,9 @@ endif
 start-clarity:
 		docker-compose up --build
 
+stop-clarity:
+		docker-compose down --remove-orphans
+
 restart-clarity:
 		docker-compose restart
 

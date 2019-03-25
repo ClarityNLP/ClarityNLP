@@ -106,8 +106,6 @@ services:
       - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
     networks:
       - clarity
-    extra_hosts: #for container --> host comms
-      - "docker.local:172.16.123.1"
     depends_on:
       - redis
 
@@ -172,7 +170,7 @@ services:
       - clarity
 
   ingest-api:
-    container_name: INGEST_API
+    container_name: "INGEST_API"
     hostname: ${INGEST_API_HOSTNAME}
     build: ./utilities/ingest-api
     volumes:
@@ -209,6 +207,8 @@ services:
       - BASE_URL=${BASE_URL}
       - INGEST_CLIENT_HOST_PORT=${INGEST_CLIENT_HOST_PORT}
       - INGEST_API_LOG_LEVEL=${INGEST_API_LOG_LEVEL}
+      - REDIS_HOSTNAME=${REDIS_HOSTNAME}
+      - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
     networks:
       - clarity
 
@@ -231,7 +231,7 @@ services:
       - clarity
 
   ingest-client:
-    container_name: INGEST_CLIENT
+    container_name: "INGEST_CLIENT"
     hostname: ${INGEST_CLIENT_HOSTNAME}
     build:
       context: ./utilities/ingest-client
@@ -246,47 +246,6 @@ services:
     volumes:
       - "./utilities/ingest-client:/app"
       - "/app/node_modules"
-    networks:
-      - clarity
-
-  mapper-api:
-    container_name: MAPPER_API
-    hostname: ${MAPPER_API_HOSTNAME}
-    build: ./utilities/mapper-api
-    volumes:
-      - ./utilities/mapper-api:/app
-      - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
-    expose:
-    - "${MAPPER_API_CONTAINER_PORT}"
-    depends_on:
-      - mapper-pg
-      - redis
-    environment:
-      - NODE_ENV=development
-    networks:
-      - clarity
-
-  mapper-client: # --> TODO revisit
-    container_name: MAPPER_CLIENT
-    hostname: ${MAPPER_CLIENT_HOSTNAME}
-    build:
-      context: ./utilities/mapper-client
-      dockerfile: Dockerfile.prod
-    ports:
-      - "${MAPPER_CLIENT_HOST_PORT}:${MAPPER_CLIENT_CONTAINER_PORT}"
-
-  mapper-pg:
-    container_name: "MAPPER_POSTGRES"
-    hostname: ${MAPPER_PG_HOSTNAME}
-    image: postgres:10.6
-    environment:
-      POSTGRES_USER: ${MAPPER_PG_USER}
-      POSTGRES_PASSWORD: ${MAPPER_PG_PASSWORD}
-      POSTGRES_DB: ${MAPPER_PG_DATABASE}
-    expose:
-      - "${MAPPER_PG_CONTAINER_PORT}"
-    volumes:
-      - "mapper-pgdata:/var/lib/postgresql/data/"
     networks:
       - clarity
 
@@ -346,8 +305,8 @@ services:
     build:
       context: ./utilities/dashboard-client
       dockerfile: Dockerfile
-    ports:
-      - "${DASHBOARD_API_HOST_PORT}:${DASHBOARD_API_CONTAINER_PORT}"
+    expose:
+      - "${DASHBOARD_API_CONTAINER_PORT}"
     volumes:
       - "./utilities/dashboard-client:/app"
       - "/app/node_modules"
