@@ -58,7 +58,7 @@ namespace IdentityServer
             {
               new ApiResource
               {
-                Name = "api1",
+                Name = "ingest_api",
                 DisplayName = "Ingest API",
                 ApiSecrets =
                 {
@@ -68,8 +68,42 @@ namespace IdentityServer
                 {
                     new Scope()
                     {
-                        Name = "api1",
+                        Name = "ingest_api",
                         DisplayName = "Ingest API"
+                    }
+                }
+              },
+              new ApiResource
+              {
+                Name = "solr_api",
+                DisplayName = "Solr API",
+                ApiSecrets =
+                {
+                    new Secret("secret".Sha256())
+                },
+                Scopes =
+                {
+                    new Scope()
+                    {
+                        Name = "solr_api",
+                        DisplayName = "Solr API"
+                    }
+                }
+              },
+              new ApiResource
+              {
+                Name = "nlp_api",
+                DisplayName = "NLP API",
+                ApiSecrets =
+                {
+                    new Secret("secret".Sha256())
+                },
+                Scopes =
+                {
+                    new Scope()
+                    {
+                        Name = "nlp_api",
+                        DisplayName = "NLP API"
                     }
                 }
               }
@@ -140,17 +174,15 @@ namespace IdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     RequireClientSecret = false,
-
-                    // RedirectUris =           { "http://localhost:5003/callback.html", "http://localhost:5003/silent.html" },
-                    RedirectUris =           { "http://localhost:8500/silent_renew.html", "http://localhost:8500/callback.html" },
-                    PostLogoutRedirectUris = { "http://localhost:8500/csv" },
-                    AllowedCorsOrigins =     { "http://localhost:8500" },
-
+                    RedirectUris =           { "http://ingest.clarity.localhost/silent_renew.html", "http://ingest.clarity.localhost/callback.html" },
+                    PostLogoutRedirectUris = { "http://ingest.clarity.localhost/csv" },
+                    AllowedCorsOrigins =     { "http://ingest.clarity.localhost" },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Profile,
-                        "api1"
+                        "ingest_api",
+                        "solr_api"
                     }
                 },
                 // SPA - Results Viewer Client
@@ -161,17 +193,33 @@ namespace IdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     RequireClientSecret = false,
-
-                    // RedirectUris =           { "http://localhost:5003/callback.html", "http://localhost:5003/silent.html" },
-                    RedirectUris =           { "http://localhost:8201/silent_renew.html", "http://localhost:8201/callback.html" },
-                    PostLogoutRedirectUris = { "http://localhost:8201" },
-                    AllowedCorsOrigins =     { "http://localhost:8201" },
-
+                    RedirectUris =           { "http://viewer.clarity.localhost/silent_renew.html", "http://viewer.clarity.localhost/callback.html" },
+                    PostLogoutRedirectUris = { "http://viewer.clarity.localhost" },
+                    AllowedCorsOrigins =     { "http://viewer.clarity.localhost" },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Profile,
-                        "api1"
+                        "nlp_api"
+                    }
+                },
+                // SPA - Dashboard Client
+                new Client
+                {
+                    ClientId = "dashboard",
+                    ClientName = "Dashboard",
+                    AllowedGrantTypes = GrantTypes.Code,
+                    RequirePkce = true,
+                    RequireClientSecret = false,
+                    RedirectUris =           { "http://dashboard.clarity.localhost/silent_renew.html", "http://dashboard.clarity.localhost/callback.html" },
+                    PostLogoutRedirectUris = { "http://dashboard.clarity.localhost" },
+                    AllowedCorsOrigins =     { "http://dashboard.clarity.localhost" },
+                    AllowedScopes =
+                    {
+                        IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Profile,
+                        "nlp_api",
+                        "solr_api"
                     }
                 },
                 // SPA - Redux OIDC Example App

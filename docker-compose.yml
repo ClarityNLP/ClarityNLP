@@ -19,11 +19,13 @@ services:
     build:
       context: ./identity-provider
       dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      - VIRTUAL_HOST=${IDENTITY_PROVIDER_VIRTUAL_HOST}
+      - VIRTUAL_PORT=5000
     networks:
       - clarity
 
@@ -32,10 +34,13 @@ services:
     build:
       context: ./identity-and-access-proxy
       dockerfile: Dockerfile
-    ports:
-      - "6010:6010"
     networks:
       - clarity
+    expose:
+      - "6010"
+    environment:
+      - VIRTUAL_HOST=${IDENTITY_AND_ACCESS_PROXY_VIRTUAL_HOST}
+      - VIRTUAL_PORT=6010
 
   nlp-api:
     container_name: "NLP_API"
@@ -218,7 +223,7 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=${INGEST_MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${INGEST_MONGO_PASSWORD}
     expose:
-    - "${INGEST_MONGO_CONTAINER_PORT}"
+      - "${INGEST_MONGO_CONTAINER_PORT}"
     volumes:
       - ./utilities/ingest-mongo/users.js:/docker-entrypoint-initdb.d/users.js:ro
       - "ingest-mongodata:/data/db"
@@ -232,13 +237,17 @@ services:
       context: ./utilities/ingest-client
       dockerfile: Dockerfile
     environment:
-      - CHOKIDAR_USEPOLLING=true
-    ports:
-      - "${INGEST_CLIENT_HOST_PORT}:${INGEST_CLIENT_CONTAINER_PORT}" #TODO -- revisit live reload...
-      # - 35729:35729 #warm-reload websocket
+      - PORT=${INGEST_CLIENT_CONTAINER_PORT}
+      - VIRTUAL_HOST=${INGEST_CLIENT_VIRTUAL_HOST}
+      - VIRTUAL_PORT=${INGEST_CLIENT_VIRTUAL_PORT}
+      - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_VIRTUAL_HOST}
+      - REACT_APP_DASHBOARD_URL=${DASHBOARD_CLIENT_VIRTUAL_HOST}
+      - REACT_APP_RESULTS_URL=${RESULTS_CLIENT_VIRTUAL_HOST}
     volumes:
       - "./utilities/ingest-client:/app"
       - "/app/node_modules"
+    networks:
+      - clarity
 
   mapper-api:
     container_name: MAPPER_API
@@ -299,13 +308,17 @@ services:
       context: ./utilities/results-client
       dockerfile: Dockerfile
     environment:
-      - CHOKIDAR_USEPOLLING=true
-    ports:
-      - "${RESULTS_CLIENT_HOST_PORT}:${RESULTS_CLIENT_CONTAINER_PORT}"
-      # - 35729:35729 #warm-reload websocket
+      - PORT=${RESULTS_CLIENT_CONTAINER_PORT}
+      - VIRTUAL_HOST=${RESULTS_CLIENT_VIRTUAL_HOST}
+      - VIRTUAL_PORT=${RESULTS_CLIENT_VIRTUAL_PORT}
+      - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_VIRTUAL_HOST}
+      - REACT_APP_DASHBOARD_URL=${DASHBOARD_CLIENT_VIRTUAL_HOST}
+      - REACT_APP_INGEST_URL=${INGEST_CLIENT_VIRTUAL_HOST}
     volumes:
       - "./utilities/results-client:/app"
       - "/app/node_modules"
+    networks:
+      - clarity
 
   dashboard-client:
     container_name: DASHBOARD_CLIENT
@@ -314,17 +327,22 @@ services:
       context: ./utilities/dashboard-client/client
       dockerfile: Dockerfile
     environment:
-      - CHOKIDAR_USEPOLLING=true
-    ports:
-      - "${DASHBOARD_CLIENT_HOST_PORT}:${DASHBOARD_CLIENT_CONTAINER_PORT}"
-      # - 35729:35729 #warm-reload websocket
+      - PORT=${DASHBOARD_CLIENT_CONTAINER_PORT}
+      - VIRTUAL_HOST=${DASHBOARD_CLIENT_VIRTUAL_HOST}
+      - VIRTUAL_PORT=${DASHBOARD_CLIENT_VIRTUAL_PORT}
+      - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_VIRTUAL_HOST}
+      - REACT_APP_INGEST_URL=${INGEST_CLIENT_VIRTUAL_HOST}
+      - REACT_APP_RESULTS_URL=${RESULTS_CLIENT_VIRTUAL_HOST}
+      - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
     volumes:
       - "./utilities/dashboard-client/client:/app"
       - "/app/node_modules"
+    networks:
+      - clarity
 
   dashboard-api:
     container_name: DASHBOARD_API
-    hostname: ${DASHBOARD_CLIENT_HOSTNAME}
+    hostname: ${DASHBOARD_API_HOSTNAME}
     build:
       context: ./utilities/dashboard-client
       dockerfile: Dockerfile
@@ -333,5 +351,21 @@ services:
     volumes:
       - "./utilities/dashboard-client:/app"
       - "/app/node_modules"
-    env_file:
-      - .env
+    environment:
+      - DASHBOARD_API_CONTAINER_PORT=${DASHBOARD_API_CONTAINER_PORT}
+      - NLP_API_HOSTNAME=${NLP_API_HOSTNAME}
+      - NLP_API_CONTAINER_PORT=${NLP_API_CONTAINER_PORT}
+      - NLP_SOLR_HOSTNAME=${NLP_SOLR_HOSTNAME}
+      - NLP_SOLR_CONTAINER_PORT=${NLP_SOLR_CONTAINER_PORT}
+      - INTERVAL=${INTERVAL}
+    networks:
+      - clarity
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - clarity
