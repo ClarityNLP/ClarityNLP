@@ -6,7 +6,15 @@ const jwksClient = require('jwks-rsa');
 var jwt = require('jsonwebtoken');
 const url = require('url');
 
-const allowedOrigins = ['localhost:8500', 'http://localhost:8500', 'localhost'];
+const allowedOrigins = [
+  'dashboard.clarity.localhost',
+  'ingest.clarity.localhost',
+  'viewer.clarity.localhost' ,
+  'http://dashboard.clarity.localhost',
+  'http://ingest.clarity.localhost',
+  'http://viewer.clarity.localhost',
+  'localhost',
+];
 
 // Set up proxy rules instance
 var proxyRules = new HttpProxyRules({
@@ -34,7 +42,6 @@ var proxyRules = new HttpProxyRules({
     // DASHBOARD-API
     '/api/dashboard': 'ws://dashboard-api:8750' //DASHBOARD-API --> websocket connection
   }
-  // default: 'http://localhost:8080' // default target
 });
 
 // Create reverse proxy instance
@@ -82,7 +89,7 @@ const proxyServer = http.createServer(function(req, res) {
 	}
 
   var client = jwksClient({
-    jwksUri: 'http://is4:5000/.well-known/openid-configuration/jwks'
+    jwksUri: 'http://identity-provider:5000/.well-known/openid-configuration/jwks'
   });
   function getKey(header, callback){
     client.getSigningKey(header.kid, function(err, key) {
@@ -113,7 +120,6 @@ const proxyServer = http.createServer(function(req, res) {
     const target = proxyRules.match(req);
 
     if (target) {
-      console.log('about to proxy to target')
       return proxy.web(req, res, {
         target: target
       }, function(err) {
