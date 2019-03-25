@@ -1,9 +1,12 @@
 CREATE SCHEMA nlp;
 
 CREATE TABLE nlp.nlpql_library (
-	nlpql_id bigserial PRIMARY key NOT null,
-	nlpql_name varchar(100),
-	nlpql_version text,
+	nlpql_id bigserial not null
+		constraint nlpql_library_pkey
+			primary key,
+	nlpql_name varchar(100) not null,
+	nlpql_version varchar(25) not null,
+	nlpql_name_version text unique,
 	nlpql_raw text,
 	nlpql_json text,
 	date_added TIMESTAMP
