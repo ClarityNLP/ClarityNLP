@@ -117,6 +117,9 @@ services:
       - "${SCHEDULER_CONTAINER_PORT}"
     networks:
       - clarity
+    environment:
+      - VIRTUAL_HOST=${SCHEDULER_VIRTUAL_HOST}
+      - VIRTUAL_PORT=${SCHEDULER_CONTAINER_PORT}
 
   nlp-solr:
     container_name: "NLP_SOLR"
