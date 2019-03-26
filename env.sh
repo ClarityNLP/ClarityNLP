@@ -30,6 +30,7 @@ export USE_REDIS_CACHING=false
 
 # LUIGI
 export SCHEDULER_HOSTNAME=scheduler
+export SCHEDULER_VIRTUAL_HOST=luigi.clarity.localhost
 export SCHEDULER_HOST_PORT=8082
 export SCHEDULER_CONTAINER_PORT=8082
 export LUIGI_WORKERS=1
