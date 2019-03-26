@@ -6,7 +6,6 @@ CREATE TABLE nlp.nlpql_library (
 			primary key,
 	nlpql_name varchar(100) not null,
 	nlpql_version varchar(25) not null,
-	nlpql_name_version text unique,
 	nlpql_raw text,
 	nlpql_json text,
 	date_added TIMESTAMP
@@ -15,6 +14,8 @@ CREATE TABLE nlp.nlpql_library (
 CREATE UNIQUE INDEX nlpql_library_nlpql_id_uindex
 	ON nlp.nlpql_library (nlpql_id)
 ;
+
+CREATE UNIQUE INDEX nlpql_library_nlpql_name_nlpql_version_uindex ON nlp.nlpql_library (nlpql_name, nlpql_version);
 
 CREATE TABLE nlp.pipeline_config (
 	pipeline_id bigserial not null
