@@ -36,6 +36,8 @@ var proxyRules = new HttpProxyRules({
         "/api/nlp/nlpql": "http://nlp-api:5000/nlpql",
         "/api/nlp/phenotype_results_by_id/(.+)":
             "http://nlp-api:5000/phenotype_results_by_id/$1",
+        "/api/nlp/phenotype_structure/(.+)":
+            "http://nlp-api:5000/phenotype_structure/$1",
         // INGEST-API
         "/api/ingest/fields": "http://ingest-api:1337/fields", //INGEST-API --> GET fields
         "/api/ingest/core": "http://ingest-api:1337/solr/core", //INGEST-API --> GET solr/core
