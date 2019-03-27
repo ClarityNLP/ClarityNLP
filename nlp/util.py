@@ -56,47 +56,60 @@ conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (
 mongo_host = read_property('NLP_MONGO_HOSTNAME', ('mongo', 'host'))
 mongo_port = int(read_property('NLP_MONGO_CONTAINER_PORT', ('mongo', 'port')))
 mongo_db = read_property('NLP_MONGO_DATABASE', ('mongo', 'db'))
-mongo_working_index = read_property('NLP_MONGO_WORKING_INDEX', ('mongo', 'working_index'))
-mongo_working_collection = read_property('NLP_MONGO_WORKING_COLLECTION', ('mongo', 'working_collection'))
+mongo_working_index = read_property(
+    'NLP_MONGO_WORKING_INDEX', ('mongo', 'working_index'))
+mongo_working_collection = read_property(
+    'NLP_MONGO_WORKING_COLLECTION', ('mongo', 'working_collection'))
 mongo_username = read_property('NLP_MONGO_USERNAME', ('mongo', 'username'))
 mongo_password = read_property('NLP_MONGO_PASSWORD', ('mongo', 'password'))
 tmp_dir = read_property('NLP_API_TMP_DIR', ('tmp', 'dir'))
 log_dir = read_property('NLP_API_LOG_DIR', ('log', 'dir'))
 luigi_scheduler = read_property('LUIGI_SCHEDULER_URL', ('luigi', 'scheduler'))
-luigi_url = read_property('LUIGI_URL', ('luigi', 'url'))
+luigi_url = read_property('SCHEDULER_VIRTUAL_HOST', ('luigi', 'url'))
 luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'))
-results_viewer_url = read_property('RESULTS_CLIENT_URL', ('results_client', 'url'))
-main_url = read_property('NLP_API_URL', ('main', 'url'))
+results_viewer_url = read_property(
+    'RESULTS_CLIENT_URL', ('results_client', 'url'))
+main_url = read_property(
+    'IDENTITY_AND_ACCESS_PROXY_VIRTUAL_HOST', ('main', 'url'))
 row_count = read_property('BATCH_SIZE', ('solr', 'batch_size'), default='10')
 report_mapper_url = read_property('MAPPER_API_URL', ('report_mapper', 'url'))
 report_mapper_key = read_property('MAPPER_API_KEY', ('report_mapper', 'key'))
-report_mapper_inst = read_property('MAPPER_API_INSTITUTE', ('report_mapper', 'institute'))
+report_mapper_inst = read_property(
+    'MAPPER_API_INSTITUTE', ('report_mapper', 'institute'))
 ohdsi_url = read_property('OHDSI_WEBAPI_URL', ('ohdsi', 'webapi'))
 debug_mode = read_property('NLP_API_DEBUG_MODE', ('local', 'debug'))
 azure_key = read_property('NLP_AZURE_KEY', ('apis', 'azure_key'))
 solr_text_field = read_property('SOLR_TEXT_FIELD', ('solr', 'text_field'))
 solr_id_field = read_property('SOLR_ID_FIELD', ('solr', 'id_field'))
-solr_report_id_field = read_property('SOLR_REPORT_ID_FIELD', ('solr', 'report_id_field'))
-solr_source_field = read_property('SOLR_SOURCE_FIELD', ('solr', 'source_field'))
-solr_report_date_field = read_property('SOLR_REPORT_DATE_FIELD', ('solr', 'date_field'))
-solr_subject_field = read_property('SOLR_SUBJECT_FIELD', ('solr', 'subject_field'))
-solr_report_type_field = read_property('SOLR_REPORT_TYPE_FIELD', ('solr', 'type_field'))
-expression_evaluator = read_property('NLP_EXPRESSION_EVALUATOR', ('local', 'evaluator'))
+solr_report_id_field = read_property(
+    'SOLR_REPORT_ID_FIELD', ('solr', 'report_id_field'))
+solr_source_field = read_property(
+    'SOLR_SOURCE_FIELD', ('solr', 'source_field'))
+solr_report_date_field = read_property(
+    'SOLR_REPORT_DATE_FIELD', ('solr', 'date_field'))
+solr_subject_field = read_property(
+    'SOLR_SUBJECT_FIELD', ('solr', 'subject_field'))
+solr_report_type_field = read_property(
+    'SOLR_REPORT_TYPE_FIELD', ('solr', 'type_field'))
+expression_evaluator = read_property(
+    'NLP_EXPRESSION_EVALUATOR', ('local', 'evaluator'))
 redis_hostname = read_property('REDIS_HOSTNAME', ('redis', 'hostname'))
 redis_host_port = read_property('REDIS_HOST_PORT', ('redis', 'host_port'))
-redis_container_port = read_property('REDIS_CONTAINER_PORT', ('redis', 'container_port'))
+redis_container_port = read_property(
+    'REDIS_CONTAINER_PORT', ('redis', 'container_port'))
 use_memory_caching = read_property('USE_MEMORY_CACHING', ('optimizations', 'use_memory_cache'),
                                    default='true')
 use_precomputed_segmentation = read_property('USE_PRECOMPUTED_SEGMENTATION',
-                                             ('optimizations', 'use_precomputed_segmentation'),
+                                             ('optimizations',
+                                              'use_precomputed_segmentation'),
                                              default='true')
 use_reordered_nlpql = read_property('USE_REORDERED_NLPQL',
-                                             ('optimizations', 'use_reordered_nlpql'),
-                                             default='false')
+                                    ('optimizations', 'use_reordered_nlpql'),
+                                    default='false')
 
 use_redis_caching = read_property('USE_REDIS_CACHING',
-                                             ('optimizations', 'use_redis_caching'),
-                                             default='true')
+                                  ('optimizations', 'use_redis_caching'),
+                                  default='true')
 
 # TODO this out a bit more, this is more for experimental evaluation
 cache_counts = {
@@ -105,7 +118,8 @@ cache_counts = {
 }
 
 try:
-    redis_conn = redis.Redis(host=redis_hostname, port=redis_host_port, decode_responses=True)
+    redis_conn = redis.Redis(
+        host=redis_hostname, port=redis_host_port, decode_responses=True)
     redis_conn.set('clarity_cache_compute', 0)
     redis_conn.set('clarity_cache_query', 0)
 except Exception as ex:
@@ -170,6 +184,7 @@ def cmp_2_key(mycmp):
 
     return K
 
+
 def mongo_client(host=None, port=None, username=None, password=None):
 
     if not host:
@@ -188,7 +203,7 @@ def mongo_client(host=None, port=None, username=None, password=None):
     if username and len(username) > 0 and password and len(password) > 0:
         print('authenticated mongo')
         return MongoClient(host=host, port=port, username=username,
-                password=password)
+                           password=password)
     else:
         print('unauthenticated mongo')
         return MongoClient(host, port)
