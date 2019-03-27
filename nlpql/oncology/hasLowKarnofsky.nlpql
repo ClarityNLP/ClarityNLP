@@ -1,6 +1,6 @@
 debug;
 
-phenotype "Karnofksy" version "1";
+phenotype "Low Karnofksy" version "1";
 
 /* Phenotype library description */
 //Fever >=38°C with a rise a rise of >=1°C PLUS any of: rigors, dyspnea, nausea/vomiting, tachycardia, hypotension, shock
