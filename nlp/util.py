@@ -70,7 +70,8 @@ luigi_url = read_property('SCHEDULER_VIRTUAL_HOST', ('luigi', 'url'))
 luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'))
 results_viewer_url = read_property(
     'RESULTS_CLIENT_URL', ('results_client', 'url'))
-main_url = read_property('NLP_API_VIRTUAL_HOST', ('main', 'url'))
+main_url = read_property(
+    'IDENTITY_AND_ACCESS_PROXY_VIRTUAL_HOST', ('main', 'url'))
 row_count = read_property('BATCH_SIZE', ('solr', 'batch_size'), default='10')
 report_mapper_url = read_property('MAPPER_API_URL', ('report_mapper', 'url'))
 report_mapper_key = read_property('MAPPER_API_KEY', ('report_mapper', 'key'))

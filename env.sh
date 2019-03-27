@@ -27,7 +27,6 @@ export USE_MEMORY_CACHING=false
 export USE_PRECOMPUTED_SEGMENTATION=false
 export USE_REORDERED_NLPQL=false
 export USE_REDIS_CACHING=false
-export NLP_API_VIRTUAL_HOST=clarity.localhost
 
 # LUIGI
 export SCHEDULER_HOSTNAME=scheduler
