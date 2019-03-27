@@ -1,24 +1,32 @@
 [submodule "utilities/mapper-api"]
 	path = utilities/mapper-api
 	url = https://github.com/ClarityNLP/report-type-mapper-api.git
+	branch = .
 [submodule "utilities/mapper-client"]
 	path = utilities/mapper-client
 	url = https://github.com/ClarityNLP/report-type-mapper-client.git
+	branch = .
 [submodule "evaluation/validation"]
 	path = evaluation/validation
 	url = https://github.com/ClarityNLP/validation-framework.git
+	branch = .
 [submodule "utilities/ingest-api"]
 	path = utilities/ingest-api
 	url = https://github.com/ClarityNLP/ingest-api.git
+	branch = .
 [submodule "utilities/ingest-client"]
 	path = utilities/ingest-client
 	url = https://github.com/ClarityNLP/ingest-client.git
+	branch = .
 [submodule "utilities/results-client"]
 	path = utilities/results-client
 	url = https://github.com/ClarityNLP/results-viewer
+	branch = .
 [submodule "utilities/export-api"]
 	path = utilities/export-api
 	url = https://github.com/ClarityNLP/ClarityNLPExportResults.git
+	branch = .
 [submodule "utilities/dashboard-client"]
 	path = utilities/dashboard-client
 	url = https://github.com/ClarityNLP/dashboard-client.git
+	branch = .
