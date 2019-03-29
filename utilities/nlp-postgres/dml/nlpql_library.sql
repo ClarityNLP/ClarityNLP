@@ -1277,3 +1277,7 @@ define final hasLowKarnofsky:
     "limit": 0,
     "phenotype_id": 1
 }', '2019-03-26 22:38:01.619000');
+
+
+
+SELECT setval('nlp.nlpql_library_nlpql_id_seq', max(nlpql_id)+1) FROM nlp.nlpql_library;;
