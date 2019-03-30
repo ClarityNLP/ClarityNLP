@@ -22,32 +22,27 @@ var proxyRules = new HttpProxyRules({
     // NLP-API
     '/api/nlp/pipeline_types': 'http://nlp-api:5000/pipeline_types', //NLP-API --> GET pipeline_types
     '/api/nlp/phenotype_jobs/ALL': 'http://nlp-api:5000/phenotype_jobs/ALL',
-    '/api/nlp/phenotype_subjects/(.+)/(.+)':
-      'http://nlp-api:5000/phenotype_subjects/$1/$2',
-    '/api/nlp/phenotype_subject_results/(.+)/(.+)/(.+)':
-      'http://nlp-api:5000/phenotype_subject_results/$1/$2/$3',
-    '/api/nlp/phenotype_job_by_id/(.+)':
-      'http://nlp-api:5000/phenotype_job_by_id/$1',
-    '/api/nlp/phenotype_paged_results/(.+)/(.+)':
-      'http://nlp-api:5000/phenotype_paged_results/$1/$2',
+    '/api/nlp/phenotype_subjects/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subjects/$1/$2',
+    '/api/nlp/phenotype_subject_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subject_results/$1/$2/$3',
+    '/api/nlp/phenotype_job_by_id/(.+)': 'http://nlp-api:5000/phenotype_job_by_id/$1',
+    '/api/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
     '/api/nlp/export_ohdsi': 'http://nlp-api:5000/export_ohdsi',
     '/api/nlp/nlpql_tester': 'http://nlp-api:5000/nlpql_tester',
     '/api/nlp/add_query': 'http://nlp-api:5000/add_query',
     '/api/nlp/nlpql': 'http://nlp-api:5000/nlpql',
-    '/api/nlp/phenotype_results_by_id/(.+)':
-      'http://nlp-api:5000/phenotype_results_by_id/$1',
-    '/api/nlp/phenotype_structure/(.+)':
-      'http://nlp-api:5000/phenotype_structure/$1',
+    '/api/nlp/phenotype_results_by_id/(.+)': 'http://nlp-api:5000/phenotype_results_by_id/$1',
+    '/api/nlp/phenotype_structure/(.+)': 'http://nlp-api:5000/phenotype_structure/$1',
     '/api/nlp/delete_job/(.+)': 'http://nlp-api:5000/delete_job/$1',
     '/api/nlp/kill_job/(.+)': 'http://nlp-api:5000/kill_job/$1',
-    '/api/nlp/phenotype_paged_results/(.+)/(.+)':
-      'http://nlp-api:5000/phenotype_paged_results/$1/$2',
+    '/api/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
     '/api/nlp/write_nlpql_feedback': 'http://nlp-api:5000/write_nlpql_feedback',
-    '/api/nlp/phenotype_feature_results/(.+)/(.+)/(.+)':
-      'http://nlp-api:5000/phenotype_feature_results/$1/$2/$3',
+    '/api/nlp/phenotype_feature_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_feature_results/$1/$2/$3',
     '/api/nlp/performance/(.+)': 'http://nlp-api:5000/performance/$1',
     '/api/nlp/stats/(.+)': 'http://nlp-api:5000/stats/$1',
     '/api/nlp/document/(.+)': 'http://nlp-api:5000/document/$1',
+    '/api/nlp/job_results/(.+)/phenotype_intermediate': 'http://nlp-api:5000/job_results/$1/phenotype_intermediate',
+    '/api/nlp/job_results/(.+)/phenotype': 'http://nlp-api:5000/job_results/$1/phenotype',
+    '/api/nlp/job_results/(.+)/annotations': 'http://nlp-api:5000/job_results/$1/annotations',
     '/api/nlp/delete_query/(.+)': 'http://nlp-api:5000/delete_query/$1',
     // INGEST-API
     '/api/ingest/fields': 'http://ingest-api:1337/fields', //INGEST-API --> GET fields
