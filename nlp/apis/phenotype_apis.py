@@ -114,12 +114,22 @@ def addQuery():
             try:
                 nlpql_id = library.create_new_nlpql(library.NLPQL(
                     nlpql_name=nlpql_name, nlpql_version=nlpql_version, nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
+                return json.dumps(nlpql_id, indent=4)
             except Exception as e:
                 return json.dumps(e, indent=4)
 
-            return json.dumps(nlpql_id, indent=4)
-
     return "Please POST text containing NLPQL."
+
+
+@phenotype_app.route('/delete_query/<int:query_id>', methods=["GET"])
+@auto.doc(groups=['private'])
+def delete_query_by_id(query_id: int):
+    print('deleting query now ' + str(query_id))
+    flag = library.delete_query(str(query_id), util.conn_string)
+    if flag == 1:
+        return "Successfully deleted Query!"
+    else:
+        return "Unable to delete Query!"
 
 
 @phenotype_app.route('/pipeline', methods=['POST'])

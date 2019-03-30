@@ -44,6 +44,24 @@ def create_new_nlpql(nlpql: NLPQL, connection_string: str):
     return -1
 
 
+def delete_query(query_id: str, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "DELETE FROM nlp.nlpql_library WHERE nlpql_id=" + query_id)
+        conn.commit()
+
+        return query_id
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+
+    return -1
+
+
 def get_library(connection_string: str):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
