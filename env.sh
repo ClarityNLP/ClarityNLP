@@ -58,7 +58,7 @@ export NLP_MONGO_PASSWORD=password
 
 # NLP POSTGRES
 export NLP_PG_HOSTNAME=nlp-postgres
-export NLP_PG_HOST_PORT=5433
+export NLP_PG_HOST_PORT=5432
 export NLP_PG_CONTAINER_PORT=5432
 export NLP_PG_USER=pg
 export NLP_PG_PASSWORD=pg
