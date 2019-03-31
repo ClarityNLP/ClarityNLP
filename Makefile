@@ -20,6 +20,12 @@ start-clarity:
 stop-clarity:
 		docker-compose down --remove-orphans
 
+start-clarity-insecure:
+		docker-compose -f docker-compose.insecure.yml up --build
+
+stop-clarity-insecure:
+		docker-compose -f docker-compose.insecure.yml down --remove-orphans
+
 restart-clarity:
 		docker-compose restart
 
