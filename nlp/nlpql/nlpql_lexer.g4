@@ -28,7 +28,7 @@ MIN_VALUE: 'minimum_value';
 MAX_VALUE: 'maximum_value';
 ENUM_LIST: 'enum_list';
 LIMIT: 'limit';
-
+OUTPUT_FEATURE_MATRIX: 'output_feature_matrix';
 
 // Custom ClarityNLP Features
 OMOP: 'OMOP';
@@ -79,8 +79,8 @@ FLOAT:      (Digits '.' Digits? | '.' Digits) ExponentPart? [fFdD]?
              |       Digits (ExponentPart [fFdD]? | [fFdD])
              ;
 HEX_FLOAT:  '0' [xX] (HexDigits '.'? | HexDigits? '.' HexDigits) [pP] [+-]? Digits [fFdD]?;
-BOOL:       'true' | 'TRUE'
-            |       'false' | 'FALSE'
+BOOL:       'true' | 'TRUE' | 'True'
+            |       'false' | 'FALSE' | 'False'
             ;
 NULL:       'null' | 'NULL' | 'None' | 'none';
 IN:         'IN' | 'in';

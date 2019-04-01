@@ -78,5 +78,9 @@ define hasAllergy:
 //CDS logical Context (Patient, Document)
 context Patient;
 
+
 define final hasSepsis:
   where isPenicillin AND hasAllergy;
+
+output_feature_matrix: True;
+

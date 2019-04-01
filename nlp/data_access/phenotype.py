@@ -93,7 +93,7 @@ class PhenotypeModel(BaseModel):
                  code_systems: list = None, value_sets: list = None, term_sets: list = None,
                  document_sets: list = None, data_entities: list = None, cohorts: list = None,
                  operations: list = None, debug=False, limit: int = 0, nlpql: str = '',
-                 phenotype_id=1, valid=True):
+                 phenotype_id=1, valid=True, output_feature_matrix: bool = False):
         self.owner = owner
         self.name = name
         self.description = description
@@ -141,6 +141,7 @@ class PhenotypeModel(BaseModel):
         self.limit = limit
         self.nlpql = nlpql
         self.phenotype_id = phenotype_id
+        self.output_feature_matrix = output_feature_matrix
 
 
 def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
@@ -297,7 +298,6 @@ def query_phenotype(phenotype_id: int, connection_string: str):
                        [phenotype_id])
         val = cursor.fetchone()[0]
         phenotype = PhenotypeModel.from_json(val)
-
         return phenotype
     except Exception as ex:
         traceback.print_exc(file=sys.stdout)

@@ -21,7 +21,8 @@ statement:
     define |
     context |
     debugger |
-    limit
+    limit |
+    outputFeatureMatrix |
     )
     SEMI
     ;
@@ -243,3 +244,6 @@ value:
    | TIME
    ;
 
+outputFeatureMatrix:
+    OUTPUT_FEATURE_MATRIX COLON BOOL
+;

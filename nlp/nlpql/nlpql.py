@@ -1,6 +1,7 @@
 import antlr4
 import traceback
 from data_access import PhenotypeModel, PhenotypeDefine, PhenotypeEntity, PhenotypeOperations
+import pprint
 
 if __name__ is not None and "." in __name__:
     from .nlpql_parserParser import *
@@ -534,6 +535,9 @@ def handle_operation(context, phenotype: PhenotypeModel, define_name, final):
     if res:
         phenotype.operations.append(res)
 
+def handle_feature_matrix(expression: nlpql_parserParser.OutputFeatureMatrixContext, phenotype: PhenotypeModel):
+    # 0 = OUTPUT_FEATURE_MATRIX; 1 = colon; 2 = BOOL
+    phenotype.output_feature_matrix = expression.getChild(2).getText()
 
 handlers = {
     nlpql_parserParser.PhenotypeNameContext: handle_phenotype_name,
@@ -548,9 +552,9 @@ handlers = {
     nlpql_parserParser.CohortContext: handle_cohort,
     nlpql_parserParser.DescriptionContext: handle_description,
     nlpql_parserParser.DebuggerContext: handle_debug,
-    nlpql_parserParser.LimitContext: handle_limit
+    nlpql_parserParser.LimitContext: handle_limit,
+    nlpql_parserParser.OutputFeatureMatrixContext: handle_feature_matrix,
 }
-
 
 def handle_expression(expr):
     has_errors = False
@@ -592,6 +596,7 @@ def handle_expression(expr):
 
 
 def run_nlpql_parser(nlpql_txt: str):
+
     lexer = nlpql_lexer(antlr4.InputStream(nlpql_txt))
     stream = antlr4.CommonTokenStream(lexer)
     parser = nlpql_parserParser(stream)

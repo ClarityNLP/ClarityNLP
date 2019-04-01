@@ -1,11 +1,18 @@
 import csv
 import os
+import math 
 import sys
 import traceback
 from datetime import datetime
-
+import pandas as pd
+import dask.dataframe as dd
+from collections import OrderedDict
 from bson.objectid import ObjectId
 from pymongo import MongoClient
+import data_access
+import math 
+
+import psycopg2
 
 import util
 
@@ -39,6 +46,7 @@ def job_results(job_type: str, job: str):
         return phenotype_feedback_results(job)
     else:
         return generic_results(job, job_type)
+
 
 
 def phenotype_feedback_results(job: str):
@@ -157,7 +165,7 @@ def get_columns(db, job: str, job_type: str, phenotype_final: bool):
 def generic_results(job: str, job_type: str, phenotype_final: bool = False):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
-    today = datetime.today().strftime('%m_%d_%Y_%H%M')
+    today = datetime.today().strftime('%m_%d_%Y_%H%M%s')
     filename = '/tmp/job%s_%s_%s.csv' % (job, job_type, today)
     try:
         with open(filename, 'w', newline='') as csvfile:
@@ -173,6 +181,7 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
 
             results = db[job_type + "_results"].find(query)
             columns = sorted(get_columns(db, job, job_type, phenotype_final))
+
             for res in results:
                 keys = list(res.keys())
                 if not header_written:
@@ -337,7 +346,7 @@ def phenotype_stats(job_id: str, phenotype_final: bool):
         stats["subjects"] = subjects
         stats["results"] = documents
     return stats
-import math
+
 def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -378,7 +387,7 @@ def phenotype_feature_results(job_id: str, feature: str, subject: str):
     return results
 
 
-def phenotype_results_by_context(context: str, query_filters:dict):
+def phenotype_results_by_context(context: str, query_filters: dict):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
     results = []
@@ -396,6 +405,50 @@ def phenotype_results_by_context(context: str, query_filters:dict):
 
     return results
 
+def generate_feature_matrix(context: str, query_filters:dict, job_type: str, job_id: str, phenotype_id: int):
+
+    def assign_feature_label(row, column, feature):
+        return int(row[column] == feature)
+    
+    interim_df_file = job_results("phenotype_intermediate", job_id)
+    final_df_file = job_results("phenotype", job_id)
+
+    interim_df = dd.read_csv(interim_df_file, header=0)
+    interim_features = interim_df.loc[:, "nlpql_feature"].unique()
+
+    final_df = dd.read_csv(final_df_file, header=0)
+    final_features = final_df.loc[:, "nlpql_feature"].unique()
+
+    out = interim_df.loc[:, ["_id", "nlpql_feature"]].merge(final_df.loc[:, ["_id", "nlpql_feature"]], how= "outer" , on=["_id"]).compute()
+
+    for feature in interim_features.compute():
+        out[feature] = out.apply(assign_feature_label, column="nlpql_feature_x", feature=feature, axis=1)
+
+    for feature in final_features.compute():
+        out[feature] = out.apply(assign_feature_label, column="nlpql_feature_y", feature=feature, axis=1)
+
+    # get json out of postgres to recover the metadata associated with the non-matches (eg, the 0s)
+    cols_to_keep = OrderedDict()
+
+    cols_to_keep[0] = "_id"
+
+    for i, feature in enumerate(interim_features.compute()):
+        cols_to_keep[i+1] = feature
+
+    for i, feature in enumerate(final_features.compute()):
+        cols_to_keep[len(cols_to_keep.keys())+1] = feature
+
+    results_mat = out.loc[:, cols_to_keep.values()]
+
+    # TODO: get all the filters applied to the dataset, and then do the set math to give these people/notes all 0s
+    # TODO: also, check whether we need a "context" function / filter for these results (will be relevant for when we query solr and for what we join on (e.g., patient id or note id)
+
+    #out.columns= [x for x in set(interim_features).intersection(set(final_features))]
+
+    # todo: check the query type first? to make sure it's a phenotype
+    nlpql_config = data_access.query_phenotype(phenotype_id, util.conn_string)
+
+    return results_mat
 
 def remove_tmp_file(filename):
     if filename:
@@ -403,4 +456,26 @@ def remove_tmp_file(filename):
 
 
 if __name__ == "__main__":
-    job_results("pipeline", "97")
+    # job_results("pipeline", "97")	
+    #results = phenotype_performance_results("2152")
+    #print(results)
+    feature_matrix = generate_feature_matrix("", {}, "phenotype", "2156", 2004)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
