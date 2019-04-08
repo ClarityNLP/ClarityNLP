@@ -8,6 +8,7 @@ COPY dml/load_vocab.sh /docker-entrypoint-initdb.d/30-load_vocab.sh
 COPY dml/copy_vocab.sql /docker-entrypoint-initdb.d/40-copy_vocab.sql
 COPY ddl/omop_indexes.sql /docker-entrypoint-initdb.d/50-omop_indexes.sql
 COPY dml/nlpql_library.sql /docker-entrypoint-initdb.d/60-nlpql_library.sql
+COPY dml/nlpql_library_sequence.sql /docker-entrypoint-initdb.d/70-nlpql_library_sequence.sql
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["postgres"]
