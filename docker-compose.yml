@@ -21,9 +21,7 @@ services:
   identity-provider:
     container_name: IDENTITY_PROVIDER
     hostname: identity-provider
-    build:
-      context: ./identity-provider
-      dockerfile: Dockerfile
+    build: ./identity-provider
     expose:
       - ${IDENTITY_PROVIDER_CONTAINER_PORT}
     environment:
@@ -37,9 +35,7 @@ services:
   identity-and-access-proxy:
     container_name: IDENTITY_AND_ACCESS_PROXY
     hostname: identity-and-access-proxy
-    build:
-      context: ./identity-and-access-proxy
-      dockerfile: Dockerfile
+    build: ./identity-and-access-proxy
     expose:
       - ${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
     environment:
@@ -51,9 +47,7 @@ services:
   nlp-api:
     container_name: NLP_API
     hostname: ${NLP_API_HOSTNAME}
-    build:
-      context: ./nlp
-      dockerfile: Dockerfile
+    build: ./nlp
     expose:
       - ${NLP_API_CONTAINER_PORT}
     volumes:
@@ -136,9 +130,7 @@ services:
   nlp-solr:
     container_name: NLP_SOLR
     hostname: ${NLP_SOLR_HOSTNAME}
-    build:
-      context: ./utilities/nlp-solr
-      dockerfile: Dockerfile
+    build: ./utilities/nlp-solr
     expose:
       - ${NLP_SOLR_CONTAINER_PORT}
     volumes:
@@ -170,9 +162,7 @@ services:
   nlp-postgres:
     container_name: NLP_POSTGRES
     hostname: ${NLP_PG_HOSTNAME}
-    build:
-      context: ./utilities/nlp-postgres
-      dockerfile: Dockerfile
+    build: ./utilities/nlp-postgres
     environment:
       POSTGRES_USER: ${NLP_PG_USER}
       POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
@@ -232,17 +222,17 @@ services:
     container_name: ${INGEST_MONGO_CONTAINER_NAME}
     hostname: ${INGEST_MONGO_HOSTNAME}
     image: mongo:3.4.2
-    expose:
-      - ${INGEST_MONGO_CONTAINER_PORT}
-    volumes:
-      - ./utilities/ingest-mongo/users.js:/docker-entrypoint-initdb.d/users.js:ro
-      - ingest-mongodata:/data/db
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
       - MONGO_INITDB_DATABASE=${INGEST_MONGO_DATABASE}
       - MONGO_INITDB_ROOT_USERNAME=${INGEST_MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${INGEST_MONGO_PASSWORD}
+    expose:
+      - ${INGEST_MONGO_CONTAINER_PORT}
+    volumes:
+      - ./utilities/ingest-mongo/users.js:/docker-entrypoint-initdb.d/users.js:ro
+      - ingest-mongodata:/data/db
     networks:
       - clarity
 
@@ -315,9 +305,7 @@ services:
   dashboard-api:
     container_name: DASHBOARD_API
     hostname: ${DASHBOARD_API_HOSTNAME}
-    build:
-      context: ./utilities/dashboard-client
-      dockerfile: Dockerfile
+    build: ./utilities/dashboard-client
     expose:
       - ${DASHBOARD_API_CONTAINER_PORT}
     volumes:
@@ -365,7 +353,7 @@ services:
     hostname: dnsmasq
     image: jpillora/dnsmasq
     ports:
-      - "53:53/udp"
+      - 53:53/udp
     volumes:
       - ./dnsmasq.conf:/etc/dnsmasq.conf
     logging:
