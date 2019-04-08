@@ -62,6 +62,38 @@ def delete_query(query_id: str, connection_string: str):
     return -1
 
 
+def get_query(query_id: str, connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    query = {
+
+    }
+
+    try:
+        cursor.execute(
+            "SELECT * FROM nlp.nlpql_library WHERE nlpql_id=" + query_id)
+        rows = cursor.fetchall()
+        conn.commit()
+
+        for row in rows:
+            query = {
+                "nlpql_id": row[0],
+                "nlpql_name": row[1],
+                "nlpql_version": row[2],
+                "nlpql_raw": row[3],
+                "nlpql_json": row[4],
+                "date_added": row[5]
+            }
+
+        return query
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+
+    return query
+
+
 def get_library(connection_string: str):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
