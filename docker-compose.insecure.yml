@@ -315,6 +315,7 @@ services:
     volumes:
       - ./scripts/wait-for-it-extra.sh:/wait-for-it-extra.sh
       - ./utilities/dashboard-client:/app
+      - /app/node_modules
     entrypoint:
       - /wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
