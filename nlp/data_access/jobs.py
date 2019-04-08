@@ -328,6 +328,8 @@ def get_job_performance(job_ids: list(), connection_string: str):
                 performance['final_subjects'] = stats["subjects"]
                 performance['final_results'] = stats["results"]
 
+
+            del performance['counts_found']
             metrics[job_id] = performance
     except Exception as ex:
         traceback.print_exc(file=sys.stdout)
