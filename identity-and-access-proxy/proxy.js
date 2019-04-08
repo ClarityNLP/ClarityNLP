@@ -7,54 +7,53 @@ var jwt = require('jsonwebtoken');
 const url = require('url');
 
 const allowedOrigins = [
-  'dashboard.clarity.localhost',
-  'ingest.clarity.localhost',
-  'viewer.clarity.localhost',
-  'http://dashboard.clarity.localhost',
-  'http://ingest.clarity.localhost',
-  'http://viewer.clarity.localhost',
-  'localhost'
+  'dashboard.claritynlp.dev',
+  'ingest.claritynlp.dev',
+  'viewer.claritynlp.dev',
+  'http://dashboard.claritynlp.dev',
+  'http://ingest.claritynlp.dev',
+  'http://viewer.claritynlp.dev',
 ];
 
 // Set up proxy rules instance
 var proxyRules = new HttpProxyRules({
   rules: {
     // NLP-API
-    '/api/nlp/pipeline_types': 'http://nlp-api:5000/pipeline_types', //NLP-API --> GET pipeline_types
-    '/api/nlp/phenotype_jobs/ALL': 'http://nlp-api:5000/phenotype_jobs/ALL',
-    '/api/nlp/phenotype_subjects/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subjects/$1/$2',
-    '/api/nlp/phenotype_subject_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subject_results/$1/$2/$3',
-    '/api/nlp/phenotype_job_by_id/(.+)': 'http://nlp-api:5000/phenotype_job_by_id/$1',
-    '/api/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
-    '/api/nlp/export_ohdsi': 'http://nlp-api:5000/export_ohdsi',
-    '/api/nlp/nlpql_tester': 'http://nlp-api:5000/nlpql_tester',
-    '/api/nlp/add_query': 'http://nlp-api:5000/add_query',
-    '/api/nlp/nlpql': 'http://nlp-api:5000/nlpql',
-    '/api/nlp/phenotype_results_by_id/(.+)': 'http://nlp-api:5000/phenotype_results_by_id/$1',
-    '/api/nlp/phenotype_structure/(.+)': 'http://nlp-api:5000/phenotype_structure/$1',
-    '/api/nlp/delete_job/(.+)': 'http://nlp-api:5000/delete_job/$1',
-    '/api/nlp/kill_job/(.+)': 'http://nlp-api:5000/kill_job/$1',
-    '/api/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
-    '/api/nlp/write_nlpql_feedback': 'http://nlp-api:5000/write_nlpql_feedback',
-    '/api/nlp/phenotype_feature_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_feature_results/$1/$2/$3',
-    '/api/nlp/performance/(.+)': 'http://nlp-api:5000/performance/$1',
-    '/api/nlp/stats/(.+)': 'http://nlp-api:5000/stats/$1',
-    '/api/nlp/document/(.+)': 'http://nlp-api:5000/document/$1',
-    '/api/nlp/job_results/(.+)/phenotype_intermediate': 'http://nlp-api:5000/job_results/$1/phenotype_intermediate',
-    '/api/nlp/job_results/(.+)/phenotype': 'http://nlp-api:5000/job_results/$1/phenotype',
-    '/api/nlp/job_results/(.+)/annotations': 'http://nlp-api:5000/job_results/$1/annotations',
-    '/api/nlp/delete_query/(.+)': 'http://nlp-api:5000/delete_query/$1',
+    '/nlp/pipeline_types': 'http://nlp-api:5000/pipeline_types', //NLP-API --> GET pipeline_types
+    '/nlp/phenotype_jobs/ALL': 'http://nlp-api:5000/phenotype_jobs/ALL',
+    '/nlp/phenotype_subjects/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subjects/$1/$2',
+    '/nlp/phenotype_subject_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subject_results/$1/$2/$3',
+    '/nlp/phenotype_job_by_id/(.+)': 'http://nlp-api:5000/phenotype_job_by_id/$1',
+    '/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
+    '/nlp/export_ohdsi': 'http://nlp-api:5000/export_ohdsi',
+    '/nlp/nlpql_tester': 'http://nlp-api:5000/nlpql_tester',
+    '/nlp/add_query': 'http://nlp-api:5000/add_query',
+    '/nlp/nlpql': 'http://nlp-api:5000/nlpql',
+    '/nlp/phenotype_results_by_id/(.+)': 'http://nlp-api:5000/phenotype_results_by_id/$1',
+    '/nlp/phenotype_structure/(.+)': 'http://nlp-api:5000/phenotype_structure/$1',
+    '/nlp/delete_job/(.+)': 'http://nlp-api:5000/delete_job/$1',
+    '/nlp/kill_job/(.+)': 'http://nlp-api:5000/kill_job/$1',
+    '/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
+    '/nlp/write_nlpql_feedback': 'http://nlp-api:5000/write_nlpql_feedback',
+    '/nlp/phenotype_feature_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_feature_results/$1/$2/$3',
+    '/nlp/performance/(.+)': 'http://nlp-api:5000/performance/$1',
+    '/nlp/stats/(.+)': 'http://nlp-api:5000/stats/$1',
+    '/nlp/document/(.+)': 'http://nlp-api:5000/document/$1',
+    '/nlp/job_results/(.+)/phenotype_intermediate': 'http://nlp-api:5000/job_results/$1/phenotype_intermediate',
+    '/nlp/job_results/(.+)/phenotype': 'http://nlp-api:5000/job_results/$1/phenotype',
+    '/nlp/job_results/(.+)/annotations': 'http://nlp-api:5000/job_results/$1/annotations',
+    '/nlp/delete_query/(.+)': 'http://nlp-api:5000/delete_query/$1',
     // INGEST-API
-    '/api/ingest/fields': 'http://ingest-api:1337/fields', //INGEST-API --> GET fields
-    '/api/ingest/core': 'http://ingest-api:1337/solr/core', //INGEST-API --> GET solr/core
-    '/api/ingest/numDocs': 'http://ingest-api:1337/solr/numDocs', //INGEST-API --> GET solr/numDocs
-    '/api/ingest/csv': 'http://ingest-api:1337/ingest/csv', //INGEST-API --> POST /ingest/csv
-    '/api/ingest/upload': 'http://ingest-api:1337/upload', //INGEST-API --> POST /upload
-    '/api/ingest/(.+)/schedule': 'http://ingest-api:1337/ingest/$1/schedule', //INGEST-API --> POST /ingest/:ingestId/schedule
-    '/api/ingest': 'http://ingest-api:1337/ingest', //INGEST-API --> GET /ingest
-    '/api/ingest/(.+)/delete': 'http://ingest-api:1337/ingest/$1/delete', //INGEST-API --> GET /ingest/:ingestId/delete
+    '/ingest/fields': 'http://ingest-api:1337/fields', //INGEST-API --> GET fields
+    '/ingest/core': 'http://ingest-api:1337/solr/core', //INGEST-API --> GET solr/core
+    '/ingest/numDocs': 'http://ingest-api:1337/solr/numDocs', //INGEST-API --> GET solr/numDocs
+    '/ingest/csv': 'http://ingest-api:1337/ingest/csv', //INGEST-API --> POST /ingest/csv
+    '/ingest/upload': 'http://ingest-api:1337/upload', //INGEST-API --> POST /upload
+    '/ingest/(.+)/schedule': 'http://ingest-api:1337/ingest/$1/schedule', //INGEST-API --> POST /ingest/:ingestId/schedule
+    '/ingest': 'http://ingest-api:1337/ingest', //INGEST-API --> GET /ingest
+    '/ingest/(.+)/delete': 'http://ingest-api:1337/ingest/$1/delete', //INGEST-API --> GET /ingest/:ingestId/delete
     // DASHBOARD-API
-    '/api/dashboard': 'ws://dashboard-api:8750' //DASHBOARD-API --> websocket connection
+    '/dashboard': 'ws://dashboard-api:8750' //DASHBOARD-API --> websocket connection
   }
 });
 

@@ -1,3 +1,6 @@
-FROM mongo
+FROM mongo:3.4.2
+
+COPY users.js /docker-entrypoint-initdb.d/users.js
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["mongod"]

@@ -8,6 +8,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using IdentityServer4.Configuration;
+// using IdentityServer4.Core.Logging;
+// using IdentityServer4.Core.Services;
+// using IdentityServer4.Core.Services.Default;
+// using IdentityServer4.Host.Config;
 
 namespace IdentityServer
 {
@@ -24,7 +29,10 @@ namespace IdentityServer
         {
             services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_1);
 
-            var builder = services.AddIdentityServer()
+            var builder = services.AddIdentityServer(options =>
+                {
+                    options.PublicOrigin = "https://idp.claritynlp.dev";
+                })
                 .AddInMemoryIdentityResources(Config.GetIdentityResources())
                 .AddInMemoryApiResources(Config.GetApis())
                 .AddInMemoryClients(Config.GetClients())
