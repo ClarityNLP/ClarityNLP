@@ -12,4 +12,5 @@ RUN npm install
 
 COPY . .
 
-CMD ["pm2-dev", "process.json"]
+ENTRYPOINT ["pm2-dev"]
+CMD ["process.json"]
