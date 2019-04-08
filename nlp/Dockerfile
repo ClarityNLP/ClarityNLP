@@ -18,4 +18,5 @@ RUN python3 install_models.py
 
 COPY . .
 
-CMD ["python3", "api.py"]
+ENTRYPOINT ["python3"]
+CMD ["api.py"]
