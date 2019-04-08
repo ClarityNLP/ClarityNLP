@@ -162,9 +162,9 @@ namespace IdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     RequireClientSecret = false,
-                    RedirectUris =           { "http://ingest.clarity.localhost/silent_renew.html", "http://ingest.clarity.localhost/callback.html" },
-                    PostLogoutRedirectUris = { "http://ingest.clarity.localhost/csv" },
-                    AllowedCorsOrigins =     { "http://ingest.clarity.localhost" },
+                    RedirectUris =           { "https://ingest.claritynlp.dev/silent_renew.html", "https://ingest.claritynlp.dev/callback.html" },
+                    PostLogoutRedirectUris = { "https://ingest.claritynlp.dev/csv" },
+                    AllowedCorsOrigins =     { "https://ingest.claritynlp.dev" },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -181,9 +181,9 @@ namespace IdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     RequireClientSecret = false,
-                    RedirectUris =           { "http://viewer.clarity.localhost/silent_renew.html", "http://viewer.clarity.localhost/callback.html" },
-                    PostLogoutRedirectUris = { "http://viewer.clarity.localhost" },
-                    AllowedCorsOrigins =     { "http://viewer.clarity.localhost" },
+                    RedirectUris =           { "https://viewer.claritynlp.dev/silent_renew.html", "https://viewer.claritynlp.dev/callback.html" },
+                    PostLogoutRedirectUris = { "https://viewer.claritynlp.dev" },
+                    AllowedCorsOrigins =     { "https://viewer.claritynlp.dev" },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -199,9 +199,9 @@ namespace IdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     RequireClientSecret = false,
-                    RedirectUris =           { "http://dashboard.clarity.localhost/silent_renew.html", "http://dashboard.clarity.localhost/callback.html" },
-                    PostLogoutRedirectUris = { "http://dashboard.clarity.localhost" },
-                    AllowedCorsOrigins =     { "http://dashboard.clarity.localhost" },
+                    RedirectUris =           { "https://dashboard.claritynlp.dev/silent_renew.html", "https://dashboard.claritynlp.dev/callback.html" },
+                    PostLogoutRedirectUris = { "https://dashboard.claritynlp.dev" },
+                    AllowedCorsOrigins =     { "https://dashboard.claritynlp.dev" },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
