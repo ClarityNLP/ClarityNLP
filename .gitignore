@@ -25,3 +25,4 @@ env.mk
 identity-and-access-proxy/package-lock.json
 identity-provider/bin
 identity-provider/obj
+certs/
