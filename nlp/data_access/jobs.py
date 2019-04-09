@@ -301,16 +301,14 @@ def get_job_performance(job_ids: list(), connection_string: str):
 
             if status_name == 'STATS_FINAL_SUBJECTS':
                 performance['final_subjects'] = status_value
-                counts_found += 1
+                counts_found += int(status_value)
             elif status_name == 'STATS_FINAL_RESULTS':
                 performance['final_results'] = status_value
-                counts_found += 1
+                counts_found += int(status_value)
             elif status_name == 'STATS_INTERMEDIATE_SUBJECTS':
                 performance['intermediate_subjects'] = status_value
-                counts_found += 1
             elif status_name == 'STATS_INTERMEDIATE_RESULTS':
                 performance['intermediate_results'] = status_value
-                counts_found += 1
 
             performance['counts_found'] = counts_found
             metrics[job_id] = performance
@@ -318,16 +316,34 @@ def get_job_performance(job_ids: list(), connection_string: str):
         for k in metrics.keys():
             performance = metrics[k]
             counts_found = performance['counts_found']
-            if counts_found == 0:
-                intermediate_stats = phenotype_stats(str(job_id), False)
-                stats = phenotype_stats(str(job_id), True)
+            if counts_found == 0 and status == "COMPLETED":
+                final_subjects = util.get_from_redis_cache('final_subjects_{}'.format(k))
+                final_results = util.get_from_redis_cache('final_results{}'.format(k))
+                if final_results and final_subjects:
+                    performance['final_subjects'] = final_subjects
+                    performance['final_results'] = final_results
+                else:
+                    stats = phenotype_stats(str(job_id), True)
 
-                performance['intermediate_subjects'] = intermediate_stats["subjects"]
-                performance['intermediate_results'] = intermediate_stats["results"]
+                    performance['final_subjects'] = stats["subjects"]
+                    performance['final_results'] = stats["results"]
 
-                performance['final_subjects'] = stats["subjects"]
-                performance['final_results'] = stats["results"]
+                    util.write_to_redis_cache('final_subjects_{}'.format(k), stats["subjects"])
+                    util.write_to_redis_cache('final_results_{}'.format(k), stats["results"])
 
+                int_subjects = util.get_from_redis_cache('intermediate_subjects_{}'.format(k))
+                int_results = util.get_from_redis_cache('intermediate_results{}'.format(k))
+                if int_subjects and int_results:
+                    performance['intermediate_subjects'] = int_subjects
+                    performance['intermediate_results'] = intermediate_stats["results"]
+                else:
+                    intermediate_stats = phenotype_stats(str(job_id), False)
+
+                    performance['intermediate_subjects'] = intermediate_stats["subjects"]
+                    performance['intermediate_results'] = intermediate_stats["results"]
+
+                    util.write_to_redis_cache('intermediate_subjects_{}'.format(k), intermediate_stats["subjects"])
+                    util.write_to_redis_cache('intermediate_results_{}'.format(k), intermediate_stats["results"])
 
             del performance['counts_found']
             metrics[job_id] = performance
