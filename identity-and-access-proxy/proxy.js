@@ -6,13 +6,18 @@ const jwksClient = require('jwks-rsa');
 var jwt = require('jsonwebtoken');
 const url = require('url');
 
+const {
+  PROTOCOL,
+  DOMAIN,
+  DASHBOARD_CLIENT_SUBDOMAIN,
+  INGEST_CLIENT_SUBDOMAIN,
+  RESULTS_CLIENT_SUBDOMAIN,
+} = process.env
+
 const allowedOrigins = [
-  'dashboard.claritynlp.dev',
-  'ingest.claritynlp.dev',
-  'viewer.claritynlp.dev',
-  'http://dashboard.claritynlp.dev',
-  'http://ingest.claritynlp.dev',
-  'http://viewer.claritynlp.dev',
+  `${PROTOCOL}://${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}`,
+  `${PROTOCOL}://${INGEST_CLIENT_SUBDOMAIN}.${DOMAIN}`,
+  `${PROTOCOL}://${RESULTS_CLIENT_SUBDOMAIN}.${DOMAIN}`,
 ];
 
 // Set up proxy rules instance
