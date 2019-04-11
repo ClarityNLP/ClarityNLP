@@ -102,6 +102,7 @@ pipeline{
                     // rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/results-client-emory-staging:latest", ports: '', service: 'ClarityNLP/results-client', timeout: 600
                     // rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: 'redis:4.0.10', ports: '', service: 'ClarityNLP/redis', timeout: 600
                     // rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${EMORY_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/export-api:latest", ports: '', service: 'ClarityNLP/export-api', timeout: 600
+
                 }
             }
         }
