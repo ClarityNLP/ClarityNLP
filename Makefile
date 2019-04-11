@@ -33,7 +33,6 @@ endif
 endif
 
 start-clarity:
-		./scripts/certs.sh
 		docker-compose up --build
 
 stop-clarity:
