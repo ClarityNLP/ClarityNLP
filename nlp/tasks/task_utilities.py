@@ -2,6 +2,7 @@ import datetime
 import sys
 import traceback
 
+import json
 import luigi
 from pymongo import MongoClient
 from algorithms import segmentation
@@ -11,8 +12,86 @@ from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
 from data_access import base_model
+from algorithms.sec_tag import *
+from cachetools import LRUCache, cached, keys
 
+sentences_key = "sentence_attrs"
+section_names_key = "section_name_attrs"
+section_text_key = "section_text_attrs"
 doc_fields = ['report_id', 'subject', 'report_date', 'report_type', 'source', 'solr_id']
+pipeline_cache = LRUCache(maxsize=5000)
+document_cache = LRUCache(maxsize=5000)
+init_cache = LRUCache(maxsize=1000)
+segment = segmentation.Segmentation()
+
+
+@cached(document_cache)
+def _get_document_by_id(document_id):
+    util.add_cache_compute_count()
+    return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+
+
+def get_document_by_id(document_id):
+    doc = None
+
+    if util.use_redis_caching == "true":
+        util.add_cache_query_count()
+        txt = util.get_from_redis_cache("doc:" + document_id)
+        if not txt:
+            util.add_cache_compute_count()
+            doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+            util.write_to_redis_cache("doc:" + document_id, json.dumps(doc))
+        else:
+            doc = json.loads(txt)
+    elif util.use_memory_caching == "true":
+        util.add_cache_query_count()
+        doc = _get_document_by_id(document_id)
+
+    if not doc:
+        return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+    else:
+        return doc
+
+
+def document_sections(doc):
+    if util.use_precomputed_segmentation == "true" and section_names_key in doc and len(doc[section_names_key]) > 0:
+        return doc[section_names_key], doc[section_text_key]
+    else:
+        txt = document_text(doc)
+        section_headers, section_texts = [UNKNOWN], [txt]
+        try:
+            section_headers, section_texts = sec_tag_process(txt)
+        except Exception as e:
+            print(e)
+        names = [x.concept for x in section_headers]
+        return names, section_texts
+
+
+def document_sentences(doc):
+    if util.use_precomputed_segmentation == "true" and sentences_key in doc and len(doc[sentences_key]) > 0:
+        return doc[sentences_key]
+    else:
+        txt = document_text(doc)
+        sentence_list = segment.parse_sentences(txt)
+        return sentence_list
+
+
+def document_text(doc, clean=False):
+    if doc and util.solr_text_field in doc:
+        txt = doc[util.solr_text_field]
+        if type(txt) == str:
+            txt_val = txt
+        elif type(txt) == list:
+            txt_val = ' '.join(txt)
+        else:
+            txt_val = str(txt)
+
+        if clean:
+            return txt_val.encode("ascii", errors="ignore").decode()
+        else:
+            return txt_val
+    else:
+        return ''
 
 
 def get_config_boolean(pipeline_config, key, default=False):
@@ -159,6 +238,14 @@ class BaseTask(luigi.Task):
                                             filter_query=self.pipeline_config.filter_query,
                                             cohort_ids=self.pipeline_config.cohort,
                                             job_results_filters=self.pipeline_config.job_results)
+
+                for d in self.docs:
+                    doc_id = d[util.solr_report_id_field]
+                    if util.use_memory_caching == "true":
+                        k = keys.hashkey(doc_id)
+                        document_cache[k] = d
+                    if util.use_redis_caching == "true":
+                        util.write_to_redis_cache("doc:" + doc_id, json.dumps(d))
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS,
                                        "Running %s main task" % self.task_name)
                 self.run_custom_task(temp_file, client)
@@ -232,9 +319,12 @@ class BaseTask(luigi.Task):
         return get_config_string(self.pipeline_config, key, default=default)
 
     def get_document_sentences(self, doc):
-        txt = self.get_document_text(doc)
-        sentence_list = self.segment.parse_sentences(txt)
-        return sentence_list
+        return document_sentences(doc)
+
+    def get_document_sections(self, doc):
+        names, section_texts = document_sections(doc)
+        return names, section_texts
+
 
 
 

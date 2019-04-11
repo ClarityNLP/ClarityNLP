@@ -1,0 +1,260 @@
+a avd
+abvd
+ac dh
+ac th
+acalabrutinib monotherapy
+acvbp
+acvbp r
+afatinib monotherapy
+alectinib monotherapy
+atezolizumab monotherapy
+axitinib monotherapy
+azacitidine monotherapy
+b cp
+bacod
+beac
+beacopp
+bevacizumab monotherapy
+bortezomib monotherapy
+brentuximab vedotin monotherapy
+bucy
+buflu
+bumel
+butt
+bv avd
+c mopp
+c vpdl
+capecitabine monotherapy
+capeox
+capeox bevacizumab
+capiri
+capox
+capox b
+carboplatin monotherapy
+carfilzomib monotherapy
+cbop
+cemiplimab monotherapy
+cepp
+cetuximab monotherapy
+choep
+choep 14
+chop
+chop 14
+chop 21
+chop di
+chop di 14
+chop r
+chop14
+chopr
+chut
+cisplatin monotherapy
+clag
+clag m
+cnop
+codox m
+codox m ivac
+copdac
+copp
+crizotinib monotherapy
+cvp r
+cx c
+cy tbi
+cybord
+cyclophosphamide monotherapy
+cytbi
+cyve
+d vmp
+da epoch
+da r epoch
+dabrafenib monotherapy
+daepoch
+daratumumab monotherapy
+dcep
+dd 4a
+ddac
+deb tace
+dexabeam
+dexamethasone monotherapy
+dhap
+docetaxel monotherapy
+doxorubicin monotherapy
+dt pace
+dtic
+durvalumab monotherapy
+duvelisib monotherapy
+edoxaban monotherapy
+ee 4a
+enoxaparin monotherapy
+epoch 14
+erlotinib monotherapy
+eshap
+eshap r
+fcr
+fec dh
+fec t
+felv
+flag ida
+flang
+flep
+flot
+flox
+flu bu
+flu mel
+flubucy
+flucam
+flucytbi
+fludarabine monotherapy
+flumel
+fm r
+folfiri
+folfiri and cetuximab
+folfiri bevacizumab
+folfiri cetuximab
+folfiri plus cetuximab
+folfiri ziv aflibercept
+folfirinox
+folfox
+folfox b
+folfox4
+folfox4 cetuximab
+folfoxiri
+gchop
+gcvp
+gefitinib monotherapy
+gelox
+gemcitabine monotherapy
+gemox
+gemox r
+gliadel wafer
+hepatic arterial chemotherapy
+hidac
+hpmpc
+hydroxyurea monotherapy
+hyper cvad
+hypercvad
+hypercvad r
+ibrutinib monotherapy
+ice r
+idac
+ifosfamide monotherapy
+igev
+imatinib monotherapy
+imep
+ipilimumab monotherapy
+irinotecan monotherapy
+ixazomib monotherapy
+ldac
+ldrt
+lenalidomide monotherapy
+m bacod
+m ei
+macop b
+mapi
+mdcf
+mdex
+mel dex
+meldex
+methotrexate monotherapy
+mfolfirinox
+mfolfox
+mfolfox6
+midac
+minibeam
+mopp
+mopp abv
+mt r
+mvac
+mycophenolate mofetil monotherapy
+nab paclitaxel monotherapy
+nivolumab monotherapy
+nordic flox
+nove hidac
+o fc
+obinutuzumab monotherapy
+olaparib monotherapy
+optimox
+ox p
+paclitaxel monotherapy
+panitumumab monotherapy
+pazopanib monotherapy
+peginterferon alfa 2a monotherapy
+peginterferon alfa 2b monotherapy
+pembrolizumab monotherapy
+pemetrexed monotherapy
+pixantrone monotherapy
+prednisone monotherapy
+promace cytabom
+promace mopp
+r acvbp
+r bac
+r bl
+r chop
+r chop 14
+r chop 21
+r cnop
+r copadem
+r cp
+r cvp
+r dhaox
+r dhap
+r epoch
+r eshap
+r fcm
+r fm
+r fnd
+r gcvp
+r gdp
+r gemox
+r hypercvad
+r ice
+r ife
+r megachop
+r mp
+r pmitcebo
+racvbp
+ramucirumab monotherapy
+rchop
+rchop21
+rcvp
+rdhap
+regimen 1
+regorafenib monotherapy
+repoch
+rhig
+rino
+rituximab chop
+rituximab cvp
+rituximab monotherapy
+ruxolitinib monotherapy
+sirolimus monotherapy
+sorafenib monotherapy
+stanford v
+sunitinib monotherapy
+tac
+tchp
+temozolomide monotherapy
+thal dex
+ti ce
+tocilizumab monotherapy
+trametinib monotherapy
+trastuzumab monotherapy
+uftm
+vaca
+vamp
+veip
+vel dex
+veldex
+vemurafenib monotherapy
+ven r
+venetoclax monotherapy
+venr
+vide
+vipd
+vpdl
+vr cap
+vrcp
+vtd pace
+warfarin monotherapy
+xeliri
+xelox
+xelox bevacizumab

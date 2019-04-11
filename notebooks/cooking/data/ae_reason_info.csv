@@ -1,0 +1,21 @@
+﻿type,reason,description
+OSE_Labeled_AE ,from_drug_use ,AE associated with the use of the drug of interest 
+OSE_Labeled_AE ,from_drug_component ,AE associated with an inactive ingredient of the drug of interest 
+OSE_Labeled_AE ,class_effect,Effect associated with a drug class to which the drug of interest belongs. 
+OSE_Labeled_AE ,medication_error ,"Preventable event that may cause or lead to inappropriate medication use or patient harm while the medication is in the control of a healthcare provider, patient, or consumer. Examples include administration of incorrect dosage, taking a drug at incorrect frequency, or administering the wrong drug because if easily confused names."
+OSE_Labeled_AE ,other,A reason for interest other than the specific reasons listed.
+NonOSE_AE,manifestation_or_complication,"Text describing signs, symptoms, or changes in lab resuts related to the manifestations of an AE and the sequelae of an AE are not of interest."
+NonOSE_AE,AE_rate_lteq_placebo,Aes with incidence rate equal to or lower than placebo are not of interest.
+NonOSE_AE,AE_animal,AEs observed in animal data are not of interest.
+NonOSE_AE,AE_from_drug_interaction,AEs that result from drug-drug interaction or co-administration are not of interest.
+NonOSE_AE,general_term,"General terms or non-specific text such as broad categories (e.g., MedDRA system organ class) used to introdue AEs or text describe an outcome (e.g., death) rather than an AE. These are not of interest."
+NonOSE_AE,AE_from_off_label,AES associated with off-label or unapproved drug use are not of interest.
+NonOSE_AE,AE_only_as_instruction,"AES mentioned in instructions are often mentioned in a hypothetical context, with instructions for what to do if they develop. These AES are not of interest."
+NonOSE_AE,AE_for_another_drug_in_class,AE is related to a class effect but the label specifically states that the AE has not been reported or associated with the drug of interest or that the AE was only reported in another drug in the class to which the drug of interest belongs. These Aes are not of interest.
+NonOSE_AE,OD_or_withdrawal,"AE associated with discontinuing a medication or taking more than the prescribed amount. Drug overdoes and withdrawal do not generally occur when a drug is used as indicated. Additionally, in the context of pharmacovigilance, identifying AEs associated with the drug when used as indicated is the highest priority. These AEs are not of interest."
+NonOSE_AE,negation,AE whose presence or occurrence is negated or denied. These AEs are not of interst.
+NonOSE_AE,other,A reason for disinterest other than the specific reasons listed.
+Not_AE_Candidate,indication,A clinical symptom or circumstance for which the use of the drug of interest would be appropriate. These mentions are not AEs.
+Not_AE_Candidate,contraindication,"A clinical symptom, circumstance, or condition for which the use of the drug of interest would be inappropriate. These mentions are not AEs. "
+Not_AE_Candidate,preexisting_condition_or_risk_factor,"Mentions that describe a condition that developed prior to applying the medication of interest, or condition that increases the likelihood of developing a disease or injury. These mentions are not AEs."
+Not_AE_Candidate,other,A reason other than the specific reasons listed that the mention is not actually an AE.

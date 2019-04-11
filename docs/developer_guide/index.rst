@@ -66,5 +66,5 @@ NLPQL Expression Evaluation Algorithms
 .. toctree::
    :maxdepth: 1
 
-   algorithms/nlpql_eval
+   algorithms/nlpql_expr_eval
 

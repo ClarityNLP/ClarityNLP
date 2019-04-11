@@ -107,13 +107,13 @@ def segmentation_init(tries=0):
 
 
 ###############################################################################
-def parse_sentences_spacy(text):
+def parse_sentences_spacy(text, spacy=None):
 
     # spacy = segmentation_init()
     # doc = spacy(text)
     # return [sent.string.strip() for sent in doc.sents]
-
-    spacy = segmentation_init()
+    if not spacy:
+        spacy = segmentation_init()
 
     # Do some cleanup and substitutions before tokenizing. The substitutions
     # replace strings of tokens that tend to be incorrectly split with
@@ -151,8 +151,8 @@ class Segmentation(object):
         cleaned_text = self.regex_multi_space.sub(' ', no_newlines)
         return cleaned_text
 
-    def parse_sentences(self, text):
-        return parse_sentences_spacy(text)
+    def parse_sentences(self, text, spacy=None):
+        return parse_sentences_spacy(text, spacy)
 
     def parse_sentences_nltk(self, text):
         # needs punkt

@@ -21,6 +21,11 @@ Documentation
    about/index
 
 
+Contact Us
+----------
+
+Feel free to connect with us on `Slack <https://join.slack.com/t/claritynlp/shared_invite/enQtNTE5NTUzNzk4MTk5LTFmNWY1NWVmZTA4Yjc5MDUwNTRhZTBmNTA0MWM0ZDNmYjdlNTAzYmViYzAzMTkwZDkzODA2YTJhYzQ1ZTliZTQ>`_.
+
 License
 -------
 This project is licensed under Mozilla Public License 2.0.
