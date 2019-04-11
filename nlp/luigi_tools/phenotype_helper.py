@@ -476,7 +476,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     try:
         evaluator = util.expression_evaluator
     except:
-        evaluator = 'pandas'        
+        evaluator = 'mongo'        
 
     # the NLPQL expression to be evaluated
     expression = c['raw_text']
