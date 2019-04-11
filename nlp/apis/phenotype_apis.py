@@ -97,41 +97,6 @@ def nlpql():
     return "Please POST text containing NLPQL."
 
 
-@phenotype_app.route("/add_query", methods=["POST"])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
-def addQuery():
-    """POST to add NLPQL to library"""
-    if request.method == 'POST' and request.data:
-        raw_nlpql = request.data.decode("utf-8")
-        nlpql_results = run_nlpql_parser(raw_nlpql)
-        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
-            return json.dumps(nlpql_results)
-        else:
-            p_cfg = nlpql_results['phenotype']
-            nlpql_json = p_cfg.to_json()
-            nlpql_name = p_cfg.name
-            nlpql_version = p_cfg.phenotype['version']
-            try:
-                nlpql_id = library.create_new_nlpql(library.NLPQL(
-                    nlpql_name=nlpql_name, nlpql_version=nlpql_version, nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
-                return json.dumps(nlpql_id, indent=4)
-            except Exception as e:
-                return json.dumps(e, indent=4)
-
-    return "Please POST text containing NLPQL."
-
-
-@phenotype_app.route('/delete_query/<int:query_id>', methods=["GET"])
-@auto.doc(groups=['private'])
-def delete_query_by_id(query_id: int):
-    print('deleting query now ' + str(query_id))
-    flag = library.delete_query(str(query_id), util.conn_string)
-    if flag == 1:
-        return "Successfully deleted Query!"
-    else:
-        return "Unable to delete Query!"
-
-
 @phenotype_app.route('/pipeline', methods=['POST'])
 @auto.doc(groups=['public', 'private', 'phenotypes'])
 def pipeline():
@@ -340,3 +305,51 @@ def get_phenotype_results_by_id(ids: str):
     except Exception as e:
         traceback.print_exc(file=sys.stderr)
         return "Failed: " + str(e)
+
+
+# LIBRARY ENDPOINTS
+
+
+@phenotype_app.route("/add_query", methods=["POST"])
+@auto.doc(groups=['public', 'private', 'phenotypes'])
+def addQuery():
+    """POST to add NLPQL to library"""
+    if request.method == 'POST' and request.data:
+        raw_nlpql = request.data.decode("utf-8")
+        nlpql_results = run_nlpql_parser(raw_nlpql)
+        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+            return json.dumps(nlpql_results)
+        else:
+            p_cfg = nlpql_results['phenotype']
+            nlpql_json = p_cfg.to_json()
+            nlpql_name = p_cfg.name
+            nlpql_version = p_cfg.phenotype['version']
+            try:
+                nlpql_id = library.create_new_nlpql(library.NLPQL(
+                    nlpql_name=nlpql_name, nlpql_version=nlpql_version, nlpql_raw=raw_nlpql, nlpql_json=nlpql_json), util.conn_string)
+                return json.dumps(nlpql_id, indent=4)
+            except Exception as e:
+                return json.dumps(e, indent=4)
+
+    return "Please POST text containing NLPQL."
+
+
+@phenotype_app.route('/get_query/<int:query_id>', methods=["GET"])
+@auto.doc(groups=['private'])
+def get_query_by_id(query_id: int):
+    """Get NLPQL by ID from NLPQL Library"""
+    if request.method == 'GET':
+        query = library.get_query(str(query_id), util.conn_string)
+        return json.dumps(query, indent=4, sort_keys=True, default=str)
+    else:
+        return Response('Only GET requests are supported', status=400, mimetype='application/json')
+
+
+@phenotype_app.route('/delete_query/<int:query_id>', methods=["GET"])
+@auto.doc(groups=['private'])
+def delete_query_by_id(query_id: int):
+    flag = library.delete_query(str(query_id), util.conn_string)
+    if flag == 1:
+        return "Successfully deleted Query!"
+    else:
+        return "Unable to delete Query!"

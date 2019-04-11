@@ -48,6 +48,7 @@ var proxyRules = new HttpProxyRules({
     '/nlp/job_results/(.+)/phenotype': 'http://nlp-api:5000/job_results/$1/phenotype',
     '/nlp/job_results/(.+)/annotations': 'http://nlp-api:5000/job_results/$1/annotations',
     '/nlp/delete_query/(.+)': 'http://nlp-api:5000/delete_query/$1',
+    '/nlp/get_query/(.+)': 'http://nlp-api:5000/get_query/$1',
     // INGEST-API
     '/ingest/fields': 'http://ingest-api:1337/fields', //INGEST-API --> GET fields
     '/ingest/core': 'http://ingest-api:1337/solr/core', //INGEST-API --> GET solr/core
