@@ -1,103 +1,127 @@
-Running ClarityNLP Locally
-==========================
+Getting Up and Running Locally With Docker
+==========================================
+The steps below will get you up and running with a local ClarityNLP development environment.
 
-This is the best setup for getting started with ClarityNLP.
+Prerequisites
+-------------
 
+Download Source Code
+~~~~~~~~~~~~~~~~~~~~
+::
 
+  git clone https://github.com/ClarityNLP/ClarityNLP
 
-Setting up ClarityNLP Locally
------------------------------
+Initialize Submodules
+~~~~~~~~~~~~~~~~~~~~~
+::
 
-1. Install `Docker for Mac <https://www.docker.com/docker-mac>`_ or `Docker for Windows <https://www.docker.com/docker-windows>`_.
+  cd ClarityNLP
+  git checkout <branch> # develop for latest, master for stable, or tagged version
+  git submodule update --init --recursive --remote
 
-These are the recommended Docker settings for ClarityNLP. In Docker, they can be updated via Docker > Preferences > Advanced.
+Install Docker
+~~~~~~~~~~~~~~
+
+| Follow the `installation instructions <https://docs.docker.com/install/#supported-platforms>`_.
+|
+| These are the recommended Docker settings for ClarityNLP. In Docker, they can be updated via Docker > Preferences > Advanced.
 
 * Memory: >8GB
 * Disk: >256GB recommended, but can run on much less (depends on data needs)
 
-2. Run
+Install Docker Compose
+~~~~~~~~~~~~~~~~~~~~~~
+Follow the `installation guide <https://docs.docker.com/compose/install/>`_.
+
+Install mkcert
+~~~~~~~~~~~~~~
+mkcert automatically creates and installs a local CA in the system root store, and generates locally-trusted certificates.
+
+macOS
+"""""
+
+On macOS, use `Homebrew <https://brew.sh/>`_. ::
+
+  brew install mkcert
+  brew install nss # if you use Firefox
+
+or `MacPorts <https://www.macports.org/>`_. ::
+
+  sudo port selfupdate
+  sudo port install mkcert
+  sudo port install nss # if you use Firefox
+
+Linux
+"""""
+
+On Linux, first install certutil. ::
+
+  sudo apt install libnss3-tools
+      -or-
+  sudo yum install nss-tools
+      -or-
+  sudo pacman -S nss
+
+Then you can install using `Linuxbrew <https://docs.brew.sh/Homebrew-on-Linux>`_ ::
+
+  brew install mkcert
+
+Windows
+"""""""
+
+On Windows, use Chocolatey ::
+
+  choco install mkcert
+
+or use Scoop ::
+
+  scoop bucket add extras
+  scoop install mkcert
+
+Generate Development Certificates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+First, create local CA: ::
+
+  mkcert -install
+
+Run the following command at the root of the ClarityNLP project: ::
+
+  mkcert -cert-file certs/claritynlp.dev.crt -key-file certs/claritynlp.dev.key claritynlp.dev "*.claritynlp.dev"
+
+Run the Stack
+-------------
+
+The first time running it will take some time to build the Docker images, but subsequent runs will occur quickly.
+Open a terminal at the project root and run the following for local development: ::
+
+  make start-clarity
+
+| The stack is running in the foreground, and can be stopped via CMD+C (Mac/Linux) or Ctrl+C (Windows).
+|
+| In order to remove the containers and any networks that were created:
+
 ::
 
-    git clone https://github.com/ClarityNLP/ClarityNLP
+  make stop-clarity
 
-3. Switch to the ClarityNLP directory
-::
+Tips & Tricks
+-------------
 
-    cd ClarityNLP
+In order to verify containers are running: ::
 
-4. Initialize submodules
-::
+  docker ps
 
-    git submodule update --init --recursive
+The Luigi container will monitor for active tasks. It is expected to see the following output throughout the logs. ::
 
-5. Add .env file, use .env.example as a start:
-
-::
-
-    touch .env
-    cat .env.example >> .env
-
-6. Run ClarityNLP (see below).
-
-
-Running ClarityNLP
-------------------
-Build images and run containers. This will take 10-20 minutes the first time.
-::
-
-    sh run_claritynlp.sh
-
-**Or call Docker Directly:**
-
-::
-
-    docker-compose up --build
-
-(Optional) In a new terminal, verify containers are runnning.
-::
-
-    docker ps
-
-The Luigi container will monitor for active tasks. It is expected to see the following output throughout the logs.
-::
-
-    LUIGI_SCHEDULER   | 2018-10-16 19:46:19,149 luigi.scheduler INFO     Starting pruning of task graph
-    LUIGI_SCHEDULER   | 2018-10-16 19:46:19,149 luigi.scheduler INFO     Done pruning task graph
-
-
-Shutting down ClarityNLP
-------------------------
-CMD+C (Mac) or Ctrl+C (Windows) from the window where ClarityNLP was started or you can run the following to
-forcefully kill the containers.
-
-::
-
-    sh stop_all_docker_containers.sh
-
+  LUIGI_SCHEDULER   | 2018-10-16 19:46:19,149 luigi.scheduler INFO     Starting pruning of task graph
+  LUIGI_SCHEDULER   | 2018-10-16 19:46:19,149 luigi.scheduler INFO     Done pruning task graph
 
 
 ClarityNLP Links
 ----------------
-* `ClarityNLP API <http://localhost:5000>`_
-* `ClarityNLP Solr <http://localhost:8983>`_
-* `ClarityNLP Luigi <http://localhost:8082>`_
-* `Report Type Mapper Docs <http://localhost:3000/>`_
-* `Report Type Mapper Client <http://localhost:8000>`_
-* `Ingest Client <http://localhost:8500/>`_
-* `Results Client <http://localhost:8201/>`_
-
-* ClarityNLP Postgres `jdbc:postgresql://localhost:5433/clarity`
-* ClaritNLP Mongo `localhost:27017`
-* Ingest Mongo `localhost:27020`
-
-
-
-
-Updating to download latest changes
------------------------------------
-From the command line, run:
-
-::
-
-    git pull
-    git submodule update --recursive
+* ClarityNLP Dashboard --> https://dashboard.claritynlp.dev
+* ClarityNLP API --> https://api.claritynlp.dev
+* ClarityNLP Solr --> https://solr.claritynlp.dev
+* ClarityNLP Luigi --> https://luigi.claritynlp.dev
+* Clarity Ingest --> https://ingest.claritynlp.dev
+* Clarity Results --> https://viewer.claritynlp.dev
