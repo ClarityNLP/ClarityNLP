@@ -11,7 +11,6 @@ volumes:
   nlp-mongodata:
   ingest-files:
   ingest-mongodata:
-  certs:
   vhost:
   html:
   dhparam:
@@ -50,10 +49,9 @@ services:
     expose:
       - ${NLP_API_CONTAINER_PORT}
     volumes:
-      - ./scripts/wait-for-it-extra.sh:/wait-for-it-extra.sh
       - ./nlp:/api
     entrypoint:
-      - /wait-for-it-extra.sh
+      - /api/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
       - ${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}
       - ${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}
@@ -175,14 +173,13 @@ services:
     hostname: ${INGEST_API_HOSTNAME}
     build: ./utilities/ingest-api
     volumes:
-      - ./scripts/wait-for-it-extra.sh:/wait-for-it-extra.sh
       - ./utilities/ingest-api:/app
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
       - ingest-files:/var/lib/ingest-files
     expose:
       - ${INGEST_API_CONTAINER_PORT}
     entrypoint:
-      - /wait-for-it-extra.sh
+      - /app/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
       - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
       - ${INGEST_MONGO_HOSTNAME}:${INGEST_MONGO_CONTAINER_PORT}
@@ -305,11 +302,10 @@ services:
     expose:
       - ${DASHBOARD_API_CONTAINER_PORT}
     volumes:
-      - ./scripts/wait-for-it-extra.sh:/wait-for-it-extra.sh
       - ./utilities/dashboard-client:/app
       - /app/node_modules
     entrypoint:
-      - /wait-for-it-extra.sh
+      - /app/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
       - ${NLP_API_HOSTNAME}:${NLP_API_CONTAINER_PORT}
       - --timeout=420
