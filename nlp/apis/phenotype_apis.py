@@ -3,7 +3,6 @@ from luigi_tools import phenotype_helper, luigi_runner
 from data_access import *
 from algorithms import *
 from nlpql import *
-from .docs import auto
 from apis.api_helpers import init
 from tasks import register_tasks, registered_pipelines, registered_collectors
 
@@ -67,7 +66,6 @@ def parse_nlpql(nlpql: str):
 
 
 @phenotype_app.route('/phenotype', methods=['POST'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def phenotype():
     """POST a phenotype job (JSON) to run"""
     if not request.data:
@@ -81,7 +79,6 @@ def phenotype():
 
 
 @phenotype_app.route("/nlpql", methods=["POST"])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def nlpql():
     """POST to run NLPQL phenotype"""
     if request.method == 'POST' and request.data:
@@ -98,7 +95,6 @@ def nlpql():
 
 
 @phenotype_app.route('/pipeline', methods=['POST'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def pipeline():
     """POST a pipeline job (JSON) to run on the Luigi pipeline."""
     if not request.data:
@@ -135,7 +131,6 @@ def pipeline():
 
 
 @phenotype_app.route('/pipeline_id/<int:pipeline_id>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def pipeline_id(pipeline_id: int):
     """GET a pipeline JSON based on the pipeline_id"""
     try:
@@ -147,7 +142,6 @@ def pipeline_id(pipeline_id: int):
 
 
 @phenotype_app.route('/phenotype_id/<int:phenotype_id>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def phenotype_id(phenotype_id: int):
     """GET a pipeline JSON based on the phenotype_id"""
     try:
@@ -159,7 +153,6 @@ def phenotype_id(phenotype_id: int):
 
 
 @phenotype_app.route("/nlpql_tester", methods=["POST"])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def nlpql_tester():
     if request.method == 'POST' and request.data:
         return parse_nlpql(request.data.decode("utf-8"))
@@ -168,7 +161,6 @@ def nlpql_tester():
 
 
 @phenotype_app.route("/nlpql_expander", methods=["POST"])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def nlpql_expander():
     """POST to expand NLPQL termset macros"""
     if request.method == 'POST' and request.data:
@@ -179,7 +171,6 @@ def nlpql_expander():
 
 
 @phenotype_app.route('/phenotype_jobs/<string:status_string>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def phenotype_jobs(status_string: str):
     """GET a phenotype jobs JSON based on the job status"""
     try:
@@ -191,7 +182,6 @@ def phenotype_jobs(status_string: str):
 
 
 @phenotype_app.route('/phenotype_job_by_id/<string:id>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def phenotype_job_by_id(id: str):
     """GET a phenotype jobs JSON by id"""
     try:
@@ -203,7 +193,6 @@ def phenotype_job_by_id(id: str):
 
 
 @phenotype_app.route('/phenotype_paged_results/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_paged_phenotype_results(job_id: int, phenotype_final_str: str):
     """GET paged phenotype results"""
     try:
@@ -221,7 +210,6 @@ def get_paged_phenotype_results(job_id: int, phenotype_final_str: str):
 
 
 @phenotype_app.route('/phenotype_subjects/<int:job_id>/<string:phenotype_final_str>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_phenotype_subjects(job_id: int, phenotype_final_str: str):
     """GET phenotype_subjects"""
     try:
@@ -238,7 +226,6 @@ def get_phenotype_subjects(job_id: int, phenotype_final_str: str):
 
 
 @phenotype_app.route('/phenotype_subject_results/<int:job_id>/<string:phenotype_final_str>/<string:subject>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_phenotype_subject_results(job_id: int, phenotype_final_str, subject: str):
     """GET phenotype results for a given subject"""
     try:
@@ -255,7 +242,6 @@ def get_phenotype_subject_results(job_id: int, phenotype_final_str, subject: str
 
 
 @phenotype_app.route('/phenotype_result_by_id/<string:id>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_phenotype_result_by_id(id: str):
     """GET phenotype result for a given mongo identifier"""
     try:
@@ -268,7 +254,6 @@ def get_phenotype_result_by_id(id: str):
 
 
 @phenotype_app.route('/phenotype_structure/<int:id>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_phenotype_structure(id: int):
     """GET phenotype structure parsed out"""
     try:
@@ -281,7 +266,6 @@ def get_phenotype_structure(id: int):
 
 
 @phenotype_app.route('/phenotype_feature_results/<int:job_id>/<string:feature>/<string:subject>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_phenotype_feature_results(job_id: int, feature: str, subject: str):
     """GET phenotype results for a given feature"""
     try:
@@ -294,7 +278,6 @@ def get_phenotype_feature_results(job_id: int, feature: str, subject: str):
 
 
 @phenotype_app.route('/phenotype_results_by_id/<string:ids>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def get_phenotype_results_by_id(ids: str):
     """GET phenotype results for a comma-separated list of ids"""
     try:
@@ -311,7 +294,6 @@ def get_phenotype_results_by_id(ids: str):
 
 
 @phenotype_app.route("/add_query", methods=["POST"])
-@auto.doc(groups=['public', 'private', 'phenotypes'])
 def addQuery():
     """POST to add NLPQL to library"""
     if request.method == 'POST' and request.data:
@@ -335,7 +317,6 @@ def addQuery():
 
 
 @phenotype_app.route('/get_query/<int:query_id>', methods=["GET"])
-@auto.doc(groups=['private'])
 def get_query_by_id(query_id: int):
     """Get NLPQL by ID from NLPQL Library"""
     if request.method == 'GET':
@@ -346,7 +327,6 @@ def get_query_by_id(query_id: int):
 
 
 @phenotype_app.route('/delete_query/<int:query_id>', methods=["GET"])
-@auto.doc(groups=['private'])
 def delete_query_by_id(query_id: int):
     flag = library.delete_query(str(query_id), util.conn_string)
     if flag == 1:

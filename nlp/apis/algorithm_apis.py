@@ -3,14 +3,12 @@ from flask import request,  Blueprint
 from apis.api_helpers import init
 from data_access import *
 from algorithms import *
-from .docs import auto
 
 
 algorithm_app = Blueprint('algorithm_app', __name__)
 
 
 @algorithm_app.route('/ngram_cohort', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'algorithms'])
 def get_ngram():
     """GET n-grams for a cohort, PARAMETERS: cohort_id=cohort_id, keyword=keyword, n=ngram length, frequency=cutoff
     frequency"""
@@ -34,7 +32,6 @@ def get_ngram():
 
 
 @algorithm_app.route('/measurement_finder', methods=['POST'])
-@auto.doc(groups=['public', 'private', 'algorithms'])
 def measurement_finder():
     """POST to extract measurements, See samples/sample_measurement_finder.json"""
     if request.method == 'POST' and request.data:
@@ -47,7 +44,6 @@ def measurement_finder():
 
 
 @algorithm_app.route('/term_finder', methods=['POST'])
-@auto.doc(groups=['public', 'private', 'algorithms'])
 def term_finder():
     """POST to extract terms, context, negex, sections from text, See samples/sample_term_finder.json"""
     if request.method == 'POST' and request.data:
@@ -61,7 +57,6 @@ def term_finder():
 
 
 @algorithm_app.route('/value_extractor', methods=['POST'])
-@auto.doc(groups=['public', 'private', 'algorithms'])
 def value_extractor():
     """POST to extract values such as BP, LVEF, Vital Signs etc. (See samples/sample_value_extractor.json)"""
     if request.method == 'POST' and request.data:
@@ -75,7 +70,6 @@ def value_extractor():
 
 
 @algorithm_app.route('/named_entity_recognition', methods=['POST'])
-@auto.doc(groups=['public', 'private', 'algorithms'])
 def named_entity_recognition():
     """POST to extract standard named entities. (See samples/sample_ner.json)"""
     if request.method == 'POST' and request.data:
@@ -88,7 +82,6 @@ def named_entity_recognition():
 
 
 @algorithm_app.route('/pos_tagger', methods=['POST'])
-@auto.doc(groups=['public', 'private', 'algorithms'])
 def pos_tagger():
     """POST to extract Tags. (See samples/sample_pos_tag_text.json)"""
     if request.method == 'POST' and request.data:
@@ -101,7 +94,6 @@ def pos_tagger():
 
 
 @algorithm_app.route("/tnm_stage", methods=["POST"])
-@auto.doc(groups=['public', 'private', 'algorithms'])
 def tnm_stage():
     """POST to extract TNM cancer stage (See samples/sample_tnm_stage.json)"""
     if request.method == 'POST' and request.data:
