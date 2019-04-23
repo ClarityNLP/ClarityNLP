@@ -50,6 +50,7 @@ var proxyRules = new HttpProxyRules({
     '/nlp/delete_query/(.+)': 'http://nlp-api:5000/delete_query/$1',
     '/nlp/get_query/(.+)': 'http://nlp-api:5000/get_query/$1',
     // INGEST-API
+    '/ingest/socket': 'http://ingest-api:1337',
     '/ingest/fields': 'http://ingest-api:1337/fields', //INGEST-API --> GET fields
     '/ingest/core': 'http://ingest-api:1337/solr/core', //INGEST-API --> GET solr/core
     '/ingest/numDocs': 'http://ingest-api:1337/solr/numDocs', //INGEST-API --> GET solr/numDocs
@@ -168,16 +169,18 @@ const proxyServer = http.createServer(function(req, res) {
 });
 
 proxyServer.on('upgrade', function(req, socket, head) {
+
+  const target = proxyRules.match(req);
+
   proxy.ws(
     req,
     socket,
     head,
     {
-      target: 'ws://dashboard-api:8750'
+      target: target
     },
     function(err) {
       console.log('err: ', err);
-      // sendError(res, err);
     }
   );
 });
