@@ -68,12 +68,6 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
     subjects = list()
     documents = list()
 
-    if sources and len(sources) > 0:
-        if len(new_fq) > 0:
-            new_fq += ' AND '
-        sources_fq = util.solr_source_field + ': ("' + '" OR "'.join(sources) + '")'
-        new_fq += sources_fq
-
     if types and len(types) > 0:
         if len(new_fq) > 0:
             new_fq += ' AND '
@@ -135,6 +129,12 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
         doc_fq = util.solr_report_id_field + ': (' + ' OR '.join(subjects) + ')'
         new_fq += doc_fq
 
+
+    if sources and len(sources) > 0:
+        if len(new_fq) > 0:
+            new_fq += ' AND '
+        sources_fq = util.solr_source_field + ': ("' + '" OR "'.join(sources) + '")'
+        new_fq += sources_fq
 
     return new_fq
 
