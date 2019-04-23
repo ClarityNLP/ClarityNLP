@@ -159,7 +159,7 @@ services:
       - ${NLP_MONGO_CONTAINER_PORT}
     volumes:
       - ./utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js
-      - ./utilities/nlp-mongo/users.js:/docker-entrypoint-initdb.d/users.js
+      - ./utilities/nlp-mongo/users.sh:/docker-entrypoint-initdb.d/users.sh
       - nlp-mongodata:/data/db
     environment:
       - MONGO_DATA_DIR=/data/db
@@ -243,7 +243,7 @@ services:
     expose:
       - ${INGEST_MONGO_CONTAINER_PORT}
     volumes:
-      - ./utilities/ingest-mongo/users.js:/docker-entrypoint-initdb.d/users.js:ro
+      - ./utilities/ingest-mongo/users.sh:/docker-entrypoint-initdb.d/users.sh:ro
       - ingest-mongodata:/data/db
     networks:
       - clarity
