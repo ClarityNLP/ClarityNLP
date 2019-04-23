@@ -2,6 +2,16 @@
 export ASPNETCORE_URLS=http://*:5000
 export IDENTITY_PROVIDER_CONTAINER_PORT=5000
 export IDENTITY_PROVIDER_SUBDOMAIN=idp
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=admin
+export CLIENT_CLI_SECRET=secret
+export IDP_SIGNING_CREDS_PASSPHRASE=mysecurepassphrase
+
+# IDP MSSQL
+export IDP_DB_CONTAINER_PORT=1433
+export IDP_DB_PASSWORD=yourStrong123Password
+export IDP_DATABASE=idp
+export IDP_DB_HOSTNAME=mssql
 
 # IDENTITY AND ACCESS PROXY
 export IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT=6010
@@ -35,6 +45,8 @@ export NLP_API_SUBDOMAIN=nlp
 export SCHEDULER_HOSTNAME=scheduler
 export SCHEDULER_HOST_PORT=8082
 export SCHEDULER_CONTAINER_PORT=8082
+export SCHEDULER_USERNAME=admin
+export SCHEDULER_PASSWORD=admin
 export LUIGI_WORKERS=1
 export LUIGI_URL=http://localhost:8082
 export LUIGI_SCHEDULER_URL=http://scheduler:8082
@@ -49,6 +61,8 @@ export NLP_SOLR_URL=http://nlp-solr:8983/solr/sample
 export NLP_SOLR_URL_TOP_LEVEL=http://nlp-solr:8983
 export SOLR_HEAP=4096m
 export SOLR_SUBDOMAIN=solr
+export SOLR_USERNAME=admin
+export SOLR_PASSWORD=admin
 
 # NLP MONGO
 export NLP_MONGO_HOSTNAME=nlp-mongo
