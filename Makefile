@@ -50,6 +50,12 @@ start-clarity-prod:
 stop-clarity-prod:
 		docker-compose -f docker-compose.prod.yml down --remove-orphans
 
+start-clarity-prod-local:
+		docker-compose -f docker-compose.prod.dnsmasq.yml up --build
+
+stop-clarity-prod-local:
+		docker-compose -f docker-compose.prod.dnsmasq.yml down --remove-orphans
+
 restart-clarity:
 		docker-compose restart
 

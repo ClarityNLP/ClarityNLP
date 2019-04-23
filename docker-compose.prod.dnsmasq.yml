@@ -1,10 +1,12 @@
-version: "3"
+version: '3'
 
 networks:
   clarity:
     driver: bridge
 
 volumes:
+  mssql-data:
+  idp-signing-creds:
   redisdata:
   nlp-solrdata:
   nlp-pgdata:
@@ -17,14 +19,39 @@ volumes:
   htpasswd:
 
 services:
+  mssql:
+    container_name: IDP_MSSQL
+    hostname: ${IDP_DB_HOSTNAME}
+    image: microsoft/mssql-server-linux
+    expose:
+      - ${IDP_DB_CONTAINER_PORT}
+    # volumes:
+    #   - mssql-data:/var/opt/mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${IDP_DB_PASSWORD}
+      - MSSQL_PID=Developer
+    networks:
+      - clarity
+
   identity-provider:
     container_name: IDENTITY_PROVIDER
     hostname: identity-provider
     build: ./identity-provider
     expose:
       - ${IDENTITY_PROVIDER_CONTAINER_PORT}
+    volumes:
+      - idp-signing-creds:/app/creds
+    entrypoint:
+      - /app/wait-for-it-extra.sh
+      - ${IDP_DB_HOSTNAME}:${IDP_DB_CONTAINER_PORT}
+      - --timeout=420
+      - --extra=15
+      - --
+      - docker-entrypoint.sh
+    command: dotnet IdentityServer.dll
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - VIRTUAL_HOST=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
       - VIRTUAL_PORT=${IDENTITY_PROVIDER_CONTAINER_PORT}
@@ -37,6 +64,11 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CLIENT_CLI_SECRET=${CLIENT_CLI_SECRET}
+      - IDP_DB_PASSWORD=${IDP_DB_PASSWORD}
+      - IDP_DATABASE=${IDP_DATABASE}
+      - IDP_SIGNING_CREDS_PASSPHRASE=${IDP_SIGNING_CREDS_PASSPHRASE}
+    depends_on:
+      - mssql
     networks:
       - clarity
 
@@ -46,6 +78,8 @@ services:
     build: ./identity-and-access-proxy
     expose:
       - ${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
+    entrypoint: pm2-runtime
+    command: proxy.js
     environment:
       - VIRTUAL_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
       - VIRTUAL_PORT=${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
@@ -60,11 +94,9 @@ services:
   nlp-api:
     container_name: NLP_API
     hostname: ${NLP_API_HOSTNAME}
-    build: ./nlp
+    build: ./nlp #TODO need production dockerfile
     expose:
       - ${NLP_API_CONTAINER_PORT}
-    volumes:
-      - ./nlp:/api
     entrypoint:
       - /api/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
@@ -154,19 +186,19 @@ services:
   nlp-mongo:
     container_name: NLP_MONGO
     hostname: ${NLP_MONGO_HOSTNAME}
-    image: mongo
-    expose:
-      - ${NLP_MONGO_CONTAINER_PORT}
-    volumes:
-      - ./utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js
-      - ./utilities/nlp-mongo/users.js:/docker-entrypoint-initdb.d/users.js
-      - nlp-mongodata:/data/db
+    build:
+      context: ./utilities/nlp-mongo
+      dockerfile: Dockerfile.prod
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
       - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
       - MONGO_INITDB_ROOT_USERNAME=${NLP_MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${NLP_MONGO_PASSWORD}
+    expose:
+      - ${NLP_MONGO_CONTAINER_PORT}
+    volumes:
+      - nlp-mongodata:/data/db
     networks:
       - clarity
 
@@ -188,9 +220,11 @@ services:
   ingest-api:
     container_name: INGEST_API
     hostname: ${INGEST_API_HOSTNAME}
+    build:
+      context: ./utilities/ingest-api
+      dockerfile: Dockerfile.prod
     build: ./utilities/ingest-api
     volumes:
-      - ./utilities/ingest-api:/app
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
       - ingest-files:/var/lib/ingest-files
     expose:
@@ -202,10 +236,10 @@ services:
       - ${INGEST_MONGO_HOSTNAME}:${INGEST_MONGO_CONTAINER_PORT}
       - --timeout=420
       - --
-      - pm2-dev
-    command: process.json
+      - pm2-runtime
+    command: app.js
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - JOB_TYPES=ingest
       - NLP_SOLR_HOSTNAME=${NLP_SOLR_HOSTNAME}
       - NLP_SOLR_CONTAINER_PORT=${NLP_SOLR_CONTAINER_PORT}
@@ -233,7 +267,9 @@ services:
   ingest-mongo:
     container_name: ${INGEST_MONGO_CONTAINER_NAME}
     hostname: ${INGEST_MONGO_HOSTNAME}
-    image: mongo:3.4.2
+    build:
+      context: ./utilities/ingest-mongo
+      dockerfile: Dockerfile.prod
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
@@ -243,7 +279,6 @@ services:
     expose:
       - ${INGEST_MONGO_CONTAINER_PORT}
     volumes:
-      - ./utilities/ingest-mongo/users.js:/docker-entrypoint-initdb.d/users.js:ro
       - ingest-mongodata:/data/db
     networks:
       - clarity
@@ -251,14 +286,15 @@ services:
   ingest-client:
     container_name: INGEST_CLIENT
     hostname: ${INGEST_CLIENT_HOSTNAME}
-    build: ./utilities/ingest-client
+    build:
+      context: ./utilities/ingest-client
+      dockerfile: Dockerfile.prod
     volumes:
-      - ./utilities/ingest-client:/app
       - /app/node_modules
     environment:
       - PORT=${INGEST_CLIENT_CONTAINER_PORT}
       - VIRTUAL_HOST=${INGEST_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${INGEST_CLIENT_VIRTUAL_PORT}
+      - VIRTUAL_PORT=80
       - REACT_APP_IDENTITY_PROVIDER_URL=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
       - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
       - REACT_APP_DASHBOARD_URL=${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}
@@ -280,14 +316,15 @@ services:
   results-client:
     container_name: RESULTS_CLIENT
     hostname: ${RESULTS_CLIENT_HOSTNAME}
-    build: ./utilities/results-client
+    build:
+      context: ./utilities/results-client
+      dockerfile: Dockerfile.prod
     volumes:
-      - ./utilities/results-client:/app
       - /app/node_modules
     environment:
       - PORT=${RESULTS_CLIENT_CONTAINER_PORT}
       - VIRTUAL_HOST=${RESULTS_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${RESULTS_CLIENT_VIRTUAL_PORT}
+      - VIRTUAL_PORT=80
       - REACT_APP_IDENTITY_PROVIDER_URL=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
       - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
       - REACT_APP_DASHBOARD_URL=${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}
@@ -298,14 +335,15 @@ services:
   dashboard-client:
     container_name: DASHBOARD_CLIENT
     hostname: ${DASHBOARD_CLIENT_HOSTNAME}
-    build: ./utilities/dashboard-client/client
+    build:
+      context: ./utilities/dashboard-client/client
+      dockerfile: Dockerfile.prod
     volumes:
-      - ./utilities/dashboard-client/client:/app
       - /app/node_modules
     environment:
       - PORT=${DASHBOARD_CLIENT_CONTAINER_PORT}
       - VIRTUAL_HOST=${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${DASHBOARD_CLIENT_VIRTUAL_PORT}
+      - VIRTUAL_PORT=80
       - REACT_APP_IDENTITY_PROVIDER_URL=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
       - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
       - REACT_APP_INGEST_URL=${INGEST_CLIENT_SUBDOMAIN}.${DOMAIN}
@@ -318,19 +356,18 @@ services:
     container_name: DASHBOARD_API
     hostname: ${DASHBOARD_API_HOSTNAME}
     build: ./utilities/dashboard-client
+    volumes:
+      - /app/node_modules
     expose:
       - ${DASHBOARD_API_CONTAINER_PORT}
-    volumes:
-      - ./utilities/dashboard-client:/app
-      - /app/node_modules
     entrypoint:
       - /app/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
       - ${NLP_API_HOSTNAME}:${NLP_API_CONTAINER_PORT}
       - --timeout=420
       - --
-      - pm2-dev
-    command: process.json
+      - pm2-runtime
+    command: index.js
     environment:
       - DASHBOARD_API_CONTAINER_PORT=${DASHBOARD_API_CONTAINER_PORT}
       - NLP_API_HOSTNAME=${NLP_API_HOSTNAME}

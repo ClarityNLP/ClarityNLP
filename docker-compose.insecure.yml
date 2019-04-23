@@ -14,6 +14,7 @@ volumes:
   vhost:
   html:
   dhparam:
+  htpasswd:
 
 services:
   identity-provider:
@@ -27,6 +28,15 @@ services:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - VIRTUAL_HOST=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
       - VIRTUAL_PORT=${IDENTITY_PROVIDER_CONTAINER_PORT}
+      - PROTOCOL=${PROTOCOL}
+      - DOMAIN=${DOMAIN}
+      - SUBDOMAIN=${IDENTITY_PROVIDER_SUBDOMAIN}
+      - DASHBOARD_SUBDOMAIN=${DASHBOARD_CLIENT_SUBDOMAIN}
+      - INGEST_SUBDOMAIN=${INGEST_CLIENT_SUBDOMAIN}
+      - RESULTS_SUBDOMAIN=${RESULTS_CLIENT_SUBDOMAIN}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - CLIENT_CLI_SECRET=${CLIENT_CLI_SECRET}
     networks:
       - clarity
 
@@ -39,6 +49,11 @@ services:
     environment:
       - VIRTUAL_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
       - VIRTUAL_PORT=${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
+      - PROTOCOL=${PROTOCOL}
+      - DOMAIN=${DOMAIN}
+      - DASHBOARD_CLIENT_SUBDOMAIN=${DASHBOARD_CLIENT_SUBDOMAIN}
+      - INGEST_CLIENT_SUBDOMAIN=${INGEST_CLIENT_SUBDOMAIN}
+      - RESULTS_CLIENT_SUBDOMAIN=${RESULTS_CLIENT_SUBDOMAIN}
     networks:
       - clarity
 
@@ -332,7 +347,7 @@ services:
   nginx-proxy:
     container_name: NGINX_PROXY
     hostname: nginx-proxy
-    image: jwilder/nginx-proxy
+    build: ./nginx-proxy
     ports:
       - "80:80"
       - "443:443"
@@ -342,7 +357,16 @@ services:
       - vhost:/etc/nginx/vhost.d
       - html:/usr/share/nginx/html
       - dhparam:/etc/nginx/dhparam
+      - htpasswd:/etc/nginx/htpasswd
       - /var/run/docker.sock:/tmp/docker.sock:ro
+    environment:
+      - SOLR_USERNAME=${SOLR_USERNAME}
+      - SOLR_PASSWORD=${SOLR_PASSWORD}
+      - SOLR_SUBDOMAIN=${SOLR_SUBDOMAIN}
+      - SCHEDULER_USERNAME=${SCHEDULER_USERNAME}
+      - SCHEDULER_PASSWORD=${SCHEDULER_PASSWORD}
+      - SCHEDULER_SUBDOMAIN=${SCHEDULER_SUBDOMAIN}
+      - DOMAIN=${DOMAIN}
     networks:
       - clarity
 
