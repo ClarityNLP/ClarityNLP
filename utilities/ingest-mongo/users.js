@@ -1,7 +1,7 @@
 db.createUser(
   {
-    user: "admin",
-    pwd: "password",
+    user: process.env.INGEST_MONGO_USERNAME,
+    pwd: process.env.INGEST_MONGO_PASSWORD,
     roles:[
       {
         role: "dbOwner",
