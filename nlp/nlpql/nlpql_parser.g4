@@ -223,7 +223,12 @@ named:
     DOCUMENT_SET |
     COHORT |
     POPULATION |
-    DATAMODEL;
+    DATAMODEL |
+    REPORT_TYPES |
+    REPORT_TAGS |
+    SOURCE |
+    FILTER_QUERY |
+    QUERY;
 
 array: L_BRACKET value (COMMA value)* R_BRACKET
    | L_BRACKET R_BRACKET

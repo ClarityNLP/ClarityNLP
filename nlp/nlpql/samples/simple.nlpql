@@ -1,82 +1,20 @@
-debug;
+phenotype "neo" version "";
 
-limit 1000;
+limit 100;
 
-// Phenotype library name
-phenotype "Drug Allergy" version "1";
-
-/* Phenotype library description */
-description "Sample NLPQL to find drug allergies.";
-
-// # Structured Data Model #
-datamodel OMOP version "5.3";
-
-// # Referenced libraries #
-// The ClarityCore library provides common functions for simplifying NLP pipeline creation
 include ClarityCore version "1.0" called Clarity;
-include OHDSIHelpers version "1.0" called OHDSI;
-
-// ## Code Systems ##
-codesystem OMOP: "http://omop.org"; // OMOP vocabulary https://github.com/OHDSI/Vocabulary-v5.0;
 
 
-// #Manual Term sets#
-// simple example-- termset "Vegetables":["brocolli","carrots","cauliflower"]
-// can add expansion of structured concepts from terminologies as well with OMOPHelpers
-// Clarity.createReportTagList(["Physician","Nurse","Note","Discharge Summary"]);
-documentset ProviderNotes:
-    Clarity.createDocumentSet({
-            "filter_query": "subject:(55672 OR 77614 OR 31942 OR 67906 OR 30202)",
-            "report_types": [
-                "Discharge summary"
-            ],
-            "report_tags": [],
-            "query": "report_text:smok* OR cigar* OR etoh"});
+termset neoterm:
+	["neoplasm", "neoplasms"];
 
-termset PenicillinTerms: [
-"Amoxicillin",
-"Ampicillin",
-"Dicloxacillin",
-"Nafcillin",
-"Oxacillin",
-"Penicillin G",
-"Penicillin V",
-"Piperacillin",
-"Ticarcillin"];
+documentset neodocs:
+	Clarity.createDocumentSet({
+		source: ["AACT"]
+	});
 
-termset AllergyTerms: [
-"allergy",
-"Skin rash",
-"Hives",
-"Itching",
-"Fever",
-"Swelling",
-"Shortness of breath",
-"Wheezing",
-"Runny nose",
-"Itchy eyes",
-"watery eyes",
-"Anaphylaxis"];
-
-define isPenicillin:
-  Clarity.ProviderAssertion({
-    cohort:PlateletTransfusionPatients,
-    termset: [PenicillinTerms],
-    documentset: [ProviderNotes]
-  });
-
-define hasAllergy:
-  Clarity.ProviderAssertion({
-    cohort:PlateletTransfusionPatients,
-    termset: [AllergyTerms],
-    documentset: [ProviderNotes],
-    code: "1234",
-    codesystem: "mycodesystem"
-  });
-
-
-//CDS logical Context (Patient, Document)
-context Patient;
-
-define final hasSepsis:
-  where isPenicillin AND hasAllergy;
+define final neomention:
+	Clarity.TermFinder({
+		termset: [neoterm],
+		documentset: [neodocs]
+	});

@@ -196,7 +196,8 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
 
         return list()
 
-    return response.json()['response']['docs']
+    doc_results = response.json()['response']['docs']
+    return doc_results
 
 
 def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
