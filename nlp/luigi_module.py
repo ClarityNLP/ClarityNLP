@@ -20,7 +20,7 @@ class PhenotypeTask(luigi.Task):
     phenotype = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
 
     def requires(self):
         register_tasks()
@@ -53,7 +53,7 @@ class PhenotypeTask(luigi.Task):
 
     def run(self):
         print('dependencies done; run phenotype reconciliation')
-        client = MongoClient(util.mongo_host, util.mongo_port)
+        client = util.mongo_client()
 
         try:
             data_access.update_job_status(str(self.job), util.conn_string, data_access.IN_PROGRESS,
@@ -197,7 +197,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "1000"
+    p_id = "2035"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,

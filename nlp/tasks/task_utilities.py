@@ -169,7 +169,7 @@ class BaseCollector(base_model.BaseModel):
     collector_name = "ClarityNLPLuigiCollector"
 
     def run(self, pipeline_id, job, owner, pipeline_type, p_config):
-        client = MongoClient(util.mongo_host, util.mongo_port)
+        client = util.mongo_client()
         db = client[util.mongo_db]
 
         try:
@@ -189,7 +189,7 @@ class BaseCollector(base_model.BaseModel):
         print('custom cleanup')
 
     def cleanup(self, pipeline_id, job, owner, pipeline_type, p_config):
-        client = MongoClient(util.mongo_host, util.mongo_port)
+        client = util.mongo_client()
         db = client[util.mongo_db]
 
         try:
@@ -219,7 +219,7 @@ class BaseTask(luigi.Task):
         task_family_name = str(self.task_family)
         if self.task_name == "ClarityNLPLuigiTask":
             self.task_name = task_family_name
-        client = MongoClient(util.mongo_host, util.mongo_port)
+        client = util.mongo_client()
 
         try:
             with self.output().open('w') as temp_file:

@@ -1,0 +1,18 @@
+ phenotype "Pain n-gram" version "2";
+
+ include ClarityCore version "1.0" called Clarity;
+
+ termset PainTerms:
+    ["pain", "distress", "distressed", "suffering","agony"];
+
+  define final painNgrams:
+    Clarity.ngram({
+      termset:[PainTerms],
+      "n": "3",
+      "filter_nums": true,
+      "filter_stops": true,
+      "filter_punct": true,
+      "min_freq": 1,
+      "lemmas": true,
+      "limit_to_termset": true
+      });

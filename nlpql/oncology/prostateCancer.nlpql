@@ -1,0 +1,17 @@
+ phenotype "Prostate Cancer Term Proximity" version "1";
+
+
+
+documentset Docs:
+    Clarity.createDocumentSet({
+        "query":["report_text:prostate"]
+    });
+
+define final TermProximityFunction:
+    Clarity.TermProximityTask({
+        documentset:[Docs],
+        "termset1": "prostate",
+        "termset2": "cancer, Gleason, Gleason's, Gleasons,adenocarcinoma, carcinoma",
+        "word_distance": 6,
+        "any_order": "False"
+    });

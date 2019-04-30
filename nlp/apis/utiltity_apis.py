@@ -6,7 +6,6 @@ from os.path import isfile, join
 from data_access import *
 from algorithms import *
 from results import *
-from .docs import auto
 import tasks
 import subprocess
 import json
@@ -20,13 +19,14 @@ def home():
 
 
 @utility_app.route('/kill_job/<int:job_id>', methods=['GET'])
-@auto.doc(groups=['private'])
 def kill_job(job_id: int):
     print('killing job now ' + str(job_id))
     cmd = "ps -ef | grep luigi | grep -v luigid | grep \"job %d\" | awk '{print $2}'" % job_id
-    pid = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    pid = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE, shell=True)
     output, err = pid.communicate()
-    update_job_status(str(job_id), util.conn_string, "KILLED", "Killed by user command")
+    update_job_status(str(job_id), util.conn_string,
+                      "KILLED", "Killed by user command")
 
     if len(output) > 0 and len(err) == 0:
         pid = output.decode("utf-8").strip()
@@ -42,7 +42,6 @@ def kill_job(job_id: int):
 
 
 @utility_app.route('/delete_job/<int:job_id>', methods=['GET'])
-@auto.doc(groups=['private'])
 def delete_job_by_id(job_id: int):
     print('deleting job now ' + str(job_id))
     flag = delete_job(str(job_id), util.conn_string)
@@ -53,7 +52,6 @@ def delete_job_by_id(job_id: int):
 
 
 @utility_app.route('/job_results/<int:job_id>/<string:job_type>', methods=['GET'])
-@auto.doc(groups=['private'])
 def get_job_results(job_id: int, job_type: str):
     """GET job results as CSV"""
     try:
@@ -64,7 +62,6 @@ def get_job_results(job_id: int, job_type: str):
 
 
 @utility_app.route('/sections', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_section_source():
     """GET source file for sections and synonyms"""
     try:
@@ -76,15 +73,14 @@ def get_section_source():
 
 
 @utility_app.route("/report_type_mappings", methods=["GET"])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def report_type_mappings():
     """GET dictionary of report type mappings"""
-    mappings = get_report_type_mappings(util.report_mapper_url, util.report_mapper_inst, util.report_mapper_key)
+    mappings = get_report_type_mappings(
+        util.report_mapper_url, util.report_mapper_inst, util.report_mapper_key)
     return simplejson.dumps(mappings, sort_keys=True, indent=4 * ' ')
 
 
 @utility_app.route('/pipeline_types', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def pipeline_types():
     """GET valid pipeline types"""
     try:
@@ -94,7 +90,6 @@ def pipeline_types():
 
 
 @utility_app.route('/status/<int:job_id>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_job_status(job_id: int):
     """GET current job status"""
     try:
@@ -104,8 +99,27 @@ def get_job_status(job_id: int):
         return "Failed to get job status" + str(e)
 
 
+@utility_app.route('/stats/<string:job_ids>', methods=['GET'])
+def get_job_stats(job_ids: str):
+    """GET current job stats"""
+    try:
+        perf = jobs.get_job_performance(job_ids.split(','), util.conn_string)
+        return json.dumps(perf, indent=4)
+    except Exception as e:
+        return "Failed to get job stats" + str(e)
+
+
+@utility_app.route('/performance/<string:job_ids>', methods=['GET'])
+def get_job_performance(job_ids: str):
+    """GET current job performance"""
+    try:
+        perf = phenotype_performance_results(job_ids.split(','))
+        return json.dumps(perf, indent=4)
+    except Exception as e:
+        return "Failed to get job stats" + str(e)
+
+
 @utility_app.route('/document/<string:report_id>', methods=['GET'])
-@auto.doc(groups=['private'])
 def get_document_by_id(report_id: str):
     """GET Solr document by id"""
     try:
@@ -119,7 +133,6 @@ sample_path = '../nlpql/'
 
 
 @utility_app.route('/nlpql_samples', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_nlpql_samples():
     """GET NLPQL samples"""
     try:
@@ -133,14 +146,12 @@ def get_nlpql_samples():
 
             break
 
-
         return json.dumps(nlpql_files, indent=4)
     except Exception as e:
         return "Failed to get nlpql samples" + str(e)
 
 
 @utility_app.route('/nlpql_text/<string:subdir>/<string:name>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_nlpql_text(subdir: str, name: str):
     """GET NLPQL sample by name"""
     try:
@@ -150,13 +161,24 @@ def get_nlpql_text(subdir: str, name: str):
     except Exception as e:
         return "Failed to get nlpql text" + str(e)
 
+
 @utility_app.route('/write_nlpql_feedback', methods=['GET', 'POST'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def write_nlpql_feedback():
     """Write NLPQL feedback"""
     if request.method == 'POST':
         data = request.get_json()
-        response = writeResultFeedback(util.mongo_host, util.mongo_port, util.mongo_db, data)
+        response = writeResultFeedback(data)
         return response
     else:
         return Response('Only POST requests are supported', status=400, mimetype='application/json')
+
+
+@utility_app.route('/library', methods=['GET'])
+def library():
+    """Get all NLPQL in NLPQL Library"""
+    if request.method == 'GET':
+        library = get_library(util.conn_string)
+        response = json.dumps(library, indent=4, sort_keys=True, default=str)
+        return response
+    else:
+        return Response('Only GET requests are supported', status=400, mimetype='application/json')

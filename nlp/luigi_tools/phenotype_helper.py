@@ -7,7 +7,6 @@ import collections
 
 import pandas as pd
 import util
-from pymongo import MongoClient
 
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations, results
 from data_access import expr_eval, expr_result
@@ -476,7 +475,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     try:
         evaluator = util.expression_evaluator
     except:
-        evaluator = 'pandas'        
+        evaluator = 'mongo'
 
     # the NLPQL expression to be evaluated
     expression = c['raw_text']
@@ -709,7 +708,7 @@ def mongo_process_operations(expr_obj_list,
         context_field = 'subject'
 
     # setup access to the Mongo collection
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 

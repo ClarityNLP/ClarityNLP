@@ -1,11 +1,11 @@
 import csv
 import os
+import math
 import sys
 import traceback
 from datetime import datetime
 
 from bson.objectid import ObjectId
-from pymongo import MongoClient
 
 import util
 
@@ -41,9 +41,59 @@ def job_results(job_type: str, job: str):
         return generic_results(job, job_type)
 
 
+def phenotype_performance_results(jobs: list):
+    client = util.mongo_client()
+    db = client[util.mongo_db]
+    metrics = dict()
+
+    if len(jobs) < 1:
+        return metrics
+    try:
+        for job in jobs:
+            performance = {
+                'total_answered': 0,
+                'total_correct': 0,
+                'total_incorrect': 0,
+                'accuracy_score': 0.0,
+                'total_comments': 0
+            }
+
+            query = {"job_id": int(job.strip())}
+
+            has_comments = 0
+            count = 0
+            correct = 0
+            results = db['result_feedback'].find(query)
+            # ['comments', 'feature', 'is_correct', 'job_id', 'subject', 'report_id', 'result_id']
+            for res in results:
+                if len(res['comments']) > 0:
+                    has_comments += 1
+                else:
+                    count += 1
+                    if res['is_correct'] == 'true' or res['is_correct'] == 'True':
+                        correct += 1
+
+            if count > 0:
+                performance['accuracy_score'] = float((correct * 1.0) / (count * 1.0))
+            else:
+                performance['accuracy_score'] = 0.0
+            performance['total_incorrect'] = count - correct
+            performance['total_correct'] = correct
+            performance['total_answered'] = count
+            performance['total_comments'] = has_comments
+
+            metrics[job] = performance
+    except Exception as e:
+        print(e)
+    finally:
+        client.close()
+    return metrics
+
+
+
 def phenotype_feedback_results(job: str):
     job_type = 'annotations'
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
     filename = '/tmp/job_feedback%s_%s_%s.csv' % (job, job_type, today)
@@ -85,7 +135,7 @@ def phenotype_feedback_results(job: str):
 
 
 def pipeline_results(job: str):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
     filename = '/tmp/job%s_pipeline_%s.csv' % (job, today)
     length = len(pipeline_output_positions)
@@ -155,7 +205,7 @@ def get_columns(db, job: str, job_type: str, phenotype_final: bool):
 
 
 def generic_results(job: str, job_type: str, phenotype_final: bool = False):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
     filename = '/tmp/job%s_%s_%s.csv' % (job, job_type, today)
@@ -200,7 +250,7 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
 
 
 def lookup_phenotype_result_by_id(id: str):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     obj = dict()
 
@@ -216,7 +266,7 @@ def lookup_phenotype_result_by_id(id: str):
 
 
 def lookup_phenotype_results_by_id(id_list: list):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     obj = dict()
     obj['results'] = list()
@@ -248,7 +298,7 @@ def lookup_phenotype_results_by_id(id_list: list):
 
 
 def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = ''):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     obj = dict()
 
@@ -289,7 +339,7 @@ def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '
 
 
 def phenotype_subjects(job_id: str, phenotype_final: bool):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     results = []
     # db.phenotype_results.aggregate([  {"$match":{"job_id":{"$eq":10201}, "phenotype_final":{"$eq":true}}},
@@ -337,9 +387,9 @@ def phenotype_stats(job_id: str, phenotype_final: bool):
         stats["subjects"] = subjects
         stats["results"] = documents
     return stats
-import math
+
 def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     results = []
     try:
@@ -363,7 +413,7 @@ def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
 
 
 def phenotype_feature_results(job_id: str, feature: str, subject: str):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     results = []
     try:
@@ -379,7 +429,7 @@ def phenotype_feature_results(job_id: str, feature: str, subject: str):
 
 
 def phenotype_results_by_context(context: str, query_filters:dict):
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
     db = client[util.mongo_db]
     results = []
     try:
@@ -403,4 +453,6 @@ def remove_tmp_file(filename):
 
 
 if __name__ == "__main__":
-    job_results("pipeline", "97")
+    # job_results("pipeline", "97")
+    results = phenotype_performance_results("2152")
+    print(results)

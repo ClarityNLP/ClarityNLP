@@ -90,8 +90,18 @@ if [[ ! -d $coredir ]]; then
     echo "finished configuring with the Schema API"
 
     if [[ $CORE == 'sample' ]]; then
+      echo "uploading sample.csv"
       /opt/solr/bin/post -c $CORE /sample.csv
-      echo "finished uploading sample.csv"
+      echo "finished uploading sample.csv, starting sample2.csv"
+
+      /opt/solr/bin/post -c $CORE /sample2.csv
+      echo "finished uploading sample2.csv, starting sample3.csv"
+
+      /opt/solr/bin/post -c $CORE /sample3.csv
+      echo "finished uploading sample3.csv, starting sample4.csv"
+
+      /opt/solr/bin/post -c $CORE /sample4.csv
+      echo "finished uploading sample4.csv"
     fi
 
     stop-local-solr

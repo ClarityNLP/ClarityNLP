@@ -1,0 +1,37 @@
+phenotype "Breast Cancer Trials with low ECOG scores (Healthy Patients)";
+
+documentset InclusionNotes:
+     Clarity.createDocumentSet({
+         "filter_query":"source:AACT"});
+
+termset EcogTerms: [
+        "ecog",
+        "Eastern Cooperative Oncology Group"
+        ];
+
+define EcogScore:
+  Clarity.ValueExtraction({
+    documentset: [InclusionNotes],
+    termset:[EcogTerms],
+    minimum_value: "0",
+    maximum_value: "5"
+    });
+
+define lowEcog:
+   where EcogScore.value <= 2;
+
+
+termset BrcaTerms:["BRCA", "br ca",
+    "breast cancer", "breast carcinoma", "carcinoma of the breast",
+    "Mammary Carcinoma", "cancer of the breast"];
+
+define BrcaMention:
+  Clarity.ProviderAssertion({
+      documentset: [InclusionNotes],
+    termset:[BrcaTerms]
+    });
+
+context Patient;
+
+define final lowEcogAndBrca:
+   where BrcaMention and lowEcog;

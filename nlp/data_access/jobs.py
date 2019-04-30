@@ -10,9 +10,11 @@ from datetime import datetime, timezone
 
 try:
     from .base_model import BaseModel
+    from .results import phenotype_stats
 except Exception as e:
     print(e)
     from base_model import BaseModel
+    from results import phenotype_stats
 
 
 STARTED = "STARTED"
@@ -143,7 +145,7 @@ def update_job_status(job_id: str, connection_string: str, updated_status: str, 
 
 def delete_job(job_id: str, connection_string: str):
     conn = psycopg2.connect(connection_string)
-    client = MongoClient(util.mongo_host, util.mongo_port)
+    client = util.mongo_client()
 
     cursor = conn.cursor()
     flag = -1 # To determine whether the update was successful or not
@@ -187,12 +189,25 @@ def query_phenotype_jobs(status: str, connection_string: str):
                             and jb.status = %s 
                             order by jb.date_started DESC""",
                            [status])
+
         rows = cursor.fetchall()
+
         for row in rows:
             name = row['phenotype_name']
             if not name or name.strip() == '':
                 name = "Phenotype %s" % str(row['phenotype_id'])
                 row['phenotype_name'] = name
+            started = row['date_started']
+            ended = row['date_ended']
+            if started and ended:
+                runtime = ended - started
+                row['total_time_as_seconds'] = runtime.total_seconds()
+                row['total_time_as_minutes'] = row['total_time_as_seconds'] / 60
+                row['total_time_as_hours'] = row['total_time_as_minutes'] / 60
+            else:
+                row['total_time_as_seconds'] = 0.0
+                row['total_time_as_minutes'] = 0.0
+                row['total_time_as_hours'] = 0.0
             jobs.append(row)
         return jobs
     except Exception as ex:
@@ -232,7 +247,118 @@ def query_phenotype_job_by_id(job_id: str, connection_string: str):
     return job
 
 
+def get_job_performance(job_ids: list(), connection_string: str):
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+    metrics = dict()
+
+    if len(job_ids) == 0:
+        return metrics
+
+
+    try:
+        in_clause = ''
+        for i in job_ids:
+            if len(in_clause) > 0:
+                in_clause += ', '
+            in_clause += '%s'
+        cursor.execute("""
+            SELECT status, nlp_job_id from nlp.nlp_job 
+            where nlp_job_id in ({})
+            """.format(in_clause),
+                       job_ids)
+
+        statuses = cursor.fetchall()
+        for s in statuses:
+            status = s[0]
+            job_id = s[1]
+
+            metrics[job_id] = {
+                "status": status,
+                "final_results": 0,
+                "final_subjects": 0,
+                "intermediate_results": 0,
+                "intermediate_subjects": 0,
+                "counts_found": 0
+            }
+
+        cursor.execute("""
+            SELECT status, description, date_updated, nlp_job_id from nlp.nlp_job_status
+            where nlp_job_id in  ({}) 
+            order by date_updated
+            """.format(in_clause),
+                       job_ids)
+        updates = cursor.fetchall()
+
+        for row in updates:
+            status_name = row[0]
+            status_date = row[2]
+            status_value = row[1]
+            job_id = row[3]
+
+            performance = metrics[job_id]
+            counts_found = performance['counts_found']
+
+            if status_name == 'STATS_FINAL_SUBJECTS':
+                performance['final_subjects'] = status_value
+                counts_found += int(status_value)
+            elif status_name == 'STATS_FINAL_RESULTS':
+                performance['final_results'] = status_value
+                counts_found += int(status_value)
+            elif status_name == 'STATS_INTERMEDIATE_SUBJECTS':
+                performance['intermediate_subjects'] = status_value
+            elif status_name == 'STATS_INTERMEDIATE_RESULTS':
+                performance['intermediate_results'] = status_value
+
+            performance['counts_found'] = counts_found
+            metrics[job_id] = performance
+
+        for k in metrics.keys():
+            performance = metrics[k]
+            counts_found = performance['counts_found']
+            if counts_found == 0 and status == "COMPLETED":
+                final_subjects = util.get_from_redis_cache('final_subjects_{}'.format(k))
+                final_results = util.get_from_redis_cache('final_results{}'.format(k))
+                if final_results and final_subjects:
+                    performance['final_subjects'] = final_subjects
+                    performance['final_results'] = final_results
+                else:
+                    stats = phenotype_stats(str(job_id), True)
+
+                    performance['final_subjects'] = stats["subjects"]
+                    performance['final_results'] = stats["results"]
+
+                    util.write_to_redis_cache('final_subjects_{}'.format(k), stats["subjects"])
+                    util.write_to_redis_cache('final_results_{}'.format(k), stats["results"])
+
+                int_subjects = util.get_from_redis_cache('intermediate_subjects_{}'.format(k))
+                int_results = util.get_from_redis_cache('intermediate_results{}'.format(k))
+                if int_subjects and int_results:
+                    performance['intermediate_subjects'] = int_subjects
+                    performance['intermediate_results'] = intermediate_stats["results"]
+                else:
+                    intermediate_stats = phenotype_stats(str(job_id), False)
+
+                    performance['intermediate_subjects'] = intermediate_stats["subjects"]
+                    performance['intermediate_results'] = intermediate_stats["results"]
+
+                    util.write_to_redis_cache('intermediate_subjects_{}'.format(k), intermediate_stats["subjects"])
+                    util.write_to_redis_cache('intermediate_results_{}'.format(k), intermediate_stats["results"])
+
+            del performance['counts_found']
+            metrics[job_id] = performance
+    except Exception as ex:
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        conn.close()
+
+    return metrics
+
+
 if __name__ == "__main__":
     conn_string = util.conn_string
-    status = get_job_status(117, conn_string)
-    print(json.dumps(status, indent=4))
+    # status = get_job_status(117, conn_string)
+    res = get_job_performance(200, conn_string)
+    print(json.dumps(res, indent=4))
+
+

@@ -1,0 +1,50 @@
+phenotype "History of Migraines and Mental Health Symptoms";
+
+termset MigraineTerms: [
+        "migraine",
+        "migraines"
+        ];
+
+define MigrainesMention:
+  Clarity.ProviderAssertion({
+    termset:[MigraineTerms]
+    });
+
+termset DepressionTerms:
+   ["depression", "depressive"]
+;
+
+define DepressionMention:
+  Clarity.ProviderAssertion({
+    termset:[DepressionTerms]
+    });
+
+termset AnxietyTerms:
+   ["Anxiety", "anxious", "panic disorder"]
+;
+
+define AnxietyMention:
+  Clarity.ProviderAssertion({
+    termset:[AnxietyTerms]
+    });
+
+termset PTSDTerms:
+    ["PTSD", "post trauma", "post traumatic"];
+
+define PTSDMention:
+  Clarity.ProviderAssertion({
+    termset:[PTSDTerms]
+    });
+
+termset StressTerms:
+    ["stress", "stressful", "stressed"];
+
+define StressMention:
+  Clarity.ProviderAssertion({
+    termset:[StressTerms]
+    });
+
+context Patient;
+
+define final hasMigrainesAndOtherSymptoms:
+   where MigrainesMention and (AnxietyMention or DepressionMention or PTSDMention or StressMention);
