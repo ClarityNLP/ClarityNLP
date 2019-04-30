@@ -3,13 +3,11 @@ from flask import request, Blueprint
 from algorithms import *
 from data_access import *
 from ohdsi import *
-from .docs import auto
 
 ohdsi_app = Blueprint('ohdsi_app', __name__)
 
 
 @ohdsi_app.route('/ohdsi_create_cohort', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'ohdsi', 'omop'])
 def ohdsi_create_cohort():
     """Creating Cohorts"""
     if request.method == 'GET':
@@ -21,7 +19,6 @@ def ohdsi_create_cohort():
 
 
 @ohdsi_app.route('/ohdsi_get_conceptset', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'ohdsi', 'omop'])
 def ohdsi_get_conceptset():
     """Get concept set details."""
     if request.method == 'GET':
@@ -33,7 +30,6 @@ def ohdsi_get_conceptset():
 
 
 @ohdsi_app.route('/ohdsi_get_cohort', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'ohdsi', 'omop'])
 def ohdsi_get_cohort():
     """Get cohort details from OHDSI."""
     if request.method == 'GET':
@@ -45,7 +41,6 @@ def ohdsi_get_cohort():
 
 
 @ohdsi_app.route('/ohdsi_cohort_status', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'ohdsi', 'omop'])
 def ohdsi_cohort_status():
     """Get status of OHDSI cohort creation"""
     if request.method == 'GET':
@@ -57,7 +52,6 @@ def ohdsi_cohort_status():
 
 
 @ohdsi_app.route('/ohdsi_get_cohort_by_name', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'ohdsi', 'omop'])
 def ohdsi_get_cohort_by_name():
     """Get cohort details from OHDSI by giving Cohort name."""
     if request.method == 'GET':
@@ -69,7 +63,6 @@ def ohdsi_get_cohort_by_name():
 
 
 @ohdsi_app.route('/vocab_expansion', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'ohdsi', 'omop'])
 def vocabulary_expansion():
     """GET related terms based a user entered term, PARAMETERS: type=1 (synonyms), 2 (ancestors), 3 (descendants), concept=user entered term, vocab=(optional, default is SNOMED)"""
     if request.method == 'GET':

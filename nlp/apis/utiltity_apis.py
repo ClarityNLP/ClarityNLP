@@ -6,7 +6,6 @@ from os.path import isfile, join
 from data_access import *
 from algorithms import *
 from results import *
-from .docs import auto
 import tasks
 import subprocess
 import json
@@ -20,7 +19,6 @@ def home():
 
 
 @utility_app.route('/kill_job/<int:job_id>', methods=['GET'])
-@auto.doc(groups=['private'])
 def kill_job(job_id: int):
     print('killing job now ' + str(job_id))
     cmd = "ps -ef | grep luigi | grep -v luigid | grep \"job %d\" | awk '{print $2}'" % job_id
@@ -44,7 +42,6 @@ def kill_job(job_id: int):
 
 
 @utility_app.route('/delete_job/<int:job_id>', methods=['GET'])
-@auto.doc(groups=['private'])
 def delete_job_by_id(job_id: int):
     print('deleting job now ' + str(job_id))
     flag = delete_job(str(job_id), util.conn_string)
@@ -55,7 +52,6 @@ def delete_job_by_id(job_id: int):
 
 
 @utility_app.route('/job_results/<int:job_id>/<string:job_type>', methods=['GET'])
-@auto.doc(groups=['private'])
 def get_job_results(job_id: int, job_type: str):
     """GET job results as CSV"""
     try:
@@ -66,7 +62,6 @@ def get_job_results(job_id: int, job_type: str):
 
 
 @utility_app.route('/sections', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_section_source():
     """GET source file for sections and synonyms"""
     try:
@@ -78,7 +73,6 @@ def get_section_source():
 
 
 @utility_app.route("/report_type_mappings", methods=["GET"])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def report_type_mappings():
     """GET dictionary of report type mappings"""
     mappings = get_report_type_mappings(
@@ -87,7 +81,6 @@ def report_type_mappings():
 
 
 @utility_app.route('/pipeline_types', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def pipeline_types():
     """GET valid pipeline types"""
     try:
@@ -97,7 +90,6 @@ def pipeline_types():
 
 
 @utility_app.route('/status/<int:job_id>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_job_status(job_id: int):
     """GET current job status"""
     try:
@@ -108,7 +100,6 @@ def get_job_status(job_id: int):
 
 
 @utility_app.route('/stats/<string:job_ids>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_job_stats(job_ids: str):
     """GET current job stats"""
     try:
@@ -119,7 +110,6 @@ def get_job_stats(job_ids: str):
 
 
 @utility_app.route('/performance/<string:job_ids>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_job_performance(job_ids: str):
     """GET current job performance"""
     try:
@@ -130,7 +120,6 @@ def get_job_performance(job_ids: str):
 
 
 @utility_app.route('/document/<string:report_id>', methods=['GET'])
-@auto.doc(groups=['private'])
 def get_document_by_id(report_id: str):
     """GET Solr document by id"""
     try:
@@ -144,7 +133,6 @@ sample_path = '../nlpql/'
 
 
 @utility_app.route('/nlpql_samples', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_nlpql_samples():
     """GET NLPQL samples"""
     try:
@@ -164,7 +152,6 @@ def get_nlpql_samples():
 
 
 @utility_app.route('/nlpql_text/<string:subdir>/<string:name>', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def get_nlpql_text(subdir: str, name: str):
     """GET NLPQL sample by name"""
     try:
@@ -176,7 +163,6 @@ def get_nlpql_text(subdir: str, name: str):
 
 
 @utility_app.route('/write_nlpql_feedback', methods=['GET', 'POST'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def write_nlpql_feedback():
     """Write NLPQL feedback"""
     if request.method == 'POST':
@@ -188,7 +174,6 @@ def write_nlpql_feedback():
 
 
 @utility_app.route('/library', methods=['GET'])
-@auto.doc(groups=['public', 'private', 'utilities'])
 def library():
     """Get all NLPQL in NLPQL Library"""
     if request.method == 'GET':
