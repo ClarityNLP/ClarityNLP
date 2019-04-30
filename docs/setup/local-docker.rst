@@ -1,5 +1,6 @@
 Getting Up and Running Locally With Docker
 ==========================================
+  
 The steps below will get you up and running with a local ClarityNLP development environment.
 
 Prerequisites
@@ -88,11 +89,19 @@ Run the following command at the root of the ClarityNLP project: ::
 
   mkcert -cert-file certs/claritynlp.dev.crt -key-file certs/claritynlp.dev.key claritynlp.dev "*.claritynlp.dev"
 
+Extra Prerequisites for Windows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On Windows, install Cygwin and dependencies ::
+
+  choco install cygwin
+  choco install cyg-get git git-completion make
+
 Run the Stack
 -------------
 
 The first time running it will take some time to build the Docker images, but subsequent runs will occur quickly.
-Open a terminal at the project root and run the following for local development: ::
+Open a terminal (Cygwin on Windows) at the project root and run the following for local development: ::
 
   make start-clarity
 
