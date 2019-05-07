@@ -130,7 +130,8 @@ def map_arguments(pipeline: PipelineConfig, e, all_terms):
     for k in e.keys():
         if not (
                 k == 'owner' or k == 'limit' or k == "name" or k == "config_type" or k == "terms" or
-                k == "cohort" or k == "job_results" or k =="concept_code" or k == "concept_code_system"):
+                k == "cohort" or k == "job_results" or k =="concept_code" or k == "concept_code_system" or
+                k == "cql" or k == "cql_source"):
             if k in pipeline_keys:
                 try:
                     pipeline[k] = e[k]
@@ -239,6 +240,13 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         else:
             cohort, job_results_filter = list(), dict()
 
+        if 'cql' in e['named_arguments']:
+            cql = e['named_arguments']["cql"]
+        elif 'cql_source' in e['named_arguments']:
+            cql = e['named_arguments']["cql_source"]
+        else:
+            cql = ''
+
         tags = get_item_list_by_key(report_tags, doc_sets)
         types = get_item_list_by_key(report_types, doc_sets)
         query = get_item_by_key(custom_query, doc_sets)
@@ -260,6 +268,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   filter_query=fq,
                                   concept_code=code,
                                   concept_code_system=code_system,
+                                  cql=cql,
                                   is_phenotype=True)
         map_arguments(pipeline, e, all_terms)
         map_arguments(pipeline, e['named_arguments'], all_terms)
