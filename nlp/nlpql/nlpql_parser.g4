@@ -228,7 +228,9 @@ named:
     REPORT_TAGS |
     SOURCE |
     FILTER_QUERY |
-    QUERY;
+    QUERY |
+    CQL |
+    CQL_SOURCE;
 
 array: L_BRACKET value (COMMA value)* R_BRACKET
    | L_BRACKET R_BRACKET
@@ -236,6 +238,7 @@ array: L_BRACKET value (COMMA value)* R_BRACKET
 
 value:
     STRING
+   | LONG_STRING
    | DECIMAL
    | FLOAT
    | obj
