@@ -126,12 +126,12 @@ def get_item_by_key(dictionary, keys: list):
     return ''
 
 
+manually_mapped_keys = ['owner', 'limit', 'name', 'config_type', 'terms', 'cohort', 'job_results', 'concept_code',
+                        'concept_code_system', 'cql', 'cql_source', 'named_arguments']
+
 def map_arguments(pipeline: PipelineConfig, e, all_terms):
     for k in e.keys():
-        if not (
-                k == 'owner' or k == 'limit' or k == "name" or k == "config_type" or k == "terms" or
-                k == "cohort" or k == "job_results" or k =="concept_code" or k == "concept_code_system" or
-                k == "cql" or k == "cql_source"):
+        if k not in manually_mapped_keys:
             if k in pipeline_keys:
                 try:
                     pipeline[k] = e[k]
