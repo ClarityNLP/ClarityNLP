@@ -1,0 +1,57 @@
+phenotype "CIBMTR Example 2" version "1";
+description "Illustrate how to combine structured and unstructured data for a single patient.";
+include ClarityCore version "1.0" called Clarity;
+
+// The filter query limits the documents to those for a specific patient only,
+// in this case patient_id 26812.
+
+documentset PatientDocs:
+    Clarity.createDocumentSet({
+        "filter_query":"source:MIMIC AND subject:26812"
+    });
+
+// custom tasks to simulate CQL queries; results taken from the indicated file
+
+define WBC:
+    Clarity.CQLExecutionTask({
+        documentset: [PatientDocs],
+        "task_index": 0,
+        "patient_id":"38587",
+        "fhir_url":"https://gt-apps.hdap.gatech.edu/cql/evaluate",
+        cql: """
+                 library Retrieve2 version '1.0'
+
+                 using FHIR version '3.0.0'
+
+                 include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+                 codesystem "LOINC": 'http://loinc.org'
+
+                 define "WBC": Concept {
+                     Code '26464-8' from "LOINC",
+                     Code '804-5' from "LOINC",
+                     Code '6690-2' from "LOINC",
+                     Code '49498-9' from "LOINC"
+                 }
+
+                 context Patient
+
+                 define "result":
+                     [Observation: Code in "WBC"]
+             """
+    });
+
+context Patient;
+
+//
+// Check for low, high, and normal WBC values.
+//
+
+define low_wbc:
+    where WBC.value < 4;
+
+define high_wbc:
+    where WBC.value > 11.5;
+
+define normal_wbc:
+    where WBC.value >= 4.0 AND WBC.value <= 11.5;
