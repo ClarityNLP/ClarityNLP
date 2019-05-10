@@ -11,13 +11,13 @@ const {
   DOMAIN,
   DASHBOARD_CLIENT_SUBDOMAIN,
   INGEST_CLIENT_SUBDOMAIN,
-  RESULTS_CLIENT_SUBDOMAIN,
-} = process.env
+  RESULTS_CLIENT_SUBDOMAIN
+} = process.env;
 
 const allowedOrigins = [
   `${PROTOCOL}://${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}`,
   `${PROTOCOL}://${INGEST_CLIENT_SUBDOMAIN}.${DOMAIN}`,
-  `${PROTOCOL}://${RESULTS_CLIENT_SUBDOMAIN}.${DOMAIN}`,
+  `${PROTOCOL}://${RESULTS_CLIENT_SUBDOMAIN}.${DOMAIN}`
 ];
 
 // Set up proxy rules instance
@@ -26,31 +26,42 @@ var proxyRules = new HttpProxyRules({
     // NLP-API
     '/nlp/pipeline_types': 'http://nlp-api:5000/pipeline_types', //NLP-API --> GET pipeline_types
     '/nlp/phenotype_jobs/ALL': 'http://nlp-api:5000/phenotype_jobs/ALL',
-    '/nlp/phenotype_subjects/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subjects/$1/$2',
-    '/nlp/phenotype_subject_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_subject_results/$1/$2/$3',
-    '/nlp/phenotype_job_by_id/(.+)': 'http://nlp-api:5000/phenotype_job_by_id/$1',
-    '/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
+    '/nlp/phenotype_subjects/(.+)/(.+)':
+      'http://nlp-api:5000/phenotype_subjects/$1/$2',
+    '/nlp/phenotype_subject_results/(.+)/(.+)/(.+)':
+      'http://nlp-api:5000/phenotype_subject_results/$1/$2/$3',
+    '/nlp/phenotype_job_by_id/(.+)':
+      'http://nlp-api:5000/phenotype_job_by_id/$1',
+    '/nlp/phenotype_paged_results/(.+)/(.+)':
+      'http://nlp-api:5000/phenotype_paged_results/$1/$2',
     '/nlp/export_ohdsi': 'http://nlp-api:5000/export_ohdsi',
     '/nlp/nlpql_tester': 'http://nlp-api:5000/nlpql_tester',
+    '/nlp/nlpql_expander': 'http://nlp-api:5000/nlpql_expander',
     '/nlp/add_query': 'http://nlp-api:5000/add_query',
     '/nlp/nlpql': 'http://nlp-api:5000/nlpql',
-    '/nlp/phenotype_results_by_id/(.+)': 'http://nlp-api:5000/phenotype_results_by_id/$1',
-    '/nlp/phenotype_structure/(.+)': 'http://nlp-api:5000/phenotype_structure/$1',
+    '/nlp/phenotype_results_by_id/(.+)':
+      'http://nlp-api:5000/phenotype_results_by_id/$1',
+    '/nlp/phenotype_structure/(.+)':
+      'http://nlp-api:5000/phenotype_structure/$1',
     '/nlp/delete_job/(.+)': 'http://nlp-api:5000/delete_job/$1',
     '/nlp/kill_job/(.+)': 'http://nlp-api:5000/kill_job/$1',
-    '/nlp/phenotype_paged_results/(.+)/(.+)': 'http://nlp-api:5000/phenotype_paged_results/$1/$2',
+    '/nlp/phenotype_paged_results/(.+)/(.+)':
+      'http://nlp-api:5000/phenotype_paged_results/$1/$2',
     '/nlp/write_nlpql_feedback': 'http://nlp-api:5000/write_nlpql_feedback',
-    '/nlp/phenotype_feature_results/(.+)/(.+)/(.+)': 'http://nlp-api:5000/phenotype_feature_results/$1/$2/$3',
+    '/nlp/phenotype_feature_results/(.+)/(.+)/(.+)':
+      'http://nlp-api:5000/phenotype_feature_results/$1/$2/$3',
     '/nlp/performance/(.+)': 'http://nlp-api:5000/performance/$1',
     '/nlp/stats/(.+)': 'http://nlp-api:5000/stats/$1',
     '/nlp/document/(.+)': 'http://nlp-api:5000/document/$1',
-    '/nlp/job_results/(.+)/phenotype_intermediate': 'http://nlp-api:5000/job_results/$1/phenotype_intermediate',
-    '/nlp/job_results/(.+)/phenotype': 'http://nlp-api:5000/job_results/$1/phenotype',
-    '/nlp/job_results/(.+)/annotations': 'http://nlp-api:5000/job_results/$1/annotations',
+    '/nlp/job_results/(.+)/phenotype_intermediate':
+      'http://nlp-api:5000/job_results/$1/phenotype_intermediate',
+    '/nlp/job_results/(.+)/phenotype':
+      'http://nlp-api:5000/job_results/$1/phenotype',
+    '/nlp/job_results/(.+)/annotations':
+      'http://nlp-api:5000/job_results/$1/annotations',
     '/nlp/delete_query/(.+)': 'http://nlp-api:5000/delete_query/$1',
     '/nlp/get_query/(.+)': 'http://nlp-api:5000/get_query/$1',
     // INGEST-API
-    '/ingest/socket': 'http://ingest-api:1337',
     '/ingest/fields': 'http://ingest-api:1337/fields', //INGEST-API --> GET fields
     '/ingest/core': 'http://ingest-api:1337/solr/core', //INGEST-API --> GET solr/core
     '/ingest/numDocs': 'http://ingest-api:1337/solr/numDocs', //INGEST-API --> GET solr/numDocs
@@ -59,8 +70,13 @@ var proxyRules = new HttpProxyRules({
     '/ingest/(.+)/schedule': 'http://ingest-api:1337/ingest/$1/schedule', //INGEST-API --> POST /ingest/:ingestId/schedule
     '/ingest': 'http://ingest-api:1337/ingest', //INGEST-API --> GET /ingest
     '/ingest/(.+)/delete': 'http://ingest-api:1337/ingest/$1/delete', //INGEST-API --> GET /ingest/:ingestId/delete
-    // DASHBOARD-API
-    '/dashboard': 'ws://dashboard-api:8750' //DASHBOARD-API --> websocket connection
+    '/socket.io': 'ws://ingest-api:1337/socket.io', //TODO rename ingest to consolidated socket server
+  }
+});
+
+const whitelist = new HttpProxyRules({
+  rules: {
+    '/__getcookie': 'http://ingest-api:1337/__getcookie'
   }
 });
 
@@ -111,6 +127,22 @@ const proxyServer = http.createServer(function(req, res) {
     res.writeHead(200);
     res.end();
     return;
+  }
+
+  //check whitelist
+  const whitelistTarget = whitelist.match(req);
+
+  if (whitelistTarget) {
+    return proxy.web(
+      req,
+      res,
+      {
+        target: whitelistTarget
+      },
+      function(err) {
+        sendError(res, err);
+      }
+    );
   }
 
   var client = jwksClient({
@@ -169,7 +201,6 @@ const proxyServer = http.createServer(function(req, res) {
 });
 
 proxyServer.on('upgrade', function(req, socket, head) {
-
   const target = proxyRules.match(req);
 
   proxy.ws(

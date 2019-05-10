@@ -33,7 +33,8 @@ MIN_VALUE: 'minimum_value';
 MAX_VALUE: 'maximum_value';
 ENUM_LIST: 'enum_list';
 LIMIT: 'limit';
-
+CQL: 'cql';
+CQL_SOURCE: 'cql_source';
 
 // Custom ClarityNLP Features
 OMOP: 'OMOP';
@@ -91,6 +92,28 @@ NULL:       'null' | 'NULL' | 'None' | 'none';
 IN:         'IN' | 'in';
 CHAR:       '\'' (~['\\\r\n] | EscapeSequence) '\'';
 STRING:     '"' (~["\\\r\n] | EscapeSequence)* '"';
+
+LONG_STRING
+ : '\'\'\'' LONG_STRING_ITEM*? '\'\'\''
+ | '"""' LONG_STRING_ITEM*? '"""'
+ ;
+
+/// longstringitem  ::=  longstringchar | stringescapeseq
+fragment LONG_STRING_ITEM
+ : LONG_STRING_CHAR
+ | STRING_ESCAPE_SEQ
+ ;
+
+/// longstringchar  ::=  <any source character except "\">
+fragment LONG_STRING_CHAR
+ : ~'\\'
+ ;
+
+/// stringescapeseq ::=  "\" <any source character>
+fragment STRING_ESCAPE_SEQ
+ : '\\' .
+ | '\\' [\r\n]+
+ ;
 
 WS:                 [ \t\r\n\u000C]+ -> channel(HIDDEN);
 COMMENT:            '/*' .*? '*/'    -> channel(HIDDEN);
