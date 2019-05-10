@@ -50,7 +50,6 @@ var proxyRules = new HttpProxyRules({
     '/nlp/delete_query/(.+)': 'http://nlp-api:5000/delete_query/$1',
     '/nlp/get_query/(.+)': 'http://nlp-api:5000/get_query/$1',
     // INGEST-API
-    '/ingest/socket': 'http://ingest-api:1337',
     '/ingest/fields': 'http://ingest-api:1337/fields', //INGEST-API --> GET fields
     '/ingest/core': 'http://ingest-api:1337/solr/core', //INGEST-API --> GET solr/core
     '/ingest/numDocs': 'http://ingest-api:1337/solr/numDocs', //INGEST-API --> GET solr/numDocs
@@ -59,8 +58,13 @@ var proxyRules = new HttpProxyRules({
     '/ingest/(.+)/schedule': 'http://ingest-api:1337/ingest/$1/schedule', //INGEST-API --> POST /ingest/:ingestId/schedule
     '/ingest': 'http://ingest-api:1337/ingest', //INGEST-API --> GET /ingest
     '/ingest/(.+)/delete': 'http://ingest-api:1337/ingest/$1/delete', //INGEST-API --> GET /ingest/:ingestId/delete
-    // DASHBOARD-API
-    '/dashboard': 'ws://dashboard-api:8750' //DASHBOARD-API --> websocket connection
+    '/socket.io': 'ws://ingest-api:1337/socket.io', //TODO rename ingest to consolidated socket server
+  }
+});
+
+const whitelist = new HttpProxyRules({
+  rules: {
+    '/__getcookie': 'http://ingest-api:1337/__getcookie'
   }
 });
 
@@ -111,6 +115,22 @@ const proxyServer = http.createServer(function(req, res) {
     res.writeHead(200);
     res.end();
     return;
+  }
+
+  //check whitelist
+  const whitelistTarget = whitelist.match(req);
+
+  if (whitelistTarget) {
+    return proxy.web(
+      req,
+      res,
+      {
+        target: whitelistTarget
+      },
+      function(err) {
+        sendError(res, err);
+      }
+    );
   }
 
   var client = jwksClient({
