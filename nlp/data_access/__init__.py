@@ -8,3 +8,4 @@ from .results import job_results, paged_phenotype_results, phenotype_subjects, p
 from .phenotype import *
 from .measurement_model import *
 from .library import *
+from .cql_result_parser import decode_top_level_obj
