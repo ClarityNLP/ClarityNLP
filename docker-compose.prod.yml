@@ -238,6 +238,7 @@ services:
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
       - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
       - ${INGEST_MONGO_HOSTNAME}:${INGEST_MONGO_CONTAINER_PORT}
+      - ${NLP_API_HOSTNAME}:${NLP_API_CONTAINER_PORT}
       - --timeout=420
       - --
       - pm2-runtime
@@ -249,6 +250,9 @@ services:
       - NLP_SOLR_CONTAINER_PORT=${NLP_SOLR_CONTAINER_PORT}
       - NLP_CORE_NAME=${NLP_CORE_NAME}
       - NLP_SOLR_URL_TOP_LEVEL=${NLP_SOLR_URL_TOP_LEVEL}
+      - NLP_API_HOSTNAME=${NLP_API_HOSTNAME}
+      - NLP_API_CONTAINER_PORT=${NLP_API_CONTAINER_PORT}
+      - INTERVAL=${INTERVAL}
       - INGEST_MONGO_USERNAME=${INGEST_MONGO_USERNAME}
       - INGEST_MONGO_PASSWORD=${INGEST_MONGO_PASSWORD}
       - INGEST_MONGO_HOSTNAME=${INGEST_MONGO_HOSTNAME}
@@ -261,12 +265,14 @@ services:
       - PROTOCOL=${PROTOCOL}
       - DOMAIN=${DOMAIN}
       - INGEST_CLIENT_SUBDOMAIN=${INGEST_CLIENT_SUBDOMAIN}
+      - DASHBOARD_CLIENT_SUBDOMAIN=${DASHBOARD_CLIENT_SUBDOMAIN}
     networks:
       - clarity
     depends_on:
       - ingest-mongo
       - redis
       - nlp-solr
+      - nlp-api
 
   ingest-mongo:
     container_name: ${INGEST_MONGO_CONTAINER_NAME}
@@ -359,35 +365,6 @@ services:
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
     networks:
       - clarity
-
-  dashboard-api:
-    container_name: DASHBOARD_API
-    hostname: ${DASHBOARD_API_HOSTNAME}
-    build: ./utilities/dashboard-client
-    volumes:
-      - /app/node_modules
-    expose:
-      - ${DASHBOARD_API_CONTAINER_PORT}
-    entrypoint:
-      - /app/wait-for-it-extra.sh
-      - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
-      - ${NLP_API_HOSTNAME}:${NLP_API_CONTAINER_PORT}
-      - --timeout=420
-      - --
-      - pm2-runtime
-    command: index.js
-    environment:
-      - DASHBOARD_API_CONTAINER_PORT=${DASHBOARD_API_CONTAINER_PORT}
-      - NLP_API_HOSTNAME=${NLP_API_HOSTNAME}
-      - NLP_API_CONTAINER_PORT=${NLP_API_CONTAINER_PORT}
-      - NLP_SOLR_HOSTNAME=${NLP_SOLR_HOSTNAME}
-      - NLP_SOLR_CONTAINER_PORT=${NLP_SOLR_CONTAINER_PORT}
-      - INTERVAL=${INTERVAL}
-    networks:
-      - clarity
-    depends_on:
-      - nlp-api
-      - nlp-solr
 
   nginx-proxy:
     container_name: NGINX_PROXY
