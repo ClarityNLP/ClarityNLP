@@ -182,6 +182,7 @@ services:
       - nlp-solrdata:/opt/solr/server/solr/mycores
     environment:
       - SOLR_HEAP=${SOLR_HEAP}
+      - LETSENCRYPT_HOST=${SOLR_SUBDOMAIN}.${DOMAIN}
       - VIRTUAL_HOST=${SOLR_SUBDOMAIN}.${DOMAIN}
       - VIRTUAL_PORT=${NLP_SOLR_CONTAINER_PORT}
     networks:
