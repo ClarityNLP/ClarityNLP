@@ -24,7 +24,7 @@ sly==0.3
 spacy==2.0.9
 sphinx==1.7.4
 sphinx-autobuild==0.7.1
-textacy[all]
+textacy==0.6.3
 tornado>=4.0,<5
 typing==3.6.2
 imbalanced-learn==0.4.3
