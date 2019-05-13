@@ -1,0 +1,149 @@
+phenotype "CIBMTR Example 2" version "1";
+description "Illustrate how to combine structured and unstructured data for a single patient.";
+include ClarityCore version "1.0" called Clarity;
+
+// The filter query limits the documents to those for a specific patient only,
+// in this case patient_id 26812.
+
+documentset PatientDocs:
+    Clarity.createDocumentSet({
+        "filter_query":"source:MIMIC AND subject:26812"
+    });
+
+// custom tasks to simulate CQL queries; results taken from the indicated file
+
+define WBC:
+    Clarity.CQLExecutionTask({
+        documentset: [PatientDocs],
+        "task_index": 0,
+        "patient_id":"38587",
+        "fhir_url":"https://gt-apps.hdap.gatech.edu/cql/evaluate",
+        cql: """
+                 library Retrieve2 version '1.0'
+
+                 using FHIR version '3.0.0'
+
+                 include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+                 codesystem "LOINC": 'http://loinc.org'
+
+                 define "WBC": Concept {
+                     Code '26464-8' from "LOINC",
+                     Code '804-5' from "LOINC",
+                     Code '6690-2' from "LOINC",
+                     Code '49498-9' from "LOINC"
+                 }
+
+                 context Patient
+
+                 define "result":
+                     [Observation: Code in "WBC"]
+             """
+    });
+
+define Hematocrit:
+    Clarity.CQLExecutionTask({
+        documentset: [PatientDocs],
+        "task_index": 1,
+        "patient_id":"38587",
+        "fhir_url":"https://gt-apps.hdap.gatech.edu/cql/evaluate",
+        cql: """
+                 library Retrieve2 version '1.0'
+
+                 using FHIR version '3.0.0'
+
+                 include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+                 codesystem "LOINC": 'http://loinc.org'
+
+                 define "Hematocrit": Concept {
+                     Code '4544-3' from "LOINC"
+                 }
+
+                 context Patient
+
+                 define "result":
+                     [Observation: Code in "Hematocrit"]
+             """
+    });
+
+define Platelets:
+    Clarity.CQLExecutionTask({
+        documentset: [PatientDocs],
+        "task_index": 2,
+        "patient_id":"38587",
+        "fhir_url":"https://gt-apps.hdap.gatech.edu/cql/evaluate",        
+        cql: """
+                 library Retrieve2 version '1.0'
+
+                 using FHIR version '3.0.0'
+
+                 include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+                 codesystem "LOINC": 'http://loinc.org'
+
+                 define "Platelets": Concept {
+                     Code '777-3' from "LOINC"
+                 }
+
+                 context Patient
+
+                 define "result":
+                     [Observation: Code in "Platelets"]
+
+             """
+    });
+
+context Patient;
+
+//
+// Check for low, high, and normal ranges of each blood component.
+//
+
+define low_wbc:
+    where WBC.value < 4;
+
+define high_wbc:
+    where WBC.value > 11.5;
+
+define normal_wbc:
+    where WBC.value >= 4.0 AND WBC.value <= 11.5;
+
+define low_hematocrit:
+    where Hematocrit.value < 40.7;
+
+define high_hematocrit:
+    where Hematocrit.value > 50.3;
+
+define normal_hematocrit:
+    where Hematocrit.value >= 40.7 AND Hematocrit.value <= 50.3;
+
+define low_platelets:
+    where Platelets.value < 150.0;
+
+define high_platelets:
+    where Platelets.value > 450.0;
+
+define normal_platelets:
+    where Platelets.value >= 150.0 AND Platelets.value <= 450.0;
+    
+//
+// Combine the previous results into additional logic expressions.
+//
+
+define high_wbc_and_platelets:
+    where high_wbc AND high_platelets;
+
+define condition_1:
+    where normal_wbc AND (high_platelets OR low_hematocrit);
+
+//
+// Mix math and logic.
+//
+
+define condition_2:
+    where WBC.value > 20.0 AND high_platelets;
+
+define condition_3:
+    where (WBC.value >= 8.0 AND WBC.value <= 20.0) AND
+          (normal_platelets OR low_hematocrit);
