@@ -40,9 +40,10 @@ Custom Tasks
 .. toctree::
    :maxdepth: 1
 
+   nlpql/cqlexecution
    nlpql/gleason
-   nlpql/race
    nlpql/pftfinder
+   nlpql/race
    nlpql/textstats
    nlpql/tnm
    nlpql/transfusion
