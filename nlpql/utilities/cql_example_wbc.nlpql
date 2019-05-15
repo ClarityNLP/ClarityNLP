@@ -1,16 +1,24 @@
-phenotype "CIBMTR Example 2" version "1";
+phenotype "CIBMTR Example 1" version "1";
 description "Illustrate how to combine structured and unstructured data for a single patient.";
 include ClarityCore version "1.0" called Clarity;
 
+///////////////////////////////////////////////////////////////////////////////
+//
 // The filter query limits the documents to those for a specific patient only,
-// in this case patient_id 26812.
+// in this case patient_id 38587.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 documentset PatientDocs:
     Clarity.createDocumentSet({
-        "filter_query":"source:MIMIC AND subject:26812"
+        "filter_query":"source:MIMIC AND subject:38587"
     });
 
-// custom tasks to simulate CQL queries; results taken from the indicated file
+///////////////////////////////////////////////////////////////////////////////
+//
+// Retrieve WBC data from the FHIR server.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 define WBC:
     Clarity.CQLExecutionTask({
@@ -43,9 +51,11 @@ define WBC:
 
 context Patient;
 
+///////////////////////////////////////////////////////////////////////////////
 //
 // Check for low, high, and normal WBC values.
 //
+///////////////////////////////////////////////////////////////////////////////
 
 define low_wbc:
     where WBC.value < 4;
