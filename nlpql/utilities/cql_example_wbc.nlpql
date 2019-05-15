@@ -49,19 +49,60 @@ define WBC:
              """
     });
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Define a termset of WBC-related terms, and use the value extractor to find
+// WBC values in the unstructured text for patient 38587.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+termset WBCTerms: [
+    "wbc",
+    "wbc count",
+    "leukocytes",
+    "leukocyte count",
+    "white blood cell count",
+    "white cells",
+    "white cell count"
+];
+
+define WBCUnstructured:
+    Clarity.ValueExtraction({
+        termset:[WBCTerms],
+        documentset:[PatientDocs]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Set the evaluation context to 'Patient', meaning that the expressions below
+// should use data from our single patient only.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 context Patient;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Check for low, high, and normal WBC values.
+// A new feature for any occurrence of WBC in either the structured or
+// unstructured data.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+define has_wbc:
+    where WBC OR WBCUnstructured;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Check for low, high, and normal ranges of each blood component.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 define low_wbc:
-    where WBC.value < 4;
+    where WBC.value < 4 OR WBCUnstructured.value < 4;
 
 define high_wbc:
-    where WBC.value > 11.5;
+    where WBC.value > 11.5 OR WBCUnstructured.value > 11.5;
 
 define normal_wbc:
-    where WBC.value >= 4.0 AND WBC.value <= 11.5;
+    where (WBC.value >= 4.0 AND WBC.value <= 11.5) OR
+          (WBCUnstructured.value >= 4.0 AND WBCUnstructured.value <= 11.5);
