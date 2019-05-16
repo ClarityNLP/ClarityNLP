@@ -154,8 +154,14 @@ def _extract_patient_resource(obj, mongo_obj):
 
     # dob is in YYYY-MM-DD format
     dob = getattr(obj, 'date_of_birth')
-    mongo_obj['patient_date_of_birth'] = datetime.strptime(dob, '%Y-%m-%d')
-    
+    the_date = None
+    if dob is not None:
+        the_date = datetime.strptime(dob, '%Y-%m-%d').isoformat()
+    mongo_obj['patient_date_of_birth'] = the_date
+
+    # save explicitly as 'dob' field
+    mongo_obj['dob'] = the_date
+
 
 ###############################################################################
 def _extract_procedure_resource(obj, mongo_obj):
@@ -183,12 +189,16 @@ def _extract_procedure_resource(obj, mongo_obj):
     mongo_obj['procedure_context_ref'] = context_ref
 
     performed_date_time = getattr(obj, 'performed_date_time')
+    the_date_time = None
     if performed_date_time is not None:
         performed_date_time = _fixup_fhir_datetime(performed_date_time)
-        mongo_obj['procedure_performed_date_time'] = datetime.strptime(performed_date_time,
-                                                                       '%Y-%m-%dT%H:%M:%S%z')
+        the_date_time = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    mongo_obj['procedure_performed_date_time'] = the_date_time
+        
+    # save explicitly as 'datetime' field
+    mongo_obj['datetime'] = the_date_time
 
-
+    
 ###############################################################################
 def _extract_condition_resource(obj, mongo_obj):
     """
@@ -221,18 +231,26 @@ def _extract_condition_resource(obj, mongo_obj):
     mongo_obj['condition_context_ref'] = context_ref
 
     onset_date_time = getattr(obj, 'onset_date_time')
+    the_date_time = None
     if onset_date_time is not None:
         onset_date_time = _fixup_fhir_datetime(onset_date_time)
-        mongo_obj['condition_onset_date_time'] = datetime.strptime(onset_date_time,
-                                                                   '%Y-%m-%dT%H:%M:%S%z')
+        the_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    mongo_obj['condition_onset_date_time'] = the_date_time
+
+    # save explicitly as 'datetime' field
+    mongo_obj['datetime'] = the_date_time
     
     abatement_date_time = getattr(obj, 'abatement_date_time')
+    the_date_time = None
     if abatement_date_time is not None:
         abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
-        mongo_obj['condition_abatement_date_time'] = datetime.strptime(abatement_date_time,
-                                                                   '%Y-%m-%dT%H:%M:%S%z')
-            
-        
+        the_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    mongo_obj['condition_abatement_date_time'] = the_date_time
+
+    # save explicitly as 'end_datetime' field
+    mongo_obj['end_datetime'] = the_date_time
+    
+
 ###############################################################################
 def _extract_observation_resource(obj, mongo_obj):
     """
@@ -259,13 +277,15 @@ def _extract_observation_resource(obj, mongo_obj):
     mongo_obj['obs_context_ref'] = context_ref
 
     eff_date_time = getattr(obj, 'date_time')
+    the_date_time = None
     if eff_date_time is not None:
         eff_date_time = _fixup_fhir_datetime(eff_date_time)
-        mongo_obj['obs_effective_date_time'] = datetime.strptime(eff_date_time,
-                                                                 '%Y-%m-%dT%H:%M:%S%z')
-    else:
-        mongo_obj['obs_effective_date_time'] = None
+        the_date_time = datetime.strptime(eff_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    mongo_obj['obs_effective_date_time'] = the_date_time
 
+    # save explicitly as 'datetime' field
+    mongo_obj['datetime'] = the_date_time
+    
     value = getattr(obj, 'value')
     if value is not None:
         # store this in the 'value' field also
