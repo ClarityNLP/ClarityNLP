@@ -24,9 +24,8 @@ pipeline{
                         idpImage.push("latest")
                         def identityAndAccessProxyImage = docker.build("identity-and-access-proxy:1.0", "./identity-and-access-proxy")
                         identityAndAccessProxyImage.push("latest")
-                        def nlpApiImage = docker.builid("nlp-api:1.0", "./nlp")
+                        def nlpApiImage = docker.build("nlp-api:1.0", "./nlp")
                         nlpApiImage.push("latest")
-                        // def schedulerImage = docker.build
                         def nlpSolrImage = docker.build("nlp-solr:1.0", "./utilities/nlp-solr")
                         nlpSolrImage.push("latest")
                         def nlpMongoImage = docker.build("nlp-mongo:1.0", "-f ./utilities/nlp-mongo/Dockerfile.prod ./utilities/nlp-mongo")
