@@ -32,7 +32,7 @@ pipeline{
                         nlpMongoImage.push("latest")
                         def nlpPostgresImage = docker.build("nlp-postgres:1.0", "./utilities/nlp-postgres")
                         nlpPostgresImage.push("latest")
-                        def ingestApiImage = docker.build("ingest-api:1.0", "-f ./utilities/ingest-api/Dockerfile.prod ./utilities/ingest-api")
+                        def ingestApiImage = docker.build("ingest-api:1.0", "./utilities/ingest-api")
                         ingestApiImage.push("latest")
                         def ingestMongoImage = docker.build("ingest-mongo:1.0", "-f ./utilities/ingest-mongo/Dockerfile.prod ./utilities/ingest-mongo")
                         ingestMongoImage.push("latest")
