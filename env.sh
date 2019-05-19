@@ -5,6 +5,7 @@ export IDENTITY_PROVIDER_SUBDOMAIN=idp
 export ADMIN_USERNAME=admin
 export ADMIN_PASSWORD=admin
 export CLIENT_CLI_SECRET=secret
+export CLIENT_NLPASS_SECRET=secret
 export IDP_SIGNING_CREDS_PASSPHRASE=mysecurepassphrase
 
 # IDP MSSQL
