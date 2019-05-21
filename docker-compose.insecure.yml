@@ -37,6 +37,7 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CLIENT_CLI_SECRET=${CLIENT_CLI_SECRET}
+      - CLIENT_NLPASS_SECRET=${CLIENT_NLPASS_SECRET}
     networks:
       - clarity
 

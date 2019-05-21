@@ -93,6 +93,21 @@ namespace IdentityServer
             {
                 new Client
                 {
+                    ClientId = "nlpass",
+                    AllowedGrantTypes = GrantTypes.ClientCredentials,
+                    ClientSecrets =
+                    {
+                        new Secret(Startup.StaticConfig["CLIENT_NLPASS_SECRET"].Sha256())
+                    },
+                    AccessTokenLifetime = 3000000,
+                    AllowedScopes =
+                    {
+                        "solr_api",
+                        "nlp_api"
+                    }
+                },
+                new Client
+                {
                     ClientId = "cli",
                     AllowedGrantTypes = GrantTypes.ClientCredentials,
                     ClientSecrets =
