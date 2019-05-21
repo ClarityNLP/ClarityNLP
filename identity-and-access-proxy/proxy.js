@@ -39,6 +39,7 @@ var proxyRules = new HttpProxyRules({
     '/nlp/nlpql_expander': 'http://nlp-api:5000/nlpql_expander',
     '/nlp/add_query': 'http://nlp-api:5000/add_query',
     '/nlp/nlpql': 'http://nlp-api:5000/nlpql',
+    '/nlp/phenotype': 'http://nlp-api:5000/phenotype',
     '/nlp/phenotype_results_by_id/(.+)':
       'http://nlp-api:5000/phenotype_results_by_id/$1',
     '/nlp/phenotype_structure/(.+)':
