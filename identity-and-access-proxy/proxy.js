@@ -23,6 +23,8 @@ const allowedOrigins = [
 // Set up proxy rules instance
 var proxyRules = new HttpProxyRules({
   rules: {
+    // SOLR-API
+    '/solr/(.*)': 'http://nlp-solr:8983/solr/$1',
     // NLP-API
     '/nlp/pipeline_types': 'http://nlp-api:5000/pipeline_types', //NLP-API --> GET pipeline_types
     '/nlp/phenotype_jobs/ALL': 'http://nlp-api:5000/phenotype_jobs/ALL',
