@@ -10,6 +10,7 @@ import re
 import os
 import json
 import requests
+import data_access
 import data_access.cql_result_parser as crp
 
 
@@ -346,6 +347,12 @@ class CQLExecutionTask(BaseTask):
                 except:
                     fhir_url = None
 
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'fhir_url: {0}'.format(fhir_url))
+            print('fhir_url: {0}'.format(fhir_url))
+                    
             if fhir_url is None:
                 print('\n*** CQLExecutionTask: no value for fhir_url ***\n')
                 return
@@ -364,6 +371,12 @@ class CQLExecutionTask(BaseTask):
                 except:
                     patient_id = None
 
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'patient_id: {0}'.format(patient_id))
+            print('patient_id: {0}'.format(patient_id))
+            
             if patient_id is None:
                 print('\n*** CQLExecutionTask: no value for patient_id ***\n')
                 return
@@ -386,10 +399,23 @@ class CQLExecutionTask(BaseTask):
             except:
                 fhir_service_uri = None
 
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'fhir_service_uri: {0}'.format(fhir_service_uri))
+            print('fhir_service_uri: {0}'.format(fhir_service_uri))
+                
             try:
                 fhir_data_service_uri = util.fhir_data_service_uri
             except:
                 fhir_data_service_uri = None
+
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'fhir_data_service_uri: {0}'.format(fhir_data_service_uri))
+            print('fhir_data_service_uri: {0}'.format(fhir_data_service_uri))
+
                 
             if fhir_service_uri is None:
                 print('\n*** CQLExecutionTask: no value for fhir_service_uri ***\n')
@@ -419,6 +445,18 @@ class CQLExecutionTask(BaseTask):
             fhir_auth_token = _get_custom_arg(_KEY_FHIR_AUTH_TOKEN,
                                               self.pipeline_config.custom_arguments)
 
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'fhir_auth_type: {0}'.format(fhir_auth_type))
+            print('fhir_auth_type: {0}'.format(fhir_auth_type))
+
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'fhir_auth_token: {0}'.format(fhir_auth_token))
+            print('fhir_auth_token: {0}'.format(fhir_auth_token))
+            
             if fhir_auth_type is not None and fhir_auth_token is not None:
                 payload[_KEY_FHIR_AUTH_TYPE] = fhir_auth_type
                 payload[_KEY_FHIR_AUTH_TOKEN] = fhir_auth_token
@@ -429,6 +467,12 @@ class CQLExecutionTask(BaseTask):
             except:
                 terminologyServiceUri = None
 
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'terminologyServiceUri: {0}'.format(terminologyServiceUri))
+            print('terminologyServiceUri: {0}'.format(terminologyServiceUri))
+                
             # ensure '/' termination
             if terminologyServiceUri is not None:
                 if not terminologyServiceUri.endswith('/'):
@@ -439,11 +483,23 @@ class CQLExecutionTask(BaseTask):
             except:
                 terminologyUser = None
 
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'terminologyUser: {0}'.format(terminologyUser))
+            print('terminologyUser: {0}'.format(terminologyUser))
+                
             try:
                 terminologyPass = util.fhir_terminology_password
             except:
                 terminologyPass = None
 
+            data_access.update_job_status(str(self.job),
+                                          util.conn_string,
+                                          data_access.IN_PROGRESS,
+                                          'terminologyPass: {0}'.format(terminologyPass))
+            print('terminologyPass: {0}'.format(terminologyPass))
+                
             # setup terminology server capability
             if terminologyServiceUri is not None and \
                terminologyUser is not None and terminologyUser != 'username' and \
