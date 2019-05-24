@@ -15,15 +15,19 @@ import data_access.cql_result_parser as crp
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 
-_KEY_FHIR_URL = 'fhir_url'
-_KEY_FHIR_AUTH_TYPE = 'fhir_auth_type'
-_KEY_FHIR_AUTH_TOKEN = 'fhir_auth_token'
-_KEY_PATIENT_ID = 'patient_id'
-_KEY_TERMINOLOGY_SERVICE_URI = 'terminologyServiceUri'
-_KEY_TERMINOLOGY_USER = 'terminologyUser'
-_KEY_TERMINOLOGY_PASS = 'terminologyPass'
+# names of custom args accessible to CQLExecutionTask
+
+_FHIR_CQL_EVAL_URL     = 'cql_eval_url'            # https://gt-apps.hdap.gatech.edu/cql/evaluate
+_FHIR_PATIENT_ID       = 'patient_id'              # 
+_FHIR_DATA_SERVICE_URI = 'fhir_data_service_uri'   # https://apps.hdap.gatech.edu/gt-fhir/fhir/
+_FHIR_AUTH_TYPE        = 'fhir_auth_type'          # 
+_FHIR_AUTH_TOKEN       = 'fhir_auth_token'         # 
+_FHIR_TERMINOLOGY_SERVICE_URI = 'fhir_terminology_service_uri'           # https://cts.nlm.nih.gov/fhir/
+_FHIR_TERMINOLOGY_SERVICE_ENDPOINT = 'fhir_terminology_service_endpoint' # Terminology Service Endpoint
+_FHIR_TERMINOLOGY_USER_NAME = 'fhir_terminology_user_name'               # username
+_FHIR_TERMINOLOGY_USER_PASSWORD = 'fhir_terminology_user_password'       # password
         
 # number of unique task indices among all Luigi clones of this task
 _MAX_TASK_INDEX = 1000
@@ -306,7 +310,7 @@ def _extract_observation_resource(obj, mongo_obj):
         
     
 ###############################################################################
-def _get_custom_arg(str_key, custom_arg_dict):
+def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     """
     Extract a value at the given key from the given dict, or return None
     if not found.
@@ -316,6 +320,15 @@ def _get_custom_arg(str_key, custom_arg_dict):
     if str_key in custom_arg_dict:
         value = custom_arg_dict[str_key]
 
+    # echo in job status and in log file
+    msg = '{0}: {1}'.format(str_variable_name, value)
+    data_access.update_job_status(job_id,
+                                  util.conn_string,
+                                  data_access.IN_PROGRESS,
+                                  msg)
+    # write msg to log file
+    print(msg)
+    
     return value
 
     
@@ -334,56 +347,26 @@ class CQLExecutionTask(BaseTask):
         # this particular value of the task_index.
         check_val = _atomic_check(task_index)
         if check_val == task_index:
-        
+
+            job_id = str(self.job)
+            
             # URL of the FHIR server's CQL evaluation endpoint
-
-            # check custom NLPQL params or pipeline config first
-            fhir_url = _get_custom_arg(_KEY_FHIR_URL,
-                                       self.pipeline_config.custom_arguments)
-            if fhir_url is None:
-                # look for it as a local param
-                try:
-                    fhir_url = util.fhir_url
-                except:
-                    fhir_url = None
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'fhir_url: {0}'.format(fhir_url))
-            print('fhir_url: {0}'.format(fhir_url))
-                    
-            if fhir_url is None:
-                print('\n*** CQLExecutionTask: no value for fhir_url ***\n')
+            cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
+                                           'cql_eval_url',
+                                           job_id,
+                                           self.pipeline_config.custom_arguments)
+            if cql_eval_url is None:
                 return
-
-            print('fhir_url: {0}'.format(fhir_url))
             
-            # ID of the desired patient
-            patient_id = _get_custom_arg(_KEY_PATIENT_ID,
+            patient_id = _get_custom_arg(_FHIR_PATIENT_ID,
+                                         'patient_id',
+                                         job_id,
                                          self.pipeline_config.custom_arguments)
-            # patient_id must be a string
-            patient_id = patient_id
             if patient_id is None:
-                # look for it as a local param
-                try:
-                    patient_id = util.fhir_patient_id
-                except:
-                    patient_id = None
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'patient_id: {0}'.format(patient_id))
-            print('patient_id: {0}'.format(patient_id))
-            
-            if patient_id is None:
-                print('\n*** CQLExecutionTask: no value for patient_id ***\n')
                 return
 
             # patient_id must be a string
             patient_id = str(patient_id)
-            print('patient_id: {0}'.format(patient_id))
             
             # CQL code string verbatim from CQL file
             cql_code = self.pipeline_config.cql
@@ -394,35 +377,19 @@ class CQLExecutionTask(BaseTask):
                 print('\n*** CQLExecutionTask: no CQL code was found ***\n')
                 return
             
-            try:
-                fhir_service_uri = util.fhir_service_uri
-            except:
-                fhir_service_uri = None
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'fhir_service_uri: {0}'.format(fhir_service_uri))
-            print('fhir_service_uri: {0}'.format(fhir_service_uri))
-                
-            try:
-                fhir_data_service_uri = util.fhir_data_service_uri
-            except:
-                fhir_data_service_uri = None
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'fhir_data_service_uri: {0}'.format(fhir_data_service_uri))
-            print('fhir_data_service_uri: {0}'.format(fhir_data_service_uri))
-
-                
-            if fhir_service_uri is None:
-                print('\n*** CQLExecutionTask: no value for fhir_service_uri ***\n')
+            fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
+                                                                'fhir_terminology_service_endpoint',
+                                                                job_id,
+                                                                self.pipeline_config.custom_arguments)
+             
+            fhir_data_service_uri = _get_custom_arg(_FHIR_DATA_SERVICE_URI,
+                                                    'fhir_data_service_uri',
+                                                    job_id,
+                                                    self.pipeline_config.custom_arguments)
+            if fhir_terminology_service_endpoint is None:
                 return
             
             if fhir_data_service_uri is None:
-                print('\n*** CQLExecutionTask: no value for fhir_data_service_uri ***\n')
                 return
 
             # ensure '/' termination
@@ -434,88 +401,59 @@ class CQLExecutionTask(BaseTask):
             payload = {
                 # the requests lib will properly escape the raw string
                 "code":cql_code,
-                "fhirServiceUri":fhir_service_uri,
+                "fhirServiceUri":fhir_terminology_service_endpoint,
                 "dataServiceUri":fhir_data_service_uri,
                 "patientId":patient_id,
             }
 
-            fhir_auth_type = _get_custom_arg(_KEY_FHIR_AUTH_TYPE,
+            fhir_auth_type = _get_custom_arg(_FHIR_AUTH_TYPE,
+                                             'fhir_auth_type',
+                                             job_id,
                                              self.pipeline_config.custom_arguments)
 
-            fhir_auth_token = _get_custom_arg(_KEY_FHIR_AUTH_TOKEN,
+            fhir_auth_token = _get_custom_arg(_FHIR_AUTH_TOKEN,
+                                              'fhir_auth_token',
+                                              job_id,
                                               self.pipeline_config.custom_arguments)
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'fhir_auth_type: {0}'.format(fhir_auth_type))
-            print('fhir_auth_type: {0}'.format(fhir_auth_type))
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'fhir_auth_token: {0}'.format(fhir_auth_token))
-            print('fhir_auth_token: {0}'.format(fhir_auth_token))
             
             if fhir_auth_type is not None and fhir_auth_token is not None:
-                payload[_KEY_FHIR_AUTH_TYPE] = fhir_auth_type
-                payload[_KEY_FHIR_AUTH_TOKEN] = fhir_auth_token
+                # not sure about these keys - TBD
+                payload['fhirAuthType'] = fhir_auth_type
+                payload['fhirAuthToken'] = fhir_auth_token
 
             # params for UMLS OID code lookup
-            try:
-                terminologyServiceUri = util.fhir_terminology_service_uri
-            except:
-                terminologyServiceUri = None
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'terminologyServiceUri: {0}'.format(terminologyServiceUri))
-            print('terminologyServiceUri: {0}'.format(terminologyServiceUri))
-                
+            fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
+                                                           'fhir_terminology_service_uri',
+                                                           job_id,
+                                                           self.pipeline_config.custom_arguments)
             # ensure '/' termination
-            if terminologyServiceUri is not None:
-                if not terminologyServiceUri.endswith('/'):
-                    terminologyServiceUri += '/'
-                    
-            try:
-                terminologyUser = util.fhir_terminology_user
-            except:
-                terminologyUser = None
+            if fhir_terminology_service_uri is not None:
+                if not fhir_terminology_service_uri.endswith('/'):
+                    fhir_terminology_service_uri += '/'
 
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'terminologyUser: {0}'.format(terminologyUser))
-            print('terminologyUser: {0}'.format(terminologyUser))
-                
-            try:
-                terminologyPass = util.fhir_terminology_password
-            except:
-                terminologyPass = None
-
-            data_access.update_job_status(str(self.job),
-                                          util.conn_string,
-                                          data_access.IN_PROGRESS,
-                                          'terminologyPass: {0}'.format(terminologyPass))
-            print('terminologyPass: {0}'.format(terminologyPass))
-                
+            fhir_terminology_user_name = _get_custom_arg(_FHIR_TERMINOLOGY_USER_NAME,
+                                                         'fhir_terminology_user_name',
+                                                         job_id,
+                                                         self.pipeline_config.custom_arguments)
+            
+            fhir_terminology_user_password = _get_custom_arg(_FHIR_TERMINOLOGY_USER_PASSWORD,
+                                                             'fhir_terminology_user_password',
+                                                             job_id,
+                                                             self.pipeline_config.custom_arguments)
+            
             # setup terminology server capability
-            if terminologyServiceUri is not None and \
-               terminologyUser is not None and terminologyUser != 'username' and \
-               terminologyPass is not None and terminologyPass != 'password':
-                payload[_KEY_TERMINOLOGY_SERVICE_URI] = terminologyServiceUri
-                payload[_KEY_TERMINOLOGY_USER] = terminologyUser
-                payload[_KEY_TERMINOLOGY_PASS] = terminologyPass
-                print('terminologyServiceUri: {0}'.format(terminologyServiceUri))
-                print('terminologyUser: {0}'.format(terminologyUser))
-                print('terminologyPass: {0}'.format(terminologyPass))
+            if fhir_terminology_service_uri is not None and \
+               fhir_terminology_user_name is not None and fhir_terminology_user_name != 'username' and \
+               fhir_terminology_user_password is not None and fhir_terminology_user_password != 'password':
+                payload['terminologyServiceUri'] = fhir_terminology_service_uri
+                payload['terminologyUser'] = fhir_terminology_user_name
+                payload['terminologyPass'] = fhir_terminology_user_password
                 
             exception_thrown = False
 
             # perform the request here, catch lots of different exceptions
             try:
-                r = requests.post(fhir_url, headers=headers, json=payload)
+                r = requests.post(cql_eval_url, headers=headers, json=payload)
             except requests.exceptions.HTTPError as e:
                 print('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
                 exception_thrown = True
