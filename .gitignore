@@ -26,4 +26,4 @@ identity-and-access-proxy/package-lock.json
 identity-provider/bin
 identity-provider/obj
 identity-provider/identityserver4_log.txt
-certs/claritynlp.dev*
+certs/claritynlp.*
