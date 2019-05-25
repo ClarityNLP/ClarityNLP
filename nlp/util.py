@@ -110,21 +110,6 @@ use_reordered_nlpql = read_property('USE_REORDERED_NLPQL',
 use_redis_caching = read_property('USE_REDIS_CACHING',
                                   ('optimizations', 'use_redis_caching'),
                                   default='true')
-fhir_patient_id = read_property('FHIR_PATIENT_ID',
-                                ('local', 'fhir_patient_id'))
-fhir_url = read_property('FHIR_URL',
-                         ('local', 'fhir_url'))
-fhir_service_uri = read_property('FHIR_SERVICE_URI',
-                                 ('local', 'fhir_service_uri'))
-fhir_data_service_uri = read_property('FHIR_DATA_SERVICE_URI',
-                                      ('local', 'fhir_data_service_uri'))
-fhir_terminology_service_uri = read_property('FHIR_TERMINOLOGY_SERVICE_URI',
-                                             ('local', 'fhir_terminology_service_uri'))
-fhir_terminology_user = read_property('FHIR_TERMINOLOGY_USER',
-                                      ('local', 'fhir_terminology_user'))
-fhir_terminology_password = read_property('FHIR_TERMINOLOGY_PASSWORD',
-                                          ('local', 'fhir_terminology_password'))
-
 
 # TODO this out a bit more, this is more for experimental evaluation
 cache_counts = {
