@@ -42,9 +42,10 @@ var proxyRules = new HttpProxyRules({
     '/nlp/add_query': 'http://nlp-api:5000/add_query',
     '/nlp/nlpql': 'http://nlp-api:5000/nlpql',
     '/nlp/phenotype': 'http://nlp-api:5000/phenotype',
-      '/nlp/status/(.+)': 'http://nlp-api:5000/status/$1',
     '/nlp/phenotype_results_by_id/(.+)':
       'http://nlp-api:5000/phenotype_results_by_id/$1',
+    '/nlp/status/(.+)':
+      'http://nlp-api:5000/status/$1',
     '/nlp/phenotype_structure/(.+)':
       'http://nlp-api:5000/phenotype_structure/$1',
     '/nlp/delete_job/(.+)': 'http://nlp-api:5000/delete_job/$1',
