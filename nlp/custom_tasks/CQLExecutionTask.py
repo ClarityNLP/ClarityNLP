@@ -15,7 +15,7 @@ import data_access.cql_result_parser as crp
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 
 # names of custom args accessible to CQLExecutionTask
 
@@ -200,8 +200,9 @@ def _extract_procedure_resource(obj, mongo_obj):
         the_date_time = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
     mongo_obj['procedure_performed_date_time'] = the_date_time
         
-    # save explicitly as 'datetime' field
+    # save explicitly as 'datetime' and 'report_date' fields
     mongo_obj['datetime'] = the_date_time
+    mongo_obj['report_date'] = the_date_time
 
     
 ###############################################################################
@@ -242,8 +243,9 @@ def _extract_condition_resource(obj, mongo_obj):
         the_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
     mongo_obj['condition_onset_date_time'] = the_date_time
 
-    # save explicitly as 'datetime' field
+    # save explicitly as 'datetime' and report_date fields
     mongo_obj['datetime'] = the_date_time
+    mongo_obj['report_date'] = the_date_time
     
     abatement_date_time = getattr(obj, 'abatement_date_time')
     the_date_time = None
@@ -288,8 +290,9 @@ def _extract_observation_resource(obj, mongo_obj):
         the_date_time = datetime.strptime(eff_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
     mongo_obj['obs_effective_date_time'] = the_date_time
 
-    # save explicitly as 'datetime' field
+    # save explicitly as 'datetime' and 'report_date' fields
     mongo_obj['datetime'] = the_date_time
+    mongo_obj['report_date'] = the_date_time
     
     value = getattr(obj, 'value')
     if value is not None:
