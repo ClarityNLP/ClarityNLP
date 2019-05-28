@@ -15,7 +15,7 @@ import data_access.cql_result_parser as crp
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 
 # names of custom args accessible to CQLExecutionTask
 
@@ -200,11 +200,18 @@ def _extract_procedure_resource(obj, mongo_obj):
         the_date_time = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
     mongo_obj['procedure_performed_date_time'] = the_date_time
         
-    # save explicitly as 'datetime' and 'report_date' fields
+    # save explicitly as 'datetime' field
     mongo_obj['datetime'] = the_date_time
-    mongo_obj['report_date'] = the_date_time
 
-    
+    # add display/formatting info
+    procedure_name = mongo_obj['procedure_codesys_display_1']
+    result_display_obj = {
+        'date': mongo_obj['datetime'],
+        'result_content':'Procedure: {0}'.format(procedure_name)
+    }
+    mongo_obj['result_display'] = result_display_obj
+
+
 ###############################################################################
 def _extract_condition_resource(obj, mongo_obj):
     """
@@ -240,22 +247,30 @@ def _extract_condition_resource(obj, mongo_obj):
     the_date_time = None
     if onset_date_time is not None:
         onset_date_time = _fixup_fhir_datetime(onset_date_time)
-        the_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    mongo_obj['condition_onset_date_time'] = the_date_time
+        onset_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    mongo_obj['condition_onset_date_time'] = onset_date_time
 
-    # save explicitly as 'datetime' and report_date fields
-    mongo_obj['datetime'] = the_date_time
-    mongo_obj['report_date'] = the_date_time
+    # save explicitly as 'datetime' field
+    mongo_obj['datetime'] = onset_date_time
     
     abatement_date_time = getattr(obj, 'abatement_date_time')
     the_date_time = None
     if abatement_date_time is not None:
         abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
-        the_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    mongo_obj['condition_abatement_date_time'] = the_date_time
+        abatement_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    mongo_obj['condition_abatement_date_time'] = abatement_date_time
 
     # save explicitly as 'end_datetime' field
-    mongo_obj['end_datetime'] = the_date_time
+    mongo_obj['end_datetime'] = abatement_date_time
+
+    # add display/formatting info
+    condition_name = mongo_obj['condition_codesys_display_1']
+    result_display_obj = {
+        'date': mongo_obj['datetime'],
+        'result_content':'Condition: {0}, onset: {1}, abatement: {2}'.
+        format(condition_name, onset_date_time, abatement_date_time)
+    }
+    mongo_obj['result_display'] = result_display_obj
     
 
 ###############################################################################
@@ -290,9 +305,8 @@ def _extract_observation_resource(obj, mongo_obj):
         the_date_time = datetime.strptime(eff_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
     mongo_obj['obs_effective_date_time'] = the_date_time
 
-    # save explicitly as 'datetime' and 'report_date' fields
+    # save explicitly as 'datetime' field
     mongo_obj['datetime'] = the_date_time
-    mongo_obj['report_date'] = the_date_time
     
     value = getattr(obj, 'value')
     if value is not None:
@@ -310,7 +324,15 @@ def _extract_observation_resource(obj, mongo_obj):
     mongo_obj['obs_unit_code'] = unit_code
 
     _extract_coding_systems_list(obj, mongo_obj, 'obs')
-        
+
+    # add display/formatting info
+    value_name = mongo_obj['obs_codesys_display_1']
+    result_display_obj = {
+        'date': mongo_obj['datetime'],
+        'result_content':'{0}: {1}'.format(value_name, value)
+    }
+    mongo_obj['result_display'] = result_display_obj
+    
     
 ###############################################################################
 def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
