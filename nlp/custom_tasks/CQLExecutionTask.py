@@ -127,8 +127,7 @@ def _extract_coding_systems_list(obj, mongo_obj, prefix):
         mongo_obj['{0}_codesys_system_{1}'.format(prefix, counter)] = coding_obj.system
         mongo_obj['{0}_codesys_display_{1}'.format(prefix, counter)] = coding_obj.display
         if 1 == counter:
-            # set the 'source' field to match coding_obj.display
-            mongo_obj['source'] = coding_obj.display
+            mongo_obj['source'] = 'FHIR'
         counter += 1
 
 
@@ -327,9 +326,10 @@ def _extract_observation_resource(obj, mongo_obj):
 
     # add display/formatting info
     value_name = mongo_obj['obs_codesys_display_1']
+    units = mongo_obj['obs_unit_code']
     result_display_obj = {
         'date': mongo_obj['datetime'],
-        'result_content':'{0}: {1}'.format(value_name, value)
+        'result_content':'{0}: {1} {2}'.format(value_name, value, units)
     }
     mongo_obj['result_display'] = result_display_obj
     
