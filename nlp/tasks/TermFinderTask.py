@@ -169,9 +169,8 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     "value": (term.negex == "Affirmed"),
                     "result_display": {
                         "date": doc[util.solr_report_date_field],
-                        "result_content": doc[util.solr_report_type_field],
-                        "show_sentence": True,
-                        "sentence": term.sentence,
+                        "result_content": term.sentence,
+                        "sentence":'',
                         "highlights": [term.term]
                     }
                 }

@@ -206,7 +206,9 @@ def _extract_procedure_resource(obj, mongo_obj):
     procedure_name = mongo_obj['procedure_codesys_display_1']
     result_display_obj = {
         'date': mongo_obj['datetime'],
-        'result_content':'Procedure: {0}'.format(procedure_name)
+        'result_content':'Procedure: {0}'.format(procedure_name),
+        'sentence':'',
+        'highlights': [procedure_name]
     }
     mongo_obj['result_display'] = result_display_obj
 
@@ -266,8 +268,10 @@ def _extract_condition_resource(obj, mongo_obj):
     condition_name = mongo_obj['condition_codesys_display_1']
     result_display_obj = {
         'date': mongo_obj['datetime'],
-        'result_content':'Condition: {0}, onset: {1}, abatement: {2}'.
-        format(condition_name, onset_date_time, abatement_date_time)
+        'result_content':'Condition: {0}, onset: {1}, abatement: {2}'.format(
+            condition_name, onset_date_time, abatement_date_time),
+        'sentence':'',
+        'highlights':[condition_name]
     }
     mongo_obj['result_display'] = result_display_obj
     
@@ -329,7 +333,9 @@ def _extract_observation_resource(obj, mongo_obj):
     units = mongo_obj['obs_unit_code']
     result_display_obj = {
         'date': mongo_obj['datetime'],
-        'result_content':'{0}: {1} {2}'.format(value_name, value, units)
+        'result_content':'{0}: {1} {2}'.format(value_name, value, units),
+        'sentence':'',
+        'highlights':[value_name, value, units]
     }
     mongo_obj['result_display'] = result_display_obj
     

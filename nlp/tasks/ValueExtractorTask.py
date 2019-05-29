@@ -44,9 +44,10 @@ class ValueExtractorTask(BaseTask):
                         "temporality": meas.temporality,
                         "result_display": {
                             "date": doc[util.solr_report_date_field],
-                            "result_content":"{0} {1} {2}".format(meas.text, value, meas.units),
-                            "show_sentence": True,
-                            "sentence": meas.sentence,
+                            "result_content":"{0} {1} {2}".format(meas.text,
+                                                                  value,
+                                                                  meas.units),
+                            "sentence":meas.sentence,
                             "highlights": [meas.text, value, meas.units]
                         }
                     }
