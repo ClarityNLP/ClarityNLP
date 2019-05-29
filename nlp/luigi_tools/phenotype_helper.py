@@ -254,7 +254,7 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         elif 'name' in e['named_arguments']:
             display_name = e['named_arguments']["name"]
         else:
-            display_name = e['name ']
+            display_name = e['name']
 
         tags = get_item_list_by_key(report_tags, doc_sets)
         types = get_item_list_by_key(report_types, doc_sets)
