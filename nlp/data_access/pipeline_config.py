@@ -31,7 +31,7 @@ class PipelineConfig(BaseModel):
                  minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list=None, sources: list=None,
                  is_phenotype=False, report_types: list=None, custom_query='', filter_query='',
                  custom_arguments: dict=None, enum_list: list=None, final: bool=False, job_results: dict=None,
-                 pipeline_id=-1, cql=''):
+                 pipeline_id=-1, cql='', display_name=''):
 
         # This code initializes mutable params in a manner that prevents the
         # "mutable default argument" bug. In this function the types of the
@@ -101,6 +101,7 @@ class PipelineConfig(BaseModel):
             self.sources = sources
         self.pipeline_id = pipeline_id
         self.cql = cql
+        self.display_name = display_name
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):

@@ -230,7 +230,8 @@ named:
     FILTER_QUERY |
     QUERY |
     CQL |
-    CQL_SOURCE;
+    CQL_SOURCE |
+    DISPLAY_NAME;
 
 array: L_BRACKET value (COMMA value)* R_BRACKET
    | L_BRACKET R_BRACKET

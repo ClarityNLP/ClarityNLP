@@ -35,6 +35,7 @@ ENUM_LIST: 'enum_list';
 LIMIT: 'limit';
 CQL: 'cql';
 CQL_SOURCE: 'cql_source';
+DISPLAY_NAME: 'display_name';
 
 // Custom ClarityNLP Features
 OMOP: 'OMOP';
