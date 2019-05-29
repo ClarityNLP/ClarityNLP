@@ -161,7 +161,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             if df not in data_fields:
                 data_fields[df] = ''
 
-    if not "results_display" in data_fields:
+    if not "result_display" in data_fields:
         data_fields["result_display"] = {
             "date": '',
             "result_content": '',
