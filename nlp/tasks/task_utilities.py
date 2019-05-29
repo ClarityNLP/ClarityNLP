@@ -162,20 +162,12 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
                 data_fields[df] = ''
 
     if not "results_display" in data_fields:
-        if doc:
-            data_fields["result_display"] = {
-                "date": doc[util.solr_report_date_field],
-                "result_content": doc[util.solr_text_field],
-                "highlights": '',
-                "tooltips":''
-            }
-        else:
-            data_fields["result_display"] = {
-                "date": str(datetime.datetime.time().isoformat()),
-                "result_content": '',
-                "highlights": '',
-                "tooltips":''
-            }
+        data_fields["result_display"] = {
+            "date": '',
+            "result_content": '',
+            "highlights": [''],
+            "sentence": ''
+        }
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
 
