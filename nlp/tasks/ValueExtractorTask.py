@@ -41,7 +41,14 @@ class ValueExtractorTask(BaseTask):
                         "condition": meas.condition,
                         "value1": meas.value1,
                         "value2": meas.value2,
-                        "temporality": meas.temporality
+                        "temporality": meas.temporality,
+                        "result_display": {
+                            "date": doc[util.solr_report_date_field],
+                            "result_content": meas.text+" "+value+" "+meas.units,
+                            "show_sentence": true,
+                            "sentence": meas.sentence,
+                            "highlights": [meas.text, value, meas.units]
+                            }
                     }
                     self.write_result_data(temp_file, mongo_client, doc, obj)
 

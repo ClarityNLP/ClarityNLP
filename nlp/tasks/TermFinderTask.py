@@ -166,8 +166,15 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     "negation": term.negex,
                     "temporality": term.temporality,
                     "experiencer": term.experiencer,
-                    "value": (term.negex == "Affirmed")
-                }
+                    "value": (term.negex == "Affirmed"),
+                    "result_display": {
+                        "date": doc[util.solr_report_date_field],
+                        "result_content": doc[util.solr_report_type_field],
+                        "show_sentence": true,
+                        "sentence": term.sentence,
+                        "highlights": [term.term]
+                        }
+                    }
 
                 write_result_data(temp_file, mongo_client, doc, obj)
 
