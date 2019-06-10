@@ -41,7 +41,7 @@ additional python packages required by ClarityNLP:
    pip3 install -r requirements.txt
    pip3 install -U pytest
    python3 -m spacy download en
-   python3 -m spacy download en_core_web_md
+   python3 -m spacy download en_core_web_sm
 
 Next, install some additional model files required by the Natural Language
 Toolkit (nltk):
