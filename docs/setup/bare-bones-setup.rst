@@ -57,7 +57,7 @@ Open a terminal window and install the ``git`` version control system and the
 
 Next, install either the `Anaconda <https://www.anaconda.com>`_ python
 distribution or its much smaller 
-`Miniconda <https://https://docs.conda.io/en/latest/miniconda.html>`_
+`Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
 cousin. Anaconda provides a full python-based numerical computing and machine
 learning stack. Miniconda provides a minimal python installation. Both give
 you the ``conda`` package manager, an essential tool for resolving labyrinthine
@@ -90,7 +90,7 @@ the repo, and initialize the various git submodules with these commands:
    cd /some/location/on/your/disk
    mkdir ClarityNLPBareBones
    cd ClarityNLPBareBones
-   git clone https://github.com/ClarityNLP/ClarityNLP.git
+   git clone --recurse-submodules https://github.com/ClarityNLP/ClarityNLP.git
    cd ClarityNLP
    # git checkout develop
    git submodule update --init --recursive --remote
