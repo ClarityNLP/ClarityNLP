@@ -29,7 +29,7 @@ The following section is useful if you need to interact directly with the Clarit
    :maxdepth: 2
 
    retrieve-access-token
-   local-docker
+   add-third-party-app
 
 
 
