@@ -20,9 +20,11 @@ Production Setup
 
    production-docker
    
+   
 Accessing ClarityNLP Securely
 -----------------------------
 The following section is useful if you need to interact directly with the ClarityNLP API via a HTTP client or a third-party app.
+
 .. toctree::
    :maxdepth: 2
 
