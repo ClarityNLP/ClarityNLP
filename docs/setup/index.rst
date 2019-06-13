@@ -2,7 +2,7 @@ Setup
 =====
 The following guides will get you started with ClarityNLP.
 
-Quick Setup
+Local Setup
 -----------
 
 
@@ -19,8 +19,15 @@ Production Setup
    :maxdepth: 2
 
    production-docker
+   
+Accessing ClarityNLP Securely
+-----------------------------
+The following section is useful if you need to interact directly with the ClarityNLP API via a HTTP client or a third-party app.
+.. toctree::
+   :maxdepth: 2
 
-
+   retrieve-access-token
+   local-docker
 
 
 
