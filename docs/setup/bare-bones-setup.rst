@@ -412,10 +412,10 @@ make it writable, and set the paths in the ``[tmp]`` and ``[log]`` sections of
    dir=/path/to/my/preferred/log/dir
 
 
-Finally, from the ``barebones_setup`` folder, copy ``project.cfg`` into the ``nlp``
-folder, which is where ClarityNLP expects to find it:
+Finally, from the ``barebones_setup`` folder, copy ``project.cfg.BAREBONES``
+into the ``nlp`` folder, which is where ClarityNLP expects to find it:
 ::
-   cp project.cfg ../nlp
+   cp project.cfg.BAREBONES ../nlp/project.cfg
 
 
 ..
