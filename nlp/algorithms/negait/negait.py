@@ -93,7 +93,7 @@ from collections import namedtuple
 from nltk.stem.porter import PorterStemmer
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 2
 
 # serializable result object
 EMPTY_FIELD = None
@@ -112,7 +112,7 @@ NegaitResult = namedtuple('NegaitResult', NEGAIT_RESULT_FIELDS)
 
 
 # load Spacy's English model
-nlp = spacy.load('en')
+nlp = spacy.load('en_core_web_sm')
 
 stemmer = PorterStemmer()
 

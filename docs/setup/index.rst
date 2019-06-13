@@ -20,9 +20,13 @@ Production Setup
 
    production-docker
 
+Bare Bones Setup
+----------------
 
+.. toctree::
+   :maxdepth: 3
 
-
+   bare-bones-setup
 
 Data Ingestion
 --------------

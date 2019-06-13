@@ -22,8 +22,6 @@ Technical Background
    technical_background/solr
    technical_background/pipelines
    testing
-   local-nlp-setup
-
 
 
 Utility Algorithms

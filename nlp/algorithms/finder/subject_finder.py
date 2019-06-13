@@ -1736,13 +1736,6 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
             token_list = get_modifiers(s)
             m.subject.append(token_list)
 
-        # # flatten the subject list and convert from spacy tokens to strings
-        # m.subject = flatten(m.subject)
-        # m.subject = [s.text for s in m.subject]
-
-        # # flatten the location list, a list of strings
-        # m.location = flatten(m.location)
-            
     # undo ngram replacements and other substitutions for subjects and locations
     if len(replacements) > 0:
         for m in measurements:

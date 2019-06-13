@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from textacy import extract, Doc, preprocess_text
+from textacy import extract, make_spacy_doc, preprocess_text
 
 try:
     from .task_utilities import BaseTask, BaseCollector, pipeline_mongo_writer, get_config_integer
@@ -87,7 +87,7 @@ class NGramTask(BaseTask):
         for doc in self.docs:
             ngrams = list()
             cln_txt = self.get_document_text(doc, clean=True)
-            t_doc = Doc(preprocess_text(cln_txt, lowercase=True))
+            t_doc = make_spacy_doc(preprocess_text(cln_txt, lowercase=True), lang='en')
             res = extract.ngrams(t_doc, n_num, filter_stops=filter_stops, filter_punct=filter_punct,
                                  filter_nums=filter_nums)
             for r in res:
@@ -121,4 +121,5 @@ if __name__ == "__main__":
               "the glow from that fire can truly light the world."
     d = Doc(content)
     results = extract.ngrams(d, 3)
-    print(results)
+    for r in results:
+        print(r)
