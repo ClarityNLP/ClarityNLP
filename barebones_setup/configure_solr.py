@@ -3,12 +3,15 @@
 import os
 import sys
 import json
+import argparse
 import datetime
 import requests
 import subprocess
 
-# name of the solr test core
-_CORE_NAME = 'claritynlp_test'
+_VERSION_MAJOR = 0
+_VERSION_MINOR = 1
+_MODULE_NAME   = 'configure_solr.py'
+
 
 # setup tokenized field type
 DATA1 = [
@@ -247,7 +250,7 @@ def _http_post(solr_url, headers, json_data, params=None):
     
 
 ###############################################################################
-def _create_validation_files():
+def _create_validation_files(solr_base_url):
     """
     Create and ingest test for ClarityNLP validation.
     """
@@ -255,7 +258,7 @@ def _create_validation_files():
     # special docs for validation purposes
     VALIDATION_FILES = ['data_validation0.txt']
 
-    solr_url = 'http://localhost:8983/solr/{0}/update'.format(_CORE_NAME)
+    solr_url = '{0}/update'.format(solr_base_url)
     headers = {'Content-type':'application/json'}
     params = {'wt':'json', 'commit':'true'}
     
@@ -297,15 +300,15 @@ def _create_validation_files():
             
 
 ###############################################################################
-def _configure_solr_schema(obj_list):
+def _configure_solr_schema(solr_base_url, obj_list):
     """
     Send data to solr via HTTP POST, check the response, and return True
     if successful or False otherwise.
     """
 
-    solr_url = 'http://localhost:8983/solr/{0}/schema'.format(_CORE_NAME)
+    solr_url = '{0}/schema'.format(solr_base_url)
     headers = {'Content-type':'application/json'}
-    
+
     for payload in obj_list:
         json_data = json.dumps(payload)
         r = _http_post(solr_url, headers, json_data)
@@ -318,31 +321,64 @@ def _configure_solr_schema(obj_list):
 
 
 ###############################################################################
+def _get_version():
+    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
+
+
+###############################################################################
 if __name__ == '__main__':
+
+    # name of the ClarityNLP solr test core
+    CORE_NAME = 'claritynlp_test'
     
-    print('Cofiguring solr...')
-    
-    ok = _create_solr_core(_CORE_NAME)
+    parser = argparse.ArgumentParser(
+        description='Configure the ClarityNLP test core')
+    parser.add_argument('-v', '--version', help='show version and exit',
+                        action='store_true')
+    parser.add_argument('-n', '--hostname',
+                        help='hostname for solr instance, default == localhost')
+    parser.add_argument('-p', '--port',
+                        help='port number for solr instance, default == 8983')
+
+    args = parser.parse_args()
+
+    if 'version' in args and args.version:
+        print(_get_version())
+        sys.exit(0)
+
+    hostname = 'localhost'
+    if 'hostname' in args and args.hostname is not None:
+        hostname = args.hostname
+
+    port = 8983
+    if 'port' in args and args.port is not None:
+        port = int(args.port)
+
+    solr_base_url = 'http://{0}:{1}/solr/{2}'.format(hostname, port, CORE_NAME)
+
+    print('Configuring solr...')
+
+    ok = _create_solr_core(CORE_NAME)
     if not ok:
         sys.exit(-1)
-    print('\tcreated solr core "{0}"'.format(_CORE_NAME))
+    print('\tcreated solr core "{0}"'.format(CORE_NAME))
     
     # setup custom field type
-    ok = _configure_solr_schema(DATA1)
+    ok = _configure_solr_schema(solr_base_url, DATA1)
     if not ok:
         print('\tcreation of "searchText" field type failed')
         sys.exit(-1)
     print('\tcreated the "searchText" field type')
 
     # add standard fields
-    ok = _configure_solr_schema(DATA2)
+    ok = _configure_solr_schema(solr_base_url, DATA2)
     if not ok:
         print('\tstandard field setup failed')
         sys.exit(-1)
     print('\tcreated standard fields')
         
     # add dynamic fields
-    ok = _configure_solr_schema(DATA3)
+    ok = _configure_solr_schema(solr_base_url, DATA3)
     if not ok:
         print('\tdynamic field setup failed')
         sys.exit(-1)
@@ -360,7 +396,7 @@ if __name__ == '__main__':
     files = ['sample.csv', 'sample2.csv', 'sample3.csv', 'sample4.csv']
     for f in files:
         filepath = os.path.join(nlp_solr_dir, f)
-        ok = _ingest_file(_CORE_NAME, filepath)
+        ok = _ingest_file(CORE_NAME, filepath)
         if not ok:
             print('\tload FAILED for file {0}'.format(filepath))
         else:
@@ -368,7 +404,7 @@ if __name__ == '__main__':
 
     # create and ingest the validation files
     print('Loading validation files...')
-    if not _create_validation_files():
+    if not _create_validation_files(solr_base_url):
         print('\n\t*** Ingest failure for validation files ***')
     else:
         # run validation checks
