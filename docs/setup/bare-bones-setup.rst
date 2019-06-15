@@ -8,7 +8,7 @@ more control over your ClarityNLP installation and you prefer to configure
 everything yourself, then these are the instructions you need.
 
 This installation is also useful if you neither need nor want the OAuth2
-security layers built into the containerized version of ClarityNLP. A lack
+security layers built into the Docker version of ClarityNLP. A lack
 of security means that this method is emphatically **NOT** appropriate for
 patient data that must be protected in a HIPAA-compliant manner. So only store
 de-identified or test data in your bare bones Solr instance if you choose
@@ -26,31 +26,36 @@ There are five major components in a ClarityNLP installation:
 
 ClarityNLP uses Solr to index, store, and search documents; Postgres to store
 job control data and lots of medical vocabulary; Mongo to store results;
-Luigi for task control and scheduling, and Flask as the underlying web server.
+Luigi to control and schedule the various processing tasks, and Flask to
+provide API endpoints and the underlying web server.
 
 A bare bones installation means that, at a minimum, Luigi and Flask are
 installed and run locally on your system. Solr, Postgres, and Mongo can also
 be installed and run locally on your system, or one or more of these can be
 hosted elsewhere.
 
-A university research group, for example, may have a hosted Solr instance on a
-VPN that is accessible to all members of the group, Bare bones ClarityNLP users
-could configure their system to use the hosted Solr instance via configuration
-file settings. They would install and run Postgres, Mongo, Luigi, and Flask on
-their local system.
+A university research group, for example, could have a hosted Solr instance on
+a VPN that is accessible to all members of the group. The Solr instance might
+contain `MIMIC <https://mimic.physionet.org/>`_ or other de-identified, public
+data. Members of the research group running a bare bones ClarityNLP
+installation would configure their laptops to use the hosted Solr instance.
+This can be accomplished via settings in a ClarityNLP configuration file, as
+explained below. These users would install and run Postgres, Mongo, Luigi, and
+Flask on their laptops.
 
 At GA Tech we have hosted versions of Solr, Postgres, and MongoDB. Our bare
-bones ClarityNLP users can install and run Luigi and Flask on their laptops,
-and then setup their configuration file to "point" to the hosted instances.
+bones ClarityNLP users only need to install and run Luigi and Flask on their
+laptops, and then setup their configuration file to "point" to the hosted
+instances.
 
-These flexible configuration options are also available with the containerized
-and secure version of ClarityNLP.
+These flexible configuration options are also available with the
+container-based, secure version of ClarityNLP.
 
 Roadmap
 -------
 
 This installation and configuration process is somewhat lengthy, so here's a
-high-level overview of what we'll be doing:
+high-level overview of what we'll be doing.
 
 First, we'll need to setup and install the source code, the necessary python
 libraries, and all of the associated python and non-python dependencies. We
@@ -58,7 +63,7 @@ will perform the installation inside of a custom
 `conda <https://www.anaconda.com>`_-managed environment
 so that ClarityNLP will not interfere with other software on your system.
 
-Next we'll install and configure one or more of Solr, PostgreSQL, and MongoDB,
+Next we'll install and/or configure Solr, PostgreSQL, and MongoDB,
 depending on whether you have access to hosted instances or not.
 
 Then we'll ingest some test documents into Solr and run a sample NLPQL file so
@@ -82,8 +87,9 @@ by following the instructions provided at the Homebrew website. We prefer to
 use Homebrew since it allows packages to be installed and uninstalled without
 superuser privileges.
 
-Open a terminal window and install the ``git`` version control system and the
-``curl`` command line data transfer tool with this command:
+After installing homebrew, open a terminal window and use homebrew to install
+the ``git`` version control system and the ``curl`` command line data transfer
+tool with this command:
 ::
 
    brew install git curl
@@ -114,7 +120,7 @@ Clone the ClarityNLP GitHub Repository
 Open a terminal window on your system and change directories to wherever you
 want to install ClarityNLP. Create a new folder called ``ClarityNLPBareBones``,
 to emphasize that it will hold a version of ClarityNLP configured for running
-locally on your system without Docker or OAuth2. You can create the umbrella
+locally on your system without Docker or OAuth2. You can create this
 folder, clone the repo, and initialize all submodules with these commands:
 ::
    cd /some/location/on/your/disk
@@ -167,12 +173,12 @@ The conda version of ``pip`` knows about conda environments and will install
 the packages listed in ``conda_pip_requirements.txt`` into the claritynlp
 custom environment, NOT the system folders.
 
-You can activate the ``claritynlp`` custom environment with the command
+You can activate the claritynlp custom environment with the command
 ::
 
    conda activate claritynlp
 
-Whenever the ``claritynlp`` environment is active, the command line in the
+Whenever the claritynlp environment is active, the command line in the
 terminal window displays ``(claritynlp)`` to the left of the prompt. If the
 default environment is active it will display ``(base)`` instead.
 
@@ -183,7 +189,8 @@ default environment is active it will display ``(base)`` instead.
 Install Additional Model Files
 ------------------------------
 
-ClarityNLP uses the ``spacy`` and ``nltk`` natural language processing
+ClarityNLP uses the `spacy <https://spacy.io/>`_ and
+`nltk <https://www.nltk.org/>`_ natural language processing
 libraries, which require additional support files. From the same terminal
 window in the ``barebones_setup`` folder, run these commands to install the
 support files:
@@ -239,15 +246,23 @@ for installing Postgres on MacOSX is to download and install
 `Postgres.app <https://postgresapp.com/>`_, which takes care of most of the
 setup and configuration for you. If you do not have access to a hosted Postgres
 server, download the .dmg file from the Postgres.app website, run the
-installer, and click `initialize` to create a new server.
+installer, and click `initialize` to create a new server. 
 
 After everything is installed and running, you will see an elephant icon in
 the menu bar at the upper right corner of your screen. Click the icon and a
 menu will appear. The button in the lower right corner of the menu can be used
 to start and stop the database server. For now, click the button and stop the
 server, since we need to make a small change to the postgres configuration
-file. You will need to follow these configuration steps as well if you have a
-hosted Postgres instance.
+file.
+
+You will need to follow these configuration steps as well if you have a
+hosted Postgres instance. You may need to ask your local database admin to
+perform the configuration, depending on whether or not you have superuser
+privileges for your particular installation. The location of the data
+directory on your hosted instance will likely differ from that provided below,
+which is specific to a Mac installation.
+
+These instructions were developed for PostgreSQL 11.
 
 Edit the PostgreSQL Config File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -275,9 +290,8 @@ Create the Database and a User Account
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With the database server installed, configured, and running, we now need to
-create a user account. Open a terminal and browse to this location in your
-local copy of the ClarityNLP git repo:
-``ClarityNLPBareBones/ClarityNLP/utilities/nlp-postgres``. From this location
+create a user account. Open a terminal and browse to
+``ClarityNLPBareBones/ClarityNLP/utilities/nlp-postgres``. From this folder
 run the following commands (we suggest using a better password):
 ::
    psql postgres
@@ -287,10 +301,10 @@ run the following commands (we suggest using a better password):
    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA nlp TO clarity_user;
 
 These commands create the database and grant the ``clarity_user`` sufficient
-privileges for use with ClarityNLP.
+privileges to use it with ClarityNLP.
 
 Next, from the psql prompt run these commands to connect to the database and
-setup the vocabulary tables:
+setup the OMOP vocabulary tables:
 ::
    
    \connect clarity
@@ -372,9 +386,13 @@ You should see the Solr admin dashboard. If you do, your Solr installation is
 up and running.
 
 We need to do some additional configuration of the Solr server and ingest
-some test documents. We provide a python script to do this for you. Open a
-terminal window to ``ClarityNLPBareBones/ClarityNLP/barebones_setup``. If you
-installed Solr on your local system run:
+some test documents. We provide a python script to do this for you. This script
+assumes that you are running a modern version of Solr, at least version 8. If
+you are running an older version this script **may not work for you**, since
+some field type names changed at the transition from Solr 6 to Solr 7.
+
+Open a terminal window to ``ClarityNLPBareBones/ClarityNLP/barebones_setup``.
+If you installed Solr on your local system run:
 ::
    conda activate claritynlp
    python ./configure_solr.py
@@ -423,7 +441,8 @@ appear in the next table:
 The test documents have all been configured with these fields. If you
 decide to ingest additional documents into the ``claritynlp_test`` Solr core,
 you will need to ensure that they contain these fields as well. Additional
-information on document ingestion can be found `here <https://clarity-nlp.readthedocs.io/en/latest/setup/ingest/generic_ingestion.html>`_.
+information on document ingestion can be found
+`here <https://clarity-nlp.readthedocs.io/en/latest/setup/ingest/generic_ingestion.html>`_.
 
 Python scripts for ingesting some common document types can be found
 `here <https://github.com/ClarityNLP/Utilities>`_.
@@ -450,7 +469,14 @@ equals sign to the password that you used. If you used a password
 of ``jx8#$04!Q%``, change the password line to ``password=jx8#$04!Q%``.
 
 Make the appropriate changes for Solr, Postgres, and MongoDB to conform to
-your desired configuration.
+your desired configuration. Note that the username and password entries for
+MongodB are commented out. It is possible to use MongoDB without having to
+create a user account. If this is the case for your system, just leave these
+entries commented out. Otherwise, uncomment them and set the values appropriate
+for your system.
+
+If you followed the instructions above *exactly* and installed everything
+locally, you do not need to change anything in this file.
 
 The provided ``project.cfg`` file tells ClarityNLP to use ``/tmp`` as the
 location for the log file and various temporary files needed during the run. If
@@ -468,7 +494,7 @@ sections of ``project.cfg``. The paths would look like this after any changes:
 **Double-check all entries in this file!** You will have problems getting the
 system to run if you have typos or other errors for these parameters.
    
-Finally, once you are satisifed that the data in the file is correct, copy
+Once you are satisifed that the data in the file is correct, copy
 ``project.cfg`` from the ``barebones_setup`` folder into the ``nlp`` folder,
 which is where ClarityNLP expects to find it:
 ::
@@ -487,21 +513,25 @@ after each reboot, as mentioned above.
 1. Start Solr
 ^^^^^^^^^^^^^
 
-Start Solr if it is not already running by opening a terminal window and
-running ``solr start``.
+If you installed Solr locally and chose the manual start method, start Solr by
+opening a terminal window and running ``solr start``.
 
-Verify that you can communicate with your Solr core by pinging it. Open a
-Web browser and visit this URL: ``http://localhost:8983/solr/claritynlp_test/admin/ping``.
+Verify that you can communicate with your Solr core by pinging it. For a local
+installation, open a Web browser and visit this URL:
+``http://localhost:8983/solr/claritynlp_test/admin/ping``. For a hosted
+instance, change ``localhost`` to whatever is appropriate for your system.
+
 The Web browser should display a status of ``OK`` in the final line of output
 if it is connected. If you get an HTTP 404 error, make recheck your URL and
-make sure that your Solr instance actually started.
+make sure that your Solr instance is actually running.
 
 
 2. Start the MongoDB Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Launch the the ``mongod`` server by supplying the path to your local MongoDB
-config file as follows (this command uses the default config file):
+If you installed MongoDB locally, launch the the ``mongod`` server by supplying
+the path to your local MongoDB config file as follows (this command uses the
+default config file):
 ::
    mongod --config /usr/local/etc/mongod.conf
 
@@ -509,22 +539,41 @@ Verify that the mongo server is running by typing ``mongo`` into a terminal to
 start the mongo client. It should connect to the database and prompt for input.
 Exit the client by typing ``exit`` in the terminal.
 
+For a hosted MongoDB instance you need to supply the connection params from the
+terminal. If your Mongo installation does not require accounts and passwords,
+connect to it with this command, replacing the ``<hostname or ip>`` and
+``<port number>`` placeholders with values appropriate for your system:
+::
+   mongo --host <hostname or ip> --port <port number>
 
+If your hosted instance requires a user name and password, you will need to
+supply those as well. More info on connecting to a remote Mongo server can
+be found `here <https://docs.mongodb.com/manual/mongo/>`_.
+   
 3. Start the Postgres Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If your Postgres server is not already running, start it by clicking the
+If you installed Postgres locally, start the PostgreSQL server by clicking the
 elephant icon in the menu bar at the upper right corner of your screen. Press
 the start button at the lower right of the popup menu. Open another terminal
 and verify that your server is available by running ``pg_isready``. It should
 report ``accepting connections``.
+
+If you use a hosted Postgres instance, check to see that it is up and running
+with this command, replacing the hostname and port number with values suitable
+for your installation:
+::
+   pg_isready -h <hostname> -p <port number>
+
+If your Postgres server is running it should respond with
+``accepting connections``.
 
 
 4. Start the Luigi Task Scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ClarityNLP uses Luigi to schedule and manage the data processing tasks. Luigi
-must be manually started.
+must be manually started in a bare bones setup.
 
 We will run Luigi from a dedicated directory, ``~/tmp/luigi``. Open another
 terminal window and create ``~/tmp/luigi`` with these commands (this only
@@ -542,15 +591,18 @@ Launch Luigi with:
 
 Luigi should start and the command prompt should become inactive. Keep Luigi
 running for your entire ClarityNLP session. You only need to start Luigi once,
-even if you process multiple NLPQL files. 
+even if you plan to run multiple ClarityNLP jobs.
 
 
-5. Start the ClarityNLP Flask Web Server
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5. Start the Flask Web Server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ClarityNLP uses Flask as the underlying web framework. Open yet another
-terminal window, cd to the ``ClarityNLPBareBones/ClarityNLP/nlp`` directory,
-and launch the web server with:
+ClarityNLP uses Flask as the underlying web framework. Flask must be manually
+started in a bare bones setup.
+
+Open yet another terminal window, cd to the
+``ClarityNLPBareBones/ClarityNLP/nlp`` directory, and launch the web server
+with:
 ::
    conda activate claritynlp
    export FLASK_APP=api.py
@@ -588,18 +640,20 @@ several ClarityNLP tasks on a special validation document that was loaded into
 the ``claritynlp_test`` Solr core during setup.
 
 When we run this validation job, ClarityNLP will process the validation
-document in our local Solr core, run the validation tasks, and write results
-to the local MongoDB instance. We can extract the results into a CSV file for
-easy viewing and then run a special python script to check that the results
-are correct.
+document, run the validation tasks, and write results to MongoDB. We can
+extract the results into a CSV file for easy viewing and then run a special
+python script to check that the results are correct.
 
 You launch a ClarityNLP job by performing an HTTP POST of your NLPQL file to
 the ClarityNLP ``nlpql`` API endpoint. Since the local running instance of
-ClarityNLP is listening at ``http://localhost:5000``, the URL to post the
-NLPQL file is ``http://localhost:5000/nlpql``.  We will see how to do this
-with the ``curl`` command line tool below.
+ClarityNLP is listening at ``http://localhost:5000``, the appropriate URL
+is ``http://localhost:5000/nlpql``.  We will see how to post the file using
+the ``curl`` command line tool below. If you are familiar with
+`Postman <https://www.getpostman.com/>`_ or other HTTP clients you could
+certainly use those instead of ``curl``. Any HTTP client that can POST files
+as plain text should be OK.
 
-Before running the NLPQL file, we should first check the it for syntax errors.
+Before running the NLPQL file, we should first check it for syntax errors.
 That can be accomplished by POSTing the NLPQL file to the ``nlpql_tester`` API
 endpoint. From your terminal window run these commands to do so:
 ::
@@ -669,10 +723,6 @@ After the job finishes you can download a CSV file to see what ClarityNLP
 found. The ``intermediate_results_csv`` file contains all of the raw data
 values that the various tasks found.
 
-If you are familiar with `Postman <https://www.getpostman.com/>`_ or other
-HTTP clients you could certainly use those instead of ``curl``. Any HTTP client
-that can POST files as plain text should be OK.
-
 To check the results, you need to generate a proper CSV file from the
 intermediate results. The record delimiter should be a comma, **not a tab**,
 which seems to be the default for Microsoft Excel. Assuming that you have the
@@ -726,11 +776,13 @@ above.
 Final Words
 -----------
    
-Detailed instructions on how to run jobs with ClarityNLP can be found in
-our `Cooking with Clarity <https://github.com/ClarityNLP/ClarityNLP/tree/master/notebooks/cooking>`_
+An introduction to NLPQL can be found
+`here <https://claritynlp.readthedocs.io/en/latest/user_guide/index.html>`_.
+
+Additional information on how to run jobs with ClarityNLP can be found in
+our
+`Cooking with Clarity <https://github.com/ClarityNLP/ClarityNLP/tree/master/notebooks/cooking>`_
 sessions. These are `Jupyter <https://jupyter.org/>`_ notebooks presented in a
 tutorial format. Simply click on any of the ``.ipynb`` files to open the
 notebook in a Web browser. These notebooks provide in-depth explorations of
 topics relevant to computational phenotyping.
-
-
