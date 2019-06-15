@@ -8,11 +8,10 @@ more control over your ClarityNLP installation and you prefer to configure
 everything yourself, then these are the instructions you need.
 
 This installation is also useful if you neither need nor want the OAuth2
-security layers built into the Docker version of ClarityNLP. A lack
-of security means that this method is emphatically **NOT** appropriate for
-patient data that must be protected in a HIPAA-compliant manner. So only store
-de-identified or test data in your bare bones Solr instance if you choose
-to do this.
+security layers built into the Docker version of ClarityNLP. A bare bones
+installation is emphatically **NOT** appropriate for patient data that must
+be protected in a HIPAA-compliant manner. So only store de-identified public
+data in your Solr instance if you choose to do this.
 
 Overview
 --------
@@ -386,10 +385,11 @@ You should see the Solr admin dashboard. If you do, your Solr installation is
 up and running.
 
 We need to do some additional configuration of the Solr server and ingest
-some test documents. We provide a python script to do this for you. This script
-assumes that you are running a modern version of Solr, at least version 8. If
-you are running an older version this script **may not work for you**, since
-some field type names changed at the transition from Solr 6 to Solr 7.
+some test documents. We provide a python script to do this for you.
+**This script assumes that you are running a modern version of Solr,**
+**version 8 or later.** If you are running an older version this script
+**may not work for you**, since some field type names changed at the
+transition from Solr 6 to Solr 7.
 
 Open a terminal window to ``ClarityNLPBareBones/ClarityNLP/barebones_setup``.
 If you installed Solr on your local system run:
@@ -410,6 +410,13 @@ You should confirm that the files ``sample.csv``, ``sample2.csv``,
 ``sample3.csv``, and ``sample4.csv`` were loaded successfully (load statements
 appear in the console as the script runs). If the load failed for any reason
 an error message will be written to stdout.
+
+If the script ran without error, your ``claritynlp_test`` Solr core should
+have ingested 7016 documents. Verify this by opening a web browser to
+``http://localhost:8983``, or if you have a hosted Solr instance, to its admin
+page. From the core selector at the left of the screen, select the
+``claritynlp_test`` core and look in the ``Statistics`` window. The value of
+the ``Num Docs`` field should equal 7016.
 
 ClarityNLP expects the ingested documents to have a minimal set of fields, which
 appear in the next table:
