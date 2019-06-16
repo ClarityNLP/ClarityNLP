@@ -75,12 +75,11 @@ def create_new_job(job: NlpJob, connection_string: str):
     return -1
 
 
-def get_job_status(job_id: int, connection_string: str):
+def get_job_status(job_id: int, connection_string: str, get_updates=False):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
     status_dict = {
-        "status": "UNKNOWN",
-        "updates": list()
+        "status": "UNKNOWN"
     }
 
     try:
@@ -90,19 +89,21 @@ def get_job_status(job_id: int, connection_string: str):
         status = cursor.fetchone()[0]
         status_dict["status"] = status
 
-        cursor.execute("""
-            SELECT status, description, date_updated, nlp_job_status_id from nlp.nlp_job_status
-            where nlp_job_id = %s order by date_updated
-            """,
-                       [job_id])
-        updates = cursor.fetchall()
-        for row in updates:
-            udict = dict()
-            udict["nlp_job_status_id"] = row[3]
-            udict["date_updated"] = (row[2]).strftime("%Y-%m-%d %H:%M:%S")
-            udict["status"] = row[0]
-            udict["description"] = row[1]
-            status_dict["updates"].append(udict)
+        if get_updates:
+            status_dict['updates'] = list()
+            cursor.execute("""
+                SELECT status, description, date_updated, nlp_job_status_id from nlp.nlp_job_status
+                where nlp_job_id = %s order by date_updated
+                """,
+                           [job_id])
+            updates = cursor.fetchall()
+            for row in updates:
+                udict = dict()
+                udict["nlp_job_status_id"] = row[3]
+                udict["date_updated"] = (row[2]).strftime("%Y-%m-%d %H:%M:%S")
+                udict["status"] = row[0]
+                udict["description"] = row[1]
+                status_dict["updates"].append(udict)
 
         return status_dict
     except Exception as ex:
