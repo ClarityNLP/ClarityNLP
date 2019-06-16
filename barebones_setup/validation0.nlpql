@@ -1,0 +1,117 @@
+limit 100;
+
+phenotype "Validation 0" version "1";
+include ClarityCore version "1.0" called Clarity;
+
+documentset ValidationDoc:
+    Clarity.createDocumentSet({
+        "report_types":["CLARITYNLP_VALIDATION_0"]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// RACE FINDER
+//
+///////////////////////////////////////////////////////////////////////////////
+
+define Race:
+    Clarity.RaceFinderTask({
+        documentset: [ValidationDoc]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// MEASUREMENT FINDER
+//
+///////////////////////////////////////////////////////////////////////////////
+
+termset LesionTerms: [
+    "lesion"
+];
+
+define Measurement:
+    Clarity.MeasurementFinder({
+        documentset: [ValidationDoc],
+        termset: [LesionTerms]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// PROVIDER ASSERTION
+//
+///////////////////////////////////////////////////////////////////////////////
+
+termset FeverTerms: [
+    "fever"
+];
+
+define hasFever:
+    Clarity.ProviderAssertion({
+        documentset: [ValidationDoc],
+        termset: [FeverTerms]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// TERM PROXIMITY
+//
+///////////////////////////////////////////////////////////////////////////////
+
+termset ProstateTerms: [
+    "prostate"
+];
+
+define hasProstateCancer:
+    Clarity.TermProximityTask({
+        documentset: [ValidationDoc],
+        "termset1": [ProstateTerms],
+        "termset2": "cancer, Gleason, Gleason's, Gleasons",
+        "word_distance": 5,
+        "any_order": "True"
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// VALUE EXTRACTION
+//
+///////////////////////////////////////////////////////////////////////////////
+
+termset EjectionFractionTerms: [
+    "ejection fraction",
+    "lvef"
+];
+
+define EjectionFraction:
+    Clarity.ValueExtraction({
+        documentset: [ValidationDoc],
+        termset:[EjectionFractionTerms],
+        minimum_value: "10",
+        maximum_value: "85"
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// GLEASON SCORE
+//
+///////////////////////////////////////////////////////////////////////////////
+
+define GleasonScore:
+    Clarity.GleasonScoreTask({
+        documentset: [ValidationDoc]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// TNM STAGER
+//
+///////////////////////////////////////////////////////////////////////////////
+
+define TNMCode:
+    Clarity.TNMStager ({
+        documentset: [ValidationDoc]
+    });
+
+
+// logical Context (Patient, Document)
+context Patient;
+

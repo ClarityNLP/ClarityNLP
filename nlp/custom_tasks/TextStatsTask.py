@@ -70,7 +70,7 @@ class TextStatsTask(BaseTask):
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         for doc in self.docs:
             txt = self.get_document_text(doc)
-            textacy_doc = textacy.Doc(txt)
+            textacy_doc = textacy.make_spacy_doc(txt, lang='en')
             ts = TextStats(textacy_doc)
 
             obj = {

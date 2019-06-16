@@ -20,6 +20,14 @@ Production Setup
 
    production-docker
    
+Bare Bones Setup
+----------------
+
+.. toctree::
+   :maxdepth: 3
+
+   bare-bones-setup
+   
    
 Accessing ClarityNLP Securely
 -----------------------------
@@ -30,8 +38,7 @@ The following section is useful if you need to interact directly with the Clarit
 
    retrieve-access-token
    add-third-party-app
-
-
+   
 
 Data Ingestion
 --------------
