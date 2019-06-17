@@ -164,7 +164,7 @@ def _extract_patient_resource(obj, mongo_obj):
     mongo_obj['patient_date_of_birth'] = the_date
 
     # save explicitly as 'dob' field
-    mongo_obj['dob'] = the_date
+    #mongo_obj['dob'] = the_date
 
 
 ###############################################################################
