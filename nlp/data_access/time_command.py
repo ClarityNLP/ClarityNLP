@@ -74,7 +74,7 @@ def _to_date(match):
     month = int(match.group('month'))
     day = int(match.group('day'))
 
-    obj = datetime(year, month, day)
+    obj = datetime(year, month, day, tzinfo=tzutc())
     return obj
 
     
