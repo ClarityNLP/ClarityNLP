@@ -8,10 +8,11 @@ import os
 import sys
 import json
 import optparse
+from datetime import datetime, timezone
 from collections import namedtuple
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME   = 'cibmtr_data_parser.py'
 
 # set to True to enable debug output
@@ -61,6 +62,9 @@ PATIENT_FIELDS = [
 ]
 PatientResource = namedtuple('PatientResource', PATIENT_FIELDS)
 
+# All namedtuples below have a date_time field, which is an instance
+# of a python datetime object.
+
 # fields extracted from a 'Procedure' FHIR resource
 PROCEDURE_FIELDS = [
     'id_value', 
@@ -69,7 +73,7 @@ PROCEDURE_FIELDS = [
     'subject_reference',
     'subject_display',
     'context_reference',
-    'performed_date_time'
+    'date_time'
 ]
 ProcedureResource = namedtuple('ProcedureResource', PROCEDURE_FIELDS)
 
@@ -81,8 +85,8 @@ CONDITION_FIELDS = [
     'subject_reference',
     'subject_display',
     'context_reference',
-    'onset_date_time',
-    'abatement_date_time'
+    'date_time',
+    'end_date_time'
 ]
 ConditionResource = namedtuple('ConditionResource', CONDITION_FIELDS)
 
@@ -104,6 +108,9 @@ ObservationResource = namedtuple('ObservationResource', OBSERVATION_FIELDS)
 CODING_FIELDS = ['code', 'system', 'display']
 CodingObj = namedtuple('CodingObj', CODING_FIELDS)
 
+# regex used to recognize UTC offsets in a FHIR datetime string
+_regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
+
 
 ###############################################################################
 def enable_debug():
@@ -112,6 +119,26 @@ def enable_debug():
     _TRACE = True
 
 
+###############################################################################
+def _fixup_fhir_datetime(fhir_datetime_str):
+    """
+    The FHIR server returns a date time as follows:
+
+        '2156-09-17T09:01:02+03:04
+
+    Need to remove the final colon in the UTC offset portion (+03:04) to
+    match the python strftime format for the UTC offset.
+    """
+    
+    new_str = fhir_datetime_str
+    match = _regex_fhir_utc_offset.search(fhir_datetime_str)
+    if match:
+        pos = match.start() + 3
+        new_str = fhir_datetime_str[:pos] + fhir_datetime_str[pos+1:]
+        
+    return new_str
+
+    
 ###############################################################################
 def _decode_value_quantity(obj):
     value_quantity_dict = obj[_KEY_VALUE_QUANTITY]
@@ -235,15 +262,18 @@ def _decode_observation(obj):
     subject_reference, subject_display = _decode_subject_info(obj)
     context_reference = _decode_context_info(obj)
             
-    date_time = None
     value = None
     unit = None
     unit_system = None
     unit_code = None
-    if _KEY_EFF_DATE_TIME in obj:
-        date_time = obj[_KEY_EFF_DATE_TIME]
     if _KEY_VALUE_QUANTITY in obj:
         value, unit, unit_system, unit_code = _decode_value_quantity(obj)
+
+    date_time = None    
+    if _KEY_EFF_DATE_TIME in obj:
+        date_time = obj[_KEY_EFF_DATE_TIME]
+        date_time = _fixup_fhir_datetime(date_time)
+        date_time = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z')        
 
     observation = ObservationResource(
         subject_reference,
@@ -257,7 +287,6 @@ def _decode_observation(obj):
         coding_systems_list
     )
         
-    #print(observation)
     return observation
 
 
@@ -306,8 +335,12 @@ def _decode_condition(obj):
     abatement_date_time = None
     if _KEY_ONSET_DATE_TIME in obj:
         onset_date_time = obj[_KEY_ONSET_DATE_TIME]
+        onset_date_time = _fixup_fhir_datetime(onset_date_time)
+        onset_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z')
     if _KEY_ABATEMENT_DATE_TIME in obj:
         abatement_date_time = obj[_KEY_ABATEMENT_DATE_TIME]
+        abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
+        abatement_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z')
 
     condition = ConditionResource(
         id_value,
@@ -316,8 +349,8 @@ def _decode_condition(obj):
         subject_reference,
         subject_display,
         context_reference,
-        onset_date_time,
-        abatement_date_time
+        date_time=onset_date_time,
+        end_date_time=abatement_date_time
     )
         
     return condition
@@ -345,10 +378,12 @@ def _decode_procedure(obj):
     subject_reference, subject_display = _decode_subject_info(obj)
     context_reference = _decode_context_info(obj)
 
-    performed_date_time = None
+    dt = None
     if _KEY_PERFORMED_DATE_TIME in obj:
         performed_date_time = obj[_KEY_PERFORMED_DATE_TIME]
-
+        performed_date_time = _fixup_fhir_datetime(performed_date_time)
+        dt = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z')
+    
     procedure = ProcedureResource(
         id_value,
         status,
@@ -356,7 +391,7 @@ def _decode_procedure(obj):
         subject_reference,
         subject_display,
         context_reference,
-        performed_date_time
+        date_time=dt
     )
     
     return procedure
@@ -417,8 +452,11 @@ def _decode_patient(name, patient_obj):
 
     date_of_birth = None
     if _KEY_DOB in obj:
-        date_of_birth = obj[_KEY_DOB]
-        assert str == type(date_of_birth)
+        dob = obj[_KEY_DOB]
+        assert str == type(dob)
+
+        # dob is in YYYY-MM-DD format; convert to datetime obj
+        date_of_birth = datetime.strptime(dob, '%Y-%m-%d')
             
     patient = PatientResource(
         subject,
@@ -426,7 +464,7 @@ def _decode_patient(name, patient_obj):
         gender,
         date_of_birth
     )
-    #print(patient)
+
     return patient
     
     

@@ -12,10 +12,10 @@ import json
 import requests
 import data_access
 import data_access.cql_result_parser as crp
-
+import data_access.time_command as tc
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 
 # names of custom args accessible to CQLExecutionTask
 
@@ -28,12 +28,18 @@ _FHIR_TERMINOLOGY_SERVICE_URI = 'fhir_terminology_service_uri'           # https
 _FHIR_TERMINOLOGY_SERVICE_ENDPOINT = 'fhir_terminology_service_endpoint' # Terminology Service Endpoint
 _FHIR_TERMINOLOGY_USER_NAME = 'fhir_terminology_user_name'               # username
 _FHIR_TERMINOLOGY_USER_PASSWORD = 'fhir_terminology_user_password'       # password
-        
+
+_KEY_ERROR = 'error'
+
 # number of unique task indices among all Luigi clones of this task
-_MAX_TASK_INDEX = 1000
+_MAX_TASK_INDEX = 1024
 
 # Array for coordinating clones of this task, all initialized to -1.
 _shared_array = multiprocessing.Array('i', [-1]*_MAX_TASK_INDEX)
+
+# time command custom args
+_ARG_DATETIME_START = 'datetime_start'
+_ARG_DATETIME_END   = 'datetime_end'
 
 
 ###############################################################################
@@ -60,28 +66,111 @@ def _atomic_check(task_index):
             return_val = task_index
 
     return return_val
-            
+
 
 ###############################################################################
-def _fixup_fhir_datetime(fhir_datetime_str):
+def _sort_by_datetime_desc(result_list):
     """
-    The FHIR server returns a date time as follows:
-
-        '2156-09-17T09:01:02+03:04
-
-    Need to remove the final colon in the UTC offset portion (+03:04) to
-    match the python strftime format for the UTC offset.
+    Sort the namedtuples from cql_result_parser by datetime from most recent
+    to least recent.
     """
 
-    _regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
-    
-    new_str = fhir_datetime_str
-    match = _regex_fhir_utc_offset.search(fhir_datetime_str)
-    if match:
-        pos = match.start() + 3
-        new_str = fhir_datetime_str[:pos] + fhir_datetime_str[pos+1:]
+    patient_list = []
+    procedure_list = []
+    condition_list = []
+    observation_list = []
+
+    # build list of (datetime_obj, index) from each type of namedtuple
+    for i in range(len(result_list)):
+        obj = result_list[i]
+        if obj is None:
+            print('\n\n******* CQLExecutionTask: OBJ IS NONE ******\n\n')
         
-    return new_str
+        if isinstance(obj, crp.ObservationResource):
+            dt = getattr(obj, 'date_time', None)
+            assert dt is not None
+            observation_list.append( (dt, i) )
+        elif isinstance(obj, crp.ConditionResource):
+            dt = getattr(obj, 'date_time', None)
+            assert dt is not None
+            condition_list.append( (dt, i) )
+        elif isinstance(obj, crp.ProcedureResource):
+            dt = getattr(obj, 'date_time', None)
+            assert dt is not None
+            procedure_list.append( (dt, i) )
+        elif isinstance(obj, crp.PatientResource):
+            # patient has no date_time
+            patient_list.append( (obj, i) )
+        else:
+            print('\n*** CQLExecutionTask _sort_by_datetime_desc: ***')
+            print('  *** unknown namedtuple: {0} ***\n'.format(obj))
+            return result_list
+
+    assert 1 == len(patient_list)
+        
+    # sort each by datetime in descending order of date
+    # only a single list, if any, should have nonzero length, since the FHIR
+    # data is either {patient, observation+}, {patient, condition+}, or
+    # {patient, procedure+}
+    nonzero_count = 0
+    the_list = None
+    if len(observation_list) > 0:
+        nonzero_count += 1
+        observation_list = sorted(observation_list, key=lambda x: x[0], reverse=True)
+        the_list = observation_list
+    if len(condition_list) > 0:
+        nonzero_count += 1
+        condition_list = sorted(condition_list, key=lambda x: x[0], reverse=True)
+        the_list = condition_list
+    if len(procedure_list) > 0:
+        nonzero_count += 1
+        procedure_list = sorted(procedure_list, key=lambda x: x[0], reverse=True)
+        the_list = procedure_list
+        
+    if nonzero_count > 1:
+        print('\n *** CQLExecutionTask: found multiple FHIR resources ***\n')
+        assert nonzero_count <= 1
+    else:
+        # extract earliest and latest datetimes
+        earliest = the_list[-1][0]
+        latest = the_list[0][0]
+        
+    # read out each element in order to assemble sorted list
+    # put patient data in front
+    new_results = []
+    for obj, index in patient_list:
+        new_results.append(result_list[index])
+    for dt,index in procedure_list:
+        new_results.append(result_list[index])
+    for dt, index in condition_list:
+        new_results.append(result_list[index])
+    for dt, index in observation_list:
+        new_results.append(result_list[index])
+
+    assert len(new_results) == len(result_list)
+    return (new_results, earliest, latest)
+
+
+# ###############################################################################
+# def _fixup_fhir_datetime(fhir_datetime_str):
+#     """
+#     The FHIR server returns a date time as follows:
+
+#         '2156-09-17T09:01:02+03:04
+
+#     Need to remove the final colon in the UTC offset portion (+03:04) to
+#     match the python strftime format for the UTC offset.
+#     """
+
+#     _regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
+    
+#     new_str = fhir_datetime_str
+#     match = _regex_fhir_utc_offset.search(fhir_datetime_str)
+#     if match:
+#         pos = match.start() + 3
+#         new_str = fhir_datetime_str[:pos] + fhir_datetime_str[pos+1:]
+        
+#     return new_str
     
 
 ###############################################################################
@@ -111,7 +200,22 @@ def _json_to_objs(json_obj):
             else:
                 results.extend(result_obj)
 
-    return results
+    if 0 == len(results):
+        return (None, None, None)
+                
+    # check for presence of the 'error' key in the patient resource
+    # if present, FHIR server returned no useful data
+    for r in results:
+        if isinstance(r, crp.PatientResource):
+            if _KEY_ERROR in r:
+                print('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
+                return (None, None, None)
+                
+    # sort by datetime from most to least recent
+    # element[0] is the patient resource
+    results, earliest, latest = _sort_by_datetime_desc(results)
+
+    return (results, earliest, latest)
 
 
 ###############################################################################
@@ -120,14 +224,18 @@ def _extract_coding_systems_list(obj, mongo_obj, prefix):
     Extract the list of (code, system, display) tuples.
     """
     
-    coding_systems_list = getattr(obj, 'coding_systems_list')
+    coding_systems_list = getattr(obj, 'coding_systems_list', None)
+    if coding_systems_list is None:
+        return
+    
     counter = 1
     for coding_obj in coding_systems_list:
         mongo_obj['{0}_codesys_code_{1}'.format(prefix, counter)] = coding_obj.code
         mongo_obj['{0}_codesys_system_{1}'.format(prefix, counter)] = coding_obj.system
         mongo_obj['{0}_codesys_display_{1}'.format(prefix, counter)] = coding_obj.display
         if 1 == counter:
-            mongo_obj['source'] = 'FHIR'
+            # set the 'source' field to match coding_obj.display
+            mongo_obj['source'] = coding_obj.display
         counter += 1
 
 
@@ -139,29 +247,40 @@ def _extract_patient_resource(obj, mongo_obj):
 
     assert isinstance(obj, crp.PatientResource)
 
+    if _KEY_ERROR in obj:
+        # no data returned
+        return
+
     # patient id is in the 'subject' field
-    patient_id = getattr(obj, 'subject')
+    patient_id = getattr(obj, 'subject', None)
     mongo_obj['patient_subject'] = patient_id
 
     # get the list of (first_name, last_name) tuples and create numbered fields
-    name_list = getattr(obj, 'name_list')
-    counter = 1
-    for first, last in name_list:
-        key_fname = 'patient_fname_{0}'.format(counter)
-        key_lname = 'patient_lname_{0}'.format(counter)
-        mongo_obj[key_fname] = first
-        mongo_obj[key_lname] = last
-        counter += 1
+    name_list = getattr(obj, 'name_list', None)
+    if name_list is not None:
+        counter = 1
+        for first, last in name_list:
+            key_fname = 'patient_fname_{0}'.format(counter)
+            key_lname = 'patient_lname_{0}'.format(counter)
+            mongo_obj[key_fname] = first
+            mongo_obj[key_lname] = last
+            counter += 1
 
-    gender = getattr(obj, 'gender')
+    gender = getattr(obj, 'gender', None)
     mongo_obj['patient_gender'] = gender
 
-    # dob is in YYYY-MM-DD format
-    dob = getattr(obj, 'date_of_birth')
-    the_date = None
+    dob = getattr(obj, 'date_of_birth', None)
+    dob_str = None
     if dob is not None:
-        the_date = datetime.strptime(dob, '%Y-%m-%d').isoformat()
-    mongo_obj['patient_date_of_birth'] = the_date
+        dob_str = dob.isoformat()
+    mongo_obj['patient_date_of_birth'] = dob_str        
+    
+    # # dob is in YYYY-MM-DD format
+    # dob = getattr(obj, 'date_of_birth', None)
+    # the_date = None
+    # if dob is not None:
+    #     the_date = datetime.strptime(dob, '%Y-%m-%d').isoformat()
+    # mongo_obj['patient_date_of_birth'] = the_date
 
     # save explicitly as 'dob' field
     #mongo_obj['dob'] = the_date
@@ -175,32 +294,42 @@ def _extract_procedure_resource(obj, mongo_obj):
 
     assert isinstance(obj, crp.ProcedureResource)
 
-    id_value = getattr(obj, 'id_value')
+    if _KEY_ERROR in obj:
+        # no data returned
+        return
+
+    id_value = getattr(obj, 'id_value', None)
     mongo_obj['procedure_id_value'] = id_value
 
-    status = getattr(obj, 'status')
+    status = getattr(obj, 'status', None)
     mongo_obj['procedure_status'] = status
 
     _extract_coding_systems_list(obj, mongo_obj, 'procedure')
 
-    subject_ref = getattr(obj, 'subject_reference')
+    subject_ref = getattr(obj, 'subject_reference', None)
     mongo_obj['procedure_subject_ref'] = subject_ref
 
-    subject_display = getattr(obj, 'subject_display')
+    subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['procedure_subject_display'] = subject_display
 
-    context_ref = getattr(obj, 'context_reference')
+    context_ref = getattr(obj, 'context_reference', None)
     mongo_obj['procedure_context_ref'] = context_ref
 
-    performed_date_time = getattr(obj, 'performed_date_time')
-    the_date_time = None
-    if performed_date_time is not None:
-        performed_date_time = _fixup_fhir_datetime(performed_date_time)
-        the_date_time = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    mongo_obj['procedure_performed_date_time'] = the_date_time
+    dt = getattr(obj, 'date_time', None)
+    dt_string = None
+    if dt is not None:
+        dt_string = dt.isoformat()
+    mongo_obj['datetime'] = dt_string
+    
+    # performed_date_time = getattr(obj, 'performed_date_time')
+    # the_date_time = None
+    # if performed_date_time is not None:
+    #     performed_date_time = _fixup_fhir_datetime(performed_date_time)
+    #     the_date_time = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    # mongo_obj['procedure_performed_date_time'] = the_date_time
         
     # save explicitly as 'datetime' field
-    mongo_obj['datetime'] = the_date_time
+    # mongo_obj['datetime'] = the_date_time
 
     # add display/formatting info
     procedure_name = mongo_obj['procedure_codesys_display_1']
@@ -221,48 +350,66 @@ def _extract_condition_resource(obj, mongo_obj):
 
     assert isinstance(obj, crp.ConditionResource)
 
-    id_value = getattr(obj, 'id_value')
+    if _KEY_ERROR in obj:
+        # no data returned
+        return
+
+    id_value = getattr(obj, 'id_value', None)
     mongo_obj['condition_id_value'] = id_value
 
-    category_list = getattr(obj, 'category_list')
-    counter = 1
-    for elt in category_list:
-        if isinstance(elt, crp.CodingObj):
-            mongo_obj['condition_category_code_{0}'.format(counter)] = elt.code
-            mongo_obj['condition_category_system_{0}'.format(counter)] = elt.system
-            mongo_obj['condition_category_display_{0}'.format(counter)] = elt.display
-            counter += 1
+    category_list = getattr(obj, 'category_list', None)
+    if category_list is not None:
+        counter = 1
+        for elt in category_list:
+            if isinstance(elt, crp.CodingObj):
+                mongo_obj['condition_category_code_{0}'.format(counter)] = elt.code
+                mongo_obj['condition_category_system_{0}'.format(counter)] = elt.system
+                mongo_obj['condition_category_display_{0}'.format(counter)] = elt.display
+                counter += 1
 
     _extract_coding_systems_list(obj, mongo_obj, 'condition')
         
-    subject_ref = getattr(obj, 'subject_reference')
+    subject_ref = getattr(obj, 'subject_reference', None)
     mongo_obj['condition_subject_ref'] = subject_ref
 
-    subject_display = getattr(obj, 'subject_display')
+    subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['condition_subject_display'] = subject_display
 
-    context_ref = getattr(obj, 'context_reference')
+    context_ref = getattr(obj, 'context_reference', None)
     mongo_obj['condition_context_ref'] = context_ref
 
-    onset_date_time = getattr(obj, 'onset_date_time')
-    the_date_time = None
-    if onset_date_time is not None:
-        onset_date_time = _fixup_fhir_datetime(onset_date_time)
-        onset_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    mongo_obj['condition_onset_date_time'] = onset_date_time
-
-    # save explicitly as 'datetime' field
-    mongo_obj['datetime'] = onset_date_time
+    date_time = getattr(obj, 'date_time', None)
+    dt_string = None
+    if date_time is not None:
+        dt_string = date_time.isoformat()
+    mongo_obj['datetime'] = dt_string
     
-    abatement_date_time = getattr(obj, 'abatement_date_time')
-    the_date_time = None
-    if abatement_date_time is not None:
-        abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
-        abatement_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    mongo_obj['condition_abatement_date_time'] = abatement_date_time
+    end_date_time = getattr(obj, 'end_date_time', None)
+    dt_string = None
+    if end_date_time is not None:
+        dt_string = end_date_time.isoformat()
+    mongo_obj['end_datetime'] = dt_string
 
-    # save explicitly as 'end_datetime' field
-    mongo_obj['end_datetime'] = abatement_date_time
+    
+    # onset_date_time = getattr(obj, 'onset_date_time', None)
+    # the_date_time = None
+    # if onset_date_time is not None:
+    #     onset_date_time = _fixup_fhir_datetime(onset_date_time)
+    #     onset_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    # mongo_obj['condition_onset_date_time'] = onset_date_time
+
+    # # save explicitly as 'datetime' field
+    # mongo_obj['datetime'] = onset_date_time
+    
+    # abatement_date_time = getattr(obj, 'abatement_date_time')
+    # the_date_time = None
+    # if abatement_date_time is not None:
+    #     abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
+    #     abatement_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    # mongo_obj['condition_abatement_date_time'] = abatement_date_time
+
+    # # save explicitly as 'end_datetime' field
+    # mongo_obj['end_datetime'] = abatement_date_time
 
     # add display/formatting info
     condition_name = mongo_obj['condition_codesys_display_1']
@@ -284,7 +431,11 @@ def _extract_observation_resource(obj, mongo_obj):
 
     assert isinstance(obj, crp.ObservationResource)
 
-    subject_ref = getattr(obj, 'subject_reference')
+    if _KEY_ERROR in obj:
+        # no data returned
+        return
+
+    subject_ref = getattr(obj, 'subject_reference', None)
 
     # The subject_ref has the form Patient/9940, where the number after the
     # fwd slash is the patient ID. Extract this ID and store in the 'subject'
@@ -295,35 +446,41 @@ def _extract_observation_resource(obj, mongo_obj):
         mongo_obj['subject'] = num
     mongo_obj['obs_subject_ref'] = subject_ref
 
-    subject_display = getattr(obj, 'subject_display')
+    subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['obs_subject_display'] = subject_display
 
-    context_ref = getattr(obj, 'context_reference')
+    context_ref = getattr(obj, 'context_reference', None)
     mongo_obj['obs_context_ref'] = context_ref
 
-    eff_date_time = getattr(obj, 'date_time')
-    the_date_time = None
-    if eff_date_time is not None:
-        eff_date_time = _fixup_fhir_datetime(eff_date_time)
-        the_date_time = datetime.strptime(eff_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    mongo_obj['obs_effective_date_time'] = the_date_time
+    date_time = getattr(obj, 'date_time', None)
+    dt_string = None
+    if date_time is not None:
+        dt_string = date_time.isoformat()
+    mongo_obj['datetime'] = dt_string
+    
+    # eff_date_time = getattr(obj, 'date_time')
+    # the_date_time = None
+    # if eff_date_time is not None:
+    #     eff_date_time = _fixup_fhir_datetime(eff_date_time)
+    #     the_date_time = datetime.strptime(eff_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    # mongo_obj['obs_effective_date_time'] = the_date_time
 
     # save explicitly as 'datetime' field
-    mongo_obj['datetime'] = the_date_time
+    # mongo_obj['datetime'] = the_date_time
     
-    value = getattr(obj, 'value')
+    value = getattr(obj, 'value', None)
     if value is not None:
         # store this in the 'value' field also
         mongo_obj['value'] = value
     mongo_obj['obs_value'] = value
 
-    unit = getattr(obj, 'unit')
+    unit = getattr(obj, 'unit', None)
     mongo_obj['obs_unit'] = unit
 
-    unit_system = getattr(obj, 'unit_system')
+    unit_system = getattr(obj, 'unit_system', None)
     mongo_obj['obs_unit_system'] = unit_system
 
-    unit_code = getattr(obj, 'unit_code')
+    unit_code = getattr(obj, 'unit_code', None)
     mongo_obj['obs_unit_code'] = unit_code
 
     _extract_coding_systems_list(obj, mongo_obj, 'obs')
@@ -352,7 +509,7 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
         value = custom_arg_dict[str_key]
 
     # echo in job status and in log file
-    msg = '{0}: {1}'.format(str_variable_name, value)
+    msg = 'CQLExecutionTask: {0} == {1}'.format(str_variable_name, value)
     data_access.update_job_status(job_id,
                                   util.conn_string,
                                   data_access.IN_PROGRESS,
@@ -362,7 +519,66 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     
     return value
 
+
+###############################################################################
+def _get_datetime_window(custom_args, data_earliest, data_latest):
+    """
+    Extract and parse the datetime_start and datetime_end custom
+    arguments. These specify the start/end datetime filters for the CQL
+    results.
+    """
+
+    datetime_start = None
+    datetime_end = None    
     
+    if _ARG_DATETIME_START in custom_args:
+        time_start = custom_args[_ARG_DATETIME_START]
+        datetime_start = tc.parse_time_command(time_start,
+                                               data_earliest,
+                                               data_latest)
+        
+    if _ARG_DATETIME_END in custom_args:
+        time_end = custom_args[_ARG_DATETIME_END]
+        datetime_end = tc.parse_time_command(time_end,
+                                             data_earliest,
+                                             data_latest)
+
+    print('\n*** DATETIME START: {0}'.format(datetime_start))
+    print('***   DATETIME END: {0}'.format(datetime_end))
+        
+    return (datetime_start, datetime_end)
+
+
+###############################################################################
+def _apply_datetime_filter(samples, t0, t1):
+    """
+    Remove any samples outside of the specified start and end times.
+    The 'samples' parameter is a list of namedtuples from the CQL result
+    parser module.
+    """
+
+    if 0 == len(samples):
+        return []
+    
+    results = []
+    for s in samples:
+
+        # Timestamps from the relevant FHIR resources have been mapped to
+        # the 'date_time' field by the cql_result_parser.
+        t = getattr(s, 'date_time', None)
+        if t is None:
+            continue
+
+        if t0 is not None and t < t0:
+            continue
+        if t1 is not None and t > t1:
+            continue
+
+        results.append(s)
+
+    return results
+
+
 ###############################################################################
 class CQLExecutionTask(BaseTask):
     
@@ -480,23 +696,17 @@ class CQLExecutionTask(BaseTask):
                 payload['terminologyUser'] = fhir_terminology_user_name
                 payload['terminologyPass'] = fhir_terminology_user_password
                 
-            exception_thrown = False
-
             # perform the request here, catch lots of different exceptions
             try:
                 r = requests.post(cql_eval_url, headers=headers, json=payload)
             except requests.exceptions.HTTPError as e:
                 print('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
-                exception_thrown = True
             except requests.exceptions.ConnectionError as e:
                 print('\n*** CQLExecutionTask ConnectionError: "{0}" ***\n'.format(e))
-                exception_thrown = True
             except requests.exceptions.Timeout as e:
                 print('\n*** CQLExecutionTask Timeout: "{0}" ***\n'.format(e))
-                exception_thrown = True
             except requests.exceptions.RequestException as e:
                 print('\n*** CQLEXecutionTask RequestException: "{0}" ***\n'.format(e))
-                exception_thrown = True
 
             print('Response status code: {0}'.format(r.status_code))
 
@@ -505,13 +715,29 @@ class CQLExecutionTask(BaseTask):
                 print('\n*** CQL JSON RESULTS ***\n')
                 print(r.json())
                 print()
-                
-                results = _json_to_objs(r.json())
-                print('\tfound {0} results'.format(len(results)))            
+
+                # data_earliest == earliest datetime in the data
+                # data_latest   == latest datetime in the data
+                results, data_earliest, data_latest = _json_to_objs(r.json())
+                print('\tfound {0} results'.format(len(results)))
+            else:
+                print('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
+                return
 
             if results is None:
                 return
-                
+
+            # parse datetime_start, datetime_end time commands, if any, and
+            # filter data to specified time window
+            datetime_start, datetime_end = _get_datetime_window(
+                self.pipeline_config.custom_arguments,
+                data_earliest,
+                data_latest
+            )
+
+            # remove results outside of the desired time window
+            results = _apply_datetime_filter(results, datetime_start, datetime_end)
+                        
             patient_obj = {}
             for obj in results:
 
