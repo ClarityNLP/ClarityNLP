@@ -38,8 +38,8 @@ _MAX_TASK_INDEX = 1024
 _shared_array = multiprocessing.Array('i', [-1]*_MAX_TASK_INDEX)
 
 # time command custom args
-_ARG_DATETIME_START = 'datetime_start'
-_ARG_DATETIME_END   = 'datetime_end'
+_ARG_TIME_START = 'time_start'
+_ARG_TIME_END   = 'time_end'
 
 
 ###############################################################################
@@ -531,14 +531,14 @@ def _get_datetime_window(custom_args, data_earliest, data_latest):
     datetime_start = None
     datetime_end = None    
     
-    if _ARG_DATETIME_START in custom_args:
-        time_start = custom_args[_ARG_DATETIME_START]
+    if _ARG_TIME_START in custom_args:
+        time_start = custom_args[_ARG_TIME_START]
         datetime_start = tc.parse_time_command(time_start,
                                                data_earliest,
                                                data_latest)
         
-    if _ARG_DATETIME_END in custom_args:
-        time_end = custom_args[_ARG_DATETIME_END]
+    if _ARG_TIME_END in custom_args:
+        time_end = custom_args[_ARG_TIME_END]
         datetime_end = tc.parse_time_command(time_end,
                                              data_earliest,
                                              data_latest)
@@ -569,9 +569,9 @@ def _apply_datetime_filter(samples, t0, t1):
         if t is None:
             continue
 
-        if t0 is not None and t < t0:
+        if t0 is not None and t <= t0:
             continue
-        if t1 is not None and t > t1:
+        if t1 is not None and t >= t1:
             continue
 
         results.append(s)
