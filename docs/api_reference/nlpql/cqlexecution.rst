@@ -63,8 +63,56 @@ fhir_terminology_user_password     Password for terminology service authenticati
 =================================  ==================
 
 The terminology user name and password parameters may not be required,
-depending on whether the terminology server requires password authentication
-or not.
+depending on whether or not the terminology server enforces password
+authentication.
+
+Time Filtering
+--------------
+
+This task supports a time filtering capability for the CQL query results. Two
+**optional** parameters, ``time_start`` and ``time_end``, can be used to
+specify a time window. Any results whose timestamps lie *outside* of this
+window will be discarded. If the time window parameters are omitted, all
+results from the CQL query will be kept.
+
+The ``time_start`` and ``time_end`` parameters must be quoted strings with
+syntax as follows:
+::
+   DATETIME(YYYY, MM, DD, HH, mm, ss)
+   DATE(YYYY, MM, DD)
+   EARLIEST()
+   LATEST()
+
+An optional offset in days can be added or subtracted to these:
+::
+   LATEST() - 7d
+   DATE(2010, 7, 15) + 20d
+
+The offset consists of digits followed by a ``d`` character, indicating days.
+
+**Both ``time_start`` and ``time_end`` are assumed to be expressed in**
+**Universal Coordinated Time (UTC).**
+
+Here are some time window examples:
+
+1. Discard any results not occurring in March, 2016:
+::
+   "time_start":"DATE(2016, 03, 01)",
+     "time_end":"DATE(2016, 03, 31)"
+
+2. Keep all results within one week of the most recent result:
+::
+   "time_start":"LATEST() - 7d",
+     "time_end":"LATEST()"
+
+3. Keep all results within a window of 20 days beginning July 4, 2018, at 3 PM:
+::
+   "time_start":"DATETIME(2018, 7, 4, 15, 0, 0)",
+     "time_end":"DATETIME(2018, 7, 4, 15, 0, 0) + 20d"
+
+Note that the strings to the left and right of the colon must be surrounded
+by quotes.
+
 
 Example
 -------
@@ -102,6 +150,8 @@ The ``cql`` parameter is a triple-quoted string containing the CQL query.
 This CQL code is assumed to be syntactically correct and is passed to the FHIR
 server's CQL evaluation service unaltered. All CQL code should be checked for
 syntax errors and other problems prior to its use in an NLPQL file.
+
+This example omits the optional time window parameters.
 
 ::
    
@@ -164,11 +214,12 @@ cql_eval_url                       str                  Yes       See table abov
 fhir_data_service_uri              str                  Yes       See table above.
 fhir_terminology_service_uri       str                  Yes       See table above.
 fhir_terminology_service_endpoint  str                  Yes       See table above.
+cql                                triple-quoted str    Yes       Properly-formatted CQL query, sent verbatim to FHIR server.
 fhir_terminology_user_name         str                  No        Optional, depends on configuration of terminology server
 fhir_terminology_user_password     str                  No        Optional, depends on configuration of terminology server
-cql                                triple-quoted str    Yes       Properly-formatted CQL query, sent verbatim to FHIR server.
+time_start                         str                  No        Optional, discard results with timestamp < time_start
+time_end                           str                  No        Optional, discard results with timestamp > time_end
 =================================  ===================  ========= ======================================
-
 
 Results
 -------
