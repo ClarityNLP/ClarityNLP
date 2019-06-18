@@ -149,28 +149,6 @@ def _sort_by_datetime_desc(result_list):
 
     assert len(new_results) == len(result_list)
     return (new_results, earliest, latest)
-
-
-# ###############################################################################
-# def _fixup_fhir_datetime(fhir_datetime_str):
-#     """
-#     The FHIR server returns a date time as follows:
-
-#         '2156-09-17T09:01:02+03:04
-
-#     Need to remove the final colon in the UTC offset portion (+03:04) to
-#     match the python strftime format for the UTC offset.
-#     """
-
-#     _regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
-    
-#     new_str = fhir_datetime_str
-#     match = _regex_fhir_utc_offset.search(fhir_datetime_str)
-#     if match:
-#         pos = match.start() + 3
-#         new_str = fhir_datetime_str[:pos] + fhir_datetime_str[pos+1:]
-        
-#     return new_str
     
 
 ###############################################################################
@@ -273,17 +251,7 @@ def _extract_patient_resource(obj, mongo_obj):
     dob_str = None
     if dob is not None:
         dob_str = dob.isoformat()
-    mongo_obj['patient_date_of_birth'] = dob_str        
-    
-    # # dob is in YYYY-MM-DD format
-    # dob = getattr(obj, 'date_of_birth', None)
-    # the_date = None
-    # if dob is not None:
-    #     the_date = datetime.strptime(dob, '%Y-%m-%d').isoformat()
-    # mongo_obj['patient_date_of_birth'] = the_date
-
-    # save explicitly as 'dob' field
-    #mongo_obj['dob'] = the_date
+    mongo_obj['patient_date_of_birth'] = dob_str
 
 
 ###############################################################################
@@ -320,16 +288,6 @@ def _extract_procedure_resource(obj, mongo_obj):
     if dt is not None:
         dt_string = dt.isoformat()
     mongo_obj['datetime'] = dt_string
-    
-    # performed_date_time = getattr(obj, 'performed_date_time')
-    # the_date_time = None
-    # if performed_date_time is not None:
-    #     performed_date_time = _fixup_fhir_datetime(performed_date_time)
-    #     the_date_time = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    # mongo_obj['procedure_performed_date_time'] = the_date_time
-        
-    # save explicitly as 'datetime' field
-    # mongo_obj['datetime'] = the_date_time
 
     # add display/formatting info
     procedure_name = mongo_obj['procedure_codesys_display_1']
@@ -390,27 +348,6 @@ def _extract_condition_resource(obj, mongo_obj):
         dt_string = end_date_time.isoformat()
     mongo_obj['end_datetime'] = dt_string
 
-    
-    # onset_date_time = getattr(obj, 'onset_date_time', None)
-    # the_date_time = None
-    # if onset_date_time is not None:
-    #     onset_date_time = _fixup_fhir_datetime(onset_date_time)
-    #     onset_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    # mongo_obj['condition_onset_date_time'] = onset_date_time
-
-    # # save explicitly as 'datetime' field
-    # mongo_obj['datetime'] = onset_date_time
-    
-    # abatement_date_time = getattr(obj, 'abatement_date_time')
-    # the_date_time = None
-    # if abatement_date_time is not None:
-    #     abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
-    #     abatement_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    # mongo_obj['condition_abatement_date_time'] = abatement_date_time
-
-    # # save explicitly as 'end_datetime' field
-    # mongo_obj['end_datetime'] = abatement_date_time
-
     # add display/formatting info
     condition_name = mongo_obj['condition_codesys_display_1']
     result_display_obj = {
@@ -457,16 +394,6 @@ def _extract_observation_resource(obj, mongo_obj):
     if date_time is not None:
         dt_string = date_time.isoformat()
     mongo_obj['datetime'] = dt_string
-    
-    # eff_date_time = getattr(obj, 'date_time')
-    # the_date_time = None
-    # if eff_date_time is not None:
-    #     eff_date_time = _fixup_fhir_datetime(eff_date_time)
-    #     the_date_time = datetime.strptime(eff_date_time, '%Y-%m-%dT%H:%M:%S%z').isoformat()
-    # mongo_obj['obs_effective_date_time'] = the_date_time
-
-    # save explicitly as 'datetime' field
-    # mongo_obj['datetime'] = the_date_time
     
     value = getattr(obj, 'value', None)
     if value is not None:
