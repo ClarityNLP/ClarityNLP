@@ -2,32 +2,31 @@ Setup
 =====
 The following guides will get you started with ClarityNLP.
 
-Local Setup
------------
-
+Single-User Setup with Docker
+-----------------------------
 
 .. toctree::
    :maxdepth: 2
 
    local-docker
 
-Production Setup
-----------------
-
-
-.. toctree::
-   :maxdepth: 2
-
-   production-docker
-   
-Bare Bones Setup
-----------------
+Single-User Setup without Docker (Bare Bones)
+---------------------------------------------
 
 .. toctree::
    :maxdepth: 3
 
    bare-bones-setup
+
    
+Multi-User (Production) Setup
+-----------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   production-docker
+      
    
 Accessing ClarityNLP Securely
 -----------------------------

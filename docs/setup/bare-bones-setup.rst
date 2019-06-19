@@ -1,3 +1,5 @@
+.. _barebonessetup:
+
 Bare Bones Setup
 ================
 
