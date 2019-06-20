@@ -784,7 +784,6 @@ def mongo_process_operations(expr_obj_list,
                   'no phenotype matches on "{1}".'.format(eval_result.expr_type,
                                                           eval_result.expr_text))
 
-    client.close()
 
 
 def get_dependencies(po, deps: list):

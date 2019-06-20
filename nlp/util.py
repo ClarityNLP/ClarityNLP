@@ -212,7 +212,8 @@ def mongo_client(host=None, port=None, username=None, password=None):
     if username and len(username) > 0 and password and len(password) > 0:
         # print('authenticated mongo')
         _mongo_client = MongoClient(host=host, port=port, username=username,
-                           password=password)
+                           password=password, socketTimeoutMS=15000, maxPoolSize=500,
+                                    maxIdleTimeMS=30000)
     else:
         # print('unauthenticated mongo')
         _mongo_client = MongoClient(host, port)

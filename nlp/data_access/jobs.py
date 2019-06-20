@@ -167,7 +167,6 @@ def delete_job(job_id: str, connection_string: str):
         traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
-        client.close()
 
     return flag
 

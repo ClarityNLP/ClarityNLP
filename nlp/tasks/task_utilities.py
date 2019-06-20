@@ -189,8 +189,7 @@ class BaseCollector(base_model.BaseModel):
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
-        finally:
-            client.close()
+
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
         print('please implement run_custom_task')
@@ -209,8 +208,6 @@ class BaseCollector(base_model.BaseModel):
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
-        finally:
-            client.close()
 
 
 class BaseTask(luigi.Task):
@@ -266,8 +263,7 @@ class BaseTask(luigi.Task):
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
-        finally:
-            client.close()
+
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,
