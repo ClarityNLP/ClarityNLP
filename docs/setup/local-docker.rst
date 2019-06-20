@@ -173,50 +173,77 @@ you should periodically see the following lines in the console output:
 ClarityNLP Links
 ----------------
 
-The user interface components of ClarityNLP can be accessed on your machine via
-the ``.dev`` top-level domain. All Docker containers must be up and running to
-access these components at the links provided below.
+The user interface (UI) components of ClarityNLP can be accessed on your
+machine by opening a web browser and entering the URLs provided below. Each
+different user interface component has been mapped to a unique URL in the
+``.dev`` top level domain.
+
+**All Docker containers must be fully initialized for the UI components to**
+**become active.**
 
 Dashboard
 ~~~~~~~~~
 
-The dashboard (https://dashboard.claritynlp.dev) is the main user interface
-to ClarityNLP.
+The :ref:`ui_dashboard` is the main user interface to ClarityNLP. It provides
+controls for ingesting documents, creating NLPQL files, accessing results and
+lots more.
 
-<link to documentation page for the dashboard>
+Dashboard URL: https://dashboard.claritynlp.dev
 
 
 Solr Administrative User Interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Solr UI (https://solr.claritynlp.dev) is the administrative interface to
-the ClarityNLP Solr instance. Documentation on how to use the UI can be found
+Solr provides an administrative user interface that you can use to configure
+and explore your ClarityNLP Solr instance. The Apache project provides full
+documentation on the admin UI which you can find
 `here <https://lucene.apache.org/solr/guide/6_6/using-the-solr-administration-user-interface.html>`_.
 
-Probably the most useful interface component is the
-`query tool <https://lucene.apache.org/solr/guide/6_6/query-screen.html#query-screen>`_, which lets you
-submit queries to Solr and find documents of interest. The ClarityNLP Solr
-installation includes 7015 sample documents in a core called ``sample``.
-  
+Perhaps the most useful component of this UI is the
+`query tool <https://lucene.apache.org/solr/guide/6_6/query-screen.html#query-screen>`_,
+which lets you submit queries to Solr and find documents of interest. The
+ClarityNLP Solr installation provides more than 7000 documents in a core called
+``sample``.
+
+Solr Admin Interface URL: https://solr.claritynlp.dev
+
+
 Luigi Task Monitor
 ~~~~~~~~~~~~~~~~~~
 
-The Luigi task monitor (https://luigi.claritynlp.dev) provides information on
+The Luigi project provides a task monitor that displays information on
 the currently running ClarityNLP job. ClarityNLP processes documents by dividing
-the workload into parallel tasks. These tasks are scheduled by Luigi. The task
-monitor displays the number of running tasks, how many have finished, etc.
-You can update the task counts by simply refreshing the page.
+the workload into parallel tasks that are scheduled by Luigi. The task
+monitor displays the number of running tasks, how many have finished, any
+failures, etc. You can update the task counts by simply refreshing the page.
+
+Lugi Task Monitor URL: https://luigi.claritynlp.dev
+
 
 Ingest Client
 ~~~~~~~~~~~~~
 
-* Clarity Ingest --> https://ingest.claritynlp.dev
+The :ref:`ui_ingest_client` provides an easy-to-use interface to help you load new
+documents into your ClarityNLP Solr instance. It also helps you map the fields
+in your documents to the fields that ClarityNLP expects.
+
+Ingest Client URL: https://ingest.claritynlp.dev
+
 
 Results Viewer
 ~~~~~~~~~~~~~~
 
-* Clarity Results --> https://viewer.claritynlp.dev
+The :ref:`ui_results_viewer` helps you examine the results from each of your
+ClarityNLP runs. It highlights specific terms and values and provides an
+evaluation mechanism that you can use to score the results that ClarityNLP
+found.
 
-TBD - describe how to access the API
-  
-* ClarityNLP API --> https://api.claritynlp.dev
+Clarity Results Viewer URL: https://viewer.claritynlp.dev
+
+
+NLP API
+~~~~~~~
+
+<TODO - example of how to POST an NLPQL file using Postman or curl with access tokens>
+
+.. * ClarityNLP API --> https://api.claritynlp.dev
