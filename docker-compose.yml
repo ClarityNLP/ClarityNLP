@@ -15,7 +15,7 @@ volumes:
   html:
   dhparam:
   htpasswd:
-command: postgres -c 'shared_buffers=512MB' -c 'max_connections=500'
+
 services:
   identity-provider:
     container_name: IDENTITY_PROVIDER
