@@ -182,6 +182,13 @@ def query_phenotype_jobs(status: str, connection_string: str):
                                INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                               where jb.job_type = 'PHENOTYPE'
                               order by jb.date_started DESC""")
+        elif status == 'INCOMPLETE':
+            cursor.execute("""select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
+                             INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
+                            where jb.job_type = 'PHENOTYPE'
+                            and (jb.status = %s or jb.status = %s or jb.status = %s)
+                            order by jb.date_started DESC""",
+                           [COMPLETED, FAILURE, KILLED])
         else:
             cursor.execute("""select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
                              INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
@@ -316,7 +323,7 @@ def get_job_performance(job_ids: list(), connection_string: str):
         for k in metrics.keys():
             performance = metrics[k]
             counts_found = performance['counts_found']
-            if counts_found == 0 and status == "COMPLETED":
+            if counts_found == 0 and status == COMPLETED:
                 final_subjects = util.get_from_redis_cache('final_subjects_{}'.format(k))
                 final_results = util.get_from_redis_cache('final_results{}'.format(k))
                 if final_results and final_subjects:
