@@ -85,7 +85,7 @@ After that we'll show you where you can find instructions for ingesting your
 own documents into Solr, after which you will be ready to do your own
 investigations.
 
-The instructions below indicate MacOS-specific instructions with **[MacOS]**,
+The instructions below denote MacOS-specific instructions with **[MacOS]**,
 Ubuntu-specific instructions with **[Ubuntu]**, and instructions valid for
 all operating systems with **[All]**.
 
@@ -376,15 +376,15 @@ run the command appropriate to your operating system to start ``psql``:
 Then run this command sequence (we suggest using a better password) to setup
 the database:
 ::
-   CREATE ROLE clarity_user WITH LOGIN PASSWORD 'password';
+   CREATE USER clarity_user WITH LOGIN PASSWORD 'password';
    CREATE DATABASE clarity;
    \connect clarity
-   CREATE SCHEMA nlp;
-   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA nlp TO clarity_user;
-   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA nlp TO clarity_user;
    \i ddl/ddl.sql
    \i ddl/omop_vocab.sql
-   \i ddl/omop_indexes.sql   
+   \i ddl/omop_indexes.sql
+   GRANT USAGE ON SCHEMA nlp TO clarity_user;
+   GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA nlp TO clarity_user;
+   GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA nlp TO clarity_user;
 
 These commands create the database, setup the tables and indexes, and grant
 the ``clarity_user`` sufficient privileges to use it with ClarityNLP.
@@ -394,13 +394,13 @@ Load OMOP Vocabulary Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **THIS STEP IS OPTIONAL.** The OMOP vocabulary and concept data is used
-by the ClarityNLP synonym expansion macros. Synonym expansion is optional.
-If you are unfamiliar with OMOP or do not forsee a need for such synonym
-expansion you can safely skip this step. The ingestion process is
-time-consuming and could take from one to two hours or more, depending on the
-speed of your system. If you only want to explore basic features of ClarityNLP
-you do not need to load this data, and you can skip ahead to the Solr setup
-instructions.
+by the ClarityNLP synonym expansion macros. Synonym expansion is an optional
+feature of ClarityNLP. If you are unfamiliar with OMOP or do not forsee a
+need for such synonym expansion you can safely skip this step. The ingestion
+process is time-consuming and could take from one to two hours or more,
+depending on the speed of your system. If you only want to explore basic
+features of ClarityNLP you do not need to load this data, and you can skip
+ahead to the Solr setup instructions.
 
 If you do choose to load the data, then keep your ``psql`` terminal window
 open. **From a different terminal window** follow these steps to download and
@@ -655,12 +655,18 @@ make sure that your Solr instance is actually running.
 2. Start the MongoDB Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you installed MongoDB locally, launch the the ``mongod`` server by supplying
-the path to your local MongoDB config file as follows (this command uses the
-default config file):
+If you installed MongoDB locally, launch the the ``mongod`` server with one
+of these options:
+
+**[MacOS]** Provide the path to your local MongoDB config file as follows
+(this command uses the default location):
 ::
    mongod --config /usr/local/etc/mongod.conf
 
+**[Ubuntu]**
+::
+   sudo systemctl start mongodb
+   
 Verify that the mongo server is running by typing ``mongo`` into a terminal to
 start the mongo client. It should connect to the database and prompt for input.
 Exit the client by typing ``exit`` in the terminal.
@@ -679,11 +685,18 @@ be found `here <https://docs.mongodb.com/manual/mongo/>`_.
 3. Start the Postgres Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you installed Postgres locally, start the PostgreSQL server by clicking the
-elephant icon in the menu bar at the upper right corner of your screen. Press
-the start button at the lower right of the popup menu. Open another terminal
-and verify that your server is available by running ``pg_isready``. It should
-report ``accepting connections``.
+If you installed Postgres locally:
+
+**[MacOS]** Start the server by clicking the elephant icon in the
+menu bar at the upper right corner of your screen. Press the start button at
+the lower right of the popup menu. 
+
+**[Ubuntu]** Start the server with:
+::
+   sudo systemctl start postgresql
+
+Verify that your server is available by running the command ``pg_isready``
+from a terminal window. It should report ``accepting connections``.   
 
 If you use a hosted Postgres instance, check to see that it is up and running
 with this command, replacing the hostname and port number with values suitable
@@ -733,18 +746,6 @@ with:
    conda activate claritynlp
    export FLASK_APP=api.py
    python -m flask run
-
-..
-   If you want to run Flask in development mode with an active debugger,
-   use this command sequence instead:
-   ::
-      export FLASK_APP=api.py
-      export FLASK_ENV=development
-      export FLASK_DEBUG=1
-      python3 -m flask run
-
-   The default value of ``FLASK_ENV`` is ``production``. The allowed values
-   for ``FLASK_DEBUG`` are ``1`` (enable) and ``0`` (disable).
 
 Just like Luigi, the Flask web server only needs to be started once. The web
 server prints startup information to the screen as it initializes.
@@ -849,9 +850,11 @@ After the job finishes you can download a CSV file to see what ClarityNLP
 found. The ``intermediate_results_csv`` file contains all of the raw data
 values that the various tasks found.
 
-To check the results, you need to generate a proper CSV file from the
-intermediate results. The record delimiter should be a comma, **not a tab**,
-which seems to be the default for Microsoft Excel. Assuming that you have the
+To check the results, you need to generate a CSV file from the
+intermediate data with a comma for the record delimiter, **not a tab**.
+A tab character seems to be the default delimiter for Microsoft Excel.
+
+Excel users can correct this as follows. Assuming that you have the
 intermediate result file open in Excel, press the key combination
 <COMMAND>-A. This should highlight the leftmost column of data in the
 spreadsheet. After highlighting, click the ``Data`` menu item, then press the
@@ -865,6 +868,9 @@ On the dialog that appears, set the ``File Format`` combo box selection to
 in the ``Save As`` edit control at the top of the dialog. Give the file a new
 name if you want (but with a ``.csv`` extension), then click the ``Save``
 button.
+
+Users of other spreadsheet software will need to consult the documentation on
+how to save CSV files with a comma for the record separator.
 
 With the file saved to disk in proper CSV format, run this command from the
 ``ClarityNLPBareBones/ClarityNLP/barebones_setup`` folder to check the values:
@@ -885,12 +891,14 @@ Perform these actions to completely shutdown ClarityNLP on your system:
 1. Stop the Flask webserver by entering <CTRL>-C in the flask terminal window.
 2. Stop the Luigi task scheduler by entering <CTRL>-C in the luigi terminal
    window.
-3. Stop the MongoDB database server by entering <CTRL>-C in the MongoDB
-   terminal window.
+3. MacOS users can stop the MongoDB database server by entering <CTRL>-C in
+   the MongoDB terminal window. Ubuntu users can run the command
+   ``sudo systemctl stop mongodb``.
 4. Stop Solr by entering ``solr stop -all`` in a terminal window.
-5. Stop Postgres by first clicking on the elephant icon in the menu bar at
-   the upper right corner of the screen. Click the stop button on the menu
-   that appears.
+5. MacOS users can stop Postgres by first clicking on the elephant icon in
+   the menu bar at the upper right corner of the screen. Click the stop
+   button on the menu that appears. Ubuntu users can run the command
+   ``sudo systemctl stop postgresql``.
 
 Alternatively, you could just terminate Flask and Luigi and keep the other
 servers running if you plan to run more jobs later.
