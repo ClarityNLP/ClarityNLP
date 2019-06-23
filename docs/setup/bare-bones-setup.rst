@@ -52,6 +52,17 @@ instances.
 These flexible configuration options are also available with the
 container-based, secure version of ClarityNLP.
 
+These instructions have been tested on these operating systems:
+
+- MacOS 10.13 "High Sierra"
+- Ubuntu Linux 18.04 LTS "Bionic Beaver"
+
+Recent versions of MongoDB, PostgreSQL, and Solr are also assumed:
+
+- MongoDB version 3.6 or greater
+- PostgreSQL version 10 or 11
+- Solr version 7 or 8
+
 Roadmap
 -------
 
@@ -74,29 +85,49 @@ After that we'll show you where you can find instructions for ingesting your
 own documents into Solr, after which you will be ready to do your own
 investigations.
 
-For now, we will assume that you want to install and run everything on
-a Mac laptop (we use Macs for development). We plan to develop a Linux version
-of these instructions soon. Experienced Linux users can probably figure out
-what to do based on these instructions for Mac.
 
+Install the Prerequisites
+-------------------------
 
-Install Prerequisites
----------------------
-
-First of all, install the `Homebrew package manager <https://brew.sh>`_
+**[MacOS]** Install the `Homebrew package manager <https://brew.sh>`_
 by following the instructions provided at the Homebrew website. We prefer to
 use Homebrew since it allows packages to be installed and uninstalled without
 superuser privileges.
 
-After installing homebrew, open a terminal window and use homebrew to install
-the ``git`` version control system and the ``curl`` command line data transfer
-tool with this command:
+After installing homebrew, open a terminal window and update your homebrew
+installation with:
 ::
+   brew update
+   brew upgrade
 
-   brew install git curl
+Next, use homebrew to install the ``git`` version control system, the ``curl``
+command line data transfer tool, and the ``wget`` file transfer tool with
+these commands:
+::
+   brew install git curl wget
 
-Next, install either the `Anaconda <https://www.anaconda.com>`_ python
-distribution or its much smaller 
+**[Ubuntu]** Update your system using the ``apt`` package manager with:
+::
+   sudo apt update
+   sudo apt upgrade
+   
+Then use ``apt`` to install the three tools:
+::
+   sudo apt install git curl wget
+
+**[All]** Solr requires the java runtime to be installed on your system. In a
+terminal window run this command:
+::
+   java --version
+
+If you see a message about the command ``java`` not being found, then you need
+to install the java runtime. Please visit the
+`Oracle Java download site <https://www.oracle.com/downloads/>`_ and
+follow the instructions to download and install the latest version of the
+Java runtime environment (JRE).
+   
+Next, visit the Conda website and install either the
+`Anaconda <https://www.anaconda.com>`_ python distribution or its much smaller 
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
 cousin. Anaconda provides a full python-based numerical computing and machine
 learning stack. Miniconda provides a minimal python installation. Both give
@@ -152,17 +183,7 @@ Create the Conda Environment for ClarityNLP
 -------------------------------------------
 
 From the ``ClarityNLPBareBones/ClarityNLP/barebones_setup`` folder, create a
-new conda managed environment with this command:
-::
-   conda env create --file conda_environment.yml
-
-Conda will load the file, check for package availability and dependency
-conflicts, and then proceed with the installation if possible. If the
-installation fails, then either a package or a dependency has become
-unavailable for some reason, probably due to bugs being discovered.
-   
-If the prevous step failed, you can manually create the environment with
-these commands:
+new conda managed environment with:
 ::
    conda create --name claritynlp python=3.6   
    conda activate claritynlp
@@ -204,9 +225,11 @@ support files:
 Setup MongoDB
 -------------
   
-ClarityNLP stores results in `MongoDB <https://www.mongodb.com/>`_, so you
-will need a MongoDB server running on your system. If you do not have access
-to a hosted MongoDB installation, use Homebrew to install MongoDB with:
+ClarityNLP stores results in `MongoDB <https://www.mongodb.com/>`_. If you do
+not have access to a hosted MongoDB installation, you will need to install it
+on your system.
+
+**[MacOS]** Use Homebrew to install MongoDB with:
 ::
    brew install mongodb
 
@@ -222,14 +245,29 @@ accomplished by opening another terminal window and running this command
 After the server initializes it will deactivate the prompt in the terminal
 window, indicating that it is running.
 
-Now start up the Mongo **client** and find out if it can communicate with the
-server. From a **different** terminal window, start the MongoDB client by
-running ``mongo``. If the client launches successfully you should see a ``>``
-prompt. Enter ``show databases`` at the prompt and press enter. The system
-should respond with at least the *admin* and *test* databases. If you see both
-listed your installation should be OK. You can stop the client by typing
-``exit`` at the prompt. Stop the mongo server by running <CTRL>-C in the
-server window.
+**[Ubuntu]** Use ``apt`` to install MongoDB with:
+::
+   sudo apt install mongodb
+
+The installation process on Ubuntu should automatically start the MongoDB
+server. Verify that it is active with:
+::
+   sudo systemctl status mongodb
+
+You should see a message stating that the ``mongodb.service`` is active and
+running. If it is not, start it with:
+::
+   sudo systemctl start mongodb
+
+Then repeat the status check to verify that it is running.
+   
+**[All]** Now start up the Mongo **client** and find out if it can
+communicate with the running MongoDB server. From a terminal window start the
+MongoDB client by running ``mongo``. If the client launches successfully you
+should see a ``>`` prompt. Enter ``show databases`` at the prompt and press
+enter. The system should respond with at least the *admin* database. If you
+see this your installation should be OK. You can stop the client by typing
+``exit`` at the prompt.
 
 If you have access to a hosted MongoDB instance, you will need to know the
 hostname for your ``mongod`` server as well as the port number that it listens
