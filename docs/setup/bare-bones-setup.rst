@@ -52,12 +52,12 @@ instances.
 These flexible configuration options are also available with the
 container-based, secure version of ClarityNLP.
 
-These instructions have been tested on these operating systems:
+The instructions below have been tested on:
 
 - MacOS 10.13 "High Sierra"
 - Ubuntu Linux 18.04 LTS "Bionic Beaver"
 
-Recent versions of MongoDB, PostgreSQL, and Solr are also assumed:
+Recent versions of MongoDB, PostgreSQL, and Solr are assumed:
 
 - MongoDB version 3.6 or greater
 - PostgreSQL version 10 or 11
@@ -84,6 +84,10 @@ that we can verify that the system works as expected.
 After that we'll show you where you can find instructions for ingesting your
 own documents into Solr, after which you will be ready to do your own
 investigations.
+
+The instructions below indicate MacOS-specific instructions with **[MacOS]**,
+Ubuntu-specific instructions with **[Ubuntu]**, and instructions valid for
+all operating systems with **[All]**.
 
 
 Install the Prerequisites
@@ -139,8 +143,7 @@ instructions we will assume that you choose the smaller Miniconda distribution.
 **Important: download the Miniconda installation package for the latest**
 **python 3 release, not python 2.7.**
 
-After installing Miniconda, update to the latest version of ``conda`` by
-running this command in a terminal window:
+After installing Miniconda, update to the latest version of ``conda`` with:
 ::
 
    conda update -n base -c defaults conda
@@ -280,8 +283,10 @@ Setup PostgreSQL
 ----------------
 
 Now we need to install and configure PostgreSQL. ClarityNLP uses Postgres for
-job control and for storing OMOP vocabulary files. Perhaps the easiest option
-for installing Postgres on MacOSX is to download and install
+job control and for storing OMOP vocabulary and concept data.
+
+**[MacOS]** Perhaps the easiest option for installing Postgres on MacOSX is to
+download and install
 `Postgres.app <https://postgresapp.com/>`_, which takes care of most of the
 setup and configuration for you. If you do not have access to a hosted Postgres
 server, download the .dmg file from the Postgres.app website, run the
@@ -294,36 +299,63 @@ to start and stop the database server. For now, click the button and stop the
 server, since we need to make a small change to the postgres configuration
 file.
 
+**[Ubuntu]** Install postgres with:
+::
+   sudo apt install postgresql
+
+The installation process should automatically start the postgres server, as it
+did with the MongoDB installation. For now, stop the server with:
+::
+   sudo systemctl stop postgresql
+   
+
+Edit the PostgreSQL Config File
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 You will need to follow these configuration steps as well if you have a
 hosted Postgres instance. You may need to ask your local database admin to
 perform the configuration, depending on whether or not you have superuser
 privileges for your particular installation. The location of the data
 directory on your hosted instance will likely differ from that provided below,
-which is specific to a Mac installation.
+which is specific to a local installation.
 
-These instructions were developed for PostgreSQL 11.
-
-Edit the PostgreSQL Config File
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-With the Postgres server stopped, click the elephant icon, click the
-``Open Postgres`` menu item, and then click the ``Server Settings`` button on
-the dialog that appears. Note the location of the data directory, which
-defaults to ``~/Library/Application Support/Postgres/var-11``. The
+**[MacOS]** With the Postgres server stopped, click the elephant icon, click
+the ``Open Postgres`` menu item, and then click the ``Server Settings``
+button on the dialog that appears. Note the location of the data directory,
+which defaults to ``~/Library/Application Support/Postgres/var-11``. The
 ``postgresql.conf`` file is located in the data directory and contains various
 important parameters that govern the operation of the database. We need to
 edit one of those params to make the data ingest process run more smoothly.
 
-Open a text editor, browse to the Postgres data directory, and open the file
-``postgresql.conf``. Search the file for the entry ``max_wal_size``, which
-governs the size of the write-ahead log (hence the WAL acronym). If the
+**[Ubuntu]** The postgres config file for Postgres 10 is stored by default in
+``/etc/postgresql/10/main/postgresql.conf``. If you installed Postgres 11 the
+10 should be replaced by an 11. This file is owned by the special ``postgres``
+user. To edit the file, switch to this user account with:
+::
+   sudo -i -u postgres
+   whoami
+
+The ``whoami`` command should display ``postgres``.
+
+**[All]** Open a text editor, browse to the location indicated above and open
+the file ``postgresql.conf``. Search the file for the entry ``max_wal_size``,
+which governs the size of the write-ahead log (hence the WAL acronym). If the
 entry happens to be commented out, uncomment it. Set its value to 30GB (if
 the value is already greater than 30GB don't change it). By
 doing this we prevent checkpoints from occurring too frequently and slowing
 down the data ingest process. Save the file after editing.
 
-Then restart the server by clicking on the elephant icon and pressing the
-start button.
+**[Ubuntu]** Log out as the ``postgres`` user with:
+::
+   exit
+
+Then restart the Postgres server with either:
+
+**[MacOS]** Click on the elephant icon and press the start button.
+
+**[Ubuntu]** Use ``systemctl`` to start it:
+::
+   sudo systemctl start postgresql
 
 Create the Database and a User Account
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -331,34 +363,49 @@ Create the Database and a User Account
 With the database server installed, configured, and running, we now need to
 create a user account. Open a terminal and browse to
 ``ClarityNLPBareBones/ClarityNLP/utilities/nlp-postgres``. From this folder
-run the following commands (we suggest using a better password):
+run the command appropriate to your operating system to start ``psql``:
+
+**[MacOS]**
 ::
    psql postgres
+
+**[Ubuntu]**
+::
+   sudo -u postgres psql
+   
+Then run this command sequence (we suggest using a better password) to setup
+the database:
+::
    CREATE ROLE clarity_user WITH LOGIN PASSWORD 'password';
    CREATE DATABASE clarity;
+   \connect clarity
+   CREATE SCHEMA nlp;
    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA nlp TO clarity_user;
    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA nlp TO clarity_user;
-
-These commands create the database and grant the ``clarity_user`` sufficient
-privileges to use it with ClarityNLP.
-
-Next, from the psql prompt run these commands to connect to the database and
-setup the OMOP vocabulary tables:
-::
-   
-   \connect clarity
    \i ddl/ddl.sql
    \i ddl/omop_vocab.sql
    \i ddl/omop_indexes.sql   
 
+These commands create the database, setup the tables and indexes, and grant
+the ``clarity_user`` sufficient privileges to use it with ClarityNLP.
+
+
 Load OMOP Vocabulary Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-   
-The database is now ready to ingest the OMOP vocabulary files. Keep your
-``psql`` terminal window open. From a new terminal window follow these steps
-to prepare the data for ingest:
-::
 
+**THIS STEP IS OPTIONAL.** The OMOP vocabulary and concept data is used
+by the ClarityNLP synonym expansion macros. Synonym expansion is optional.
+If you are unfamiliar with OMOP or do not forsee a need for such synonym
+expansion you can safely skip this step. The ingestion process is
+time-consuming and could take from one to two hours or more, depending on the
+speed of your system. If you only want to explore basic features of ClarityNLP
+you do not need to load this data, and you can skip ahead to the Solr setup
+instructions.
+
+If you do choose to load the data, then keep your ``psql`` terminal window
+open. **From a different terminal window** follow these steps to download and
+prepare the data for ingest:
+::
    cd /tmp
    mkdir vocabs
    cd vocabs
@@ -366,7 +413,7 @@ to prepare the data for ingest:
    unzip omop_vocabulary_set.zip
    rm omop_vocabulary_set.zip
 
-You should see the following files in ``/tmp/vocabs`` after unzipping:
+You should see these files in ``/tmp/vocabs`` after unzipping:
 ::
 
    DOMAIN.csv
@@ -380,15 +427,14 @@ You should see the following files in ``/tmp/vocabs`` after unzipping:
    DRUG_STRENGTH.csv
    
 Go back to your ``psql`` window and begin the process of loading data into the
-database with this command (``copy_vocab.sql`` looks for the unzipped data in
-``/tmp/vocabs``, in case you're wondering):
+database with:
 ::
 
    \i dml/copy_vocab.sql
 
-The loading process could take a **long** time, possibly one or two hours,
-depending on the speed of your system. As the load progresses, it should
-gradually generate the following output:
+As mentioned above, the loading process could take a **long** time, possibly
+more than two hours, depending on the speed of your system. As the load
+progresses, it should gradually generate the following output:
 ::
    SET
    COPY 2465049
@@ -408,8 +454,10 @@ finish. After loading completes, log out with the command
 Setup Solr
 ----------
 ClarityNLP uses `Solr <http://lucene.apache.org/solr/>`_ as its document store.
-If you do not have access to a hosted Solr instance, install Solr with Homebrew
-by running this command:
+If you do not have access to a hosted Solr instance you will need to install it
+on your system.
+
+**[MacOS]** Use Homebrew to install Solr with:
 ::
    brew install solr
 
@@ -419,16 +467,47 @@ command
 ::
    solr start
 
-After starting Solr, check to see that it is running by opening a web browser
-to ``http://localhost:8983`` (or the appropriate URL for your hosted instance).
-You should see the Solr admin dashboard. If you do, your Solr installation is
-up and running.
+Start the solr server.
+   
+**[Ubuntu]** Ubuntu does not seem to provide a suitable apt package for Solr,
+so you will need to download the Solr distribution from the Apache web site.
+Open a web browser to the
+`Solr download site <https://lucene.apache.org/solr/downloads.html>`_ and
+download the binary release for the latest version of Solr 8. For now we will
+assume that you download the 8.1.1 **binary** release, which is in the file
+``solr-8.1.1.tgz``.
+
+Open a terminal window and run these commands to unzip the distribution into
+your home directory:
+::
+   cd ~
+   mkdir solr
+   tar -C solr -zxvf ~/Downloads/solr-8.1.1.tgz
+   mv ~/solr/solr-8.1.1 ~/solr/8.1.1
+
+Open a text editor and add this line to your ``.bashrc`` file, which places
+the Solr binaries on your path:
+::
+   export PATH=~/solr/8.1.1/bin:$PATH
+
+Close the text editor, exit the terminal window, and open a new terminal window
+to update your path. Run ``which solr`` and verify that
+``~/solr/8.1.1/bin/solr`` is found.
+
+Start your Solr server by running:
+::
+   solr start
+   
+**[All]** After starting Solr, check to see that it is running by opening a
+web browser to ``http://localhost:8983`` (or the appropriate URL for your
+hosted instance). You should see the Solr admin dashboard. If you do, your
+Solr installation is up and running.
 
 We need to do some additional configuration of the Solr server and ingest
 some test documents. We provide a python script to do this for you.
-**This script assumes that you are running a modern version of Solr,**
-**version 8 or later.** If you are running an older version this script
-**may not work for you**, since some field type names changed at the
+**This script assumes that you are running a recent version of Solr,**
+**version 7 or later.** If you are running an older version this script
+**will not work**, since some field type names changed at the
 transition from Solr 6 to Solr 7.
 
 Open a terminal window to ``ClarityNLPBareBones/ClarityNLP/barebones_setup``.
