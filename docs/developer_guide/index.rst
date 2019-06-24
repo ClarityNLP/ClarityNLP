@@ -1,31 +1,22 @@
 Developer Guide
 ===============
-This library uses Python 3.5+. The source code is hosted `here <https://github.com/ClarityNLP/ClarityNLP>`_.
 
+For Algorithm Developers
+------------------------
 
+Technical Overview
+^^^^^^^^^^^^^^^^^^
 
-Here's an overview of ClarityNLP's architecture.
-
-.. image:: clarity_simple.png
-   :scale: 75 %
-   :alt: ClarityNLP Simplified Architecture
-   :align: center
-
-
-
-Technical Background
---------------------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    technical_background/technologies
    technical_background/solr
    technical_background/pipelines
-   testing
 
-
+   
 Utility Algorithms
-------------------
+^^^^^^^^^^^^^^^^^^
 
 .. toctree::
    :maxdepth: 1
@@ -38,7 +29,7 @@ Utility Algorithms
 
 
 Task Algorithms
----------------
+^^^^^^^^^^^^^^^
 
 .. toctree::
    :maxdepth: 1
@@ -49,20 +40,64 @@ Task Algorithms
    algorithms/value_extraction
    algorithms/measurement_subject_resolution
 
-
-Building Custom Task Algorithms
--------------------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   custom/custom
-
+   
 NLPQL Expression Evaluation Algorithms
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. toctree::
    :maxdepth: 1
 
    algorithms/nlpql_expr_eval
 
+
+Building Custom Task Algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+
+   custom/custom
+
+   
+Testing
+^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+              
+   testing
+   
+              
+For App Developers
+--------------------------
+
+ClarityNLP Architecture
+^^^^^^^^^^^^^^^^^^^^^^^
+
+This library uses Python 3.6+.
+The source code is hosted `here <https://github.com/ClarityNLP/ClarityNLP>`_.
+
+
+Here's an overview of ClarityNLP's architecture.
+
+.. Image:: clarity_simple.png
+   :scale: 75 %
+   :alt: ClarityNLP Simplified Architecture
+   :align: center
+
+           
+Third-Party App Integration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+
+   third_party_integration
+
+FHIR Integration
+^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+
+   fhir

@@ -1,51 +1,53 @@
 Setup
 =====
+
 The following guides will get you started with ClarityNLP.
 
-Single-User Setup with Docker
------------------------------
+Local Machine Setup
+-------------------
 
 .. toctree::
    :maxdepth: 2
 
    local-docker
-
-Single-User Setup without Docker (Bare Bones)
----------------------------------------------
-
-.. toctree::
-   :maxdepth: 3
-
-   bare-bones-setup
+   local-no-docker
 
    
-Multi-User (Production) Setup
------------------------------
+Server Setup
+------------
 
 .. toctree::
    :maxdepth: 2
 
    production-docker
-      
-   
-Accessing ClarityNLP Securely
------------------------------
-The following section is useful if you need to interact directly with the ClarityNLP API via a HTTP client or a third-party app.
+
+
+Document Ingestion
+------------------
 
 .. toctree::
    :maxdepth: 2
 
-   retrieve-access-token
-   add-third-party-app
+   ingest/generic_ingestion
+   
+.. Accessing ClarityNLP Securely
+.. -----------------------------
+.. The following section is useful if you need to interact directly with the ClarityNLP API via a HTTP client or a third-party app.
+
+
+..   :maxdepth: 2
+
+..   retrieve-access-token
+..   add-third-party-app
    
 
-Data Ingestion
---------------
+.. Data Ingestion
+.. --------------
 
-To begin interacting with ClarityNLP, make sure you have ingested documents into Solr.
+.. To begin interacting with ClarityNLP, make sure you have ingested documents into Solr.
 
-.. toctree::
-   :maxdepth: 1
 
-   ingest/generic_ingestion
-   ingest/file_ingestion
+..   :maxdepth: 1
+
+..   ingest/generic_ingestion
+..   ingest/file_ingestion

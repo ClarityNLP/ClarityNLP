@@ -1,9 +1,10 @@
-## Production Deployment
+## Nonsecure Deployment
 
 
 ### Docker Setup
 
-1. Install both Docker and Docker-Compose on your machine. Go [here](https://docs.docker.com/install/#server) to install Docker, <br/>
+1. Install both Docker and Docker-Compose on your machine.
+Go [here](https://docs.docker.com/install/#server) to install Docker, <br/>
 find your OS and follow instructions. Go [here](https://docs.docker.com/compose/install/) to install Docker Compose.
 
 2. Run `git clone https://github.com/ClarityNLP/ClarityNLP [folder-name]`
@@ -19,6 +20,8 @@ find your OS and follow instructions. Go [here](https://docs.docker.com/compose/
 
 5. Build images and run containers `docker-compose -f docker-compose.prod.yml up --build -d`
 
+
+## Secure Deployment
 
 
 ### Updating to download latest changes

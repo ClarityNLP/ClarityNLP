@@ -1,5 +1,5 @@
-Getting Up and Running on a Single Machine With Docker
-======================================================
+Local Machine Setup With Docker
+===============================
   
 The instructions below will get you up and running with a Docker-based
 ClarityNLP development environment on your laptop or desktop. We walk you
@@ -13,7 +13,7 @@ Multi-user deployments of ClarityNLP should instead follow the instructions
 for a production or enterprise deployment.
 
 If you want a single-user deployment without using Docker, then you need our
-:ref:`barebonessetup`.
+:ref:`nativesetup`.
 
 
 Prerequisites

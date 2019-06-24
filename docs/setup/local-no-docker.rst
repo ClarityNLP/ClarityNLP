@@ -1,16 +1,17 @@
-.. _barebonessetup:
+.. _nativesetup:
 
-Bare Bones Setup
-================
+Local Machine Setup without Docker
+==================================
 
 This page provides instructions on how to run ClarityNLP locally on your
-machine **without** having to use Docker or OAuth2. It is much simpler to use
-Docker, since everything is provided and configured for you. But if you want
-more control over your ClarityNLP installation and you prefer to configure
-everything yourself, then these are the instructions you need.
+machine **without** having to use Docker or OAuth2. We call this a *native*
+installation of ClarityNLP. It is much simpler to use Docker, since everything
+is provided and configured for you. But if you want more control over your
+ClarityNLP installation and you prefer to configure everything yourself, then
+these are the instructions you need.
 
 This installation is also useful if you neither need nor want the OAuth2
-security layers built into the Docker version of ClarityNLP. A bare bones
+security layers built into the Docker version of ClarityNLP. A native
 installation is emphatically **NOT** appropriate for patient data that must
 be protected in a HIPAA-compliant manner. So only store de-identified public
 data in your Solr instance if you choose to do this.
@@ -30,7 +31,7 @@ job control data and lots of medical vocabulary; Mongo to store results;
 Luigi to control and schedule the various processing tasks, and Flask to
 provide API endpoints and the underlying web server.
 
-A bare bones installation means that, at a minimum, Luigi and Flask are
+A native installation means that, at a minimum, Luigi and Flask are
 installed and run locally on your system. Solr, Postgres, and Mongo can also
 be installed and run locally on your system, or one or more of these can be
 hosted elsewhere.
@@ -38,7 +39,7 @@ hosted elsewhere.
 A university research group, for example, could have a hosted Solr instance on
 a VPN that is accessible to all members of the group. The Solr instance might
 contain `MIMIC <https://mimic.physionet.org/>`_ or other de-identified, public
-data. Members of the research group running a bare bones ClarityNLP
+data. Members of the research group running a native ClarityNLP
 installation would configure their laptops to use the hosted Solr instance.
 This can be accomplished via settings in a ClarityNLP configuration file, as
 explained below. These users would install and run Postgres, Mongo, Luigi, and
@@ -153,14 +154,14 @@ Clone the ClarityNLP GitHub Repository
 --------------------------------------
 
 Open a terminal window on your system and change directories to wherever you
-want to install ClarityNLP. Create a new folder called ``ClarityNLPBareBones``,
+want to install ClarityNLP. Create a new folder called ``ClarityNLPNative``,
 to emphasize that it will hold a version of ClarityNLP configured for running
 locally on your system without Docker or OAuth2. You can create this
 folder, clone the repo, and initialize all submodules with these commands:
 ::
    cd /some/location/on/your/disk
-   mkdir ClarityNLPBareBones
-   cd ClarityNLPBareBones
+   mkdir ClarityNLPNative
+   cd ClarityNLPNative
    git clone --recurse-submodules https://github.com/ClarityNLP/ClarityNLP.git
    cd ClarityNLP
 
@@ -177,15 +178,15 @@ checkout the ``develop`` branch of the repo with these additional commands:
    git submodule foreach git pull origin develop
 
 After checking out your desired branch of the repository, change to the
-``barebones_setup`` folder of the repo with:
+``native_setup`` folder of the repo with:
 ::
-   cd barebones_setup
+   cd native_setup
 
    
 Create the Conda Environment for ClarityNLP
 -------------------------------------------
 
-From the ``ClarityNLPBareBones/ClarityNLP/barebones_setup`` folder, create a
+From the ``ClarityNLPNative/ClarityNLP/native_setup`` folder, create a
 new conda managed environment with:
 ::
    conda create --name claritynlp python=3.6   
@@ -217,7 +218,7 @@ Install Additional Model Files
 ClarityNLP uses the `spacy <https://spacy.io/>`_ and
 `nltk <https://www.nltk.org/>`_ natural language processing
 libraries, which require additional support files. From the same terminal
-window in the ``barebones_setup`` folder, run these commands to install the
+window in the ``native_setup`` folder, run these commands to install the
 support files:
 ::
    conda activate claritynlp   # if not already active
@@ -362,7 +363,7 @@ Create the Database and a User Account
 
 With the database server installed, configured, and running, we now need to
 create a user account. Open a terminal and browse to
-``ClarityNLPBareBones/ClarityNLP/utilities/nlp-postgres``. From this folder
+``ClarityNLPNative/ClarityNLP/utilities/nlp-postgres``. From this folder
 run the command appropriate to your operating system to start ``psql``:
 
 **[MacOS]**
@@ -510,7 +511,7 @@ some test documents. We provide a python script to do this for you.
 **will not work**, since some field type names changed at the
 transition from Solr 6 to Solr 7.
 
-Open a terminal window to ``ClarityNLPBareBones/ClarityNLP/barebones_setup``.
+Open a terminal window to ``ClarityNLPNative/ClarityNLP/native_setup``.
 If you installed Solr on your local system run:
 ::
    conda activate claritynlp
@@ -577,7 +578,7 @@ Python scripts for ingesting some common document types can be found
 Setup the Project Configuration File
 ------------------------------------
 
-In the ``ClarityNLPBareBones/barebones_setup`` directory you will find a file named
+In the ``ClarityNLPNative/native_setup`` directory you will find a file named
 ``project.cfg``. This file gets loaded on startup and it configures Clarity to
 run locally on your system.
 
@@ -621,7 +622,7 @@ sections of ``project.cfg``. The paths would look like this after any changes:
 system to run if you have typos or other errors for these parameters.
    
 Once you are satisifed that the data in the file is correct, copy
-``project.cfg`` from the ``barebones_setup`` folder into the ``nlp`` folder,
+``project.cfg`` from the ``native_setup`` folder into the ``nlp`` folder,
 which is where ClarityNLP expects to find it:
 ::
    cp project.cfg ../nlp/project.cfg
@@ -631,7 +632,7 @@ Running Locally without Docker
 ------------------------------
 
 Now we're finally ready to run. Here are the instructions for running a job
-with your bare bones ClarityNLP system. We open several terminal windows to
+with your native ClarityNLP system. We open several terminal windows to
 start the various servers and schedulers. You can reduce the number of windows
 by configuring Mongo, Postgres, and Solr to start as background processes
 after each reboot, as mentioned above.
@@ -712,7 +713,7 @@ If your Postgres server is running it should respond with
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ClarityNLP uses Luigi to schedule and manage the data processing tasks. Luigi
-must be manually started in a bare bones setup.
+must be started manually in a native setup.
 
 We will run Luigi from a dedicated directory, ``~/tmp/luigi``. Open another
 terminal window and create ``~/tmp/luigi`` with these commands (this only
@@ -736,11 +737,11 @@ even if you plan to run multiple ClarityNLP jobs.
 5. Start the Flask Web Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ClarityNLP uses Flask as the underlying web framework. Flask must be manually
-started in a bare bones setup.
+ClarityNLP uses Flask as the underlying web framework. Flask must be
+started manually in a native setup.
 
 Open yet another terminal window, cd to the
-``ClarityNLPBareBones/ClarityNLP/nlp`` directory, and launch the web server
+``ClarityNLPNative/ClarityNLP/nlp`` directory, and launch the web server
 with:
 ::
    conda activate claritynlp
@@ -761,7 +762,7 @@ At this point ClarityNLP is fully initialized and waiting for commands.
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Open (yet another) terminal window and cd to
-``ClarityNLPBareBones/ClarityNLP/barebones_setup``. Run the ``ls`` command
+``ClarityNLPNative/ClarityNLP/native_setup``. Run the ``ls`` command
 and note the file ``validation0.nlpql``. This is an NLPQL file that runs
 several ClarityNLP tasks on a special validation document that was loaded into
 the ``claritynlp_test`` Solr core during setup.
@@ -873,7 +874,7 @@ Users of other spreadsheet software will need to consult the documentation on
 how to save CSV files with a comma for the record separator.
 
 With the file saved to disk in proper CSV format, run this command from the
-``ClarityNLPBareBones/ClarityNLP/barebones_setup`` folder to check the values:
+``ClarityNLPNative/ClarityNLP/native_setup`` folder to check the values:
 ::
    conda activate claritynlp  # if not already active
    python ./validate_results0.py --file /path/to/your/csv/file.csv

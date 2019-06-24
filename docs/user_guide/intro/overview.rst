@@ -1,7 +1,6 @@
 .. _intro-overview:
 
-======================
-ClarityNLP at a glance
+ClarityNLP at a Glance
 ======================
 
 ClarityNLP is designed to simplify the process of analyzing unstructured data (eg. provider notes, radiology reports, pathology results, etc) to find particular data or patients from electronic medical records.
@@ -44,9 +43,8 @@ Imagine you have a dataset with thousands of clinical documents and would like t
 
 Let's break down the NLPQL above.
 
-------------------
 Phenotype Name
-------------------
+--------------
 
 .. code-block:: java
 
@@ -54,9 +52,8 @@ Phenotype Name
 
 Every ClarityNLP phenotype definition needs a name.  We give it a name (and optionally a version) using the ``phenotype`` command.  Here, we are just declaring that our phenotype will be called "Patient Temperatures".
 
---------------
 Libraries
---------------
+---------
 
 .. code-block:: java
 
@@ -64,9 +61,8 @@ Libraries
 
 NLPQL is designed to be extensible and make it easy for developers to build new NLP algorithms and run them using the ClarityNLP platform. A common paradigm for making software extensible is the use of libraries.  Using the ``include`` command, we are saying to include the core Clarity library which has lots of handy commands and NLP algorithms built-in. The ``called`` phrase allows us to select a short name to refer to the library in the NLPQL that follows. In this case, we have selected to call it "Clarity".
 
-------------------
 Document Sets
-------------------
+-------------
 
 .. code-block:: java
 
@@ -88,9 +84,8 @@ In this case, we have declared a document set called "Nursing Notes" and include
              
 ClarityNLP provides an additional document set, ``createDocumentSet``, which provides more control over document section, allowing users to select report tags or report types, and provides flexibility to write custom queries.
 
-------------------
 Term Sets
-------------------
+---------
 
 .. code-block:: java
 
@@ -101,9 +96,8 @@ Term Sets
 
 In this case, we have created a term set called "TemperatureTerms" and included 3 common ways temperature is  referenced in a clinical note ("temperature", "temp", and "t").
 
-----------------------
 Phenotype Features
-----------------------
+------------------
 
 `Features <topics/features>`_ are the clinical elements that you wish to find and analyze in order to identify your patients of interest.  Features specify an NLP method you'd like to run as well as optional parameters such as document sets, term sets, patient cohorts, and more.  See the `feature examples <overview/examples>`_ to get a better sense of how different features can be created.
 
@@ -140,7 +134,7 @@ With this statement, we are creating a new feature called "hasFever" that includ
 Running NLPQL Queries
 =====================
 
-In the full guide, we will walk you through the steps of ingesting and mapping your own data.  Once in place, you will be able to run queries by hitting the `NLPQL API <../apis/nlpql>`_ on your local server or visiting <your_server>:8080/query.  But to run a quick test, feel free to use our `NLPQL test page <https://nlpql.apps.hdap.gatech.edu/>`_.
+In the full guide, we will walk you through the steps of ingesting and mapping your own data.  Once in place, you will be able to run queries by hitting the `NLPQL API <../apis/nlpql>`_ on your local server or visiting <your_server>:8080/nlpql.  But to run a quick test, feel free to use our `NLPQL test page <https://nlpql.apps.hdap.gatech.edu/>`_.
 
 
 **Next Steps**
