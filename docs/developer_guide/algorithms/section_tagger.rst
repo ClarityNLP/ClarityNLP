@@ -17,7 +17,7 @@ The starting point for the section tagger is the open-source *SecTag*
 database of J. Denny and colleagues [1]_.
 
 Source Code
------------
+^^^^^^^^^^^
 
 The source code for the section tagger is located in
 ``nlp/algorithms/sec_tag``.
@@ -34,7 +34,7 @@ the file with this command:  ``python3 ./sec_tag_file.py``. This interactive
 application writes results (input file with tag annotations) to stdout.
 
 SecTag Database
----------------
+^^^^^^^^^^^^^^^
 
 The section tagger requires three input files for its operation, all of which
 can be found in the ``nlp/algorithms/sec_tag/data`` folder. These files are
@@ -78,7 +78,7 @@ The SecTag database name is "SecTag_Terminology". Additional information on
 the contents of the database can be found in [1]_ and [2]_.
 
 Concepts and Synonyms
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 The section tagger operates by scanning the report text and recognizing
 synonyms for an underlying set of concepts. The synonyms recognized in the text
@@ -114,7 +114,7 @@ code that represents a path through the graph from the highest-level concepts
 to it.
 
 SecTag Errors
--------------
+^^^^^^^^^^^^^
 
 There are a few errors in the SecTag database. Two concepts are misspelled.
 These are concept 127, "principal_diagnosis", misspelled as
@@ -181,10 +181,10 @@ extremities_mra                  6.41.500.1.1.2.5
 ================================ ===========================
 
 Algorithm
-=========
+---------
 
 Initialization and Sentence Tokenization
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The section tagger begins its operation with an initialization phase in which
 it loads the data files mentioned above and creates various data structures.
@@ -202,7 +202,7 @@ comprises large chunks of report text spanning multiple sentences and sentence
 fragments.
 
 Synonym Matching
-----------------
+^^^^^^^^^^^^^^^^
 
 The section tagger scans each sentence and looks for strings indicating the
 start of a new section. Clinical note sections tend to be delimited by one
@@ -256,7 +256,7 @@ process to decide on the winning concept. The ambiguity resolver uses a
 concept stack to guide its decisions, which we describe next.
 
 The Concept Stack
------------------
+^^^^^^^^^^^^^^^^^
 
 The sections in a clinincal note tend to be arranged as flattened hierarchies
 extending over several consecutive sections. For instance, in a discharge
@@ -297,7 +297,7 @@ same level of specificity (or less specific) than C. The concepts in the stack
 represent the full set of open concept scopes at any stage of processing.
 
 Concept Ambiguity Resolution
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The section tagger uses the concept stack to select a single concept from
 a list of candidates, such the candidate concepts produced by the synonym
@@ -447,7 +447,7 @@ After these stack adjustments the section tagger resumes scanning and the
 process continues.
 
 References
-==========
+----------
 
 .. [1] | J. Denny, A. Spickard, K. Johnson, N. Peterson, J. Peterson, R. Miller
        | **Evaluation of a Method to Identify and Categorize Section Headers**
