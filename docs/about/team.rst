@@ -18,8 +18,9 @@ Members
 
 Current Students
 ----------------
-* Chirag Jamadagni
+
 
 Former Students
 ---------------
+* Chirag Jamadagni
 * Prathamesh Prabhudesai
