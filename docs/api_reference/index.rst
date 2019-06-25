@@ -73,7 +73,8 @@ All operations are prefixed in NLPQL as `define`, with the optional `final` flag
 
    nlpql/operations
 
-
+.. _nlpwebapis:
+   
 NLP Web APIs
 ------------
 NLP endpoints provided by ClarityNLP.

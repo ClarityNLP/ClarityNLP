@@ -1,9 +1,9 @@
 Technologies We Use
 ===================
 
-ClarityNLP depends on a set of leading open-source projects listed below. In
-this section we provide a brief overview of each project and describe how it
-is used by ClarityNLP.
+ClarityNLP is built on the set of popular open-source projects listed below.
+In this section we provide a brief overview of each project and describe how
+it is used by ClarityNLP.
 
 
 Docker
@@ -96,11 +96,19 @@ schedule and manage the execution of these tasks.
 Flask
 -----
 
+`Flask <http://flask.pocoo.org/>`_ is a "micro" framework for building Web
+applications. Flask provides a web server and a minimal set of core features,
+as well as an extension mechanism for including features found in more
+comprehensive Web frameworks.
 
+The ClarityNLP component that provides the :ref:`nlpwebapis` is built with
+Flask.
 
 
 Client-side Libraries (React, Sails)
 ------------------------------------
+
+
 
 Redis
 -----
