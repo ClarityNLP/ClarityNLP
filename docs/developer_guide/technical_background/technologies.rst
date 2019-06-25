@@ -38,9 +38,18 @@ section for more.
 PostgresSQL
 -----------
 
+`PostgreSQL <https://www.postgresql.org/>`_ is one of the leading open-source
+relational database systems, distinguished by its robust feature set, ACID
+compliance, and excellent performance. ClarityNLP uses Postgres to store data
+relevant to NLPQL job management and control. Postgres is also used to store
+a large amount of medical vocabulary and concept data.
+
 
 MongoDB
 -------
+
+
+`MongoDB <https://www.mongodb.com/>`_ is a popular NoSQL document store.
 
 
 NLP Libraries (spaCy, textacy, nltk)

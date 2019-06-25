@@ -1,4 +1,4 @@
-# Solr
+# Solr Setup and Configuration
 
 ## Data types
 We use standard Solr data types with one custom data type, `searchText`.  `searchText` is a text field, tokenized on spaces, with filtering to support case insensitivity.
