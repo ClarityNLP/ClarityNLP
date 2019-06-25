@@ -27,6 +27,7 @@ Utility Algorithms
    algorithms/sentence_tokenization
    algorithms/matrix_preprocessor
 
+.. _task_algorithms_index:
 
 Task Algorithms
 ^^^^^^^^^^^^^^^

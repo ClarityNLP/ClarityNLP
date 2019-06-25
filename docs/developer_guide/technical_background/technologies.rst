@@ -5,6 +5,7 @@ ClarityNLP depends on a set of leading open-source projects listed below. In
 this section we provide a brief overview of each project and describe how it
 is used by ClarityNLP.
 
+
 Docker
 ------
 
@@ -41,31 +42,61 @@ PostgresSQL
 `PostgreSQL <https://www.postgresql.org/>`_ is one of the leading open-source
 relational database systems, distinguished by its robust feature set, ACID
 compliance, and excellent performance. ClarityNLP uses Postgres to store data
-relevant to NLPQL job management and control. Postgres is also used to store
-a large amount of medical vocabulary and concept data.
+required to manage each NLPQL job. Postgres is also used to store a large
+amount of medical vocabulary and concept data.
 
 
 MongoDB
 -------
 
+`MongoDB <https://www.mongodb.com/>`_ is a popular NoSQL document store. A
+mongo *document* is a JSON object with user-defined fields and values. There
+is no rigid structure imposed on documents, which is the reason MongoDB is
+called a *schema-free* database. Multiple documents form groups called
+*collections*, and one or more collections comprise a database.
 
-`MongoDB <https://www.mongodb.com/>`_ is a popular NoSQL document store.
+ClarityNLP uses Mongo to store the results that it finds. The ClarityNLP
+built-in and custom tasks all define unique Mongo document objects for
+their particular result sets. These different task objects are written into
+a single collection, which represents the results for that particular
+ClarityNLP run.
 
 
 NLP Libraries (spaCy, textacy, nltk)
 ------------------------------------
+
+The natural language processing libraries `spaCy <https://spacy.io/>`_ and
+`nltk <https://www.nltk.org/>`_ provide implementations of the fundamental NLP
+algorithms that ClarityNLP needs. These algorithms include sentence
+segmentation, part-of-speech tagging, dependency parsing, and other standard
+NLP tasks. ClarityNLP builds its NLP algorithms on top of the foundation
+provided by spaCy and nltk.
+
+`Textacy <https://github.com/chartbeat-labs/textacy>`_ is a higher-level NLP
+library built on spaCy. ClarityNLP uses textacy for its :ref:`ngram` task and
+for computing text statistics with :ref:`textstats`.
+
+
+Luigi
+-----
+
+`Luigi <https://luigi.readthedocs.io/en/stable/index.html>`_ is a python
+library that manages and schedules pipelines of batch processes. A *pipeline*
+is an ordered sequence of tasks needed to compute a result. The tasks in the
+pipeline can have *dependencies*, which are child tasks that must run and
+finish before the parents can be scheduled to run. Luigi handles the task
+scheduling, dependency management, restart-on-failure, and other necessary
+aspects of managing these pipelines.
+
+The :ref:`apiref` defines a set of core and custom tasks that comprise
+the data processing capabilities of ClarityNLP. ClarityNLP uses Luigi to
+schedule and manage the execution of these tasks.
 
 
 Flask
 -----
 
 
-Luigi
------
-
-
-Pandas
-------
 
 
 Client-side Libraries (React, Sails)
@@ -74,3 +105,6 @@ Client-side Libraries (React, Sails)
 Redis
 -----
 
+
+.. Pandas
+.. ------
