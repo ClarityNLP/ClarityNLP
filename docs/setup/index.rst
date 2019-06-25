@@ -1,3 +1,5 @@
+.. _setupindex:
+
 Setup
 =====
 
@@ -22,6 +24,8 @@ Server Setup
    server_setup
 
 
+.. _document_ingestion_index:
+   
 Document Ingestion
 ------------------
 

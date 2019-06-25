@@ -8,7 +8,7 @@ Technical Overview
 ^^^^^^^^^^^^^^^^^^
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    technical_background/technologies
    technical_background/solr
