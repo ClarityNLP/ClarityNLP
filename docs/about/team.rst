@@ -14,6 +14,7 @@ Members
 * Richard Boyd
 * Trey Schneider
 * Christine Herlihy
+* Caleb Sides
 
 Current Students
 ----------------
