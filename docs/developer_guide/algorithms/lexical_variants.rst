@@ -60,13 +60,13 @@ strings):
    plural_noun(noun)
    plural_verb(verb)
    plural_adj(adjective)
-
    plural(text_string)
 
 Use the more specific functions if the part of speech of the input text is
 known. Use ``plural`` if nothing is known about the text.
 
 .. _verb_inflections:
+
 Verb Inflections
 ================
 

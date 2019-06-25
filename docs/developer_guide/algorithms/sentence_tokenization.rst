@@ -198,21 +198,21 @@ as a JSON-formatted file. The sentence tokenization module will read the
 input file, split the text into sentences as described above, and write the
 results to stdout. Help for the command line interface can be obtained by
 running this command from the ``nlp/algorithms/segmentation`` folder:
-
-    ``python3 ./segmentation.py --help``
+::
+   python3 ./segmentation.py --help
 
 Some examples:
 
 To tokenize all reports in myreports.json and print each sentence to stdout:
-
-        ``python3 ./segmentation.py --file /path/to/myreports.json``
+::
+   python3 ./segmentation.py --file /path/to/myreports.json
 
 To tokenize only the first 10 reports (indices begin with 0):
-
-        ``python3 ./segmentation.py --file myreports.json --end 9``
+::
+   python3 ./segmentation.py --file myreports.json --end 9``
 
 To tokenize reports 115 through 134 inclusive, and to also show the report text
 after cleanup and token substitution (i.e. the actual input to the spaCy
 sentence tokenizer):
-
-        ``python3 ./segmentation.py --file myreports.json --start 115 --end 134 --debug``
+::
+   python3 ./segmentation.py --file myreports.json --start 115 --end 134 --debug

@@ -62,9 +62,9 @@ C++ compiler.
 
 After verifying that the C++ compiler works, build the matrix preprocessor code
 with these commands:
-
-|    ``cd nlp/algorithms/matrix_preprocessor``
-|    ``make``
+::
+   cd nlp/algorithms/matrix_preprocessor
+   make
 
 The build process should run to completion with no errors, after which these
 binaries should be present in the ``build/bin`` folder: ``libpreprocess.a``,
@@ -154,21 +154,21 @@ Examples
 1. Prune duplicate rows/columns from the input term-frequency matrix.
    Write pruned matrix to ``reduced_matrix_tf.mtx``; generate the two index files
    as well:
-
-       ``python3 ./preprocess.py --infile /path/to/mymatrix.mtx``
+   ::
+      python3 ./preprocess.py --infile /path/to/mymatrix.mtx
 
 
 2. Same as in example 1, but generate an output term-document matrix containing
    TF-IDF weights. Write result matrix to ``reduced_matrix.mtx``; generate the
    two index files also:
-
-       ``python3 ./preprocess.py --infile /path/to/mymatrix.mtx --weights``
+   ::
+      python3 ./preprocess.py --infile /path/to/mymatrix.mtx --weights
 
 3. Same as 2, but require a mininim row sum of 6 and a mininum column sum of 8
    in the pruned term-frequency matrix. Compute TF-IDF weights and output a
    floating point term-document matrix.
-
-       ``python ./preprocess.py -i /path/to/mymatrix.mtx -r 6 -c 8 -w``
+   ::
+      python ./preprocess.py -i /path/to/mymatrix.mtx -r 6 -c 8 -w
 
 
 Important Note
