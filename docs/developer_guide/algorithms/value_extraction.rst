@@ -9,18 +9,18 @@ Overview
 Value extraction is the process of scanning text for query terms and finding
 numeric values associated with those terms. For example, consider the
 sentence:
+::
+   The patient's heart rate was 60 beats per minute.
 
-    ``The patient's heart rate was 60 beats per minute.``
-
-It is clear that the value 60 is associated with "heart rate". A value
+It is clear that the value 60 is associated with ``heart rate``. A value
 extractor using this sentence as input should therefore return 60 as the
-result for the query "heart rate".
+result for the query ``heart rate``.
 
 Values can occur either before or after the query terms, since both
 variants are acceptable forms of English expression:
-
- |   ``A 98.6F temperature was measured during the exam.    (before)``
- |   ``A temperature of 98.6F was measured during the exam. (after)``
+::
+   A 98.6F temperature was measured during the exam.    (before)
+   A temperature of 98.6F was measured during the exam. (after)
 
 The *value-follows-query* form is dominant in the text of medical records.
 To constrain the scope of the problem and to reduce the chances of error:
@@ -30,13 +30,13 @@ To constrain the scope of the problem and to reduce the chances of error:
 This assumption does **not** imply anything about the distance between the
 query and the value. Sometimes the value immediately follows the term, as
 in terse lists of vital signs:
-
-    ``Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA``
+::
+   Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA
 
 Other times, in narrative text, one or more words fill the space between
 query term and value:
-
-    ``The temperature recorded for the patient at the exam was 98.6F.``
+::
+   The temperature recorded for the patient at the exam was 98.6F.
 
 ClarityNLP is able to understand these situations and correctly associate the
 value 98.6 with "temperature".
