@@ -9,8 +9,8 @@ separately install Solr, MongoDB, PostgreSQL, or any of the other technologies
 that ClarityNLP uses. Everything in the Docker containers has been setup and
 configured for you.
 
-Multi-user deployments of ClarityNLP should instead follow the instructions
-for a production or enterprise deployment.
+If you instead want to install ClarityNLP on a server to support multiple
+users, you should follow our :ref:`serversetupdoc` instructions.
 
 If you want a single-user deployment without using Docker, then you need our
 :ref:`nativesetup`.

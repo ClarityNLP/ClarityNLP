@@ -19,7 +19,7 @@ Server Setup
 .. toctree::
    :maxdepth: 2
 
-   production-docker
+   server_setup
 
 
 Document Ingestion
