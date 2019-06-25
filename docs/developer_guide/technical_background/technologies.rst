@@ -1,9 +1,9 @@
 Technologies We Use
 ===================
 
-ClarityNLP is built on the set of popular open-source projects listed below.
-In this section we provide a brief overview of each project and describe how
-it is used by ClarityNLP.
+ClarityNLP is built on several popular open-source projects. In this section
+we provide a brief overview of each project and describe how it is used by
+ClarityNLP.
 
 
 Docker
@@ -17,7 +17,7 @@ dependencies so that it can be deployed as self-contained unit.
 
 ClarityNLP can be deployed as a set of Docker containers. The secure
 OAuth2-based server configuration assumes this deployment mechanism. You can
-find out more about ClarityNLP setup options and its use of Docker in our
+find out more about the ClarityNLP setup options and our use of Docker in the
 :ref:`setupindex` documentation.
 
 
@@ -30,8 +30,8 @@ indexing, and the ability to scale to billions of documents. It is fast,
 highly configurable, and supports a wide range of user customizations.
 
 ClarityNLP uses Solr as its primary document store. Any documents that
-ClarityNLP processes must be retrieved from Solr. We provide documentation on
-how to ingest your documents into Solr, as well as some python scripts to help
+ClarityNLP processes must be retrieved from Solr. We provide instructions on
+how to ingest documents into Solr. We also provide some python scripts to help
 you with common data sets. See our :ref:`document_ingestion_index`
 section for more.
 
@@ -51,15 +51,13 @@ MongoDB
 
 `MongoDB <https://www.mongodb.com/>`_ is a popular NoSQL document store. A
 mongo *document* is a JSON object with user-defined fields and values. There
-is no rigid structure imposed on documents, which is the reason MongoDB is
-called a *schema-free* database. Multiple documents form groups called
-*collections*, and one or more collections comprise a database.
+is no rigid structure imposed on documents. Multiple documents form groups
+called *collections*, and one or more collections comprise a *database*.
 
 ClarityNLP uses Mongo to store the results that it finds. The ClarityNLP
-built-in and custom tasks all define unique Mongo document objects for
-their particular result sets. These different task objects are written into
-a single collection, which represents the results for that particular
-ClarityNLP run.
+built-in and custom tasks all define result documents with fields meaningful
+to each task. ClarityNLP augments the result documents with additional
+job-specific fields and stores everything in a single collection.
 
 
 NLP Libraries (spaCy, textacy, nltk)
@@ -68,9 +66,9 @@ NLP Libraries (spaCy, textacy, nltk)
 The natural language processing libraries `spaCy <https://spacy.io/>`_ and
 `nltk <https://www.nltk.org/>`_ provide implementations of the fundamental NLP
 algorithms that ClarityNLP needs. These algorithms include sentence
-segmentation, part-of-speech tagging, dependency parsing, and other standard
-NLP tasks. ClarityNLP builds its NLP algorithms on top of the foundation
-provided by spaCy and nltk.
+segmentation, part-of-speech tagging, and dependency parsing, among others.
+ClarityNLP builds its NLP algorithms on top of the foundation provided by
+spaCy and nltk.
 
 `Textacy <https://github.com/chartbeat-labs/textacy>`_ is a higher-level NLP
 library built on spaCy. ClarityNLP uses textacy for its :ref:`ngram` task and
