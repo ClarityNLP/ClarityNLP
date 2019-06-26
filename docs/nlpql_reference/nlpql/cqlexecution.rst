@@ -1,4 +1,4 @@
-.. _cqleval:
+.. _cqlexecutiontask:
 
 Clarity.CQLExecutionTask
 ========================

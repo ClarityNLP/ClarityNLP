@@ -6,7 +6,7 @@ Clarity.PFTFinder
 Description
 -----------
 
-Custom module built on top of General Value Extraction to extract Pulmonary Function Test Values(PFT)
+Custom module for extracting pulmonary function test (PFT) values.
 
 Examples
 --------

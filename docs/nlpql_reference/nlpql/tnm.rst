@@ -5,7 +5,7 @@ Clarity.TNMStager
 
 Description
 -----------
-Extract tumor stages from text. Read more `here <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/tnm_stage_finder.html>`_.
+Extract tumor stages from text. Read more :ref:`here<tnmalgo>`.
 
 Example
 -------
@@ -38,7 +38,7 @@ cohort                 :ref:`cohort`        No
 Results
 -------
 
-See result outputs table `here <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/tnm_stage_finder.html>`_.
+See the 'Outputs' table :ref:`here<tnmalgo>`.
 
 Collector
 ---------

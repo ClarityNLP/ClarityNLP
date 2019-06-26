@@ -1,7 +1,10 @@
+.. _termfinderalgo:
+
 Term Finder
 ******************
 
-The most basic algorithm, which uses regular expressions to identify terms. In addition, the algorithm will return section, negation, experiencer and temporality. Runs :ref:`context` and :ref:`sectiontagging`.
+The most basic algorithm, which uses regular expressions to identify terms. In addition, the algorithm will return section, negation, experiencer and temporality. Runs the :ref:`context` and
+:ref:`section tagging<sectiontagging>` algorithms.
 
 Provider Assertion
 ******************

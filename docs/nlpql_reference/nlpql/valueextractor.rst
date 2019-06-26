@@ -6,7 +6,8 @@ Clarity.ValueExtraction
 Description
 -----------
 
-Extract values from text, related to terms. Read more `here <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/value_extraction.html>`_.
+Extract values from text, related to terms.
+Read more :ref:`here<general-value-extraction>`.
 
 Examples
 --------

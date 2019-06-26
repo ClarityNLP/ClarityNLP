@@ -6,7 +6,8 @@ Clarity.TransfusionNursingNotesParser
 Description
 -----------
 
-Task that parses Nursing notes (specifically formatted for Columbia) for transfusion information.
+Task that parses Nursing notes (specifically formatted for Columbia University
+Medical Center) for transfusion information.
 
 Example
 -------

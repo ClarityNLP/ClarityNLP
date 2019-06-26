@@ -1,4 +1,4 @@
-.. _size-measurement-finder:
+.. _measurementfinderalgo:
 
 Finding Size Measurements
 *************************

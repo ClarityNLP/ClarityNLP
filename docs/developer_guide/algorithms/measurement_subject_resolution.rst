@@ -103,7 +103,7 @@ Dependencies
 
 The measurement subject finder has a dependency on ClarityNLP's size measurement
 finder module, whose documentation can be found here:
-:ref:`size-measurement-finder`.
+:ref:`measurementfinderalgo`.
 
 .. _spaCy: https://spacy.io/
      

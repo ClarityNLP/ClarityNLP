@@ -3,7 +3,7 @@
 BaseTask
 ========
 
-The base for most ClarityNLP tasks. Provides most of the wiring need to run individual algorithms.
+The base class for most ClarityNLP tasks. Provides most of the wiring needed to run individual algorithms.
 
 
 Arguments
@@ -56,28 +56,28 @@ Main function that sets up documents and runs the task execution.
 output()
 ~~~~~~~~
 
-Gets Luigi file, used for job communication or temp output
+Gets Luigi file, used for job communication or temp output.
 
 ----
 
 set_name(name)
 ~~~~~~~~~~~~~~
 
-Sets name of task
+Sets name of task.
 
 ----
 
 write_result_data(temp_file: File, mongo_client: MongoClient, doc: dict, data: dict, prefix: str='', phenotype_final: bool=False)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Writes results to MongoDB
+Writes results to MongoDB.
 
 ----
 
 write_multiple_result_data(temp_file: File, mongo_client: MongoClient, doc: dict, data: list, prefix: str='')
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Writes results to MongoDB as a list
+Writes results to MongoDB as a list.
 
 
 ----
@@ -86,7 +86,7 @@ Writes results to MongoDB as a list
 write_log_data(job_status: str, status_message: str)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Writes log message to the `job_status` table
+Writes log message to the `job_status` table.
 
 
 ----
@@ -94,14 +94,14 @@ Writes log message to the `job_status` table
 run_custom_task(temp_file: File, mongo_client: MongoClient)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The primary function for tasks to implement to run tasks
+The primary function for tasks to implement to run tasks.
 
 ----
 
 get_document_text(doc: dict, clean=True)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Returns a string of the text given Solr document
+Returns a string containing the text of a given Solr document.
 
 ----
 
@@ -129,6 +129,6 @@ Looks up custom argument with matching key of type `str`.
 get_document_sentences(doc)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Returns an collection of sentences for the given Solr document.
+Returns a collection of sentences for the given Solr document.
 
 ----

@@ -2,7 +2,7 @@
 
 BaseCollector
 =============
-The base for ClarityNLP aggregate tasks. Only gets called after all the other tasks of its related type are complete.
+The base class for ClarityNLP aggregate tasks. Only gets called after all the other tasks of its related type are complete.
 
 
 
@@ -19,7 +19,7 @@ Main function that runs the collector.
 run_custom_task(pipeline_id, job, owner, pipeline_type, pipeline_config, client, db)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Primary function where custom implementation of the collector is written
+Primary function where custom implementation of the collector is written.
 
 ----
 
@@ -27,7 +27,7 @@ custom_cleanup(pipeline_id, job, owner, pipeline_type, pipeline_config, client, 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-Run custom custom cleanup after collector has ran.
+Run custom custom cleanup after collector has run.
 
 ----
 
@@ -35,5 +35,5 @@ Run custom custom cleanup after collector has ran.
 cleanup(pipeline_id, job, owner, pipeline_type, pipeline_config)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Main cleanup task that marks job as complete and runs and custom cleanup tasks after collector is completed.
+Main cleanup task that marks job as complete and runs custom cleanup tasks after collector is completed.
 

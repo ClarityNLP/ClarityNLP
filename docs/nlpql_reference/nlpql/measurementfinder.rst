@@ -6,7 +6,8 @@ Clarity.MeasurementFinder
 Description
 -----------
 
-Task for extracting size measurements from text, based on the given `termset`. Read more about MeasurementFinder `here <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/size_measurement_finder.html?highlight=measurement>`_.
+Task for extracting size measurements from text, based on the given `termset`.
+Read more about MeasurementFinder :ref:`here<measurementfinderalgo>`.
 
 Example
 -------

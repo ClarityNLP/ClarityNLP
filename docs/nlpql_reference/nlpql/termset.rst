@@ -32,5 +32,5 @@ Note that `termset` is required in certain tasks such as :ref:`providerassertion
 Lexical Variants
 ----------------
 
-As an optional step, NLPQL can be pre-processed with `lexical variants <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/lexical_variants.html>`_.
-Learn more about how to use lexical variants `here <https://clarity-nlp.readthedocs.io/en/latest/user_guide/nlpql/macros.html?highlight=Plurals>`_.
+As an optional step, NLPQL can be pre-processed with :ref:`lexical variants<lexicalvariantsalgo>`.
+Learn more about how to use lexical variants :ref:`here<macros>`.

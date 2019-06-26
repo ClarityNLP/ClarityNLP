@@ -13,7 +13,7 @@ Docker
 to provide a means of isolating applications from each other and controlling
 their access to system resources. Isolated applications run in restricted
 environments called *containers*. A container includes the application and all
-dependencies so that it can be deployed as self-contained unit.
+dependencies so that it can be deployed as a self-contained unit.
 
 ClarityNLP can be deployed as a set of Docker containers. The secure
 OAuth2-based server configuration assumes this deployment mechanism. You can
@@ -106,11 +106,13 @@ Flask.
 Client-side Libraries (React, Sails)
 ------------------------------------
 
+TBD
 
 
 Redis
 -----
 
+TBD
 
 .. Pandas
 .. ------

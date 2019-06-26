@@ -37,7 +37,7 @@ filter_query           str               Use single quote (') to quote. Correspo
 query                  str               Use single quote (') to quote. Corresponds to Solr `q` parameter. See `here <https://lucene.apache.org/solr/guide/7_4/the-standard-query-parser.html#the-standard-query-parser>`_.*
 =====================  ================  ===============================================================
 
-\* See more about the ClarityNLP Solr fields `here <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/technical_background/solr.html?highlight=Solr>`_.
+\* See more about the ClarityNLP Solr fields `here <../../developer_guide/technical_background/solr.html>`_.
 
 
 ::

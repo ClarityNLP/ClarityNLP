@@ -7,7 +7,8 @@ Clarity.TermFinder
 Description
 -----------
 
-Simple task for identifying terms with their sections, negation, temporality and experiencer. Read more `here <https://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/term-finder.html#term-finder>`_.
+Simple task for identifying terms with their sections, negation, temporality and experiencer.
+Read more :ref:`here<termfinderalgo>`.
 
 
 Example
