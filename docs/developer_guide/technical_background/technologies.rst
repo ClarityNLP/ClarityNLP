@@ -9,7 +9,7 @@ ClarityNLP.
 Docker
 ------
 
-`Docker <https://www.docker.com/>`_ uses operating system level virtualization
+`Docker <https://www.docker.com/>`_ uses *operating-system-level virtualization*
 to provide a means of isolating applications from each other and controlling
 their access to system resources. Isolated applications run in restricted
 environments called *containers*. A container includes the application and all
@@ -17,8 +17,8 @@ dependencies so that it can be deployed as a self-contained unit.
 
 ClarityNLP can be deployed as a set of Docker containers. The secure
 OAuth2-based server configuration assumes this deployment mechanism. You can
-find out more about the ClarityNLP setup options and our use of Docker in the
-:ref:`setupindex` documentation.
+find out more about the ClarityNLP setup options and our use of Docker in our
+:ref:`setup documentation<setupindex>`.
 
 
 Solr
@@ -32,8 +32,9 @@ highly configurable, and supports a wide range of user customizations.
 ClarityNLP uses Solr as its primary document store. Any documents that
 ClarityNLP processes must be retrieved from Solr. We provide instructions on
 how to ingest documents into Solr. We also provide some python scripts to help
-you with common data sets. See our :ref:`document_ingestion_index`
-section for more.
+you with common data sets. See our
+`document ingestion <../../setup/ingest/generic_ingestion.html>`_ documentation
+for more.
 
 
 PostgresSQL
@@ -86,7 +87,7 @@ finish before the parents can be scheduled to run. Luigi handles the task
 scheduling, dependency management, restart-on-failure, and other necessary
 aspects of managing these pipelines.
 
-The :ref:`apiref` defines a set of core and custom tasks that comprise
+The :ref:`nlpqlref` defines a set of core and custom tasks that comprise
 the data processing capabilities of ClarityNLP. ClarityNLP uses Luigi to
 schedule and manage the execution of these tasks.
 
