@@ -1,3 +1,5 @@
+.. _userguideindex:
+
 User Guide
 ==========
 
