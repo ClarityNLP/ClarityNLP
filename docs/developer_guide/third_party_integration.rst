@@ -1,5 +1,0 @@
-Third Party App Integration
-===========================
-
-
-

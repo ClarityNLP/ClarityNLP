@@ -93,7 +93,7 @@ Third-Party App Integration
 .. toctree::
    :maxdepth: 1
 
-   third_party_integration
+   third_party_app_integration
 
 FHIR Integration
 ^^^^^^^^^^^^^^^^

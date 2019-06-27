@@ -1,4 +1,4 @@
-Add Third Party Application
+Third Party App Integration
 ===========================
 
 The information below will help you configure a third-party application for ClarityNLP.
@@ -12,3 +12,5 @@ If you need a refresher on OAuth2 in order to determine the ideal Grant Type for
 Once you have determined the appropriate Grand Type, refer to :code:`/identity-provider/Config.cs` to see examples of how to configure your client.
 
 An exhaustive list of Client properties can be found `here <http://docs.identityserver.io/en/latest/reference/client.html>`_.
+
+
