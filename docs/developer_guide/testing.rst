@@ -1,12 +1,12 @@
-Testing `nlp`
-============
+Testing NLP Algorithms
+======================
 
 This application uses `pytest`. 
 
-Running Pytest from `nlp` directory
------------------------------------
-From the command line:
+Running Pytest from the `nlp` directory
+---------------------------------------
 
-```python
-python3 -m pytest tests/
-```
+From the command line:
+::
+   python3 -m pytest tests/
+
