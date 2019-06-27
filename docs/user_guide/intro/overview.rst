@@ -69,7 +69,7 @@ Document Sets
   documentset NursingNotes:
      Clarity.createReportTagList(["Nurse"]);
 
-`Document sets <topics/document_sets>`_ are a list of document types that you would like ClarityNLP to process.  (If no document sets are created, ClarityNLP will simply analyze all documents in your repository.)  Built into the Clarity core library is the ``createReportTagList`` function, which allows you to enumerate a set of document type tags from the `LOINC document ontology <https://loinc.org/document-ontology/current-version/>`_.  Typically, these tags are assigned to your documents at the time of ingestion through use of the `Report Type Mapper <topics/report_type_mapper>`_.
+:ref:`Document sets<documentset>` are lists of document types that you would like ClarityNLP to process.  (If no document sets are created, ClarityNLP will simply analyze all documents in your repository.)  Built into the Clarity core library is the ``createReportTagList`` function, which allows you to enumerate a set of document type tags from the `LOINC document ontology <https://loinc.org/document-ontology/current-version/>`_.  Typically, these tags are assigned to your documents at the time of ingestion through use of the `Report Type Mapper <https://github.com/ClarityNLP/report-type-mapper-api>`_.
              
 In this case, we have declared a document set called "Nursing Notes" and included in it all documents with the Nurse tag.  We could have selected another provider type (eg. Physician), a specialty type (eg. Endocrinology), a setting type (eg. Emergency Department), or a combination such as ``["Physician","Emergency Department"]``.
 
@@ -92,14 +92,14 @@ Term Sets
   termset TemperatureTerms:
      ["temp","temperature","t"];
 
-`Term sets <topics/term_sets>`_ are a list of terms or tokens you would like to input into an NLP method.  You can create these lists manually (as shown in this example) or generate them based on ontologies.  Furthermore you can extend termsets with synonyms and lexical variants.
+:ref:`Term sets<termset>` are lists of terms or tokens you would like to input into an NLP method.  You can create these lists manually (as shown in this example) or generate them based on ontologies.  Furthermore you can extend termsets with synonyms and lexical variants.
 
-In this case, we have created a term set called "TemperatureTerms" and included 3 common ways temperature is  referenced in a clinical note ("temperature", "temp", and "t").
+In this case, we have created a term set called "TemperatureTerms" and included three common ways temperature is  referenced in a clinical note ("temperature", "temp", and "t").
 
 Phenotype Features
 ------------------
 
-`Features <topics/features>`_ are the clinical elements that you wish to find and analyze in order to identify your patients of interest.  Features specify an NLP method you'd like to run as well as optional parameters such as document sets, term sets, patient cohorts, and more.  See the `feature examples <overview/examples>`_ to get a better sense of how different features can be created.
+*Features* are the clinical elements that you wish to find and analyze in order to identify your patients of interest.  Features specify an :ref:`NLPQL task<nlpqlref>` you'd like to run as well as optional parameters such as document sets, term sets, patient cohorts, and more.  See the `NLPQL examples <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlpql>`_ to get a better sense of how different features can be created.
 
 We have two features in our example NLPQL.  Let's take a look at each.
 
@@ -113,9 +113,9 @@ We have two features in our example NLPQL.  Let's take a look at each.
        maximum_value: "106"
        });
 
-Features are specified in NLPQL using the ``define`` keyword followed by a feature name and a function.  In this case, we are assigning the name "Temperature" to the output of a particular NLP method that is included in the Clarity core library called `Value Extraction <http://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/value_extraction.html>`_.  (This could just as easily have been an NLP method from another Python library or an external API using `External NLP Method Integration <http://clarity-nlp.readthedocs.io/en/latest/developer_guide/custom/custom.html>`_.)
+Features are specified in NLPQL using the ``define`` keyword followed by a feature name and a function.  In this case, we are assigning the name "Temperature" to the output of a particular NLP method that is included in the Clarity core library called :ref:`Value Extraction<general-value-extraction>`.  (This could just as easily have been an NLP method from another Python library or an external API using :ref:`External NLP Method Integration<customtaskalgo>`.)
 
-In the example, we provide the Value Extraction method with a set of parameters including our document set ("NursingNotes"), term set ("TemperatureTerms"), and min/max values to include in the temperature results. The accuray of this definition for temperature can be evaluated using the ClarityNLP `Vaidation Framework <validation/overview>`_, which we will cover later in the tutorial.
+In the example, we provide the Value Extraction method with a set of parameters including our document set ("NursingNotes"), term set ("TemperatureTerms"), and min/max values to include in the temperature results. The accuray of this definition for temperature can be evaluated using the ClarityNLP validation framework, which is a feature built into the :ref:`Results Viewer<ui_results_viewer>`.
 
 Now on to the second feature in the example:
 
@@ -128,21 +128,24 @@ Now on to the second feature in the example:
 
 With this statement, we are creating a new feature called "hasFever" that includes any patients with a temperature value greater than 100.4.  There are two things to note about this syntax.
 
-  - ``final`` A phenotype may involve the creation of numerous intermediate features that are extracted by NLP processes but are not themselves the final result of the analysis.  For example, we may be interested only in patients with a fever, rather than any patient who has a temperature value recorded.  The `final <topics/final>`_ keyword allows us to indicate the final output or outputs of the phenotype definition.
-  - ``value`` Every NLP method returns a result.  The specific format and content of these results will vary by method. As a convenience, ClarityNLP returns a ``value`` parameter for most methods.  The `Value Extraction <http://clarity-nlp.readthedocs.io/en/latest/developer_guide/algorithms/value_extraction.html>`_ method used here also returns several other parameters.   ClarityNLP is flexible in that it can take any parameter you provide and perform operations on it.  However, this will only work if the method being called returns that parameter.  Please consult the documentation for individual methods to see what parameters can be referenced.
+  - ``final`` A phenotype may involve the creation of numerous intermediate features that are extracted by NLP processes but are not themselves the final result of the analysis.  For example, we may be interested only in patients with a fever, rather than any patient who has a temperature value recorded.  The :ref:`final<nlpqlref>` keyword allows us to indicate the final output or outputs of the phenotype definition.
+    
+  - ``value`` Every NLP method returns a result.  The specific format and content of these results will vary by method. As a convenience, ClarityNLP returns a ``value`` parameter for most methods.  The :ref:`Value Extraction<general-value-extraction>` method used here also returns several other parameters.   ClarityNLP is flexible in that it can take any parameter you provide and perform operations on it.  However, this will only work if the method being called returns that parameter.  Please consult the documentation for individual methods to see what parameters can be referenced.
 
 Running NLPQL Queries
 =====================
 
-In the full guide, we will walk you through the steps of ingesting and mapping your own data.  Once in place, you will be able to run queries by hitting the `NLPQL API <../apis/nlpql>`_ on your local server or visiting <your_server>:8080/nlpql.  But to run a quick test, feel free to use our `NLPQL test page <https://nlpql.apps.hdap.gatech.edu/>`_.
+In the full guide, we will walk you through the steps of ingesting and mapping your own data.  Once in place, you will be able to run queries by hitting the :ref:`nlpql API endpoint<apiref>` on your local server or by visiting ``<your_server url>:5000/nlpql``.  But to run a quick test, feel free to use our `NLPQL test page <https://nlpql.apps.hdap.gatech.edu/>`_.
 
 
 **Next Steps**
 
-The next steps for you are to :ref:`install ClarityNLP <intro-install>`,
-:ref:`follow through the tutorial <intro-tutorial>` to learn how to create
-a full-blown ClarityNLP project and `join the community`_. Thanks for your
-interest!
+The next steps for you are to :ref:`install ClarityNLP<setupindex>`,
+follow through some of our
+`Cooking with Clarity <https://github.com/ClarityNLP/ClarityNLP/tree/master/notebooks/cooking>`_
+tutorials to learn how to create a full-blown ClarityNLP project, and
+`join our channel <https://join.slack.com/t/claritynlp/shared_invite/enQtNTE5NTUzNzk4MTk5LTFmNWY1NWVmZTA4Yjc5MDUwNTRhZTBmNTA0MWM0ZDNmYjdlNTAzYmViYzAzMTkwZDkzODA2YTJhYzQ1ZTliZTQ>`_ on Slack.
+Thanks for your interest!
 
 .. _NLPQL Launcher: https://scrapy.org/community/
 .. _NLPQL API: https://en.wikipedia.org/wiki/Web_scraping
