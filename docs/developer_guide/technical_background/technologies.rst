@@ -60,6 +60,10 @@ built-in and custom tasks all define result documents with fields meaningful
 to each task. ClarityNLP augments the result documents with additional
 job-specific fields and stores everything in a single collection.
 
+ClarityNLP also evaluates :ref:`NLPQL expressions<exprevalalgo>` by
+translating them into a
+`MongoDB aggregation <https://docs.mongodb.com/manual/aggregation/>`_ pipeline.
+
 
 NLP Libraries (spaCy, textacy, nltk)
 ------------------------------------
@@ -104,16 +108,30 @@ The ClarityNLP component that provides the :ref:`nlpwebapis` is built with
 Flask.
 
 
+Redis
+-----
+
+`Redis <https://redis.io/>`_ is an in-memory key-value store that is typically
+used as a fast cache for frequently-accessed data. The values mapped to each
+key can either be strings or more complex data structures. Redis supports many
+advanced features such as partitioning and time-based key expiration.
+
+ClarityNLP uses Redis as a fast query cache.
+
+Pandas
+------
+
+`Pandas <https://pandas.pydata.org/>`_ is a python library for data analysis,
+with particular strengths in manipulating tabular and labeled data. It provides
+data structures and methods for doing operations that one would typically use a
+spreadsheet for. It provides a powerful I/O library and integrates fully with
+the python machine learning, data analysis, and visualization stack.
+
+ClarityNLP uses pandas for some I/O operations and for various forms of
+data manipulation.
+
 Client-side Libraries (React, Sails)
 ------------------------------------
 
 TBD
 
-
-Redis
------
-
-TBD
-
-.. Pandas
-.. ------
