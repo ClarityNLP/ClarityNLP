@@ -52,6 +52,17 @@ instances.
 These flexible configuration options are also available with the
 container-based, secure version of ClarityNLP.
 
+The instructions below have been tested on:
+
+- MacOS 10.13 "High Sierra"
+- Ubuntu Linux 18.04 LTS "Bionic Beaver"
+
+Recent versions of MongoDB, PostgreSQL, and Solr are assumed:
+
+- MongoDB version 3.6 or greater
+- PostgreSQL version 10 or 11
+- Solr version 7 or 8
+
 Roadmap
 -------
 
@@ -74,29 +85,53 @@ After that we'll show you where you can find instructions for ingesting your
 own documents into Solr, after which you will be ready to do your own
 investigations.
 
-For now, we will assume that you want to install and run everything on
-a Mac laptop (we use Macs for development). We plan to develop a Linux version
-of these instructions soon. Experienced Linux users can probably figure out
-what to do based on these instructions for Mac.
+The instructions below denote MacOS-specific instructions with **[MacOS]**,
+Ubuntu-specific instructions with **[Ubuntu]**, and instructions valid for
+all operating systems with **[All]**.
 
 
-Install Prerequisites
----------------------
+Install the Prerequisites
+-------------------------
 
-First of all, install the `Homebrew package manager <https://brew.sh>`_
+**[MacOS]** Install the `Homebrew package manager <https://brew.sh>`_
 by following the instructions provided at the Homebrew website. We prefer to
 use Homebrew since it allows packages to be installed and uninstalled without
 superuser privileges.
 
-After installing homebrew, open a terminal window and use homebrew to install
-the ``git`` version control system and the ``curl`` command line data transfer
-tool with this command:
+After installing homebrew, open a terminal window and update your homebrew
+installation with:
 ::
+   brew update
+   brew upgrade
 
-   brew install git curl
+Next, use homebrew to install the ``git`` version control system, the ``curl``
+command line data transfer tool, and the ``wget`` file transfer tool with
+these commands:
+::
+   brew install git curl wget
 
-Next, install either the `Anaconda <https://www.anaconda.com>`_ python
-distribution or its much smaller 
+**[Ubuntu]** Update your system using the ``apt`` package manager with:
+::
+   sudo apt update
+   sudo apt upgrade
+   
+Then use ``apt`` to install the three tools:
+::
+   sudo apt install git curl wget
+
+**[All]** Solr requires the java runtime to be installed on your system. In a
+terminal window run this command:
+::
+   java --version
+
+If you see a message about the command ``java`` not being found, then you need
+to install the java runtime. Please visit the
+`Oracle Java download site <https://www.oracle.com/downloads/>`_ and
+follow the instructions to download and install the latest version of the
+Java runtime environment (JRE).
+   
+Next, visit the Conda website and install either the
+`Anaconda <https://www.anaconda.com>`_ python distribution or its much smaller 
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
 cousin. Anaconda provides a full python-based numerical computing and machine
 learning stack. Miniconda provides a minimal python installation. Both give
@@ -108,8 +143,7 @@ instructions we will assume that you choose the smaller Miniconda distribution.
 **Important: download the Miniconda installation package for the latest**
 **python 3 release, not python 2.7.**
 
-After installing Miniconda, update to the latest version of ``conda`` by
-running this command in a terminal window:
+After installing Miniconda, update to the latest version of ``conda`` with:
 ::
 
    conda update -n base -c defaults conda
@@ -152,17 +186,7 @@ Create the Conda Environment for ClarityNLP
 -------------------------------------------
 
 From the ``ClarityNLPBareBones/ClarityNLP/barebones_setup`` folder, create a
-new conda managed environment with this command:
-::
-   conda env create --file conda_environment.yml
-
-Conda will load the file, check for package availability and dependency
-conflicts, and then proceed with the installation if possible. If the
-installation fails, then either a package or a dependency has become
-unavailable for some reason, probably due to bugs being discovered.
-   
-If the prevous step failed, you can manually create the environment with
-these commands:
+new conda managed environment with:
 ::
    conda create --name claritynlp python=3.6   
    conda activate claritynlp
@@ -204,9 +228,11 @@ support files:
 Setup MongoDB
 -------------
   
-ClarityNLP stores results in `MongoDB <https://www.mongodb.com/>`_, so you
-will need a MongoDB server running on your system. If you do not have access
-to a hosted MongoDB installation, use Homebrew to install MongoDB with:
+ClarityNLP stores results in `MongoDB <https://www.mongodb.com/>`_. If you do
+not have access to a hosted MongoDB installation, you will need to install it
+on your system.
+
+**[MacOS]** Use Homebrew to install MongoDB with:
 ::
    brew install mongodb
 
@@ -222,14 +248,29 @@ accomplished by opening another terminal window and running this command
 After the server initializes it will deactivate the prompt in the terminal
 window, indicating that it is running.
 
-Now start up the Mongo **client** and find out if it can communicate with the
-server. From a **different** terminal window, start the MongoDB client by
-running ``mongo``. If the client launches successfully you should see a ``>``
-prompt. Enter ``show databases`` at the prompt and press enter. The system
-should respond with at least the *admin* and *test* databases. If you see both
-listed your installation should be OK. You can stop the client by typing
-``exit`` at the prompt. Stop the mongo server by running <CTRL>-C in the
-server window.
+**[Ubuntu]** Use ``apt`` to install MongoDB with:
+::
+   sudo apt install mongodb
+
+The installation process on Ubuntu should automatically start the MongoDB
+server. Verify that it is active with:
+::
+   sudo systemctl status mongodb
+
+You should see a message stating that the ``mongodb.service`` is active and
+running. If it is not, start it with:
+::
+   sudo systemctl start mongodb
+
+Then repeat the status check to verify that it is running.
+   
+**[All]** Now start up the Mongo **client** and find out if it can
+communicate with the running MongoDB server. From a terminal window start the
+MongoDB client by running ``mongo``. If the client launches successfully you
+should see a ``>`` prompt. Enter ``show databases`` at the prompt and press
+enter. The system should respond with at least the *admin* database. If you
+see this your installation should be OK. You can stop the client by typing
+``exit`` at the prompt.
 
 If you have access to a hosted MongoDB instance, you will need to know the
 hostname for your ``mongod`` server as well as the port number that it listens
@@ -242,8 +283,10 @@ Setup PostgreSQL
 ----------------
 
 Now we need to install and configure PostgreSQL. ClarityNLP uses Postgres for
-job control and for storing OMOP vocabulary files. Perhaps the easiest option
-for installing Postgres on MacOSX is to download and install
+job control and for storing OMOP vocabulary and concept data.
+
+**[MacOS]** Perhaps the easiest option for installing Postgres on MacOSX is to
+download and install
 `Postgres.app <https://postgresapp.com/>`_, which takes care of most of the
 setup and configuration for you. If you do not have access to a hosted Postgres
 server, download the .dmg file from the Postgres.app website, run the
@@ -256,36 +299,63 @@ to start and stop the database server. For now, click the button and stop the
 server, since we need to make a small change to the postgres configuration
 file.
 
+**[Ubuntu]** Install postgres with:
+::
+   sudo apt install postgresql
+
+The installation process should automatically start the postgres server, as it
+did with the MongoDB installation. For now, stop the server with:
+::
+   sudo systemctl stop postgresql
+   
+
+Edit the PostgreSQL Config File
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 You will need to follow these configuration steps as well if you have a
 hosted Postgres instance. You may need to ask your local database admin to
 perform the configuration, depending on whether or not you have superuser
 privileges for your particular installation. The location of the data
 directory on your hosted instance will likely differ from that provided below,
-which is specific to a Mac installation.
+which is specific to a local installation.
 
-These instructions were developed for PostgreSQL 11.
-
-Edit the PostgreSQL Config File
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-With the Postgres server stopped, click the elephant icon, click the
-``Open Postgres`` menu item, and then click the ``Server Settings`` button on
-the dialog that appears. Note the location of the data directory, which
-defaults to ``~/Library/Application Support/Postgres/var-11``. The
+**[MacOS]** With the Postgres server stopped, click the elephant icon, click
+the ``Open Postgres`` menu item, and then click the ``Server Settings``
+button on the dialog that appears. Note the location of the data directory,
+which defaults to ``~/Library/Application Support/Postgres/var-11``. The
 ``postgresql.conf`` file is located in the data directory and contains various
 important parameters that govern the operation of the database. We need to
 edit one of those params to make the data ingest process run more smoothly.
 
-Open a text editor, browse to the Postgres data directory, and open the file
-``postgresql.conf``. Search the file for the entry ``max_wal_size``, which
-governs the size of the write-ahead log (hence the WAL acronym). If the
+**[Ubuntu]** The postgres config file for Postgres 10 is stored by default in
+``/etc/postgresql/10/main/postgresql.conf``. If you installed Postgres 11 the
+10 should be replaced by an 11. This file is owned by the special ``postgres``
+user. To edit the file, switch to this user account with:
+::
+   sudo -i -u postgres
+   whoami
+
+The ``whoami`` command should display ``postgres``.
+
+**[All]** Open a text editor, browse to the location indicated above and open
+the file ``postgresql.conf``. Search the file for the entry ``max_wal_size``,
+which governs the size of the write-ahead log (hence the WAL acronym). If the
 entry happens to be commented out, uncomment it. Set its value to 30GB (if
 the value is already greater than 30GB don't change it). By
 doing this we prevent checkpoints from occurring too frequently and slowing
 down the data ingest process. Save the file after editing.
 
-Then restart the server by clicking on the elephant icon and pressing the
-start button.
+**[Ubuntu]** Log out as the ``postgres`` user with:
+::
+   exit
+
+Then restart the Postgres server with either:
+
+**[MacOS]** Click on the elephant icon and press the start button.
+
+**[Ubuntu]** Use ``systemctl`` to start it:
+::
+   sudo systemctl start postgresql
 
 Create the Database and a User Account
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -293,34 +363,49 @@ Create the Database and a User Account
 With the database server installed, configured, and running, we now need to
 create a user account. Open a terminal and browse to
 ``ClarityNLPBareBones/ClarityNLP/utilities/nlp-postgres``. From this folder
-run the following commands (we suggest using a better password):
+run the command appropriate to your operating system to start ``psql``:
+
+**[MacOS]**
 ::
    psql postgres
-   CREATE ROLE clarity_user WITH LOGIN PASSWORD 'password';
-   CREATE DATABASE clarity;
-   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA nlp TO clarity_user;
-   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA nlp TO clarity_user;
 
-These commands create the database and grant the ``clarity_user`` sufficient
-privileges to use it with ClarityNLP.
-
-Next, from the psql prompt run these commands to connect to the database and
-setup the OMOP vocabulary tables:
+**[Ubuntu]**
 ::
+   sudo -u postgres psql
    
+Then run this command sequence (we suggest using a better password) to setup
+the database:
+::
+   CREATE USER clarity_user WITH LOGIN PASSWORD 'password';
+   CREATE DATABASE clarity;
    \connect clarity
    \i ddl/ddl.sql
    \i ddl/omop_vocab.sql
-   \i ddl/omop_indexes.sql   
+   \i ddl/omop_indexes.sql
+   GRANT USAGE ON SCHEMA nlp TO clarity_user;
+   GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA nlp TO clarity_user;
+   GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA nlp TO clarity_user;
+
+These commands create the database, setup the tables and indexes, and grant
+the ``clarity_user`` sufficient privileges to use it with ClarityNLP.
+
 
 Load OMOP Vocabulary Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-   
-The database is now ready to ingest the OMOP vocabulary files. Keep your
-``psql`` terminal window open. From a new terminal window follow these steps
-to prepare the data for ingest:
-::
 
+**THIS STEP IS OPTIONAL.** The OMOP vocabulary and concept data is used
+by the ClarityNLP synonym expansion macros. Synonym expansion is an optional
+feature of ClarityNLP. If you are unfamiliar with OMOP or do not forsee a
+need for such synonym expansion you can safely skip this step. The ingestion
+process is time-consuming and could take from one to two hours or more,
+depending on the speed of your system. If you only want to explore basic
+features of ClarityNLP you do not need to load this data, and you can skip
+ahead to the Solr setup instructions.
+
+If you do choose to load the data, then keep your ``psql`` terminal window
+open. **From a different terminal window** follow these steps to download and
+prepare the data for ingest:
+::
    cd /tmp
    mkdir vocabs
    cd vocabs
@@ -328,7 +413,7 @@ to prepare the data for ingest:
    unzip omop_vocabulary_set.zip
    rm omop_vocabulary_set.zip
 
-You should see the following files in ``/tmp/vocabs`` after unzipping:
+You should see these files in ``/tmp/vocabs`` after unzipping:
 ::
 
    DOMAIN.csv
@@ -342,15 +427,14 @@ You should see the following files in ``/tmp/vocabs`` after unzipping:
    DRUG_STRENGTH.csv
    
 Go back to your ``psql`` window and begin the process of loading data into the
-database with this command (``copy_vocab.sql`` looks for the unzipped data in
-``/tmp/vocabs``, in case you're wondering):
+database with:
 ::
 
    \i dml/copy_vocab.sql
 
-The loading process could take a **long** time, possibly one or two hours,
-depending on the speed of your system. As the load progresses, it should
-gradually generate the following output:
+As mentioned above, the loading process could take a **long** time, possibly
+more than two hours, depending on the speed of your system. As the load
+progresses, it should gradually generate the following output:
 ::
    SET
    COPY 2465049
@@ -370,8 +454,10 @@ finish. After loading completes, log out with the command
 Setup Solr
 ----------
 ClarityNLP uses `Solr <http://lucene.apache.org/solr/>`_ as its document store.
-If you do not have access to a hosted Solr instance, install Solr with Homebrew
-by running this command:
+If you do not have access to a hosted Solr instance you will need to install it
+on your system.
+
+**[MacOS]** Use Homebrew to install Solr with:
 ::
    brew install solr
 
@@ -381,16 +467,47 @@ command
 ::
    solr start
 
-After starting Solr, check to see that it is running by opening a web browser
-to ``http://localhost:8983`` (or the appropriate URL for your hosted instance).
-You should see the Solr admin dashboard. If you do, your Solr installation is
-up and running.
+Start the solr server.
+   
+**[Ubuntu]** Ubuntu does not seem to provide a suitable apt package for Solr,
+so you will need to download the Solr distribution from the Apache web site.
+Open a web browser to the
+`Solr download site <https://lucene.apache.org/solr/downloads.html>`_ and
+download the binary release for the latest version of Solr 8. For now we will
+assume that you download the 8.1.1 **binary** release, which is in the file
+``solr-8.1.1.tgz``.
+
+Open a terminal window and run these commands to unzip the distribution into
+your home directory:
+::
+   cd ~
+   mkdir solr
+   tar -C solr -zxvf ~/Downloads/solr-8.1.1.tgz
+   mv ~/solr/solr-8.1.1 ~/solr/8.1.1
+
+Open a text editor and add this line to your ``.bashrc`` file, which places
+the Solr binaries on your path:
+::
+   export PATH=~/solr/8.1.1/bin:$PATH
+
+Close the text editor, exit the terminal window, and open a new terminal window
+to update your path. Run ``which solr`` and verify that
+``~/solr/8.1.1/bin/solr`` is found.
+
+Start your Solr server by running:
+::
+   solr start
+   
+**[All]** After starting Solr, check to see that it is running by opening a
+web browser to ``http://localhost:8983`` (or the appropriate URL for your
+hosted instance). You should see the Solr admin dashboard. If you do, your
+Solr installation is up and running.
 
 We need to do some additional configuration of the Solr server and ingest
 some test documents. We provide a python script to do this for you.
-**This script assumes that you are running a modern version of Solr,**
-**version 8 or later.** If you are running an older version this script
-**may not work for you**, since some field type names changed at the
+**This script assumes that you are running a recent version of Solr,**
+**version 7 or later.** If you are running an older version this script
+**will not work**, since some field type names changed at the
 transition from Solr 6 to Solr 7.
 
 Open a terminal window to ``ClarityNLPBareBones/ClarityNLP/barebones_setup``.
@@ -538,12 +655,18 @@ make sure that your Solr instance is actually running.
 2. Start the MongoDB Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you installed MongoDB locally, launch the the ``mongod`` server by supplying
-the path to your local MongoDB config file as follows (this command uses the
-default config file):
+If you installed MongoDB locally, launch the the ``mongod`` server with one
+of these options:
+
+**[MacOS]** Provide the path to your local MongoDB config file as follows
+(this command uses the default location):
 ::
    mongod --config /usr/local/etc/mongod.conf
 
+**[Ubuntu]**
+::
+   sudo systemctl start mongodb
+   
 Verify that the mongo server is running by typing ``mongo`` into a terminal to
 start the mongo client. It should connect to the database and prompt for input.
 Exit the client by typing ``exit`` in the terminal.
@@ -562,11 +685,18 @@ be found `here <https://docs.mongodb.com/manual/mongo/>`_.
 3. Start the Postgres Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you installed Postgres locally, start the PostgreSQL server by clicking the
-elephant icon in the menu bar at the upper right corner of your screen. Press
-the start button at the lower right of the popup menu. Open another terminal
-and verify that your server is available by running ``pg_isready``. It should
-report ``accepting connections``.
+If you installed Postgres locally:
+
+**[MacOS]** Start the server by clicking the elephant icon in the
+menu bar at the upper right corner of your screen. Press the start button at
+the lower right of the popup menu. 
+
+**[Ubuntu]** Start the server with:
+::
+   sudo systemctl start postgresql
+
+Verify that your server is available by running the command ``pg_isready``
+from a terminal window. It should report ``accepting connections``.   
 
 If you use a hosted Postgres instance, check to see that it is up and running
 with this command, replacing the hostname and port number with values suitable
@@ -616,18 +746,6 @@ with:
    conda activate claritynlp
    export FLASK_APP=api.py
    python -m flask run
-
-..
-   If you want to run Flask in development mode with an active debugger,
-   use this command sequence instead:
-   ::
-      export FLASK_APP=api.py
-      export FLASK_ENV=development
-      export FLASK_DEBUG=1
-      python3 -m flask run
-
-   The default value of ``FLASK_ENV`` is ``production``. The allowed values
-   for ``FLASK_DEBUG`` are ``1`` (enable) and ``0`` (disable).
 
 Just like Luigi, the Flask web server only needs to be started once. The web
 server prints startup information to the screen as it initializes.
@@ -732,9 +850,11 @@ After the job finishes you can download a CSV file to see what ClarityNLP
 found. The ``intermediate_results_csv`` file contains all of the raw data
 values that the various tasks found.
 
-To check the results, you need to generate a proper CSV file from the
-intermediate results. The record delimiter should be a comma, **not a tab**,
-which seems to be the default for Microsoft Excel. Assuming that you have the
+To check the results, you need to generate a CSV file from the
+intermediate data with a comma for the record delimiter, **not a tab**.
+A tab character seems to be the default delimiter for Microsoft Excel.
+
+Excel users can correct this as follows. Assuming that you have the
 intermediate result file open in Excel, press the key combination
 <COMMAND>-A. This should highlight the leftmost column of data in the
 spreadsheet. After highlighting, click the ``Data`` menu item, then press the
@@ -748,6 +868,9 @@ On the dialog that appears, set the ``File Format`` combo box selection to
 in the ``Save As`` edit control at the top of the dialog. Give the file a new
 name if you want (but with a ``.csv`` extension), then click the ``Save``
 button.
+
+Users of other spreadsheet software will need to consult the documentation on
+how to save CSV files with a comma for the record separator.
 
 With the file saved to disk in proper CSV format, run this command from the
 ``ClarityNLPBareBones/ClarityNLP/barebones_setup`` folder to check the values:
@@ -768,12 +891,14 @@ Perform these actions to completely shutdown ClarityNLP on your system:
 1. Stop the Flask webserver by entering <CTRL>-C in the flask terminal window.
 2. Stop the Luigi task scheduler by entering <CTRL>-C in the luigi terminal
    window.
-3. Stop the MongoDB database server by entering <CTRL>-C in the MongoDB
-   terminal window.
+3. MacOS users can stop the MongoDB database server by entering <CTRL>-C in
+   the MongoDB terminal window. Ubuntu users can run the command
+   ``sudo systemctl stop mongodb``.
 4. Stop Solr by entering ``solr stop -all`` in a terminal window.
-5. Stop Postgres by first clicking on the elephant icon in the menu bar at
-   the upper right corner of the screen. Click the stop button on the menu
-   that appears.
+5. MacOS users can stop Postgres by first clicking on the elephant icon in
+   the menu bar at the upper right corner of the screen. Click the stop
+   button on the menu that appears. Ubuntu users can run the command
+   ``sudo systemctl stop postgresql``.
 
 Alternatively, you could just terminate Flask and Luigi and keep the other
 servers running if you plan to run more jobs later.
