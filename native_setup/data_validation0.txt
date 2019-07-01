@@ -1,0 +1,18 @@
+The patient is a caucasian male, age 40 years.
+
+The first lesion measures 1.3 cm.
+The second lesion has a volume of 1.4 cubic centimeters.
+The third lesion has a size of approximately 1.5 - 1.6 cm in my estimation.
+The fourth lesion is 1.7 x 1.8 cm in size.
+The fifth lesion measures 1.9 cm craniocaudal by 2.0 cm transverse on the CT scan.
+The lesion is 2.1 cm craniocaudal by 2.2 cm transverse by 2.3 cm anterior on the scan.
+
+The patient does not have fever.
+The patient has fever.
+
+The patient has cancer of the prostate with Gleason 2+3 in two out of twelve cores.
+
+The LVEF was less than 40% on admission.
+The left ventriclular ejection fraction was measured to be 75%.
+
+The tumor code pT4bpN1bM0 (stage IIIC) also has a stage indication.

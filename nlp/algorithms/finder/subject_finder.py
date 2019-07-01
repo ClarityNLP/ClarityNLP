@@ -205,10 +205,10 @@ FILE_DIR = os.path.dirname(__file__)
 from spacy import displacy
 
 # load Spacy's English model
-nlp = spacy.load('en')
+nlp = spacy.load('en_core_web_sm')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 6
+VERSION_MINOR = 8
 
 # set to True to enable debug output
 TRACE = False
@@ -1605,7 +1605,30 @@ def tokenize_and_find_subjects(sentence):
     
     return (doc, meas_subjects)
 
+
+###############################################################################
+def flatten(l):
+    """
+    Non-recursive list flattener from
+    http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
+    based on code from Mike Fletcher's BasicTypes library.
+    """
     
+    l = list(l)
+    i = 0
+    while i < len(l):
+        while isinstance(l[i], list):
+            if not l[i]:
+                l.pop(i)
+                i -= 1
+                break
+            else:
+                l[i:i + 1] = l[i]
+        i += 1
+        
+    return list(l)
+
+
 ###############################################################################
 def run(term_string, sentence, nosub=False, use_displacy=False):
     """
@@ -1745,6 +1768,17 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
                 text = ' '.join(loc_texts)
                 new_loc_texts.append(text)
             m.location = new_loc_texts
+
+    # flatten the subject and location lists
+    for m in measurements:
+        if m.subject is not None:
+            m.subject = flatten(m.subject)
+            # convert subjects from spacy tokens to strings, if needed
+            if 0 == len(replacements):
+                m.subject = [s.text for s in m.subject]
+                
+        if m.location is not None:
+            m.location = flatten(m.location)
 
     # convert to a JSON result
     return to_json(original_terms, original_sentence, measurements)

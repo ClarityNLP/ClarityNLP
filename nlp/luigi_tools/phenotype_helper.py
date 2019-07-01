@@ -127,7 +127,7 @@ def get_item_by_key(dictionary, keys: list):
 
 
 manually_mapped_keys = ['owner', 'limit', 'name', 'config_type', 'terms', 'cohort', 'job_results', 'concept_code',
-                        'concept_code_system', 'cql', 'cql_source', 'named_arguments']
+                        'concept_code_system', 'cql', 'cql_source', 'named_arguments', 'display_name']
 
 def map_arguments(pipeline: PipelineConfig, e, all_terms):
     for k in e.keys():
@@ -247,6 +247,15 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         else:
             cql = ''
 
+        if 'display_name' in e['named_arguments']:
+            display_name = e['named_arguments']["display_name"]
+        elif 'displayname' in e['named_arguments']:
+            display_name = e['named_arguments']["display_name"]
+        elif 'name' in e['named_arguments']:
+            display_name = e['named_arguments']["name"]
+        else:
+            display_name = e['name']
+
         tags = get_item_list_by_key(report_tags, doc_sets)
         types = get_item_list_by_key(report_types, doc_sets)
         query = get_item_by_key(custom_query, doc_sets)
@@ -269,7 +278,8 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   concept_code=code,
                                   concept_code_system=code_system,
                                   cql=cql,
-                                  is_phenotype=True)
+                                  is_phenotype=True,
+                                  display_name=display_name)
         map_arguments(pipeline, e, all_terms)
         map_arguments(pipeline, e['named_arguments'], all_terms)
         return pipeline
@@ -774,7 +784,6 @@ def mongo_process_operations(expr_obj_list,
                   'no phenotype matches on "{1}".'.format(eval_result.expr_type,
                                                           eval_result.expr_text))
 
-    client.close()
 
 
 def get_dependencies(po, deps: list):

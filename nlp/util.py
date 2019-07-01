@@ -184,8 +184,17 @@ def cmp_2_key(mycmp):
 
     return K
 
+_mongo_client = None
 
 def mongo_client(host=None, port=None, username=None, password=None):
+    global _mongo_client
+    if _mongo_client:
+        try:
+            _mongo_client.server_info()
+        except pymongo.errors.ServerSelectionTimeoutError as err:
+            _mongo_client = None
+        if _mongo_client:
+            return _mongo_client
 
     if not host:
         host = mongo_host
@@ -201,9 +210,11 @@ def mongo_client(host=None, port=None, username=None, password=None):
 
     print('Mongo port: {}; host: {}'.format(port, host))
     if username and len(username) > 0 and password and len(password) > 0:
-        print('authenticated mongo')
-        return MongoClient(host=host, port=port, username=username,
-                           password=password)
+        # print('authenticated mongo')
+        _mongo_client = MongoClient(host=host, port=port, username=username,
+                           password=password, socketTimeoutMS=15000, maxPoolSize=500,
+                                    maxIdleTimeMS=30000)
     else:
-        print('unauthenticated mongo')
-        return MongoClient(host, port)
+        # print('unauthenticated mongo')
+        _mongo_client = MongoClient(host, port)
+    return _mongo_client

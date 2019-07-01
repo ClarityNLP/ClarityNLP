@@ -1,33 +1,25 @@
-antlr4-python3-runtime==4.7.1
+antlr4-python3-runtime==4.7.1   # latest conda package is only 4.7.0
 cachetools==2.1.0
 commonmark==0.5.4
-flask==0.12.4
+flask==0.12.4                   # behind by four releases, possibly incompatible upgrade
 flask-cors==3.0.3
-inflect==0.3.1
-jobtastic==2.0.0
-kazoo==2.4.0
-luigi>=2.8.0
-msgpack>=0.3.0,<0.6
+inflect==2.1.0                  # upgraded from ancient 0.3.1
+luigi==2.8.6                    # upgraded, was >=2.8.0, dangerous since several broken releases after 2.8.0
+msgpack==0.5.6                  # upgraded (conda solution), was >=0.3.0,<0.6
 nltk==3.2.5
-numpy==1.14.0
+numpy==1.15.4                   # upgraded (conda solution), was 1.14.0
 pandas==0.21.1
 psycopg2==2.7.3.2
-pymongo==3.6.0
+pymongo==3.8.0                  # upgraded, was 3.6.0
 pytest==3.3.2
 recommonmark==0.4.0
-redis==3.0.1
-requests>=2.20.0
-requests-file==1.4.2
+redis==3.0.1                    # behind by three releases, conda pkg seems broken
+requests==2.22.0                # upgraded (conda solution), was >=2.20.0
 requests-oauthlib==0.8.0
 simplejson==3.13.2
-sly==0.3
-spacy==2.0.9
+sly==0.3                        # no conda pkg
+spacy==2.0.12                   # upgraded (conda solution), was 2.0.9
 sphinx==1.7.4
 sphinx-autobuild==0.7.1
-textacy==0.6.3
-tornado>=4.0,<5
+textacy==0.7.0                  # upgraded, was 0.6.3, minor code changes
 typing==3.6.2
-imbalanced-learn==0.4.3
-imblearn==0.0
-scikit-learn==0.20.1
-joblib==0.13.0

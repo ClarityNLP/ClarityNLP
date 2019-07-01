@@ -212,6 +212,7 @@ services:
     container_name: NLP_POSTGRES
     hostname: ${NLP_PG_HOSTNAME}
     build: ./utilities/nlp-postgres
+    command: postgres -c 'shared_buffers=512MB' -c 'max_connections=500'
     environment:
       POSTGRES_USER: ${NLP_PG_USER}
       POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}

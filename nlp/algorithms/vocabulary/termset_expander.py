@@ -144,7 +144,7 @@ if -1 != pos:
 import util
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 6
+VERSION_MINOR = 7
 
 MODULE_NAME = 'termset_expander.py'
 
@@ -152,7 +152,7 @@ global DEBUG
 DEBUG = False
 
 # load Spacy's English model
-nlp = spacy.load('en')
+nlp = spacy.load('en_core_web_sm')
 
 # initialize the CMU phoneme dictionary
 cmu_dict = cmudict.dict()

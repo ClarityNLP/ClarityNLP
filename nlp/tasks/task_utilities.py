@@ -7,6 +7,7 @@ import luigi
 from pymongo import MongoClient
 from algorithms import segmentation
 import util
+import datetime
 from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
@@ -146,6 +147,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     data_fields["concept_code"] = p_config.concept_code
     data_fields["concept_code_system"] = p_config.concept_code_system
     data_fields["phenotype_final"] = (phenotype_final or p_config.final)
+    data_fields["display_name"] = p_config.display_name
 
     if doc:
         data_fields["report_id"] = doc[util.solr_report_id_field]
@@ -158,6 +160,14 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
         for df in doc_fields:
             if df not in data_fields:
                 data_fields[df] = ''
+
+    if not "result_display" in data_fields:
+        data_fields["result_display"] = {
+            "date": '',
+            "result_content": '',
+            "highlights": [''],
+            "sentence": ''
+        }
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
 
@@ -179,8 +189,7 @@ class BaseCollector(base_model.BaseModel):
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
-        finally:
-            client.close()
+
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
         print('please implement run_custom_task')
@@ -199,8 +208,6 @@ class BaseCollector(base_model.BaseModel):
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
-        finally:
-            client.close()
 
 
 class BaseTask(luigi.Task):
@@ -256,8 +263,7 @@ class BaseTask(luigi.Task):
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
-        finally:
-            client.close()
+
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,
