@@ -13,6 +13,7 @@ NLPQL Helpers
    nlpql/cohort
    nlpql/termset
    nlpql/context
+   nlpql/macros
 
 NLPQL Tasks
 -----------

@@ -30,21 +30,9 @@ How to Write a Query
 .. toctree::
    :maxdepth: 3
 
-   intro/overview
-              
-..   :caption: First steps
-..   :hidden:
-..   intro/overview
+   intro/overview              
 
    
-Termset Expansion Macros
-------------------------
-.. toctree::
-  :maxdepth: 2
-
-  nlpql/macros
-
-  
 Basic NLP Phenotype Examples
 ----------------------------
 .. toctree::

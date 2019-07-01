@@ -1,12 +1,15 @@
 .. _macros:
 
-Termset Expansion
-*****************
+Termset Expansion Macros
+************************
 
 NLPQL supports a set of macros for termset generation. The macros
 provide a compact syntax for representing lists of synonyms and lexical
 variants (plurals and verb inflections). The macros also support the concept
 of a "namespace", so that terms can be generated from different sources.
+
+The use of termset expansion macros is **optional**. They are provided purely
+for convenience, as a means to generate and suggest additional synonyms.
 
 Syntax
 ======
