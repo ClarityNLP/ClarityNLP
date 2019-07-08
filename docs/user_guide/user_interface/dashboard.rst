@@ -1,6 +1,6 @@
 .. _ui_dashboard:
 
-# Dashboard
+#Dashboard
 =============
 
 The Dashboard Client is designed to give you an overall view of your ClarityNLP instance at a glance.
