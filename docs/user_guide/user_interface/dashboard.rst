@@ -9,3 +9,5 @@ It contains lists of:
 * Documents you have uploaded
 * Queries you have created and saved via the [Query Builder](/query_builder)
 * Jobs that have been run on the instance
+
+.. image:: /docs/images/UI/claritynlp_dasboard_1.png
