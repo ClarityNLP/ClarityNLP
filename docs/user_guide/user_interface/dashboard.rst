@@ -3,11 +3,10 @@
 Dashboard
 =============
 
-The Dashboard Client is designed to give you an overall view of your ClarityNLP instance at a glance.
-It contains lists of:
+The Dashboard Client is designed to give you an overall view of your ClarityNLP instance at a glance. On pge load, you can see the latest:
 
 * Documents you have uploaded
-* Queries you have created and saved via the [Query Builder](/query_builder)
+* Queries you have created and saved via the .. _Query Builder: ../query-builder
 * Jobs that have been run on the instance
 
 .. image:: /docs/images/UI/claritynlp_dasboard_1.png
