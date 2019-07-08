@@ -66,7 +66,6 @@ pipeline{
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "redis:4.0.10", ports: '', service: 'ClarityNLP/redis', timeout: 700
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/viewer-client:latest", ports: '', service: 'ClarityNLP/results-client', timeout: 700
                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/dashboard-client:latest", ports: '', service: 'ClarityNLP/dashboard-client', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "adi90x/rancher-active-proxy:0.9.3", ports: '', service: 'ClarityNLP/rancher-active-proxy', timeout: 700
                 }
             }
         }
