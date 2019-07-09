@@ -18,6 +18,7 @@ POST JSON to run spaCy's NER. Sample input JSON `here <https://github.com/Clarit
 POST NLPQL plain text file to run phenotype against data in Solr. Returns links to view job status and results.
 Learn more about NLPQL :ref:`here<intro-overview>` and see samples of NLPQL `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlpql>`_.
 
+.. _nlpql_tester_api:
 
 /nlpql_tester
 -------------

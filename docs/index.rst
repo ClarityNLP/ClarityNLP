@@ -27,6 +27,7 @@ Documentation
    nlpql_reference/index
    api_reference/index
    faq/index
+   troubleshooting/index
    about/index
 
 
