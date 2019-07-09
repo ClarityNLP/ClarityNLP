@@ -22,7 +22,7 @@ Frequently Asked Questions (FAQ)
 
    Open a terminal and run the command ``docker ps``.  The status of each
    container will be printed to stdout. Each container should report a
-   status message of ``Up n seconds``, where n is an integer, if the it is
-   fully initialized and running.
+   status message of ``Up n seconds``, where n is an integer, if the container
+   is fully initialized and running.
 
 
