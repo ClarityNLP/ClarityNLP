@@ -75,8 +75,9 @@ The text cleanup process first searches the report text for cut-and-paste
 section headers found between ``(Over)`` and ``(Cont)`` tokens. These headers
 are often inserted directly into a sentence, producing a confusing result.
 Here is an example:
+   
+| "There are two subcentimeter right renal hypodensities, 1 in\\n                                                             (Over)\\n\\n [\**2728-6-8\**] 5:24 PM\\n CT CHEST W/CONTRAST; CT ABD & PELVIS W & W/O CONTRAST, ADDL SECTIONSClip # [\**Telephone/Fax (1) 103840\**]\\n Reason: Evaluate for metastasis/lymphadenopathy related to ? GI [\**Country \**]\\n Admitting Diagnosis: UPPER GI BLEED\\n  Contrast: OMNIPAQUE Amt: 130\\n ______________________________________________________________________________\\n                                 FINAL REPORT\\n (Cont)\\n the upper pole and 1 in the lower pole, both of which are too small to\\n characterize."
 
-"There are two subcentimeter right renal hypodensities, 1 in\\n                                                             (Over)\\n\\n [\**2728-6-8\**] 5:24 PM\\n CT CHEST W/CONTRAST; CT ABD & PELVIS W & W/O CONTRAST, ADDL SECTIONSClip # [\**Telephone/Fax (1) 103840\**]\\n Reason: Evaluate for metastasis/lymphadenopathy related to ? GI [\**Country \**]\\n Admitting Diagnosis: UPPER GI BLEED\\n  Contrast: OMNIPAQUE Amt: 130\\n ______________________________________________________________________________\\n                                 FINAL REPORT\\n (Cont)\\n the upper pole and 1 in the lower pole, both of which are too small to\\n characterize."
 
 By looking at this text closely, you can see how the ``(Over)..(Cont)`` section
 has been pasted into this sentence:
