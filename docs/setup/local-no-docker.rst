@@ -55,6 +55,7 @@ container-based, secure version of ClarityNLP.
 
 The instructions below have been tested on:
 
+- MacOS 10.14 "Mojave"
 - MacOS 10.13 "High Sierra"
 - Ubuntu Linux 18.04 LTS "Bionic Beaver"
 
