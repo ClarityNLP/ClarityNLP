@@ -12,29 +12,35 @@ from datetime import datetime, timezone
 from collections import namedtuple
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
-_MODULE_NAME   = 'cibmtr_data_parser.py'
+_VERSION_MINOR = 3
+_MODULE_NAME   = 'cibmtr_result_parser.py'
 
 # set to True to enable debug output
-_TRACE = False
+_TRACE = True
 
 # dict keys used to extract portions of the JSON data
 _KEY_ABATEMENT_DATE_TIME = 'abatementDateTime'
+_KEY_ASSIGNER            = 'assigner'
 _KEY_CATEGORY            = 'category'
 _KEY_CODE                = 'code'
 _KEY_CODING              = 'coding'
+_KEY_CONTAINED           = 'contained'
 _KEY_CONTEXT             = 'context'
 _KEY_DISPLAY             = 'display'
 _KEY_DOB                 = 'birthDate'
+_KEY_DOC_STATUS          = 'docStatus'
 _KEY_EFF_DATE_TIME       = 'effectiveDateTime'
 _KEY_FAMILY_NAME         = 'family'
 _KEY_GENDER              = 'gender'
 _KEY_GIVEN_NAME          = 'given'
 _KEY_ID                  = 'id'
+_KEY_IDENTIFIER          = 'identifier'
 _KEY_LOCATION            = 'location'
+_KEY_MASTER_IDENTIFIER   = 'masterIdentifier'
 _KEY_NAME                = 'name'
 _KEY_ONSET_DATE_TIME     = 'onsetDateTime'
 _KEY_PERFORMED_DATE_TIME = 'performedDateTime'
+_KEY_PERIOD              = 'period'
 _KEY_REFERENCE           = 'reference'
 _KEY_RESOURCE_TYPE       = 'resourceType'
 _KEY_RESULT              = 'result'
@@ -42,9 +48,32 @@ _KEY_RESULT_TYPE         = 'resultType'
 _KEY_STATUS              = 'status'
 _KEY_SUBJECT             = 'subject'
 _KEY_SYSTEM              = 'system'
+_KEY_TEXT                = 'text'
+_KEY_TYPE                = 'type'
 _KEY_UNIT                = 'unit'
+_KEY_USE                 = 'use'
 _KEY_VALUE               = 'value'
 _KEY_VALUE_QUANTITY      = 'valueQuantity'
+
+# 2.3.0 Reference
+_KEYS_REFERENCE = ['reference', 'type', 'identifier', 'display']
+ReferenceObj = namedtuple('ReferenceObj', _KEYS_REFERENCE)
+
+# 2.24.0.4 Coding
+_KEYS_CODING = ['system', 'version', 'code', 'display', 'userSelected']
+CodingObj = namedtuple('CodingObj', _KEYS_CODING)
+
+# 2.24.0.5 CodableConcept
+_KEYS_CODABLE_CONCEPT = ['coding', 'text']
+CodableConceptObj = namedtuple('CodableConceptObj', _KEYS_CODABLE_CONCEPT)
+
+# 2.24.0.10 Period
+_KEYS_PERIOD = ['start', 'end']
+PeriodObj = namedtuple('PeriodObj', _KEYS_PERIOD)
+
+# 2.24.0.12 Identifier
+_KEYS_IDENTIFIER = ['use', 'type', 'system', 'value', 'period', 'assigner']
+IdentifierObj = namedtuple('IdentifierObj', _KEYS_IDENTIFIER)
 
 _STR_BUNDLE      = 'FhirBundleCursorStu3'
 #_STR_CONCEPT     = 'Concept'
@@ -52,6 +81,11 @@ _STR_CONDITION   = 'Condition'
 _STR_OBSERVATION = 'Observation'
 _STR_PATIENT     = 'Patient'
 _STR_PROCEDURE   = 'Procedure'
+_STR_DOCREF      = 'DocumentReference'
+_STR_DIAGREPT    = 'DiagnosticReport'
+_STR_MEDADMIN    = 'MedicationAdministration'
+_STR_MEDREQ      = 'MedicationRequest'
+_STR_MEDSTMT     = 'MedicationStatement'
 
 # fields extracted from a 'Patient' FHIR resource
 PATIENT_FIELDS = [
@@ -104,9 +138,6 @@ OBSERVATION_FIELDS = [
     'coding_systems_list'
 ]
 ObservationResource = namedtuple('ObservationResource', OBSERVATION_FIELDS)
-
-CODING_FIELDS = ['code', 'system', 'display']
-CodingObj = namedtuple('CodingObj', CODING_FIELDS)
 
 # regex used to recognize UTC offsets in a FHIR datetime string
 _regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
@@ -162,6 +193,22 @@ def _decode_value_quantity(obj):
 
 
 ###############################################################################
+def _decode_coding(obj):
+    """
+    Decode a FHIR v4 'Coding' datatype (2.24.0.4) and return a Coding
+    namedtuple.
+    """
+
+    assert dict == type(obj)
+
+    new_dict = {}
+    for k in _KEYS_CODING:
+        new_dict[k] = obj.get(k) # returns None if key doesn't exist
+    coding_obj = CodingObj(**new_dict)
+    return coding_obj
+
+
+###############################################################################
 def _decode_code_dict(obj):
     """
     Extract the coding systems, codes, and display names and return as a
@@ -179,18 +226,9 @@ def _decode_code_dict(obj):
             # list elements should be dicts
             for coding_dict in coding_list:
                 assert dict == type(coding_dict)
-                code = None
-                if _KEY_CODE in coding_dict:
-                    code = coding_dict[_KEY_CODE]
-                system = None
-                if _KEY_SYSTEM in coding_dict:
-                    system = coding_dict[_KEY_SYSTEM]
-                display = None
-                if _KEY_DISPLAY in coding_dict:
-                    display = coding_dict[_KEY_DISPLAY]
-
-                coding_systems_list.append( CodingObj(code, system, display))
-
+                coding_obj = _decode_coding(coding_dict)
+                coding_systems_list.append(coding_obj)
+                        
     return coding_systems_list
 
 
@@ -219,8 +257,6 @@ def _decode_subject_info(obj):
 
 ###############################################################################
 def _decode_context_info(obj):
-    """
-    """
 
     context_reference = None
     if _KEY_CONTEXT in obj:
@@ -240,6 +276,166 @@ def _decode_id_value(obj):
         id_value = obj[_KEY_ID]
 
     return id_value
+
+
+###############################################################################
+def _decode_name_list(name_entries):
+
+    name_list = []
+    
+    obj_type = type(name_entries)
+    assert list == obj_type
+    for elt in name_entries:
+        assert dict == type(elt)
+
+        # single last name, should be a string
+        last_name  = elt[_KEY_FAMILY_NAME]
+        assert str == type(last_name)
+
+        # list of first name strings
+        first_name_list = elt[_KEY_GIVEN_NAME]
+        assert list == type(first_name_list)
+        for first_name in first_name_list:
+            assert str == type(first_name)
+            name_list.append( (first_name, last_name))                
+
+    return name_list
+
+
+###############################################################################
+def _extract_values(key_list, obj):
+    """
+    Extract values associated with the given key list from the given obj, which
+    is assumed to be a dict. If the obj does not contain an entry for the given
+    key, insert None for the value.
+    """
+
+    result = []
+    for k in key_list:
+        if k in obj:
+            print('found {0}'.format(k))
+            the_value = obj[k]
+        else:
+            the_value = None
+        result.append(the_value)
+
+    return tuple(result)
+
+
+###############################################################################
+def _decode_codable_concept(obj):
+    """
+    Decode a FHIR 'CodableConcept' datatype (2.24.0.5) and return a
+    CodableConceptObj namedtuple.
+    """
+
+    text = None
+    if _KEY_TEXT in obj:
+        text = obj[_KEY_TEXT]
+    coding_list = []
+    if _KEY_CODING in obj:
+        coding_entries = obj[_KEY_CODING]
+        obj_type = type(coding_entries)
+        assert list == obj_type
+        for elt in coding_entries:
+            # 'Coding' datatype, 2.24.0.4
+            coding_obj = _decode_coding(elt)
+            coding_list.append(coding_obj)
+
+    codable_concept_obj = CodableConceptObj(
+        coding=coding_obj,
+        text=text
+    )
+    return codable_concept_obj
+        
+
+###############################################################################
+def _decode_period(obj):
+    """
+    Decode a FHIR 'Period' datatype (2.24.0.10) and return a Period namedtuple.
+    """
+
+    assert dict == type(obj)
+    
+    new_dict = {}
+    for k in _KEYS_PERIOD:
+        # these are datetimes
+        new_dict[k] = _fixup_fhir_datetime(obj.get(k))
+    period_obj = PeriodObj(**new_dict)
+    return period_obj
+    
+
+###############################################################################
+def _decode_identifier(obj):
+    """
+    Decode a FHIR 'Identifier' datatype (2.24.0.12). An identifier can include
+    a reference ('assigner' field), which could potentially include another
+    identifier field if an indirect reference. The spec seems to strongly
+    indicate that the 'assigner' is a direct reference and is often just text.
+    """
+
+    use = None
+    if _KEY_USE in obj:
+        use = obj[_KEY_USE]
+    the_type = None
+    if _KEY_TYPE in obj:
+        the_type = _decode_codable_concept(obj[_KEY_TYPE])
+    system = None
+    if _KEY_SYSTEM in obj:
+        system = obj[_KEY_SYSTEM]
+    value = None
+    if _KEY_VALUE in obj:
+        value = obj[_KEY_VALUE]
+    period_obj = None
+    if _KEY_PERIOD in obj:
+        period_obj = _decode_period(obj[_KEY_PERIOD])
+    assigner = None
+    if _KEY_ASSIGNER in obj:
+        # get the display string only
+        assigner_obj = obj[_KEY_ASSIGNER]
+        if _KEY_DISPLAY in assigner_obj:
+            assigner = assigner_obj[_KEY_DISPLAY]
+
+    identifier_obj = IdentifierObj(
+        use=use,
+        type=the_type,
+        system=system,
+        value=value,
+        period=period_obj,
+        assigner=assigner
+    )
+    return identifier_obj
+
+        
+###############################################################################
+def _decode_reference(obj):
+    """
+    Decode a FHIR 'Reference' datatype (2.3.0) and return a ReferenceObj
+    namedtuple.
+    """
+
+    assert dict == type(obj)
+
+    reference = None
+    if _KEY_REFERENCE in obj:
+        reference = obj[_KEY_REFERENCE]
+    the_type = None
+    if _KEY_TYPE in obj:
+        the_type = obj[_KEY_TYPE]
+    identifier_obj = None
+    if _KEY_IDENTIFIER in obj:
+        identifier_obj = _decode_identifier(obj[_KEY_IDENTIFIER])
+    display=None
+    if _KEY_DISPLAY in obj:
+        display = obj[_KEY_DISPLAY]
+
+    reference_obj = ReferenceObj(
+        reference=reference,
+        type=the_type,
+        identifier=identifier_obj,
+        display=display
+    )
+    return reference_obj
 
 
 ###############################################################################
@@ -398,6 +594,98 @@ def _decode_procedure(obj):
 
 
 ###############################################################################
+def _decode_documentreference(obj):
+    """
+    Decode a FHIR 'DocumentReference' object from the JSON data.
+    """
+
+    if _TRACE: print('Decoding DOCUMENTREFERENCE resource...')
+
+    result = []
+
+    obj_type = type(obj)
+    assert dict == obj_type
+
+    id_str = None
+    if _KEY_ID in obj:
+        id_str = obj[_KEY_ID]
+
+    # contained
+    contained_list = []
+    if _KEY_CONTAINED in obj:
+        the_list = obj[_KEY_CONTAINED]
+        obj_type = type(the_list)
+        assert list == obj_type
+        for elt in the_list:
+
+            elt_resource_type = None
+            if _KEY_RESOURCE_TYPE in elt:
+                elt_resource_type = elt[_KEY_RESOURCE_TYPE]
+            elt_id = None
+            if _KEY_ID in elt:
+                elt_id = elt[_KEY_ID]
+            elt_namelist = []
+            if _KEY_NAME in elt:
+                name_entries = elt[_KEY_NAME]
+                elt_namelist = _decode_name_list(name_entries)
+
+            contained_list.append( (elt_resource_type, elt_id, elt_namelist))
+
+    # masterIdentifier
+    master_identifier = None
+    if _KEY_MASTER_IDENTIFIER in obj:
+        master_identifier = _decode_identifier(obj[_KEY_MASTER_IDENTIFIER])
+    identifier_list = []
+    if _KEY_IDENTIFIER in obj:
+        the_list = obj[_KEY_IDENTIFIER]
+        obj_type = type(the_list)
+        assert list == obj_type
+        for elt in the_list:
+            identifier = _decode_identifier(elt)
+            identifier_list.append(identifier)
+
+    # status
+    status = None
+    if _KEY_STATUS in obj:
+        status = obj[_KEY_STATUS]
+    doc_status = None
+    if _KEY_DOC_STATUS in obj:
+        doc_status = obj[_KEY_DOC_STATUS]
+
+    # type
+    the_type = None
+    if _KEY_TYPE in obj:
+        the_type = obj[_KEY_TYPE]
+        # this is a CodableConcept
+        the_type = _decode_codable_concept(the_type)
+
+    # category (list of CodableConcept)
+    category_list = []
+    if _KEY_CATEGORY in obj:
+        elt_list = obj[_KEY_CATEGORY]
+        obj_type = type(elt_list)
+        assert list == obj_type
+        for elt in elt_list:
+            codable_concept_obj = _decode_codable_concept(elt)
+            category_list.append(codable_concept_obj)
+
+    # subject
+    subject_obj = None
+    if _KEY_SUBJECT in obj:
+        subject_obj = _decode_reference(obj[_KEY_SUBJECT])
+            
+            
+    print('documentreference: ')
+    print('\tid_str: {0}'.format(id_str))
+    print('\tcontained_list: {0}'.format(contained_list))
+    print('\tmaster_identifier: {0}'.format(master_identifier))
+    print('\tidentifier_list: {0}'.format(identifier_list))
+    print('\ttype: {0}'.format(the_type))
+    print('\tcategory_list: {0}'.format(category_list))
+    print('\tsubject: {0}'.format(subject_obj))
+    
+
+###############################################################################
 def _decode_patient(name, patient_obj):
     """
     Decode a FHIR 'Patient' object from the JSON data.
@@ -413,7 +701,7 @@ def _decode_patient(name, patient_obj):
 
     try:
         obj = json.loads(patient_obj)
-    except json.decoder.JSONDecoderError as e:
+    except json.decoder.JSONDecodeError as e:
         print('\t{0}: String conversion (patient) failed with error: "{1}"'.
               format(_MODULE_NAME, e))
         return result
@@ -425,25 +713,12 @@ def _decode_patient(name, patient_obj):
     subject = None
     if _KEY_ID in obj:
         subject = obj[_KEY_ID]
+        
     name_list = []
     if _KEY_NAME in obj:
         # this is a list of dicts
         name_entries = obj[_KEY_NAME]
-        obj_type = type(name_entries)
-        assert list == obj_type
-        for elt in name_entries:
-            assert dict == type(elt)
-
-            # single last name, should be a string
-            last_name  = elt[_KEY_FAMILY_NAME]
-            assert str == type(last_name)
-
-            # list of first name strings
-            first_name_list = elt[_KEY_GIVEN_NAME]
-            assert list == type(first_name_list)
-            for first_name in first_name_list:
-                assert str == type(first_name)
-                name_list.append( (first_name, last_name))                
+        name_list = _decode_name_list(name_entries)
 
     gender = None
     if _KEY_GENDER in obj:
@@ -543,6 +818,12 @@ def decode_top_level_obj(obj):
             else:
                 if _TRACE: print('no decode')
                 result_obj = None
+
+        # DocumentReference example from FHIR website
+        if _KEY_RESOURCE_TYPE in obj and _STR_DOCREF == obj[_KEY_RESOURCE_TYPE]:
+            result_obj = _decode_documentreference(obj)
+            if _TRACE: print('decoded documentreference')
+
     else:
         # don't know what else to expect here
         assert False
