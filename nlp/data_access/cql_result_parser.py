@@ -21,11 +21,16 @@ _TRACE = True
 # dict keys used to extract portions of the JSON data
 _KEY_ABATEMENT_DATE_TIME = 'abatementDateTime'
 _KEY_ASSIGNER            = 'assigner'
+_KEY_AUTHENTICATOR       = 'authenticator'
+_KEY_AUTHOR              = 'author'
 _KEY_CATEGORY            = 'category'
 _KEY_CODE                = 'code'
 _KEY_CODING              = 'coding'
 _KEY_CONTAINED           = 'contained'
 _KEY_CONTEXT             = 'context'
+_KEY_CUSTODIAN           = 'custodian'
+_KEY_DATE                = 'date'
+_KEY_DESCRIPTION         = 'description'
 _KEY_DISPLAY             = 'display'
 _KEY_DOB                 = 'birthDate'
 _KEY_DOC_STATUS          = 'docStatus'
@@ -42,12 +47,15 @@ _KEY_ONSET_DATE_TIME     = 'onsetDateTime'
 _KEY_PERFORMED_DATE_TIME = 'performedDateTime'
 _KEY_PERIOD              = 'period'
 _KEY_REFERENCE           = 'reference'
+_KEY_RELATES_TO          = 'relatesTo'
 _KEY_RESOURCE_TYPE       = 'resourceType'
 _KEY_RESULT              = 'result'
 _KEY_RESULT_TYPE         = 'resultType'
+_KEY_SECURITY_LABEL      = 'securityLabel'
 _KEY_STATUS              = 'status'
 _KEY_SUBJECT             = 'subject'
 _KEY_SYSTEM              = 'system'
+_KEY_TARGET              = 'target'
 _KEY_TEXT                = 'text'
 _KEY_TYPE                = 'type'
 _KEY_UNIT                = 'unit'
@@ -74,6 +82,10 @@ PeriodObj = namedtuple('PeriodObj', _KEYS_PERIOD)
 # 2.24.0.12 Identifier
 _KEYS_IDENTIFIER = ['use', 'type', 'system', 'value', 'period', 'assigner']
 IdentifierObj = namedtuple('IdentifierObj', _KEYS_IDENTIFIER)
+
+# relatesTo (from DocumentReference)
+_KEYS_RELATES_TO = ['code', 'target']
+RelatesToObj = namedtuple('RelatesToObj', _KEYS_RELATES_TO)
 
 _STR_BUNDLE      = 'FhirBundleCursorStu3'
 #_STR_CONCEPT     = 'Concept'
@@ -360,7 +372,8 @@ def _decode_period(obj):
     new_dict = {}
     for k in _KEYS_PERIOD:
         # these are datetimes
-        new_dict[k] = _fixup_fhir_datetime(obj.get(k))
+        tmp = _fixup_fhir_datetime(obj.get(k))
+        new_dict[k] = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S%z')
     period_obj = PeriodObj(**new_dict)
     return period_obj
     
@@ -437,6 +450,17 @@ def _decode_reference(obj):
     )
     return reference_obj
 
+
+###############################################################################
+def _decode_instant(instant_str):
+    """
+    Decode a FHIR 'instant' timestring and return a python datetime obj.
+    """
+
+    tmp = _fixup_fhir_datetime(instant_str)
+    the_instant = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S%z')
+    return the_instant
+    
 
 ###############################################################################
 def _decode_observation(obj):
@@ -674,7 +698,65 @@ def _decode_documentreference(obj):
     if _KEY_SUBJECT in obj:
         subject_obj = _decode_reference(obj[_KEY_SUBJECT])
             
+    # date
+    date = None
+    if _KEY_DATE in obj:
+        date = _decode_instant(obj[_KEY_DATE])
+
+    # author list (list of Reference datatypes)
+    author_list = []
+    if _KEY_AUTHOR in obj:
+        elt_list = obj[_KEY_AUTHOR]
+        obj_type = type(elt_list)
+        assert list == obj_type
+        print('elt_list: {0}'.format(elt_list))
+        print('length of elt list: {0}'.format(len(elt_list)))
+        for elt in elt_list:
+            print('type of elt: {0}'.format(type(elt)))
+            author_obj = _decode_reference(elt)
+            author_list.append(author_obj)
+
+    # authenticator (Reference)
+    authenticator = None
+    if _KEY_AUTHENTICATOR in obj:
+        authenticator = _decode_reference(obj[_KEY_AUTHENTICATOR])
             
+    # custodian (Reference)
+    custodian = None
+    if _KEY_CUSTODIAN in obj:
+        custodian = _decode_reference(obj[_KEY_CUSTODIAN])
+
+    # relatesTo array
+    relates_to_list = []
+    if _KEY_RELATES_TO in obj:
+        elt_list = obj[_KEY_RELATES_TO]
+        obj_type = type(elt_list)
+        assert list == obj_type
+        for elt in elt_list:
+            code = None
+            if _KEY_CODE in elt:
+                code = elt[_KEY_CODE]
+            target_obj = None
+            if _KEY_TARGET in elt:
+                target_obj = _decode_reference(elt[_KEY_TARGET])
+            relates_to_obj = RelatesToObj(code=code, target=target_obj)
+            relates_to_list.append(relates_to_obj)
+
+    # description
+    description = None
+    if _KEY_DESCRIPTION in obj:
+        description = obj[_KEY_DESCRIPTION]
+
+    # security label list (CodableConcept elements)
+    security_label_list = []
+    if _KEY_SECURITY_LABEL in obj:
+        elt_list = obj[_KEY_SECURITY_LABEL]
+        obj_type = type(elt_list)
+        assert list == obj_type
+        for elt in elt_list:
+            sl_obj = _decode_codable_concept(elt)
+            security_label_list.append(sl_obj)
+        
     print('documentreference: ')
     print('\tid_str: {0}'.format(id_str))
     print('\tcontained_list: {0}'.format(contained_list))
@@ -683,6 +765,13 @@ def _decode_documentreference(obj):
     print('\ttype: {0}'.format(the_type))
     print('\tcategory_list: {0}'.format(category_list))
     print('\tsubject: {0}'.format(subject_obj))
+    print('\tdate: {0}'.format(date))
+    print('\tauthor_list: {0}'.format(author_list))
+    print('\tauthenticator: {0}'.format(authenticator))
+    print('\tcustodian: {0}'.format(custodian))
+    print('\trelates_to_list: {0}'.format(relates_to_list))
+    print('\tdescription: {0}'.format(description))
+    print('\tsecurity_label_list: {0}'.format(security_label_list))
     
 
 ###############################################################################
