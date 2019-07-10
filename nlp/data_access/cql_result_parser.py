@@ -21,13 +21,16 @@ _TRACE = True
 # dict keys used to extract portions of the JSON data
 _KEY_ABATEMENT_DATE_TIME = 'abatementDateTime'
 _KEY_ASSIGNER            = 'assigner'
+_KEY_ATTACHMENT          = 'attachment'
 _KEY_AUTHENTICATOR       = 'authenticator'
 _KEY_AUTHOR              = 'author'
 _KEY_CATEGORY            = 'category'
 _KEY_CODE                = 'code'
 _KEY_CODING              = 'coding'
 _KEY_CONTAINED           = 'contained'
+_KEY_CONTENT             = 'content'
 _KEY_CONTEXT             = 'context'
+_KEY_CREATION            = 'creation'
 _KEY_CUSTODIAN           = 'custodian'
 _KEY_DATE                = 'date'
 _KEY_DESCRIPTION         = 'description'
@@ -35,7 +38,11 @@ _KEY_DISPLAY             = 'display'
 _KEY_DOB                 = 'birthDate'
 _KEY_DOC_STATUS          = 'docStatus'
 _KEY_EFF_DATE_TIME       = 'effectiveDateTime'
+_KEY_ENCOUNTER           = 'encounter'
+_KEY_EVENT               = 'event'
+_KEY_FACILITY_TYPE       = 'facilityType'
 _KEY_FAMILY_NAME         = 'family'
+_KEY_FORMAT              = 'format'
 _KEY_GENDER              = 'gender'
 _KEY_GIVEN_NAME          = 'given'
 _KEY_ID                  = 'id'
@@ -46,12 +53,15 @@ _KEY_NAME                = 'name'
 _KEY_ONSET_DATE_TIME     = 'onsetDateTime'
 _KEY_PERFORMED_DATE_TIME = 'performedDateTime'
 _KEY_PERIOD              = 'period'
+_KEY_PRACTICE_SETTING    = 'practiceSetting'
 _KEY_REFERENCE           = 'reference'
+_KEY_RELATED             = 'related'
 _KEY_RELATES_TO          = 'relatesTo'
 _KEY_RESOURCE_TYPE       = 'resourceType'
 _KEY_RESULT              = 'result'
 _KEY_RESULT_TYPE         = 'resultType'
 _KEY_SECURITY_LABEL      = 'securityLabel'
+_KEY_SOURCE_PATIENT_INFO = 'sourcePatientInfo'
 _KEY_STATUS              = 'status'
 _KEY_SUBJECT             = 'subject'
 _KEY_SYSTEM              = 'system'
@@ -66,6 +76,10 @@ _KEY_VALUE_QUANTITY      = 'valueQuantity'
 # 2.3.0 Reference
 _KEYS_REFERENCE = ['reference', 'type', 'identifier', 'display']
 ReferenceObj = namedtuple('ReferenceObj', _KEYS_REFERENCE)
+
+# 2.24.0.3 Attachment
+_KEYS_ATTACHMENT = ['contentType', 'language', 'data', 'url', 'size', 'hash', 'title', 'creation']
+AttachmentObj = namedtuple('AttachmentObj', _KEYS_ATTACHMENT)
 
 # 2.24.0.4 Coding
 _KEYS_CODING = ['system', 'version', 'code', 'display', 'userSelected']
@@ -86,6 +100,15 @@ IdentifierObj = namedtuple('IdentifierObj', _KEYS_IDENTIFIER)
 # relatesTo (from DocumentReference)
 _KEYS_RELATES_TO = ['code', 'target']
 RelatesToObj = namedtuple('RelatesToObj', _KEYS_RELATES_TO)
+
+# content (from DocumentReference)
+_KEYS_CONTENT = ['attachment', 'format']
+ContentObj = namedtuple('ContentObj', _KEYS_CONTENT)
+
+# context (from DocumentReference)
+_KEYS_CONTEXT = ['encounter', 'event', 'period', 'facility_type',
+                 'practice_setting', 'source_patient_info', 'related']
+ContextObj = namedtuple('ContextObj', _KEYS_CONTEXT)
 
 _STR_BUNDLE      = 'FhirBundleCursorStu3'
 #_STR_CONCEPT     = 'Concept'
@@ -315,26 +338,6 @@ def _decode_name_list(name_entries):
 
 
 ###############################################################################
-def _extract_values(key_list, obj):
-    """
-    Extract values associated with the given key list from the given obj, which
-    is assumed to be a dict. If the obj does not contain an entry for the given
-    key, insert None for the value.
-    """
-
-    result = []
-    for k in key_list:
-        if k in obj:
-            print('found {0}'.format(k))
-            the_value = obj[k]
-        else:
-            the_value = None
-        result.append(the_value)
-
-    return tuple(result)
-
-
-###############################################################################
 def _decode_codable_concept(obj):
     """
     Decode a FHIR 'CodableConcept' datatype (2.24.0.5) and return a
@@ -460,6 +463,109 @@ def _decode_instant(instant_str):
     tmp = _fixup_fhir_datetime(instant_str)
     the_instant = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S%z')
     return the_instant
+    
+
+###############################################################################
+def _decode_attachment(obj):
+    """
+    Decode a FHIR 'Attachment' datatype (2.24.0.3) and return an
+    AttachmentObj namedtuple.
+    """
+
+    assert dict == type(obj)
+    
+    new_dict = {}
+    for k in _KEYS_ATTACHMENT:
+        new_dict[k] = obj.get(k)
+
+    # fix the 'creation' timestamp
+    if _KEY_CREATION in new_dict:
+        tmp = _fixup_fhir_datetime(new_dict[_KEY_CREATION])
+        new_dict[_KEY_CREATION] = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S%z')
+        
+    attachment_obj = AttachmentObj(**new_dict)
+    return attachment_obj
+    
+
+###############################################################################
+def _decode_content(obj):
+    """
+    Decode the 'content' field of a FHIR DocumentReference resource.
+    """
+
+    assert dict == type(obj)
+    attachment_obj = None
+    if _KEY_ATTACHMENT in obj:
+        attachment_obj = _decode_attachment(obj[_KEY_ATTACHMENT])        
+    format_obj = None
+    if _KEY_FORMAT in obj:
+        format_obj = _decode_coding(obj[_KEY_FORMAT])
+
+    content_obj = ContentObj(
+        attachment=attachment_obj,
+        format=format_obj
+    )
+    return content_obj
+
+
+###############################################################################
+def _decode_context(obj):
+    """
+    Decode the 'context' field of a FHIR DocumentReference resource.
+    """
+
+    assert dict == type(obj)
+    
+    encounter_list = []
+    if _KEY_ENCOUNTER in obj:
+        elt_list = obj[_KEY_ENCOUNTER]
+        assert list == type(elt_list)
+        for elt in elt_list:
+            encounter_obj = _decode_reference(elt)
+            encounter_list.append(encounter_obj)
+             
+    event_list = []
+    if _KEY_EVENT in obj:
+        elt_list = obj[_KEY_EVENT]
+        assert list == type(elt_list)
+        for elt in elt_list:
+            event_obj = _decode_codable_concept(elt)
+            event_list.append(event_obj)
+
+    period_obj = None
+    if _KEY_PERIOD in obj:
+        period = _decode_period(obj[_KEY_PERIOD])
+
+    facility_type = None
+    if _KEY_FACILITY_TYPE in obj:
+        facility_type = _decode_codable_concept(obj[_KEY_FACILITY_TYPE])
+
+    practice_setting = None
+    if _KEY_PRACTICE_SETTING in obj:
+        practice_setting = _decode_codable_concept(obj[_KEY_PRACTICE_SETTING])
+
+    source_patient_info = None
+    if _KEY_SOURCE_PATIENT_INFO in obj:
+        source_patient_info = _decode_reference(obj[_KEY_SOURCE_PATIENT_INFO])
+
+    related_list = []
+    if _KEY_RELATED in obj:
+        elt_list = obj[_KEY_RELATED]
+        assert list == type(elt_list)
+        for elt in elt_list:
+            related_obj = _decode_reference(elt)
+            related_list.append(related_obj)
+
+    context_obj = ContextObj(
+        encounter = encounter_list,
+        event = event_list,
+        period = period_obj,
+        facility_type = facility_type,
+        practice_setting = practice_setting,
+        source_patient_info = source_patient_info,
+        related = related_list
+    )
+    return context_obj
     
 
 ###############################################################################
@@ -756,7 +862,22 @@ def _decode_documentreference(obj):
         for elt in elt_list:
             sl_obj = _decode_codable_concept(elt)
             security_label_list.append(sl_obj)
-        
+
+    # content list (Content elements)
+    content_list = []
+    if _KEY_CONTENT in obj:
+        elt_list = obj[_KEY_CONTENT]
+        obj_type = type(elt_list)
+        assert list == obj_type
+        for elt in elt_list:
+            content_obj = _decode_content(elt)
+            content_list.append(content_obj)
+
+    # context
+    context = None
+    if _KEY_CONTEXT in obj:
+        context_obj = _decode_context(obj[_KEY_CONTEXT])
+            
     print('documentreference: ')
     print('\tid_str: {0}'.format(id_str))
     print('\tcontained_list: {0}'.format(contained_list))
@@ -772,6 +893,8 @@ def _decode_documentreference(obj):
     print('\trelates_to_list: {0}'.format(relates_to_list))
     print('\tdescription: {0}'.format(description))
     print('\tsecurity_label_list: {0}'.format(security_label_list))
+    print('\tcontent_list: {0}'.format(content_list))
+    print('\tcontext: {0}'.format(context_obj))
     
 
 ###############################################################################
