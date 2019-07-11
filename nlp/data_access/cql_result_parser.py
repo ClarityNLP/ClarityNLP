@@ -7,6 +7,7 @@ import re
 import os
 import sys
 import json
+import base64
 import optparse
 from datetime import datetime, timezone
 from collections import namedtuple
@@ -32,6 +33,7 @@ _KEY_CONTENT             = 'content'
 _KEY_CONTEXT             = 'context'
 _KEY_CREATION            = 'creation'
 _KEY_CUSTODIAN           = 'custodian'
+_KEY_DATA                = 'data'
 _KEY_DATE                = 'date'
 _KEY_DESCRIPTION         = 'description'
 _KEY_DISPLAY             = 'display'
@@ -111,7 +113,6 @@ _KEYS_CONTEXT = ['encounter', 'event', 'period', 'facility_type',
 ContextObj = namedtuple('ContextObj', _KEYS_CONTEXT)
 
 _STR_BUNDLE      = 'FhirBundleCursorStu3'
-#_STR_CONCEPT     = 'Concept'
 _STR_CONDITION   = 'Condition'
 _STR_OBSERVATION = 'Observation'
 _STR_PATIENT     = 'Patient'
@@ -173,6 +174,31 @@ OBSERVATION_FIELDS = [
     'coding_systems_list'
 ]
 ObservationResource = namedtuple('ObservationResource', OBSERVATION_FIELDS)
+
+DOCUMENT_REFERENCE_FIELDS = [
+    'id_str',
+    'contained_list',
+    'master_identifier',
+    'identifier_list',
+    'status',
+    'doc_status',
+    'type_str',
+    'category_list',
+    'subject',
+    'date',
+    'author_list',
+    'authenticator',
+    'custodian',
+    'relates_to_list',
+    'description',
+    'security_label_list',
+    'content_list',
+    'context'
+]
+
+DocumentReferenceResource = namedtuple('DocumentReferenceResource',
+                                       DOCUMENT_REFERENCE_FIELDS)
+
 
 # regex used to recognize UTC offsets in a FHIR datetime string
 _regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
@@ -473,16 +499,23 @@ def _decode_attachment(obj):
     """
 
     assert dict == type(obj)
-    
+
     new_dict = {}
     for k in _KEYS_ATTACHMENT:
         new_dict[k] = obj.get(k)
 
     # fix the 'creation' timestamp
-    if _KEY_CREATION in new_dict:
-        tmp = _fixup_fhir_datetime(new_dict[_KEY_CREATION])
+    creation_timestamp = new_dict[_KEY_CREATION]
+    if creation_timestamp is not None:
+        tmp = _fixup_fhir_datetime(creation_timestamp)
         new_dict[_KEY_CREATION] = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S%z')
-        
+
+    # decode the base64 data, if any
+    data = new_dict[_KEY_DATA]
+    if data is not None:
+        decoded_data = base64.b64decode(data)
+        new_dict[_KEY_DATA] = decoded_data
+            
     attachment_obj = AttachmentObj(**new_dict)
     return attachment_obj
     
@@ -724,7 +757,7 @@ def _decode_procedure(obj):
 
 
 ###############################################################################
-def _decode_documentreference(obj):
+def _decode_document_reference(obj):
     """
     Decode a FHIR 'DocumentReference' object from the JSON data.
     """
@@ -874,27 +907,33 @@ def _decode_documentreference(obj):
             content_list.append(content_obj)
 
     # context
-    context = None
+    context_obj = None
     if _KEY_CONTEXT in obj:
         context_obj = _decode_context(obj[_KEY_CONTEXT])
-            
-    print('documentreference: ')
-    print('\tid_str: {0}'.format(id_str))
-    print('\tcontained_list: {0}'.format(contained_list))
-    print('\tmaster_identifier: {0}'.format(master_identifier))
-    print('\tidentifier_list: {0}'.format(identifier_list))
-    print('\ttype: {0}'.format(the_type))
-    print('\tcategory_list: {0}'.format(category_list))
-    print('\tsubject: {0}'.format(subject_obj))
-    print('\tdate: {0}'.format(date))
-    print('\tauthor_list: {0}'.format(author_list))
-    print('\tauthenticator: {0}'.format(authenticator))
-    print('\tcustodian: {0}'.format(custodian))
-    print('\trelates_to_list: {0}'.format(relates_to_list))
-    print('\tdescription: {0}'.format(description))
-    print('\tsecurity_label_list: {0}'.format(security_label_list))
-    print('\tcontent_list: {0}'.format(content_list))
-    print('\tcontext: {0}'.format(context_obj))
+        
+    docref_obj = DocumentReferenceResource(
+        id_str = id_str,
+        contained_list = contained_list,
+        master_identifier = master_identifier,
+        identifier_list = identifier_list,
+        status = status,
+        doc_status = doc_status,
+        type_str = the_type,
+        category_list = category_list,
+        subject = subject_obj,
+        date = date,
+        author_list = author_list,
+        authenticator = authenticator,
+        custodian = custodian,
+        relates_to_list = relates_to_list,
+        description = description,
+        security_label_list = security_label_list,
+        content_list = content_list,
+        context = context_obj
+    )
+
+    print(docref_obj)
+    return docref_obj
     
 
 ###############################################################################
@@ -983,7 +1022,7 @@ def _decode_bundle(name, bundle_obj):
     for elt in obj:
         obj_type = type(elt)
         assert dict == obj_type
-        
+
         if _KEY_RESOURCE_TYPE in elt:
             resource_type_str = elt[_KEY_RESOURCE_TYPE]
             if _STR_OBSERVATION == resource_type_str:
@@ -995,6 +1034,9 @@ def _decode_bundle(name, bundle_obj):
             elif _STR_CONDITION == resource_type_str:
                 condition = _decode_condition(elt)
                 bundled_objs.append(condition)
+            elif _STR_DOCREF == resource_type_str:
+                docref_obj = _decode_document_reference(elt)
+                bundled_objs.append(docref_obj)
     
     return bundled_objs
 
@@ -1032,9 +1074,9 @@ def decode_top_level_obj(obj):
                 result_obj = None
 
         # DocumentReference example from FHIR website
-        if _KEY_RESOURCE_TYPE in obj and _STR_DOCREF == obj[_KEY_RESOURCE_TYPE]:
-            result_obj = _decode_documentreference(obj)
-            if _TRACE: print('decoded documentreference')
+        #if _KEY_RESOURCE_TYPE in obj and _STR_DOCREF == obj[_KEY_RESOURCE_TYPE]:
+        #    result_obj = _decode_document_reference(obj)
+        #    if _TRACE: print('decoded documentreference')
 
     else:
         # don't know what else to expect here
