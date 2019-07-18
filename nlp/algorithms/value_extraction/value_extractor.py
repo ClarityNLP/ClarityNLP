@@ -127,7 +127,7 @@ except Exception as e:
             EMPTY_SMF_FIELD
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 13
+VERSION_MINOR = 14
 
 # set to True to enable debug output
 TRACE = False
@@ -142,9 +142,8 @@ VALUE_FIELDS = ['text', 'start', 'end', 'condition', 'matchingTerm', 'x', 'y', '
 Value = namedtuple('Value', VALUE_FIELDS)
 
 
-# match (), {}, and []
-str_brackets   = r'[(){}\[\]]' 
-regex_brackets = re.compile(str_brackets)
+# replace these chars with whitespace
+regex_whitespace_replace = re.compile(r'[%(){}\[\]]')
 
 # hyphenated words, abbreviations
 str_text_word = r'[-a-zA-Z.]+'
@@ -764,9 +763,9 @@ def clean_sentence(sentence, is_case_sensitive):
     if TRACE:
         print('calling clean_sentence...')
 
-    # erase [], {}, or () from the sentence
-    sentence = regex_brackets.sub(' ', sentence)
-
+    # replace certain chars with whitespace
+    sentence = regex_whitespace_replace.sub(' ', sentence)
+    
     # convert to lowercase unless case sensitive match enabled
     if not is_case_sensitive:
         sentence = sentence.lower()
