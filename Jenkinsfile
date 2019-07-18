@@ -5,7 +5,7 @@ pipeline{
     environment {
       GTRI_IMAGE_REGISTRY = credentials('gtri-image-registry')
       GTRI_RANCHER_API_ENDPOINT = credentials('gtri-rancher-api-endpoint')
-      GTRI_HDAP_ENV_ID = credentials('gtri-hdap-env-id')
+      GTRI_HDAP_ENV_ID = credentials('hdap-aws-rancher-env')
     }
 
     //Define stages for the build process
