@@ -876,6 +876,9 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
     terms = term_string.split(',') # produces a list
     terms = [term.strip() for term in terms]
 
+    # sort terms from longest to shortest
+    terms = sorted(terms, key=lambda x: len(x), reverse=True)
+    
     if enumlist:
         if isinstance(enumlist, str):
             filter_terms = enumlist.split(',')
