@@ -61,6 +61,7 @@ def compare_results(term_string, test_data, minval, maxval, denom_only=False):
 
         if value_result.measurementCount != len(expected_list):
             print('\tMismatch in computed vs. expected results: ')
+            print('\tSentence: {0}'.format(sentence))
             print('\tComputed: ')
             for m in value_result.measurementList:
                 print('\t\t{0}'.format(m))
@@ -234,28 +235,28 @@ if __name__ == '__main__':
     compare_results(term_string, test_data, minval, maxval)
     
     # vital signs
-    term_string = "t, temp, p, hr, bp, rr, o2, o2sat, spo2, o2 sat, "          \
-        "sats, o2sats, pox, sao2"
+    term_string = "t, temp, temperature, p, pulse, hr, bp, r, rr, o2, o2sat, " \
+        "spo2, o2 sat, sats, o2sats, pox, sao2"
     test_data = {
         'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.':[
             TestResult('t',  95.6, None, ve.STR_EQUAL),
             TestResult('hr', 45,   None, ve.STR_EQUAL),
             TestResult('bp', 75,   None, ve.STR_EQUAL),
-            TestResult('rr', 17,   None, ve.STR_EQUAL)
+            TestResult('rr', 17,   None, ve.STR_EQUAL),
         ],
         'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC':[
             TestResult('t',  97.3, None, ve.STR_EQUAL),
             TestResult('p',  84,   None, ve.STR_EQUAL),
             TestResult('bp', 120,  None, ve.STR_EQUAL),
             TestResult('rr', 16,   None, ve.STR_EQUAL),
-            TestResult('o2sat', 98, None, ve.STR_EQUAL)
+            TestResult('o2sat', 98, None, ve.STR_EQUAL),
         ],
         'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L':[
             TestResult('t',    95.5, None, ve.STR_EQUAL),
             TestResult('bp',   132,  None, ve.STR_EQUAL),
             TestResult('hr',   78,   None, ve.STR_EQUAL),
             TestResult('rr',   20,   None, ve.STR_EQUAL),
-            TestResult('spo2', 98,   None, ve.STR_EQUAL)
+            TestResult('spo2', 98,   None, ve.STR_EQUAL),
         ],
         'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC':[
             # note: 'O2' and 'O2 sat' both match value 100
@@ -284,31 +285,106 @@ if __name__ == '__main__':
             TestResult('temp',   98.5,   None, ve.STR_EQUAL),
             TestResult('bp',     115,    None, ve.STR_EQUAL),
             TestResult('hr',     103,    None, ve.STR_EQUAL),
+            TestResult('r',      16,     None, ve.STR_EQUAL),
         ],
         'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%':[
             TestResult('t',      98.8,   None, ve.STR_EQUAL),
             TestResult('bp',     123,    None, ve.STR_EQUAL),
             TestResult('hr',     97,     None, ve.STR_EQUAL),
+            TestResult('r',      16,     None, ve.STR_EQUAL),
             TestResult('o2sats', 100,    None, ve.STR_EQUAL),
         ],
-        'In the ED, initial vs were: T=99.3, P=120, BP=111/57, RR=24, POx=100%.':[
+        'In the ED, initial vs were: T=99.3, P=120, BP=111/57, RR=24, '       \
+        'POx=100%.':[
             TestResult('t',      99.3,   None, ve.STR_EQUAL),
             TestResult('p',      120,    None, ve.STR_EQUAL),
             TestResult('bp',     111,    None, ve.STR_EQUAL),
             TestResult('rr',     24,     None, ve.STR_EQUAL),
             TestResult('pox',    100,    None, ve.STR_EQUAL),
         ],
-        'Vitals in PACU post-op as follows: BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.':[
+        'Vitals in PACU post-op as follows: BP 120/80 HR 60-80s RR  SaO2 '    \
+        '96% 6L NC.':[
             # note: RR value is missing
             # overlap resolution ensures no match to the '2' in 'SaO2'
             TestResult('bp',     120,    None, ve.STR_EQUAL),
             TestResult('hr',     60,     80,   ve.STR_RANGE),
             TestResult('sao2',   96,     None, ve.STR_EQUAL),
+        ],
+        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams Lt '     \
+        '18.5 inches HC 35 cm':[
+            TestResult('t',      99.4,   None, ve.STR_EQUAL),
+            TestResult('p',      160,    None, ve.STR_EQUAL),
+            TestResult('r',      56,     None, ve.STR_EQUAL),
+            TestResult('bp',     60,     None, ve.STR_EQUAL),
+            TestResult('o2 sat', 97,     None, ve.STR_EQUAL),
+        ],
+        'Prior to transfer, his vitals were BP 119/53 (105/43 sleeping), '    \
+        'HR 103, RR 15, and SpO2 97% on NRB.':[
+            TestResult('bp',     119,    None, ve.STR_EQUAL),
+            TestResult('hr',     103,    None, ve.STR_EQUAL),
+            TestResult('rr',     15,     None, ve.STR_EQUAL),
+            TestResult('spo2',   97,     None, ve.STR_EQUAL),
+        ],
+        'VS: T 98.5 BP 120/50 (110-128/50-56) HR 88 (88-107) ....RR 24 '      \
+        '(22-26), SpO2 94% on 4L NC(89-90% on 3L, 92-97% on 4L)':[
+            TestResult('t',      98.5,   None,  ve.STR_EQUAL),
+            TestResult('bp',     120,    None,  ve.STR_EQUAL),
+            TestResult('hr',     88,     None,  ve.STR_EQUAL),
+            TestResult('rr',     24,     None,  ve.STR_EQUAL),
+            TestResult('spo2',   94,     None,  ve.STR_EQUAL),
+        ],
+        'In the ED inital vitals were, Temperature 100.8, Pulse: 103, '       \
+        'RR: 28, BP: 84/43, O2Sat: 88, O2 Flow: 100 (Non-Rebreather).':[
+            # note that 100 matches 'o2'
+            TestResult('temperature', 100.8, None, ve.STR_EQUAL),
+            TestResult('pulse',       103,   None, ve.STR_EQUAL),
+            TestResult('rr',          28,    None, ve.STR_EQUAL),
+            TestResult('bp',          84,    None, ve.STR_EQUAL),
+            TestResult('o2sat',       88,    None, ve.STR_EQUAL),
+            TestResult('o2',          100,   None, ve.STR_EQUAL),
         ]
     }
 
     compare_results(term_string, test_data, minval, maxval)
 
-    # TODO:
-    #    sort terms from longest to shortest and match in that order
-    #    keep longest match
+    # blood components
+    term_string = "wbc, rbc, hgb, hct, mcv, mch, mchc, rdw, plt, plt ct"
+    test_data = {
+        'CTAB Pertinent Results: BLOOD WBC-7.0# RBC-4.02* Hgb-13.4* '         \
+        'Hct-38.4* MCV-96 MCH-33.2* MCHC-34.7 RDW-12.9 Plt Ct-172 '           \
+        '02:24AM BLOOD WBC-4.4 RBC-4.21*':[
+            TestResult('wbc',    7.0,   None,  ve.STR_EQUAL),
+            TestResult('rbc',    4.02,  None,  ve.STR_EQUAL),
+            TestResult('hgb',    13.4,  None,  ve.STR_EQUAL),
+            TestResult('hct',    38.4,  None,  ve.STR_EQUAL),
+            TestResult('mcv',    96,    None,  ve.STR_EQUAL),
+            TestResult('mch',    33.2,  None,  ve.STR_EQUAL),
+            TestResult('mchc',   34.7,  None,  ve.STR_EQUAL),
+            TestResult('rdw',    12.9,  None,  ve.STR_EQUAL),
+            TestResult('plt ct', 172,   None,  ve.STR_EQUAL),
+            TestResult('wbc',    4.4,   None,  ve.STR_EQUAL),
+            TestResult('rbc',    4.21,  None,  ve.STR_EQUAL),
+        ],
+        'Hgb-13.9* Hct-39.7* MCV-94 MCH-33.0* MCHC-35.0 RDW-12.6 Plt Ct-184 ' \
+        'BLOOD WBC-5.6 RBC-4.90 Hgb-16.1 Hct-46.2 MCV-94 MCH-33.0* '          \
+        'MCHC-34.9 RDW-12.8 Plt Ct-234':[
+            TestResult('hgb',    13.9,  None,  ve.STR_EQUAL),
+            TestResult('hct',    39.7,  None,  ve.STR_EQUAL),
+            TestResult('mcv',    94,    None,  ve.STR_EQUAL),
+            TestResult('mch',    33.0,  None,  ve.STR_EQUAL),
+            TestResult('mchc',   35.0,  None,  ve.STR_EQUAL),
+            TestResult('rdw',    12.6,  None,  ve.STR_EQUAL),
+            TestResult('plt ct', 184,   None,  ve.STR_EQUAL),
+            TestResult('wbc',    5.6,   None,  ve.STR_EQUAL),
+            TestResult('rbc',    4.90,  None,  ve.STR_EQUAL),
+            TestResult('hgb',    16.1,  None,  ve.STR_EQUAL),
+            TestResult('hct',    46.2,  None,  ve.STR_EQUAL),
+            TestResult('mcv',    94,    None,  ve.STR_EQUAL),
+            TestResult('mch',    33.0,  None,  ve.STR_EQUAL),
+            TestResult('mchc',   34.9,  None,  ve.STR_EQUAL),
+            TestResult('rdw',    12.8,  None,  ve.STR_EQUAL),
+            TestResult('plt ct', 234,   None,  ve.STR_EQUAL),
+        ]
+    }
+
+    compare_results(term_string, test_data, minval, maxval)
