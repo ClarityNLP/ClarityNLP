@@ -640,6 +640,89 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
 
 
 ###############################################################################
+def resolve_overlap(terms, results):
+    """
+    Check results for overlap and prune according to these rules:
+    
+    1.  If two results overlap exactly, return the result with the longest
+        matching term.
+    
+        Example:
+    
+            sentence: 'T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC'
+            term_str: 'o2, o2 sat'
+
+            Both 'o2' and 'o2 sat' match the value 100, and both matches have
+            identical start/end values. Return 'o2 sat' as the result.
+
+    2.  If two results partially overlap, discard the first match if the 
+        matched value is part of the search term for the second.
+
+        Example:
+
+            sentence: 'BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.'
+            term str: 'rr, sao2'
+
+            The rr value is missing, so rr matches the '2' in 'sao2'.
+            This is incorrect, so prune this false match.
+
+    """
+
+    if results is None:
+        return results
+    
+    n = len(results)
+    if 0 == n:
+        return
+
+    discard_set = set()
+    for i in range(n):
+        s1 = results[i].start
+        e1 = results[i].end
+        for j in range(i+1, n):
+            s2 = results[j].start
+            e2 = results[j].end
+
+            # results have been sorted by position in sentence
+            assert s1 <= s2
+            
+            if e1 > s2:
+                if TRACE:
+                    print('overlap1: {0}'.format(results[i]))
+                    print('overlap2: {0}'.format(results[j]))
+
+                to_discard = None
+                if s1 == s2 and e1 == e2:
+                    # identical overlap, keep match longest matching_term
+                    term1 = results[i].matching_term
+                    term2 = results[j].matching_term
+                    if len(term1) > len(term2):
+                        to_discard = results[j]
+                    else:
+                        to_discard = results[i]
+                else:
+                    # partial overlap, discard if value part of another term
+                    if results[i].text.endswith(results[j].matching_term):
+                        to_discard = results[i]
+
+                if to_discard is not None:
+                    discard_set.add(to_discard)
+                    if TRACE:
+                        print('\tdiscarding {0}'.format(to_discard))
+
+    if 0 == len(discard_set):
+        return results
+
+    # prune discarded items
+    new_results = []
+    for r in results:
+        if r not in discard_set:
+            new_results.append(r)
+
+    return new_results
+
+
+###############################################################################
 def remove_hypotheticals(sentence, results):
     """
     Use a simplified version of the ConText algorithm of Harkema et. al. to 
@@ -930,6 +1013,9 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
 
     # order results by their starting character offset
     results = sorted(results, key=lambda x: x.start)
+
+    # prune if appropriate for overlapping results
+    results = resolve_overlap(terms, results)
     
     return to_json(original_terms, original_sentence, results, enumlist)
 
@@ -998,7 +1084,7 @@ if __name__ == '__main__':
         'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
         'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
         'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
-        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
+        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.', # left side
         'In the ED, initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
         'In the ED initial vitals were HR 106, BP 88/56, RR 20, O2 Sat 85% 3L.',
         'In the ED, initial vs were: T=99.3, P=120, BP=111/57, RR=24, POx=100%.',

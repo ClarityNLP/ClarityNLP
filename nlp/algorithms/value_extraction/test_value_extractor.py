@@ -59,7 +59,15 @@ def compare_results(term_string, test_data, minval, maxval, denom_only=False):
         result_data = json.loads(json_result)
         value_result = ve.ValueResult(**result_data)
 
-        assert value_result.measurementCount == len(expected_list)
+        if value_result.measurementCount != len(expected_list):
+            print('\tMismatch in computed vs. expected results: ')
+            print('\tComputed: ')
+            for m in value_result.measurementList:
+                print('\t\t{0}'.format(m))
+            print('\tExpected: ')
+            for e in expected_list:
+                print('\t\t{0}'.format(e))
+            return
         
         # check fields
         failures = []
@@ -226,7 +234,8 @@ if __name__ == '__main__':
     compare_results(term_string, test_data, minval, maxval)
     
     # vital signs
-    term_string = "t, temp, p, hr, bp, rr, o2, o2sat, spo2, o2 sat"
+    term_string = "t, temp, p, hr, bp, rr, o2, o2sat, spo2, o2 sat, "          \
+        "sats, o2sats, pox, sao2"
     test_data = {
         'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.':[
             TestResult('t',  95.6, None, ve.STR_EQUAL),
@@ -249,12 +258,52 @@ if __name__ == '__main__':
             TestResult('spo2', 98,   None, ve.STR_EQUAL)
         ],
         'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC':[
+            # note: 'O2' and 'O2 sat' both match value 100
+            #        longest matching term 'o2 sat' wins
             TestResult('t',      98,   None, ve.STR_EQUAL),
             TestResult('bp',     122,  None, ve.STR_EQUAL),
             TestResult('hr',     7,    None, ve.STR_EQUAL),
             TestResult('rr',     20,   None, ve.STR_EQUAL),
             TestResult('o2 sat', 100,  None, ve.STR_EQUAL),
-            TestResult('o2',     100,  None, ve.STR_EQUAL),  # NOTE
+        ],
+        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC':[
+            TestResult('t',    100.6,  None, ve.STR_EQUAL),
+            TestResult('hr',   105,    None, ve.STR_EQUAL),
+            TestResult('bp',   93,     None, ve.STR_EQUAL),
+            TestResult('rr',   16,     None, ve.STR_EQUAL),
+            TestResult('sats', 98,     None, ve.STR_EQUAL),
+        ],
+        'VS: T: 95.9 BP: 154/56 HR: 69 RR: 16 O2sats: 94% 2L NC':[
+            TestResult('t',      95.9,   None, ve.STR_EQUAL),
+            TestResult('bp',     154,    None, ve.STR_EQUAL),
+            TestResult('hr',     69,     None, ve.STR_EQUAL),
+            TestResult('rr',     16,     None, ve.STR_EQUAL),
+            TestResult('o2sats', 94,     None, ve.STR_EQUAL),
+        ],
+        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA':[
+            TestResult('temp',   98.5,   None, ve.STR_EQUAL),
+            TestResult('bp',     115,    None, ve.STR_EQUAL),
+            TestResult('hr',     103,    None, ve.STR_EQUAL),
+        ],
+        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%':[
+            TestResult('t',      98.8,   None, ve.STR_EQUAL),
+            TestResult('bp',     123,    None, ve.STR_EQUAL),
+            TestResult('hr',     97,     None, ve.STR_EQUAL),
+            TestResult('o2sats', 100,    None, ve.STR_EQUAL),
+        ],
+        'In the ED, initial vs were: T=99.3, P=120, BP=111/57, RR=24, POx=100%.':[
+            TestResult('t',      99.3,   None, ve.STR_EQUAL),
+            TestResult('p',      120,    None, ve.STR_EQUAL),
+            TestResult('bp',     111,    None, ve.STR_EQUAL),
+            TestResult('rr',     24,     None, ve.STR_EQUAL),
+            TestResult('pox',    100,    None, ve.STR_EQUAL),
+        ],
+        'Vitals in PACU post-op as follows: BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.':[
+            # note: RR value is missing
+            # overlap resolution ensures no match to the '2' in 'SaO2'
+            TestResult('bp',     120,    None, ve.STR_EQUAL),
+            TestResult('hr',     60,     80,   ve.STR_RANGE),
+            TestResult('sao2',   96,     None, ve.STR_EQUAL),
         ]
     }
 
