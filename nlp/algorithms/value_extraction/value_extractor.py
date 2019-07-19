@@ -130,7 +130,7 @@ VERSION_MAJOR = 0
 VERSION_MINOR = 14
 
 # set to True to enable debug output
-TRACE = False
+_TRACE = False
 
 # serializable result object; measurementList is an array of Value namedtuples
 
@@ -358,6 +358,8 @@ def update_match_results(match, spans, results, num1, num2, cond, matching_term)
     for start_i, end_i in spans:
         if start >= start_i and end <= end_i:
             keep_it = False
+            if _TRACE:
+                print('\tupdate_match_results: discarding "{0}"'.format(match))
             break
 
     if keep_it:
@@ -396,7 +398,7 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
     appears in the result filter.
     """
 
-    if TRACE:
+    if _TRACE:
         print('calling extract_enumlist_values...')
     
     # find each query term in the sentence and record their positions
@@ -415,7 +417,7 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
     boundaries = sorted(boundaries)
     num_boundaries = len(boundaries)
 
-    if TRACE:
+    if _TRACE:
         print('\tboundaries: {0}'.format(boundaries))
 
     results = []
@@ -428,7 +430,7 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
         found_it = False
         iterator = re.finditer(str_word_query, sentence)
         for match in iterator:
-            if TRACE:
+            if _TRACE:
                 print("\tmatch '{0}' start: {1}".format(match.group(), match.start()))
             start = match.start()
 
@@ -437,7 +439,7 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
                 index = boundaries.index(start)
             except ValueError:
                 # skip this term for now - need to log this - TBD
-                if TRACE:
+                if _TRACE:
                     print('\t***ERROR***: start offset not found in boundaries list.')
                 continue
 
@@ -474,14 +476,13 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     (i.e. less than, greater than, etc.), and return results.
     """
 
-    if TRACE:
-        print('calling extract_value...')
-        print('\tSENTENCE: {0}'.format(sentence))
+    if _TRACE:
+        print('calling extract_value with term "{0}"'.format(query_term))
     
     # no values to extract if the sentence contains no digits
     match = regex_digits.search(sentence)
     if not match:
-        if TRACE:
+        if _TRACE:
             print('\tno digits found in sentence: {0}'.format(sentence))
         return []
 
@@ -511,7 +512,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for bf fraction ranges first
     iterator = re.finditer(str_bf_fraction_range_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched bf_fraction_range_query: {0}'.format(match.group()))
         (n1, d1) = get_num_and_denom(match.group('frac1'))
         (n2, d2) = get_num_and_denom(match.group('frac2'))
@@ -536,7 +537,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for other fraction ranges
     iterator = re.finditer(str_fraction_range_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched fraction_range_query: {0}'.format(match.group()))
         (n1, d1) = get_num_and_denom(match.group('frac1'))
         (n2, d2) = get_num_and_denom(match.group('frac2'))
@@ -556,7 +557,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for fractions
     iterator = re.finditer(str_fraction_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched fraction_query: {0}'.format(match.group()))
         (n, d) = get_num_and_denom(match.group('frac'))
 
@@ -575,7 +576,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for units range query
     iterator = re.finditer(str_units_range_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched units_range_query: {0}'.format(match.group()))
         units1 = match.group('units1').strip().lower()
         units2 = match.group('units2').strip().lower()
@@ -593,7 +594,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for bf numeric ranges
     iterator = re.finditer(str_bf_range_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched bf_range_query: {0}'.format(match.group()))
         num1 = float(match.group('num1'))
         num2 = float(match.group('num2'))
@@ -605,7 +606,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for numeric ranges
     iterator = re.finditer(str_range_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched range query: {0}'.format(match.group()))
         num1 = float(match.group('num1'))
         num2 = float(match.group('num2'))
@@ -617,7 +618,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for op-value matches
     iterator = re.finditer(str_op_val_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched op_val_query: {0}'.format(match.group()))
         val = float(match.group('val'))
         if val >= minval and val <= maxval:
@@ -629,7 +630,7 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     # check for wds-value matches
     iterator = re.finditer(str_wds_val_query, sentence)
     for match in iterator:
-        if TRACE:
+        if _TRACE:
             print('\tmatched wds_val_query: {0}'.format(match.group()))
         val = float(match.group('val'))
         if val >= minval and val <= maxval:
@@ -661,10 +662,28 @@ def resolve_overlap(terms, results):
         Example:
 
             sentence: 'BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.'
-            term str: 'rr, sao2'
+            term_str: 'rr, sao2'
 
-            The rr value is missing, so rr matches the '2' in 'sao2'.
-            This is incorrect, so prune this false match.
+            The rr search term has no associated value, so the value extractor
+            looks and finds the '2' in 'SaO2'. The '2' is part of the search
+            term 'sao2', so prevent this from being returned as a match.
+
+    3.  If two results partially overlap, discard any match that is completely
+        contained inside the span of the other.
+
+        Example:
+
+            sentence: 'BLOOD PT-10.8 PTT-32.6 INR(PT)-1.0'
+            term_str: 'pt, ptt, inr(pt)'
+
+            The value extractor will find these matches:
+                'PT-10.8' for match term 'pt'
+                'PT)-1.0' for match term 'pt'
+                'PTT-32.6' for match term 'ptt'
+                'INR(PT)-1.0' for match term 'INR(PT)'
+                 
+            The second match is contained entirely within the span of the
+            fourth, so it should be discarded.
 
     """
 
@@ -687,7 +706,7 @@ def resolve_overlap(terms, results):
             assert s1 <= s2
             
             if e1 > s2:
-                if TRACE:
+                if _TRACE:
                     print('overlap1: {0}'.format(results[i]))
                     print('overlap2: {0}'.format(results[j]))
 
@@ -704,10 +723,12 @@ def resolve_overlap(terms, results):
                     # partial overlap, discard if value part of another term
                     if results[i].text.endswith(results[j].matching_term):
                         to_discard = results[i]
+                    elif e2 <= e1:
+                        to_discard = results[j]
 
                 if to_discard is not None:
                     discard_set.add(to_discard)
-                    if TRACE:
+                    if _TRACE:
                         print('\tdiscarding {0}'.format(to_discard))
 
     if 0 == len(discard_set):
@@ -732,7 +753,7 @@ def remove_hypotheticals(sentence, results):
     # number of words influenced by a hypothetical start term
     WINDOW = 6
 
-    if TRACE:
+    if _TRACE:
         print('calling remove_hypotheticals...')
 
     sentence_lc = sentence.lower()
@@ -760,7 +781,7 @@ def remove_hypotheticals(sentence, results):
                 result_spans.append( (i, i+r_word_count, r))
                 break
 
-    if TRACE:
+    if _TRACE:
         print('\tresult word spans: ')
         for span in result_spans:
             print('\t\twords [{0},{1})'.format(span[0], span[1]))
@@ -798,7 +819,7 @@ def remove_hypotheticals(sentence, results):
         # which is set by the word offset
         triggers.append( (i+word_offset, trigger))
 
-    if TRACE:
+    if _TRACE:
         print('\ttriggers: ')
         print('\t\t{0}'.format(triggers))
 
@@ -812,7 +833,7 @@ def remove_hypotheticals(sentence, results):
             if rs_start < h_start:
                 continue
             if rs_start - h_start < WINDOW:
-                if TRACE:
+                if _TRACE:
                     print('Trigger {0} influences {1}'.
                           format(hw[1], words[rs_start]))
                 omit_results.add(rs[2])
@@ -838,21 +859,43 @@ def erase(sentence, start, end):
 
 
 ###############################################################################
+def _common_clean(string_list, is_case_sensitive):
+    """
+    Do cleaning operations common to both sentences and query terms.
+    """
+
+    for i, text in enumerate(string_list):
+
+        # replace certain chars with whitespace
+        text = regex_whitespace_replace.sub(' ', text)
+    
+        # convert to lowercase unless case sensitive match enabled
+        if not is_case_sensitive:
+            text = text.lower()
+
+        string_list[i] = text
+        
+            
+###############################################################################
 def clean_sentence(sentence, is_case_sensitive):
     """
     Do some preliminary processing on the sentence prior to value extraction.
     """
 
-    if TRACE:
+    if _TRACE:
         print('calling clean_sentence...')
 
-    # replace certain chars with whitespace
-    sentence = regex_whitespace_replace.sub(' ', sentence)
+    # # replace certain chars with whitespace
+    # sentence = regex_whitespace_replace.sub(' ', sentence)
     
-    # convert to lowercase unless case sensitive match enabled
-    if not is_case_sensitive:
-        sentence = sentence.lower()
+    # # convert to lowercase unless case sensitive match enabled
+    # if not is_case_sensitive:
+    #     sentence = sentence.lower()
 
+    string_list = [sentence]
+    _common_clean(string_list, is_case_sensitive)
+    sentence = string_list[0]
+    
     # find date expressions in the sentence
     json_string = run_date_finder(sentence)
     json_data = json.loads(json_string)
@@ -868,7 +911,7 @@ def clean_sentence(sentence, is_case_sensitive):
         # erase date if not simply isolated digits, such as 1500, which
         # could be a measurement (i.e. 1500 ml)
         if not re.match(r'\s\d+\s', date.text):
-            if TRACE:
+            if _TRACE:
                 print("\terasing date '{0}'".format(date.text))
             sentence = erase(sentence, start, end)
 
@@ -890,10 +933,13 @@ def clean_sentence(sentence, is_case_sensitive):
                 continue
         start = int(m.start)
         end   = int(m.end)
-        if TRACE:
+        if _TRACE:
             print("\terasing size measurement '{0}'".format(m.text))
         sentence = erase(sentence, start, end)
 
+    if _TRACE:
+        print('\tcleaned sentence: {0}'.format(sentence))
+        
     return sentence
 
 
@@ -947,6 +993,17 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
     ValueMeasurement namedtuples.
     """
 
+    if _TRACE:
+        print('called value_extractor run...')
+        print('\tARGUMENTS: ')
+        print('\t      term_string: {0}'.format(term_string))
+        print('\t         sentence: {0}'.format(sentence))
+        print('\t       str_minval: {0}'.format(str_minval))
+        print('\t       str_maxval: {0}'.format(str_maxval))
+        print('\t         enumlist: {0}'.format(enumlist))
+        print('\tis_case_sensitive: {0}'.format(is_case_sensitive))
+        print('\t    is_denom_only: {0}'.format(is_denom_only))
+    
     # use default minval and maxval if not provided
     if enumlist is None and str_minval is None:
         str_minval = '-' + str(sys.float_info.max)
@@ -958,9 +1015,14 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
 
     terms = term_string.split(',') # produces a list
     terms = [term.strip() for term in terms]
-
+    
     # sort terms from longest to shortest
     terms = sorted(terms, key=lambda x: len(x), reverse=True)
+
+    # save a copy of the original terms
+    original_terms = terms.copy()
+
+    _common_clean(terms, is_case_sensitive)
     
     if enumlist:
         if isinstance(enumlist, str):
@@ -968,22 +1030,29 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
         else:
             filter_terms = enumlist
         filter_terms = [term.strip() for term in filter_terms]
-
+        
     # save a copy of the original terms
-    original_terms = terms.copy()
-
+    #original_terms = terms.copy()
+    
     # convert terms to lowercase unless doing a case-sensitive match
     if not is_case_sensitive:
         terms = [term.lower() for term in terms]
-
+        
         if enumlist:
             filter_terms = [ft.lower() for ft in filter_terms]
 
+    if _TRACE:
+        print('\n\tterms: {0}'.format(terms))
+    if _TRACE and enumlist:
+        print('\t filter_terms: {0}'.format(filter_terms))
+                
     # map the new terms to the original, so can restore in output
     for i in range(len(terms)):
         new_term = terms[i]
         original_term = original_terms[i]
         term_dict[new_term] = original_term
+        if _TRACE:
+            print('\tterm_dict[{0}] => {1}'.format(new_term, original_term))
 
     if not enumlist:
         # do range check on numerator values for fractions
@@ -1255,7 +1324,7 @@ if __name__ == '__main__':
     if not enumlist:
         enumlist = []
         
-    # if TRACE:
+    # if _TRACE:
     #     print('\n Command line arguments: \n')
     #     print('\t              min value: {0}'.format(str_minval))
     #     print('\t              max value: {0}'.format(str_maxval))

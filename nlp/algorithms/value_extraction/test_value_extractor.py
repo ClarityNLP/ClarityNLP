@@ -348,7 +348,10 @@ if __name__ == '__main__':
     compare_results(term_string, test_data, minval, maxval)
 
     # blood components
-    term_string = "wbc, rbc, hgb, hct, mcv, mch, mchc, rdw, plt, plt ct"
+    term_string = "wbc, rbc, hgb, hct, mcv, mch, mchc, rdw, plt, plt ct, "    \
+        "rates, temp, tidal v, peep, fio2, po2, pco2, ph, caltco2, "          \
+        "base xs, lactate, neuts, lymphs, monos, eos, baso, pt, ptt, "        \
+        "inr(pt), glucose, urean, creat, na, k, cl, hco3, angap"
     test_data = {
         'CTAB Pertinent Results: BLOOD WBC-7.0# RBC-4.02* Hgb-13.4* '         \
         'Hct-38.4* MCV-96 MCH-33.2* MCHC-34.7 RDW-12.9 Plt Ct-172 '           \
@@ -384,6 +387,44 @@ if __name__ == '__main__':
             TestResult('mchc',   34.9,  None,  ve.STR_EQUAL),
             TestResult('rdw',    12.8,  None,  ve.STR_EQUAL),
             TestResult('plt ct', 234,   None,  ve.STR_EQUAL),
+        ],
+        'BLOOD Type-ART Temp-36.6 Rates-16/ Tidal V-600 PEEP-5 FiO2-60 '      \
+        'pO2-178* pCO2-35 pH-7.42 calTCO2-23 Base XS-0 Intubat-INTUBATED '    \
+        'Vent-CONTROLLED BLOOD Lactate-1.0 BLOOD Lactate-1.6':[
+            # note: the 16/ could be confused with a fraction
+            TestResult('temp',    36.6,  None,  ve.STR_EQUAL),
+            TestResult('rates',   16,    None,  ve.STR_EQUAL),
+            TestResult('tidal v', 600,   None,  ve.STR_EQUAL),
+            TestResult('peep',    5,     None,  ve.STR_EQUAL),
+            TestResult('fio2',    60,    None,  ve.STR_EQUAL),
+            TestResult('po2',     178,   None,  ve.STR_EQUAL),
+            TestResult('pco2',    35,    None,  ve.STR_EQUAL),
+            TestResult('ph',      7.42,  None,  ve.STR_EQUAL),
+            TestResult('caltco2', 23,    None,  ve.STR_EQUAL),
+            TestResult('base xs', 0,     None,  ve.STR_EQUAL),
+            TestResult('lactate', 1.0,   None,  ve.STR_EQUAL),
+            TestResult('lactate', 1.6,   None,  ve.STR_EQUAL),
+        ],
+        'BLOOD Neuts-59.7 Lymphs-33.5 Monos-4.9 Eos-1.3 Baso-0.6 BLOOD '      \
+        'PT-10.8 PTT-32.6 INR(PT)-1.0 BLOOD Plt Ct-234 BLOOD Glucose-182* '   \
+        'UreaN-14 Creat-0.8 Na-134 K-4.0 Cl-101 HCO3-25 AnGap-12':[
+            TestResult('neuts',   59.7,  None,  ve.STR_EQUAL),
+            TestResult('lymphs',  33.5,  None,  ve.STR_EQUAL),
+            TestResult('monos',   4.9,   None,  ve.STR_EQUAL),
+            TestResult('eos',     1.3,   None,  ve.STR_EQUAL),
+            TestResult('baso',    0.6,   None,  ve.STR_EQUAL),
+            TestResult('pt',      10.8,  None,  ve.STR_EQUAL),
+            TestResult('ptt',     32.6,  None,  ve.STR_EQUAL),
+            TestResult('inr(pt)', 1.0,   None,  ve.STR_EQUAL),
+            TestResult('plt ct',  234,   None,  ve.STR_EQUAL),
+            TestResult('glucose', 182,   None,  ve.STR_EQUAL),
+            TestResult('urean',   14,    None,  ve.STR_EQUAL),
+            TestResult('creat',   0.8,   None,  ve.STR_EQUAL),
+            TestResult('na',      134,   None,  ve.STR_EQUAL),
+            TestResult('k',       4.0,   None,  ve.STR_EQUAL),
+            TestResult('cl',      101,   None,  ve.STR_EQUAL),
+            TestResult('hco3',    25,    None,  ve.STR_EQUAL),
+            TestResult('angap',   12,    None,  ve.STR_EQUAL),
         ]
     }
 
