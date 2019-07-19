@@ -101,7 +101,7 @@ def compare_results(term_string, test_data, minval, maxval, denom_only=False):
 if __name__ == '__main__':
 
     minval = 0
-    maxval = 1000
+    maxval = 1000000
 
     # find values using "LVEF" as the search term
     term_string = "lvef"
@@ -351,7 +351,8 @@ if __name__ == '__main__':
     term_string = "wbc, rbc, hgb, hct, mcv, mch, mchc, rdw, plt, plt ct, "    \
         "rates, temp, tidal v, peep, fio2, po2, pco2, ph, caltco2, "          \
         "base xs, lactate, neuts, lymphs, monos, eos, baso, pt, ptt, "        \
-        "inr(pt), glucose, urean, creat, na, k, cl, hco3, angap"
+        "inr(pt), glucose, urean, creat, na, k, cl, hco3, angap, totprot, "   \
+        "uricacd, igg, iga, igm, c3, c4, blood c4"
     test_data = {
         'CTAB Pertinent Results: BLOOD WBC-7.0# RBC-4.02* Hgb-13.4* '         \
         'Hct-38.4* MCV-96 MCH-33.2* MCHC-34.7 RDW-12.9 Plt Ct-172 '           \
@@ -391,7 +392,7 @@ if __name__ == '__main__':
         'BLOOD Type-ART Temp-36.6 Rates-16/ Tidal V-600 PEEP-5 FiO2-60 '      \
         'pO2-178* pCO2-35 pH-7.42 calTCO2-23 Base XS-0 Intubat-INTUBATED '    \
         'Vent-CONTROLLED BLOOD Lactate-1.0 BLOOD Lactate-1.6':[
-            # note: the 16/ could be confused with a fraction
+            # note: the 16/ is not confused with a fraction
             TestResult('temp',    36.6,  None,  ve.STR_EQUAL),
             TestResult('rates',   16,    None,  ve.STR_EQUAL),
             TestResult('tidal v', 600,   None,  ve.STR_EQUAL),
@@ -408,6 +409,7 @@ if __name__ == '__main__':
         'BLOOD Neuts-59.7 Lymphs-33.5 Monos-4.9 Eos-1.3 Baso-0.6 BLOOD '      \
         'PT-10.8 PTT-32.6 INR(PT)-1.0 BLOOD Plt Ct-234 BLOOD Glucose-182* '   \
         'UreaN-14 Creat-0.8 Na-134 K-4.0 Cl-101 HCO3-25 AnGap-12':[
+            # overlap resolution prevents 'pt)-1.0' from matching term 'pt'
             TestResult('neuts',   59.7,  None,  ve.STR_EQUAL),
             TestResult('lymphs',  33.5,  None,  ve.STR_EQUAL),
             TestResult('monos',   4.9,   None,  ve.STR_EQUAL),
@@ -425,7 +427,101 @@ if __name__ == '__main__':
             TestResult('cl',      101,   None,  ve.STR_EQUAL),
             TestResult('hco3',    25,    None,  ve.STR_EQUAL),
             TestResult('angap',   12,    None,  ve.STR_EQUAL),
+        ],
+        'BLOOD Glucose-119* UreaN-21* Creat-0.9 Na-138 K-3.8 Cl-100 HCO3-25 ' \
+        'AnGap-17 BLOOD TotProt-6.2* UricAcd-2.8* BLOOD PEP-AWAITING '        \
+        'F IgG-1040 IgA-347 IgM-87 IFE-PND BLOOD C3-144 C4-37 BLOOD C4-45*':[
+            TestResult('glucose',  119,   None,  ve.STR_EQUAL),
+            TestResult('urean',    21,    None,  ve.STR_EQUAL),
+            TestResult('creat',    0.9,   None,  ve.STR_EQUAL),
+            TestResult('na',       138,   None,  ve.STR_EQUAL),
+            TestResult('k',        3.8,   None,  ve.STR_EQUAL),
+            TestResult('cl',       100,   None,  ve.STR_EQUAL),
+            TestResult('hco3',     25,    None,  ve.STR_EQUAL),
+            TestResult('angap',    17,    None,  ve.STR_EQUAL),
+            TestResult('totprot',  6.2,   None,  ve.STR_EQUAL),
+            TestResult('uricacd',  2.8,   None,  ve.STR_EQUAL),
+            TestResult('igg',      1040,  None,  ve.STR_EQUAL),
+            TestResult('iga',      347,   None,  ve.STR_EQUAL),
+            TestResult('igm',      87,    None,  ve.STR_EQUAL),
+            TestResult('c3',       144,   None,  ve.STR_EQUAL),
+            TestResult('c4',       37,    None,  ve.STR_EQUAL),
+            TestResult('blood c4', 45,    None,  ve.STR_EQUAL),
         ]
     }
 
     compare_results(term_string, test_data, minval, maxval)
+
+    # approximations
+    term_string = "rr"
+    the_result = TestResult('rr', 22, None, ve.STR_APPROX)
+    test_data = {
+        'RR approx 22'          :[the_result],
+        'RR approx. 22'         :[the_result],
+        'RR approximately 22'   :[the_result],
+        'RR is approx. 22'      :[the_result],
+        'RR is approximately 22':[the_result]
+    }
+
+    compare_results(term_string, test_data, minval, maxval)
+
+    # >=, <=
+    term_string = "rr"
+    test_data = {
+        'RR >= 24':[TestResult('rr', 24, None, ve.STR_GTE)],
+        'RR <= 42':[TestResult('rr', 42, None, ve.STR_LTE)],
+        'her RR was greater than 24':[TestResult('rr', 24, None, ve.STR_GT)],
+        'his RR was less than 42':[TestResult('rr', 42, None, ve.STR_LT)]
+    }
+
+    compare_results(term_string, test_data, minval, maxval)
+
+    # ranges
+    term_string = "rr, fvc"
+    the_result = TestResult('rr', 22, 42, ve.STR_RANGE)
+    test_data = {
+        'RR 22-42':[the_result],
+        'RR22-42':[the_result],
+        'RR 22 - 42':[the_result],
+        'RR(22-42)':[the_result],
+        'RR (22 to 42)':[the_result],
+        'RR (22 - 42)':[the_result],
+        'RR22to42':[the_result],
+        'RR 22to42':[the_result],
+        'RR 22 to 42':[the_result],
+        'RR from 22 to 42':[the_result],
+        'RR range: 22-42':[the_result],
+        'RR= 22-42':[the_result],
+        'RR=22-42':[the_result],
+        'RR= 22 -42':[the_result],
+        'RR = 22 - 42':[the_result],
+        'RR = 22 to 42':[the_result],
+        'RR=22to42':[the_result],
+        'RR is 22-42':[the_result],
+        'RR ~ 22-42':[the_result],
+        'RR approx. 22-42':[the_result],
+        'RR is approximately 22 - 42':[the_result],
+        'RR is ~22-42':[the_result],
+        'RR varies from 22-42':[the_result],
+        'RR varied from 22 to 42':[the_result],
+        'RR includes all values in the range 22 to 42':[the_result],
+        'RR values were 22-42':[the_result],
+        'RR: 22-42':[the_result],
+        'RR 22-42':[the_result],
+        'RR=22-42':[the_result],
+        'RR ~= 22-42':[the_result],
+        'RR ~= 22 to 42':[the_result],
+        'RR is approx. = 22-42':[the_result],
+        'RR- 22-42':[the_result],
+        'RR= 22    -42':[the_result],
+        'RR between 22 and 42':[the_result],
+        'RR ranging from 22 to 42':[the_result],
+        'FVC value for this patient is 500ml to 600ml.':[
+            TestResult('fvc', 500, 600, ve.STR_RANGE)
+        ]
+    }
+    
+    compare_results(term_string, test_data, minval, maxval)
+    
+    # blood pressure
+    

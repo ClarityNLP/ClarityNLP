@@ -908,9 +908,10 @@ def clean_sentence(sentence, is_case_sensitive):
         start = int(date.start)
         end   = int(date.end)
 
-        # erase date if not simply isolated digits, such as 1500, which
+        # erase date if not all digits, such as 1500, which
         # could be a measurement (i.e. 1500 ml)
-        if not re.match(r'\s\d+\s', date.text):
+        #if not re.match(r'\s\d+\s', date.text):
+        if not re.match(r'\d+', date.text):
             if _TRACE:
                 print("\terasing date '{0}'".format(date.text))
             sentence = erase(sentence, start, end)
@@ -1003,6 +1004,8 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
         print('\t         enumlist: {0}'.format(enumlist))
         print('\tis_case_sensitive: {0}'.format(is_case_sensitive))
         print('\t    is_denom_only: {0}'.format(is_denom_only))
+
+    assert term_string is not None
     
     # use default minval and maxval if not provided
     if enumlist is None and str_minval is None:
