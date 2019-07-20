@@ -523,5 +523,57 @@ if __name__ == '__main__':
     
     compare_results(term_string, test_data, minval, maxval)
     
-    # blood pressure
+    # blood pressure - check numerators (the default)
+    term_string = "bp"
+    test_data = {
+        'BP < 120/80':[TestResult('bp', 120, None, ve.STR_LT)],
+        'BP = 110/70':[TestResult('bp', 110, None, ve.STR_EQUAL)],
+        'BP >= 100/70':[TestResult('bp', 100, None, ve.STR_GTE)],
+        'BP <= 110/70':[TestResult('bp', 110, None, ve.STR_LTE)],
+        'BP lt. or eq 112/70':[TestResult('bp', 112, None, ve.STR_LTE)],
+        'her BP was less than 120/80':[TestResult('bp', 120, None, ve.STR_LT)],
+        'his BP was gt 110 /70':[TestResult('bp', 110, None, ve.STR_GT)],
+        'BP lt. 110/70':[TestResult('bp', 110, None, ve.STR_LT)],
+        'BP 110/70 to 120/80':[TestResult('bp', 110, 120, ve.STR_FRACTION_RANGE)],
+        'BP was between 100/60 and 120/80':[TestResult('bp', 100, 120, ve.STR_FRACTION_RANGE)],
+        'BP range: 105/75 - 120/70':[TestResult('bp', 105, 120, ve.STR_FRACTION_RANGE)],
+        # embedded dates and measurements
+        'Her BP on 3/27 measured 110/70.':[TestResult('bp', 110, None, ve.STR_EQUAL)],
+        'Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.':[
+            TestResult('bp', 110, None, ve.STR_EQUAL),
+            TestResult('bp', 115, None, ve.STR_EQUAL)
+        ],
+        'Her BP on 3/27 from her 12 cm x 9 cm x 6 cm heart was 110/70.':[
+            TestResult('bp', 110, None, ve.STR_EQUAL)
+        ]
+    }
+
+    compare_results(term_string, test_data, minval, maxval)
+    
+    # blood pressure - check denominators
+    term_string = "bp"
+    test_data = {
+        'BP < 120/80':[TestResult('bp', 80, None, ve.STR_LT)],
+        'BP = 110/70':[TestResult('bp', 70, None, ve.STR_EQUAL)],
+        'BP >= 100/70':[TestResult('bp', 70, None, ve.STR_GTE)],
+        'BP <= 110/70':[TestResult('bp', 70, None, ve.STR_LTE)],
+        'BP lt. or eq 112/70':[TestResult('bp', 70, None, ve.STR_LTE)],
+        'her BP was less than 120/80':[TestResult('bp', 80, None, ve.STR_LT)],
+        'his BP was gt 110 /70':[TestResult('bp', 70, None, ve.STR_GT)],
+        'BP lt. 110/70':[TestResult('bp', 70, None, ve.STR_LT)],
+        'BP 110/70 to 120/80':[TestResult('bp', 70, 80, ve.STR_FRACTION_RANGE)],
+        'BP was between 100/60 and 120/80':[TestResult('bp', 60, 80, ve.STR_FRACTION_RANGE)],
+        'BP range: 105/75 - 120/70':[TestResult('bp', 75, 70, ve.STR_FRACTION_RANGE)],
+        # embedded dates and measurements
+        'Her BP on 3/27 measured 110/70.':[TestResult('bp', 70, None, ve.STR_EQUAL)],
+        'Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.':[
+            TestResult('bp', 70, None, ve.STR_EQUAL),
+            TestResult('bp', 80, None, ve.STR_EQUAL)
+        ],
+        'Her BP on 3/27 from her 12 cm x 9 cm x 6 cm heart was 110/70.':[
+            TestResult('bp', 70, None, ve.STR_EQUAL)
+        ]
+    }
+
+    compare_results(term_string, test_data, minval, maxval, denom_only=True)
     

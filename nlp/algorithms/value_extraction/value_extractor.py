@@ -126,52 +126,81 @@ except Exception as e:
             run_size_measurement, SizeMeasurement, EMPTY_FIELD as \
             EMPTY_SMF_FIELD
 
-VERSION_MAJOR = 0
-VERSION_MINOR = 14
+###############################################################################
+#
+#                         E X P O R T S
+#
+# The 'run' function is also visible externally.
+#
+###############################################################################
+
+# ignore any result field with this value
+EMPTY_FIELD = None  # ignore any field with this value
+
+# serializable result object; measurementList is an array of Value namedtuples
+VALUE_RESULT_FIELDS = [
+    'sentence', 'measurementCount', 'terms', 'querySuccess', 'measurementList'
+]
+ValueResult = namedtuple('ValueResult', VALUE_RESULT_FIELDS)
+
+VALUE_FIELDS = [
+    'text', 'start', 'end', 'condition', 'matchingTerm',
+    'x', 'y', 'minValue', 'maxValue'
+]
+Value = namedtuple('Value', VALUE_FIELDS)
+
+# condition field values
+STR_APPROX         = 'APPROX'
+STR_LT             = 'LESS_THAN'
+STR_LTE            = 'LESS_THAN_OR_EQUAL'
+STR_GT             = 'GREATER_THAN'
+STR_GTE            = 'GREATER_THAN_OR_EQUAL'
+STR_EQUAL          = 'EQUAL'
+STR_RANGE          = 'RANGE'
+STR_FRACTION_RANGE = 'FRACTION_RANGE'
+
+ValueMeasurement = namedtuple('ValueMeasurement',
+                              'text start end num1 num2 cond matching_term')
+
+###############################################################################
+
+_VERSION_MAJOR = 0
+_VERSION_MINOR = 14
+_MODULE_NAME = 'value_extractor.py'
 
 # set to True to enable debug output
 _TRACE = False
 
-# serializable result object; measurementList is an array of Value namedtuples
-
-EMPTY_FIELD = None  # ignore any field with this value
-VALUE_RESULT_FIELDS = ['sentence', 'measurementCount', 'terms', 'querySuccess', 'measurementList']
-ValueResult = namedtuple('ValueResult', VALUE_RESULT_FIELDS)
-
-VALUE_FIELDS = ['text', 'start', 'end', 'condition', 'matchingTerm', 'x', 'y', 'minValue', 'maxValue']
-Value = namedtuple('Value', VALUE_FIELDS)
-
-
 # replace these chars with whitespace
-regex_whitespace_replace = re.compile(r'[%(){}\[\]]')
+_regex_whitespace_replace = re.compile(r'[%(){}\[\]]')
 
 # hyphenated words, abbreviations
-str_text_word = r'[-a-zA-Z.]+'
+_str_text_word = r'[-a-zA-Z.]+'
 
 # this is a catchall that finds words, titer expressions (1:200),
 # '+' and '-' symbols, +/-, etc.
-str_enumlist_value = r'[-a-zA-Z:\d/\+()]+'
+_str_enumlist_value = r'[-a-zA-Z:\d/\+()]+'
 
 # matcher for 'words', including hyphenated words and abbreviations
-str_words     = r'([-a-zA-Z.]+\s+){0,8}?' # nongreedy
+_str_words     = r'([-a-zA-Z.]+\s+){0,8}?' # nongreedy
 
-str_digits    = r'\d+'
-str_op        = r'((is|of|was|approx\.?|approximately|~=|>=|<=|[<>=~\?])\s*)?'
-str_approx    = r'(~=|~|\b(approx\.?|approximately))'
-str_equal     = r'\b(equal|eq\.?)'
-str_less_than = r'\b(less\s+than|lt\.?)'
-str_gt_than   = r'\b(greater\s+than|gt\.?)'
-str_lt        = r'(<|' + str_less_than + r')'
-str_lte       = r'(<=|' + str_less_than + r'\s+or\s+' + str_equal + r')'
-str_gt        = r'(>|' + str_gt_than + r')'
-str_gte       = r'(>=|' + str_gt_than + r'\s+or\s+' + str_equal + r')'
-str_separator = r'([-:=\s]\s*)?'
-str_num       = r'(\d+(\.\d+)?|\.\d+)'
-str_cond      = r'(?P<cond>' + str_op + r')'
-str_val       = r'(?P<val>' + str_num + r')(\'?s)?'
-str_range_sep = r'\s*(-|to(\s+the)?)\s*'
-str_range     = r'(?P<num1>' + str_num + r')(\'?s)?' + str_range_sep + \
-                r'(?P<num2>' + str_num + r')(\'?s)?'
+_str_digits    = r'\d+'
+_str_op        = r'((is|of|was|approx\.?|approximately|~=|>=|<=|[<>=~\?])\s*)?'
+_str_approx    = r'(~=|~|\b(approx\.?|approximately))'
+_str_equal     = r'\b(equal|eq\.?)'
+_str_less_than = r'\b(less\s+than|lt\.?)'
+_str_gt_than   = r'\b(greater\s+than|gt\.?)'
+_str_lt        = r'(<|' + _str_less_than + r')'
+_str_lte       = r'(<=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
+_str_gt        = r'(>|' + _str_gt_than + r')'
+_str_gte       = r'(>=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
+_str_separator = r'([-:=\s]\s*)?'
+_str_num       = r'(\d+(\.\d+)?|\.\d+)'
+_str_cond      = r'(?P<cond>' + _str_op + r')'
+_str_val       = r'(?P<val>' + _str_num + r')(\'?s)?'
+_str_range_sep = r'\s*(-|to(\s+the)?)\s*'
+_str_range     = r'(?P<num1>' + _str_num + r')(\'?s)?' + _str_range_sep + \
+                r'(?P<num2>' + _str_num + r')(\'?s)?'
 
 # # from http://ebmcalc.com/Basic.htm, an online medical unit conversion tool
 # str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
@@ -191,72 +220,54 @@ str_range     = r'(?P<num1>' + str_num + r')(\'?s)?' + str_range_sep + \
 #             r'Vol%|weeks|yd|years|yr)'
 
 # 'between' and 'from' often denote ranges, such as 'between 10 and 20'
-str_bf     = r'\b(between|from)\s*'
-str_bf_sep = r'\s*(-|to|and)\s*'
+_str_bf     = r'\b(between|from)\s*'
+_str_bf_sep = r'\s*(-|to|and)\s*'
 
 # range with optional 's, to capture "90's to 100's", etc.
-str_bf_range = str_bf + \
-               r'(?P<num1>' + str_num + r')(\'?s)?' + str_bf_sep + \
-               r'(?P<num2>' + str_num + r')(\'?s)?'
+_str_bf_range = _str_bf + \
+    r'(?P<num1>' + _str_num + r')(\'?s)?' + _str_bf_sep                      +\
+    r'(?P<num2>' + _str_num + r')(\'?s)?'
 
-str_units_range = r'(' + str_bf + r')?'                  +\
-                  r'(?P<num1>' + str_num + r')' + r'\s*' +\
-                  r'(?P<units1>' + str_text_word + r')'  +\
-                  str_bf_sep                             +\
-                  r'(?P<num2>' + str_num + r')' +r'\s*'  +\
-                  r'(?P<units2>' + str_text_word + r')'
+_str_units_range = r'(' + _str_bf + r')?'                                    +\
+    r'(?P<num1>' + _str_num + r')' + r'\s*'                                  +\
+    r'(?P<units1>' + _str_text_word + r')'                                   +\
+    _str_bf_sep                                                              +\
+    r'(?P<num2>' + _str_num + r')' +r'\s*'                                   +\
+    r'(?P<units2>' + _str_text_word + r')'
 
 # two integers separated by '/'
-str_fraction  = r'\d+\s*/\s*\d+'
-str_fraction_range  = r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_range_sep + \
-                      r'(?P<frac2>' + str_fraction + r')(\'?s)?'
+_str_fraction  = r'\d+\s*/\s*\d+'
+_str_fraction_range  = r'(?P<frac1>' + _str_fraction + r')(\'?s)?'           +\
+    _str_range_sep                                                           +\
+    r'(?P<frac2>' + _str_fraction + r')(\'?s)?'
 
 # between 110/70 and 120/80, from 100/60 to 120/70, etc.
-str_bf_fraction_range = str_bf + \
-                        r'(?P<frac1>' + str_fraction + r')(\'?s)?' + str_bf_sep + \
-                        r'(?P<frac2>' + str_fraction + r')(\'?s)?'
+_str_bf_fraction_range = _str_bf                                             +\
+    r'(?P<frac1>' + _str_fraction + r')(\'?s)?'                              +\
+    _str_bf_sep                                                              +\
+    r'(?P<frac2>' + _str_fraction + r')(\'?s)?'
 
 # common punctuation
-str_punct = r'[.;,?\'\"!$%~]'
-regex_punct = re.compile(str_punct)
+_str_punct = r'[.;,?\'\"!$%~]'
+_regex_punct = re.compile(_str_punct)
 
-regex_num      = re.compile(str_num)
-regex_fraction = re.compile(str_fraction)
-regex_number   = re.compile(str_num)
-regex_digits   = re.compile(str_digits)
-regex_range    = re.compile(str_range)
-regex_approx   = re.compile(str_approx)
-regex_lt       = re.compile(str_lt)
-regex_lte      = re.compile(str_lte)
-regex_gt       = re.compile(str_gt)
-regex_gte      = re.compile(str_gte)
-
-# condition field values
-STR_APPROX         = 'APPROX'
-STR_LT             = 'LESS_THAN'
-STR_LTE            = 'LESS_THAN_OR_EQUAL'
-STR_GT             = 'GREATER_THAN'
-STR_GTE            = 'GREATER_THAN_OR_EQUAL'
-STR_EQUAL          = 'EQUAL'
-STR_RANGE          = 'RANGE'
-STR_FRACTION_RANGE = 'FRACTION_RANGE'
-
-ValueMeasurement = namedtuple('ValueMeasurement', 'text start end num1 num2 cond matching_term')
-
-# indentation levels for JSON output
-I1 = ' '*4
-I2 = ' '*8
-I3 = ' '*12
-I4 = ' '*16
-I5 = ' '*20
-I6 = ' '*24
+_regex_num      = re.compile(_str_num)
+_regex_fraction = re.compile(_str_fraction)
+_regex_number   = re.compile(_str_num)
+_regex_digits   = re.compile(_str_digits)
+_regex_range    = re.compile(_str_range)
+_regex_approx   = re.compile(_str_approx)
+_regex_lt       = re.compile(_str_lt)
+_regex_lte      = re.compile(_str_lte)
+_regex_gt       = re.compile(_str_gt)
+_regex_gte      = re.compile(_str_gte)
 
 # used to restore original terms
-term_dict = {}
+_term_dict = {}
 
 
 ###############################################################################
-def to_json(original_terms, original_sentence, results, is_text):
+def _to_json(original_terms, original_sentence, results, is_text):
     """
     Convert results to a JSON string.
     """
@@ -279,7 +290,7 @@ def to_json(original_terms, original_sentence, results, is_text):
         m_dict['start'] = m.start
         m_dict['end'] = m.end
         m_dict['condition'] = m.cond
-        m_dict['matchingTerm'] = term_dict[m.matching_term]
+        m_dict['matchingTerm'] = _term_dict[m.matching_term]
         m_dict['x'] = m.num1
 
         if EMPTY_FIELD == m.num2:
@@ -308,7 +319,7 @@ def to_json(original_terms, original_sentence, results, is_text):
 
     
 ###############################################################################
-def cond_to_string(words, cond):
+def _cond_to_string(words, cond):
     """
     Determine the relationship between the query term and the value.
     """
@@ -316,15 +327,15 @@ def cond_to_string(words, cond):
     # need to check two strings, so concat and run regex on result
     s = words + ' ' + cond
 
-    if regex_approx.search(s):
+    if _regex_approx.search(s):
         result = STR_APPROX
-    elif regex_lte.search(s):
+    elif _regex_lte.search(s):
         result = STR_LTE
-    elif regex_gte.search(s):
+    elif _regex_gte.search(s):
         result = STR_GTE
-    elif regex_lt.search(s):
+    elif _regex_lt.search(s):
         result = STR_LT
-    elif regex_gt.search(s):
+    elif _regex_gt.search(s):
         result = STR_GT
     else:
         result = STR_EQUAL
@@ -333,7 +344,7 @@ def cond_to_string(words, cond):
 
 
 ###############################################################################
-def get_num_and_denom(str_fraction):
+def _get_num_and_denom(str_fraction):
     """
     Convert a fraction (such as 110/70) to an integer 2-tuple.
     """
@@ -344,7 +355,8 @@ def get_num_and_denom(str_fraction):
 
 
 ###############################################################################
-def update_match_results(match, spans, results, num1, num2, cond, matching_term):
+def _update_match_results(
+        match, spans, results, num1, num2, cond, matching_term):
     """
     Given a match object, check its [start, end) span against all matching
     spans thus far, and add to span list only if no overlap. This prevents
@@ -359,17 +371,20 @@ def update_match_results(match, spans, results, num1, num2, cond, matching_term)
         if start >= start_i and end <= end_i:
             keep_it = False
             if _TRACE:
-                print('\tupdate_match_results: discarding "{0}"'.format(match))
+                print('\tupdate_match_results: discarding "{0}"'.
+                      format(match))
             break
 
     if keep_it:
-        meas = ValueMeasurement(match_text, start, end, num1, num2, cond, matching_term)
+        meas = ValueMeasurement(
+            match_text, start, end, num1, num2, cond, matching_term
+        )
         results.append(meas)
         spans.append( (start, end))
 
 
 ###############################################################################
-def get_query_start(query_term):
+def _get_query_start(query_term):
     """
     Construct the starting string for a value extraction query.
     """
@@ -377,22 +392,22 @@ def get_query_start(query_term):
     # Form a query string from either a standalone query term or a
     # query term followed by optional words plus a separator symbol.
     if len(query_term) > 1:
-        str_query = r'\b(' + query_term + r'\s*' + r'|' + \
-                    query_term + r'\s+([a-zA-Z]+\s*)' + r')' + str_separator
-        str_start = str_query + r'(?P<words>' + str_words + r')'
+        str_query = r'\b(' + query_term + r'\s*' + r'|'                      +\
+            query_term + r'\s+([a-zA-Z]+\s*)' + r')' + _str_separator
+        str_start = str_query + r'(?P<words>' + _str_words + r')'
     else:
         # If the query term is a single letter, it cannot be followed by
         # another letter, since likely starting a new word. Must be followed
         # either by a non-letter character, such as a digit or whitespace.
         str_query = r'\b(' + query_term + r'(?![a-zA-Z])\s*' + r'|' + \
-                    query_term + r'\s+([a-zA-Z]+\s*)' + r')' + str_separator
-        str_start = str_query + r'(?P<words>' + str_words + r')'
+                    query_term + r'\s+([a-zA-Z]+\s*)' + r')' + _str_separator
+        str_start = str_query + r'(?P<words>' + _str_words + r')'
 
     return str_start
 
 
 ###############################################################################
-def extract_enumlist_values(query_terms, sentence, filter_words):
+def _extract_enumlist_values(query_terms, sentence, filter_words):
     """
     Extract a word to match the query term, and accept if that word
     appears in the result filter.
@@ -422,16 +437,17 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
 
     results = []
     for query_term in query_terms:
-        str_word_query = r'\b' + query_term + r'\b'                    +\
-                         r'(?P<words>'                                 +\
-                         r'\s*(' + str_enumlist_value + r'\s*){0,8}'   +\
-                         r')'
+        str_word_query = r'\b' + query_term + r'\b'                          +\
+            r'(?P<words>'                                                    +\
+            r'\s*(' + _str_enumlist_value + r'\s*){0,8}'                     +\
+            r')'
 
         found_it = False
         iterator = re.finditer(str_word_query, sentence)
         for match in iterator:
             if _TRACE:
-                print("\tmatch '{0}' start: {1}".format(match.group(), match.start()))
+                print("\tmatch '{0}' start: {1}".
+                      format(match.group(), match.start()))
             start = match.start()
 
             # this start offset must occur in the boundaries list
@@ -440,7 +456,8 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
             except ValueError:
                 # skip this term for now - need to log this - TBD
                 if _TRACE:
-                    print('\t***ERROR***: start offset not found in boundaries list.')
+                    print('\t***ERROR***: start offset not found ' +\
+                          'in boundaries list.')
                 continue
 
             # don't cross into the next query term match region
@@ -461,14 +478,15 @@ def extract_enumlist_values(query_terms, sentence, filter_words):
 
             if found_it:
                 meas = ValueMeasurement(word, start, end,
-                                        word, EMPTY_FIELD, STR_EQUAL, query_term)
+                                        word, EMPTY_FIELD, STR_EQUAL,
+                                        query_term)
                 results.append(meas)
 
     return results
 
         
 ###############################################################################
-def extract_value(query_term, sentence, minval, maxval, denom_only):
+def _extract_value(query_term, sentence, minval, maxval, denom_only):
     """
     Search the sentence for the query term, find associated values that fit
     one of the regex patterns, extract the values, check the value against
@@ -480,31 +498,32 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
         print('calling extract_value with term "{0}"'.format(query_term))
     
     # no values to extract if the sentence contains no digits
-    match = regex_digits.search(sentence)
+    match = _regex_digits.search(sentence)
     if not match:
         if _TRACE:
             print('\tno digits found in sentence: {0}'.format(sentence))
         return []
 
-    str_start = get_query_start(query_term)
+    str_start = _get_query_start(query_term)
     
     # find two ints separated by '/', such as blood pressure values
-    str_fraction_query = str_start + str_cond + r'(?P<frac>' + str_fraction + r')'
+    str_fraction_query = str_start + _str_cond                               +\
+        r'(?P<frac>' + _str_fraction + r')'
     
     # two fractions with a range separator inbetween
-    str_fraction_range_query = str_start + str_cond + str_fraction_range
-    str_bf_fraction_range_query = str_start + str_cond + str_bf_fraction_range
+    str_fraction_range_query = str_start + _str_cond + _str_fraction_range
+    str_bf_fraction_range_query = str_start + _str_cond + _str_bf_fraction_range
     
     # <query> <operator> <value>
-    str_op_val_query = str_start + str_cond + str_val
+    str_op_val_query = str_start + _str_cond + _str_val
     
     # two numbers with a range separator inbetween
-    str_range_query = str_start + str_cond + str_range
-    str_bf_range_query = str_start + str_cond + str_bf_range
-    str_units_range_query = str_start + str_cond + str_units_range
+    str_range_query = str_start + _str_cond + _str_range
+    str_bf_range_query = str_start + _str_cond + _str_bf_range
+    str_units_range_query = str_start + _str_cond + _str_units_range
 
     # <query> <words> <value>
-    str_wds_val_query = str_start + str_val
+    str_wds_val_query = str_start + _str_val
 
     spans   = []  # [start, end) character offsets of each match
     results = []  # ValueMeasurement namedtuple results
@@ -514,8 +533,8 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched bf_fraction_range_query: {0}'.format(match.group()))
-        (n1, d1) = get_num_and_denom(match.group('frac1'))
-        (n2, d2) = get_num_and_denom(match.group('frac2'))
+        (n1, d1) = _get_num_and_denom(match.group('frac1'))
+        (n2, d2) = _get_num_and_denom(match.group('frac2'))
 
         # keep either numerator or denom, according to user preference
         x1 = n1
@@ -524,13 +543,14 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
             x1 = d1
             x2 = d2
         
-        # accept a fraction range if both values are contained in [minval, maxval]
+        # accept a fraction range if both values are in [minval, maxval]
         if x1 >= minval and x1 <= maxval and x2 >= minval and x2 <= maxval:
             cond = 'FRACTION_RANGE'
             match_text = match.group().strip()
             start = match.start()
             end = start + len(match_text)
-            meas = ValueMeasurement(match_text, start, end, x1, x2, cond, query_term)
+            meas = ValueMeasurement(match_text, start, end, x1, x2,
+                                    cond, query_term)
             results.append(meas)
             spans.append( (start, end))
 
@@ -539,27 +559,28 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched fraction_range_query: {0}'.format(match.group()))
-        (n1, d1) = get_num_and_denom(match.group('frac1'))
-        (n2, d2) = get_num_and_denom(match.group('frac2'))
+        (n1, d1) = _get_num_and_denom(match.group('frac1'))
+        (n2, d2) = _get_num_and_denom(match.group('frac2'))
 
         # keep either numerator or denom, according to user preference
         x1 = n1
         x2 = n2
         if denom_only:
             x1 = d1
-            x2 = d1
+            x2 = d2
             
-        # accept a fraction range if both values are contained in [minval, maxval]
+        # accept a fraction range if both values are in [minval, maxval]
         if x1 >= minval and x1 <= maxval and x2 >= minval and x2 <= maxval:
             cond = STR_FRACTION_RANGE
-            update_match_results(match, spans, results, x1, x2, cond, query_term)
+            _update_match_results(match, spans, results, x1, x2,
+                                  cond, query_term)
 
     # check for fractions
     iterator = re.finditer(str_fraction_query, sentence)
     for match in iterator:
         if _TRACE:
             print('\tmatched fraction_query: {0}'.format(match.group()))
-        (n, d) = get_num_and_denom(match.group('frac'))
+        (n, d) = _get_num_and_denom(match.group('frac'))
 
         # keep either numerator or denom, according to user preference
         x = n
@@ -570,8 +591,9 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
         if x >= minval and x <= maxval:
             words = match.group('words')
             cond_words = match.group('cond').strip()
-            cond = cond_to_string(words, cond_words)
-            update_match_results(match, spans, results, x, EMPTY_FIELD, cond, query_term)
+            cond = _cond_to_string(words, cond_words)
+            _update_match_results(match, spans, results, x, EMPTY_FIELD,
+                                  cond, query_term)
 
     # check for units range query
     iterator = re.finditer(str_units_range_query, sentence)
@@ -581,15 +603,17 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
         units1 = match.group('units1').strip().lower()
         units2 = match.group('units2').strip().lower()
         # strip punctuation
-        units1 = regex_punct.sub('', units1)
-        units2 = regex_punct.sub('', units2)
+        units1 = _regex_punct.sub('', units1)
+        units2 = _regex_punct.sub('', units2)
         if units1 == units2:
             num1 = float(match.group('num1'))
             num2 = float(match.group('num2'))
-            # accept a numeric range if both numbers are contained in [minval, maxval]
-            if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
+            # accept a numeric range if both numbers are in [minval, maxval]
+            if num1 >= minval and num1 <= maxval and \
+               num2 >= minval and num2 <= maxval:
                 cond = STR_RANGE
-                update_match_results(match, spans, results, num1, num2, cond, query_term)
+                _update_match_results(match, spans, results, num1, num2,
+                                      cond, query_term)
 
     # check for bf numeric ranges
     iterator = re.finditer(str_bf_range_query, sentence)
@@ -598,10 +622,12 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
             print('\tmatched bf_range_query: {0}'.format(match.group()))
         num1 = float(match.group('num1'))
         num2 = float(match.group('num2'))
-        # accept a numeric range if both numbers are contained in [minval, maxval]
-        if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
+        # accept a numeric range if both numbers are in [minval, maxval]
+        if num1 >= minval and num1 <= maxval and \
+           num2 >= minval and num2 <= maxval:
             cond = STR_RANGE
-            update_match_results(match, spans, results, num1, num2, cond, query_term)        
+            _update_match_results(match, spans, results, num1, num2,
+                                  cond, query_term)
             
     # check for numeric ranges
     iterator = re.finditer(str_range_query, sentence)
@@ -610,10 +636,12 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
             print('\tmatched range query: {0}'.format(match.group()))
         num1 = float(match.group('num1'))
         num2 = float(match.group('num2'))
-        # accept a numeric range if both numbers are contained in [minval, maxval]
-        if num1 >= minval and num1 <= maxval and num2 >= minval and num2 <= maxval:
+        # accept a numeric range if both numbers are in [minval, maxval]
+        if num1 >= minval and num1 <= maxval and \
+           num2 >= minval and num2 <= maxval:
             cond = STR_RANGE
-            update_match_results(match, spans, results, num1, num2, cond, query_term)
+            _update_match_results(match, spans, results, num1, num2,
+                                  cond, query_term)
 
     # check for op-value matches
     iterator = re.finditer(str_op_val_query, sentence)
@@ -624,8 +652,9 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
         if val >= minval and val <= maxval:
             words = match.group('words')
             cond_words = match.group('cond').strip()
-            cond = cond_to_string(words, cond_words)
-            update_match_results(match, spans, results, val, EMPTY_FIELD, cond, query_term)
+            cond = _cond_to_string(words, cond_words)
+            _update_match_results(match, spans, results, val, EMPTY_FIELD,
+                                  cond, query_term)
             
     # check for wds-value matches
     iterator = re.finditer(str_wds_val_query, sentence)
@@ -634,14 +663,15 @@ def extract_value(query_term, sentence, minval, maxval, denom_only):
             print('\tmatched wds_val_query: {0}'.format(match.group()))
         val = float(match.group('val'))
         if val >= minval and val <= maxval:
-            update_match_results(match, spans, results, val, EMPTY_FIELD, EMPTY_FIELD, query_term)
+            _update_match_results(match, spans, results, val,
+                                  EMPTY_FIELD, EMPTY_FIELD, query_term)
 
     results = remove_hypotheticals(sentence, results)
     return results
 
 
 ###############################################################################
-def resolve_overlap(terms, results):
+def _resolve_overlap(terms, results):
     """
     Check results for overlap and prune according to these rules:
     
@@ -825,7 +855,7 @@ def remove_hypotheticals(sentence, results):
 
     omit_results = set()
         
-    # for each trigger, find the next value result that starts within WINDOW words\
+    # for each trigger, find next value result starting within WINDOW words\
     for hw in triggers:
         h_start = hw[0]
         for rs in result_spans:
@@ -867,7 +897,7 @@ def _common_clean(string_list, is_case_sensitive):
     for i, text in enumerate(string_list):
 
         # replace certain chars with whitespace
-        text = regex_whitespace_replace.sub(' ', text)
+        text = _regex_whitespace_replace.sub(' ', text)
     
         # convert to lowercase unless case sensitive match enabled
         if not is_case_sensitive:
@@ -877,7 +907,7 @@ def _common_clean(string_list, is_case_sensitive):
         
             
 ###############################################################################
-def clean_sentence(sentence, is_case_sensitive):
+def _clean_sentence(sentence, is_case_sensitive):
     """
     Do some preliminary processing on the sentence prior to value extraction.
     """
@@ -908,12 +938,14 @@ def clean_sentence(sentence, is_case_sensitive):
         start = int(date.start)
         end   = int(date.end)
 
+        if _TRACE:
+            print('\tfound date: "{0}"'.format(date))
+
         # erase date if not all digits, such as 1500, which
         # could be a measurement (i.e. 1500 ml)
-        #if not re.match(r'\s\d+\s', date.text):
-        if not re.match(r'\d+', date.text):
+        if not re.match(r'\A\d+\Z', date.text):
             if _TRACE:
-                print("\terasing date '{0}'".format(date.text))
+                print('\terasing date "{0}"'.format(date.text))
             sentence = erase(sentence, start, end)
 
     # find size measurements in the sentence
@@ -926,6 +958,10 @@ def clean_sentence(sentence, is_case_sensitive):
     # erase each size measurement from the sentence except for those in
     # units of cc's and inches
     for m in measurements:
+
+        if _TRACE:
+            print('\tfound size measurement: "{0}"'.format(m.text))
+        
         if 'CUBIC_MILLIMETERS' == m.units:
             if -1 != m.text.find('cc'):
                 continue
@@ -935,7 +971,7 @@ def clean_sentence(sentence, is_case_sensitive):
         start = int(m.start)
         end   = int(m.end)
         if _TRACE:
-            print("\terasing size measurement '{0}'".format(m.text))
+            print('\terasing size measurement "{0}"'.format(m.text))
         sentence = erase(sentence, start, end)
 
     if _TRACE:
@@ -945,50 +981,13 @@ def clean_sentence(sentence, is_case_sensitive):
 
 
 ###############################################################################
-def get_version():
-    return 'value_extractor {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
-
-
-###############################################################################
-def show_help():
-    print(get_version())
-    print("""
-    USAGE: 
-
-    To extract numeric values:
-
-        python3 ./value_extractor.py -t <term list> -s <sentence> --min <minval> --max <maxval> [-hvcyz]
-
-    To extract text and keep only those words that appear in an enumerated list:
-
-        python3 ./value_extractor.py -t <term list> -s <sentence> --enumlist <enumerated list> [-hvcz]
-           
-
-    OPTIONS:
-
-        -t, --terms    <quoted string>  List of comma-separated search terms.
-        -s, --sentence <quoted string>  Sentence to be processed.
-        -m, --min      <float or int>   Minimum acceptable value.
-        -n, --max      <float or int>   Maximum acceptable value.
-        -e, --enumlist <quoted string>  List of comma-separated terms for filtering results.
-                                        The presence of this option causes textual values to be extracted.
-                                        Only those terms appearing in the enumerated list are returned.
-
-    FLAGS:
-
-        -h, --help                      Print this information and exit.
-        -v, --version                   Print version information and exit.
-        -c, --case                      Preserve case when matching terms.
-        -y, --denom                     Return the denominator of fractional values instead of the numerator.
-                                        Default is to return the numerator.
-        -z, --test                      Disable -s option and use internal test sentences.
-
-    """)
-
-
-###############################################################################
-def run(term_string, sentence, str_minval=None, str_maxval=None,
-        enumlist=None, is_case_sensitive=False, is_denom_only=False):
+def run(term_string,               # comma-separated string of query terms
+        sentence,
+        str_minval=None,
+        str_maxval=None,
+        enumlist=None,
+        is_case_sensitive=False,
+        is_denom_only=False):
     """
     Run the value extractor for all query terms and return a list of
     ValueMeasurement namedtuples.
@@ -1053,7 +1052,7 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
     for i in range(len(terms)):
         new_term = terms[i]
         original_term = original_terms[i]
-        term_dict[new_term] = original_term
+        _term_dict[new_term] = original_term
         if _TRACE:
             print('\tterm_dict[{0}] => {1}'.format(new_term, original_term))
 
@@ -1072,24 +1071,67 @@ def run(term_string, sentence, str_minval=None, str_maxval=None,
 
     # end of setup
 
-    sentence = clean_sentence(sentence, is_case_sensitive)
+    sentence = _clean_sentence(sentence, is_case_sensitive)
 
     results = []
     if enumlist:
-        results = extract_enumlist_values(terms, sentence, filter_terms)
+        results = _extract_enumlist_values(terms, sentence, filter_terms)
     else:
         for term in terms:
             # extract a single numeric value
-            values = extract_value(term, sentence, minval, maxval, is_denom_only)
+            values = _extract_value(term, sentence, minval, maxval,
+                                    is_denom_only)
             results.extend(values)
 
     # order results by their starting character offset
     results = sorted(results, key=lambda x: x.start)
 
     # prune if appropriate for overlapping results
-    results = resolve_overlap(terms, results)
+    results = _resolve_overlap(terms, results)
     
-    return to_json(original_terms, original_sentence, results, enumlist)
+    return _to_json(original_terms, original_sentence, results, enumlist)
+
+
+###############################################################################
+def _get_version():
+    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
+
+
+###############################################################################
+def _show_help():
+    print(_get_version())
+    print("""
+    USAGE: 
+
+    To extract numeric values:
+
+        python3 ./value_extractor.py -t <term list> -s <sentence> --min <minval> --max <maxval> [-hvcyz]
+
+    To extract text and keep only those words that appear in an enumerated list:
+
+        python3 ./value_extractor.py -t <term list> -s <sentence> --enumlist <enumerated list> [-hvcz]
+           
+
+    OPTIONS:
+
+        -t, --terms    <quoted string>  List of comma-separated search terms.
+        -s, --sentence <quoted string>  Sentence to be processed.
+        -m, --min      <float or int>   Minimum acceptable value.
+        -n, --max      <float or int>   Maximum acceptable value.
+        -e, --enumlist <quoted string>  List of comma-separated terms for filtering results.
+                                        The presence of this option causes textual values to be extracted.
+                                        Only those terms appearing in the enumerated list are returned.
+
+    FLAGS:
+
+        -h, --help                      Print this information and exit.
+        -v, --version                   Print version information and exit.
+        -c, --case                      Preserve case when matching terms.
+        -y, --denom                     Return the denominator of fractional values instead of the numerator.
+                                        Default is to return the numerator.
+        -z, --test                      Disable -s option and use internal test sentences.
+
+    """)
 
 
 ###############################################################################
@@ -1289,17 +1331,17 @@ if __name__ == '__main__':
     optparser.add_option('-z', '--test',     action='store_true', dest='use_test_sentences', default=False)
 
     if 1 == len(sys.argv):
-        show_help()
+        _show_help()
         sys.exit(0)
 
     opts, other = optparser.parse_args(sys.argv)
 
     if opts.show_help:
-        show_help()
+        _show_help()
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        print(_get_version())
         sys.exit(0)
 
     terms = opts.terms
