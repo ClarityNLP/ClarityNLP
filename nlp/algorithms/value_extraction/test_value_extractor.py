@@ -31,14 +31,20 @@ TestResult = namedtuple('TestResult', TEST_RESULT_FIELDS)
 def compare_fields(field_name, computed, expected, failure_list):
     
     if computed != expected:
-        failure_list.append('\texpected {0}: {1}, got: {2}'.
+        failure_list.append('\texpected {0}: "{1}", got: "{2}"'.
                             format(field_name, expected, computed))
 
     return failure_list
 
 
 ###############################################################################
-def compare_results(term_string, test_data, minval, maxval, denom_only=False):
+def compare_results(
+        term_string,
+        test_data,
+        minval,
+        maxval,
+        enumlist=None,
+        denom_only=False):
     """
     Run the value extractor on the test data using the supplied term string
     and check the results.
@@ -52,6 +58,7 @@ def compare_results(term_string, test_data, minval, maxval, denom_only=False):
             sentence,
             minval,
             maxval,
+            enumlist=enumlist,
             is_denom_only=denom_only
         )
         
@@ -543,7 +550,7 @@ if __name__ == '__main__':
             TestResult('bp', 110, None, ve.STR_EQUAL),
             TestResult('bp', 115, None, ve.STR_EQUAL)
         ],
-        'Her BP on 3/27 from her 12 cm x 9 cm x 6 cm heart was 110/70.':[
+        'Her BP on 3/27 from her 12 cm. x 9 cm x 6 cm heart was 110/70.':[
             TestResult('bp', 110, None, ve.STR_EQUAL)
         ]
     }
@@ -570,10 +577,35 @@ if __name__ == '__main__':
             TestResult('bp', 70, None, ve.STR_EQUAL),
             TestResult('bp', 80, None, ve.STR_EQUAL)
         ],
-        'Her BP on 3/27 from her 12 cm x 9 cm x 6 cm heart was 110/70.':[
+        'Her BP on 3/27 from her 12cm x 9cm. x 6   cm heart was 110/70.':[
             TestResult('bp', 70, None, ve.STR_EQUAL)
         ]
     }
 
     compare_results(term_string, test_data, minval, maxval, denom_only=True)
+    
+    # numbers followed by 's'
+    term_string = "hr"
+    test_data = {
+        "her HR varied from the 80s to the 90's":[
+            TestResult('hr', 80, 90, ve.STR_RANGE)
+        ],
+        'her HR was in the 90s':[TestResult('hr', 90, None, ve.STR_EQUAL)]
+    }
+
+    compare_results(term_string, test_data, minval, maxval)
+    
+    # enumlist: search for keywords and return text 'values' from enumlist
+    term_string = 'positive, +, negative'
+    enumlist = 'titer, hav, igm, igg'
+    test_data = {
+        'POSITIVE Titer-1:80':[TestResult('positive', 'titer', None, ve.STR_EQUAL)],
+        '+Titer-1:80':[TestResult('+', 'titer', None, ve.STR_EQUAL)],
+        #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
+        #    TestResult('+', 'hav igg', None, ve.STR_EQUAL),
+        #    TestResult('negative', 'igm', None, ve.STR_EQUAL)
+        #],
+    }
+
+    compare_results(term_string, test_data, minval, maxval, enumlist)
     
