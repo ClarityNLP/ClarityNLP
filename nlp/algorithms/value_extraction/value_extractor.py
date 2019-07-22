@@ -265,6 +265,9 @@ _regex_gte      = re.compile(_str_gte)
 # used to restore original terms
 _term_dict = {}
 
+# returned if no results found
+_EMPTY_JSON = '{}'
+
 
 ###############################################################################
 def _to_json(original_terms, original_sentence, results, is_text):
@@ -415,15 +418,19 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
 
     if _TRACE:
         print('calling extract_enumlist_values...')
-    
+        print('\t query_terms: {0}'.format(query_terms))
+        print('\t    sentence: {0}'.format(sentence))
+        print('\tfilter_words: {0}'.format(filter_words))
+
     # find each query term in the sentence and record their positions
     boundaries = []
     for query_term in query_terms:
-        str_word_query = r'\b' + query_term + r'\b'
+        # escape any chars that have special meaning for regex
+        str_word_query = re.escape(query_term)
         iterator = re.finditer(str_word_query, sentence)
         for match in iterator:
             boundaries.append(match.start())
-
+        
     # return if no query terms were found
     if 0 == len(boundaries):
         return []
@@ -437,16 +444,18 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
 
     results = []
     for query_term in query_terms:
-        str_word_query = r'\b' + query_term + r'\b'                          +\
+        if _TRACE: print('\tsearching for query term "{0}"'.format(query_term))
+        str_word_query = re.escape(query_term)
+        str_enum_query = str_word_query                                      +\
             r'(?P<words>'                                                    +\
             r'\s*(' + _str_enumlist_value + r'\s*){0,8}'                     +\
             r')'
 
         found_it = False
-        iterator = re.finditer(str_word_query, sentence)
+        iterator = re.finditer(str_enum_query, sentence)
         for match in iterator:
             if _TRACE:
-                print("\tmatch '{0}' start: {1}".
+                print("\t\tmatch '{0}' start: {1}".
                       format(match.group(), match.start()))
             start = match.start()
 
@@ -456,7 +465,7 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
             except ValueError:
                 # skip this term for now - need to log this - TBD
                 if _TRACE:
-                    print('\t***ERROR***: start offset not found ' +\
+                    print('\t\t***ERROR***: start offset not found ' +\
                           'in boundaries list.')
                 continue
 
@@ -469,6 +478,9 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
             words = match.group('words')
             words_start = match.start('words')
             word = ''
+
+            #need to find candidates, do overlap resolution, take longest match - TBD
+            
             for fw in filter_words:
                 pos = words.find(fw)
                 if -1 != pos and words_start + pos < end:
@@ -481,6 +493,8 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
                                         word, EMPTY_FIELD, STR_EQUAL,
                                         query_term)
                 results.append(meas)
+                if _TRACE:
+                    print('\t\tnew result: "{0}"'.format(meas))
 
     return results
 
@@ -1046,7 +1060,7 @@ def run(term_string,               # comma-separated string of query terms
     if _TRACE:
         print('\n\tterms: {0}'.format(terms))
     if _TRACE and enumlist:
-        print('\t filter_terms: {0}'.format(filter_terms))
+        print('\tfilter_terms: {0}'.format(filter_terms))
                 
     # map the new terms to the original, so can restore in output
     for i in range(len(terms)):
@@ -1083,12 +1097,17 @@ def run(term_string,               # comma-separated string of query terms
                                     is_denom_only)
             results.extend(values)
 
+    if 0 == len(results):
+        if _TRACE:
+            print('\t*** no results found ***')
+        return _EMPTY_JSON
+            
     # order results by their starting character offset
     results = sorted(results, key=lambda x: x.start)
 
     # prune if appropriate for overlapping results
     results = _resolve_overlap(terms, results)
-    
+
     return _to_json(original_terms, original_sentence, results, enumlist)
 
 
