@@ -171,7 +171,7 @@ _MODULE_NAME = 'value_extractor.py'
 # set to True to enable debug output
 _TRACE = False
 
-# replace these chars with whitespace
+# chars to be replaced with whitespace to simplify things
 _regex_whitespace_replace = re.compile(r'[%(){}\[\]]')
 
 # hyphenated words, abbreviations
@@ -195,12 +195,23 @@ _str_lte       = r'(<=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
 _str_gt        = r'(>|' + _str_gt_than + r')'
 _str_gte       = r'(>=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
 _str_separator = r'([-:=\s]\s*)?'
-_str_num       = r'(\d+(\.\d+)?|\.\d+)'
+
+# numbers with commas
+_str_comma_num = r'\d{1,3}(,\d{3})+'
+
+# integers or floating point numbers
+_str_int_float = r'(\d+(\.\d+)?|\.\d+)'
+
+_str_num       = _str_comma_num + r'|' + _str_int_float
 _str_cond      = r'(?P<cond>' + _str_op + r')'
-_str_val       = r'(?P<val>' + _str_num + r')(\'?s)?'
+_str_suffix    = r'(k|K|s|\'s)?'
+_str_suffix1   = r'(?P<suffix1>' + _str_suffix + r')'
+_str_suffix2   = r'(?P<suffix2>' + _str_suffix + r')'
+_str_val       = r'(?P<val>' + _str_num + r')(?P<suffix>' + _str_suffix + r')'
 _str_range_sep = r'\s*(-|to(\s+the)?)\s*'
-_str_range     = r'(?P<num1>' + _str_num + r')(\'?s)?' + _str_range_sep + \
-                r'(?P<num2>' + _str_num + r')(\'?s)?'
+_str_range     = r'(?P<num1>' + _str_num + r')' + _str_suffix1                +\
+    _str_range_sep                                                            +\
+    r'(?P<num2>' + _str_num + r')' + _str_suffix2
 
 # # from http://ebmcalc.com/Basic.htm, an online medical unit conversion tool
 # str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
@@ -223,10 +234,10 @@ _str_range     = r'(?P<num1>' + _str_num + r')(\'?s)?' + _str_range_sep + \
 _str_bf     = r'\b(between|from)\s*'
 _str_bf_sep = r'\s*(-|to|and)\s*'
 
-# range with optional 's, to capture "90's to 100's", etc.
+# range with optional suffixes, to capture "90's to 100's", 20k-40k, etc.
 _str_bf_range = _str_bf + \
-    r'(?P<num1>' + _str_num + r')(\'?s)?' + _str_bf_sep                      +\
-    r'(?P<num2>' + _str_num + r')(\'?s)?'
+    r'(?P<num1>' + _str_num + r')' + _str_suffix1 + _str_bf_sep              +\
+    r'(?P<num2>' + _str_num + r')' + _str_suffix2
 
 _str_units_range = r'(' + _str_bf + r')?'                                    +\
     r'(?P<num1>' + _str_num + r')' + r'\s*'                                  +\
@@ -355,6 +366,27 @@ def _get_num_and_denom(str_fraction):
     values = str_fraction.strip().split('/')
     assert 2 == len(values)
     return (int(values[0]), int(values[1]))
+
+
+###############################################################################
+def _get_suffixed_num(match_obj, num_grp, suffix_grp):
+    """
+    Convert a string representing a numeric value with an optional suffix
+    to a floating point value.
+
+    The two strings identify the regex match groups for the number and
+    suffix.
+    """
+
+    # strip commas from number before conversion to float
+    num_str = match_obj.group(num_grp)
+    num_str_no_commas = re.sub(r',', '', num_str)
+    num = float(num_str_no_commas)
+
+    suffix = match_obj.group(suffix_grp)
+    if suffix is not None and len(suffix) > 0 and 'k' == suffix.lower():
+        num *= 1000.0
+    return num
 
 
 ###############################################################################
@@ -622,6 +654,9 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
         if units1 == units2:
             num1 = float(match.group('num1'))
             num2 = float(match.group('num2'))
+            if 'k' == units1.lower():
+                num1 *= 1000.0
+                num2 *= 1000.0
             # accept a numeric range if both numbers are in [minval, maxval]
             if num1 >= minval and num1 <= maxval and \
                num2 >= minval and num2 <= maxval:
@@ -634,8 +669,8 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched bf_range_query: {0}'.format(match.group()))
-        num1 = float(match.group('num1'))
-        num2 = float(match.group('num2'))
+        num1 = _get_suffixed_num(match, 'num1', 'suffix1')
+        num2 = _get_suffixed_num(match, 'num2', 'suffix2')
         # accept a numeric range if both numbers are in [minval, maxval]
         if num1 >= minval and num1 <= maxval and \
            num2 >= minval and num2 <= maxval:
@@ -648,8 +683,8 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched range query: {0}'.format(match.group()))
-        num1 = float(match.group('num1'))
-        num2 = float(match.group('num2'))
+        num1 = _get_suffixed_num(match, 'num1', 'suffix1')
+        num2 = _get_suffixed_num(match, 'num2', 'suffix2')
         # accept a numeric range if both numbers are in [minval, maxval]
         if num1 >= minval and num1 <= maxval and \
            num2 >= minval and num2 <= maxval:
@@ -662,7 +697,7 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched op_val_query: {0}'.format(match.group()))
-        val = float(match.group('val'))
+        val = _get_suffixed_num(match, 'val', 'suffix')
         if val >= minval and val <= maxval:
             words = match.group('words')
             cond_words = match.group('cond').strip()
@@ -675,7 +710,7 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched wds_val_query: {0}'.format(match.group()))
-        val = float(match.group('val'))
+        val = _get_suffixed_num(match, 'val', 'suffix')
         if val >= minval and val <= maxval:
             _update_match_results(match, spans, results, val,
                                   EMPTY_FIELD, EMPTY_FIELD, query_term)

@@ -584,28 +584,41 @@ if __name__ == '__main__':
 
     compare_results(term_string, test_data, minval, maxval, denom_only=True)
     
-    # numbers followed by 's'
-    term_string = "hr"
+    # numbers with suffixes
+    term_string = "hr, platelets"
     test_data = {
         "her HR varied from the 80s to the 90's":[
             TestResult('hr', 80, 90, ve.STR_RANGE)
         ],
-        'her HR was in the 90s':[TestResult('hr', 90, None, ve.STR_EQUAL)]
+        'her HR was in the 90s':[TestResult('hr', 90, None, ve.STR_EQUAL)],
+        'platelets were 20k':[TestResult('platelets', 20000, None, ve.STR_EQUAL)],
+        'platelets in the range 20k-40k':[
+            TestResult('platelets', 20000, 40000, ve.STR_RANGE)
+        ],
+        'platelets from 25k - 38k':[
+            TestResult('platelets', 25000, 38000, ve.STR_RANGE)
+        ],
+        'platelets between 25k and 38k':[
+            TestResult('platelets', 25000, 38000, ve.STR_RANGE)
+        ],
+        'platelets between 25,000 and 38,000':[
+            TestResult('platelets', 25000, 38000, ve.STR_RANGE)
+        ],
     }
 
     compare_results(term_string, test_data, minval, maxval)
     
-    # enumlist: search for keywords and return text 'values' from enumlist
-    term_string = 'positive, +, negative'
-    enumlist = 'titer, hav, igm, igg'
-    test_data = {
-        'POSITIVE Titer-1:80':[TestResult('positive', 'titer', None, ve.STR_EQUAL)],
-        '+Titer-1:80':[TestResult('+', 'titer', None, ve.STR_EQUAL)],
-        #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
-        #    TestResult('+', 'hav igg', None, ve.STR_EQUAL),
-        #    TestResult('negative', 'igm', None, ve.STR_EQUAL)
-        #],
-    }
+    # # enumlist: search for keywords and return text 'values' from enumlist
+    # term_string = 'positive, +, negative'
+    # enumlist = 'titer, hav, igm, igg'
+    # test_data = {
+    #     'POSITIVE Titer-1:80':[TestResult('positive', 'titer', None, ve.STR_EQUAL)],
+    #     '+Titer-1:80':[TestResult('+', 'titer', None, ve.STR_EQUAL)],
+    #     #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
+    #     #    TestResult('+', 'hav igg', None, ve.STR_EQUAL),
+    #     #    TestResult('negative', 'igm', None, ve.STR_EQUAL)
+    #     #],
+    # }
 
-    compare_results(term_string, test_data, minval, maxval, enumlist)
+    # compare_results(term_string, test_data, minval, maxval, enumlist)
     
