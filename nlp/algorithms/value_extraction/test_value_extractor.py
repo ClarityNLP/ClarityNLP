@@ -29,7 +29,7 @@ _Result = namedtuple('_Result', _RESULT_FIELDS)
 
 
 ###############################################################################
-def compare_fields(field_name, computed, expected, failure_list):
+def _compare_fields(field_name, computed, expected, failure_list):
     
     if computed != expected:
         failure_list.append('\texpected {0}: "{1}", got: "{2}"'.
@@ -39,7 +39,7 @@ def compare_fields(field_name, computed, expected, failure_list):
 
 
 ###############################################################################
-def compare_results(
+def _compare_results(
         term_string,
         test_data,
         minval,
@@ -63,10 +63,11 @@ def compare_results(
             is_denom_only=denom_only
         )
         
-        # load the json result and decode into a ValueResult namedtuple
+        # load the json result and decode as a ValueResult namedtuple
         result_data = json.loads(json_result)
         value_result = ve.ValueResult(**result_data)
 
+        # check that len(computed) == len(expected)
         if value_result.measurementCount != len(expected_list):
             print('\tMismatch in computed vs. expected results: ')
             print('\tSentence: {0}'.format(sentence))
@@ -84,26 +85,25 @@ def compare_results(
 
             computed = value['matchingTerm']
             expected = expected_list[i].term
-            failures = compare_fields('matching term', computed, expected, failures)
+            failures = _compare_fields('matching term', computed, expected, failures)
 
             computed = value['x']
             expected = expected_list[i].x
-            failures = compare_fields('x', computed, expected, failures)
+            failures = _compare_fields('x', computed, expected, failures)
 
             computed = value['y']
             expected = expected_list[i].y
-            failures = compare_fields('y', computed, expected, failures)
+            failures = _compare_fields('y', computed, expected, failures)
 
             computed = value['condition']
             expected = expected_list[i].condition
-            failures = compare_fields('condition', computed, expected, failures)
+            failures = _compare_fields('condition', computed, expected, failures)
                 
         if len(failures) > 0:
             print(sentence)
             for f in failures:
                 print(f)
-    
-    
+
 
 ###############################################################################
 if __name__ == '__main__':
@@ -184,7 +184,7 @@ if __name__ == '__main__':
         ]
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
     
     # find values using "ejection fraction" as the search term
     term_string = "ejection fraction"
@@ -240,7 +240,7 @@ if __name__ == '__main__':
         ]
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
     
     # vital signs
     term_string = "t, temp, temperature, p, pulse, hr, bp, r, rr, o2, o2sat, " \
@@ -353,7 +353,7 @@ if __name__ == '__main__':
         ]
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
 
     # blood components
     term_string = "wbc, rbc, hgb, hct, mcv, mch, mchc, rdw, plt, plt ct, "    \
@@ -458,7 +458,7 @@ if __name__ == '__main__':
         ]
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
 
     # approximations
     term_string = "rr"
@@ -471,7 +471,7 @@ if __name__ == '__main__':
         'RR is approximately 22':[the_result]
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
 
     # >=, <=
     term_string = "rr"
@@ -482,7 +482,7 @@ if __name__ == '__main__':
         'his RR was less than 42':[_Result('rr', 42, None, ve.STR_LT)]
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
 
     # ranges
     term_string = "rr, fvc"
@@ -529,7 +529,7 @@ if __name__ == '__main__':
         ]
     }
     
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
     
     # blood pressure - check numerators (the default)
     term_string = "bp"
@@ -556,7 +556,7 @@ if __name__ == '__main__':
         ]
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
     
     # blood pressure - check denominators
     term_string = "bp"
@@ -583,9 +583,9 @@ if __name__ == '__main__':
         ]
     }
 
-    compare_results(term_string, test_data, minval, maxval, denom_only=True)
+    _compare_results(term_string, test_data, minval, maxval, denom_only=True)
     
-    # numbers with suffixes
+    # numbers with suffixes and commas
     term_string = "hr, platelets"
     test_data = {
         "her HR varied from the 80s to the 90's":[
@@ -607,7 +607,7 @@ if __name__ == '__main__':
         ],
     }
 
-    compare_results(term_string, test_data, minval, maxval)
+    _compare_results(term_string, test_data, minval, maxval)
     
     # # enumlist: search for keywords and return text 'values' from enumlist
     # term_string = 'positive, +, negative'
@@ -621,5 +621,5 @@ if __name__ == '__main__':
     #     #],
     # }
 
-    # compare_results(term_string, test_data, minval, maxval, enumlist)
+    # _compare_results(term_string, test_data, minval, maxval, enumlist)
     
