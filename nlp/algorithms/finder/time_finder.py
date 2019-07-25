@@ -41,15 +41,19 @@ import json
 import optparse
 from collections import namedtuple
 
-VERSION_MAJOR = 0
-VERSION_MINOR = 1
-
 # 'TimeValue' is the JSON-serializable result object from this module
-EMPTY_FIELD = -1
+EMPTY_FIELD = None
 TIME_VALUE_FIELDS = ['text', 'start', 'end', 'hours', 'minutes', 'seconds',
                      'fractional_seconds', 'am_pm', 'timezone',
                      'gmt_delta_sign', 'gmt_delta_hours', 'gmt_delta_minutes']
 TimeValue = namedtuple('TimeValue', TIME_VALUE_FIELDS)
+STR_AM = 'am'
+STR_PM = 'pm'
+
+
+_VERSION_MAJOR = 0
+_VERSION_MINOR = 1
+_MODULE_NAME = 'time_finder.py'
 
 # fractional seconds
 str_frac = r'[.:][0-9]+'
@@ -255,8 +259,9 @@ regex_brackets = re.compile(str_brackets)
 CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
 Candidate = namedtuple('Candidate', CANDIDATE_FIELDS)
 
+
 ###############################################################################
-def has_overlap(a1, b1, a2, b2):
+def _has_overlap(a1, b1, a2, b2):
     """
     Determine if intervals [a1, b1) and [a2, b2) overlap at all.
     """
@@ -272,7 +277,7 @@ def has_overlap(a1, b1, a2, b2):
         return True
 
 ###############################################################################
-def remove_overlap(candidates):
+def _remove_overlap(candidates):
     """
     Given a set of match candidates, resolve into nonoverlapping matches.
     Take the longest match at any given position.
@@ -306,7 +311,7 @@ def remove_overlap(candidates):
             len_j   = end_j - start_j
 
             # does candidate[j] overlap candidate[i] at all
-            if has_overlap(start_i, end_i, start_j, end_j):
+            if _has_overlap(start_i, end_i, start_j, end_j):
                 #print('\t{0} OVERLAPS {1}, lengths {2}, {3}'.format(candidates[index_i].matchobj.group(),
                 #                                                    candidates[index_j].matchobj.group(),
                 #                                                    len_i, len_j))
@@ -347,7 +352,7 @@ def remove_overlap(candidates):
     return results
 
 ###############################################################################
-def clean_sentence(sentence):
+def _clean_sentence(sentence):
     """
     Do some preliminary processing on the sentence.
     """
@@ -373,7 +378,7 @@ def run(sentence):
     candidates = [] # potential matches, need overlap resolution to confirm
 
     original_sentence = sentence
-    sentence = clean_sentence(sentence)
+    sentence = _clean_sentence(sentence)
 
     for regex in regexes:
         iterator = regex.finditer(sentence)
@@ -396,7 +401,7 @@ def run(sentence):
     # print()
 
     #print('number of candidates before: {0}'.format(len(candidates)))
-    pruned_candidates = remove_overlap(candidates)
+    pruned_candidates = _remove_overlap(candidates)
     #print('number of candidates after: {0}'.format(len(pruned_candidates)))
     # print('Result matches: ')
     # for c in pruned_candidates:
@@ -448,9 +453,9 @@ def run(sentence):
             if match.group('am_pm') is not None:
                 am_pm = match.group('am_pm')
                 if -1 != am_pm.find('a') or -1 != am_pm.find('A'):
-                    am_pm = 'am'
+                    am_pm = STR_AM
                 else:
-                    am_pm = 'pm'
+                    am_pm = STR_PM
         except IndexError:
             pass
 
@@ -504,12 +509,13 @@ def run(sentence):
     return json.dumps([r._asdict() for r in results], indent=4)
 
 ###############################################################################
-def get_version():
-    return 'date_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
-        
+def _get_version():
+    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
+
+
 ###############################################################################
-def show_help():
-    print(get_version())
+def _show_help():
+    print(_get_version())
     print("""
     USAGE: python3 ./time_finder.py -s <sentence> [-hvz]
 
@@ -524,6 +530,7 @@ def show_help():
         -z, --test                      Disable -s option and use internal test sentences.
 
     """)
+
 
 ###############################################################################
 if __name__ == '__main__':
@@ -581,15 +588,15 @@ if __name__ == '__main__':
     use_test_sentences = opts.use_test_sentences
     
     if not use_test_sentences and 1 == len(sys.argv):
-        show_help()
+        _show_help()
         sys.exit(0)
 
     if opts.show_help:
-        show_help()
+        _show_help()
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        print(_get_version())
         sys.exit(0)
 
     if not sentence and not use_test_sentences:
