@@ -9,10 +9,11 @@ TODO: add relative time expressions
     date range:    4/2-5/13, 4/2-5/3/2013
     abbreviations: 2 wks, 1 1/2 wk, 1 wk
     age:           3 days old
-    duration:      for 6 months, a year
+    duration:      for 6 months, a year, over 2 hours, q. 6-8 hrs
                    duration words: for, over, last, lasting, lasted, within
     frequency:     every three days
     relative time: three days after 02APR13
+                   two hours after
 
                    relative time words: before, after, prior, later,
                                         earlier, post, ago, next, following
@@ -53,6 +54,9 @@ STR_PM = 'pm'
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 _MODULE_NAME = 'time_finder.py'
+
+# set to True to see debug output
+_TRACE = False
 
 # fractional seconds
 _str_frac = r'[.:][0-9]+'
@@ -177,20 +181,20 @@ _str_h24ms_with_timezone = _str_t                                             +\
 _regex_h24ms_with_timezone = re.compile(_str_h24ms_with_timezone, re.IGNORECASE)
 
 # hour, minutes, seconds with GMT delta
-str_gmt_delta = r'(GMT|UTC)?[-+]' + _str_h24 + r':?' + r'(' + _str_MM + r')?'
-str_h24ms_with_gmt_delta = _str_t                                             +\
-                         r'(?P<hours>'   + _str_h24 + r')'                    +\
-                         r'(?P<minutes>' + _str_MM  + r')'                    +\
-                         r'(?P<seconds>' + _str_MM  + r')'  + r'\s*'          +\
-                         r'(?P<gmt_delta>' + str_gmt_delta + r')'
+_str_gmt_delta = r'(GMT|UTC)?[-+]' + _str_h24 + r':?' + r'(' + _str_MM + r')?'
+_str_h24ms_with_gmt_delta = _str_t                                            +\
+                           r'(?P<hours>'   + _str_h24 + r')'                  +\
+                           r'(?P<minutes>' + _str_MM  + r')'                  +\
+                           r'(?P<seconds>' + _str_MM  + r')'  + r'\s*'        +\
+                           r'(?P<gmt_delta>' + _str_gmt_delta + r')'
 
 # decipher the gmt_delta components
-str_gmt = r'(GMT|UTC)?(?P<gmt_sign>'+ r'[-+]' + r')'          +\
-          r'(?P<gmt_hours>' + _str_h24 + r')'  + r':?'        +\
-          r'(' + r'(?P<gmt_minutes>' + _str_MM + r')' + r')?'
-_regex_gmt = re.compile(str_gmt)
+_str_gmt = r'(GMT|UTC)?(?P<gmt_sign>'+ r'[-+]' + r')'          +\
+           r'(?P<gmt_hours>' + _str_h24 + r')'  + r':?'        +\
+           r'(' + r'(?P<gmt_minutes>' + _str_MM + r')' + r')?'
+_regex_gmt = re.compile(_str_gmt)
 
-_regex_h24ms_with_gmt_delta = re.compile(str_h24ms_with_gmt_delta, re.IGNORECASE)
+_regex_h24ms_with_gmt_delta = re.compile(_str_h24ms_with_gmt_delta, re.IGNORECASE)
 
 # hour, minutes, seconds, and fraction
 _str_h24msf = _str_t                                           +\
@@ -219,23 +223,23 @@ _regex_h24msf = re.compile(_str_h24msf)
 # <time>+-hhmm
 # <time>+-hh
 
-str_iso_hh = r'([01][0-9]|2[0-4])'
-str_iso_mm = r'[0-5][0-9]'
-str_iso_ss = r'([0-5][0-9]|60)'
+_str_iso_hh = r'([01][0-9]|2[0-4])'
+_str_iso_mm = r'[0-5][0-9]'
+_str_iso_ss = r'([0-5][0-9]|60)'
 
-str_iso_hms = r'\b(?P<hours>'  + str_iso_hh + r'):?'                         +\
-              r'((?P<minutes>' + str_iso_mm + r'))?:?'                       +\
-              r'((?P<seconds>' + str_iso_ss + r'))?'                         +\
-              r'((?P<frac>'    + r'\.\d+'   + r'))?'
+_str_iso_hms = r'\b(?P<hours>'  + _str_iso_hh + r'):?'                        +\
+               r'((?P<minutes>' +  _str_iso_mm + r'))?:?'                     +\
+               r'((?P<seconds>' + _str_iso_ss + r'))?'                        +\
+               r'((?P<frac>'    + r'\.\d+'   + r'))?'
 
-str_iso_zone_hm = r'(?P<gmt_hours>' + str_iso_hh + r')'                      +\
-                  r'(:?' + r'(?P<gmt_minutes>' + str_iso_mm + r'))?'
+_str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r')'                     +\
+                   r'(:?' + r'(?P<gmt_minutes>' + _str_iso_mm + r'))?'
 
-str_iso_zone = r'((?P<timezone>Z)|' +\
-               r'(?P<gmt_sign>[-+])' + str_iso_zone_hm + r')'
+_str_iso_zone = r'((?P<timezone>Z)|'                                          +\
+                r'(?P<gmt_sign>[-+])' + _str_iso_zone_hm + r')'
 
-str_iso_time = str_iso_hms + r'((?P<gmt_delta>' + str_iso_zone + r'))?'
-_regex_iso_time = re.compile(str_iso_time)
+_str_iso_time = _str_iso_hms + r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
+_regex_iso_time = re.compile(_str_iso_time)
 
 _regexes = [_regex_iso_time,             # 0
             _regex_h24ms_with_gmt_delta, # 1
@@ -253,11 +257,11 @@ _regexes = [_regex_iso_time,             # 0
 ]
 
 # match (), {}, and []
-str_brackets = r'[(){}\[\]]'
-_regex_brackets = re.compile(str_brackets)
+_str_brackets = r'[(){}\[\]]'
+_regex_brackets = re.compile(_str_brackets)
 
-CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
-Candidate = namedtuple('Candidate', CANDIDATE_FIELDS)
+_CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
+_Candidate = namedtuple('_Candidate', _CANDIDATE_FIELDS)
 
 
 ###############################################################################
@@ -286,6 +290,9 @@ def _remove_overlap(candidates):
     from longest to shortest.
     """
 
+    if _TRACE:
+        print('called _remove_overlap...')
+    
     results = []
     overlaps = []
     indices = [i for i in range(len(candidates))]
@@ -293,7 +300,8 @@ def _remove_overlap(candidates):
     i = 0
     while i < len(indices):
 
-        #print('Starting indices: {0}'.format(indices))
+        if _TRACE:
+            print('\tstarting indices: {0}'.format(indices))
 
         index_i = indices[i]
         start_i = candidates[index_i].start
@@ -312,9 +320,11 @@ def _remove_overlap(candidates):
 
             # does candidate[j] overlap candidate[i] at all
             if _has_overlap(start_i, end_i, start_j, end_j):
-                #print('\t{0} OVERLAPS {1}, lengths {2}, {3}'.format(candidates[index_i].matchobj.group(),
-                #                                                    candidates[index_j].matchobj.group(),
-                #                                                    len_i, len_j))
+                if _TRACE:
+                    print('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
+                          format(candidates[index_i].match_text,
+                                 candidates[index_j].match_text,
+                                 len_i, len_j))
                 overlaps.append(j)
                 # keep the longest match at any overlap region
                 if len_j > len_i:
@@ -324,13 +334,16 @@ def _remove_overlap(candidates):
                     candidate_index = index_j
             j += 1
 
-        #print('\tWinner: {0}'.format(candidates[candidate_index].matchobj.group()))
-        #print('\tAppending {0} to results'.format(candidates[candidate_index].matchobj.group()))
+        if _TRACE:
+            print('\t\t\twinner: {0}'.
+                  format(candidates[candidate_index].match_text))
+            print('\t\t\tappending {0} to results'.
+                  format(candidates[candidate_index].match_text))
+            
         results.append(candidates[candidate_index])
-        #for r in results:
-        #    print('\tResults: {0}'.format(r.matchobj.group()))
-        
-        #print('\tOverlaps: {0}'.format(overlaps))
+
+        if _TRACE:
+            print('\t\toverlaps: {0}'.format(overlaps))
         
         # remove all overlaps
         new_indices = []
@@ -339,7 +352,8 @@ def _remove_overlap(candidates):
                 new_indices.append(indices[k])
         indices = new_indices
 
-        #print('\tNew indices: {0}'.format(new_indices))
+        if _TRACE:
+            print('\t\tindices after removing overlaps: {0}'.format(indices))
         
         if 0 == len(indices):
             break
@@ -348,8 +362,8 @@ def _remove_overlap(candidates):
         i = 0
         overlaps = []
 
-    #print('number of non-overlapping results: {0}'.format(len(results)))
     return results
+
 
 ###############################################################################
 def _clean_sentence(sentence):
@@ -373,54 +387,45 @@ def run(sentence):
     
     """    
 
-    #spans      = [] # [start, end) character offsets of each match
     results    = [] # TimeValue namedtuple results
     candidates = [] # potential matches, need overlap resolution to confirm
 
     original_sentence = sentence
     sentence = _clean_sentence(sentence)
 
-# _regexes = [_regex_iso_time,             # 0
-#             _regex_hms_with_gmt_delta,   # 1
-#             _regex_h24ms_with_timezone,  # 2
-#             _regex_h12msf_am_pm,         # 3
-#             _regex_h12ms_am_pm,          # 4
-#             _regex_h12m_am_pm,           # 5
-#             _regex_h12_am_pm,            # 6
-#             _regex_h24msf,               # 7
-#             _regex_h24ms,                # 8
-#             _regex_h24m,                 # 9
-#             _regex_h12m,                 # 10
-# ]
-
-    
     for regex_index, regex in enumerate(_regexes):
         iterator = regex.finditer(sentence)
         for match in iterator:
             match_text = match.group()
-            #print('[{0:2}]: MATCH TEXT: ->{1}<-'.format(regex_index, match_text))
+            if _TRACE:
+                print('[{0:2}]: MATCH TEXT: ->{1}<-'.
+                      format(regex_index, match_text))
             start = match.start()
             end   = match.end()
-            candidates.append( Candidate(start, end, match_text, regex))
+            candidates.append( _Candidate(start, end, match_text, regex))
 
     # sort the candidates in descending order of length, which is needed for
     # one-pass overlap resolution later on
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
-            
-    # print('Candidate matches: ')
-    # index = 0
-    # for c in candidates:
-    #    print('[{0:2}]\t[{1},{2}): {3}'.format(index, c.start, c.end, c.matchobj.group().strip()))
-    #    index += 1
-    # print()
 
-    #print('number of candidates before: {0}'.format(len(candidates)))
+    if _TRACE:
+        print('\tCandidate matches: ')
+        index = 0
+        for c in candidates:
+            print('\t[{0:2}]\t[{1},{2}): {3}'.
+                  format(index, c.start, c.end, c.match_text, c.regex))
+            index += 1
+        print()
+
     pruned_candidates = _remove_overlap(candidates)
-    #print('number of candidates after: {0}'.format(len(pruned_candidates)))
-    # print('Result matches: ')
-    # for c in pruned_candidates:
-    #     print('[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-    # print()
+
+    if _TRACE:
+        print('\tcandidates count after overlap removal: {0}'.
+              format(len(pruned_candidates)))
+        print('Result matches: ')
+        for c in pruned_candidates:
+            print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+        print()
 
     for pc in pruned_candidates:
 
@@ -522,6 +527,7 @@ def run(sentence):
     
     # convert to list of dicts to preserve field names in JSON output
     return json.dumps([r._asdict() for r in results], indent=4)
+
 
 ###############################################################################
 def _get_version():
