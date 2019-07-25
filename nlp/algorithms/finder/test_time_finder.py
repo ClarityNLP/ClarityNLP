@@ -124,6 +124,8 @@ if __name__ == '__main__':
         ]
     }
 
+    _compare_results(test_data)
+
     # h12m format
     test_data = {
         'The times are 4:08, 10:14, and 12:59':[
@@ -132,6 +134,8 @@ if __name__ == '__main__':
             _Result(text='12:59', hours=12, minutes=59)
         ]
     }
+
+    _compare_results(test_data)
 
     # h12m_am_pm format
     test_data = {
@@ -142,19 +146,26 @@ if __name__ == '__main__':
         ]
     }
 
+    _compare_results(test_data)
+
     # h12ms_am_pm format
     test_data = {
         'The times are 6:10:37 am, 12:19:36P.M., and 1:02:03AM':[
             _Result(text='6:10:37 am',   hours=6,  minutes=10, seconds=37, am_pm=tf.STR_AM),
             _Result(text='12:19:36P.M.', hours=12, minutes=19, seconds=36, am_pm=tf.STR_PM),
-            _Result(text='1:02:03AM',   hours=1,  minutes=2,  seconds=3,  am_pm=tf.STR_AM)
+            _Result(text='1:02:03AM',    hours=1,  minutes=2,  seconds=3,  am_pm=tf.STR_AM)
         ]
     }
+
+    _compare_results(test_data)
 
     # h12msf_am_pm format
     test_data = {
         'The times are 7:11:39:123456 am and 11:41:22.22334p.m..':[
-            _Result(text='7:11:39:123456 am', hours=7, minutes=11, seconds=39, fractional_seconds=123456)
+            _Result(text='7:11:39:123456 am', hours=7, minutes=11, seconds=39,
+                    fractional_seconds=123456, am_pm=tf.STR_AM),
+            _Result(text='11:41:22.22334p.m.', hours=11, minutes=41, seconds=22,
+                    fractional_seconds=22334, am_pm=tf.STR_PM)
         ]
     }
 

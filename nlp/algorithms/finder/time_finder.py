@@ -56,45 +56,45 @@ _VERSION_MINOR = 1
 _MODULE_NAME = 'time_finder.py'
 
 # fractional seconds
-str_frac = r'[.:][0-9]+'
+_str_frac = r'[.:][0-9]+'
 
 # hours, 12-hour clock
-str_h12 = r'(0?[1-9]|1[0-2])'
+_str_h12 = r'(0?[1-9]|1[0-2])'
 
 # hours, 24-hour clock
-str_h24 = r'([01][0-9]|2[0-4])'
+_str_h24 = r'([01][0-9]|2[0-4])'
 
 # am or pm
-str_am_pm = r'[aApP]\.?[mM]\.?'
+_str_am_pm = r'[aApP]\.?[mM]\.?'
 
 # minutes
-str_MM = r'[0-5][0-9]'
+_str_MM = r'[0-5][0-9]'
 
 # world time zones (added 'Z' for Zulu == zero meridian)
-str_time_zone_abbrev = r'(ACDT|ACST|ACT|ACWST|ADT|AEDT|AEST|AFT|AKDT|'       +\
-                       'AKST|AMST|AMT|ART|AST|AWST|AZOST|AZOT|AZT|BDT|'      +\
-                       'BIOT|BIT|BOT|BRST|BRT|BST|BTT|CAT|CCT|CDT|CEST|'     +\
-                       'CET|CHADT|CHAST|CHOT|CHOST|CHST|CHUT|CIST|CIT|'      +\
-                       'CKT|CLST|CLT|COST|COT|CST|CT|CVT|CWST|CXT|DAVT|'     +\
-                       'DDUT|DFT|EASST|EAST|EAT|ECT|EDT|EEST|EET|EGST|'      +\
-                       'EGT|EIT|EST|FET|FJT|FKST|FKT|FNT|GALT|GAMT|GET|'     +\
-                       'GFT|GILT|GIT|GMT|GST|GYT|HDT|HAEC|HST|HKT|HMT|'      +\
-                       'HOVST|HOVT|ICT|IDLW|IDT|IOT|IRDT|IRKT|IRST|IST|'     +\
-                       'JST|KGT|KOST|KRAT|KST|LHST|LINT|MAGT|MART|MAWT|'     +\
-                       'MDT|MET|MEST|MHT|MIST|MIT|MMT|MSK|MST|MUT|MVT|'      +\
-                       'MYT|NCT|NDT|NFT|NPT|NST|NT|NUT|NZDT|NZST|OMST|'      +\
-                       'ORAT|PDT|PET|PETT|PGT|PHOT|PHT|PKT|PMDT|PMST|'       +\
-                       'PONT|PST|PYST|PYT|RET|ROTT|SAKT|SAMT|SAST|SBT|'      +\
-                       'SCT|SDT|SGT|SLST|SRET|SRT|SST|SYOT|THAT|THA|TFT|'    +\
-                       'TJT|TKT|TLT|TMT|TRT|TOT|TVT|ULAST|ULAT|USZ1|UTC|'    +\
-                       'UYST|UYT|UZT|VET|VLAT|VOLT|VOST|VUT|WAKT|WAST|'      +\
-                       'WAT|WEST|WET|WIT|WST|YAKT|YEKT|Z)'
+_str_time_zone_abbrev = r'(ACDT|ACST|ACT|ACWST|ADT|AEDT|AEST|AFT|AKDT|'       +\
+    'AKST|AMST|AMT|ART|AST|AWST|AZOST|AZOT|AZT|BDT|'      +\
+    'BIOT|BIT|BOT|BRST|BRT|BST|BTT|CAT|CCT|CDT|CEST|'     +\
+    'CET|CHADT|CHAST|CHOT|CHOST|CHST|CHUT|CIST|CIT|'      +\
+    'CKT|CLST|CLT|COST|COT|CST|CT|CVT|CWST|CXT|DAVT|'     +\
+    'DDUT|DFT|EASST|EAST|EAT|ECT|EDT|EEST|EET|EGST|'      +\
+    'EGT|EIT|EST|FET|FJT|FKST|FKT|FNT|GALT|GAMT|GET|'     +\
+    'GFT|GILT|GIT|GMT|GST|GYT|HDT|HAEC|HST|HKT|HMT|'      +\
+    'HOVST|HOVT|ICT|IDLW|IDT|IOT|IRDT|IRKT|IRST|IST|'     +\
+    'JST|KGT|KOST|KRAT|KST|LHST|LINT|MAGT|MART|MAWT|'     +\
+    'MDT|MET|MEST|MHT|MIST|MIT|MMT|MSK|MST|MUT|MVT|'      +\
+    'MYT|NCT|NDT|NFT|NPT|NST|NT|NUT|NZDT|NZST|OMST|'      +\
+    'ORAT|PDT|PET|PETT|PGT|PHOT|PHT|PKT|PMDT|PMST|'       +\
+    'PONT|PST|PYST|PYT|RET|ROTT|SAKT|SAMT|SAST|SBT|'      +\
+    'SCT|SDT|SGT|SLST|SRET|SRT|SST|SYOT|THAT|THA|TFT|'    +\
+    'TJT|TKT|TLT|TMT|TRT|TOT|TVT|ULAST|ULAT|USZ1|UTC|'    +\
+    'UYST|UYT|UZT|VET|VLAT|VOLT|VOST|VUT|WAKT|WAST|'      +\
+    'WAT|WEST|WET|WIT|WST|YAKT|YEKT|Z)'
 
 # separator, colon only (not supporting '.' as a separator)
-str_sep = r'[:]'
+_str_sep = r'[:]'
 
 # t or T, to indicate time
-str_t = r'\b[tT]?'
+_str_t = r'\b[tT]?'
 
 
 # 12 hour notation
@@ -102,39 +102,39 @@ str_t = r'\b[tT]?'
 
 # hour only, with am_pm:
 #    4 am, 5PM, 10a.m., 9 pm.
-str_h12_am_pm = r'\b(?P<hours>' + str_h12    + r')' + r'\s*'                 +\
-                r'(?P<am_pm>'   + str_am_pm  + r')'
-regex_h12_am_pm = re.compile(str_h12_am_pm)
+_str_h12_am_pm = r'\b(?P<hours>' + _str_h12    + r')' + r'\s*'                +\
+                 r'(?P<am_pm>'   + _str_am_pm  + r')'
+_regex_h12_am_pm = re.compile(_str_h12_am_pm)
 
 # hour and minutes:
 #    4:08, 10:14
-str_h12m = r'\b(?P<hours>' + str_h12 + r')'+ str_sep                         +\
-           r'(?P<minutes>' + str_MM  + r')'
-regex_h12m = re.compile(str_h12m)
+_str_h12m = r'\b(?P<hours>' + _str_h12 + r')'+ _str_sep                       +\
+            r'(?P<minutes>' + _str_MM  + r')'
+_regex_h12m = re.compile(_str_h12m)
 
 # hour and minutes, with am_pm:
 #    5:09 am, 9:41 P.M., 10:02 AM
-str_h12m_am_pm = r'\b(?P<hours>' + str_h12   + r')' + str_sep                +\
-                 r'(?P<minutes>' + str_MM    + r')' + r'\s*'                 +\
-                 r'(?P<am_pm>'   + str_am_pm + r')'
-regex_h12m_am_pm = re.compile(str_h12m_am_pm)
+_str_h12m_am_pm = r'\b(?P<hours>' + _str_h12   + r')' + _str_sep              +\
+                  r'(?P<minutes>' + _str_MM    + r')' + r'\s*'                +\
+                  r'(?P<am_pm>'   + _str_am_pm + r')'
+_regex_h12m_am_pm = re.compile(_str_h12m_am_pm)
 
 # hour, minutes, and seconds, with am_pm:
 #    6:10:37 am, 7:19:19P.M.
-str_h12ms_am_pm = r'\b(?P<hours>' + str_h12   + r')' + str_sep               +\
-                  r'(?P<minutes>' + str_MM    + r')' + str_sep               +\
-                  r'(?P<seconds>' + str_MM    + r')' + r'\s*'                +\
-                  r'(?P<am_pm>'   + str_am_pm + r')'
-regex_h12ms_am_pm = re.compile(str_h12ms_am_pm)
+_str_h12ms_am_pm = r'\b(?P<hours>' + _str_h12   + r')' + _str_sep             +\
+                   r'(?P<minutes>' + _str_MM    + r')' + _str_sep             +\
+                   r'(?P<seconds>' + _str_MM    + r')' + r'\s*'               +\
+                   r'(?P<am_pm>'   + _str_am_pm + r')'
+_regex_h12ms_am_pm = re.compile(_str_h12ms_am_pm)
 
 # hour, minutes, seconds, and fraction, with am_pm:
 #    7:11:39:123123 am and 9:41:22.22334p.m.
-str_h12msf_am_pm = r'\b(?P<hours>' + str_h12   + r')' + r':'                 +\
-                   r'(?P<minutes>' + str_MM    + r')' + r':'                 +\
-                   r'(?P<seconds>' + str_MM    + r')'                        +\
-                   r'(?P<frac>'    + str_frac  + r')' + r'\s*'               +\
-                   r'(?P<am_pm>'   + str_am_pm + r')'                         
-regex_h12msf_am_pm = re.compile(str_h12msf_am_pm)
+_str_h12msf_am_pm = r'\b(?P<hours>' + _str_h12   + r')' + r':'                +\
+                    r'(?P<minutes>' + _str_MM    + r')' + r':'                +\
+                    r'(?P<seconds>' + _str_MM    + r')'                       +\
+                    r'(?P<frac>'    + _str_frac  + r')' + r'\s*'              +\
+                    r'(?P<am_pm>'   + _str_am_pm + r')'
+_regex_h12msf_am_pm = re.compile(_str_h12msf_am_pm)
 
 
 # 24 hour notation
@@ -142,62 +142,62 @@ regex_h12msf_am_pm = re.compile(str_h12msf_am_pm)
 
 # hour and minutes:
 #    08:12, T23:43
-str_h24m = str_t                                        +\
-           r'(?P<hours>'   + str_h24 + r')' + str_sep   +\
-           r'(?P<minutes>' + str_MM  + r')'
-regex_h24m = re.compile(str_h24m)
+_str_h24m = _str_t                                        +\
+           r'(?P<hours>'   + _str_h24 + r')' + _str_sep   +\
+           r'(?P<minutes>' + _str_MM  + r')'
+_regex_h24m = re.compile(_str_h24m)
 
 # hour and minutes, no colon
-# str_h24m_no_colon = str_t                               +\
-#                     r'(?P<hours>'   + str_h24 + r')'    +\
-#                     r'(?P<minutes>' + str_MM  + r')'
-# regex_h24m_no_colon = re.compile(str_h24m_no_colon)
+# _str_h24m_no_colon = _str_t                               +\
+#                     r'(?P<hours>'   + _str_h24 + r')'    +\
+#                     r'(?P<minutes>' + _str_MM  + r')'
+# _regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
 
 # hour, minutes, and seconds
-str_h24ms = str_t                                       +\
-            r'(?P<hours>'   + str_h24 + r')' + str_sep  +\
-            r'(?P<minutes>' + str_MM  + r')' + str_sep  +\
-            r'(?P<seconds>' + str_MM  + r')'
-regex_h24ms = re.compile(str_h24ms)
+_str_h24ms = _str_t                                       +\
+            r'(?P<hours>'   + _str_h24 + r')' + _str_sep  +\
+            r'(?P<minutes>' + _str_MM  + r')' + _str_sep  +\
+            r'(?P<seconds>' + _str_MM  + r')'
+_regex_h24ms = re.compile(_str_h24ms)
 
 # hour, minutes, and seconds, no colon
-# str_h24ms_no_colon = str_t                              +\
-#                      r'(?P<hours>'   + str_h24 + r')'   +\
-#                      r'(?P<minutes>' + str_MM  + r')'   +\
-#                      r'(?P<seconds>' + str_MM  + r')'
-# regex_h24ms_no_colon = re.compile(str_h24ms_no_colon)
+# _str_h24ms_no_colon = _str_t                              +\
+#                      r'(?P<hours>'   + _str_h24 + r')'   +\
+#                      r'(?P<minutes>' + _str_MM  + r')'   +\
+#                      r'(?P<seconds>' + _str_MM  + r')'
+# _regex_h24ms_no_colon = re.compile(_str_h24ms_no_colon)
 
 # hour, minutes, seconds, and timezone
-str_h24ms_with_timezone = str_t                                              +\
-                          r'(?P<hours>'    + str_h24 + r')'                  +\
-                          r'(?P<minutes>'  + str_MM  + r')'                  +\
-                          r'(?P<seconds>'  + str_MM  + r')'       + r'\s*'   +\
-                          r'(?P<timezone>' + str_time_zone_abbrev + r')'
-regex_h24ms_with_timezone = re.compile(str_h24ms_with_timezone, re.IGNORECASE)
+_str_h24ms_with_timezone = _str_t                                             +\
+                          r'(?P<hours>'    + _str_h24 + r')'                  +\
+                          r'(?P<minutes>'  + _str_MM  + r')'                  +\
+                          r'(?P<seconds>'  + _str_MM  + r')'       + r'\s*'   +\
+                          r'(?P<timezone>' + _str_time_zone_abbrev + r')'
+_regex_h24ms_with_timezone = re.compile(_str_h24ms_with_timezone, re.IGNORECASE)
 
 # hour, minutes, seconds with timezone correction
-str_gmt_delta = r'(GMT|UTC)?[-+]' + str_h24 + r':?' + r'(' + str_MM + r')?'
-str_hms_with_gmt_delta = str_t                                               +\
-                         r'(?P<hours>'   + str_h24 + r')'                    +\
-                         r'(?P<minutes>' + str_MM  + r')'                    +\
-                         r'(?P<seconds>' + str_MM  + r')'  + r'\s*'          +\
+str_gmt_delta = r'(GMT|UTC)?[-+]' + _str_h24 + r':?' + r'(' + _str_MM + r')?'
+str_hms_with_gmt_delta = _str_t                                               +\
+                         r'(?P<hours>'   + _str_h24 + r')'                    +\
+                         r'(?P<minutes>' + _str_MM  + r')'                    +\
+                         r'(?P<seconds>' + _str_MM  + r')'  + r'\s*'          +\
                          r'(?P<gmt_delta>' + str_gmt_delta + r')'
 
 # decipher the gmt_delta components
-str_gmt = r'(GMT|UTC)?(?P<gmt_sign>'+ r'[-+]' + r')'         +\
-          r'(?P<gmt_hours>' + str_h24 + r')'  + r':?'        +\
-          r'(' + r'(?P<gmt_minutes>' + str_MM + r')' + r')?'
-regex_gmt = re.compile(str_gmt)
+str_gmt = r'(GMT|UTC)?(?P<gmt_sign>'+ r'[-+]' + r')'          +\
+          r'(?P<gmt_hours>' + _str_h24 + r')'  + r':?'        +\
+          r'(' + r'(?P<gmt_minutes>' + _str_MM + r')' + r')?'
+_regex_gmt = re.compile(str_gmt)
 
-regex_hms_with_gmt_delta = re.compile(str_hms_with_gmt_delta, re.IGNORECASE)
+_regex_hms_with_gmt_delta = re.compile(str_hms_with_gmt_delta, re.IGNORECASE)
 
 # hour, minutes, seconds, and fraction
-str_h24msf = str_t                                           +\
-             r'(?P<hours>'   + str_h24  + r')' + str_sep     +\
-             r'(?P<minutes>' + str_MM   + r')' + str_sep     +\
-             r'(?P<seconds>' + str_MM   + r')'               +\
-             r'(?P<frac>'    + str_frac + r')'
-regex_h24msf = re.compile(str_h24msf)
+_str_h24msf = _str_t                                           +\
+             r'(?P<hours>'   + _str_h24  + r')' + _str_sep     +\
+             r'(?P<minutes>' + _str_MM   + r')' + _str_sep     +\
+             r'(?P<seconds>' + _str_MM   + r')'                +\
+             r'(?P<frac>'    + _str_frac + r')'
+_regex_h24msf = re.compile(_str_h24msf)
 
 
 # ISO8601 formats:
@@ -234,27 +234,27 @@ str_iso_zone = r'((?P<timezone>Z)|' +\
                r'(?P<gmt_sign>[-+])' + str_iso_zone_hm + r')'
 
 str_iso_time = str_iso_hms + r'((?P<gmt_delta>' + str_iso_zone + r'))?'
-regex_iso_time = re.compile(str_iso_time)
+_regex_iso_time = re.compile(str_iso_time)
 
 # all time regexes
-regexes = [regex_iso_time,
-           regex_hms_with_gmt_delta,
-           regex_h24ms_with_timezone,
-           regex_h12msf_am_pm,
-           regex_h12ms_am_pm,
-           regex_h12m_am_pm,
-           regex_h12_am_pm,
-           regex_h24msf,
-           regex_h24ms,
-           #regex_h24ms_no_colon,
-           regex_h24m,
-           regex_h12m,
-           #regex_h24m_no_colon
+regexes = [_regex_iso_time,
+           _regex_hms_with_gmt_delta,
+           _regex_h24ms_with_timezone,
+           _regex_h12msf_am_pm,
+           _regex_h12ms_am_pm,
+           _regex_h12m_am_pm,
+           _regex_h12_am_pm,
+           _regex_h24msf,
+           _regex_h24ms,
+           #_regex_h24ms_no_colon,
+           _regex_h24m,
+           _regex_h12m,
+           #_regex_h24m_no_colon
 ]
 
 # match (), {}, and []
 str_brackets = r'[(){}\[\]]'
-regex_brackets = re.compile(str_brackets)
+_regex_brackets = re.compile(str_brackets)
 
 CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
 Candidate = namedtuple('Candidate', CANDIDATE_FIELDS)
@@ -358,7 +358,7 @@ def _clean_sentence(sentence):
     """
 
     # erase [], {}, or () from the sentence
-    sentence = regex_brackets.sub(' ', sentence)
+    sentence = _regex_brackets.sub(' ', sentence)
 
     return sentence
 
@@ -474,7 +474,7 @@ def run(sentence):
             pass
 
         if EMPTY_FIELD != gmt_delta:
-            match_gmt = regex_gmt.search(match.group('gmt_delta'))
+            match_gmt = _regex_gmt.search(match.group('gmt_delta'))
             if match_gmt:
 
                 try:
