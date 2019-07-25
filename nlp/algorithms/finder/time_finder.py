@@ -50,7 +50,6 @@ TimeValue = namedtuple('TimeValue', TIME_VALUE_FIELDS)
 STR_AM = 'am'
 STR_PM = 'pm'
 
-
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 _MODULE_NAME = 'time_finder.py'
@@ -154,6 +153,7 @@ _regex_h24m = re.compile(_str_h24m)
 # _regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
 
 # hour, minutes, and seconds
+#    01:03:24, t14:15:16
 _str_h24ms = _str_t                                       +\
             r'(?P<hours>'   + _str_h24 + r')' + _str_sep  +\
             r'(?P<minutes>' + _str_MM  + r')' + _str_sep  +\
@@ -168,6 +168,7 @@ _regex_h24ms = re.compile(_str_h24ms)
 # _regex_h24ms_no_colon = re.compile(_str_h24ms_no_colon)
 
 # hour, minutes, seconds, and timezone
+#    040837EST, 112345 HOVST, T093000 Z
 _str_h24ms_with_timezone = _str_t                                             +\
                           r'(?P<hours>'    + _str_h24 + r')'                  +\
                           r'(?P<minutes>'  + _str_MM  + r')'                  +\
@@ -175,9 +176,9 @@ _str_h24ms_with_timezone = _str_t                                             +\
                           r'(?P<timezone>' + _str_time_zone_abbrev + r')'
 _regex_h24ms_with_timezone = re.compile(_str_h24ms_with_timezone, re.IGNORECASE)
 
-# hour, minutes, seconds with timezone correction
+# hour, minutes, seconds with GMT delta
 str_gmt_delta = r'(GMT|UTC)?[-+]' + _str_h24 + r':?' + r'(' + _str_MM + r')?'
-str_hms_with_gmt_delta = _str_t                                               +\
+str_h24ms_with_gmt_delta = _str_t                                             +\
                          r'(?P<hours>'   + _str_h24 + r')'                    +\
                          r'(?P<minutes>' + _str_MM  + r')'                    +\
                          r'(?P<seconds>' + _str_MM  + r')'  + r'\s*'          +\
@@ -189,7 +190,7 @@ str_gmt = r'(GMT|UTC)?(?P<gmt_sign>'+ r'[-+]' + r')'          +\
           r'(' + r'(?P<gmt_minutes>' + _str_MM + r')' + r')?'
 _regex_gmt = re.compile(str_gmt)
 
-_regex_hms_with_gmt_delta = re.compile(str_hms_with_gmt_delta, re.IGNORECASE)
+_regex_h24ms_with_gmt_delta = re.compile(str_h24ms_with_gmt_delta, re.IGNORECASE)
 
 # hour, minutes, seconds, and fraction
 _str_h24msf = _str_t                                           +\
@@ -236,20 +237,19 @@ str_iso_zone = r'((?P<timezone>Z)|' +\
 str_iso_time = str_iso_hms + r'((?P<gmt_delta>' + str_iso_zone + r'))?'
 _regex_iso_time = re.compile(str_iso_time)
 
-# all time regexes
-regexes = [_regex_iso_time,
-           _regex_hms_with_gmt_delta,
-           _regex_h24ms_with_timezone,
-           _regex_h12msf_am_pm,
-           _regex_h12ms_am_pm,
-           _regex_h12m_am_pm,
-           _regex_h12_am_pm,
-           _regex_h24msf,
-           _regex_h24ms,
-           #_regex_h24ms_no_colon,
-           _regex_h24m,
-           _regex_h12m,
-           #_regex_h24m_no_colon
+_regexes = [_regex_iso_time,             # 0
+            _regex_h24ms_with_gmt_delta, # 1
+            _regex_h24ms_with_timezone,  # 2
+            _regex_h12msf_am_pm,         # 3
+            _regex_h12ms_am_pm,          # 4
+            _regex_h12m_am_pm,           # 5
+            _regex_h12_am_pm,            # 6
+            _regex_h24msf,               # 7
+            _regex_h24ms,                # 8
+            _regex_h24m,                 # 9
+            _regex_h12m,                 # 10
+            #_regex_h24m_no_colon
+            #_regex_h24ms_no_colon,
 ]
 
 # match (), {}, and []
@@ -380,13 +380,27 @@ def run(sentence):
     original_sentence = sentence
     sentence = _clean_sentence(sentence)
 
-    for regex in regexes:
+# _regexes = [_regex_iso_time,             # 0
+#             _regex_hms_with_gmt_delta,   # 1
+#             _regex_h24ms_with_timezone,  # 2
+#             _regex_h12msf_am_pm,         # 3
+#             _regex_h12ms_am_pm,          # 4
+#             _regex_h12m_am_pm,           # 5
+#             _regex_h12_am_pm,            # 6
+#             _regex_h24msf,               # 7
+#             _regex_h24ms,                # 8
+#             _regex_h24m,                 # 9
+#             _regex_h12m,                 # 10
+# ]
+
+    
+    for regex_index, regex in enumerate(_regexes):
         iterator = regex.finditer(sentence)
         for match in iterator:
             match_text = match.group()
-            #print('MATCH TEXT: ->{0}<-'.format(match_text))
+            #print('[{0:2}]: MATCH TEXT: ->{1}<-'.format(regex_index, match_text))
             start = match.start()
-            end   = match.end() #start + len(match_text)
+            end   = match.end()
             candidates.append( Candidate(start, end, match_text, regex))
 
     # sort the candidates in descending order of length, which is needed for
@@ -445,7 +459,8 @@ def run(sentence):
     
         try:
             if match.group('frac') is not None:
-                frac_seconds = int(match.group('frac')[1:])
+                # leave as a string; conversion needs to handle leading zeros
+                frac_seconds = match.group('frac')[1:]
         except IndexError:
             pass
 
@@ -566,7 +581,7 @@ if __name__ == '__main__':
         # h24ms_with_timezone format
         'The times are 040837CEST and 09:30Z',
 
-        # hms with GMT delta
+        # h24ms with GMT delta
         'The times are T191919-0700 and 14:45:15+03:30',
 
         # h24msf format
