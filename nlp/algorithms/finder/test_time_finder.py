@@ -144,10 +144,17 @@ if __name__ == '__main__':
 
     # h12ms_am_pm format
     test_data = {
-        'The times are 6:10:37 am, 12:19:36P.M., and 01:02:03AM':[
+        'The times are 6:10:37 am, 12:19:36P.M., and 1:02:03AM':[
             _Result(text='6:10:37 am',   hours=6,  minutes=10, seconds=37, am_pm=tf.STR_AM),
             _Result(text='12:19:36P.M.', hours=12, minutes=19, seconds=36, am_pm=tf.STR_PM),
-            _Result(text='01:02:03AM',   hours=1,  minutes=2,  seconds=3,  am_pm=tf.STR_AM)
+            _Result(text='1:02:03AM',   hours=1,  minutes=2,  seconds=3,  am_pm=tf.STR_AM)
+        ]
+    }
+
+    # h12msf_am_pm format
+    test_data = {
+        'The times are 7:11:39:123456 am and 11:41:22.22334p.m..':[
+            _Result(text='7:11:39:123456 am', hours=7, minutes=11, seconds=39, fractional_seconds=123456)
         ]
     }
 
