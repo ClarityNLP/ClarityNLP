@@ -39,7 +39,6 @@ import re
 import os
 import sys
 import json
-import optparse
 from collections import namedtuple
 
 # 'TimeValue' is the JSON-serializable result object from this module
@@ -530,127 +529,6 @@ def run(sentence):
 
 
 ###############################################################################
-def _get_version():
+def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
 
-
-###############################################################################
-def _show_help():
-    print(_get_version())
-    print("""
-    USAGE: python3 ./time_finder.py -s <sentence> [-hvz]
-
-    OPTIONS:
-
-        -s, --sentence <quoted string>  Sentence to be processed.
-
-    FLAGS:
-
-        -h, --help                      Print this information and exit.
-        -v, --version                   Print version information and exit.
-        -z, --test                      Disable -s option and use internal test sentences.
-
-    """)
-
-
-###############################################################################
-if __name__ == '__main__':
-
-    TEST_SENTENCES = [
-        # h12_am_pm format
-        'The times are 4 am, 5PM, 10a.m, and 9 pm..',
-
-        # h12_m format
-        'The times are 4:08 and 10:14.',
-        
-        # h12m_am_pm format
-        'The times are 5:09 am, 9:41 P.M., and 10:02 AM.',
-
-        # h12ms_am_pm format
-        'The times are 6:10:37 am and 7:19:19P.M..',
-
-        # h12msf_am_pm format
-        'The times are 7:11:39:123123 am and 9:41:22.22334p.m..',
-
-        # h24m format
-        'The times are 08:12 and T23:43.',
-
-        # h24m_no_colon format
-        #'The times are 0910, t1919, and T2343.',
-
-        # h24ms format
-        'The times are 01:03:24 and t19:19:19.',
-
-        # h24ms_no_colon format
-        #'The times are 040837 and T191919.',
-
-        # h24ms_with_timezone format
-        'The times are 040837CEST and 09:30Z',
-
-        # h24ms with GMT delta
-        'The times are T191919-0700 and 14:45:15+03:30',
-
-        # h24msf format
-        'The times are 04:08:37.81412 and 19:19:19.532453.',
-
-        # ISO 8601 format
-        'The times are 08:23:32Z, 09:24:33+12, 10:25:34-04:30, and 11:26:35.012345+0600',
-    ]
-
-    optparser = optparse.OptionParser(add_help_option=False)
-    optparser.add_option('-s', '--sentence', action='store',      dest='sentence')                        
-    optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
-    optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
-    optparser.add_option('-z', '--test',     action='store_true', dest='use_test_sentences', default=False)
-    
-    opts, other = optparser.parse_args(sys.argv)
-
-    sentence = opts.sentence
-    use_test_sentences = opts.use_test_sentences
-    
-    if not use_test_sentences and 1 == len(sys.argv):
-        _show_help()
-        sys.exit(0)
-
-    if opts.show_help:
-        _show_help()
-        sys.exit(0)
-
-    if opts.get_version:
-        print(_get_version())
-        sys.exit(0)
-
-    if not sentence and not use_test_sentences:
-        print('A sentence must be specified on the command line.')
-        sys.exit(-1)
-
-    sentences = []
-    if use_test_sentences:
-        sentences = TEST_SENTENCES
-    else:
-        sentences.append(sentence)
-
-    # main loop
-    for sentence in sentences:
-
-        if use_test_sentences:
-            print(sentence)
-
-        # find the dates and print JSON results to stdout
-        json_string = run(sentence)
-        json_data = json.loads(json_string)
-        time_values = [TimeValue(**d) for d in json_data]
-
-        # get the length of the longest field name
-        max_len = max([len(f) for f in TIME_VALUE_FIELDS])
-
-        for tv in time_values:
-            for f in TIME_VALUE_FIELDS:
-                # get the value of this field for this record
-                val = getattr(tv, f)
-
-                # if not empty, print it
-                if EMPTY_FIELD != val:
-                    INDENT = ' '*(max_len - len(f))
-                    print('{0}{1}: {2}'.format(INDENT, f, val))
-            print()
