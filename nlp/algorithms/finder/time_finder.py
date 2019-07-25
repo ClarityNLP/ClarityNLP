@@ -226,15 +226,15 @@ _str_iso_hh = r'([01][0-9]|2[0-4])'
 _str_iso_mm = r'[0-5][0-9]'
 _str_iso_ss = r'([0-5][0-9]|60)'
 
-_str_iso_hms = r'\b(?P<hours>'  + _str_iso_hh + r'):?'                        +\
-               r'((?P<minutes>' +  _str_iso_mm + r'))?:?'                     +\
-               r'((?P<seconds>' + _str_iso_ss + r'))?'                        +\
+_str_iso_hms = r'\b(?P<hours>'  + _str_iso_hh + r'):?'                       +\
+               r'((?P<minutes>' + _str_iso_mm + r'))?:?'                     +\
+               r'((?P<seconds>' + _str_iso_ss + r'))?'                       +\
                r'((?P<frac>'    + r'\.\d+'   + r'))?'
 
-_str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r')'                     +\
+_str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r')'                    +\
                    r'(:?' + r'(?P<gmt_minutes>' + _str_iso_mm + r'))?'
 
-_str_iso_zone = r'((?P<timezone>Z)|'                                          +\
+_str_iso_zone = r'((?P<timezone>Z)|'                                         +\
                 r'(?P<gmt_sign>[-+])' + _str_iso_zone_hm + r')'
 
 _str_iso_time = _str_iso_hms + r'((?P<gmt_delta>' + _str_iso_zone + r'))?'

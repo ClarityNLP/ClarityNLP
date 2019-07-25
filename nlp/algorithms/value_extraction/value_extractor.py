@@ -107,6 +107,8 @@ try:
     # for normal operation via NLP pipeline
     from algorithms.finder.date_finder import run as \
         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from algorithms.finder.time_finder import run as \
+        run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
     from algorithms.finder.size_measurement_finder import run as \
         run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
 except Exception as e:
@@ -122,17 +124,12 @@ except Exception as e:
         sys.path.append(finder_dir)
         from date_finder import run as run_date_finder, \
             DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+        from time_finder import run as run_time_finder, \
+            TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
         from size_measurement_finder import run as \
             run_size_measurement, SizeMeasurement, EMPTY_FIELD as \
             EMPTY_SMF_FIELD
 
-###############################################################################
-#
-#                         E X P O R T S
-#
-# The 'run' function is also visible externally.
-#
-###############################################################################
 
 # ignore any result field with this value
 EMPTY_FIELD = None  # ignore any field with this value
@@ -922,7 +919,7 @@ def remove_hypotheticals(sentence, results):
     for r in results:
         if not r in omit_results:
             new_results.append(r)
-            
+
     return new_results
 
 
@@ -982,13 +979,13 @@ def _clean_sentence(sentence, is_case_sensitive):
     # unpack JSON result into a list of DateMeasurement namedtuples
     dates = [DateValue(**record) for record in json_data]
 
-    # erase each date from the sentence
+    # erase each date expression from the sentence
     for date in dates:
         start = int(date.start)
         end   = int(date.end)
 
         if _TRACE:
-            print('\tfound date: "{0}"'.format(date))
+            print('\tfound date expression: "{0}"'.format(date))
 
         # erase date if not all digits, such as 1500, which
         # could be a measurement (i.e. 1500 ml)
@@ -1022,6 +1019,32 @@ def _clean_sentence(sentence, is_case_sensitive):
         if _TRACE:
             print('\terasing size measurement "{0}"'.format(m.text))
         sentence = erase(sentence, start, end)
+
+    # find time expressions in the sentence
+    json_string = run_time_finder(sentence)
+    json_data = json.loads(json_string)
+
+    # unpack JSON result into a list of TimeValue namedtuples
+    times = [TimeValue(**record) for record in json_data]
+
+    # erase each time expression from the sentence
+    for t in times:
+        start = int(t.start)
+        end   = int(t.end)
+
+        # erase time expression if not one of these formats:
+        #     hh, hhmm, hhmmss, or one of these on each side of +-
+        #     only digits and '.'
+        erase_it = False
+        match_a = re.match(r'\A\d+\Z', t.text)
+        match_b = re.match(r'\A\d+[\-\+]\d+\Z', t.text)
+        match_c = re.match(r'\A[\d\.]+\Z', t.text)
+        if not match_a and not match_b and not match_c:
+            erase_it = True
+        if erase_it:
+            if _TRACE:
+                print('\tERASING TIME EXPRESSION: "{0}"'.format(t.text))
+            sentence = erase(sentence, start, end)
 
     if _TRACE:
         print('\tcleaned sentence: {0}'.format(sentence))

@@ -546,7 +546,18 @@ if __name__ == '__main__':
         'BP was between 100/60 and 120/80':[_Result('bp', 100, 120, ve.STR_FRACTION_RANGE)],
         'BP range: 105/75 - 120/70':[_Result('bp', 105, 120, ve.STR_FRACTION_RANGE)],
         # embedded dates and measurements
-        'Her BP on 3/27 measured 110/70.':[_Result('bp', 110, None, ve.STR_EQUAL)],
+        'Her BP on 3/27 measured 110/70.':[
+            _Result('bp', 110, None, ve.STR_EQUAL)
+        ],
+        'Her BP at 8 AM on 3/27 measured 110/70':[
+            _Result('bp', 110, None, ve.STR_EQUAL)
+        ],
+        'Her BP at 3:47P.M on March 27 measured 110/70':[
+            _Result('bp', 110, None, ve.STR_EQUAL)
+        ],
+        'Her BP at 05:14:28 AM on March 27, 2005 measured 110/70':[
+            _Result('bp', 110, None, ve.STR_EQUAL)
+        ],
         'Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.':[
             _Result('bp', 110, None, ve.STR_EQUAL),
             _Result('bp', 115, None, ve.STR_EQUAL)
@@ -557,7 +568,7 @@ if __name__ == '__main__':
     }
 
     _compare_results(term_string, test_data, minval, maxval)
-    
+
     # blood pressure - check denominators
     term_string = "bp"
     test_data = {
@@ -577,6 +588,15 @@ if __name__ == '__main__':
         'Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.':[
             _Result('bp', 70, None, ve.STR_EQUAL),
             _Result('bp', 80, None, ve.STR_EQUAL)
+        ],
+        'Her BP at 8 AM on 3/27 measured 110/70':[
+            _Result('bp', 70, None, ve.STR_EQUAL)
+        ],
+        'Her BP at 3:47P.M on March 27 measured 110/70':[
+            _Result('bp', 70, None, ve.STR_EQUAL)
+        ],
+        'Her BP at 05:14:28 AM on March 27, 2005 measured 110/70':[
+            _Result('bp', 70, None, ve.STR_EQUAL)
         ],
         'Her BP on 3/27 from her 12cm x 9cm. x 6   cm heart was 110/70.':[
             _Result('bp', 70, None, ve.STR_EQUAL)
