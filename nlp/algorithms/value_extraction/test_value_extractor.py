@@ -630,10 +630,25 @@ if __name__ == '__main__':
     _compare_results(term_string, test_data, minval, maxval)
 
     # durations
-    term_string = "platelets"
+    term_string = "platelets, platelet"
     test_data = {
         'platelets 2 hrs after transfusion 156':[
             _Result('platelets', 156, None, ve.STR_EQUAL)
+        ],
+        'platelets q 2- 3 hrs measured 200':[
+            _Result('platelets', 200, None, ve.STR_EQUAL)
+        ],
+        'platelets for the previous 3-4 months were 220':[
+            _Result('platelets', 220, None, ve.STR_EQUAL)
+        ],
+        'platelets within the prev. 1 hour measured 223':[
+            _Result('platelets', 223, None, ve.STR_EQUAL)
+        ],
+        'platelets for the past 2 months were 235,000':[
+            _Result('platelets', 235000, None, ve.STR_EQUAL)
+        ],
+        'platelet values for two weeks have been above 215,000':[
+            _Result('platelet', 215000, None, ve.STR_GT)
         ]
     }
 

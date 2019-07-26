@@ -199,7 +199,7 @@ _str_comma_num = r'\d{1,3}(,\d{3})+'
 # integers or floating point numbers
 _str_int_float = r'(\d+(\.\d+)?|\.\d+)'
 
-# any number
+# any number (always surround this with parens or place in a capture group)
 _str_num       = _str_comma_num + r'|' + _str_int_float
 
 _str_cond      = r'(?P<cond>' + _str_op + r')'
@@ -272,24 +272,42 @@ _regex_lte      = re.compile(_str_lte)
 _regex_gt       = re.compile(_str_gt)
 _regex_gte      = re.compile(_str_gte)
 
-# vitals
-_str_vitals = r'\b(temperature|temp|t|hr|bp|pulse|p|rr?|o2sats?|o2 sats?|spo2|o2|fio2|wt|ht)'
+# abbreviations commonly found in vitals signs
+_str_vitals = r'\b(temperature|temp|t|hr|bp|pulse|p|rr?|'         +\
+              r'o2sats?|o2 sats?|spo2|o2|fio2|wt|ht)'
 _regex_vitals = re.compile(_str_vitals)
 
-# durations (for 2 hrs, q. 6-8 hrs, etc.)
-#_str_duration_wd = r'\b(for|over|last|lasting|lasted|within|q\.?|each|every|once)'
+# durations
+_str_duration_start = r'\b(for|over|last|lasting|lasted|within|'  +\
+                      r'q\.?|each|every|once)'
+_str_duration_amt = r'(hours?|hrs|hr\.?|minutes?|mins|min\.?|'    +\
+                    r'seconds?|secs|sec\.?|'                      +\
+                    r'days?|weeks?|wks|wk\.?|'                    +\
+                    r'months?|mos|mo\.|years?|yrs\.?|yr\.?)'
 
-# NOTE: could match heart rate 'hr'; need to resolve any 'hr' matches
-_str_duration_amt = r'(hours?|hrs|hr\.?|minutes?|mins|min\.?|seconds?|secs|sec\.?)'
-#_str_duration_range = _str_duration_wd + r'\s*' + _str_range + r'\s*' +\
-#    _str_duration_amt
-#_str_duration_num = _str_duration_wd + r'\s*' + _str_num + r'\s*'
-#_str_duration1 = _str_duration_range + r'|' + _str_duration_num
-_str_duration2 = r'(?P<dur_num2>' + _str_num + r')'               +\
+# q. 6-8 hrs, for 3-6 months, for the previous 3-4 weeks, etc.
+_str_duration_range = _str_duration_start                         +\
+    r'\s*'                                                        +\
+    _str_words                                                    +\
+    _str_range                                                    +\
+    r'\s*'                                                        +\
+    r'(?P<dur_amt>' + _str_duration_amt + r')'
+
+# 2 hrs after, etc.
+_str_duration1 = r'(?P<dur_num1>' + _str_num + r')'               +\
                  r'\s*'                                           +\
-                 r'(?P<dur_amt2>' +_str_duration_amt + r')'
-#_str_duration = _str_duration1 + r'|' + _str_duration2
-_regex_duration = re.compile(_str_duration2)
+                 r'(?P<dur_amt1>' +_str_duration_amt + r')'
+
+_str_duration2 = _str_duration_start    +\
+    r'\s*'                              +\
+    _str_words                          +\
+    r'(' + _str_num + r')'              +\
+    r'\s*'                              +\
+    _str_duration_amt
+
+_str_duration = _str_duration_range + r'|' +\
+    _str_duration1 + r'|' + _str_duration2
+_regex_duration = re.compile(_str_duration)
 
 # used to restore original terms
 _term_dict = {}
@@ -971,23 +989,20 @@ def _erase_durations(sentence):
         if _TRACE:
             print('\tDURATION: {0}'.format(match.group()))
 
-        try:
-            if match.group('dur_amt1') is not None:
-                duration = match.group('dur_amt1')
-        except IndexError:
-            pass
-
-        try:
-            if match.group('dur_amt2') is not None:
-                duration = match.group('dur_amt2')
-        except IndexError:
-            pass
-
+        duration = None
+        for i in (1, 2, 3):
+            try:
+                group_name = 'dur_amt{0}'.format(i)
+                if match.group(group_name) is not None:
+                    duration = match.group(group_name)
+            except IndexError:
+                pass
+            
         if _TRACE:
             print('\t     amt: {0}'.format(duration))
 
         erase_it = True
-        if 'hr' == duration:
+        if duration is not None and 'hr' == duration:
             # check sentence for other vitals (excluding hr)
             vitals_count = 0
             iterator = _regex_vitals.finditer(sentence)
@@ -1007,7 +1022,7 @@ def _erase_durations(sentence):
         if erase_it:
             sentence = erase(sentence, match.start(), match.end())
             if _TRACE:
-                print('\terased time duration expression: "{0}"'.
+                print('\t\terased time duration expression: "{0}"'.
                       format(match.group()))
         
     return sentence
