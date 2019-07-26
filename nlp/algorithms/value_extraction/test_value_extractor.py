@@ -628,6 +628,16 @@ if __name__ == '__main__':
     }
 
     _compare_results(term_string, test_data, minval, maxval)
+
+    # durations
+    term_string = "platelets"
+    test_data = {
+        'platelets 2 hrs after transfusion 156':[
+            _Result('platelets', 156, None, ve.STR_EQUAL)
+        ]
+    }
+
+    _compare_results(term_string, test_data, minval, maxval)
     
     # # enumlist: search for keywords and return text 'values' from enumlist
     # term_string = 'positive, +, negative'

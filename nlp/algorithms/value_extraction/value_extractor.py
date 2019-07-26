@@ -199,7 +199,9 @@ _str_comma_num = r'\d{1,3}(,\d{3})+'
 # integers or floating point numbers
 _str_int_float = r'(\d+(\.\d+)?|\.\d+)'
 
+# any number
 _str_num       = _str_comma_num + r'|' + _str_int_float
+
 _str_cond      = r'(?P<cond>' + _str_op + r')'
 _str_suffix    = r'(k|K|s|\'s)?'
 _str_suffix1   = r'(?P<suffix1>' + _str_suffix + r')'
@@ -231,7 +233,7 @@ _str_range     = r'(?P<num1>' + _str_num + r')' + _str_suffix1                +\
 _str_bf     = r'\b(between|from)\s*'
 _str_bf_sep = r'\s*(-|to|and)\s*'
 
-# range with optional suffixes, to capture "90's to 100's", 20k-40k, etc.
+# ranges with optional suffixes, to capture "90's to 100's", 20k-40k, etc.
 _str_bf_range = _str_bf + \
     r'(?P<num1>' + _str_num + r')' + _str_suffix1 + _str_bf_sep              +\
     r'(?P<num2>' + _str_num + r')' + _str_suffix2
@@ -269,6 +271,25 @@ _regex_lt       = re.compile(_str_lt)
 _regex_lte      = re.compile(_str_lte)
 _regex_gt       = re.compile(_str_gt)
 _regex_gte      = re.compile(_str_gte)
+
+# vitals
+_str_vitals = r'\b(temperature|temp|t|hr|bp|pulse|p|rr?|o2sats?|o2 sats?|spo2|o2|fio2|wt|ht)'
+_regex_vitals = re.compile(_str_vitals)
+
+# durations (for 2 hrs, q. 6-8 hrs, etc.)
+#_str_duration_wd = r'\b(for|over|last|lasting|lasted|within|q\.?|each|every|once)'
+
+# NOTE: could match heart rate 'hr'; need to resolve any 'hr' matches
+_str_duration_amt = r'(hours?|hrs|hr\.?|minutes?|mins|min\.?|seconds?|secs|sec\.?)'
+#_str_duration_range = _str_duration_wd + r'\s*' + _str_range + r'\s*' +\
+#    _str_duration_amt
+#_str_duration_num = _str_duration_wd + r'\s*' + _str_num + r'\s*'
+#_str_duration1 = _str_duration_range + r'|' + _str_duration_num
+_str_duration2 = r'(?P<dur_num2>' + _str_num + r')'               +\
+                 r'\s*'                                           +\
+                 r'(?P<dur_amt2>' +_str_duration_amt + r')'
+#_str_duration = _str_duration1 + r'|' + _str_duration2
+_regex_duration = re.compile(_str_duration2)
 
 # used to restore original terms
 _term_dict = {}
@@ -935,6 +956,64 @@ def erase(sentence, start, end):
 
 
 ###############################################################################
+def _erase_durations(sentence):
+    """
+    Erase time duration expressions from the sentence.
+    Example:
+
+        before: 'platelets 2 hrs after transfusion 156'
+         after: 'platelets       after transfusion 156'
+    """
+    
+    # find time durations in the sentence
+    iterator = _regex_duration.finditer(sentence)
+    for match in iterator:
+        if _TRACE:
+            print('\tDURATION: {0}'.format(match.group()))
+
+        try:
+            if match.group('dur_amt1') is not None:
+                duration = match.group('dur_amt1')
+        except IndexError:
+            pass
+
+        try:
+            if match.group('dur_amt2') is not None:
+                duration = match.group('dur_amt2')
+        except IndexError:
+            pass
+
+        if _TRACE:
+            print('\t     amt: {0}'.format(duration))
+
+        erase_it = True
+        if 'hr' == duration:
+            # check sentence for other vitals (excluding hr)
+            vitals_count = 0
+            iterator = _regex_vitals.finditer(sentence)
+            for match2 in iterator:
+                match_text = match2.group()
+                if 'hr' == match_text:
+                    continue
+                vitals_count += 1
+
+            if _TRACE:
+                print('\tvitals_count: {0}'.format(vitals_count))
+                
+            if vitals_count > 0:
+                # this 'hr' appears with other vitals and is prob heart rate
+                erase_it = False
+
+        if erase_it:
+            sentence = erase(sentence, match.start(), match.end())
+            if _TRACE:
+                print('\terased time duration expression: "{0}"'.
+                      format(match.group()))
+        
+    return sentence
+
+
+###############################################################################
 def _common_clean(string_list, is_case_sensitive):
     """
     Do cleaning operations common to both sentences and query terms.
@@ -960,13 +1039,6 @@ def _clean_sentence(sentence, is_case_sensitive):
 
     if _TRACE:
         print('calling clean_sentence...')
-
-    # # replace certain chars with whitespace
-    # sentence = regex_whitespace_replace.sub(' ', sentence)
-    
-    # # convert to lowercase unless case sensitive match enabled
-    # if not is_case_sensitive:
-    #     sentence = sentence.lower()
 
     string_list = [sentence]
     _common_clean(string_list, is_case_sensitive)
@@ -1034,7 +1106,7 @@ def _clean_sentence(sentence, is_case_sensitive):
 
         # erase time expression if not one of these formats:
         #     hh, hhmm, hhmmss, or one of these on each side of +-
-        #     only digits and '.'
+        #     only digits and '.' (confused with floating pt values)
         erase_it = False
         match_a = re.match(r'\A\d+\Z', t.text)
         match_b = re.match(r'\A\d+[\-\+]\d+\Z', t.text)
@@ -1046,6 +1118,8 @@ def _clean_sentence(sentence, is_case_sensitive):
                 print('\tERASING TIME EXPRESSION: "{0}"'.format(t.text))
             sentence = erase(sentence, start, end)
 
+    sentence = _erase_durations(sentence)
+            
     if _TRACE:
         print('\tcleaned sentence: {0}'.format(sentence))
         
