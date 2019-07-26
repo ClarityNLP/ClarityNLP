@@ -62,6 +62,10 @@ def _compare_results(
             enumlist=enumlist,
             is_denom_only=denom_only
         )
+
+        if 0 == len(expected_list) and ve.EMPTY_RESULT == json_result:
+            # expected not to find anything and actually did not
+            continue
         
         # load the json result and decode as a ValueResult namedtuple
         result_data = json.loads(json_result)
@@ -468,7 +472,11 @@ if __name__ == '__main__':
         'RR approx. 22'         :[the_result],
         'RR approximately 22'   :[the_result],
         'RR is approx. 22'      :[the_result],
-        'RR is approximately 22':[the_result]
+        'RR is approximately 22':[the_result],
+        'RR near 22'            :[the_result],
+        'RR is about 22'        :[the_result],
+        'RR ~ 22'               :[the_result],
+        'RR~=22'                :[the_result]
     }
 
     _compare_results(term_string, test_data, minval, maxval)
@@ -479,7 +487,9 @@ if __name__ == '__main__':
         'RR >= 24':[_Result('rr', 24, None, ve.STR_GTE)],
         'RR <= 42':[_Result('rr', 42, None, ve.STR_LTE)],
         'her RR was greater than 24':[_Result('rr', 24, None, ve.STR_GT)],
-        'his RR was less than 42':[_Result('rr', 42, None, ve.STR_LT)]
+        'his RR was less than 42':[_Result('rr', 42, None, ve.STR_LT)],
+        'his RR was up to 50':[_Result('rr', 50, None, ve.STR_LT)],
+        'RR above 45':[_Result('rr', 45, None, ve.STR_GT)],
     }
 
     _compare_results(term_string, test_data, minval, maxval)
@@ -564,6 +574,9 @@ if __name__ == '__main__':
         ],
         'Her BP on 3/27 from her 12 cm. x 9 cm x 6 cm heart was 110/70.':[
             _Result('bp', 110, None, ve.STR_EQUAL)
+        ],
+        "her BP was near the 120/80's":[
+            _Result('bp', 120, None, ve.STR_APPROX)
         ]
     }
 
@@ -600,6 +613,9 @@ if __name__ == '__main__':
         ],
         'Her BP on 3/27 from her 12cm x 9cm. x 6   cm heart was 110/70.':[
             _Result('bp', 70, None, ve.STR_EQUAL)
+        ],
+        "her BP was near the 120/80's":[
+            _Result('bp', 80, None, ve.STR_APPROX)
         ]
     }
 
@@ -629,13 +645,13 @@ if __name__ == '__main__':
 
     _compare_results(term_string, test_data, minval, maxval)
 
-    # durations
-    term_string = "platelets, platelet"
+    # durations, multiple overlap
+    term_string = "platelets, platelet, platelet count"
     test_data = {
         'platelets 2 hrs after transfusion 156':[
             _Result('platelets', 156, None, ve.STR_EQUAL)
         ],
-        'platelets q 2- 3 hrs measured 200':[
+        'platelets q. 2- 3 hrs measured 200':[
             _Result('platelets', 200, None, ve.STR_EQUAL)
         ],
         'platelets for the previous 3-4 months were 220':[
@@ -647,9 +663,22 @@ if __name__ == '__main__':
         'platelets for the past 2 months were 235,000':[
             _Result('platelets', 235000, None, ve.STR_EQUAL)
         ],
-        'platelet values for two weeks have been above 215,000':[
+        'platelet values for two weeks have been above 215K':[
             _Result('platelet', 215000, None, ve.STR_GT)
+        ],
+        'received one bag of platelets due to platelet count of 71k':[
+            _Result('platelet count', 71000, None, ve.STR_EQUAL)
         ]
+    }
+
+    _compare_results(term_string, test_data, minval, maxval)
+
+    # hypotheticals
+    term_string = 'temp'
+    test_data = {
+        'If the FVC is 1500 ml, you should set the temp to 100.':[],
+        'you should set the temp to 100':[],
+        #'do you know if the temp is 100?':[],
     }
 
     _compare_results(term_string, test_data, minval, maxval)

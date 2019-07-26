@@ -131,6 +131,9 @@ except Exception as e:
             EMPTY_SMF_FIELD
 
 
+# returned if no results found
+EMPTY_RESULT = '{}'
+
 # ignore any result field with this value
 EMPTY_FIELD = None  # ignore any field with this value
 
@@ -183,7 +186,7 @@ _str_words     = r'([-a-zA-Z.]+\s+){0,8}?' # nongreedy
 
 _str_digits    = r'\d+'
 _str_op        = r'((is|of|was|approx\.?|approximately|~=|>=|<=|[<>=~\?])\s*)?'
-_str_approx    = r'(~=|~|\b(approx\.?|approximately))'
+_str_approx    = r'(~=|~|\b(approx\.?|approximately|near(ly)?|about))'
 _str_equal     = r'\b(equal|eq\.?)'
 _str_less_than = r'\b(less\s+than|lt\.?|up\s+to|under)'
 _str_gt_than   = r'\b(greater\s+than|gt\.?|exceed(ing|s)|above|over)'
@@ -213,21 +216,26 @@ _str_range     = r'(?P<num1>' + _str_num + r')' + _str_suffix1                +\
     r'(?P<num2>' + _str_num + r')' + _str_suffix2
 
 # # from http://ebmcalc.com/Basic.htm, an online medical unit conversion tool
-# str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
-#             r'breaths/min|centimeters|cm|cents|cmH20|cmHg|cm^2|cm2|days|'    +\
-#             r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
-#             r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
-#             r'gm/sqcm|gm|hrs|hr|inches|index|inH2O|inHg|in|IU/L|kcal/day|'   +\
-#             r'kg/m2|kg/m^2|kg/sqm|kg|kilograms|km/hr|km/sec|km/s|knots|kPa|' +\
-#             r'L/24H|L/day|L/min|L/sec|lb|Liter|litresO2|logit|L|m/sec|mbar|' +\
-#             r'mcg/dL|mcg/kg|mcg/mL|mcgm/mL|mEq/L/hr|meq/L|mEq/L|mEq|meters|' +\
-#             r'METs|mg%|mg/day|mg/dL|mg/g|mg/kg|mg/mL|mg|micm|miles/hr|'      +\
-#             r'miles/sec|miles/s|mph|mins|min|mIU/mL|mL/24H|mL/day|mL/dL|'    +\
-#             r'mL/hr|mL/L|mL/min|mL/sec|mL/sqm|mL|mm/Hr|mmHg|mmol/L|mm|'      +\
-#             r'months|mOsm/dl|mOsm/kg|mosm/kg|mo|m|ng/kg/min|ng/mL|nm|'       +\
-#             r'number|Pascal|percent|pg|ph|points|pounds|psi|rate|ratio|'     +\
-#             r'score|secs|sec|seq|sqcm/sqm|sqcm|sqm|sqrcm|sqrm|torr|u/L|U/L|' +\
-#             r'Vol%|weeks|yd|years|yr)'
+# _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
+#              r'breaths/min|centimeters|cm|cents|cmH20|cmHg|cm^2|cm2|days|'    +\
+#              r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
+#              r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
+#              r'gm/sqcm|gm|hrs|hr|inches|index|inH2O|inHg|in|IU/L|kcal/day|'   +\
+#              r'kg/m2|kg/m^2|kg/sqm|kg|kilograms|km/hr|km/sec|km/s|knots|kPa|' +\
+#              r'L/24H|L/day|L/min|L/sec|lb|Liter|litresO2|logit|L|m/sec|mbar|' +\
+#              r'mcg/dL|mcg/kg|mcg/mL|mcgm/mL|mEq/L/hr|meq/L|mEq/L|mEq|meters|' +\
+#              r'METs|mg%|mg/day|mg/dL|mg/g|mg/kg|mg/mL|mg|micm|miles/hr|'      +\
+#              r'miles/sec|miles/s|mph|mins|min|mIU/mL|mL/24H|mL/day|mL/dL|'    +\
+#              r'mL/hr|mL/L|mL/min|mL/sec|mL/sqm|mL|mm/Hr|mmHg|mmol/L|mm|'      +\
+#              r'months|mOsm/dl|mOsm/kg|mosm/kg|mo|m|ng/kg/min|ng/mL|nm|'       +\
+#              r'number|Pascal|percent|pg|ph|points|pounds|psi|rate|ratio|'     +\
+#              r'score|secs|sec|seq|sqcm/sqm|sqcm|sqm|sqrcm|sqrm|torr|u/L|U/L|' +\
+#              r'Vol%|weeks|yd|years|yr)'
+
+# _str_quantity = r'([xX]\d+)?'
+# _str_meas = r'(?P<num>' + _str_num + r')\s*' + _str_units                    +\
+#             r'\s*' + _str_quantity
+# _regex_meas = re.compile(_str_meas)
 
 # 'between' and 'from' often denote ranges, such as 'between 10 and 20'
 _str_bf     = r'\b(between|from)\s*'
@@ -311,9 +319,6 @@ _regex_duration = re.compile(_str_duration)
 
 # used to restore original terms
 _term_dict = {}
-
-# returned if no results found
-_EMPTY_JSON = '{}'
 
 
 ###############################################################################
@@ -783,8 +788,10 @@ def _resolve_overlap(terms, results):
             looks and finds the '2' in 'SaO2'. The '2' is part of the search
             term 'sao2', so prevent this from being returned as a match.
 
-    3.  If two results partially overlap, discard any match that is completely
-        contained inside the span of the other.
+    3.  If two results partially overlap, check the matching terms for each
+        result. If the matching terms overlap, keep the match with the longest
+        matching term. If the terms do not overlap, keep the match that is
+        closest to the value.
 
         Example:
 
@@ -796,9 +803,22 @@ def _resolve_overlap(terms, results):
                 'PT)-1.0' for match term 'pt'
                 'PTT-32.6' for match term 'ptt'
                 'INR(PT)-1.0' for match term 'INR(PT)'
-                 
-            The second match is contained entirely within the span of the
-            fourth, so it should be discarded.
+
+            The matching terms 'pt' and 'inr(pt)' overlap. The longest matching
+            term is inr(pt), so keep the fourth match.
+
+        Example2:
+
+            sentence: 'received one bag of platelets due to platelet count of 71k'
+            term_str: 'platelets, platelet, platelet count'
+
+            The value extractor will find these matches:
+                'platelets due to platelet count of 71k' for match term 'platelets'
+                'platelet count of 71k' for match term 'platelet count'
+
+            The matching terms 'platelets' and 'platelet count' do not overlap,
+            so keep the match with 'platelet count', since it is nearest to the
+            value of 71k.
 
     """
 
@@ -826,20 +846,31 @@ def _resolve_overlap(terms, results):
                     print('overlap2: {0}'.format(results[j]))
 
                 to_discard = None
+                term1 = results[i].matching_term
+                term2 = results[j].matching_term
                 if s1 == s2 and e1 == e2:
                     # identical overlap, keep match longest matching_term
-                    term1 = results[i].matching_term
-                    term2 = results[j].matching_term
                     if len(term1) > len(term2):
                         to_discard = results[j]
                     else:
                         to_discard = results[i]
                 else:
                     # partial overlap, discard if value part of another term
-                    if results[i].text.endswith(results[j].matching_term):
+                    if results[i].text.endswith(term2):
                         to_discard = results[i]
-                    elif e2 <= e1:
-                        to_discard = results[j]
+                    else:
+                        # find out if matching terms overlap
+                        span1 = (s1, s1+len(term1))
+                        span2 = (s2, s2+len(term2))
+                        if span2[0] < span1[1]:
+                            # terms overlap
+                            if len(term2) > len(term1):
+                                to_discard = results[i]
+                            else:
+                                to_discard = results[j]
+                        else:
+                            # no overlap, keep closest term
+                            to_discard = results[i]
 
                 if to_discard is not None:
                     discard_set.add(to_discard)
@@ -963,7 +994,7 @@ def remove_hypotheticals(sentence, results):
 
 
 ###############################################################################
-def erase(sentence, start, end):
+def _erase(sentence, start, end):
     """
     Overwrite characters [start, end) with whitespace.
     """
@@ -1020,7 +1051,7 @@ def _erase_durations(sentence):
                 erase_it = False
 
         if erase_it:
-            sentence = erase(sentence, match.start(), match.end())
+            sentence = _erase(sentence, match.start(), match.end())
             if _TRACE:
                 print('\t\terased time duration expression: "{0}"'.
                       format(match.group()))
@@ -1079,7 +1110,7 @@ def _clean_sentence(sentence, is_case_sensitive):
         if not re.match(r'\A\d+\Z', date.text):
             if _TRACE:
                 print('\terasing date "{0}"'.format(date.text))
-            sentence = erase(sentence, start, end)
+            sentence = _erase(sentence, start, end)
 
     # find size measurements in the sentence
     json_string = run_size_measurement(sentence)
@@ -1105,7 +1136,7 @@ def _clean_sentence(sentence, is_case_sensitive):
         end   = int(m.end)
         if _TRACE:
             print('\terasing size measurement "{0}"'.format(m.text))
-        sentence = erase(sentence, start, end)
+        sentence = _erase(sentence, start, end)
 
     # find time expressions in the sentence
     json_string = run_time_finder(sentence)
@@ -1131,10 +1162,10 @@ def _clean_sentence(sentence, is_case_sensitive):
         if erase_it:
             if _TRACE:
                 print('\tERASING TIME EXPRESSION: "{0}"'.format(t.text))
-            sentence = erase(sentence, start, end)
+            sentence = _erase(sentence, start, end)
 
     sentence = _erase_durations(sentence)
-            
+
     if _TRACE:
         print('\tcleaned sentence: {0}'.format(sentence))
         
@@ -1194,9 +1225,6 @@ def run(term_string,               # comma-separated string of query terms
             filter_terms = enumlist
         filter_terms = [term.strip() for term in filter_terms]
         
-    # save a copy of the original terms
-    #original_terms = terms.copy()
-    
     # convert terms to lowercase unless doing a case-sensitive match
     if not is_case_sensitive:
         terms = [term.lower() for term in terms]
@@ -1247,7 +1275,7 @@ def run(term_string,               # comma-separated string of query terms
     if 0 == len(results):
         if _TRACE:
             print('\t*** no results found ***')
-        return _EMPTY_JSON
+        return EMPTY_RESULT
             
     # order results by their starting character offset
     results = sorted(results, key=lambda x: x.start)
@@ -1304,126 +1332,6 @@ def _show_help():
 if __name__ == '__main__':
 
     TEST_SENTENCES = [
-
-        # LVEF
-        'The LVEF is 40%.',
-        'Hyperdynamic LVEF >75%.',
-        'Overall normal LVEF (>55%).',
-        'Overall left ventricular systolic function is normal (LVEF 60%).',
-        'Overall left ventricular systolic function is normal (LVEF>55%).',
-        'Overall left ventricular systolic function is low normal (LVEF 50-55%).',
-        'LVEF was estimated at 55% and ascending aorta measured 5.1 centimeters.',
-        'Overall left ventricular systolic function is severely depressed (LVEF= 20 %).',
-        'Overall left ventricular systolic function is severely depressed (LVEF= < 30 %).',
-        'Overall left ventricular systolic function is severely depressed (LVEF= 15-20 %).',
-        'Conclusions: There is moderate global left ventricular hypokinesis (LVEF 35-40%).',
-        'Overall left ventricular systolic function is moderately depressed (LVEF~25-30 %).',
-        'Normal LV wall thickness, cavity size and regional/global systolic function (LVEF >55%).',
-        'Overall left ventricular systolic function is mildly depressed (LVEF= 40-45 %) with inferior akinesis.',
-        'Left ventricular wall thickness, cavity size and regional/global systolic function are normal (LVEF >55%).',
-        'There is mild symmetric left ventricular hypertrophy with normal cavity size and regional/global systolic function (LVEF>55%).',
-        'LEFT VENTRICLE: Overall normal LVEF (>55%). Beat-to-beat variability on LVEF due to irregular rhythm/premature beats.',
-        'Overall left ventricular systolic function is moderately depressed (LVEF= 30 % with relative preservation of the lateral, inferolateral and inferior walls).',
-        
-        # EF
-        'An echo showed an EF of 40%.',
-        'EF was 50%, with 4+ TR and AVR gradient 30mmHG.',
-        'Echo showed preseved systolic function with EF >55.',
-        'Congestive heart failure (EF 30% as of [**9-/3389**])',
-        'Left ventricular systolic function is hyperdynamic (EF>75%).',
-        'Congestive Heart Failure, chronic: TTE in the ICU showed an EF 30%.',
-        'Last EF slightly improved to 45% with inferior akinesis, mild AR and severe AS.',
-        'UNDERLYING MEDICAL CONDITION: 60 year old man with hx of CHF, intubated, EF 20%, fevers and rash and elevated LFTs',
-        'Dilated cardiomyopathy with EF of 10% secondary to chemotherapy(Hodgkins) in [**3003**], last ECHO [**8-/3023**], EF 10-15% .',
-        'UNDERLYING MEDICAL CONDITION: 73 year old woman with recent MI s/p revasc, intubated with VAP and EF 40% s/p trach    now in respiratory distress',
-        'UNDERLYING MEDICAL CONDITION: 53 year old man with crack lung, CHF (EF=20%), ate raw chicken p/w abdominal pain, fever, failed antibiotic monotherapy.',
-        '84M Russian-speaking with h/o severe 3-vessel CAD unamenable to PCI s/p CABG x4 ([**2746**]) and MI x3, chronic angina, DM, CHF (EF 30-35%) presented from clinic with progressive dyspnea x 2 days.',
-        
-        # narrative forms for LVEF
-        'Left Ventricle - Ejection Fraction:  60%  >= 55%',
-        'Left Ventricle - Ejection Fraction: 55% (nl >=55%)',
-        'Left Ventricle - Ejection Fraction:  50% to 55%  >= 55%',
-        '53-year-old male with crack lung, CHF and ejection fraction of 20%, with abdominal pain and fever, who has failed antibiotic monotherapy.',
-        'His most recent echocardiogram was in [**2648-8-10**], which showed an ejection fraction of approximately 60 to 70% and a mildly dilated left atrium.',
-        'He underwent cardiac catheterization on [**7-30**], which revealed severe aortic stenosis with an aortic valve area of 0.8 centimeters squared, an ejection fraction of 46%.',
-        'The echocardiogram was done on [**2-15**], and per telemetry, showed inferior hypokinesis with an ejection fraction of 50%, and an aortic valve area of 0.7 cm2 with trace mitral regurgitation.',
-        'Echocardiogram in [**3103-2-6**] showed a large left atrium, ejection fraction 60 to 65% with mild symmetric left ventricular hypertrophy, trace aortic regurgitation, mild mitral regurgitation.',
-        "Myocardium:  The patient's ejection fraction at the outside hospital showed a 60% preserved ejection fraction and his ACE inhibitors were titrated up throughout this hospital stay as tolerated.",
-        'Overall left ventricular systolic function is probably borderline depressed (not fully assessed; estimated ejection fraction ?50%); intrinsic function may be more depressed given the severity of the regurgitation.',
-
-        # vital signs
-        'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
-        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        'VS: T 97.7, BP 134/73, HR 74, 22, 98% 3L',
-        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
-        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
-        'In the ED, initial VS: 98.90 97 152/81 100% on RA.',
-        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
-        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
-        'VS: T: 95.9 BP: 154/56 HR: 69 RR: 16 O2sats: 94% 2L NC',
-        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
-        'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
-        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
-        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.', # left side
-        'In the ED, initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
-        'In the ED initial vitals were HR 106, BP 88/56, RR 20, O2 Sat 85% 3L.',
-        'In the ED, initial vs were: T=99.3, P=120, BP=111/57, RR=24, POx=100%.',
-        'Upon transfer her vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM.',
-        'Vitals in PACU post-op as follows: BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.',
-        'In the ED, initial vital signs were T 97.5, HR 62, BP 168/60, RR 18, 95% RA.',
-        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams Lt 18.5 inches HC 35 cm',
-        'In the ED, initial vital signs were T 97.0, BP 85/44, HR 107, RR 28, and SpO2 91% on NRB.',
-        'Prior to transfer, his vitals were BP 119/53 (105/43 sleeping), HR 103, RR 15, and SpO2 97% on NRB.',
-        'T 99.4 P 140 R 84 BP 57/30 mean 40 O2 sat 92% in RA, dropped to 89-90% Wt 2800 grams Lt 18.5 inches HC 34 cm',
-        'VS: T 98.5 BP 120/50 (110-128/50-56) HR 88 (88-107) ....RR 24 (22-26), SpO2 94% on 4L NC(89-90% on 3L, 92-97% on 4L)',
-        'In the ED inital vitals were, Temperature 100.8, Pulse: 103, RR: 28, BP: 84/43, O2Sat: 88, O2 Flow: 100 (Non-Rebreather).',
-        'At clinic, he was noted to have increased peripheral edema and was sent to the ED where his vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
-
-        # blood components
-        'CTAB Pertinent Results: BLOOD WBC-7.0# RBC-4.02* Hgb-13.4* Hct-38.4* MCV-96 MCH-33.2* MCHC-34.7 RDW-12.9 Plt Ct-172 02:24AM BLOOD WBC-4.4 RBC-4.21*',
-        'Hgb-13.9* Hct-39.7* MCV-94 MCH-33.0* MCHC-35.0 RDW-12.6 Plt Ct-184 BLOOD WBC-5.6 RBC-4.90 Hgb-16.1 Hct-46.2 MCV-94 MCH-33.0* MCHC-34.9 RDW-12.8 Plt Ct-234',
-        'BLOOD Type-ART Temp-36.6 Rates-16/ Tidal V-600 PEEP-5 FiO2-60 pO2-178* pCO2-35 pH-7.42 calTCO2-23 Base XS-0 Intubat-INTUBATED Vent-CONTROLLED BLOOD Lactate-1.0 BLOOD Lactate-1.6'
-        'BLOOD Neuts-59.7 Lymphs-33.5 Monos-4.9 Eos-1.3 Baso-0.6 BLOOD PT-10.8 PTT-32.6 INR(PT)-1.0 BLOOD Plt Ct-234 BLOOD Glucose-182* UreaN-14 Creat-0.8 Na-134 K-4.0 Cl-101 HCO3-25 AnGap-12',
-        'BLOOD Glucose-119* UreaN-21* Creat-0.9 Na-138 K-3.8 Cl-100 HCO3-25 AnGap-17 BLOOD TotProt-6.2* UricAcd-2.8* BLOOD PEP-AWAITING F IgG-1040 IgA-347 IgM-87 IFE-PND BLOOD C3-144 C4-37 BLOOD C4-45*',
-
-        # approximations
-        'RR approx 22, RR approx. 22, RR approximately 22, RR is approx. 22, RR is approximately 22',
-
-        # >=, <=
-        'RR >= 24, RR <= 42, her RR was greater than 24, his RR was less than 42',
-        
-        # ranges
-        'RR 22-42, RR22-42, RR 22 - 42, RR(22-42), RR (22 to 42), RR (22 - 42)',
-        'RR22to42, RR 22to42, RR 22 to 42, RR from 22 to 42, RR range: 22-42',
-        'RR= 22-42, RR=22-42, RR= 22 -42, RR = 22 - 42, RR = 22 to 42, RR=22to42, RR is 22-42',
-        'RR ~ 22-42, RR approx. 22-42, RR is approximately 22 - 42, RR is ~22-42, RR varies from 22-42',
-        'RR varied from 22 to 42, RR includes all values in the range 22 to 42, RR values were 22-42',
-        'RR: 22-42, RR 22-42, RR=22-42, RR ~= 22-42, RR ~= 22 to 42, RR is approx. = 22-42, RR- 22-42',
-        'RR= 22    -42, RR between 22 and 42, RR ranging from 22 to 42',
-        'FVC value for this patient is 500ml to 600ml.',
-
-        # more BP
-        'BP < 120/80, BP = 110/70, BP >= 100/70, BP <= 110/70, BP lt. or eq 110/70',
-        'her BP was less than 120/80, his BP was gt 110 /70, BP lt. 110/70',
-        
-        # some blood pressure ranges
-        'BP 110/70 to 120/80, BP was between 100/60 and 120/80, BP range: 105/75 - 120/70',
-
-        # sentences containing date expressions
-        'Her BP on 3/27 measured 110/70.',
-        'Her BP on 3/27 measured 110/70 and her BP on 4/01 measured 115/80.',
-
-        # numbers followed by s, e.g. 90s
-        "her HR varied from the 80s to the 90's",
-        'her HR was in the 90s',
-        "her BP was near the 120/80's",
-
-        # single letter queries
-        'T was 98.6 and it went to 98',
-        'T98.6 degrees F, p100, pulse 70, derp 80',
-
-        # sentences containing dates and size measurements
-        "Her BP on 3/27 from her 12 cm x 9 cm x 6 cm heart was 110/70.",
 
         # titers and other
         'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.',
