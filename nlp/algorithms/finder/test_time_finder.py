@@ -243,4 +243,17 @@ if __name__ == '__main__':
     }
 
     _compare_results(test_data)
-    
+
+    # h24ms and h24m formats
+    test_data = {
+        'The times are 0613, t0613, 1124, 232120, 010203, and 120000':[
+            _Result(text='0613',   hours=6,  minutes=13),
+            _Result(text='t0613',  hours=6,  minutes=13),
+            _Result(text='1124',   hours=11, minutes=24),
+            _Result(text='232120', hours=23, minutes=21,  seconds=20),
+            _Result(text='010203', hours=1,  minutes=2,   seconds=3),
+            _Result(text='120000', hours=12, minutes=0,   seconds=0)
+        ]
+    }
+
+    _compare_results(test_data)

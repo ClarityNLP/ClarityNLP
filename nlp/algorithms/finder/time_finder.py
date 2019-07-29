@@ -1,25 +1,6 @@
 #!/usr/bin/env python3
 """
 
-TODO: add relative time expressions
-
-    check python dateutil
-
-    unknowns:      ??-Aug-2013
-    date range:    4/2-5/13, 4/2-5/3/2013
-    abbreviations: 2 wks, 1 1/2 wk, 1 wk
-    age:           3 days old
-    duration:      for 6 months, a year, over 2 hours, q. 6-8 hrs
-                   duration words: for, over, last, lasting, lasted, within
-    frequency:     every three days
-    relative time: three days after 02APR13
-                   two hours after
-
-                   relative time words: before, after, prior, later,
-                                        earlier, post, ago, next, following
-
-    2 and 5 dec 2019
-
 References: 
 
 PHP Time Formats:
@@ -73,7 +54,7 @@ _str_am_pm = r'[aApP]\.?[mM]\.?'
 _str_MM = r'[0-5][0-9]'
 
 # world time zones (added 'Z' for Zulu == zero meridian)
-_str_time_zone_abbrev = r'(ACDT|ACST|ACT|ACWST|ADT|AEDT|AEST|AFT|AKDT|'       +\
+_str_time_zone_abbrev = r'(ACDT|ACST|ACT|ACWST|ADT|AEDT|AEST|AFT|AKDT|'      +\
     'AKST|AMST|AMT|ART|AST|AWST|AZOST|AZOT|AZT|BDT|'      +\
     'BIOT|BIT|BOT|BRST|BRT|BST|BTT|CAT|CCT|CDT|CEST|'     +\
     'CET|CHADT|CHAST|CHOT|CHOST|CHST|CHUT|CIST|CIT|'      +\
@@ -150,10 +131,10 @@ _str_h24m = _str_t                                        +\
 _regex_h24m = re.compile(_str_h24m)
 
 # hour and minutes, no colon
-# _str_h24m_no_colon = _str_t                               +\
-#                     r'(?P<hours>'   + _str_h24 + r')'    +\
-#                     r'(?P<minutes>' + _str_MM  + r')'
-# _regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
+_str_h24m_no_colon = _str_t                              +\
+                    r'(?P<hours>'   + _str_h24 + r')'    +\
+                    r'(?P<minutes>' + _str_MM  + r')'
+_regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
 
 # hour, minutes, and seconds
 #    01:03:24, t14:15:16
@@ -164,11 +145,11 @@ _str_h24ms = _str_t                                       +\
 _regex_h24ms = re.compile(_str_h24ms)
 
 # hour, minutes, and seconds, no colon
-# _str_h24ms_no_colon = _str_t                              +\
-#                      r'(?P<hours>'   + _str_h24 + r')'   +\
-#                      r'(?P<minutes>' + _str_MM  + r')'   +\
-#                      r'(?P<seconds>' + _str_MM  + r')'
-# _regex_h24ms_no_colon = re.compile(_str_h24ms_no_colon)
+_str_h24ms_no_colon = _str_t                             +\
+                     r'(?P<hours>'   + _str_h24 + r')'   +\
+                     r'(?P<minutes>' + _str_MM  + r')'   +\
+                     r'(?P<seconds>' + _str_MM  + r')'
+_regex_h24ms_no_colon = re.compile(_str_h24ms_no_colon)
 
 # hour, minutes, seconds, and timezone
 #    040837EST, 112345 HOVST, T093000 Z
@@ -243,16 +224,16 @@ _regex_iso_time = re.compile(_str_iso_time)
 _regexes = [_regex_iso_time,             # 0
             _regex_h24ms_with_gmt_delta, # 1
             _regex_h24ms_with_timezone,  # 2
-            _regex_h12msf_am_pm,         # 3
-            _regex_h12ms_am_pm,          # 4
-            _regex_h12m_am_pm,           # 5
-            _regex_h12_am_pm,            # 6
-            _regex_h24msf,               # 7
-            _regex_h24ms,                # 8
-            _regex_h24m,                 # 9
-            _regex_h12m,                 # 10
-            #_regex_h24m_no_colon
-            #_regex_h24ms_no_colon,
+            _regex_h24ms_no_colon,       # 3
+            _regex_h24m_no_colon,        # 4
+            _regex_h12msf_am_pm,         # 5
+            _regex_h12ms_am_pm,          # 6
+            _regex_h12m_am_pm,           # 7
+            _regex_h12_am_pm,            # 8
+            _regex_h24msf,               # 9
+            _regex_h24ms,                # 10
+            _regex_h24m,                 # 11
+            _regex_h12m,                 # 12
 ]
 
 # match (), {}, and []
