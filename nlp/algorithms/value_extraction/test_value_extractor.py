@@ -535,7 +535,7 @@ if __name__ == '__main__':
         'RR between 22 and 42':[the_result],
         'RR ranging from 22 to 42':[the_result],
         'FVC value for this patient is 500ml to 600ml.':[
-            _Result('fvc', 500, 600, ve.STR_RANGE)
+            _Result('fvc', 500, 600, ve.STR_RANGE),
         ]
     }
     
@@ -677,7 +677,9 @@ if __name__ == '__main__':
         ],
         'One bag of platelets hung at 0610 and she will need a repeat '
         'platelet count in one hour after transfusion completed.':[],
-        'post transfusion platelet count due around 0730.':[]
+        'post transfusion platelet count due around 0730.':[],
+        #'Will follow platelets soon after transfusion and again 6-12 ' +\
+        #'hours later peding initial post-transfusion result.':[]
     }
 
     _compare_results(term_string, test_data, minval, maxval)
@@ -688,6 +690,23 @@ if __name__ == '__main__':
         'If the FVC is 1500 ml, you should set the temp to 100.':[],
         'you should set the temp to 100':[],
         #'do you know if the temp is 100?':[],
+    }
+
+    _compare_results(term_string, test_data, minval, maxval)
+
+    # others
+    term_string = 'platelet count'
+    test_data = {
+        # range with no units on first number
+        'Will consider transfusion for platelet count < 30-50k.':[
+            _Result('platelet count', 30000, 50000, ve.STR_RANGE)
+        ],
+        # range with no units on first number
+        'Will consider IVIg for platelet count 30-80k.':[
+            _Result('platelet count', 30000, 80000, ve.STR_RANGE)
+        ],
+        # from a to b with missing b
+        'platelet count up from 5 to Pt hemodynamicaly stable Plan':[]
     }
 
     _compare_results(term_string, test_data, minval, maxval)

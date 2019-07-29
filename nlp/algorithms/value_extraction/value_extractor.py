@@ -248,7 +248,7 @@ _str_bf_range = _str_bf + \
 
 _str_units_range = r'(' + _str_bf + r')?'                                    +\
     r'(?P<num1>' + _str_num + r')' + r'\s*'                                  +\
-    r'(?P<units1>' + _str_text_word + r')'                                   +\
+    r'(?P<units1>(' + _str_text_word + r')?)'                                +\
     _str_bf_sep                                                              +\
     r'(?P<num2>' + _str_num + r')' +r'\s*'                                   +\
     r'(?P<units2>' + _str_text_word + r')'
@@ -692,6 +692,9 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
         # strip punctuation
         units1 = _regex_punct.sub('', units1)
         units2 = _regex_punct.sub('', units2)
+        if 0 == len(units1):
+            # explicit units omitted from first number
+            units1 = units2
         if units1 == units2:
             num1 = float(match.group('num1'))
             num2 = float(match.group('num2'))
@@ -742,6 +745,11 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
         if val >= minval and val <= maxval:
             words = match.group('words')
             cond_words = match.group('cond').strip()
+            if re.search(_str_bf, words) or re.search(_str_bf, cond_words):
+                # found only a single digit of a range
+                if _TRACE:
+                    print('\t\tdiscarding, missing second value')
+                continue
             cond = _cond_to_string(words, cond_words)
             _update_match_results(match, spans, results, val, EMPTY_FIELD,
                                   cond, query_term)
@@ -751,8 +759,14 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched wds_val_query: {0}'.format(match.group()))
+            print('\t                words: {0}'.format(match.group('words')))
         val = _get_suffixed_num(match, 'val', 'suffix')
         if val >= minval and val <= maxval:
+            if re.search(_str_bf, words):
+                # found only a single digit of a range
+                if _TRACE:
+                    print('\t\tdiscarding, missing second value')
+                continue
             _update_match_results(match, spans, results, val,
                                   EMPTY_FIELD, EMPTY_FIELD, query_term)
 
