@@ -756,7 +756,7 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
             _update_match_results(match, spans, results, val,
                                   EMPTY_FIELD, EMPTY_FIELD, query_term)
 
-    results = remove_hypotheticals(sentence, results)
+    results = _remove_hypotheticals(sentence, results)
     return results
 
 
@@ -890,7 +890,7 @@ def _resolve_overlap(terms, results):
 
 
 ###############################################################################
-def remove_hypotheticals(sentence, results):
+def _remove_hypotheticals(sentence, results):
     """
     Use a simplified version of the ConText algorithm of Harkema et. al. to 
     identify and remove values used in hypothetical phrases.
@@ -930,7 +930,8 @@ def remove_hypotheticals(sentence, results):
     if _TRACE:
         print('\tresult word spans: ')
         for span in result_spans:
-            print('\t\twords [{0},{1})'.format(span[0], span[1]))
+            print('\t\twords [{0},{1}) for result "{2}"'.
+                  format(span[0], span[1], span[2].text))
 
     # scan the word list looking for these hypothetical trigger words:
     #     'call for'
@@ -971,7 +972,7 @@ def remove_hypotheticals(sentence, results):
 
     omit_results = set()
         
-    # for each trigger, find next value result starting within WINDOW words\
+    # for each trigger, find next value result starting within WINDOW words
     for hw in triggers:
         h_start = hw[0]
         for rs in result_spans:
@@ -980,7 +981,7 @@ def remove_hypotheticals(sentence, results):
                 continue
             if rs_start - h_start < WINDOW:
                 if _TRACE:
-                    print('Trigger {0} influences {1}'.
+                    print('Trigger "{0}" influences "{1}"'.
                           format(hw[1], words[rs_start]))
                 omit_results.add(rs[2])
                 continue
@@ -1151,14 +1152,24 @@ def _clean_sentence(sentence, is_case_sensitive):
         end   = int(t.end)
 
         # erase time expression if not one of these formats:
-        #     hh, hhmm, hhmmss, or one of these on each side of +-
+        #     integers on each side of +- (confused with ranges or UTC offset)
+        #     hh, hhmm, hhmmss (but if preceded by 'at' or '@' likely a time)
         #     only digits and '.' (confused with floating pt values)
+
         erase_it = False
-        match_a = re.match(r'\A\d+\Z', t.text)
-        match_b = re.match(r'\A\d+[\-\+]\d+\Z', t.text)
+        match_a = re.match(r'\A\d+[\-\+]\d+\Z', t.text)
+        match_b = re.match(r'\A\d+\Z', t.text)
         match_c = re.match(r'\A[\d\.]+\Z', t.text)
         if not match_a and not match_b and not match_c:
             erase_it = True
+        if match_b:
+            # matched an integer in the for hh hhmm hhmmss
+            # check to see if preceded by '@', 'at', or similar words
+            # if so, probably a time expression
+            frag = sentence[:end]
+            if re.search(r'(@|\b(at|around))\s*' +\
+                         '(approximately|approx\.?)?\d+\Z', frag):
+                erase_it = True
         if erase_it:
             if _TRACE:
                 print('\tERASING TIME EXPRESSION: "{0}"'.format(t.text))

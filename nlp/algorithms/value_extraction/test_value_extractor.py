@@ -668,7 +668,16 @@ if __name__ == '__main__':
         ],
         'received one bag of platelets due to platelet count of 71k':[
             _Result('platelet count', 71000, None, ve.STR_EQUAL)
-        ]
+        ],
+        'Received platelets yesterday for platelet count of 28; ' \
+        'platelets 2 hrs after transfusion 156, '                 \
+        '12 hrs after transfusion 132.':[
+            _Result('platelet count', 28, None, ve.STR_EQUAL),
+            _Result('platelets', 156, None, ve.STR_EQUAL)
+        ],
+        'One bag of platelets hung at 0610 and she will need a repeat '
+        'platelet count in one hour after transfusion completed.':[],
+        'post transfusion platelet count due around 0730.':[]
     }
 
     _compare_results(term_string, test_data, minval, maxval)
