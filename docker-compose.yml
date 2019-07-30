@@ -361,3 +361,7 @@ services:
       options:
         max-size: "200k"
     restart: always
+
+  cql-execution:
+    build:
+      context: ./cql-execution-service

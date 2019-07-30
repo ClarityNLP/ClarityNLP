@@ -410,3 +410,7 @@ services:
       - nginx-proxy
     networks:
       - clarity
+
+  cql-execution:
+    build:
+      context: ./cql-execution-service
