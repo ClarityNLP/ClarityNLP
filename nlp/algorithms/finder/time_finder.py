@@ -133,7 +133,7 @@ _regex_h24m = re.compile(_str_h24m)
 # hour and minutes, no colon
 _str_h24m_no_colon = _str_t                              +\
                     r'(?P<hours>'   + _str_h24 + r')'    +\
-                    r'(?P<minutes>' + _str_MM  + r')'
+                    r'(?P<minutes>' + _str_MM  + r'(?!\d))'
 _regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
 
 # hour, minutes, and seconds
@@ -148,7 +148,7 @@ _regex_h24ms = re.compile(_str_h24ms)
 _str_h24ms_no_colon = _str_t                             +\
                      r'(?P<hours>'   + _str_h24 + r')'   +\
                      r'(?P<minutes>' + _str_MM  + r')'   +\
-                     r'(?P<seconds>' + _str_MM  + r')'
+                     r'(?P<seconds>' + _str_MM  + r'(?!\d))'
 _regex_h24ms_no_colon = re.compile(_str_h24ms_no_colon)
 
 # hour, minutes, seconds, and timezone
@@ -207,9 +207,14 @@ _str_iso_hh = r'([01][0-9]|2[0-4])'
 _str_iso_mm = r'[0-5][0-9]'
 _str_iso_ss = r'([0-5][0-9]|60)'
 
+# note the essential negative lookahead in these
+_str_iso_hh_only = r'\b(?P<hours>' + _str_iso_hh + r'(?!\d))'
+_str_iso_hhmm_only = r'\b(?P<hours>' + _str_iso_hh + r')'         +\
+                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d))'
+
 _str_iso_hms = r'\b(?P<hours>'  + _str_iso_hh + r'):?'                       +\
-               r'((?P<minutes>' + _str_iso_mm + r'))?:?'                     +\
-               r'((?P<seconds>' + _str_iso_ss + r'))?'                       +\
+               r'((?P<minutes>' + _str_iso_mm + r')):?'                      +\
+               r'((?P<seconds>' + _str_iso_ss + r'))'                        +\
                r'((?P<frac>'    + r'\.\d+'   + r'))?'
 
 _str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r')'                    +\
@@ -219,21 +224,27 @@ _str_iso_zone = r'((?P<timezone>Z)|'                                         +\
                 r'(?P<gmt_sign>[-+])' + _str_iso_zone_hm + r')'
 
 _str_iso_time = _str_iso_hms + r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
+
+_regex_iso_hh   = re.compile(_str_iso_hh_only)
+_regex_iso_hhmm = re.compile(_str_iso_hhmm_only)
 _regex_iso_time = re.compile(_str_iso_time)
 
-_regexes = [_regex_iso_time,             # 0
-            _regex_h24ms_with_gmt_delta, # 1
-            _regex_h24ms_with_timezone,  # 2
-            _regex_h24ms_no_colon,       # 3
-            _regex_h24m_no_colon,        # 4
-            _regex_h12msf_am_pm,         # 5
-            _regex_h12ms_am_pm,          # 6
-            _regex_h12m_am_pm,           # 7
-            _regex_h12_am_pm,            # 8
-            _regex_h24msf,               # 9
-            _regex_h24ms,                # 10
-            _regex_h24m,                 # 11
-            _regex_h12m,                 # 12
+_regexes = [
+    _regex_iso_hhmm,             # 0
+    _regex_iso_hh,               # 1
+    _regex_iso_time,             # 2
+    _regex_h24ms_with_gmt_delta, # 3
+    _regex_h24ms_with_timezone,  # 4
+    _regex_h24ms_no_colon,       # 5
+    _regex_h24m_no_colon,        # 6
+    _regex_h12msf_am_pm,         # 7
+    _regex_h12ms_am_pm,          # 8
+    _regex_h12m_am_pm,           # 9
+    _regex_h12_am_pm,            # 10
+    _regex_h24msf,               # 11
+    _regex_h24ms,                # 12
+    _regex_h24m,                 # 13
+    _regex_h12m,                 # 14
 ]
 
 # match (), {}, and []
@@ -373,6 +384,10 @@ def run(sentence):
     original_sentence = sentence
     sentence = _clean_sentence(sentence)
 
+    if _TRACE:
+        print('original: {0}'.format(original_sentence))
+        print(' cleaned: {0}'.format(sentence))
+        
     for regex_index, regex in enumerate(_regexes):
         iterator = regex.finditer(sentence)
         for match in iterator:

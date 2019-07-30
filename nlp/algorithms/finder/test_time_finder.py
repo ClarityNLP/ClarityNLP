@@ -18,9 +18,6 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 _MODULE_NAME = 'test_time_finder.py'
 
-# set to True to enable debug output
-_TRACE = False
-
 # namedtuple for expected results; fields default to None
 _RESULT_FIELDS = [
     'text', 'hours', 'minutes', 'seconds', 'fractional_seconds', 'am_pm',
@@ -229,7 +226,11 @@ if __name__ == '__main__':
 
     # ISO 8601 format
     test_data = {
-        'The times are 08:23:32Z, 09:24:33+12, 10:25:34-04:30, and 11:26:35.012345+0600':[
+        'The times are 04, 0622, 11:23, 08:23:32Z, 09:24:33+12, ' \
+        '10:25:34-04:30, and 11:26:35.012345+0600':[
+            _Result(text='04',    hours=4),
+            _Result(text='0622',  hours=6,  minutes=22),
+            _Result(text='11:23', hours=11, minutes=23),
             _Result(text='08:23:32Z', hours=8, minutes=23, seconds=32,
                     timezone='UTC'),
             _Result(text='09:24:33+12', hours=9, minutes=24, seconds=33,
