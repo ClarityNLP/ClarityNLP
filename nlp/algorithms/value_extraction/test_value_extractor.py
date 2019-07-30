@@ -699,9 +699,6 @@ if __name__ == '__main__':
 
     _compare_results(term_string, test_data, minval, maxval)
 
-
-    # TODO: accept s endings only if NOT a separate search term!!
-
     # others
     term_string = 'platelet count, platelets'
     test_data = {
@@ -751,3 +748,4 @@ if __name__ == '__main__':
 
     # _compare_results(term_string, test_data, minval, maxval, enumlist)
     
+    # TODO: accept s endings only if NOT a separate search term!!

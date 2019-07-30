@@ -293,20 +293,12 @@ _str_vitals = r'\b(temperature|temp|t|hr|bp|pulse|p|rr?|'         +\
 _regex_vitals = re.compile(_str_vitals)
 
 # durations
-#_str_duration_start = r'\b(for|over|last|lasting|lasted|within|'  +\
-#                      r'q\.?|each|every|once)'
 _str_duration_amt = r'(hours?|hrs|hr\.?|minutes?|mins|min\.?|'    +\
                     r'seconds?|secs|sec\.?|'                      +\
                     r'days?|weeks?|wks|wk\.?|'                    +\
                     r'months?|mos|mo\.|years?|yrs\.?|yr\.?)'
 
 # q. 6-8 hrs, for 3-6 months, for the previous 3-4 weeks, etc.
-# _str_duration_range = _str_duration_start                         +\
-#     r'\s*'                                                        +\
-#     _str_words                                                    +\
-#     _str_range                                                    +\
-#     r'\s*'                                                        +\
-#     r'(?P<dur_amt>' + _str_duration_amt + r')'
 _str_duration_range =  _str_range                                 +\
     r'\s*'                                                        +\
     r'(?P<dur_amt>' + _str_duration_amt + r')'
@@ -316,22 +308,11 @@ _str_duration1 = r'(?P<dur_num1>' + _str_num + r')'               +\
                  r'\s*'                                           +\
                  r'(?P<dur_amt1>' +_str_duration_amt + r')'
 
-# _str_duration2 = _str_duration_start    +\
-#     r'\s*'                              +\
-#     _str_words                          +\
-#     r'(' + _str_num + r')'              +\
-#     r'\s*'                              +\
-#     _str_duration_amt
-_str_duration2 = r'(?P<dur_num2>' + _str_num + r')'   +\
-    r'\s*'                                            +\
-    r'(?P<dur_amt2>' + _str_duration_amt + r')'
-
-_str_duration = _str_duration_range + r'|' +\
-    _str_duration1 + r'|' + _str_duration2
+_str_duration = _str_duration_range + r'|' + _str_duration1
 _regex_duration = re.compile(_str_duration)
 
 # add all capture group names for duration amounts to this list
-_DURATION_GROUP_NAMES = ['dur_amt', 'dur_amt1', 'dur_amt2']
+_DURATION_GROUP_NAMES = ['dur_amt', 'dur_amt1']
 
 # suffixes such as 1st, 2nd, 3rd, 4th, etc.
 _str_enum_suffix = r'\s*(st|nd|rd|th)'
