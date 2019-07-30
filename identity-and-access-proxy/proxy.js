@@ -75,6 +75,7 @@ var proxyRules = new HttpProxyRules({
     '/ingest/(.+)/schedule': 'http://ingest-api:1337/ingest/$1/schedule', //INGEST-API --> POST /ingest/:ingestId/schedule
     '/ingest': 'http://ingest-api:1337/ingest', //INGEST-API --> GET /ingest
     '/ingest/(.+)/delete': 'http://ingest-api:1337/ingest/$1/delete', //INGEST-API --> GET /ingest/:ingestId/delete
+     '/nlpaas': 'http://nlpaas:5000',
     '/socket.io': 'ws://ingest-api:1337/socket.io' //TODO rename ingest to consolidated socket server
   }
 });
