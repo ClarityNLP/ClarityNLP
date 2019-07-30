@@ -63,16 +63,22 @@ def _compare_results(
             is_denom_only=denom_only
         )
 
-        if 0 == len(expected_list) and ve.EMPTY_RESULT == json_result:
+        num_expected = len(expected_list)
+
+        is_mismatched = False
+        if 0 == num_expected and ve.EMPTY_RESULT == json_result:
             # expected not to find anything and actually did not
             continue
-        
-        # load the json result and decode as a ValueResult namedtuple
-        result_data = json.loads(json_result)
-        value_result = ve.ValueResult(**result_data)
+        elif num_expected > 0 and ve.EMPTY_RESULT == json_result:
+            is_mismatched = True
+
+        if not is_mismatched:
+            # load the json result and decode as a ValueResult namedtuple
+            result_data = json.loads(json_result)
+            value_result = ve.ValueResult(**result_data)
 
         # check that len(computed) == len(expected)
-        if value_result.measurementCount != len(expected_list):
+        if is_mismatched or (value_result.measurementCount != num_expected):
             print('\tMismatch in computed vs. expected results: ')
             print('\tSentence: {0}'.format(sentence))
             print('\tComputed: ')
@@ -81,7 +87,8 @@ def _compare_results(
             print('\tExpected: ')
             for e in expected_list:
                 print('\t\t{0}'.format(e))
-            return
+            #return
+            sys.exit(0)
         
         # check fields
         failures = []
@@ -678,24 +685,25 @@ if __name__ == '__main__':
         'One bag of platelets hung at 0610 and she will need a repeat '
         'platelet count in one hour after transfusion completed.':[],
         'post transfusion platelet count due around 0730.':[],
-        #'Will follow platelets soon after transfusion and again 6-12 ' +\
-        #'hours later peding initial post-transfusion result.':[]
+        'Will follow platelets soon after transfusion and again 6-12 ' \
+        'hours later peding initial post-transfusion result.':[],
+
+        'Platelet count four hours after transfusion was 139,000 and '   \
+        'approximately ten hours after transfusion, the platelet count ' \
+        'remained stable at 138, Maternal platelet count as reported '   \
+        'earlier was normal.':[
+            _Result('platelet count', 139000, None, ve.STR_EQUAL),
+            _Result('platelet count', 138,    None, ve.STR_EQUAL)
+        ]
     }
 
     _compare_results(term_string, test_data, minval, maxval)
 
-    # hypotheticals
-    term_string = 'temp'
-    test_data = {
-        'If the FVC is 1500 ml, you should set the temp to 100.':[],
-        'you should set the temp to 100':[],
-        #'do you know if the temp is 100?':[],
-    }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    # TODO: accept s endings only if NOT a separate search term!!
 
     # others
-    term_string = 'platelet count'
+    term_string = 'platelet count, platelets'
     test_data = {
         # range with no units on first number
         'Will consider transfusion for platelet count < 30-50k.':[
@@ -706,10 +714,28 @@ if __name__ == '__main__':
             _Result('platelet count', 30000, 80000, ve.STR_RANGE)
         ],
         # from a to b with missing b
-        'platelet count up from 5 to Pt hemodynamicaly stable Plan':[]
+        'platelet count up from 5 to Pt hemodynamicaly stable Plan':[],
+
+        # do not confuse frequency with value
+        'Given platelets x2.':[],
+
+        # do not confuse 2nd with value
+        'Platelet count after 2nd unit up to Neurosurg resident ':[],
     }
 
     _compare_results(term_string, test_data, minval, maxval)
+
+
+    # # hypotheticals
+    # term_string = 'temp'
+    # test_data = {
+    #     'If the FVC is 1500 ml, you should set the temp to 100.':[],
+    #     'you should set the temp to 100':[],
+    #     #'do you know if the temp is 100?':[],
+    # }
+
+    # _compare_results(term_string, test_data, minval, maxval)
+
     
     # # enumlist: search for keywords and return text 'values' from enumlist
     # term_string = 'positive, +, negative'

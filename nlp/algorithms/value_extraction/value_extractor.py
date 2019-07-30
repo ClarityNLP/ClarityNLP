@@ -162,6 +162,7 @@ STR_FRACTION_RANGE = 'FRACTION_RANGE'
 ValueMeasurement = namedtuple('ValueMeasurement',
                               'text start end num1 num2 cond matching_term')
 
+
 ###############################################################################
 
 _VERSION_MAJOR = 0
@@ -195,17 +196,23 @@ _str_lte       = r'(<=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
 _str_gt        = r'(>|' + _str_gt_than + r')'
 _str_gte       = r'(>=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
 _str_separator = r'([-:=\s]\s*)?'
+_str_counter   = r'(st|nd|rd|th)'
 
-# numbers with commas
+# integers with commas
 _str_comma_num = r'\d{1,3}(,\d{3})+'
 
-# integers or floating point numbers
-_str_int_float = r'(\d+(\.\d+)?|\.\d+)'
+# integers with no comma (prevent matches with x2 "times two", etc.)
+_str_int = r'(\d{2,}' + r'|' + r'(?<!x)(?<!X)\d)'
+
+# floating point numbers
+_str_float = r'(\d+(\.\d+)|\.\d+)'
+_regex_float = re.compile(_str_float)
 
 # any number (always surround this with parens or place in a capture group)
-_str_num       = _str_comma_num + r'|' + _str_int_float
+_str_num = _str_comma_num + r'|' + _str_float + r'|' + _str_int
 
 _str_cond      = r'(?P<cond>' + _str_op + r')'
+
 _str_suffix    = r'(k|K|s|\'s)?'
 _str_suffix1   = r'(?P<suffix1>' + _str_suffix + r')'
 _str_suffix2   = r'(?P<suffix2>' + _str_suffix + r')'
@@ -286,18 +293,21 @@ _str_vitals = r'\b(temperature|temp|t|hr|bp|pulse|p|rr?|'         +\
 _regex_vitals = re.compile(_str_vitals)
 
 # durations
-_str_duration_start = r'\b(for|over|last|lasting|lasted|within|'  +\
-                      r'q\.?|each|every|once)'
+#_str_duration_start = r'\b(for|over|last|lasting|lasted|within|'  +\
+#                      r'q\.?|each|every|once)'
 _str_duration_amt = r'(hours?|hrs|hr\.?|minutes?|mins|min\.?|'    +\
                     r'seconds?|secs|sec\.?|'                      +\
                     r'days?|weeks?|wks|wk\.?|'                    +\
                     r'months?|mos|mo\.|years?|yrs\.?|yr\.?)'
 
 # q. 6-8 hrs, for 3-6 months, for the previous 3-4 weeks, etc.
-_str_duration_range = _str_duration_start                         +\
-    r'\s*'                                                        +\
-    _str_words                                                    +\
-    _str_range                                                    +\
+# _str_duration_range = _str_duration_start                         +\
+#     r'\s*'                                                        +\
+#     _str_words                                                    +\
+#     _str_range                                                    +\
+#     r'\s*'                                                        +\
+#     r'(?P<dur_amt>' + _str_duration_amt + r')'
+_str_duration_range =  _str_range                                 +\
     r'\s*'                                                        +\
     r'(?P<dur_amt>' + _str_duration_amt + r')'
 
@@ -306,16 +316,26 @@ _str_duration1 = r'(?P<dur_num1>' + _str_num + r')'               +\
                  r'\s*'                                           +\
                  r'(?P<dur_amt1>' +_str_duration_amt + r')'
 
-_str_duration2 = _str_duration_start    +\
-    r'\s*'                              +\
-    _str_words                          +\
-    r'(' + _str_num + r')'              +\
-    r'\s*'                              +\
-    _str_duration_amt
+# _str_duration2 = _str_duration_start    +\
+#     r'\s*'                              +\
+#     _str_words                          +\
+#     r'(' + _str_num + r')'              +\
+#     r'\s*'                              +\
+#     _str_duration_amt
+_str_duration2 = r'(?P<dur_num2>' + _str_num + r')'   +\
+    r'\s*'                                            +\
+    r'(?P<dur_amt2>' + _str_duration_amt + r')'
 
 _str_duration = _str_duration_range + r'|' +\
     _str_duration1 + r'|' + _str_duration2
 _regex_duration = re.compile(_str_duration)
+
+# add all capture group names for duration amounts to this list
+_DURATION_GROUP_NAMES = ['dur_amt', 'dur_amt1', 'dur_amt2']
+
+# suffixes such as 1st, 2nd, 3rd, 4th, etc.
+_str_enum_suffix = r'\s*(st|nd|rd|th)'
+_regex_enum_suffix = re.compile(_str_enum_suffix)
 
 # used to restore original terms
 _term_dict = {}
@@ -457,6 +477,24 @@ def _update_match_results(
         )
         results.append(meas)
         spans.append( (start, end))
+
+        
+###############################################################################
+def _is_explicitly_enumerated(match, sentence):
+    """
+    Given a match group, get the matching value string and find out if the
+    number is a single-digit int followed by 'st', 'nd', 'rd', or 'th'. If
+    so, it is probably something like 1st, 2nd, 3rd, 4th, etc., which is not
+    a value to be returned.
+    """
+    
+    value_string = match.group('val')
+    if re.match(r'\A\d\Z', value_string):
+        match2 = _regex_enum_suffix.match(sentence[match.end():])
+        if match2:
+            return True
+
+    return False
 
 
 ###############################################################################
@@ -741,6 +779,13 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
     for match in iterator:
         if _TRACE:
             print('\tmatched op_val_query: {0}'.format(match.group()))
+
+        # check if single-digit int such as 1st, 2nd, 3rd, 4th, ...
+        if _is_explicitly_enumerated(match, sentence):
+            if _TRACE:
+                print('\t\tdiscarding - matched enum suffix')
+            continue
+            
         val = _get_suffixed_num(match, 'val', 'suffix')
         if val >= minval and val <= maxval:
             words = match.group('words')
@@ -760,6 +805,13 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
         if _TRACE:
             print('\tmatched wds_val_query: {0}'.format(match.group()))
             print('\t                words: {0}'.format(match.group('words')))
+
+        # check if single-digit int such as 1st, 2nd, 3rd, 4th, ...            
+        if _is_explicitly_enumerated(match, sentence):
+            if _TRACE:
+                print('\t\tdiscarding - matched enum suffix "{0}"')
+            continue
+
         val = _get_suffixed_num(match, 'val', 'suffix')
         if val >= minval and val <= maxval:
             if re.search(_str_bf, words):
@@ -1036,9 +1088,8 @@ def _erase_durations(sentence):
             print('\tDURATION: {0}'.format(match.group()))
 
         duration = None
-        for i in (1, 2, 3):
+        for group_name in _DURATION_GROUP_NAMES:
             try:
-                group_name = 'dur_amt{0}'.format(i)
                 if match.group(group_name) is not None:
                     duration = match.group(group_name)
             except IndexError:
@@ -1211,7 +1262,7 @@ def run(term_string,               # comma-separated string of query terms
     """
 
     if _TRACE:
-        print('called value_extractor run...')
+        print('\ncalled value_extractor run...')
         print('\tARGUMENTS: ')
         print('\t      term_string: {0}'.format(term_string))
         print('\t         sentence: {0}'.format(sentence))
