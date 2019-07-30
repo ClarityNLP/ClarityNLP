@@ -30,7 +30,7 @@
 	path = utilities/dashboard-client
 	url = https://github.com/ClarityNLP/dashboard-client.git
 	branch = .
-[submodule "cql_execution_service"]
-	path = cql_execution_service
+[submodule "cql-execution-service"]
+	path = cql-execution-service
 	url = https://github.com/gt-health/cql_execution_service/
 	branch = dstu2
