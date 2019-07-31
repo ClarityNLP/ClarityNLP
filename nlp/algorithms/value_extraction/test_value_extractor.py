@@ -652,7 +652,7 @@ if __name__ == '__main__':
 
     _compare_results(term_string, test_data, minval, maxval)
 
-    # durations, multiple overlap
+    # times, durations, multiple overlap
     term_string = "platelets, platelet, platelet count"
     test_data = {
         'platelets 2 hrs after transfusion 156':[
@@ -675,6 +675,10 @@ if __name__ == '__main__':
         ],
         'received one bag of platelets due to platelet count of 71k':[
             _Result('platelet count', 71000, None, ve.STR_EQUAL)
+        ],
+        'Pt also has profound thrombocytopenia, with platelet ' \
+        'count at 1600 of 5000 -> ?':[
+            _Result('platelet count', 5000, None, ve.STR_EQUAL)
         ],
         'Received platelets yesterday for platelet count of 28; ' \
         'platelets 2 hrs after transfusion 156, '                 \
@@ -721,7 +725,58 @@ if __name__ == '__main__':
     }
 
     _compare_results(term_string, test_data, minval, maxval)
+    
+    # enumlist: search for keywords and keep results containing enumlist terms
+    term_string = 'positive, +, hbsab'
+    enumlist = 'titer, titers'
+    test_data = {
+        'POSITIVE Titer-1:80':[
+            _Result('positive', 'titer', None, ve.STR_EQUAL)
+        ],
+        '+Titer-1:80':[
+            _Result('+', 'titer', None, ve.STR_EQUAL)
+        ],
+        'HBSAb titers remained greater than 450.':[
+            _Result('hbsab', 'titers', None, ve.STR_EQUAL)
+        ],
+    }
 
+    _compare_results(term_string, test_data, minval, maxval, enumlist)
+
+    term_string = 'HCV, HBV, IgG'
+    enumlist = 'negative, positive, -, +'
+    test_data = {
+        'She was HCV negative, HBV negative, IgM Titer-1:80, IgG +':[
+            _Result('hcv', 'negative', None, ve.STR_EQUAL),
+            _Result('hbv', 'negative', None, ve.STR_EQUAL),
+            _Result('igg', '+',        None, ve.STR_EQUAL)
+        ]
+    }
+
+    term_string = 'gram, gram positive, gram negative'
+    enumlist = 'cocci, rod(s), rods'
+    test_data = {
+        'GRAM POSITIVE COCCI': [
+            _Result('gram positive', 'cocci', None, ve.STR_EQUAL)
+        ],
+    }
+
+    _compare_results(term_string, test_data, minval, maxval, enumlist)
+    
+    # # search for keywords and return text 'values' from enumlist
+    # term_string = 'positive, +, negative'
+    # enumlist = 'titer, hav, igm, igg'
+    # test_data = {
+    #     'POSITIVE Titer-1:80':[
+    #         _Result('positive', 'titer', None, ve.STR_EQUAL)],
+    #     '+Titer-1:80':[_Result('+', 'titer', None, ve.STR_EQUAL)],
+    #     #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
+    #     #    _Result('+', 'hav igg', None, ve.STR_EQUAL),
+    #     #    _Result('negative', 'igm', None, ve.STR_EQUAL)
+    #     #],
+    # }
+
+    # _compare_results(term_string, test_data, minval, maxval, enumlist)
 
     # # hypotheticals
     # term_string = 'temp'
@@ -733,19 +788,5 @@ if __name__ == '__main__':
 
     # _compare_results(term_string, test_data, minval, maxval)
 
-    
-    # # enumlist: search for keywords and return text 'values' from enumlist
-    # term_string = 'positive, +, negative'
-    # enumlist = 'titer, hav, igm, igg'
-    # test_data = {
-    #     'POSITIVE Titer-1:80':[_Result('positive', 'titer', None, ve.STR_EQUAL)],
-    #     '+Titer-1:80':[_Result('+', 'titer', None, ve.STR_EQUAL)],
-    #     #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
-    #     #    _Result('+', 'hav igg', None, ve.STR_EQUAL),
-    #     #    _Result('negative', 'igm', None, ve.STR_EQUAL)
-    #     #],
-    # }
-
-    # _compare_results(term_string, test_data, minval, maxval, enumlist)
     
     # TODO: accept s endings only if NOT a separate search term!!

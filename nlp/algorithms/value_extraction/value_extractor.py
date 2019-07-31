@@ -510,26 +510,26 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
 
     if _TRACE:
         print('calling extract_enumlist_values...')
-        print('\t query_terms: {0}'.format(query_terms))
         print('\t    sentence: {0}'.format(sentence))
+        print('\t query_terms: {0}'.format(query_terms))
         print('\tfilter_words: {0}'.format(filter_words))
 
-    # find each query term in the sentence and record their positions
-    boundaries = []
+    # find each query term in the sentence and save unique offsets
+    boundary_set = set()
     for query_term in query_terms:
         # escape any chars that have special meaning for regex
         str_word_query = re.escape(query_term)
         iterator = re.finditer(str_word_query, sentence)
         for match in iterator:
-            boundaries.append(match.start())
+            boundary_set.add(match.start())
         
     # return if no query terms were found
-    if 0 == len(boundaries):
+    num_boundaries = len(boundary_set)
+    if 0 == num_boundaries:
         return []
 
-    # sort by increasing char position
-    boundaries = sorted(boundaries)
-    num_boundaries = len(boundaries)
+    # sort by increasing offset, to match occurrence in sentence
+    boundaries = sorted(list(boundary_set))
 
     if _TRACE:
         print('\tboundaries: {0}'.format(boundaries))
@@ -558,7 +558,7 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
                 # skip this term for now - need to log this - TBD
                 if _TRACE:
                     print('\t\t***ERROR***: start offset not found ' +\
-                          'in boundaries list.')
+                          'in boundaries list. ***\n')
                 continue
 
             # don't cross into the next query term match region
@@ -570,8 +570,6 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
             words = match.group('words')
             words_start = match.start('words')
             word = ''
-
-            #need to find candidates, do overlap resolution, take longest match - TBD
             
             for fw in filter_words:
                 pos = words.find(fw)
