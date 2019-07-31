@@ -30,6 +30,10 @@ _Result = namedtuple('_Result', _RESULT_FIELDS)
 
 ###############################################################################
 def _compare_fields(field_name, computed, expected, failure_list):
+
+    if str == type(computed) and str == type(expected):
+        computed = computed.lower()
+        expected = expected.lower()
     
     if computed != expected:
         failure_list.append('\texpected {0}: "{1}", got: "{2}"'.
@@ -753,30 +757,32 @@ if __name__ == '__main__':
         ]
     }
 
-    # term_string = 'gram, gram positive, gram negative, positive, negative'
-    # enumlist = 'cocci, rod(s), rods, bacteremia'
-    # test_data = {
-    #     'GRAM POSITIVE COCCI': [
-    #         _Result('gram positive', 'cocci', None, ve.STR_EQUAL)
-    #     ],
-    #     'GRAM NEGATIVE ROD(S).':[
-    #         _Result('gram negative', 'rod(s)', None, ve.STR_EQUAL)
-    #     ],
-    #     'NO ENTERIC GRAM NEGATIVE RODS FOUND.':[
-    #         _Result('gram negative', 'rods', None, ve.STR_EQUAL)
-    #     ],
-    #     'Patient presents with sudden onset of fever, chills, and '
-    #     'hypotension with 3/4 bottles positive gram negative bacteremia.':[
-    #         _Result('gram negative', 'bacteremia', None, ve.STR_EQUAL)
-    #     ],
-    #     'She completed a 7 day course of Vancomycin and Zosyn for the BAL ' \
-    #     'which grew gram positive and negative rods.':[
-    #         _Result('gram positive', 'rods', None, ve.STR_EQUAL),
-    #         _Result('negative', 'rods', None, ve.STR_EQUAL)
-    #     ]
-    # }
+    _compare_results(term_string, test_data, minval, maxval, enumlist)    
 
-    # _compare_results(term_string, test_data, minval, maxval, enumlist)
+    term_string = 'gram, gram positive, gram negative, positive, negative'
+    enumlist = 'cocci, rod(s), rods, bacteremia'
+    test_data = {
+        'GRAM POSITIVE COCCI': [
+            _Result('gram positive', 'cocci', None, ve.STR_EQUAL)
+        ],
+        'GRAM NEGATIVE ROD(S).':[
+            _Result('gram negative', 'rod(s)', None, ve.STR_EQUAL)
+        ],
+        'NO ENTERIC GRAM NEGATIVE RODS FOUND.':[
+            _Result('gram negative', 'rods', None, ve.STR_EQUAL)
+        ],
+        'Patient presents with sudden onset of fever, chills, and '
+        'hypotension with 3/4 bottles positive gram negative bacteremia.':[
+            _Result('gram negative', 'bacteremia', None, ve.STR_EQUAL)
+        ],
+        'She completed a 7 day course of Vancomycin and Zosyn for the BAL ' \
+        'which grew gram positive and negative rods.':[
+            _Result('gram positive', 'rods', None, ve.STR_EQUAL),
+            _Result('negative', 'rods', None, ve.STR_EQUAL)
+        ]
+    }
+
+    _compare_results(term_string, test_data, minval, maxval, enumlist)
     
     # # search for keywords and return text 'values' from enumlist
     # term_string = 'positive, +, negative'

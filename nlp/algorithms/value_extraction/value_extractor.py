@@ -814,6 +814,82 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
 
 
 ###############################################################################
+def _remove_simple_overlap(results):
+    """
+    """
+
+    if _TRACE:
+        print('calling remove_simple_overlap...')
+
+    if results is None or 0 == len(results):
+        return
+
+    while True:
+        n = len(results)
+        for i in range(n):
+            s1 = results[i].start
+            e1 = results[i].end
+            for j in range(i+1, n):
+                s2 = results[j].start
+                e2 = results[j].end
+
+                # results have been sorted by position in sentence
+                assert s1 <= s2
+
+                if e1 > s2:
+                    if _TRACE:
+                        print('\toverlap1: {0}'.format(results[i]))
+                        print('\toverlap2: {0}'.format(results[j]))
+
+                    term1 = results[i].matching_term
+                    term2 = results[j].matching_term
+                    if s1 == s2 and e1 == e2:
+                        # identical overlap, keep longest matching_term
+                        if len(term1) > len(term2):
+                            del results[j]
+                            if _TRACE: print('\t\tdeleting "{0}"'.
+                                             format(term2))
+                        else:
+                            del results[i]
+                            if _TRACE: print('\t\tdeleting "{0}"'.
+                                             format(term1))
+                        break
+                    
+                    elif results[i].text.endswith(term2):
+                        match1 = re.search(r'\d+\Z', results[i].text)
+                        match2 = re.search(r'\d+\Z', term2)
+                        if match1.group() == match2.group():
+                            # the value portion of result i is identical to
+                            # the digits at the end of term2
+                            # this is a false result, so delete result i
+                            if _TRACE: print('\t\tdeleting false result "{0}"'.
+                                             format(term1))
+                            del results[i]
+                            break
+
+                    # check if term1 is a compound term that ends with term2
+                    match = re.search(r'\b{0}\Z'.format(term2), term1)
+                    if match:
+                        # term2 is a substring of term1, so delete item j
+                        del results[j]
+                        if _TRACE: print('\t\tdeleting "{0}"'.format(term2))
+                        break
+
+            # break out of i-loop if item deleted
+            if len(results) < n:
+                break
+
+        # finished if all items examined and no deletions
+        if len(results) == n:
+            break
+
+    if _TRACE:
+        print('results after _remove_simple_overlap: ')
+        for r in results:
+            print('\t{0}'.format(r))
+
+        
+###############################################################################
 def _resolve_overlap(terms, filter_terms, results):
     """
     Check results for overlap and prune according to these rules:
@@ -890,13 +966,13 @@ def _resolve_overlap(terms, filter_terms, results):
 
     """
 
-    if results is None:
+    if results is None or 0 == len(results):
         return results
     
+    _remove_simple_overlap(results)
+    
     n = len(results)
-    if 0 == n:
-        return
-
+    
     discard_set = set()
     for i in range(n):
         s1 = results[i].start
@@ -916,34 +992,22 @@ def _resolve_overlap(terms, filter_terms, results):
                 to_discard = None
                 term1 = results[i].matching_term
                 term2 = results[j].matching_term
-                if s1 == s2 and e1 == e2:
-                    # identical overlap, keep longest matching_term
-                    if len(term1) > len(term2):
-                        to_discard = results[j]
-                    else:
+
+                # find out if matching terms overlap
+                span1 = (s1, s1+len(term1))
+                span2 = (s2, s2+len(term2))
+                if span2[0] < span1[1]:
+                    # terms overlap
+                    if len(term2) > len(term1):
                         to_discard = results[i]
+                    else:
+                        to_discard = results[j]
                 else:
 
-                    if len(filter_terms) > 0:
-                        print('\tterm1: "{0}"'.format(term1))
-                        print('\tterm2: "{0}"'.format(term2))
+                    # keep both terms if connected by and/or
                     
-                    # partial overlap, discard if value part of another term
-                    if results[i].text.endswith(term2):
-                        to_discard = results[i]
-                    else:
-                        # find out if matching terms overlap
-                        span1 = (s1, s1+len(term1))
-                        span2 = (s2, s2+len(term2))
-                        if span2[0] < span1[1]:
-                            # terms overlap
-                            if len(term2) > len(term1):
-                                to_discard = results[i]
-                            else:
-                                to_discard = results[j]
-                        else:
-                            # no overlap, keep closest term
-                            to_discard = results[i]
+                    # no overlap, keep closest term
+                    to_discard = results[i]
 
                 if to_discard is not None:
                     discard_set.add(to_discard)
