@@ -890,7 +890,7 @@ def _remove_simple_overlap(results):
 
         
 ###############################################################################
-def _resolve_overlap(terms, filter_terms, results):
+def _resolve_overlap(terms, filter_terms, sentence, results):
     """
     Check results for overlap and prune according to these rules:
     
@@ -968,62 +968,74 @@ def _resolve_overlap(terms, filter_terms, results):
 
     if results is None or 0 == len(results):
         return results
-    
+
+    is_enumerated = len(filter_terms) > 0
     _remove_simple_overlap(results)
+
+    if _TRACE:
+        print('continuing with _remove_overlap...')
     
-    n = len(results)
-    
-    discard_set = set()
-    for i in range(n):
-        s1 = results[i].start
-        e1 = results[i].end
-        for j in range(i+1, n):
-            s2 = results[j].start
-            e2 = results[j].end
+    while True:
+        n = len(results)
+        for i in range(n):
+            s1 = results[i].start
+            e1 = results[i].end
+            for j in range(i+1, n):
+                s2 = results[j].start
+                e2 = results[j].end
 
-            # results have been sorted by position in sentence
-            assert s1 <= s2
-            
-            if e1 > s2:
-                if _TRACE:
-                    print('overlap1: {0}'.format(results[i]))
-                    print('overlap2: {0}'.format(results[j]))
+                # results have been sorted by position in sentence
+                assert s1 <= s2
 
-                to_discard = None
-                term1 = results[i].matching_term
-                term2 = results[j].matching_term
-
-                # find out if matching terms overlap
-                span1 = (s1, s1+len(term1))
-                span2 = (s2, s2+len(term2))
-                if span2[0] < span1[1]:
-                    # terms overlap
-                    if len(term2) > len(term1):
-                        to_discard = results[i]
-                    else:
-                        to_discard = results[j]
-                else:
-
-                    # keep both terms if connected by and/or
-                    
-                    # no overlap, keep closest term
-                    to_discard = results[i]
-
-                if to_discard is not None:
-                    discard_set.add(to_discard)
+                if e1 > s2:
                     if _TRACE:
-                        print('\tdiscarding {0}'.format(to_discard))
+                        print('\toverlap1: {0}'.format(results[i]))
+                        print('\toverlap2: {0}'.format(results[j]))
 
-    if 0 == len(discard_set):
-        return results
+                    term1 = results[i].matching_term
+                    term2 = results[j].matching_term
 
-    # prune discarded items
-    new_results = []
-    for r in results:
-        if r not in discard_set:
-            new_results.append(r)
+                    # find out if matching terms overlap
+                    span1 = (s1, s1+len(term1))
+                    span2 = (s2, s2+len(term2))
+                    if span2[0] < span1[1]:
+                        # terms overlap
+                        if _TRACE: print('\t\tfound overlapping terms')
+                        if len(term2) > len(term1):
+                            del results[i]
+                            if _TRACE: print('\t\tdeleted "{0}"'.format(term1))
+                        else:
+                            del results[j]
+                            if _TRACE: print('\t\tdeleted "{0}"'.format(term2))
+                        break
+                    else:
 
-    return new_results
+                        # if enumlist, keep both results if connected by and/or
+                        if is_enumerated:
+                            # capture text after first term and prior to second
+                            frag_start = results[i].start + len(term1)
+                            frag_end   = results[j].start
+                            frag = sentence[frag_start:frag_end]
+                            if _TRACE: print('\t\tfrag: "{0}"'.format(frag))
+                            match = re.match(r'\A\s*(and|or)\s*\Z', frag)
+                            if match:
+                                if _TRACE: print('\t\tkeeping both results')
+                                continue
+
+                        # no overlap, keep closest term
+                        del results[i]
+                        if _TRACE: print('\t\tkeeping closest term "{0}"'.
+                                         format(term2))
+                        break
+
+            # break out of i-loop if item deleted
+            if len(results) < n:
+                break
+
+        if len(results) == n:
+            break
+        
+    return results
 
 
 ###############################################################################
@@ -1439,7 +1451,7 @@ def run(term_string,               # comma-separated string of query terms
     results = sorted(results, key=lambda x: x.start)
 
     # prune if appropriate for overlapping results
-    results = _resolve_overlap(terms, filter_terms, results)
+    results = _resolve_overlap(terms, filter_terms, sentence, results)
 
     return _to_json(original_terms, original_sentence, results, filter_terms)
 
