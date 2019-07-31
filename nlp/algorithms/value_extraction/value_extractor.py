@@ -318,17 +318,19 @@ _DURATION_GROUP_NAMES = ['dur_amt', 'dur_amt1']
 _str_enum_suffix = r'\s*(st|nd|rd|th)'
 _regex_enum_suffix = re.compile(_str_enum_suffix)
 
-# used to restore original terms
+# used to restore original terms and original filter terms
 _term_dict = {}
+_filter_term_dict = {}
 
 
 ###############################################################################
-def _to_json(original_terms, original_sentence, results, is_text):
+def _to_json(original_terms, original_sentence, results, filter_terms):
     """
     Convert results to a JSON string.
     """
 
     total = len(results)
+    has_enumlist = len(filter_terms) > 0
     
     result_dict = {}
     result_dict['sentence'] = original_sentence
@@ -347,7 +349,10 @@ def _to_json(original_terms, original_sentence, results, is_text):
         m_dict['end'] = m.end
         m_dict['condition'] = m.cond
         m_dict['matchingTerm'] = _term_dict[m.matching_term]
-        m_dict['x'] = m.num1
+        if has_enumlist:
+            m_dict['x'] = _filter_term_dict[m.num1]
+        else:
+            m_dict['x'] = m.num1
 
         if EMPTY_FIELD == m.num2:
             m_dict['y'] = EMPTY_FIELD
@@ -355,7 +360,7 @@ def _to_json(original_terms, original_sentence, results, is_text):
             m_dict['y'] = m.num2
 
         # set min and max fields for numeric results
-        if is_text:
+        if has_enumlist:
             minval = EMPTY_FIELD
             maxval = EMPTY_FIELD
         else:
@@ -514,25 +519,25 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
         print('\t query_terms: {0}'.format(query_terms))
         print('\tfilter_words: {0}'.format(filter_words))
 
-    # find each query term in the sentence and save unique offsets
-    boundary_set = set()
-    for query_term in query_terms:
-        # escape any chars that have special meaning for regex
-        str_word_query = re.escape(query_term)
-        iterator = re.finditer(str_word_query, sentence)
-        for match in iterator:
-            boundary_set.add(match.start())
+    # # find each query term in the sentence and save unique offsets
+    # boundary_set = set()
+    # for query_term in query_terms:
+    #     # escape any chars that have special meaning for regex
+    #     str_word_query = re.escape(query_term)
+    #     iterator = re.finditer(str_word_query, sentence)
+    #     for match in iterator:
+    #         boundary_set.add(match.start())
         
-    # return if no query terms were found
-    num_boundaries = len(boundary_set)
-    if 0 == num_boundaries:
-        return []
+    # # return if no query terms were found
+    # num_boundaries = len(boundary_set)
+    # if 0 == num_boundaries:
+    #     return []
 
-    # sort by increasing offset, to match occurrence in sentence
-    boundaries = sorted(list(boundary_set))
+    # # sort by increasing offset, to match occurrence in sentence
+    # boundaries = sorted(list(boundary_set))
 
-    if _TRACE:
-        print('\tboundaries: {0}'.format(boundaries))
+    # if _TRACE:
+    #     print('\tboundaries: {0}'.format(boundaries))
 
     results = []
     for query_term in query_terms:
@@ -543,7 +548,7 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
             r'\s*(' + _str_enumlist_value + r'\s*){0,8}'                     +\
             r')'
 
-        found_it = False
+        #found_it = False
         iterator = re.finditer(str_enum_query, sentence)
         for match in iterator:
             if _TRACE:
@@ -551,26 +556,27 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
                       format(match.group(), match.start()))
             start = match.start()
 
-            # this start offset must occur in the boundaries list
-            try:
-                index = boundaries.index(start)
-            except ValueError:
-                # skip this term for now - need to log this - TBD
-                if _TRACE:
-                    print('\t\t***ERROR***: start offset not found ' +\
-                          'in boundaries list. ***\n')
-                continue
+            # # this start offset must occur in the boundaries list
+            # try:
+            #     index = boundaries.index(start)
+            # except ValueError:
+            #     # skip this term for now - need to log this - TBD
+            #     if _TRACE:
+            #         print('\t\t***ERROR***: start offset not found ' +\
+            #               'in boundaries list. ***\n')
+            #     continue
 
             # don't cross into the next query term match region
             end = match.end()
-            if index < num_boundaries-1:
-                if match.end() > boundaries[index+1]:
-                    end = boundaries[index+1]
+            #if index < num_boundaries-1:
+            #    if match.end() > boundaries[index+1]:
+            #        end = boundaries[index+1]
 
             words = match.group('words')
             words_start = match.start('words')
             word = ''
-            
+
+            found_it = False
             for fw in filter_words:
                 pos = words.find(fw)
                 if -1 != pos and words_start + pos < end:
@@ -579,8 +585,10 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
                         word = fw
 
             if found_it:
-                meas = ValueMeasurement(word, start, end,
-                                        word, EMPTY_FIELD, STR_EQUAL,
+                meas = ValueMeasurement(word,
+                                        start, end,
+                                        word,
+                                        EMPTY_FIELD, STR_EQUAL,
                                         query_term)
                 results.append(meas)
                 if _TRACE:
@@ -806,7 +814,7 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
 
 
 ###############################################################################
-def _resolve_overlap(terms, results):
+def _resolve_overlap(terms, filter_terms, results):
     """
     Check results for overlap and prune according to these rules:
     
@@ -821,7 +829,22 @@ def _resolve_overlap(terms, results):
             Both 'o2' and 'o2 sat' match the value 100, and both matches have
             identical start/end values. Return 'o2 sat' as the result.
 
-    2.  If two results partially overlap, discard the first match if the 
+    2.  If two results overlap with matching terms connected by and/or,
+        keep both.
+
+        Example (for enumlist):
+   
+            sentence: 'which grew gram positive and negative rods'
+            term_str: 'gram positive, negative'
+            enumlist: 'rods'
+
+            The overlapping candidates are:
+                'gram positive and negative rods'
+                                  'negative rods'
+
+            Return 'gram positive rods' and 'negative rods' for the results.
+
+    3.  If two results partially overlap, discard the first match if the 
         matched value is part of the search term for the second.
 
         Example:
@@ -833,7 +856,7 @@ def _resolve_overlap(terms, results):
             looks and finds the '2' in 'SaO2'. The '2' is part of the search
             term 'sao2', so prevent this from being returned as a match.
 
-    3.  If two results partially overlap, check the matching terms for each
+    4.  If two results partially overlap, check the matching terms for each
         result. If the matching terms overlap, keep the match with the longest
         matching term. If the terms do not overlap, keep the match that is
         closest to the value.
@@ -894,12 +917,17 @@ def _resolve_overlap(terms, results):
                 term1 = results[i].matching_term
                 term2 = results[j].matching_term
                 if s1 == s2 and e1 == e2:
-                    # identical overlap, keep match longest matching_term
+                    # identical overlap, keep longest matching_term
                     if len(term1) > len(term2):
                         to_discard = results[j]
                     else:
                         to_discard = results[i]
                 else:
+
+                    if len(filter_terms) > 0:
+                        print('\tterm1: "{0}"'.format(term1))
+                        print('\tterm2: "{0}"'.format(term2))
+                    
                     # partial overlap, discard if value part of another term
                     if results[i].text.endswith(term2):
                         to_discard = results[i]
@@ -1271,26 +1299,30 @@ def run(term_string,               # comma-separated string of query terms
     # save a copy of the original terms
     original_terms = terms.copy()
 
-    _common_clean(terms, is_case_sensitive)
-    
-    if enumlist:
+    filter_terms = []
+    original_filter_terms = []
+    if enumlist is not None:
         if isinstance(enumlist, str):
             filter_terms = enumlist.split(',')
         else:
             filter_terms = enumlist
         filter_terms = [term.strip() for term in filter_terms]
+        filter_terms = sorted(filter_terms, key=lambda x: len(x), reverse=True)
+        original_filter_terms = filter_terms.copy()
+
+    _common_clean(terms, is_case_sensitive)
+    _common_clean(filter_terms, is_case_sensitive)
         
     # convert terms to lowercase unless doing a case-sensitive match
     if not is_case_sensitive:
         terms = [term.lower() for term in terms]
-        
-        if enumlist:
+        if enumlist is not None:
             filter_terms = [ft.lower() for ft in filter_terms]
 
     if _TRACE:
         print('\n\tterms: {0}'.format(terms))
-    if _TRACE and enumlist:
-        print('\tfilter_terms: {0}'.format(filter_terms))
+        if enumlist is not None:
+            print('\tfilter_terms: {0}'.format(filter_terms))
                 
     # map the new terms to the original, so can restore in output
     for i in range(len(terms)):
@@ -1299,8 +1331,15 @@ def run(term_string,               # comma-separated string of query terms
         _term_dict[new_term] = original_term
         if _TRACE:
             print('\tterm_dict[{0}] => {1}'.format(new_term, original_term))
+    if enumlist is not None:
+        for i in range(len(filter_terms)):
+            new_term = filter_terms[i]
+            original_term = original_filter_terms[i]
+            _filter_term_dict[new_term] = original_term
+            if _TRACE:
+                print('\tfilter_term_dict[{0}] => {1}'.format(new_term, original_term))
 
-    if not enumlist:
+    if enumlist is None:
         # do range check on numerator values for fractions
         if isinstance(str_minval, str):
             if -1 != str_minval.find('/'):
@@ -1318,7 +1357,7 @@ def run(term_string,               # comma-separated string of query terms
     sentence = _clean_sentence(sentence, is_case_sensitive)
 
     results = []
-    if enumlist:
+    if enumlist is not None:
         results = _extract_enumlist_values(terms, sentence, filter_terms)
     else:
         for term in terms:
@@ -1336,9 +1375,9 @@ def run(term_string,               # comma-separated string of query terms
     results = sorted(results, key=lambda x: x.start)
 
     # prune if appropriate for overlapping results
-    results = _resolve_overlap(terms, results)
+    results = _resolve_overlap(terms, filter_terms, results)
 
-    return _to_json(original_terms, original_sentence, results, enumlist)
+    return _to_json(original_terms, original_sentence, results, filter_terms)
 
 
 ###############################################################################
