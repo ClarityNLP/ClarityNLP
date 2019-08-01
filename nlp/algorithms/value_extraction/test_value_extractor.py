@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 """
-Test program for the value extractor.
+    Test program for the value extractor.
 
-Run from the same folder as value_extractor.py.
+    Run from the same folder as value_extractor.py.
 
+    Get help with --help option.
 """
 
 import re
@@ -15,10 +16,9 @@ from collections import namedtuple
 
 import value_extractor as ve
 
-_MODULE_NAME = 'test_value_extractor.py'
-
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
+_MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
 _RESULT_FIELDS = ['term', 'x', 'y', 'condition']
@@ -46,6 +46,7 @@ def _compare_results(
         minval,
         maxval,
         enumlist=None,
+        is_case_sensitive=False,
         denom_only=False):
     """
     Run the value extractor on the test data using the supplied term string
@@ -61,6 +62,7 @@ def _compare_results(
             minval,
             maxval,
             enumlist=enumlist,
+            is_case_sensitive=is_case_sensitive,
             is_denom_only=denom_only
         )
 
@@ -88,7 +90,7 @@ def _compare_results(
             print('\tExpected: ')
             for e in expected_list:
                 print('\t\t{0}'.format(e))
-            #return
+
             sys.exit(0)
         
         # check fields
@@ -782,7 +784,7 @@ if __name__ == '__main__':
     _compare_results(term_string, test_data, minval, maxval, enumlist)    
 
     term_string = 'gram, gram positive, gram negative, positive, negative'
-    enumlist = 'cocci, rod(s), rods, bacteremia'
+    enumlist = 'cocci, rod(s), rods, bacteremia, septicemia'
     test_data = {
         'GRAM POSITIVE COCCI': [
             _Result('gram positive', 'cocci', None, ve.STR_EQUAL)
@@ -810,6 +812,10 @@ if __name__ == '__main__':
             _Result('gram positive', 'cocci', None, ve.STR_EQUAL),
             _Result('gram positive', 'rods', None, ve.STR_EQUAL),
             _Result('gram negative', 'rods', None, ve.STR_EQUAL)
+        ],
+        'The patient was admitted directly to the ICU with hypotension '    \
+        'secondary to septic shock with a gram negative rod septicemia.':[
+            _Result('gram negative', 'septicemia', None, ve.STR_EQUAL)
         ]
     }
 
@@ -824,23 +830,59 @@ if __name__ == '__main__':
         'RPR done at that visit came back positive at a titer of 1:256':[
             _Result('titer', '1:256', None, ve.STR_EQUAL)
         ]
-        #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
-        #    _Result('+', 'hav igg', None, ve.STR_EQUAL),
-        #    _Result('negative', 'igm', None, ve.STR_EQUAL)
-        #],
     }
 
     _compare_results(term_string, test_data, minval, maxval, enumlist)
 
-    # # hypotheticals
-    # term_string = 'temp'
-    # test_data = {
-    #     'If the FVC is 1500 ml, you should set the temp to 100.':[],
-    #     'you should set the temp to 100':[],
-    #     #'do you know if the temp is 100?':[],
-    # }
+    # previous problems
+    term_string = 'fvc'
+    enumlist = None
+    test_data = {
+        'FVC is 1500ml':[_Result('fvc', 1500, None, ve.STR_EQUAL)],
+        'FVC is 1500 ml':[_Result('fvc', 1500, None, ve.STR_EQUAL)],
 
-    # _compare_results(term_string, test_data, minval, maxval)
+        # do not confuse '56 in' as a size measurement
+        'obstructive lung disease (FEV1/FVC 56 in [**10-21**]), and s/p' \
+        'recent right TKR on [**3165-1-26**] who':[
+            _Result('fvc', 56, None, ve.STR_EQUAL)
+        ],
+        'with history of treated MAC, obstructive lung disease' +\
+        '(FEV1/FVC 55 in [**10-21**]), and':[
+            _Result('fvc', 55, None, ve.STR_EQUAL)
+        ]
+    }
 
+    _compare_results(term_string, test_data, minval, maxval)
+
+    # case sensitivity
+    term_string = 'hr, BP'
+    enumlist = None
+    test_data = {
+        'Her hr was 70 and his HR was 80':[
+            _Result('hr', 70, None, ve.STR_EQUAL)
+        ],
+        "In the ICU the patient's bp was 150/90; an hour later the "
+        'BP was 140/85':[
+            _Result('BP', 140, None, ve.STR_EQUAL)
+        ]
+    }
+
+    _compare_results(term_string, test_data, minval, maxval,
+                     is_case_sensitive=True, denom_only=False)
+
+    # hypotheticals
+    term_string = 'temp'
+    test_data = {
+        'call in case temp > 101':[],
+        'call if temp > 101':[],
+        'call when temp > 101':[
+            _Result('temp', 101, None, ve.STR_GT)
+        ],
+        'set the temp to 78':[
+            _Result('temp', 78, None, ve.STR_EQUAL)
+        ],
+        'you should set the temp to 78':[]
+    }
+
+    _compare_results(term_string, test_data, minval, maxval)
     
-    # TODO: accept s endings only if NOT a separate search term!!

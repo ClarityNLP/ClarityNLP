@@ -45,7 +45,7 @@ supported time formats are listed next, using the abbreviations:
 
 2.  Any of these formats:
 
-    h12  am_pm   hours with AM/PM designator
+    h12 am_pm    hours with AM/PM designator
                  (4 am, 5PM, 10a.m., 9 pm.)
 
     h12m am_pm   hours and minutes with AM/PM designator

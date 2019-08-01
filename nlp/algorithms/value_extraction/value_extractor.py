@@ -99,7 +99,6 @@ import re
 import os
 import sys
 import json
-import optparse
 from collections import namedtuple
 
 # imports from ClarityNLP core
@@ -336,6 +335,9 @@ def _to_json(original_terms, original_sentence, results, filter_terms):
     Convert results to a JSON string.
     """
 
+    if _TRACE:
+        print('calling _to_json...')
+
     total = len(results)
     has_enumlist = len(filter_terms) > 0
     
@@ -350,6 +352,9 @@ def _to_json(original_terms, original_sentence, results, filter_terms):
     for m in results:
         m_dict = {}
 
+        if _TRACE:
+            print('\tconverting {0}'.format(m))
+        
         # restore original text
         m_dict['text'] = original_sentence[int(m.start):int(m.end)]
         m_dict['start'] = m.start
@@ -379,7 +384,7 @@ def _to_json(original_terms, original_sentence, results, filter_terms):
 
         m_dict['minValue'] = minval
         m_dict['maxValue'] = maxval
-            
+
         dict_list.append(m_dict)
 
     result_dict['measurementList'] = dict_list
@@ -816,6 +821,11 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
             _update_match_results(match, spans, results, val,
                                   EMPTY_FIELD, EMPTY_FIELD, query_term)
 
+    if _TRACE:
+        print('Results prior to _remove_hypotheticals: ')
+        for r in results:
+            print('\t{0}'.format(r))
+            
     results = _remove_hypotheticals(sentence, results)
     return results
 
@@ -980,7 +990,7 @@ def _resolve_overlap(terms, filter_terms, sentence, results):
     _remove_simple_overlap(results)
 
     if _TRACE:
-        print('continuing with _remove_overlap...')
+        print('continuing with _resolve_overlap...')
     
     while True:
         n = len(results)
@@ -1041,6 +1051,11 @@ def _resolve_overlap(terms, filter_terms, sentence, results):
 
         if len(results) == n:
             break
+
+    if _TRACE:
+        print('results after _resolve_overlap: ')
+        for r in results:
+            print('\t{0}'.format(r))
         
     return results
 
@@ -1462,183 +1477,4 @@ def run(term_string,             # comma-separated string of query terms
 ###############################################################################
 def _get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
-
-
-###############################################################################
-def _show_help():
-    print(_get_version())
-    print("""
-    USAGE: 
-
-    To extract numeric values:
-
-        python3 ./value_extractor.py -t <term list> -s <sentence> --min <minval> --max <maxval> [-hvcyz]
-
-    To extract text and keep only those words that appear in an enumerated list:
-
-        python3 ./value_extractor.py -t <term list> -s <sentence> --enumlist <enumerated list> [-hvcz]
-           
-
-    OPTIONS:
-
-        -t, --terms    <quoted string>  List of comma-separated search terms.
-        -s, --sentence <quoted string>  Sentence to be processed.
-        -m, --min      <float or int>   Minimum acceptable value.
-        -n, --max      <float or int>   Maximum acceptable value.
-        -e, --enumlist <quoted string>  List of comma-separated terms for filtering results.
-                                        The presence of this option causes textual values to be extracted.
-                                        Only those terms appearing in the enumerated list are returned.
-
-    FLAGS:
-
-        -h, --help                      Print this information and exit.
-        -v, --version                   Print version information and exit.
-        -c, --case                      Preserve case when matching terms.
-        -y, --denom                     Return the denominator of fractional values instead of the numerator.
-                                        Default is to return the numerator.
-        -z, --test                      Disable -s option and use internal test sentences.
-
-    """)
-
-
-###############################################################################
-if __name__ == '__main__':
-
-    TEST_SENTENCES = [
-
-        # titers and other
-        'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.',
-        'POSITIVE Titer-1:80',
-        'HBSAb titers remained greater than 450.',
-        'RPR done at that visit came back positive at a titer of 1:256 and ' +\
-        'patient was started on Doxycycline 100mg [**Hospital1 **] pending ' +\
-        'LP which was done on [**2699-10-27**].',
-        'Hepatitis titers negative (vaccinated for HBV), and anti-smooth '   +\
-        'muscle Ab negative.',
-        'CMV serologies negative in serum, EBV IgG positive, IgM negative.',
-        'She was HCV negative, HBV negative, IgM Titer-1:80, IgG +',
-
-        # gram pos/neg
-        'Subsequently the patient was found to have sputum gram stain with ' +\
-        '4+ gram positive cocci in pairs, clusters and chains and 1+ gram positive rods.',
-        'On [**9-24**] a sputum culture was positive for gram negative rods '+\
-        'and he was started on Cipro 500mg po daily for 14 days.',
-        'GRAM POSITIVE COCCI.',
-        'GRAM POSITIVE COCCI IN PAIRS.',
-        'GRAM NEGATIVE ROD(S).',
-        'GRAM POSITIVE COCCUS(COCCI).',
-        'GRAM POSITIVE COCCI IN CLUSTERS.',
-        'NO ENTERIC GRAM NEGATIVE RODS FOUND.',
-        'Patient presents with sudden onset of fever, chills, and hypotension ' +\
-        'with 3/4 bottles positive gram negative bacteremia.',
-        'Cultures came back\npositive with Gram negative rods in her blood on ' +\
-        'the 24th and Gram negative rods Pseudomonas in her sputum and E. '     +\
-        'coli from\nthe 22nd.',
-        'The patient was admitted directly to the ICU with hypotension '        +\
-        'secondary to septic shock with a gram negative rod septicemia.',
-        'Sputum cultures positive for gram positive cocci in pairs as well as ' +\
-        'gram negative diplococci.',
-        'She completed a 7 day course of Vancomycin and Zosyn for the BAL '     +\
-        'which grew gram positive and negative rods.',
-
-        'She was HCV negative HBV was positive, IgM Titer-1:80, IgG +'
-        #--enum "negative, positive, +, 1:80"
-
-        # hypotheticals
-        'If the FVC is 1500 ml, you should set the temp to 100.',
-        'The FVC is 1500 ml, so you should set the temp to 100.',
-        'The FVC is 1500 ml, so set the temp to 100.',
-        'Call for instructions when temp > 101.',
-        'Call in case temp > 101.'
-
-        # reported problems
-
-        # problem with list recognition in size_measurement_finder.py: recognizes '2 and 5cm' as end-of-list
-        'Saturations remain 100% on 40% fio2 and 5cm PEEP',
-        'FVC is 1500ml',
-        'FVC is 1500 ml',
-
-        # was treating '56 in' as a size measurement
-        'obstructive lung disease (FEV1/FVC 56 in [**10-21**]), and s/p' +\
-        'recent right TKR on [**3165-1-26**] who',
-        'with history of treated MAC, obstructive lung disease' +\
-        '(FEV1/FVC 56 in [**10-21**]), and',
-    ]
-
-    optparser = optparse.OptionParser(add_help_option=False)
-    optparser.add_option('-t', '--terms',    action='store',      dest='terms')
-    optparser.add_option('-s', '--sentence', action='store',      dest='sentence')                        
-    optparser.add_option('-m', '--min',      action='store',      dest='minval')
-    optparser.add_option('-n', '--max',      action='store',      dest='maxval')
-    optparser.add_option('-e', '--enumlist', action='store',      dest='enumlist')
-    optparser.add_option('-c', '--case',     action='store_true', dest='case_sensitive', default=False)
-    optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
-    optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
-    optparser.add_option('-y', '--denom',    action='store_true', dest='frac_denom_only', default=False)
-    optparser.add_option('-z', '--test',     action='store_true', dest='use_test_sentences', default=False)
-
-    if 1 == len(sys.argv):
-        _show_help()
-        sys.exit(0)
-
-    opts, other = optparser.parse_args(sys.argv)
-
-    if opts.show_help:
-        _show_help()
-        sys.exit(0)
-
-    if opts.get_version:
-        print(_get_version())
-        sys.exit(0)
-
-    terms = opts.terms
-    str_minval = opts.minval
-    str_maxval = opts.maxval
-    sentence = opts.sentence
-    is_case_sensitive = opts.case_sensitive
-    use_test_sentences = opts.use_test_sentences
-    enumlist = opts.enumlist
-    frac_denom_only = opts.frac_denom_only
-
-    if not sentence and not use_test_sentences:
-        print('A sentence must be provided on the command line.')
-        sys.exit(-1)
-
-    # don't need min and max for text extraction
-    if not enumlist and (not str_minval or not str_maxval):
-        print('Both the --min and --max arguments must be specified.')
-        sys.exit(-1)
-
-    if not terms:
-        print('One or more search terms must be provided on the command line.')
-        sys.exit(-1)
-
-    if not enumlist:
-        enumlist = []
-        
-    # if _TRACE:
-    #     print('\n Command line arguments: \n')
-    #     print('\t              min value: {0}'.format(str_minval))
-    #     print('\t              max value: {0}'.format(str_maxval))
-    #     print('\t         case-sensitive: {0}'.format(is_case_sensitive))
-    #     print('\t                  terms: {0}'.format(terms))
-    #     print('\t               sentence: {0}'.format(sentence))
-    #     print('\n')
-
-    sentences = []
-    if use_test_sentences:
-        sentences = TEST_SENTENCES
-    else:
-        sentences.append(sentence)
-
-    # end of setup
-        
-    for sentence in sentences:
-
-        if use_test_sentences:
-            print(sentence)
-
-        json_string = run(terms, sentence, str_minval, str_maxval, enumlist,
-                          is_case_sensitive, frac_denom_only)
-        print(json_string)
 
