@@ -124,10 +124,10 @@ if __name__ == '__main__':
 
     # h12m format
     test_data = {
-        'The times are 4:08, 10:14, and 12:59':[
+        'The times are 4:08, 10:14, and 11:59':[
             _Result(text='4:08',  hours=4,  minutes=8),
             _Result(text='10:14', hours=10, minutes=14),
-            _Result(text='12:59', hours=12, minutes=59)
+            _Result(text='11:59', hours=11, minutes=59)
         ]
     }
 
@@ -146,9 +146,9 @@ if __name__ == '__main__':
 
     # h12ms_am_pm format
     test_data = {
-        'The times are 6:10:37 am, 12:19:36P.M., and 1:02:03AM':[
-            _Result(text='6:10:37 am',   hours=6,  minutes=10, seconds=37, am_pm=tf.STR_AM),
-            _Result(text='12:19:36P.M.', hours=12, minutes=19, seconds=36, am_pm=tf.STR_PM),
+        'The times are 06:10:37 am, 10:19:36P.M., and 1:02:03AM':[
+            _Result(text='06:10:37 am',  hours=6,  minutes=10, seconds=37, am_pm=tf.STR_AM),
+            _Result(text='10:19:36P.M.', hours=10, minutes=19, seconds=36, am_pm=tf.STR_PM),
             _Result(text='1:02:03AM',    hours=1,  minutes=2,  seconds=3,  am_pm=tf.STR_AM)
         ]
     }
@@ -169,10 +169,10 @@ if __name__ == '__main__':
 
     # h24m format
     test_data = {
-        'The times are 14:12, 1:27, 01:27, and T23:43.':[
+        'The times are 14:12, 01:27, 10:27, and T23:43.':[
             _Result(text='14:12',  hours=14, minutes=12),
-            _Result(text='1:27',   hours=1,  minutes=27),
-            _Result(text='01:27',  hours=1,  minutes=27),
+            _Result(text='01:27',   hours=1,  minutes=27),
+            _Result(text='10:27',  hours=10,  minutes=27),
             _Result(text='T23:43', hours=23, minutes=43)
         ]
     }
@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     _compare_results(test_data)
 
-    # h24ms and h24m formats
+    # h24m and h24ms (no colon) formats
     test_data = {
         'The times are 0613, t0613, 0613Z, 0613-03:30, 0613-0330, 0613+03, ' \
         '1124, 232120, 010203, and 120000':[

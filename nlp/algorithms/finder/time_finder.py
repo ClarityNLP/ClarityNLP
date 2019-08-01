@@ -8,14 +8,25 @@ The code in this module recognizes time expressions in a sentence and returns
 a JSON result with information on each time expression that it finds. The
 supported time formats are listed next, using the abbreviations:
 
-    hh is zero-padded 00-24
-    mm is zero-padded 00-59
-    ss is zero-padded 00-60 (60 means leap second)
+    h12: 12 hr. clock, hours only,   0-9
+    h24: 24 hr. clock, zero-padded, 00-24
+     mm: minutes, zero-padded, 00-59
+     ss: seconds, zero-padded 00-60 (60 means leap second)
 
-    am_pm is OPTIONAL and can be any of these variants:
+    The symbol 'am_pm' is OPTIONAL and can be any of these variants:
 
         'am', 'pm', 'AM', 'PM', 'a.m.', 'p.m.', 'A.M.', 'P.M.', 'am.', 'pm.'
+
+        There can be arbitrary whitespace before the am_pm symbol.
                    
+    The symbol 't' is OPTIONAL and can be any of these variants:
+
+         't', 'T'
+
+    The symbol 'f' means fractional seconds (expressed as a decimal number)
+    For instance, a value of 23.44506 would have f == 44506.
+
+
 1.  ISO8601 Formats
 
     Any of these formats:
@@ -32,52 +43,45 @@ supported time formats are listed next, using the abbreviations:
         hh:mm:ss or hhmmss
         hh:mm:ss.\d+  or hhmmss.\d+ (any number of fractional digits)
 
+2.  Any of these formats:
 
-REDO THIS
+    h12  am_pm   hours with AM/PM designator
+                 (4 am, 5PM, 10a.m., 9 pm.)
 
-2.  Hour only with AM or PM designator:
+    h12m am_pm   hours and minutes with AM/PM designator
+                 (5:09 am, 9:41 P.M., 10:02 AM.)
 
-          h am_pm
-         hh am_pm
+    h12ms am_pm  hours, minutes, and seconds with AM/PM designator
+                 (06:10:37 am, 10:19:36P.M., 1:02:03AM)
 
-          examples: 4 am, 5PM, 10a.m., 9 pm., et.
+    h12msf am_pm hours, minutes, seconds, fractional seconds with AM/PM
+                 (7:11:39:012345 am, 11:41:22.22334 p.m.)
 
-3.  Hours and minutes, with optional AM/PM designator:
+    h12m         hours and minutes
+                 (4:08, 10:14, and 11:59)
 
-          h:mm am_pm
-         hh:mm am_pm
-        thh:mm am_pm
-        Thh:mm am_pm
+    th24m        hours and minutes
+                 (14:12, 01:27, 10:27, T23:43)
 
-4.  Hours, minutes, and seconds:
+    th24ms       hours, minutes, and seconds
+                 (01:03:24, T14:15:16)
 
-         hh:mm:ss
-        thh:mm:ss
-        Thh:mm:ss
+    th24msf      hours, minutes, seconds, fractional seconds
+                 (04:08:37.81412, 19:20:21.532453, 08:11:40:123456)
 
-5.  Hours, minutes, seconds, and fractional seconds:
-
-         
-
-        08:11:40:123456, 08:11:40.123456
-
-
-
-    _regex_h24ms_with_gmt_delta, # 3
-    _regex_h24ms_with_timezone,  # 4
-    _regex_h24ms_no_colon,       # 5
-    _regex_h24m_no_colon,        # 6
-    _regex_h12msf_am_pm,         # 7
-    _regex_h12ms_am_pm,          # 8
-    _regex_h12m_am_pm,           # 9
-    _regex_h12_am_pm,            # 10
-    _regex_h24msf,               # 11
-    _regex_h24ms,                # 12
-    _regex_h24m,                 # 13
-    _regex_h12m,                 # 14
+    thhmm        hours and minutes
+                 (0613, t0613)
 
 
-    
+    thhmmss      hours, minutes, and seconds
+                 (232120, 120000)
+
+    th24ms with timezone   hours, minutes, and seconds with timezone designator
+                           (040837CEST, 112345 PST, T093000 Z)
+
+    th24ms with GMT offset hours, minutes, seconds with GMT offset designator
+                           (T192021-0700, 14:45:15+03:30)
+
 
 
 OUTPUT:
@@ -108,7 +112,9 @@ All time expression recognition is case-insensitive.
 JSON results are written to stdout.
 
 
+
 USAGE:
+
 
 
 To use this code as an imported module, add the following lines to the
@@ -153,9 +159,6 @@ import sys
 import json
 from collections import namedtuple
 
-
-# This module returns JSON containing a 'TimeValue' object for each time
-# expression that it finds.
 
 # default value for all fields
 EMPTY_FIELD = None
