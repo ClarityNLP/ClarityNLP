@@ -324,6 +324,13 @@ _filter_term_dict = {}
 
 
 ###############################################################################
+def enable_debug():
+
+    global _TRACE
+    _TRACE = True
+
+
+###############################################################################
 def _to_json(original_terms, original_sentence, results, filter_terms):
     """
     Convert results to a JSON string.
@@ -1332,17 +1339,13 @@ def _clean_sentence(sentence, is_case_sensitive):
 
 
 ###############################################################################
-def run(term_string,               # comma-separated string of query terms
+def run(term_string,             # comma-separated string of query terms
         sentence,
         str_minval=None,
         str_maxval=None,
-        enumlist=None,
+        enumlist=None,           # comma-separated string of terms
         is_case_sensitive=False,
-        is_denom_only=False):
-    """
-    Run the value extractor for all query terms and return a list of
-    ValueMeasurement namedtuples.
-    """
+        is_denom_only=False):    # return denominators of fractions
 
     if _TRACE:
         print('\ncalled value_extractor run...')

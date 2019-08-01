@@ -18,10 +18,7 @@ import value_extractor as ve
 _MODULE_NAME = 'test_value_extractor.py'
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
-
-# set to True to enable debug output
-_TRACE = False
+_VERSION_MINOR = 2
 
 # namedtuple for expected results
 _RESULT_FIELDS = ['term', 'x', 'y', 'condition']
@@ -119,10 +116,35 @@ def _compare_results(
             for f in failures:
                 print(f)
 
+###############################################################################
+def _get_version():
+    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
+
 
 ###############################################################################
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(
+        description='Run validation tests on the value extractor module.'
+    )
+
+    parser.add_argument('-v', '--version',
+                        help='show version and exit',
+                        action='store_true')
+    parser.add_argument('-d', '--debug',
+                        help='print debug information to stdout',
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    if 'version' in args and args.version:
+        print(_get_version())
+        sys.exit(0)
+
+    if 'debug' in args and args.debug:
+        ve.enable_debug()
+
+        
     minval = 0
     maxval = 1000000
 
@@ -779,25 +801,36 @@ if __name__ == '__main__':
         'which grew gram positive and negative rods.':[
             _Result('gram positive', 'rods', None, ve.STR_EQUAL),
             _Result('negative', 'rods', None, ve.STR_EQUAL)
+        ],
+        'Subsequently the patient was found to have sputum gram stain with ' \
+        '4+ gram positive cocci in pairs, clusters and chains and 1+ gram '  \
+        'positive rods. On [**9-24**] a sputum culture was positive for '    \
+        'gram negative rods and he was started on Cipro 500mg po daily '     \
+        'for 14 days.':[
+            _Result('gram positive', 'cocci', None, ve.STR_EQUAL),
+            _Result('gram positive', 'rods', None, ve.STR_EQUAL),
+            _Result('gram negative', 'rods', None, ve.STR_EQUAL)
         ]
     }
 
     _compare_results(term_string, test_data, minval, maxval, enumlist)
     
-    # # search for keywords and return text 'values' from enumlist
-    # term_string = 'positive, +, negative'
-    # enumlist = 'titer, hav, igm, igg'
-    # test_data = {
-    #     'POSITIVE Titer-1:80':[
-    #         _Result('positive', 'titer', None, ve.STR_EQUAL)],
-    #     '+Titer-1:80':[_Result('+', 'titer', None, ve.STR_EQUAL)],
-    #     #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
-    #     #    _Result('+', 'hav igg', None, ve.STR_EQUAL),
-    #     #    _Result('negative', 'igm', None, ve.STR_EQUAL)
-    #     #],
-    # }
+    term_string = 'titer'
+    enumlist = '1:5, 1:10, 1:20, 1:40, 1:80, 1:160, 1:256, 1:320'
+    test_data = {
+        'POSITIVE Titer-1:80':[
+            _Result('titer', '1:80', None, ve.STR_EQUAL)
+        ],
+        'RPR done at that visit came back positive at a titer of 1:256':[
+            _Result('titer', '1:256', None, ve.STR_EQUAL)
+        ]
+        #'She was HCV negative, HBV negative, had + HAV IgG, negative IgM.':[
+        #    _Result('+', 'hav igg', None, ve.STR_EQUAL),
+        #    _Result('negative', 'igm', None, ve.STR_EQUAL)
+        #],
+    }
 
-    # _compare_results(term_string, test_data, minval, maxval, enumlist)
+    _compare_results(term_string, test_data, minval, maxval, enumlist)
 
     # # hypotheticals
     # term_string = 'temp'

@@ -1,18 +1,149 @@
 #!/usr/bin/env python3
 """
 
+OVERVIEW:
+
+
+The code in this module recognizes time expressions in a sentence and returns
+a JSON result with information on each time expression that it finds. The
+supported time formats are listed next, using the abbreviations:
+
+    hh is zero-padded 00-24
+    mm is zero-padded 00-59
+    ss is zero-padded 00-60 (60 means leap second)
+
+    am_pm is OPTIONAL and can be any of these variants:
+
+        'am', 'pm', 'AM', 'PM', 'a.m.', 'p.m.', 'A.M.', 'P.M.', 'am.', 'pm.'
+                   
+1.  ISO8601 Formats
+
+    Any of these formats:
+
+        <time>Z
+        <time>+-hh:mm
+        <time>+-hhmm
+        <time>+-hh
+
+    Where <time> means any of these:
+
+        hh
+        hh:mm or hhmm
+        hh:mm:ss or hhmmss
+        hh:mm:ss.\d+  or hhmmss.\d+ (any number of fractional digits)
+
+
+REDO THIS
+
+2.  Hour only with AM or PM designator:
+
+          h am_pm
+         hh am_pm
+
+          examples: 4 am, 5PM, 10a.m., 9 pm., et.
+
+3.  Hours and minutes, with optional AM/PM designator:
+
+          h:mm am_pm
+         hh:mm am_pm
+        thh:mm am_pm
+        Thh:mm am_pm
+
+4.  Hours, minutes, and seconds:
+
+         hh:mm:ss
+        thh:mm:ss
+        Thh:mm:ss
+
+5.  Hours, minutes, seconds, and fractional seconds:
+
+         
+
+        08:11:40:123456, 08:11:40.123456
+
+
+
+    _regex_h24ms_with_gmt_delta, # 3
+    _regex_h24ms_with_timezone,  # 4
+    _regex_h24ms_no_colon,       # 5
+    _regex_h24m_no_colon,        # 6
+    _regex_h12msf_am_pm,         # 7
+    _regex_h12ms_am_pm,          # 8
+    _regex_h12m_am_pm,           # 9
+    _regex_h12_am_pm,            # 10
+    _regex_h24msf,               # 11
+    _regex_h24ms,                # 12
+    _regex_h24m,                 # 13
+    _regex_h12m,                 # 14
+
+
+    
+
+
+OUTPUT:
+
+
+
+The set of JSON fields in the output for each time expression includes:
+
+    text                matching text
+    start               starting character offset of the matching text
+    end                 final character offset of the matching text + 1
+    hours               integer hours
+    minutes             integer minutes
+    seconds             integer seconds
+    fractional_seconds  string, contains digits after decimal point
+                        including any leading zeros
+    am_pm               string, either STR_AM or STR_PM (see values below)
+    timezone            string
+    gmt_delta_sign      sign of the UTC offset, either '+' or '-'
+    gmt_delta_hours     integer, UTC hour offset
+    gmt_delta_minutes   integer, UTC minute offset
+
+Any missing fields will have the value EMPTY_FIELD. All JSON results will
+contain an identical number of fields.
+
+All time expression recognition is case-insensitive.
+
+JSON results are written to stdout.
+
+
+USAGE:
+
+
+To use this code as an imported module, add the following lines to the
+import list in the importing module:
+
+        import json
+        import time_finder as tf
+
+To find time expressions in a sentence and capture the JSON result:
+
+        json_string = tf.run(sentence)
+
+To unpack the JSON results:
+
+        json_data = json.loads(json_string)
+        time_results = [df.TimeValue(**m) for m in json_data]
+
+        for t in time_results:
+            print(t.text)
+            print(t.start)
+            print(t.end)
+            if tf.EMPTY_FIELD != t.hours:
+                print(t.hours)
+            etc.
+
 References: 
 
-PHP Time Formats:
-    http://php.net/manual/en/datetime.formats.time.php
+    PHP Time Formats:
+        http://php.net/manual/en/datetime.formats.time.php
 
-World time zones:
-    https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
+    World time zones:
+        https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
 
-ISO8601 formats:
-    https://en.wikipedia.org/wiki/ISO_8601
-
-Maybe check Stanford's SUTime.
+    ISO8601 formats:
+        https://en.wikipedia.org/wiki/ISO_8601
 
 """
 
@@ -22,17 +153,41 @@ import sys
 import json
 from collections import namedtuple
 
-# 'TimeValue' is the JSON-serializable result object from this module
+
+# This module returns JSON containing a 'TimeValue' object for each time
+# expression that it finds.
+
+# default value for all fields
 EMPTY_FIELD = None
-TIME_VALUE_FIELDS = ['text', 'start', 'end', 'hours', 'minutes', 'seconds',
-                     'fractional_seconds', 'am_pm', 'timezone',
-                     'gmt_delta_sign', 'gmt_delta_hours', 'gmt_delta_minutes']
+
+TIME_VALUE_FIELDS = [
+    'text',
+    'start',
+    'end',
+    'hours',
+    'minutes',
+    'seconds',
+    'fractional_seconds',
+    'am_pm',
+    'timezone',
+    'gmt_delta_sign',
+    'gmt_delta_hours',
+    'gmt_delta_minutes'
+]
 TimeValue = namedtuple('TimeValue', TIME_VALUE_FIELDS)
+
+# set default value of all fields to EMPTY_FIELD
+TimeValue.__new__.__Defaults__ = (EMPTY_FIELD,) * len(TimeValue._fields)
+
 STR_AM = 'am'
 STR_PM = 'pm'
 
+
+###############################################################################
+
+
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME = 'time_finder.py'
 
 # set to True to see debug output
@@ -92,14 +247,14 @@ _regex_h12_am_pm = re.compile(_str_h12_am_pm)
 # hour and minutes:
 #    4:08, 10:14
 _str_h12m = r'\b(?P<hours>' + _str_h12 + r')'+ _str_sep                       +\
-            r'(?P<minutes>' + _str_MM  + r')'
+            r'(?P<minutes>' + _str_MM  + r'(?!\d))'
 _regex_h12m = re.compile(_str_h12m)
 
 # hour and minutes, with am_pm:
 #    5:09 am, 9:41 P.M., 10:02 AM
 _str_h12m_am_pm = r'\b(?P<hours>' + _str_h12   + r')' + _str_sep              +\
                   r'(?P<minutes>' + _str_MM    + r')' + r'\s*'                +\
-                  r'(?P<am_pm>'   + _str_am_pm + r')'
+                  r'(?P<am_pm>'   + _str_am_pm + r'(?!\d))'
 _regex_h12m_am_pm = re.compile(_str_h12m_am_pm)
 
 # hour, minutes, and seconds, with am_pm:
@@ -127,7 +282,7 @@ _regex_h12msf_am_pm = re.compile(_str_h12msf_am_pm)
 #    08:12, T23:43
 _str_h24m = _str_t                                        +\
            r'(?P<hours>'   + _str_h24 + r')' + _str_sep   +\
-           r'(?P<minutes>' + _str_MM  + r')'
+           r'(?P<minutes>' + _str_MM  + r'(?!\d))'
 _regex_h24m = re.compile(_str_h24m)
 
 # hour and minutes, no colon
@@ -141,7 +296,7 @@ _regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
 _str_h24ms = _str_t                                       +\
             r'(?P<hours>'   + _str_h24 + r')' + _str_sep  +\
             r'(?P<minutes>' + _str_MM  + r')' + _str_sep  +\
-            r'(?P<seconds>' + _str_MM  + r')'
+            r'(?P<seconds>' + _str_MM  + r'(?!\d))'
 _regex_h24ms = re.compile(_str_h24ms)
 
 # hour, minutes, and seconds, no colon
@@ -207,21 +362,24 @@ _str_iso_hh = r'([01][0-9]|2[0-4])'
 _str_iso_mm = r'[0-5][0-9]'
 _str_iso_ss = r'([0-5][0-9]|60)'
 
-# note the essential negative lookahead in these
-_str_iso_hh_only = r'\b(?P<hours>' + _str_iso_hh + r'(?!\d))'
-_str_iso_hhmm_only = r'\b(?P<hours>' + _str_iso_hh + r')'         +\
-                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d))'
-
-_str_iso_hms = r'\b(?P<hours>'  + _str_iso_hh + r'):?'                       +\
-               r'((?P<minutes>' + _str_iso_mm + r')):?'                      +\
-               r'((?P<seconds>' + _str_iso_ss + r'))'                        +\
-               r'((?P<frac>'    + r'\.\d+'   + r'))?'
-
 _str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r')'                    +\
                    r'(:?' + r'(?P<gmt_minutes>' + _str_iso_mm + r'))?'
 
 _str_iso_zone = r'((?P<timezone>Z)|'                                         +\
                 r'(?P<gmt_sign>[-+])' + _str_iso_zone_hm + r')'
+
+# note the essential negative lookahead in these
+_str_iso_hh_only = r'\b(?P<hours>' + _str_iso_hh + r'(?!\d))'     +\
+                   r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
+
+_str_iso_hhmm_only = r'\b(?P<hours>' + _str_iso_hh + r')'         +\
+                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d))'   +\
+                     r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
+
+_str_iso_hms = r'\b(?P<hours>'  + _str_iso_hh + r'):?'                       +\
+               r'((?P<minutes>' + _str_iso_mm + r')):?'                      +\
+               r'((?P<seconds>' + _str_iso_ss + r'))'                        +\
+               r'((?P<frac>'    + r'\.\d+'   + r'))?'
 
 _str_iso_time = _str_iso_hms + r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
@@ -253,6 +411,13 @@ _regex_brackets = re.compile(_str_brackets)
 
 _CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
 _Candidate = namedtuple('_Candidate', _CANDIDATE_FIELDS)
+
+
+###############################################################################
+def enable_debug():
+
+    global _TRACE
+    _TRACE = True
 
 
 ###############################################################################
@@ -438,83 +603,56 @@ def run(sentence):
         gmt_delta_sign    = EMPTY_FIELD
         gmt_delta_hours   = EMPTY_FIELD
         gmt_delta_minutes = EMPTY_FIELD
-        
-        try:
-            if match.group('hours') is not None:
-                int_hours = int(match.group('hours'))
-        except IndexError:
-            pass
 
-        try:
-            if match.group('minutes') is not None:
-                int_minutes = int(match.group('minutes'))
-        except IndexError:
-            pass
-
-        try:
-            if match.group('seconds') is not None:
-                int_seconds = int(match.group('seconds'))
-        except IndexError:
-            pass
-    
-        try:
-            if match.group('frac') is not None:
+        for k,v in match.groupdict().items():
+            if v is None:
+                continue
+            if 'hours' == k:
+                int_hours = int(v)
+            elif 'minutes' == k:
+                int_minutes = int(v)
+            elif 'seconds' == k:
+                int_seconds = int(v)
+            elif 'frac' == k:
                 # leave as a string; conversion needs to handle leading zeros
-                frac_seconds = match.group('frac')[1:]
-        except IndexError:
-            pass
-
-        try:
-            if match.group('am_pm') is not None:
-                am_pm = match.group('am_pm')
-                if -1 != am_pm.find('a') or -1 != am_pm.find('A'):
+                frac_seconds = v[1:]
+            elif 'am_pm' == k:
+                if -1 != v.find('a') or -1 != v.find('A'):
                     am_pm = STR_AM
                 else:
                     am_pm = STR_PM
-        except IndexError:
-            pass
-
-        try:
-            if match.group('timezone') is not None:
-                timezone = match.group('timezone')
+            elif 'timezone' == k:
+                timezone = v
                 if 'Z' == timezone:
                     timezone = 'UTC'
-        except IndexError:
-            pass
+            elif 'gmt_delta' == k:
+                gmt_delta = v    
+                match_gmt = _regex_gmt.search(v)
+                if match_gmt:
+                    for k2,v2 in match_gmt.groupdict().items():
+                        if v2 is None:
+                            continue
+                        if 'gmt_sign' == k2:
+                            gmt_delta_sign = v2
+                        elif 'gmt_hours' == k2:
+                            gmt_delta_hours = int(v2)
+                        elif 'gmt_minutes' == k2:
+                            gmt_delta_minutes = int(v2)
 
-        try:
-            if match.group('gmt_delta') is not None:
-                gmt_delta = match.group('gmt_delta')
-        except IndexError:
-            pass
-
-        if EMPTY_FIELD != gmt_delta:
-            match_gmt = _regex_gmt.search(match.group('gmt_delta'))
-            if match_gmt:
-
-                try:
-                    if match_gmt.group('gmt_sign') is not None:
-                        gmt_delta_sign = match_gmt.group('gmt_sign')
-                except:
-                    pass
-
-                try:
-                    if match_gmt.group('gmt_hours') is not None:
-                        gmt_delta_hours = int(match_gmt.group('gmt_hours'))
-                except:
-                    pass
-
-                try:
-                    if match_gmt.group('gmt_minutes') is not None:
-                        gmt_delta_minutes = int(match_gmt.group('gmt_minutes'))
-                except:
-                    pass
-                    
-        meas = TimeValue(pc.match_text, pc.start, pc.end,
-                         int_hours, int_minutes, int_seconds,
-                         frac_seconds, am_pm, timezone,
-                         gmt_delta_sign, gmt_delta_hours,
-                         gmt_delta_minutes)
+        meas = TimeValue(
+            text = pc.match_text,
+            start = pc.start,
+            end = pc.end,
+            hours = int_hours,
+            minutes = int_minutes,
+            seconds = int_seconds,
+            fractional_seconds = frac_seconds,
+            am_pm = am_pm,
+            timezone = timezone,
+            gmt_delta_sign = gmt_delta_sign,
+            gmt_delta_hours = gmt_delta_hours,
+            gmt_delta_minutes = gmt_delta_minutes
+        )
         results.append(meas)
 
     # sort results to match order of occurrence in sentence

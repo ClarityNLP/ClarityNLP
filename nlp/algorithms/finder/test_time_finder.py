@@ -10,12 +10,13 @@ import re
 import os
 import sys
 import json
+import argparse
 from collections import namedtuple
 
 import time_finder as tf
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME = 'test_time_finder.py'
 
 # namedtuple for expected results; fields default to None
@@ -28,12 +29,7 @@ _Result.__new__.__defaults__ = (None,) * len(_Result._fields)
 
 
 ###############################################################################
-
-
-###############################################################################
 def _compare_results(test_data):
-    """
-    """
 
     for sentence, expected_list in test_data.items():
 
@@ -90,22 +86,29 @@ def _get_version():
 
 
 ###############################################################################
-def _show_help():
-    print(_get_version())
-    print("""
-    USAGE: python3 ./{0}
-
-    FLAGS:
-
-        -h, --help                      Print this information and exit.
-        -v, --version                   Print version information and exit.
-
-    """.format(_MODULE_NAME))
-
-
-###############################################################################
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(
+        description='Run validation tests on the time finder module.'
+    )
+    
+    parser.add_argument('-v', '--version',
+                        help='show version and exit',
+                        action='store_true')
+    parser.add_argument('-d', '--debug',
+                        help='print debug information to stdout',
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    if 'version' in args and args.version:
+        print(_get_version())
+        sys.exit(0)
+
+    if 'debug' in args and args.debug:
+        tf.enable_debug()
+
+        
     # h12_am_pm format
     test_data = {
         'The times are 4 am, 5PM, 10a.m, 8 a.m, 9 pm., .':[
@@ -214,11 +217,13 @@ if __name__ == '__main__':
 
     # h24msf format
     test_data = {
-        'The times are 04:08:37.81412 and 19:20:21.532453.':[
+        'The times are 04:08:37.81412, 19:20:21.532453, and 08:11:40:123456':[
             _Result(text='04:08:37.81412',  hours=4,  minutes=8,  seconds=37,
                     fractional_seconds='81412'),
             _Result(text='19:20:21.532453', hours=19, minutes=20, seconds=21,
-                    fractional_seconds='532453')
+                    fractional_seconds='532453'),
+            _Result(text='08:11:40:123456', hours=8, minutes=11, seconds=40,
+                    fractional_seconds='123456'),
         ]
     }
 
@@ -247,9 +252,17 @@ if __name__ == '__main__':
 
     # h24ms and h24m formats
     test_data = {
-        'The times are 0613, t0613, 1124, 232120, 010203, and 120000':[
+        'The times are 0613, t0613, 0613Z, 0613-03:30, 0613-0330, 0613+03, ' \
+        '1124, 232120, 010203, and 120000':[
             _Result(text='0613',   hours=6,  minutes=13),
             _Result(text='t0613',  hours=6,  minutes=13),
+            _Result(text='0613Z',  hours=6,  minutes=13, timezone='UTC'),
+            _Result(text='0613-03:30', hours=6, minutes=13, gmt_delta_sign='-',
+                    gmt_delta_hours=3, gmt_delta_minutes=30),
+            _Result(text='0613-0330',  hours=6, minutes=13, gmt_delta_sign='-',
+                    gmt_delta_hours=3, gmt_delta_minutes=30),
+            _Result(text='0613+03',    hours=6, minutes=13, gmt_delta_sign='+',
+                    gmt_delta_hours=3),
             _Result(text='1124',   hours=11, minutes=24),
             _Result(text='232120', hours=23, minutes=21,  seconds=20),
             _Result(text='010203', hours=1,  minutes=2,   seconds=3),
