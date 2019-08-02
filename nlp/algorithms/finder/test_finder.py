@@ -5,6 +5,9 @@ size_measurement_finder modules.
 
 Run from the nlp/finder folder.
 
+
+    Ambiguity: ymd format 05-Jun-24 and dmy format
+
 """
 
 import re
@@ -104,6 +107,7 @@ def _compare_results(
             e = [ (k,v) for k,v in f[1]._asdict().items() if v is not None]
             print('\tComputed: {0}'.format(c))
             print('\tExpected: {0}'.format(e))
+        sys.exit(0)
     
 
 ###############################################################################
@@ -362,7 +366,7 @@ def _test_date_finder():
     # ISO sYYYYMMDD format
     test_data = {
         'The date +2012-11-28 is in iso_sYYYYMMDD format.':[
-            _DateResult(text='2012-11-28', year=2012, month=11, day=28),            
+            _DateResult(text='+2012-11-28', year=2012, month=11, day=28),            
         ]
     }
 
@@ -375,6 +379,168 @@ def _test_date_finder():
             _DateResult(text='11/28/2012', year=2012, month=11, day=28),
             _DateResult(text='1/3/2012',   year=2012, month=1,  day=3),
             _DateResult(text='02/17/15',   year=15,   month=2,  day=17)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # dmYYYY format
+    test_data = {
+        'The dates 28-11-2012, 3-1-2012, 03-1-2012, and 17.2.2017 ' \
+        'are in dmYYYY format.':[
+            _DateResult(text='28-11-2012', year=2012, month=11, day=28),
+            _DateResult(text='3-1-2012',   year=2012, month=1,  day=3),
+            _DateResult(text='03-1-2012',  year=2012, month=1,  day=3),
+            _DateResult(text='17.2.2017',  year=2017, month=2,  day=17),
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # year-month-day format
+    test_data = {
+        'The dates 2008-6-30, 78-12-22, and 08-6-21 '
+        'are in year-month-day format.':[
+            _DateResult(text='2008-6-30', year=2008, month=6,  day=30),
+            _DateResult(text='78-12-22',  year=78,   month=12, day=22),
+            _DateResult(text='08-6-21',   year=8,    month=6,  day=21)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # dmYY format
+    test_data = {
+        'The dates 30.6.08 and 22\t12.78 are in dmYY format.':[
+            _DateResult(text='30.6.08',   year=8,  month=6,  day=30),
+            _DateResult(text='22\t12.78', year=78, month=12, day=22)
+        ]
+    }
+    
+    _run_tests(_MODULE_DATE, test_data)
+
+    # dtmy format
+    test_data = {
+        'The dates 30-June 2008, 22DEC78, and 14 MAR   1879 ' \
+        'are in dtmy format.':[
+            _DateResult(text='30-June 2008',  year=2008, month=6,  day=30),
+            _DateResult(text='22DEC78',       year=78,   month=12, day=22),
+            _DateResult(text='14 MAR   1879', year=1879, month=3,  day=14)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # tmdy format
+    test_data = {
+        'The dates July 1st, 2008, April 17, 1790, and May.9,78 ' \
+        'are in tmdy format.':[
+            _DateResult(text='July 1st, 2008', year=2008, month=7, day=1),
+            _DateResult(text='April 17, 1790', year=1790, month=4, day=17),
+            _DateResult(text='May.9,78',       year=78,   month=5, day=9)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # month-day-year format
+    test_data = {
+        'The dates May-09-78, Apr-17-1790, and Dec-12-2005 ' \
+        'are in month-day-year format.':[
+            _DateResult(text='May-09-78',   year=78,   month=5,  day=9),
+            _DateResult(text='Apr-17-1790', year=1790, month=4,  day=17),
+            _DateResult(text='Dec-12-2005', year=2005, month=12, day=12)
+        ]
+    }
+    
+    _run_tests(_MODULE_DATE, test_data)
+
+    # ymd format
+    test_data = { 
+        'The dates 78-Dec-22 and 1814-MAY-17 are in ymd format.':[
+            _DateResult(text='78-Dec-22',   year=78,   month=12, day=22),
+            _DateResult(text='1814-MAY-17', year=1814, month=5,  day=17),
+            #_DateResult(text='05-Jun-24',   year=5,    month=6,  day=24)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # American month/day format
+    test_data = {
+        'The dates 5/12, 10/27, and 5/6 are in American month/day format.':[
+            _DateResult(text='5/12',  month=5,  day=12),
+            _DateResult(text='10/27', month=10, day=27),
+            _DateResult(text='5/6',   month=5,  day=6)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # tmd format
+    test_data = {
+        'The dates "July 1st", Apr 17, and May.9 are in tmd format.':[
+            _DateResult(text='July 1st', month=7, day=1),
+            _DateResult(text='Apr 17',   month=4, day=17),
+            _DateResult(text='May.9',    month=5, day=9)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # GNU ym format
+    test_data = {
+        'The dates 2008-6, 2008-06, and 1978-12 are in GNU ym format.':[
+            _DateResult(text='2008-6',  year=2008, month=6),
+            _DateResult(text='2008-06', year=2008, month=6),
+            _DateResult(text='1978-12', year=1978, month=12)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # tmy4 format
+    test_data = {
+        'The dates June 2008, DEC1978, March 1879 are in tmy4 format.':[
+            _DateResult(text='June 2008',  year=2008, month=6),
+            _DateResult(text='DEC1978',    year=1978, month=12),
+            _DateResult(text='March 1879', year=1879, month=3)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # y4tm format
+    test_data = {
+        'The dates 2008 June, 1978-12, and 1879.MARCH are in y4tm format.':[
+            _DateResult(text='2008 June',  year=2008, month=6),
+            _DateResult(text='1978-12',    year=1978, month=12),
+            _DateResult(text='1879.MARCH', year=1879, month=3)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # individual years
+    test_data = {
+        'The dates 2004, 1968, 1492 are individual years.':[
+            _DateResult(text='2004', year=2004),
+            _DateResult(text='1968', year=1968),
+            _DateResult(text='1492', year=1492)
+        ]
+    }
+
+    _run_tests(_MODULE_DATE, test_data)
+
+    # individual months
+    test_data = {
+        'The dates January, Feb., Sep., Sept. and December ' \
+        'are individual months.':[
+            _DateResult(text='January',  month=1),
+            _DateResult(text='Feb',      month=2),
+            _DateResult(text='Sep',      month=9),
+            _DateResult(text='Sept',     month=9),
+            _DateResult(text='December', month=12)
         ]
     }
 
@@ -408,7 +574,7 @@ if __name__ == '__main__':
 
     if 'debug' in args and args.debug:
         tf.enable_debug()
-
+        df.enable_debug()
         
     _test_time_finder()
     _test_date_finder()

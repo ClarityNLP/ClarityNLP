@@ -121,6 +121,8 @@ def _compare_results(
             print(sentence)
             for f in failures:
                 print(f)
+            sys.exit(0)
+
 
 ###############################################################################
 def _get_version():

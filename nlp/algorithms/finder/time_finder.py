@@ -159,6 +159,10 @@ import sys
 import json
 from collections import namedtuple
 
+try:
+    import finder_overlap as overlap
+except:
+    from algorithms.finder import finder_overlap as overlap
 
 # default value for all fields
 EMPTY_FIELD = None
@@ -412,8 +416,8 @@ _regexes = [
 _str_brackets = r'[(){}\[\]]'
 _regex_brackets = re.compile(_str_brackets)
 
-_CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
-_Candidate = namedtuple('_Candidate', _CANDIDATE_FIELDS)
+#_CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
+#_Candidate = namedtuple('_Candidate', _CANDIDATE_FIELDS)
 
 
 ###############################################################################
@@ -423,105 +427,105 @@ def enable_debug():
     _TRACE = True
 
 
-###############################################################################
-def _has_overlap(a1, b1, a2, b2):
-    """
-    Determine if intervals [a1, b1) and [a2, b2) overlap at all.
-    """
+# ###############################################################################
+# def _has_overlap(a1, b1, a2, b2):
+#     """
+#     Determine if intervals [a1, b1) and [a2, b2) overlap at all.
+#     """
 
-    assert a1 <= b1
-    assert a2 <= b2
+#     assert a1 <= b1
+#     assert a2 <= b2
     
-    if b2 <= a1:
-        return False
-    elif a2 >= b1:
-        return False
-    else:
-        return True
+#     if b2 <= a1:
+#         return False
+#     elif a2 >= b1:
+#         return False
+#     else:
+#         return True
 
-###############################################################################
-def _remove_overlap(candidates):
-    """
-    Given a set of match candidates, resolve into nonoverlapping matches.
-    Take the longest match at any given position.
+# ###############################################################################
+# def _remove_overlap(candidates):
+#     """
+#     Given a set of match candidates, resolve into nonoverlapping matches.
+#     Take the longest match at any given position.
 
-    ASSUMES that the candidate list has been sorted by matching text length,
-    from longest to shortest.
-    """
+#     ASSUMES that the candidate list has been sorted by matching text length,
+#     from longest to shortest.
+#     """
 
-    if _TRACE:
-        print('called _remove_overlap...')
+#     if _TRACE:
+#         print('called _remove_overlap...')
     
-    results = []
-    overlaps = []
-    indices = [i for i in range(len(candidates))]
+#     results = []
+#     overlaps = []
+#     indices = [i for i in range(len(candidates))]
 
-    i = 0
-    while i < len(indices):
+#     i = 0
+#     while i < len(indices):
 
-        if _TRACE:
-            print('\tstarting indices: {0}'.format(indices))
+#         if _TRACE:
+#             print('\tstarting indices: {0}'.format(indices))
 
-        index_i = indices[i]
-        start_i = candidates[index_i].start
-        end_i   = candidates[index_i].end
-        len_i   = end_i - start_i
+#         index_i = indices[i]
+#         start_i = candidates[index_i].start
+#         end_i   = candidates[index_i].end
+#         len_i   = end_i - start_i
 
-        overlaps.append(i)
-        candidate_index = index_i
+#         overlaps.append(i)
+#         candidate_index = index_i
 
-        j = i+1
-        while j < len(indices):
-            index_j = indices[j]
-            start_j = candidates[index_j].start
-            end_j   = candidates[index_j].end
-            len_j   = end_j - start_j
+#         j = i+1
+#         while j < len(indices):
+#             index_j = indices[j]
+#             start_j = candidates[index_j].start
+#             end_j   = candidates[index_j].end
+#             len_j   = end_j - start_j
 
-            # does candidate[j] overlap candidate[i] at all
-            if _has_overlap(start_i, end_i, start_j, end_j):
-                if _TRACE:
-                    print('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
-                          format(candidates[index_i].match_text,
-                                 candidates[index_j].match_text,
-                                 len_i, len_j))
-                overlaps.append(j)
-                # keep the longest match at any overlap region
-                if len_j > len_i:
-                    start_i = start_j
-                    end_i   = end_j
-                    len_i   = len_j
-                    candidate_index = index_j
-            j += 1
+#             # does candidate[j] overlap candidate[i] at all
+#             if _has_overlap(start_i, end_i, start_j, end_j):
+#                 if _TRACE:
+#                     print('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
+#                           format(candidates[index_i].match_text,
+#                                  candidates[index_j].match_text,
+#                                  len_i, len_j))
+#                 overlaps.append(j)
+#                 # keep the longest match at any overlap region
+#                 if len_j > len_i:
+#                     start_i = start_j
+#                     end_i   = end_j
+#                     len_i   = len_j
+#                     candidate_index = index_j
+#             j += 1
 
-        if _TRACE:
-            print('\t\t\twinner: {0}'.
-                  format(candidates[candidate_index].match_text))
-            print('\t\t\tappending {0} to results'.
-                  format(candidates[candidate_index].match_text))
+#         if _TRACE:
+#             print('\t\t\twinner: {0}'.
+#                   format(candidates[candidate_index].match_text))
+#             print('\t\t\tappending {0} to results'.
+#                   format(candidates[candidate_index].match_text))
             
-        results.append(candidates[candidate_index])
+#         results.append(candidates[candidate_index])
 
-        if _TRACE:
-            print('\t\toverlaps: {0}'.format(overlaps))
+#         if _TRACE:
+#             print('\t\toverlaps: {0}'.format(overlaps))
         
-        # remove all overlaps
-        new_indices = []
-        for k in range(len(indices)):
-            if k not in overlaps:
-                new_indices.append(indices[k])
-        indices = new_indices
+#         # remove all overlaps
+#         new_indices = []
+#         for k in range(len(indices)):
+#             if k not in overlaps:
+#                 new_indices.append(indices[k])
+#         indices = new_indices
 
-        if _TRACE:
-            print('\t\tindices after removing overlaps: {0}'.format(indices))
+#         if _TRACE:
+#             print('\t\tindices after removing overlaps: {0}'.format(indices))
         
-        if 0 == len(indices):
-            break
+#         if 0 == len(indices):
+#             break
 
-        # start over
-        i = 0
-        overlaps = []
+#         # start over
+#         i = 0
+#         overlaps = []
 
-    return results
+#     return results
 
 
 ###############################################################################
@@ -565,7 +569,7 @@ def run(sentence):
                       format(regex_index, match_text))
             start = match.start()
             end   = match.end()
-            candidates.append( _Candidate(start, end, match_text, regex))
+            candidates.append(overlap.Candidate(start, end, match_text, regex))
 
     # sort the candidates in descending order of length, which is needed for
     # one-pass overlap resolution later on
@@ -580,16 +584,19 @@ def run(sentence):
             index += 1
         print()
 
-    pruned_candidates = _remove_overlap(candidates)
+    pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
     if _TRACE:
         print('\tcandidates count after overlap removal: {0}'.
               format(len(pruned_candidates)))
-        print('Result matches: ')
+        print('\tPruned candidates: ')
         for c in pruned_candidates:
             print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
         print()
 
+    if _TRACE:
+        print('Extracting data from pruned candidates...')
+        
     for pc in pruned_candidates:
 
         # used the saved regex to match the saved text again
