@@ -75,6 +75,7 @@ def _compare_results(
         elif num_expected > 0 and ve.EMPTY_RESULT == json_result:
             is_mismatched = True
 
+        value_result = None
         if not is_mismatched:
             # load the json result and decode as a ValueResult namedtuple
             result_data = json.loads(json_result)
@@ -85,8 +86,11 @@ def _compare_results(
             print('\tMismatch in computed vs. expected results: ')
             print('\tSentence: {0}'.format(sentence))
             print('\tComputed: ')
-            for m in value_result.measurementList:
-                print('\t\t{0}'.format(m))
+            if value_result is None:
+                print('\t\tNone')
+            else:
+                for m in value_result.measurementList:
+                    print('\t\t{0}'.format(m))
             print('\tExpected: ')
             for e in expected_list:
                 print('\t\t{0}'.format(e))
@@ -735,11 +739,7 @@ if __name__ == '__main__':
     term_string = 'platelet count, platelets'
     test_data = {
         # range with no units on first number
-        'Will consider transfusion for platelet count < 30-50k.':[
-            _Result('platelet count', 30000, 50000, ve.STR_RANGE)
-        ],
-        # range with no units on first number
-        'Will consider IVIg for platelet count 30-80k.':[
+        'platelet count varied from 30-80k.':[
             _Result('platelet count', 30000, 80000, ve.STR_RANGE)
         ],
         # from a to b with missing b
@@ -871,7 +871,7 @@ if __name__ == '__main__':
                      is_case_sensitive=True, denom_only=False)
 
     # hypotheticals
-    term_string = 'temp'
+    term_string = 'temp, platelet count'
     test_data = {
         'call in case temp > 101':[],
         'call if temp > 101':[],
@@ -881,7 +881,8 @@ if __name__ == '__main__':
         'set the temp to 78':[
             _Result('temp', 78, None, ve.STR_EQUAL)
         ],
-        'you should set the temp to 78':[]
+        'you should set the temp to 78':[],
+        'Will consider transfusion for platelet count < 30-50k.':[],
     }
 
     _compare_results(term_string, test_data, minval, maxval)

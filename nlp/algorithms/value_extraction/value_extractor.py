@@ -531,26 +531,6 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
         print('\t query_terms: {0}'.format(query_terms))
         print('\tfilter_words: {0}'.format(filter_words))
 
-    # # find each query term in the sentence and save unique offsets
-    # boundary_set = set()
-    # for query_term in query_terms:
-    #     # escape any chars that have special meaning for regex
-    #     str_word_query = re.escape(query_term)
-    #     iterator = re.finditer(str_word_query, sentence)
-    #     for match in iterator:
-    #         boundary_set.add(match.start())
-        
-    # # return if no query terms were found
-    # num_boundaries = len(boundary_set)
-    # if 0 == num_boundaries:
-    #     return []
-
-    # # sort by increasing offset, to match occurrence in sentence
-    # boundaries = sorted(list(boundary_set))
-
-    # if _TRACE:
-    #     print('\tboundaries: {0}'.format(boundaries))
-
     results = []
     for query_term in query_terms:
         if _TRACE: print('\tsearching for query term "{0}"'.format(query_term))
@@ -560,29 +540,13 @@ def _extract_enumlist_values(query_terms, sentence, filter_words):
             r'\s*(' + _str_enumlist_value + r'\s*){0,8}'                     +\
             r')'
 
-        #found_it = False
         iterator = re.finditer(str_enum_query, sentence)
         for match in iterator:
             if _TRACE:
                 print("\t\tmatch '{0}' start: {1}".
                       format(match.group(), match.start()))
             start = match.start()
-
-            # # this start offset must occur in the boundaries list
-            # try:
-            #     index = boundaries.index(start)
-            # except ValueError:
-            #     # skip this term for now - need to log this - TBD
-            #     if _TRACE:
-            #         print('\t\t***ERROR***: start offset not found ' +\
-            #               'in boundaries list. ***\n')
-            #     continue
-
-            # don't cross into the next query term match region
             end = match.end()
-            #if index < num_boundaries-1:
-            #    if match.end() > boundaries[index+1]:
-            #        end = boundaries[index+1]
 
             words = match.group('words')
             words_start = match.start('words')
@@ -833,6 +797,48 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
 ###############################################################################
 def _remove_simple_overlap(results):
     """
+    Check the results list for overlap and prune according to these rules:
+
+    1.  If two results overlap exactly, return the result with the longest
+        matching term.
+    
+        Example:
+    
+            sentence: 'T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC'
+            term_str: 'o2, o2 sat'
+
+            Both 'o2' and 'o2 sat' match the value 100, and both matches have
+            identical start/end values. Return 'o2 sat' as the result, since
+            len('o2 sat') > len('o2').
+ 
+    2.  If two results partially overlap, discard the first match if the 
+        extracted value is contained within the search term for the second.
+
+        Example:
+
+            sentence: 'BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.'
+            term_str: 'rr, sao2'
+
+            The rr search term has no associated value, so the value extractor
+            keeps scanning and finds the '2' in 'SaO2'. The '2' is part of the
+            search term 'sao2' and is thus not a valid result.
+
+    3. This applies to the enumlist option: whenever two results overlap and
+       one result is a terminating substring of the other, discard the
+       substring result as a separate match.
+
+       Example:
+
+            sentence: 'no enteric gram negative rods found'
+            term_str: 'gram negative, negative'
+            eumlist:  'rods'
+
+            The value extractor finds these matches:
+                match1: 'gram negative rods'
+                match2:      'negative rods'
+
+            The second match is a terminating substring of the first and
+            is discarded.
     """
 
     if _TRACE:
@@ -910,49 +916,12 @@ def _remove_simple_overlap(results):
 def _resolve_overlap(terms, filter_terms, sentence, results):
     """
     Check results for overlap and prune according to these rules:
-    
-    1.  If two results overlap exactly, return the result with the longest
-        matching term.
-    
-        Example:
-    
-            sentence: 'T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC'
-            term_str: 'o2, o2 sat'
 
-            Both 'o2' and 'o2 sat' match the value 100, and both matches have
-            identical start/end values. Return 'o2 sat' as the result.
+    1.  Resolve the simple overlap conditions first.
 
-    2.  If two results overlap with matching terms connected by and/or,
-        keep both.
-
-        Example (for enumlist):
-   
-            sentence: 'which grew gram positive and negative rods'
-            term_str: 'gram positive, negative'
-            enumlist: 'rods'
-
-            The overlapping candidates are:
-                'gram positive and negative rods'
-                                  'negative rods'
-
-            Return 'gram positive rods' and 'negative rods' for the results.
-
-    3.  If two results partially overlap, discard the first match if the 
-        matched value is part of the search term for the second.
-
-        Example:
-
-            sentence: 'BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.'
-            term_str: 'rr, sao2'
-
-            The rr search term has no associated value, so the value extractor
-            looks and finds the '2' in 'SaO2'. The '2' is part of the search
-            term 'sao2', so prevent this from being returned as a match.
-
-    4.  If two results partially overlap, check the matching terms for each
-        result. If the matching terms overlap, keep the match with the longest
-        matching term. If the terms do not overlap, keep the match that is
-        closest to the value.
+    2.  If two results partially overlap, check the matching terms for
+        overlap. If the matching terms partially overlap, keep the match with
+        the longest matching term.
 
         Example:
 
@@ -967,8 +936,26 @@ def _resolve_overlap(terms, filter_terms, sentence, results):
 
             The matching terms 'pt' and 'inr(pt)' overlap. The longest matching
             term is inr(pt), so keep the fourth match.
+    
+    3.  (For enumlist): If two results overlap with matching terms connected
+        by and/or, keep both.
 
-        Example2:
+        Example:
+   
+            sentence: 'which grew gram positive and negative rods'
+            term_str: 'gram positive, negative'
+            enumlist: 'rods'
+
+            The overlapping candidates are:
+                'gram positive and negative rods'
+                                  'negative rods'
+
+            Return 'gram positive rods' and 'negative rods' for the results.
+
+    4.  If the values overlap but the matching terms do not, keep the match
+        that is closest to the value.
+
+        Example:
 
             sentence: 'received one bag of platelets due to platelet count of 71k'
             term_str: 'platelets, platelet, platelet count'
@@ -977,9 +964,9 @@ def _resolve_overlap(terms, filter_terms, sentence, results):
                 'platelets due to platelet count of 71k' for match term 'platelets'
                 'platelet count of 71k' for match term 'platelet count'
 
-            The matching terms 'platelets' and 'platelet count' do not overlap,
-            so keep the match with 'platelet count', since it is nearest to the
-            value of 71k.
+            The values overlap, but the matching terms 'platelets' and
+            'platelet count' do not. Keep the 'platelet count' match, since it
+            is nearest to the value of 71k.
 
     """
 
@@ -1109,6 +1096,7 @@ def _remove_hypotheticals(sentence, results):
     #     'if': only if not preceded by 'know' and not followed by 'negative'
     #     'in case'
     #     'should'
+    #     'will consider'
     triggers = []
     for i in range(word_count):
         trigger = None
@@ -1128,6 +1116,8 @@ def _remove_hypotheticals(sentence, results):
             word_offset = 1
         elif 'should' == words[i]:
             trigger = 'should'
+        elif 'will' == words[i] and i < word_count-1 and 'consider' == words[i+1]:
+            trigger = 'will consider'
         else:
             continue
 
