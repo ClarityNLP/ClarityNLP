@@ -19,9 +19,10 @@ from collections import namedtuple
 
 import time_finder as tf
 import date_finder as df
+import size_measurement_finder as smf
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -56,10 +57,32 @@ _DATE_RESULT_FIELDS = [
 _DateResult = namedtuple('_DateResult', _DATE_RESULT_FIELDS)
 _DateResult.__new__.__defaults__ = (None,) * len(_DateResult._fields)
 
+#
+# size measurement results
+#
+
+_SIZE_MEAS_FIELDS = [
+    'text',
+    'temporality',
+    'units',
+    'condition',
+    'x',
+    'y',
+    'z',
+    'values',
+    'xView',
+    'yView',
+    'zView',
+    'minValue',
+    'maxValue'
+]
+_SMResult = namedtuple('_SMResult', _SIZE_MEAS_FIELDS)
+_SMResult.__new__.__defaults__ = (None,) * len(_SMResult._fields)
+
 
 _MODULE_TIME = 'time'
 _MODULE_DATE = 'date'
-_MODULE_MEAS = 'meas'
+_MODULE_SIZE_MEAS = 'size_meas'
 
 
 ###############################################################################
@@ -127,8 +150,7 @@ def _run_tests(module_type, test_data):
                 computed_values,
                 expected_values,
                 sentence,
-                _TIME_RESULT_FIELDS
-            )
+                _TIME_RESULT_FIELDS)
 
         elif _MODULE_DATE == module_type:
 
@@ -141,8 +163,20 @@ def _run_tests(module_type, test_data):
                 computed_values,
                 expected_values,
                 sentence,
-                _DATE_RESULT_FIELDS
-            )
+                _DATE_RESULT_FIELDS)
+
+        elif _MODULE_SIZE_MEAS == module_type:
+
+            # run size_measurement_finder on the next test sentence
+            json_result = smf.run(sentence)
+            json_data = json.loads(json_result)
+            computed_values = [smf.SizeMeasurement(**d) for d in json_data]
+
+            _compare_results(
+                computed_values,
+                expected_values,
+                sentence,
+                _SIZE_MEAS_FIELDS)
 
 
 ###############################################################################
@@ -545,7 +579,69 @@ def _test_date_finder():
     }
 
     _run_tests(_MODULE_DATE, test_data)
-    
+
+
+###############################################################################
+def _test_size_measurement_finder():
+
+    # str_x_cm (x)
+    test_data = {
+        'The result is 1.5 cm in my estimation.':[
+            _SMResult(text='1.5 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=15,
+                      x=15)
+        ],
+        'The result is 1.5 cm. in my estimation.':[
+            _SMResult(text='1.5 cm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=15,
+                      x=15)
+        ],
+        'The result is 1.5-cm in my estimation.':[
+            _SMResult(text='1.5-cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=15,
+                      x=15)
+        ],
+        'The result is 1.5cm in my estimation.':[
+            _SMResult(text='1.5cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=15,
+                      x=15)
+        ],
+        'The result is 1.5cm2 in my estimation.':[
+            _SMResult(text='1.5cm2',
+                      temporality='CURRENT', units='SQUARE_MILLIMETERS',
+                      condition='EQUAL', minValue=150, maxValue=150,
+                      x=150)
+        ],
+        'The result is 1.5 cm3 in my estimation.':[
+            _SMResult(text='1.5 cm3',
+                      temporality='CURRENT', units='CUBIC_MILLIMETERS',
+                      condition='EQUAL', minValue=1500, maxValue=1500,
+                      x=1500)
+        ],
+        'The result is 1.5 cc. in my estimation.':[
+            _SMResult(text='1.5 cc.',
+                      temporality='CURRENT', units='CUBIC_MILLIMETERS',
+                      condition='EQUAL', minValue=1500, maxValue=1500,
+                      x=1500)
+        ],
+        'The current result is 1.5 cm; previously it was 1.8 cm.':[
+            _SMResult(text='1.5 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=15,
+                      x=15),
+            _SMResult(text='1.8 cm.',
+                      temporality='PREVIOUS', units='MILLIMETERS',
+                      condition='EQUAL', minValue=18, maxValue=18,
+                      x=18)
+        ]
+    }
+
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+
     
 ###############################################################################
 def _get_version():
@@ -575,6 +671,9 @@ if __name__ == '__main__':
     if 'debug' in args and args.debug:
         tf.enable_debug()
         df.enable_debug()
+        smf.enable_debug()
         
     _test_time_finder()
     _test_date_finder()
+    _test_size_measurement_finder()
+
