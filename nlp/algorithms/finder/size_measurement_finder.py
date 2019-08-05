@@ -147,7 +147,7 @@ _TRACE = False
 
 # The regex for finding numeric values is called '_x'. The negative lookbehind
 # prevents matching the rightmost portion of a BP measurement, such as 120/80.
-_x = r'(?<![\d/])(\d+\.\s?\d+|\d+\s?\.\d+|\.\d+|\d+)\s*'
+_x = r'(?<![\d/])(\d+\.\d+|\.\d+|\d+)\s*'
 
 _by = r'\s*(by|x)\s*'
 _to = r'\s*(to|-)\s*'
