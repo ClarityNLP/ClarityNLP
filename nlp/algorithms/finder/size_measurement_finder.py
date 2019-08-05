@@ -147,12 +147,12 @@ _TRACE = False
 
 # The regex for finding numeric values is called '_x'. The negative lookbehind
 # prevents matching the rightmost portion of a BP measurement, such as 120/80.
-_x = r'(?<![\d/])(\d+\.\d+|\.\d+|\d+)\s*'
+_x = r'(?<![\d/])(\d+\.\d+|\.\d+|\d+)'
 
 _by = r'\s*(by|x)\s*'
 _to = r'\s*(to|-)\s*'
 _vol = r'\s*(square|sq\.?|cubic|cu\.?)\s*'
-_view = r'\s*([a-z]+)\s*'
+_view = r'\s*([a-z]+)'
 
 # The string 'in' as an abbreviation for 'inches' is difficult to disambiguate
 # from 'in' used as a preposition. Assume that these words cannot follow 'in'
