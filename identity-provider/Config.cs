@@ -93,6 +93,20 @@ namespace IdentityServer
             {
                 new Client
                 {
+                    ClientId = "formbuilder",
+                    AllowedGrantTypes = GrantTypes.ClientCredentials,
+                    ClientSecrets =
+                    {
+                        new Secret(Startup.StaticConfig["CLIENT_FORMBUILDER_SECRET"].Sha256())
+                    },
+                    AccessTokenLifetime = 3000000,
+                    AllowedScopes =
+                    {
+                        "nlpaas"
+                    }
+                },
+                new Client
+                {
                     ClientId = "nlpass",
                     AllowedGrantTypes = GrantTypes.ClientCredentials,
                     ClientSecrets =
