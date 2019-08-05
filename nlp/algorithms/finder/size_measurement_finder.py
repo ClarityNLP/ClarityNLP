@@ -100,11 +100,10 @@ Reference: Natural Language Processing Techniques for Extracting and
 
 """
 
-import regex as re
 import os
 import sys
 import json
-import optparse
+import regex as re
 from copy import deepcopy
 from enum import Enum, unique
 from collections import namedtuple
@@ -253,6 +252,22 @@ _regex_previous = re.compile(_str_previous);
 _str_brackets = r'[(){}\[\]]'
 _regex_brackets = re.compile(_str_brackets)
 
+# all meas recognizer regexes
+regexes = [
+    _regex_xyz4,   # 0
+    _regex_xyz3,   # 1
+    _regex_xyz2,   # 2
+    _regex_xyz1,   # 3
+    _regex_xy3,    # 4
+    _regex_xy2,    # 5
+    _regex_xy1,    # 6
+    _regex_xx1,    # 7
+    _regex_xx2,    # 8
+    _regex_x_vol,  # 9
+    _regex_x,      # 10
+    _regex_list    # 11
+]
+
 @unique
 class _TokenLabel(Enum):
     DIM1    = 1,
@@ -285,6 +300,8 @@ _IN_TO_MM    = 25.4
 _IN_TO_MM_SQ = _IN_TO_MM * _IN_TO_MM
 
 _CHAR_SPACE = ' '
+
+_LIST_TOKENIZER_FUNCTION_NAME = '_tokenize_list'
 
 # namedtuple objects found by this code - internal use only
 _MEAS_FIELDS = [
@@ -443,6 +460,20 @@ def _print_tokens(token_list):
                                                       token.value,
                                                       token.text))
         index += 1
+
+
+###############################################################################
+def _close_enough(str_x, str_y):
+    """
+    Return a Boolean indicating whether two floats are within EPSILON
+    of each other.
+    """
+
+    EPSILON = 1.0e-5
+
+    x = float(str_x)
+    y = float(str_y)
+    return abs(x-y) <= EPSILON
 
 
 ###############################################################################
@@ -668,6 +699,7 @@ def _tokenize_xyz4(match):
     
     return tokens
 
+
 ###############################################################################
 def _tokenize_xyz3(match):
     """
@@ -712,6 +744,7 @@ def _tokenize_xyz3(match):
     
     return tokens
 
+
 ###############################################################################
 def _tokenize_xyz2(match):
     """
@@ -753,6 +786,7 @@ def _tokenize_xyz2(match):
 
     return tokens
 
+
 ###############################################################################
 def _tokenize_xyz1(match):
     """
@@ -789,6 +823,7 @@ def _tokenize_xyz1(match):
     tokens.append( _Token(match.group(6), _TokenLabel.UNITS, _TOKEN_VALUE_NONE))
 
     return tokens
+
 
 ###############################################################################
 def _tokenize_xy3(match):
@@ -831,6 +866,7 @@ def _tokenize_xy3(match):
     
     return tokens
 
+
 ###############################################################################
 def _tokenize_xy2(match):
     """
@@ -864,6 +900,7 @@ def _tokenize_xy2(match):
     
     return tokens
 
+
 ###############################################################################
 def _tokenize_xy1(match):
     """
@@ -893,6 +930,7 @@ def _tokenize_xy1(match):
     tokens.append( _Token(match.group(4), _TokenLabel.UNITS, _TOKEN_VALUE_NONE))
 
     return tokens
+
 
 ###############################################################################
 def _tokenize_xx1(match):
@@ -939,6 +977,7 @@ def _tokenize_xx1(match):
     tokens.append( _Token(match.group(4), units_label, _TOKEN_VALUE_NONE))
 
     return tokens
+
 
 ###############################################################################
 def _tokenize_xx2(match):
@@ -1047,6 +1086,7 @@ def _tokenize_xvol(match):
 
     return tokens
 
+
 ###############################################################################
 def _tokenize_x(match):
     """
@@ -1080,39 +1120,7 @@ def _tokenize_x(match):
 
     return tokens
 
-###############################################################################
-regexes = [
-    _regex_xyz4,   # 0
-    _regex_xyz3,   # 1
-    _regex_xyz2,   # 2
-    _regex_xyz1,   # 3
-    _regex_xy3,    # 4
-    _regex_xy2,    # 5
-    _regex_xy1,    # 6
-    _regex_xx1,    # 7
-    _regex_xx2,    # 8
-    _regex_x_vol,  # 9
-    _regex_x,      # 10
-    _regex_list    # 11
-]
 
-# associates a regex index with its measurement tokenizer function
-tokenizer_map = {0:_tokenize_xyz4,
-                 1:_tokenize_xyz3,
-                 2:_tokenize_xyz2,
-                 3:_tokenize_xyz1,
-                 4:_tokenize_xy3,
-                 5:_tokenize_xy2,
-                 6:_tokenize_xy1,
-                 7:_tokenize_xx1,
-                 8:_tokenize_xx2,
-                 9:_tokenize_xvol,
-                10:_tokenize_x,
-                11:_tokenize_list
-}
-
-LIST_TOKENIZER_FUNCTION_NAME = '_tokenize_list'
-        
 ###############################################################################
 def _range_overlap(start1, end1, start2, end2):
     """
@@ -1143,6 +1151,7 @@ def _clean_sentence(sentence):
 
     return sentence
 
+
 ###############################################################################
 def run(sentence):
     """
@@ -1152,6 +1161,21 @@ def run(sentence):
     
     """
 
+    # associates a regex index with its measurement tokenizer function
+    TOKENIZER_MAP = {0:_tokenize_xyz4,
+                     1:_tokenize_xyz3,
+                     2:_tokenize_xyz2,
+                     3:_tokenize_xyz1,
+                     4:_tokenize_xy3,
+                     5:_tokenize_xy2,
+                     6:_tokenize_xy1,
+                     7:_tokenize_xx1,
+                     8:_tokenize_xx2,
+                     9:_tokenize_xvol,
+                    10:_tokenize_x,
+                    11:_tokenize_list
+    }
+    
     original_sentence = sentence
     sentence = _clean_sentence(sentence)
     
@@ -1216,8 +1240,8 @@ def run(sentence):
             more_to_go = True
 
             # extract tokens according to the matching regex
-            tokenizer_function = tokenizer_map[best_regex_index]
-            if LIST_TOKENIZER_FUNCTION_NAME == tokenizer_function.__name__:
+            tokenizer_function = TOKENIZER_MAP[best_regex_index]
+            if _LIST_TOKENIZER_FUNCTION_NAME == tokenizer_function.__name__:
                 tokens, list_text = _tokenize_list(best_matcher, s)
                 best_match_text = list_text
             else:
@@ -1251,344 +1275,5 @@ def run(sentence):
 
 
 ###############################################################################
-def _close_enough(str_x, str_y):
-    """
-    Return a Boolean indicating whether two floats are within EPSILON
-    of each other.
-    """
-
-    EPSILON = 1.0e-5
-
-    x = float(str_x)
-    y = float(str_y)
-    return abs(x-y) <= EPSILON
-
-###############################################################################
-def self_test(TEST_DICT):
-    """
-    Run the suite of self tests and verify results.
-    """
-
-    STRING_VALUES = [STR_PREVIOUS, STR_CURRENT, 'RANGE',
-                     'craniocaudal', 'transverse', 'anterior']
-
-    for sentence, truth_dict_list in TEST_DICT.items():
-        json_string = run(sentence)
-
-        if '[]' == json_string and len(truth_dict_list) > 0:
-            # no measurement was found
-            print('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
-            print('empty JSON result')
-            continue
-
-        # parse JSON string and get a list of dicts
-        json_data = json.loads(json_string)
-
-        # iterate over each dict
-        for i in range(len(json_data)):
-            result_dict = json_data[i]
-            truth_dict  = truth_dict_list[i]
-            for key, value in truth_dict.items():
-                if key not in result_dict:
-                    print('\n*** SELF TEST FAILURE: ***\n{0}'.
-                          format(sentence))
-                    print('no result for {0}'.format(key))
-                    continue
-                else:
-                    if isinstance(value, list):
-                        # 'value' and 'result_dict[key]' are lists
-                        # compare corresponding values in each list
-                        ok = True
-                        for j in range(len(value)):
-                            expected = value[j]
-                            computed = result_dict[key][j]
-                            if not _close_enough(expected, computed):
-                                ok = False
-                                break
-                    elif value not in STRING_VALUES:
-                        # compare single values
-                        ok = _close_enough(value, result_dict[key])
-                    else:
-                        # compare string values
-                        expected = value.lower()
-                        computed = result_dict[key].lower()
-                        ok = computed == expected
-
-                    if not ok:
-                        print('\n*** SELF TEST FAILURE: ***\n{0}'.
-                              format(sentence))
-                        print('\t  Computed result: {0}'.
-                              format(computed))
-                        print('\t  Expected result: {0}'.
-                              format(expected))
-
-
-###############################################################################
 def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
-
-        
-###############################################################################
-def show_help():
-    print(get_version())
-    print("""
-    USAGE: python3 ./size_measurement_finder.py -s <sentence> [-hvz]
-
-    OPTIONS:
-
-        -s, --sentence <quoted string>  Sentence to be processed.
-
-    FLAGS:
-
-        -h, --help                      Print this information and exit.
-        -v, --version                   Print version information and exit.
-        -z, --selftest                  Run internal tests and print results.
-
-    """)
-
-###############################################################################
-if __name__ == '__main__':
-
-    TEST_DICT = {
-
-        # str_x_cm (x)
-        "The result is 1.5 cm in my estimation." :
-        [{'x':15.0}],
-        "The result is 1.5-cm in my estimation." :
-        [{'x':15.0}],
-        "The result is 1.5cm in my estimation." :
-        [{'x':15.0}],
-        "The result is 1.5cm2 in my estimation." :
-        [{'x':150.0}],
-        "The result is 1.5 cm3 in my estimation." :
-        [{'x':1500.0}],
-        "The result is 1.5 cc in my estimation." :
-        [{'x':1500.0}],
-        "The current result is 1.5 cm; previously it was 1.8 cm." :
-        [{'x':15.0},{'x':18.0}],
-
-        # x vol cm (xvol)
-        "The result is 1.5 cubic centimeters in my estimation." :
-        [{'x':1500.0}],
-        "The result is 1.5 cu. cm in my estimation." :
-        [{'x':1500.0}],
-        "The result is 1.6 square centimeters in my estimation." :
-        [{'x':160.0}],
-
-        # str_x_to_x_cm (xx1, ranges)
-        "The result is 1.5 to 1.8 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1.5 - 1.8 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1.5-1.8cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1 .5-1. 8cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1.5-1.8 cm2 in my estimation." :
-        [{'x':150.0, 'y':180.0, 'condition':'RANGE'}],
-
-        # str_x_cm_to_x_cm (xx2, ranges)
-        "The result is 1.5 cm to 1.8 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1.5cm - 1.8 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1.5mm-1.8cm in my estimation." :
-        [{'x':1.5, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1 .5 cm -1. 8cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'condition':'RANGE'}],
-        "The result is 1.5cm2-1.8 cm2 in my estimation." :
-        [{'x':150.0, 'y':180.0, 'condition':'RANGE'}],
-
-        # str x_by_x_cm (xy1)
-        "The result is 1.5 x 1.8 cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-        "The result is 1.5x1.8cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-        "The result is 1.5x1.8 cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-        "The result is 1. 5x1. 8cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-
-        # str_x_cm_by_x_cm (xy2)
-        "The result is 1.5 cm by 1.8 cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-        "The result is 1.5cm x 1.8cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-        "The result is 1 .5 cm x 1. 8cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-        "The result is 1. 5cm x 1. 8cm in my estimation." :
-        [{'x':15.0, 'y':18.0}],
-        "The result is 1.5 cm x 1.8 mm in my estimation." :
-        [{'x':15.0, 'y':1.80}],
-
-        # x cm view by x cm view (xy3)
-        "The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation." :
-        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
-        "The result is 1.5cm craniocaudal x 1.8 cm transverse in my estimation." :
-        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
-        "The result is 1. 5cm craniocaudal by 1 .8cm transverse in my estimation." :
-        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse'}],
-        
-        # x by x by x cm (xyz1)
-        "The result is 1.5 x 1.8 x 2.1 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5x1.8x2.1cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5x 1.8x 2.1 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1 .5 by 1. 8 by 2. 1 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-
-        # x by x cm by x cm (xyz2)
-        "The result is 1.5 x 1.8cm x 2.1cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5 x 1.8 cm x 2.1 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5x 1.8cm x2.1cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1 .5x 1.8 cm x2. 1cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5 x 1.8 cm x 2.1 mm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':2.1}],
-
-        # x cm by x cm by x cm (xyz3)
-        "The result is 1.5cm x 1.8cm x 2.1cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5 cm by 1.8 cm by 2.1 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5 cm by 1.8 cm x 2.1 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5cm by1. 8cm x2 .1 cm in my estimation." :
-        [{'x':15.0, 'y':18.0, 'z':21.0}],
-        "The result is 1.5 cm x 1.8 mm x 2.1 cm in my estimation." :
-        [{'x':15.0, 'y':1.8, 'z':21.0}],
-        "The result is .1cm x .2cm x .3 mm in my estimation." :
-        [{'x':1.0, 'y':2.0, 'z':0.3}],
-        
-        # x cm view by x cm view by x cm view (xyz4)
-        "The result is 1.5 cm craniocaudal by 1.8 cm transverse by 2.1 cm anterior in my estimation." :
-        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
-        "The result is 1.5 cm craniocaudal x  1.8 mm transverse x  2.1 cm anterior in my estimation." :
-        [{'x':15.0, 'xView':'craniocaudal', 'y':1.8, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
-        "The result is 1.5cm craniocaudal x 1.8cm transverse x 2.1cm anterior in my estimation." :
-        [{'x':15.0, 'xView':'craniocaudal', 'y':18.0, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
-        "The result is 1. 5cm craniocaudal x1 .8mm transverse x2 .1 cm anterior in my estimation." :
-        [{'x':15.0, 'xView':'craniocaudal', 'y':1.8, 'yView':'transverse', 'z':21.0, 'zView':'anterior'}],
-                                        
-        # lists
-        "The result is 1.5, 1.3, and 2.6 cm in my estimation." :
-        [{'values':[15.0, 13.0, 26.0]}],
-        "The result is 1.5 and 1.8 cm in my estimation." :
-        [{'values':[15.0, 18.0]}],
-        "The result is 1.5- and 1.8-cm in my estimation." :
-        [{'values':[15.0, 18.0]}],
-        "The result is 1.5, and 1.8 cm in my estimation." :
-        [{'values':[15.0, 18.0]}],
-        "The results are 1.5, 1.8, and 2.1 cm in my estimation." :
-        [{'values':[15.0, 18.0, 21.0]}],
-        "The results are 1.5 and 1.8 cm and the other results are " \
-        "2.3 and 4.8 cm in my estimation." :
-        [{'values':[15.0, 18.0]}, {'values':[23.0, 48.0]}],
-        "The results are 1.5, 1.8, and 2.1 cm2 in my estimation." :
-        [{'values':[150.0, 180.0, 210.0]}],
-        "The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation." :
-        [{'values':[1500.0, 1800.0, 2100.0, 2200.0, 2300.0]}],
-        "The left greater saphenous vein is patent with diameters of 0.26, 0.26, 0.38, " \
-        "0.24, and 0.37 and 0.75 cm at the ankle, calf, knee, low thigh, high thigh, " \
-        "and saphenofemoral junction respectively." :
-        [{'values':[2.6, 2.6, 3.8, 2.4, 3.7, 7.5]}],
-        "The peak systolic velocities are\n 99, 80, and 77 centimeters per second " \
-        "for the ICA, CCA, and ECA, respectively." :
-        [],
-
-        # do not interpret the preposition 'in' as 'inches'
-        "Peak systolic velocities on the left in centimeters per second are " \
-        "as follows: 219, 140, 137, and 96 in the native vessel proximally, " \
-        "proximal anastomosis, distal anastomosis, and native vessel distally." :
-        [],
-
-        # '100 in' still interpreted as '100 inches'...
-        #"In NICU still pale with pink mm, improving perfusion O2 sat 100 in " \
-        #"room air, tmep 97.2" :
-        #[{'x':2540.0}],
-
-        # same; note that "was" causes temporality to be "PREVIOUS"; could also be "CURRENT"
-        "On admission, height was 75 inches, weight 134 kilograms; heart " \
-        "rate was 59 in sinus rhythm; blood pressure 114/69." :
-        [{'x':1905.0},{'x':1498.6}],
-
-        # do not interpret speeds as linear measurements
-        "Within the graft from proximal to distal, the velocities are " \
-        "68, 128, 98, 75, 105, and 141 centimeters per second." :
-        [],
-
-        # do not interpret mm Hg as mm
-        "Blood pressure was 112/71 mm Hg while lying flat." :
-        [],
-        "Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg" :
-        [],
-        "The aortic valve was bicuspid with severely thickened and deformed " \
-        "leaflets, and there was\n" \
-        "moderate aortic stenosis with a peak gradient of 82 millimeters of " \
-        "mercury and a\nmean gradient of 52 millimeters of mercury." :
-        [],
-        
-        # newline in measurement
-        "Additional lesions include a 6\n"                                      \
-        "mm ring-enhancing mass within the left lentiform nucleus, a 10\n"      \
-        "mm peripherally based mass within the anterior left frontal lobe\n"    \
-        "as well as a more confluent plaque-like mass with a broad base along " \
-        "the tentorial surface measuring approximately 2\n" +
-        "cm in greatest dimension." :
-        [{'x':6.0},{'x':10.0},{'x':20.0}],
-
-        # temporality
-        "The previously seen hepatic hemangioma has increased slightly in " \
-        "size to 4.0 x\n3.5 cm (previously 3.8 x 2.2 cm)." :
-        [{'x':40.0, 'y':35.0, 'temporality':'CURRENT'},{'x':38.0, 'y':22.0, 'temporality':'PREVIOUS'}],
-
-        "There is an interval decrease in the size of target lesion 1 which is a\n" \
-        "precarinal node (2:24, 1.1 x 1.3 cm now versus 2:24, 1.1 cm x 2 cm then)." :
-        [{'x':11.0, 'y':13.0, 'temporality':'CURRENT'}, {'x':11.0, 'y':20.0, 'temporality':'PREVIOUS'}],
-
-        # other
-
-        # need to keep 1) (do not erase parens)
-        "IMPRESSION:\n 1)  7 cm X 6.3 cm infrarenal abdominal aortic " \
-        "aneurysm as described." :
-        [{'x':70.0, 'y':63.0, 'temporality':'CURRENT'}],
-    }
-
-    optparser = optparse.OptionParser(add_help_option=False)
-    optparser.add_option('-s', '--sentence', action='store',      dest='sentence')                        
-    optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
-    optparser.add_option('-z', '--selftest', action='store_true', dest='selftest', default=False)
-    optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
-    
-    if 1 == len(sys.argv):
-        show_help()
-        sys.exit(0)
-
-    opts, other = optparser.parse_args(sys.argv)
-
-    if opts.show_help:
-        show_help()
-        sys.exit(0)
-
-    if opts.get_version:
-        print(get_version())
-        sys.exit(0)
-
-    selftest = opts.selftest
-    sentence = opts.sentence
-
-    if not sentence and not selftest:
-        print('A sentence must be specified on the command line.')
-        sys.exit(-1)
-
-    if selftest:
-        self_test(TEST_DICT)
-    else:
-        # find the size measurements and print JSON result to stdout
-        json_result = run(sentence)
-        print(json_result)
