@@ -102,8 +102,6 @@ namespace IdentityServer
                     AccessTokenLifetime = 3000000,
                     AllowedScopes =
                     {
-                        "solr_api",
-                        "nlp_api",
                         "nlpaas"
                     }
                 },
