@@ -153,7 +153,7 @@ def _run_tests(module_type, test_data):
             computed_values = [tf.TimeValue(**d) for d in json_data]
 
             # check computed vs. expected results
-            return _compare_results(
+            ok =_compare_results(
                 computed_values,
                 expected_values,
                 sentence,
@@ -166,7 +166,7 @@ def _run_tests(module_type, test_data):
             json_data = json.loads(json_result)
             computed_values = [df.DateValue(**d) for d in json_data]
 
-            return _compare_results(
+            ok = _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
@@ -179,11 +179,16 @@ def _run_tests(module_type, test_data):
             json_data = json.loads(json_result)
             computed_values = [smf.SizeMeasurement(**d) for d in json_data]
 
-            return _compare_results(
+            ok =_compare_results(
                 computed_values,
                 expected_values,
                 sentence,
                 _SIZE_MEAS_FIELDS)
+
+        if not ok:
+            return False
+
+    return True
 
 
 ###############################################################################
