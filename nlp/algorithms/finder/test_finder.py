@@ -915,6 +915,105 @@ def _test_size_measurement_finder():
     
     _run_tests(_MODULE_SIZE_MEAS, test_data)
 
+    # x cm view by x cm view by x cm view (xyz4)
+    test_data = {
+        'The result is 1.5 cm craniocaudal by 1.8 cm transverse '      \
+        'by 2.1 cm anterior in my estimation.':[
+            _SMResult(text='1.5 cm craniocaudal by 1.8 cm transverse ' \
+                      'by 2.1 cm anterior',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      xView='craniocaudal', yView='transverse',
+                      zView='anterior', x=15, y=18, z=21)
+        ],
+        'The result is 1.5 cm. craniocaudal x  1.8 mm transverse x  '   \
+        '2.1 cm anterior in my estimation.':[
+            _SMResult(text='1.5 cm. craniocaudal x  1.8 mm transverse ' \
+                      'x  2.1 cm anterior',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=1.8, maxValue=21,
+                      xView='craniocaudal', yView='transverse',
+                      zView='anterior', x=15, y=1.8, z=21)
+        ],
+        'The result is 1.5cm. craniocaudal x 1.8cm. transverse x 2.1cm. '  \
+        'anterior in my estimation.':[
+            _SMResult(text='1.5cm. craniocaudal x 1.8cm. transverse ' \
+                      'x 2.1cm. anterior',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      xView='craniocaudal', yView='transverse',
+                      zView='anterior', x=15, y=18, z=21)
+        ],
+    }
+
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+
+    # lists
+    test_data = {
+        'The result is 1.5, 1.3, and 2.6 cm in my estimation.':[
+            _SMResult(text='1.5, 1.3, and 2.6 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=13, maxValue=26,
+                      values=[15, 13, 26])
+        ],
+        'The result is 1.5 and 1.8 cm in my estimation.':[
+            _SMResult(text='1.5 and 1.8 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=18,
+                      values=[15, 18])
+        ],
+        'The result is 1.5- and 1.8-cm. in my estimation.':[
+            _SMResult(text='1.5- and 1.8-cm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=18,
+                      values=[15, 18])
+        ],
+        'The result is 1.5, and 1.8 cm in my estimation.':[
+            _SMResult(text='1.5, and 1.8 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=18,
+                      values=[15, 18])
+        ],
+        'The results are 1.5 and 1.8 cm. and the other results are ' \
+        '2.3 and 4.9 cm in my estimation.':[
+            _SMResult(text='1.5 and 1.8 cm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=18,
+                      values=[15, 18]),
+            _SMResult(text='2.3 and 4.9 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=23, maxValue=49,
+                      values=[23, 49])
+        ],
+        'The results are 1.5, 1.8, and 2.1 cm2 in my estimation.':[
+            _SMResult(text='1.5, 1.8, and 2.1 cm2',
+                      temporality='CURRENT', units='SQUARE_MILLIMETERS',
+                      condition='EQUAL', minValue=150, maxValue=210,
+                      values=[150, 180, 210])
+        ],
+        'The results are 1.5, 1.8, 2.1, 2.2, and 2.3 cm3 in my estimation.':[
+            _SMResult(text='1.5, 1.8, 2.1, 2.2, and 2.3 cm3',
+                      temporality='CURRENT', units='CUBIC_MILLIMETERS',
+                      condition='EQUAL', minValue=1500, maxValue=2300,
+                      values=[1500, 1800, 2100, 2200, 2300])
+        ],
+        'The left greater saphenous vein is patent with diameters of '      \
+        '0.26, 0.26, 0.38, 0.24, and 0.37 and 0.75 cm at the ankle, calf, ' \
+        'knee, low thigh, high thigh, and saphenofemoral junction '         \
+        'respectively.':[
+            _SMResult(text='0.26, 0.26, 0.38, 0.24, and 0.37 and 0.75 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=2.4, maxValue=7.5,
+                      values=[2.6, 2.6, 3.8, 2.4, 3.7, 7.5])
+        ],
+
+        # cm/s is not a length measurement, so should return empty list
+        'The peak systolic velocities are\n 99, 80, and 77 centimeters ' \
+        'per second for the ICA, CCA, and ECA, respectively.':[]
+    }
+
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    
     
 ###############################################################################
 def _get_version():
