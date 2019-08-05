@@ -105,7 +105,7 @@ def _compare_results(
 
         print('NAMEDTUPLE: ')
         for k,v in v._asdict().items():
-            print('{0} => {1}'.format(k,v))
+            print('\t{0} => {1}'.format(k,v))
 
         return
 
@@ -667,7 +667,6 @@ def _test_size_measurement_finder():
     _run_tests(_MODULE_SIZE_MEAS, test_data)
 
     # str_x_to_x_cm (xx1, ranges)
-
     test_data = {
         'The result is 1.5 to 1.8 cm in my estimation.':[
             _SMResult(text='1.5 to 1.8 cm',
@@ -698,7 +697,6 @@ def _test_size_measurement_finder():
     _run_tests(_MODULE_SIZE_MEAS, test_data)
 
     # str_x_cm_to_x_cm (xx2, ranges)
-
     test_data = {
         'The result is 1.5 cm to 1.8 cm. in my estimation.':[
             _SMResult(text='1.5 cm to 1.8 cm.',
@@ -739,7 +737,6 @@ def _test_size_measurement_finder():
     _run_tests(_MODULE_SIZE_MEAS, test_data)
 
     # str x_by_x_cm (xy1)
-
     test_data = {
         'The result is 1.5 x 1.8 cm in my estimation.':[
             _SMResult(text='1.5 x 1.8 cm',
@@ -774,7 +771,6 @@ def _test_size_measurement_finder():
     _run_tests(_MODULE_SIZE_MEAS, test_data)
 
     # str_x_cm_by_x_cm (xy2)
-
     test_data = {
         'The result is 1.5 cm. by 1.8 cm in my estimation.':[
             _SMResult(text='1.5 cm. by 1.8 cm',
@@ -797,8 +793,129 @@ def _test_size_measurement_finder():
     }
     
     _run_tests(_MODULE_SIZE_MEAS, test_data)
+
+    # x cm view by x cm view (xy3)
+    test_data = {
+        'The result is 1.5 cm craniocaudal by 1.8 cm transverse in my estimation.':[
+            _SMResult(text='1.5 cm craniocaudal by 1.8 cm transverse',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=18,
+                      xView='craniocaudal', yView='transverse',
+                      x=15, y=18)
+        ],
+        'The result is 1.5cm craniocaudalx 1.8cm. transverse in my estimation.':[
+            _SMResult(text='1.5cm craniocaudalx 1.8cm. transverse',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=18,
+                      xView='craniocaudal', yView='transverse',
+                      x=15, y=18)
+        ],
+        'The result is 1.5cm craniocaudalby1.8cm. transverse in my estimation.':[
+            _SMResult(text='1.5cm craniocaudalby1.8cm. transverse',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=18,
+                      xView='craniocaudal', yView='transverse',
+                      x=15, y=18)
+        ],
+    }
     
-            
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+
+    # x by x by x cm (xyz1)
+    test_data = {
+        'The result is 1.5 x 1.8 x 2.1 cm in my estimation.':[
+            _SMResult(text='1.5 x 1.8 x 2.1 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is 1.5x1.8x2.1cm. in my estimation.':[
+            _SMResult(text='1.5x1.8x2.1cm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is 1.5x 1.8x 2.1 cm in my estimation.':[
+            _SMResult(text='1.5x 1.8x 2.1 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The results are 1.5x1.8 x2.1cm. and 2.0x2.1x 2.2 cm':[
+            _SMResult(text='1.5x1.8 x2.1cm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21),
+            _SMResult(text='2.0x2.1x 2.2 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=20, maxValue=22,
+                      x=20, y=21, z=22)
+        ]
+    }
+
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    
+    # x by x cm by x cm (xyz2)
+    test_data = {
+        'The result is 1.5 x 1.8cm. x 2.1cm in my estimation.':[
+            _SMResult(text='1.5 x 1.8cm. x 2.1cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is 1.5 x1.8 cm x2.1cm. in my estimation.':[
+            _SMResult(text='1.5 x1.8 cm x2.1cm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is 1.5x 1.8cm. x2.1cm in my estimation.':[
+            _SMResult(text='1.5x 1.8cm. x2.1cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is 1.5 x 1.8 cm x 2.1 mm in my estimation.':[
+            _SMResult(text='1.5 x 1.8 cm x 2.1 mm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=2.1, maxValue=18,
+                      x=15, y=18, z=2.1)
+        ]
+    }
+    
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    
+    # x cm by x cm by x cm (xyz3)
+    test_data = {
+        'The result is 1.5cm x 1.8cm x 2.1cm in my estimation.':[
+            _SMResult(text='1.5cm x 1.8cm x 2.1cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is 1.5cm. by 1.8 cm by 2.1 cm. in my estimation.':[
+            _SMResult(text='1.5cm. by 1.8 cm by 2.1 cm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is 1.5 cm by 1.8 cm. x 2.1 cm in my estimation.':[
+            _SMResult(text='1.5 cm by 1.8 cm. x 2.1 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=15, maxValue=21,
+                      x=15, y=18, z=21)
+        ],
+        'The result is .1cm x.2cm. x .3mm. in my estimation.':[
+            _SMResult(text='.1cm x.2cm. x .3mm.',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=0.3, maxValue=2,
+                      x=1, y=2, z=0.3)
+        ]
+    }
+    
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+
+    
 ###############################################################################
 def _get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
