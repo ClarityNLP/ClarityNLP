@@ -1,12 +1,11 @@
 #!/usr/bin/python3
 """
-Test program for the time_finder, date_finder, and
-size_measurement_finder modules.
+    Test program for the time_finder, date_finder, and
+    size_measurement_finder modules.
 
-Run from the nlp/finder folder.
+    Run from the finder folder with this command:
 
-
-    Ambiguity: ymd format 05-Jun-24 and dmy format
+        python ./test_finder.py
 
 """
 
@@ -17,12 +16,17 @@ import json
 import argparse
 from collections import namedtuple
 
-import time_finder as tf
-import date_finder as df
-import size_measurement_finder as smf
-
+try:
+    import time_finder as tf
+    import date_finder as df
+    import size_measurement_finder as smf
+except:
+    from algorithms.finder import time_finder as tf
+    from algorithms.finder import date_finder as df
+    from algorithms.finder import size_measurement_finder as smf
+    
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -107,7 +111,7 @@ def _compare_results(
         for k,v in v._asdict().items():
             print('\t{0} => {1}'.format(k,v))
 
-        return
+        return False
 
     # check fields for each result
     failures = []
@@ -130,8 +134,11 @@ def _compare_results(
             e = [ (k,v) for k,v in f[1]._asdict().items() if v is not None]
             print('\tComputed: {0}'.format(c))
             print('\tExpected: {0}'.format(e))
-        sys.exit(0)
-    
+            
+        return False
+
+    return True
+
 
 ###############################################################################
 def _run_tests(module_type, test_data):
@@ -146,7 +153,7 @@ def _run_tests(module_type, test_data):
             computed_values = [tf.TimeValue(**d) for d in json_data]
 
             # check computed vs. expected results
-            _compare_results(
+            return _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
@@ -159,7 +166,7 @@ def _run_tests(module_type, test_data):
             json_data = json.loads(json_result)
             computed_values = [df.DateValue(**d) for d in json_data]
 
-            _compare_results(
+            return _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
@@ -172,7 +179,7 @@ def _run_tests(module_type, test_data):
             json_data = json.loads(json_result)
             computed_values = [smf.SizeMeasurement(**d) for d in json_data]
 
-            _compare_results(
+            return _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
@@ -180,7 +187,7 @@ def _run_tests(module_type, test_data):
 
 
 ###############################################################################
-def _test_time_finder():
+def test_time_finder():
 
     # h12_am_pm format
     test_data = {
@@ -193,7 +200,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h12m format
     test_data = {
@@ -204,7 +212,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h12m_am_pm format
     test_data = {
@@ -218,7 +227,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h12ms_am_pm format
     test_data = {
@@ -232,7 +242,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h12msf_am_pm format
     test_data = {
@@ -246,7 +257,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h24m format
     test_data = {
@@ -258,7 +270,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
     
     # h24ms format
     test_data = {
@@ -268,7 +281,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h24ms_with_timezone format
     test_data = {
@@ -282,7 +296,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h24ms with GMT delta
     test_data = {
@@ -296,7 +311,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h24msf format
     test_data = {
@@ -313,7 +329,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # ISO 8601 format
     test_data = {
@@ -337,7 +354,8 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
 
     # h24m and h24ms (no colon) formats
     test_data = {
@@ -362,11 +380,14 @@ def _test_time_finder():
         ]
     }
 
-    _run_tests(_MODULE_TIME, test_data)
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
+
+    return True
 
 
 ###############################################################################
-def _test_date_finder():
+def test_date_finder():
 
     # ISO 8601 8-digit format
     test_data = {
@@ -375,7 +396,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # ISO YYYYMMDD format
     test_data = {
@@ -385,7 +407,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)    
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # ISO YYMMDD format
     test_data = {
@@ -395,7 +418,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)    
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # ISO sYYYYMMDD format
     test_data = {
@@ -404,7 +428,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)    
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # American month/day/year format
     test_data = {
@@ -416,7 +441,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # dmYYYY format
     test_data = {
@@ -429,7 +455,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # year-month-day format
     test_data = {
@@ -441,7 +468,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # dmYY format
     test_data = {
@@ -451,7 +479,8 @@ def _test_date_finder():
         ]
     }
     
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # dtmy format
     test_data = {
@@ -463,7 +492,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # tmdy format
     test_data = {
@@ -475,7 +505,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # month-day-year format
     test_data = {
@@ -487,18 +518,22 @@ def _test_date_finder():
         ]
     }
     
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # ymd format
     test_data = { 
         'The dates 78-Dec-22 and 1814-MAY-17 are in ymd format.':[
             _DateResult(text='78-Dec-22',   year=78,   month=12, day=22),
             _DateResult(text='1814-MAY-17', year=1814, month=5,  day=17),
+
+            # ambiguous
             #_DateResult(text='05-Jun-24',   year=5,    month=6,  day=24)
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # American month/day format
     test_data = {
@@ -509,7 +544,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # tmd format
     test_data = {
@@ -520,7 +556,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # GNU ym format
     test_data = {
@@ -531,7 +568,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # tmy4 format
     test_data = {
@@ -542,7 +580,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # y4tm format
     test_data = {
@@ -553,7 +592,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # individual years
     test_data = {
@@ -564,7 +604,8 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
 
     # individual months
     test_data = {
@@ -578,11 +619,14 @@ def _test_date_finder():
         ]
     }
 
-    _run_tests(_MODULE_DATE, test_data)
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
+
+    return True
 
 
 ###############################################################################
-def _test_size_measurement_finder():
+def test_size_measurement_finder():
 
     # str_x_cm (x)
     test_data = {
@@ -640,7 +684,8 @@ def _test_size_measurement_finder():
         ]
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # x vol cm (xvol)
     test_data = {
@@ -664,7 +709,8 @@ def _test_size_measurement_finder():
         ],
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # str_x_to_x_cm (xx1, ranges)
     test_data = {
@@ -694,7 +740,8 @@ def _test_size_measurement_finder():
         ]
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # str_x_cm_to_x_cm (xx2, ranges)
     test_data = {
@@ -734,7 +781,8 @@ def _test_size_measurement_finder():
         ]
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # str x_by_x_cm (xy1)
     test_data = {
@@ -768,7 +816,8 @@ def _test_size_measurement_finder():
         ]
     }
     
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # str_x_cm_by_x_cm (xy2)
     test_data = {
@@ -792,7 +841,8 @@ def _test_size_measurement_finder():
         ]
     }
     
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # x cm view by x cm view (xy3)
     test_data = {
@@ -819,7 +869,8 @@ def _test_size_measurement_finder():
         ],
     }
     
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # x by x by x cm (xyz1)
     test_data = {
@@ -853,7 +904,8 @@ def _test_size_measurement_finder():
         ]
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
     
     # x by x cm by x cm (xyz2)
     test_data = {
@@ -883,7 +935,8 @@ def _test_size_measurement_finder():
         ]
     }
     
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
     
     # x cm by x cm by x cm (xyz3)
     test_data = {
@@ -913,7 +966,8 @@ def _test_size_measurement_finder():
         ]
     }
     
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # x cm view by x cm view by x cm view (xyz4)
     test_data = {
@@ -946,7 +1000,8 @@ def _test_size_measurement_finder():
         ],
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # lists
     test_data = {
@@ -1008,7 +1063,8 @@ def _test_size_measurement_finder():
         ],
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
     # other
     test_data = {
@@ -1089,13 +1145,14 @@ def _test_size_measurement_finder():
         ]
     }
 
-    _run_tests(_MODULE_SIZE_MEAS, test_data)
+    if not _run_tests(_MODULE_SIZE_MEAS, test_data):
+        return False
 
-    
-    
-    
+    return True
+
+
 ###############################################################################
-def _get_version():
+def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
 
 
@@ -1124,7 +1181,7 @@ if __name__ == '__main__':
         df.enable_debug()
         smf.enable_debug()
         
-    _test_time_finder()
-    _test_date_finder()
-    _test_size_measurement_finder()
+    assert test_time_finder()
+    assert test_date_finder()
+    assert test_size_measurement_finder()
 

@@ -2,9 +2,9 @@
 """
     Test program for the value extractor.
 
-    Run from the same folder as value_extractor.py.
+    Run from the same folder as value_extractor.py with (assumes python3):
 
-    Get help with --help option.
+        python ./test_value_extractor.py
 """
 
 import re
@@ -14,10 +14,13 @@ import json
 import argparse
 from collections import namedtuple
 
-import value_extractor as ve
+try:
+    import value_extractor as ve
+except:
+    from algorithms.value_extraction import value_extractor as ve
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
@@ -95,7 +98,7 @@ def _compare_results(
             for e in expected_list:
                 print('\t\t{0}'.format(e))
 
-            sys.exit(0)
+            return False
         
         # check fields
         failures = []
@@ -103,7 +106,8 @@ def _compare_results(
 
             computed = value['matchingTerm']
             expected = expected_list[i].term
-            failures = _compare_fields('matching term', computed, expected, failures)
+            failures = _compare_fields('matching term',
+                                       computed, expected, failures)
 
             computed = value['x']
             expected = expected_list[i].x
@@ -115,44 +119,26 @@ def _compare_results(
 
             computed = value['condition']
             expected = expected_list[i].condition
-            failures = _compare_fields('condition', computed, expected, failures)
+            failures = _compare_fields('condition',
+                                       computed, expected, failures)
                 
         if len(failures) > 0:
             print(sentence)
             for f in failures:
                 print(f)
-            sys.exit(0)
+            return False
+
+    return True
 
 
 ###############################################################################
-def _get_version():
+def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
 
-
-###############################################################################
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(
-        description='Run validation tests on the value extractor module.'
-    )
-
-    parser.add_argument('-v', '--version',
-                        help='show version and exit',
-                        action='store_true')
-    parser.add_argument('-d', '--debug',
-                        help='print debug information to stdout',
-                        action='store_true')
-
-    args = parser.parse_args()
-
-    if 'version' in args and args.version:
-        print(_get_version())
-        sys.exit(0)
-
-    if 'debug' in args and args.debug:
-        ve.enable_debug()
-
         
+###############################################################################
+def test_value_extractor_full():
+    
     minval = 0
     maxval = 1000000
 
@@ -229,7 +215,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
     
     # find values using "ejection fraction" as the search term
     term_string = "ejection fraction"
@@ -285,7 +272,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
     
     # vital signs
     term_string = "t, temp, temperature, p, pulse, hr, bp, r, rr, o2, o2sat, " \
@@ -398,7 +386,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # blood components
     term_string = "wbc, rbc, hgb, hct, mcv, mch, mchc, rdw, plt, plt ct, "    \
@@ -503,7 +492,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # approximations
     term_string = "rr"
@@ -520,7 +510,8 @@ if __name__ == '__main__':
         'RR~=22'                :[the_result]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # >=, <=
     term_string = "rr"
@@ -533,7 +524,8 @@ if __name__ == '__main__':
         'RR above 45':[_Result('rr', 45, None, ve.STR_GT)],
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # ranges
     term_string = "rr, fvc"
@@ -580,7 +572,8 @@ if __name__ == '__main__':
         ]
     }
     
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
     
     # blood pressure - check numerators (the default)
     term_string = "bp"
@@ -621,7 +614,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # blood pressure - check denominators
     term_string = "bp"
@@ -660,7 +654,9 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval, denom_only=True)
+    if not _compare_results(term_string, test_data, minval, maxval,
+                            denom_only=True):
+        return False
     
     # numbers with suffixes and commas
     term_string = "hr, platelets"
@@ -684,7 +680,8 @@ if __name__ == '__main__':
         ],
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # times, durations, multiple overlap
     term_string = "platelets, platelet, platelet count"
@@ -735,7 +732,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # others
     term_string = 'platelet count, platelets'
@@ -754,7 +752,8 @@ if __name__ == '__main__':
         'Platelet count after 2nd unit up to Neurosurg resident ':[],
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
     
     # enumlist: search for keywords and keep results containing enumlist terms
     term_string = 'positive, +, hbsab'
@@ -771,7 +770,8 @@ if __name__ == '__main__':
         ],
     }
 
-    _compare_results(term_string, test_data, minval, maxval, enumlist)
+    if not _compare_results(term_string, test_data, minval, maxval, enumlist):
+        return False
 
     term_string = 'HCV, HBV, IgG'
     enumlist = 'negative, positive, -, +'
@@ -783,7 +783,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval, enumlist)    
+    if not _compare_results(term_string, test_data, minval, maxval, enumlist):
+        return False
 
     term_string = 'gram, gram positive, gram negative, positive, negative'
     enumlist = 'cocci, rod(s), rods, bacteremia, septicemia'
@@ -821,7 +822,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval, enumlist)
+    if not _compare_results(term_string, test_data, minval, maxval, enumlist):
+        return False
     
     term_string = 'titer'
     enumlist = '1:5, 1:10, 1:20, 1:40, 1:80, 1:160, 1:256, 1:320'
@@ -834,7 +836,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval, enumlist)
+    if not _compare_results(term_string, test_data, minval, maxval, enumlist):
+        return False
 
     # previous problems
     term_string = 'fvc'
@@ -854,7 +857,8 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
 
     # case sensitivity
     term_string = 'hr, BP'
@@ -869,8 +873,9 @@ if __name__ == '__main__':
         ]
     }
 
-    _compare_results(term_string, test_data, minval, maxval,
-                     is_case_sensitive=True, denom_only=False)
+    if not _compare_results(term_string, test_data, minval, maxval,
+                            is_case_sensitive=True, denom_only=False):
+        return False
 
     # hypotheticals
     term_string = 'temp, platelet count'
@@ -887,5 +892,34 @@ if __name__ == '__main__':
         'Will consider transfusion for platelet count < 30-50k.':[],
     }
 
-    _compare_results(term_string, test_data, minval, maxval)
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
+
+    return True
+
+
+###############################################################################
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(
+        description='Run validation tests on the value extractor module.'
+    )
+
+    parser.add_argument('-v', '--version',
+                        help='show version and exit',
+                        action='store_true')
+    parser.add_argument('-d', '--debug',
+                        help='print debug information to stdout',
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    if 'version' in args and args.version:
+        print(_get_version())
+        sys.exit(0)
+
+    if 'debug' in args and args.debug:
+        ve.enable_debug()
+
+    assert test_value_extractor_full()
     
