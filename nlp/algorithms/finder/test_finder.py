@@ -1006,13 +1006,92 @@ def _test_size_measurement_finder():
                       condition='EQUAL', minValue=2.4, maxValue=7.5,
                       values=[2.6, 2.6, 3.8, 2.4, 3.7, 7.5])
         ],
-
-        # cm/s is not a length measurement, so should return empty list
-        'The peak systolic velocities are\n 99, 80, and 77 centimeters ' \
-        'per second for the ICA, CCA, and ECA, respectively.':[]
     }
 
     _run_tests(_MODULE_SIZE_MEAS, test_data)
+
+    # other
+    test_data = {
+        # cm/s is not a unit of length, so should return empty list
+        'The peak systolic velocities are\n 99, 80, and 77 centimeters ' \
+        'per second for the ICA, CCA, and ECA, respectively.':[],
+        'Within the graft from proximal to distal, the velocities are '  \
+        '68, 128, 98, 75, 105, and 141 centimeters per second.':[],
+        
+        # do not interpret mm Hg as mm
+        'Blood pressure was 112/71 mm Hg while lying flat.':[],
+        'Aortic Valve - Peak Gradient:  *70 mm Hg  < 20 mm Hg':[],
+        'The aortic valve was bicuspid with severely thickened and '     \
+        'deformed leaflets, and there was\nmoderate aortic stenosis '    \
+        'with a peak gradient of 82 millimeters of mercury and a\nmean ' \
+        'gradient of 52 millimeters of mercury.':[],
+
+        # 'in the' precludes 'in' as an abbreviation for 'inches'
+        'Peak systolic velocities on the left in centimeters per second ' \
+        'are as follows: 219, 140, 137, and 96 in the native vessel '     \
+        'proximally, proximal anastomosis, distal anastomosis, and '      \
+        'native vessel distally.':[],
+
+        # embedded newlines
+        'Additional lesions include a 6\nmm ring-enhancing mass within '  \
+        'the left lentiform nucleus, a 10\nmm peripherally based mass '   \
+        'within the anterior left frontal lobe\nas well as a more '       \
+        'confluent plaque-like mass with a broad base along the '         \
+        'tentorial surface measuring approximately 2\ncm in greatest '    \
+        'dimension.':[
+            _SMResult(text='6\nmm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=6, maxValue=6,
+                      x=6),
+            _SMResult(text='10\nmm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=10, maxValue=10,
+                      x=10),
+            _SMResult(text='2\ncm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=20, maxValue=20,
+                      x=20)
+        ],
+
+        # temporality
+        'The previously seen hepatic hemangioma has increased '           \
+        'slightly in size to 4.0 x\n3.5 cm (previously '                  \
+        '3.8 x 2.2 cm).':[
+            _SMResult(text='4.0 x\n3.5 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=35, maxValue=40,
+                      x=40, y=35),
+            _SMResult(text='3.8 x 2.2 cm',
+                      temporality='PREVIOUS', units='MILLIMETERS',
+                      condition='EQUAL', minValue=22, maxValue=38,
+                      x=38, y=22),
+        ],
+        'There is an interval decrease in the size of target lesion 1 '   \
+        'which is a\nprecarinal node (2:24, 1.1 x 1.3 cm now versus '     \
+        '2:24, 1.1 cm x 2 cm then).':[
+            _SMResult(text='1.1 x 1.3 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=11, maxValue=13,
+                      x=11, y=13),
+            _SMResult(text='1.1 cm x 2 cm',
+                      temporality='PREVIOUS', units='MILLIMETERS',
+                      condition='EQUAL', minValue=11, maxValue=20,
+                      x=11, y=20),
+        ],
+
+        # 1) is not part of the measuremnt
+        'IMPRESSION:\n 1)  7 cm X 6.3 cm infrarenal abdominal aortic '    \
+        'aneurysm as described.':[
+            _SMResult(text='7 cm x 6.3 cm',
+                      temporality='CURRENT', units='MILLIMETERS',
+                      condition='EQUAL', minValue=63, maxValue=70,
+                      x=70, y=63)
+        ]
+    }
+
+    _run_tests(_MODULE_SIZE_MEAS, test_data)
+
+    
     
     
 ###############################################################################
