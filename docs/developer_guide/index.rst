@@ -36,6 +36,8 @@ Task Algorithms
    :maxdepth: 1
 
    algorithms/term-finder
+   algorithms/date_finder
+   algorithms/time_finder
    algorithms/size_measurement_finder
    algorithms/tnm_stage_finder
    algorithms/value_extraction
