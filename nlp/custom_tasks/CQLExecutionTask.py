@@ -353,7 +353,7 @@ def _extract_condition_resource(obj, mongo_obj):
     result_display_obj = {
         'date': mongo_obj['datetime'],
         'result_content':'Condition: {0}, onset: {1}, abatement: {2}'.format(
-            condition_name, onset_date_time, abatement_date_time),
+            condition_name, mongo_obj['datetime'], mongo_obj['end_datetime']),
         'sentence':'',
         'highlights':[condition_name]
     }
@@ -434,6 +434,10 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     value = None
     if str_key in custom_arg_dict:
         value = custom_arg_dict[str_key]
+
+    if not value:
+        if str_key in util.properties:
+            value = util.properties[str_key]
 
     # echo in job status and in log file
     msg = 'CQLExecutionTask: {0} == {1}'.format(str_variable_name, value)
