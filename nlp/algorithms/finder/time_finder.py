@@ -194,7 +194,7 @@ STR_PM = 'pm'
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME = 'time_finder.py'
 
 # set to True to see debug output
@@ -376,14 +376,14 @@ _str_iso_zone = r'((?P<timezone>Z)|'                                         +\
                 r'(?P<gmt_sign>[-+])' + _str_iso_zone_hm + r')'
 
 # note the essential negative lookahead in these
-_str_iso_hh_only = r'\b(?P<hours>' + _str_iso_hh + r'(?!\d))'     +\
+_str_iso_hh_only = r'(?<!\d)(?P<hours>' + _str_iso_hh + r'(?!\d))'           +\
                    r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
-_str_iso_hhmm_only = r'\b(?P<hours>' + _str_iso_hh + r')'         +\
-                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d))'   +\
+_str_iso_hhmm_only = r'(?<!\d)(?P<hours>' + _str_iso_hh + r')'               +\
+                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d))'              +\
                      r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
-_str_iso_hms = r'\b(?P<hours>'  + _str_iso_hh + r'):?'                       +\
+_str_iso_hms = r'(?<!\d)(?P<hours>'  + _str_iso_hh + r'):?'                  +\
                r'((?P<minutes>' + _str_iso_mm + r')):?'                      +\
                r'((?P<seconds>' + _str_iso_ss + r'))'                        +\
                r'((?P<frac>'    + r'\.\d+'   + r'))?'
@@ -394,23 +394,32 @@ _regex_iso_hh   = re.compile(_str_iso_hh_only)
 _regex_iso_hhmm = re.compile(_str_iso_hhmm_only)
 _regex_iso_time = re.compile(_str_iso_time)
 
+# ISO datetime format: YYYY-MM-DDTHH:MM:SS.ffffff
+# fractional seconds are optional
+_str_iso_datetime = r'(?<!\d-)\d{4}\-\d\d\-\d\dT' + _str_iso_hms
+_regex_iso_datetime = re.compile(_str_iso_datetime)
+
 _regexes = [
-    _regex_iso_hhmm,             # 0
-    _regex_iso_hh,               # 1
-    _regex_iso_time,             # 2
-    _regex_h24ms_with_gmt_delta, # 3
-    _regex_h24ms_with_timezone,  # 4
-    _regex_h24ms_no_colon,       # 5
-    _regex_h24m_no_colon,        # 6
-    _regex_h12msf_am_pm,         # 7
-    _regex_h12ms_am_pm,          # 8
-    _regex_h12m_am_pm,           # 9
-    _regex_h12_am_pm,            # 10
-    _regex_h24msf,               # 11
-    _regex_h24ms,                # 12
-    _regex_h24m,                 # 13
-    _regex_h12m,                 # 14
+    _regex_iso_datetime,         # 0
+    _regex_iso_hhmm,             # 1
+    _regex_iso_hh,               # 2
+    _regex_iso_time,             # 3
+    _regex_h24ms_with_gmt_delta, # 4
+    _regex_h24ms_with_timezone,  # 5
+    _regex_h24ms_no_colon,       # 6
+    _regex_h24m_no_colon,        # 7
+    _regex_h12msf_am_pm,         # 8
+    _regex_h12ms_am_pm,          # 9
+    _regex_h12m_am_pm,           # 10
+    _regex_h12_am_pm,            # 11
+    _regex_h24msf,               # 12
+    _regex_h24ms,                # 13
+    _regex_h24m,                 # 14
+    _regex_h12m,                 # 15
 ]
+
+# index of the ISO datetime regex in the _regexes array
+_ISO_DATETIME_REGEX_INDEX = 0
 
 # match (), {}, and []
 _str_brackets = r'[(){}\[\]]'
@@ -459,7 +468,12 @@ def run(sentence):
     for regex_index, regex in enumerate(_regexes):
         iterator = regex.finditer(sentence)
         for match in iterator:
-            match_text = match.group()
+            match_text = match.group().strip()
+            if _ISO_DATETIME_REGEX_INDEX == regex_index:
+                # extract only the time portion
+                t_pos = match_text.find('T')
+                assert -1 != t_pos
+                match_text = match_text[t_pos+1:]
             if _TRACE:
                 print('[{0:2}]: MATCH TEXT: ->{1}<-'.
                       format(regex_index, match_text))
@@ -496,7 +510,11 @@ def run(sentence):
     for pc in pruned_candidates:
 
         # used the saved regex to match the saved text again
-        match = pc.regex.match(pc.match_text)
+        if _regex_iso_datetime == pc.regex:
+            # match only time portion
+            match = _regex_iso_time.match(pc.match_text)
+        else:
+            match = pc.regex.match(pc.match_text)
         assert match
 
         int_hours         = EMPTY_FIELD

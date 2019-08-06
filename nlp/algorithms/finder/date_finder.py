@@ -90,7 +90,7 @@ DateValue.__new__.__defaults__ = (EMPTY_FIELD,) * len(DateValue._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME   = 'date_finder.py'
 
 # set to True to enable debug output
@@ -237,47 +237,56 @@ _regex_iso_1 = re.compile(_str_iso_8)
 
 # optional sign, four-digit year, two-digit month, two-digit day, dashes
 _str_iso_s4y2m2d = r'(?P<sign>[-+]?)'                                   +\
-                   r'(?P<year>' + _str_YY + r')' + r'-'                 +\
+                   r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'                 +\
                    r'(?P<month>' + _str_MM + r')' + r'-'                +\
-                   r'(?P<day>' + _str_DD + r')\b'
+                   r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_2 = re.compile(_str_iso_s4y2m2d)
 
 # four-digit year, two-digit month, two-digit day, fwd slashes
 _str_iso_4y2m2d = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'/'           +\
                   r'(?P<month>' + _str_MM + r')' + r'/'                 +\
-                  r'(?P<day>' + _str_DD + r')\b'
+                  r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_3 = re.compile(_str_iso_4y2m2d)
 
 # two-digit year, two-digit month, two-digit day, dashes
 _str_iso_2y2m2d = r'(?<!\d)(?P<year>' + _str_yy + r')' + r'-'           +\
                   r'(?P<month>' + _str_MM + r')' + r'-'                 +\
-                  r'(?P<day>' + _str_DD + r')\b'
+                  r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_4 = re.compile(_str_iso_2y2m2d)
+
+# ISO datetime format: YYYY-MM-DDTHH:MM:SS.ffffff
+# fractional seconds are optional
+_str_iso_datetime = _str_iso_s4y2m2d + r'T\d\d:\d\d:\d\d(\.\d+)?'
+_regex_iso_datetime = re.compile(_str_iso_datetime)
 
 # all date regexes
 _regexes = [
-    _regex_iso_1,   # 0
-    _regex_iso_2,   # 1
-    _regex_iso_3,   # 2
-    _regex_iso_4,   # 3
-    _regex_1,       # 4
-    _regex_2,       # 5
-    _regex_3,       # 6
-    _regex_4,       # 7
-    _regex_5,       # 8
-    _regex_6,       # 9
-    _regex_7,       # 10
-    _regex_8,       # 11
-    _regex_9,       # 12
-    _regex_10,      # 13
-    _regex_11,      # 14
-    _regex_12,      # 15
-    _regex_13,      # 16
-    _regex_14,      # 17
-    _regex_15,      # 18
-    _regex_16,      # 19
-    _regex_17       # 20
+    _regex_iso_datetime, # 0
+    _regex_iso_1,        # 1
+    _regex_iso_2,        # 2
+    _regex_iso_3,        # 3
+    _regex_iso_4,        # 4
+    _regex_1,            # 5
+    _regex_2,            # 6
+    _regex_3,            # 7
+    _regex_4,            # 8
+    _regex_5,            # 9
+    _regex_6,            # 10
+    _regex_7,            # 11
+    _regex_8,            # 12
+    _regex_9,            # 13
+    _regex_10,           # 14
+    _regex_11,           # 15
+    _regex_12,           # 16
+    _regex_13,           # 17
+    _regex_14,           # 18
+    _regex_15,           # 19
+    _regex_16,           # 20
+    _regex_17            # 21
 ]
+
+# index of the ISO datetime regex in the _regexes array
+_ISO_DATETIME_REGEX_INDEX = 0
 
 # match (), {}, and []
 _str_brackets = r'[(){}\[\]]'
@@ -327,6 +336,11 @@ def run(sentence):
         iterator = regex.finditer(sentence)
         for match in iterator:
             match_text = match.group().strip()
+            if _ISO_DATETIME_REGEX_INDEX == regex_index:
+                # extract only the date portion
+                t_pos = match_text.find('T')
+                assert -1 != t_pos
+                match_text = match_text[:t_pos]
             start = match.start()
             end = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex))
@@ -364,7 +378,11 @@ def run(sentence):
     for pc in pruned_candidates:
                 
         # use the saved regex to match the saved text again
-        match = pc.regex.match(pc.match_text)
+        if _regex_iso_datetime == pc.regex:
+            # match only the date portion
+            match = _regex_iso_2.match(pc.match_text)
+        else:
+            match = pc.regex.match(pc.match_text)
         assert match
         
         int_year  = EMPTY_FIELD

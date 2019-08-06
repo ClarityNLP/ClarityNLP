@@ -388,12 +388,38 @@ def test_time_finder():
     if not _run_tests(_MODULE_TIME, test_data):
         return False
 
+    # UTC datetime YYYY-MM-DDTHH:MM:SS.ffffff
+    test_data = {
+        'The datetimes are 2016-05-20T11:12:13.12345, and 2016-05-20T11:12:13':[
+            _TimeResult(text='11:12:13.12345',
+                        hours=11, minutes=12, seconds=13,
+                        fractional_seconds='12345'),
+            _TimeResult(text='11:12:13',
+                        hours=11, minutes=12, seconds=13)
+        ]
+    }
+
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
+    
     return True
 
 
 ###############################################################################
 def test_date_finder():
 
+    # UTC datetime YYYY-MM-DDTHH:MM:SS.ffffff
+    test_data = {
+        'The datetimes are 2017-06-18T11:12:13.12345, and 2017-06-18T11:12:13':[
+            _DateResult(text='2017-06-18', year=2017, month=6, day=18),
+            _DateResult(text='2017-06-18', year=2017, month=6, day=18)
+        ]
+    }
+
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
+
+    
     # ISO 8601 8-digit format
     test_data = {
         'The date 20121128 is in iso_8 format.':[
