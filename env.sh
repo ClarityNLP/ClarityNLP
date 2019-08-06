@@ -151,3 +151,13 @@ export CLARITYNLPAAS_CUSTOM_DIR=custom_s3
 export CLARITYNLPAAS_CLARITYNLP_URL=${NLP_API_URL}
 export CLARITYNLPAAS_TOKEN_URL=
 export CLARITYNLPAAS_SECRET=
+
+# CQL / FHIR
+export FHIR_CQL_EVAL_URL=https://gt-apps.hdap.gatech.edu/cql/evaluate
+export FHIR_DATA_SERVICE_URI=https://apps.hdap.gatech.edu/gt-fhir/fhir/
+export FHIR_AUTH_TYPE=
+export FHIR_AUTH_TOKEN=
+export FHIR_TERMINOLOGY_SERVICE_URI=https://cts.nlm.nih.gov/fhir/
+export FHIR_TERMINOLOGY_SERVICE_ENDPOINT=Terminology Service Endpoint
+export FHIR_TERMINOLOGY_USER_NAME=username
+export FHIR_TERMINOLOGY_USER_PASSWORD=password

@@ -1,5 +1,7 @@
 import configparser
 from os import getenv, environ, path
+
+import pymongo
 import redis
 from pymongo import MongoClient
 
@@ -12,7 +14,10 @@ quote_character = '"'
 EXPIRE_TIME_SECONDS = 604800
 
 
-def read_property(env_name, config_tuple, default=''):
+def read_property(env_name, config_tuple, default='', key_name=None):
+    if not key_name:
+        key_name = env_name
+    global properties
     property_name = default
     try:
         if getenv(env_name):
@@ -21,11 +26,11 @@ def read_property(env_name, config_tuple, default=''):
             property_name = config.get(config_tuple[0], config_tuple[1])
         if not property_name:
             property_name = default
-        if len(env_name) > 0 and 'PASSWORD' not in env_name and 'KEY' not in env_name and 'USERNAME' not in env_name:
-            properties[env_name] = property_name
+        if len(key_name) > 0 and 'PASSWORD' not in key_name and 'KEY' not in key_name and 'USERNAME' not in key_name:
+            properties[key_name] = property_name
     except Exception as ex:
         print(ex)
-        properties[env_name] = default
+        properties[key_name] = default
     return property_name
 
 
@@ -111,6 +116,21 @@ use_redis_caching = read_property('USE_REDIS_CACHING',
                                   ('optimizations', 'use_redis_caching'),
                                   default='true')
 
+cql_eval_url = read_property('FHIR_CQL_EVAL_URL', ('local', 'cql_eval_url'), key_name='cql_eval_url')
+fhir_data_service_uri = read_property('FHIR_DATA_SERVICE_URI', ('local', 'fhir_data_service_uri'),
+                                      key_name='fhir_data_service_uri')
+fhir_auth_type = read_property('FHIR_AUTH_TYPE', ('local', 'fhir_auth_type'), key_name='fhir_auth_type')
+fhir_auth_token = read_property('FHIR_AUTH_TOKEN', ('local', 'fhir_auth_token'), key_name='fhir_auth_token')
+fhir_terminology_service_uri = read_property('FHIR_TERMINOLOGY_SERVICE_URI', ('local', 'fhir_terminology_service_uri'),
+                                             key_name='fhir_terminology_service_uri')
+fhir_terminology_service_endpoint = read_property('FHIR_TERMINOLOGY_SERVICE_ENDPOINT',
+                                                  ('local', 'fhir_terminology_service_endpoint'),
+                                                  key_name='fhir_terminology_service_endpoint')
+fhir_terminology_user_name = read_property('FHIR_TERMINOLOGY_USER_NAME', ('local', 'fhir_terminology_user'),
+                                           key_name='fhir_terminology_user_name')
+fhir_terminology_user_password = read_property('FHIR_TERMINOLOGY_USER_PASSWORD', ('local', 'fhir_terminology_password'),
+                                               key_name='fhir_terminology_user_password')
+
 # TODO this out a bit more, this is more for experimental evaluation
 cache_counts = {
     'compute': 0,
@@ -184,7 +204,9 @@ def cmp_2_key(mycmp):
 
     return K
 
+
 _mongo_client = None
+
 
 def mongo_client(host=None, port=None, username=None, password=None):
     global _mongo_client
@@ -212,7 +234,7 @@ def mongo_client(host=None, port=None, username=None, password=None):
     if username and len(username) > 0 and password and len(password) > 0:
         # print('authenticated mongo')
         _mongo_client = MongoClient(host=host, port=port, username=username,
-                           password=password, socketTimeoutMS=15000, maxPoolSize=500,
+                                    password=password, socketTimeoutMS=15000, maxPoolSize=500,
                                     maxIdleTimeMS=30000)
     else:
         # print('unauthenticated mongo')

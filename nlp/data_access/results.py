@@ -89,7 +89,6 @@ def phenotype_performance_results(jobs: list):
     return metrics
 
 
-
 def phenotype_feedback_results(job: str):
     job_type = 'annotations'
     client = util.mongo_client()
@@ -252,7 +251,6 @@ def lookup_phenotype_result_by_id(id: str):
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         obj['success'] = False
-
 
     return obj
 
