@@ -8,8 +8,8 @@ The code in this module recognizes time expressions in a sentence and returns
 a JSON result with information on each time expression that it finds. The
 supported time formats are listed next, using the abbreviations:
 
-    h12: 12 hr. clock, hours only,   0-9
-    h24: 24 hr. clock, zero-padded, 00-24
+    h12: 12 hr. clock, hours only, 0-9
+    h24: 24 hr. clock, hours only, zero-padded, 00-24
      mm: minutes, zero-padded, 00-59
      ss: seconds, zero-padded 00-60 (60 means leap second)
 
