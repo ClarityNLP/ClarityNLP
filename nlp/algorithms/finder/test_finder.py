@@ -462,7 +462,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # American month/day/year format
+    # regex1: American month/day/year format
     test_data = {
         'The dates 11/28/2012, 1/3/2012, and 02/17/15 are in ' \
         'American month/day/year format.':[
@@ -475,21 +475,34 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # dmYYYY format
+    # regex2: YYYY/mm/dd
     test_data = {
-        'The dates 28-11-2012, 3-1-2012, 03-1-2012, and 17.2.2017 ' \
-        'are in dmYYYY format.':[
-            _DateResult(text='28-11-2012', year=2012, month=11, day=28),
-            _DateResult(text='3-1-2012',   year=2012, month=1,  day=3),
-            _DateResult(text='03-1-2012',  year=2012, month=1,  day=3),
-            _DateResult(text='17.2.2017',  year=2017, month=2,  day=17),
+        'The dates 1969/07/20 and 1969/7/20 are in ymd_fwd_slash format.':[
+            _DateResult(text='1969/07/20', year=1969, month=7, day=20),
+            _DateResult(text='1969/7/20',  year=1969, month=7, day=20)
         ]
     }
 
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # year-month-day format
+
+    # regex3: dmYYYY format
+    test_data = {
+        'The dates 28-11-2012, 3-1-2012, 03-1-2012, 17.2.2017 ' \
+        'and 20th.July.1969 are in dmYYYY format.':[
+            _DateResult(text='28-11-2012', year=2012, month=11, day=28),
+            _DateResult(text='3-1-2012',   year=2012, month=1,  day=3),
+            _DateResult(text='03-1-2012',  year=2012, month=1,  day=3),
+            _DateResult(text='17.2.2017',  year=2017, month=2,  day=17),
+            _DateResult(text='20th.July.1969', year=1969, month=7, day=20)
+        ]
+    }
+
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
+
+    # regex4: year-month-day format
     test_data = {
         'The dates 2008-6-30, 78-12-22, and 08-6-21 '
         'are in year-month-day format.':[
@@ -502,7 +515,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # dmYY format
+    # regex5: dmYY format
     test_data = {
         'The dates 30.6.08 and 22\t12.78 are in dmYY format.':[
             _DateResult(text='30.6.08',   year=8,  month=6,  day=30),
@@ -513,7 +526,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # dtmy format
+    # regex6: dtmy format
     test_data = {
         'The dates 30-June 2008, 22DEC78, and 14 MAR   1879 ' \
         'are in dtmy format.':[
@@ -526,7 +539,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # tmdy format
+    # regex7: tmdy format
     test_data = {
         'The dates July 1st, 2008, April 17, 1790, and May.9,78 ' \
         'are in tmdy format.':[
@@ -539,7 +552,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # month-day-year format
+    # regex8: month-day-year format
     test_data = {
         'The dates May-09-78, Apr-17-1790, and Dec-12-2005 ' \
         'are in month-day-year format.':[
@@ -552,7 +565,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # ymd format
+    # regex9: ymd format
     test_data = { 
         'The dates 78-Dec-22 and 1814-MAY-17 are in ymd format.':[
             _DateResult(text='78-Dec-22',   year=78,   month=12, day=22),
@@ -566,7 +579,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # American month/day format
+    # regex10: American month/day format
     test_data = {
         'The dates 5/12, 10/27, and 5/6 are in American month/day format.':[
             _DateResult(text='5/12',  month=5,  day=12),
@@ -578,7 +591,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # tmd format
+    # regex11: tmd format
     test_data = {
         'The dates "July 1st", Apr 17, and May.9 are in tmd format.':[
             _DateResult(text='July 1st', month=7, day=1),
@@ -590,7 +603,19 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # GNU ym format
+    # regex12: dtm format
+    test_data = {
+        'The dates 20-July, 20.July, and 20 July are in dtm format':[
+            _DateResult(text='20-July', month=7, day=20),
+            _DateResult(text='20.July', month=7, day=20),
+            _DateResult(text='20 July', month=7, day=20)
+        ]
+    }
+
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
+
+    # regex13: GNU ym format
     test_data = {
         'The dates 2008-6, 2008-06, and 1978-12 are in GNU ym format.':[
             _DateResult(text='2008-6',  year=2008, month=6),
@@ -602,31 +627,32 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # tmy4 format
+    # regex14: tmy4 format
     test_data = {
-        'The dates June 2008, DEC1978, March 1879 are in tmy4 format.':[
+        'The dates June 2008, DEC1978, March 1879, and July-1969 are in tmy4 format.':[
             _DateResult(text='June 2008',  year=2008, month=6),
             _DateResult(text='DEC1978',    year=1978, month=12),
-            _DateResult(text='March 1879', year=1879, month=3)
+            _DateResult(text='March 1879', year=1879, month=3),
+            _DateResult(text='July-1969',  year=1969, month=7)
         ]
     }
 
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # y4tm format
+    # regex15: y4tm format
     test_data = {
-        'The dates 2008 June, 1978-12, and 1879.MARCH are in y4tm format.':[
-            _DateResult(text='2008 June',  year=2008, month=6),
-            _DateResult(text='1978-12',    year=1978, month=12),
-            _DateResult(text='1879.MARCH', year=1879, month=3)
+        'The dates 2008 June, 1978-December, and 1879.MARCH are in y4tm format.':[
+            _DateResult(text='2008 June',     year=2008, month=6),
+            _DateResult(text='1978-December', year=1978, month=12),
+            _DateResult(text='1879.MARCH',    year=1879, month=3)
         ]
     }
 
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # individual years
+    # regex16: individual years
     test_data = {
         'The dates 2004, 1968, 1492 are individual years.':[
             _DateResult(text='2004', year=2004),
@@ -638,7 +664,7 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
-    # individual months
+    # regex17: individual months
     test_data = {
         'The dates January, Feb., Sep., Sept. and December ' \
         'are individual months.':[

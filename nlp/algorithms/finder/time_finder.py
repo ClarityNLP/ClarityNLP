@@ -27,7 +27,7 @@ supported time formats are listed next, using the abbreviations:
     For instance, a value of 23.44506 would have f == 44506.
 
 
-1.  ISO8601 Formats
+1.  ISO 8601 Formats
 
     Any of these formats:
 
@@ -35,6 +35,7 @@ supported time formats are listed next, using the abbreviations:
         <time>+-hh:mm
         <time>+-hhmm
         <time>+-hh
+        YYYY-MM-DDTHH:MM:SS.ffffff
 
     Where <time> means any of these:
 
@@ -194,7 +195,7 @@ STR_PM = 'pm'
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME = 'time_finder.py'
 
 # set to True to see debug output

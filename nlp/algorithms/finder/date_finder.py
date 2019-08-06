@@ -4,11 +4,50 @@
 OVERVIEW:
 
 
-The code in this module recognizes dates in a sentence and returns a JSON
-result with information on each date found. Various date formats are
-supported - see the reference below for examples of the different formats.
-This code supports all the listed formats excluding those with roman numerals
-for the month.
+The code in this module recognizes date expressions in a sentence and returns
+a JSON result with information on each date expression that it finds. The
+supported date formats are listed next, using the abbreviations (see the
+reference below):
+
+    dd: one or two-digit day of the month with optional suffix
+        (such as 7th, 22nd, etc.)
+    DD: two-digit day of the month
+     m: name of the month
+     M: month abbreviation (jan, feb. etc.)
+    mm: one or two-digit month
+    MM: two-digit month
+     y: two or four-digit year
+    yy: two-digit year
+  YYYY: four-digit year
+     ?: optional
+
+1. ISO 8601 Formats
+
+    iso_8:        YYYYMMDD
+    iso_s422:     [-+]?YYYY-MM-DD
+    iso_422:      YYYY/MM/DD
+    iso_222:      YY-MM-DD
+    iso_datetime: YYYY-MM-DDTHH:MM:SS.ffffff
+
+2. Other Formats (illustrated with the date of the first Moon landing):
+
+    mm/dd/YYYY (American convention)    07/20/1969
+    YYYY/mm/dd                          1969/7/20, 1969/07/20
+    dd-mm-YYYY, dd.mm.YYYY              20-07-1969, 20.7.1969
+    y-mm-dd                             1969-7-20, 1969-07-20, 69-7-20
+    dd.mm.yy                            20.7.69, 20.07.69
+    dd-m-y, ddmy, dd m y                20-JULY-69, 20JULY69, 20 July 1969
+    m-dd-y, m.dd.y, mddy, m dd, y       20-July 1969, 20JULY1969, 20 July, 1969
+    M-DD-y                              Jul-20-1969, Jul-20-69
+    y-M-DD                              69-Jul-20, 1969-Jul-20
+    mm/dd                               7/20, 07/20
+    m-dd, m.dd, m dd                    July 20, July 20th, July-20
+    dd-m, dd.m, dd m                    20-July, 20.July, 20 July
+    YYYY-mm                             1969-07, 1969-7
+    m-YYYY, m.YYYY, m YYYY              July-1969, July.1969, July 1969
+    YYYY-m, YYYY.m, YYYY m              1969-July, 1969.July, 1969 July
+    YYYY                                1969
+    m                                   July
 
 OUTPUT:
 
@@ -90,7 +129,7 @@ DateValue.__new__.__defaults__ = (EMPTY_FIELD,) * len(DateValue._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME   = 'date_finder.py'
 
 # set to True to enable debug output
@@ -125,8 +164,8 @@ _str_mm = r'0?[0-9]|1[0-2]'
 # two digit month
 _str_MM = r'0[0-9]|1[0-2]'
 
-# one and four digit year (3 is invalid)
-_str_y = r'[0-9]{1,4}'
+# two or four digit year
+_str_y = r'[0-9]{4}|[0-9]{2}'
 
 # two digit year
 _str_yy = r'[0-9]{2}'
@@ -164,7 +203,7 @@ _str_dmy2 = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[.\t]'              +\
             r'(?P<year>' + _str_yy + r')\b'
 _regex_5 = re.compile(_str_dmy2, re.IGNORECASE)
 
-# day, textual month and year
+# day, textual month and year (space char is a valid separator)
 _str_dtmy = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[-.\t ]*'           +\
             r'(?P<month>' + _str_m + r')' + r'[-.\t ]*'                 +\
             r'(?P<year>' + _str_y + r')\b'
