@@ -26,11 +26,11 @@ def read_property(env_name, config_tuple, default='', key_name=None):
             property_name = config.get(config_tuple[0], config_tuple[1])
         if not property_name:
             property_name = default
-        if len(env_name) > 0 and 'PASSWORD' not in env_name and 'KEY' not in env_name and 'USERNAME' not in env_name:
-            properties[env_name] = property_name
+        if len(key_name) > 0 and 'PASSWORD' not in key_name and 'KEY' not in key_name and 'USERNAME' not in key_name:
+            properties[key_name] = property_name
     except Exception as ex:
         print(ex)
-        properties[env_name] = default
+        properties[key_name] = default
     return property_name
 
 

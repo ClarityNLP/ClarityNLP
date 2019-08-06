@@ -428,7 +428,7 @@ def _extract_observation_resource(obj, mongo_obj):
 def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     """
     Extract a value at the given key from the given dict, or return None
-    if not found.
+    if not found. Attempt to read from environmental variables, if known.
     """
 
     value = None
