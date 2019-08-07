@@ -627,17 +627,26 @@ class CQLExecutionTask(BaseTask):
                 payload['terminologyPass'] = fhir_terminology_user_password
                 
             # perform the request here, catch lots of different exceptions
+            has_error = False
             try:
                 r = requests.post(cql_eval_url, headers=headers, json=payload)
             except requests.exceptions.HTTPError as e:
                 print('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
+                has_error = True
             except requests.exceptions.ConnectionError as e:
                 print('\n*** CQLExecutionTask ConnectionError: "{0}" ***\n'.format(e))
+                has_error = True
             except requests.exceptions.Timeout as e:
                 print('\n*** CQLExecutionTask Timeout: "{0}" ***\n'.format(e))
+                has_error = True
             except requests.exceptions.RequestException as e:
                 print('\n*** CQLEXecutionTask RequestException: "{0}" ***\n'.format(e))
+                has_error = True
 
+            if has_error:
+                print('HTTP error, terminating CQLExecutionTask...')
+                return
+                
             print('Response status code: {0}'.format(r.status_code))
 
             results = None
