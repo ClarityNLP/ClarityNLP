@@ -64,7 +64,7 @@ def _compare_results(
             sentence,
             minval,
             maxval,
-            enumlist=enumlist,
+            str_enumlist=enumlist,
             is_case_sensitive=is_case_sensitive,
             is_denom_only=denom_only
         )

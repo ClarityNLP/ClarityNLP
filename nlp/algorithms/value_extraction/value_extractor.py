@@ -89,7 +89,7 @@ The 'run' function has the following signature:
             sentence:          [string]  the sentence to be processed
             str_minval:        [string]  minimum acceptable value for numeric queries
             str_maxval:        [string]  maximum acceptable value for numeric queries
-            enumlist:          [string]  comma-separated desired result terms
+            str_enumlist:      [string]  comma-separated desired result terms
             is_case_sensitive: [Boolean] if True perform case-sensitive comparisons
             is_denom_only:     [Boolean] if True, return denominators for fractions
 
@@ -1348,7 +1348,7 @@ def run(term_string,             # comma-separated string of query terms
         sentence,
         str_minval=None,
         str_maxval=None,
-        enumlist=None,           # comma-separated string of terms
+        str_enumlist=None,       # comma-separated string of terms
         is_case_sensitive=False,
         is_denom_only=False):    # return denominators of fractions
 
@@ -1359,16 +1359,16 @@ def run(term_string,             # comma-separated string of query terms
         print('\t         sentence: {0}'.format(sentence))
         print('\t       str_minval: {0}'.format(str_minval))
         print('\t       str_maxval: {0}'.format(str_maxval))
-        print('\t         enumlist: {0}'.format(enumlist))
+        print('\t     str_enumlist: {0}'.format(str_enumlist))
         print('\tis_case_sensitive: {0}'.format(is_case_sensitive))
         print('\t    is_denom_only: {0}'.format(is_denom_only))
 
     assert term_string is not None
     
     # use default minval and maxval if not provided
-    if enumlist is None and str_minval is None:
+    if str_enumlist is None and str_minval is None:
         str_minval = '-' + str(sys.float_info.max)
-    if enumlist is None and str_maxval is None:
+    if str_enumlist is None and str_maxval is None:
         str_maxval = str(sys.float_info.max)
     
     # save a copy of the original sentence (needed for results)
@@ -1385,11 +1385,11 @@ def run(term_string,             # comma-separated string of query terms
 
     filter_terms = []
     original_filter_terms = []
-    if enumlist is not None:
-        if isinstance(enumlist, str):
-            filter_terms = enumlist.split(',')
+    if str_enumlist is not None:
+        if isinstance(str_enumlist, str):
+            filter_terms = str_enumlist.split(',')
         else:
-            filter_terms = enumlist
+            filter_terms = str_enumlist
         filter_terms = [term.strip() for term in filter_terms]
         filter_terms = sorted(filter_terms, key=lambda x: len(x), reverse=True)
         original_filter_terms = filter_terms.copy()
@@ -1400,12 +1400,12 @@ def run(term_string,             # comma-separated string of query terms
     # convert terms to lowercase unless doing a case-sensitive match
     if not is_case_sensitive:
         terms = [term.lower() for term in terms]
-        if enumlist is not None:
+        if str_enumlist is not None:
             filter_terms = [ft.lower() for ft in filter_terms]
 
     if _TRACE:
         print('\n\tterms: {0}'.format(terms))
-        if enumlist is not None:
+        if str_enumlist is not None:
             print('\tfilter_terms: {0}'.format(filter_terms))
                 
     # map the new terms to the original, so can restore in output
@@ -1415,7 +1415,7 @@ def run(term_string,             # comma-separated string of query terms
         _term_dict[new_term] = original_term
         if _TRACE:
             print('\tterm_dict[{0}] => {1}'.format(new_term, original_term))
-    if enumlist is not None:
+    if str_enumlist is not None:
         for i in range(len(filter_terms)):
             new_term = filter_terms[i]
             original_term = original_filter_terms[i]
@@ -1423,7 +1423,7 @@ def run(term_string,             # comma-separated string of query terms
             if _TRACE:
                 print('\tfilter_term_dict[{0}] => {1}'.format(new_term, original_term))
 
-    if enumlist is None:
+    if str_enumlist is None:
         # do range check on numerator values for fractions
         if isinstance(str_minval, str):
             if -1 != str_minval.find('/'):
@@ -1441,7 +1441,7 @@ def run(term_string,             # comma-separated string of query terms
     sentence = _clean_sentence(sentence, is_case_sensitive)
 
     results = []
-    if enumlist is not None:
+    if str_enumlist is not None:
         results = _extract_enumlist_values(terms, sentence, filter_terms)
     else:
         for term in terms:
