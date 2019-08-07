@@ -1312,12 +1312,12 @@ def _clean_sentence(sentence, is_case_sensitive):
         end   = int(t.end)
 
         # erase time expression if not one of these formats:
-        #     integers on each side of +- (confused with ranges or UTC offset)
+        #     integers on each side of - (confused with ranges)
         #     hh, hhmm, hhmmss (but if preceded by 'at' or '@' likely a time)
         #     only digits and '.' (confused with floating pt values)
 
         erase_it = False
-        match_a = re.match(r'\A\d+[\-\+]\d+\Z', t.text)
+        match_a = re.match(r'\A\d+[\-]\d+\Z', t.text)
         match_b = re.match(r'\A\d+\Z', t.text)
         match_c = re.match(r'\A[\d\.]+\Z', t.text)
         if not match_a and not match_b and not match_c:
