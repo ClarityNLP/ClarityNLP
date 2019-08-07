@@ -573,9 +573,8 @@ class CQLExecutionTask(BaseTask):
             # ensure '/' termination
             if not fhir_data_service_uri.endswith('/'):
                     fhir_data_service_uri += '/'
-            
-            headers = {'Content-Type':'application/json'}
-            
+
+            # initialize payload
             payload = {
                 # the requests lib will properly escape the raw string
                 "code":cql_code,
@@ -593,12 +592,12 @@ class CQLExecutionTask(BaseTask):
                                               'fhir_auth_token',
                                               job_id,
                                               self.pipeline_config.custom_arguments)
-            
-            if fhir_auth_type is not None and fhir_auth_token is not None:
-                # not sure about these keys - TBD
-                payload['fhirAuthType'] = fhir_auth_type
-                payload['fhirAuthToken'] = fhir_auth_token
 
+            headers = {
+                'Content-Type':'application/json',
+                'Authorization':'{0} {1}'.format(fhir_auth_type, fhir_auth_token)
+            }
+            
             # params for UMLS OID code lookup
             fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
                                                            'fhir_terminology_service_uri',
