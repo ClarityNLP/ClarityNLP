@@ -41,15 +41,17 @@ query term and value:
 ClarityNLP tries to understand these situations and correctly associate the
 value 98.6 with "temperature".
 
-We should state that this is a **generic** value extractor, which means that
-it is not specialized for finding any particular type of data, such as
-temperatures, blood pressures, or anything else. It instead uses an
-empirically-determined set of rules and regular expressions to find
+We should emphasize that this is a **generic** value extractor. Our design goal
+is to achieve good performance across a wide variety of value extraction
+problems. It has **not** been specialized for any particular type of problem,
+such as for extracting temperatures or blood pressures. It instead uses
+an empirically-determined set of rules and regular expressions to find
 values (either numeric or textual - see below) that are likely to be associated
-with the supplied query terms.
+with the query terms. These regexes and rules are under continual refinement
+and testing as the development of ClarityNLP continues.
 
-You can get better idea of what the value extractor does and the results that
-it finds by examining our comprehensive suite of
+You can get a clearer picture of what the value extractor does and the
+results that it finds by examining our comprehensive suite of
 `value extractor tests <https://github.com/ClarityNLP/ClarityNLP/blob/develop/nlp/algorithms/value_extraction/test_value_extractor.py>`_.
 
 
@@ -100,10 +102,11 @@ Result Filters
 
 Numerical results can be filtered by user-specified min and max values.
 Any results that fall outside of the interval ``[min, max]`` are discarded.
-Any numeric value is accepted if these limits are omitted.
+Any numeric value is accepted if these limits are omitted in the NLPQL
+statement.
 
 For fractions, the value extractor returns the numerator value by default.
-The denominator can be returned instead by use of the ``is_denom_only``
+The denominator can be returned instead by using the ``is_denom_only``
 argument (see below).
 
 Hypotheticals
@@ -183,43 +186,46 @@ ignored.
 Text Mode and the Enumeration List
 ----------------------------------
 
-The value extractor supports a mode of operation in which it can extract text
-strings instead of numeric values. Text mode can be enabled by supplying a
-comma-separated string of terms to the :ref:`enum_list <valueextractor>`
-parameter in your NLPQL statement. The enumlist acts like a term filter for the
-results. Only those terms appearing in the enumlist are returned in the
-``value`` field.
+The value extractor supports a mode of operation ("text mode") in which it
+extracts text strings instead of numeric values. Text mode can be enabled by
+supplying a comma-separated string of terms to the
+:ref:`enum_list <valueextractor>` parameter in your NLPQL statement.
+ The enumlist acts like a term filter for the results. Only those terms
+appearing in the enumlist are returned in the ``value`` field of the JSON
+result.
 
-To illustrate how this works, suppose you have the task of searching medical
-records for the presence of hepatitis B or C infections. You want to use
-ClarityNLP to scan the data and report any lab results that mention HBV or
-HCV. The presence or absence of HBV or HCV is typically reported as either
-"positive" or "negative", or sometimes as just "+" or "-".
+To illustrate how text mode works, suppose you have the task of searching
+medical records for the presence of hepatitis B or C infections. You want
+to use ClarityNLP to scan the data and report any lab results that mention
+HBV or HCV. The presence or absence of HBV or HCV is typically reported as
+either "positive" or "negative", or sometimes as just "+" or "-".
 
 You would start by constructing an enumlist with the terms and
-symbols that you want, such as ``positive, negative, +, -``. This string would
-be supplied as the value for the enum list.  Your
-:ref:`termset <termset>` would be ``HBV, HCV``.
+symbols that you want, such as ``"positive, negative, +, -"``. This string
+would be supplied as the value for the NLPQL enum_list.  Your
+:ref:`termset <termset>` would include the strings ``"HBV"`` and ``"HCV"``.
 
-When you run your data, suppose that ClarityNLP encounters the sentence
+Next suppose that, during a run, ClarityNLP were to encounter the sentence
 ``She was HCV negative, HBV +, IgM Titer-1:80, IgG positive``. The value
-extractor processes this sentence, notices that an enumlist is present, and
-puts itself into text mode. When finished processing the sentence it returns
-two results. The first JSON result has these values for the matching term and
-value fields (other fields omitted):
+extractor would process this sentence, noticing the presence of the enumlist,
+and therefore put itself into text mode. When processing completes the value
+extractor would return two results. The first JSON result would have these
+values for the matching "term" and "value" fields (other fields omitted):
 ::
    {
        "term":"HCV",
        "value":"negative"
    }
 
-The second JSON result has these values:
+The second JSON result would have these values:
 ::
    {
        "term":"HBV",
        "value":"+"
    }
 
+Thus the value extractor supports the extraction of textual "values" in
+addition to numeric values.
 
 Algorithm
 =========
@@ -269,7 +275,7 @@ that it finds, subject to these restrictions:
    ``at`` or ``@`` are not erased, since these are likely to be values and
    not time expressions.
 
-   Time *durations* such as ``2 hrs`` are identified and removed.
+   Time *durations* such as ``2 hrs`` are identified and erased.
 
 To illustrate the erasure process, consider this somewhat contrived example:
 ::
@@ -277,23 +283,25 @@ To illustrate the erasure process, consider this somewhat contrived example:
 
 Here we see a sentence containing the time expression ``3:27``, a date
 expression ``3/27``, and a size measurement ``12 cm. x9cm x6  cm.``. The
-sentence is irregularly formatted, as is often the case with clinical
+sentence exhibits **irregular spacing**, as is often the case with clinical
 text.
 
-Suppose that the query term is ``BP``.  When the value extractor processes
-this sentence, it converts the sentence to lowercase, then scans for dates,
-measurements, and times. The date and time expressions satisfy the criteria
-for erasure specified above. The resulting sentence after preprocessing is:
+Suppose that the query term is ``BP``, meaning "blood pressure".  When the
+value extractor processes this sentence, it converts the sentence to
+lowercase, then scans for dates, measurements, and times. The date and time
+expressions satisfy the criteria for erasure specified above. The resulting
+sentence after preprocessing is:
 ::
    her bp at      on      from her                     heart was 110/70.
 
-This is the text that the value extractor uses for subsequent stages.   
+This is the text that the value extractor uses for subsequent stages. Observe
+that the erasure process preserves character offsets.
 
 Candidate Selection
 -------------------
 
 After preprocessing, the value extractor constructs a regular expression for
-a query involving each search term. Simple term matching **is not adequate**.
+a query involving each search term. **Simple term matching is not sufficient**.
 To understand why, consider a temperature query involving the term ``t``.
 Term matching would result in a match for every letter t in the text.
 
@@ -303,54 +311,54 @@ variable amounts of whitespace, separators, and fill words.
 
 The query regex is incorporated into a list of additional regular expressions.
 These regexes each scan the sentence and attempt to recognize various contexts
-from which to extract values. These contexts are:
+from which to extract values. These contexts are, with examples:
 
 1. A range involving two fractions connected by "between/and" or "from/to":
-  
-   ``BP varied from 110/70 to 120/80.``
+::
+   BP varied from 110/70 to 120/80.
 
 2. A range involving two fractions:
-
-   ``BP range: 105/75 - 120/70``
+::
+   BP range: 105/75 - 120/70
 
 3. A fraction:
-
-   ``BP lt. or eq 112/70``
+::
+   BP lt. or eq 112/70
 
 4. A range with explicit unit specifiers:
-
-   ``Platelets between 25k and 38k``
+::
+   Platelets between 25k and 38k
 
 5. A numeric range involving "between/and" or "from/to":
-
-   ``Respiration rate between 22 and 32``
+::
+   Respiration rate between 22 and 32
 
 6. A numeric range:
-
-   ``Respiration rate 22-32``
+::
+   Respiration rate 22-32
 
 7. A query of the general form <query_term> <operator> <value>:
-
-   ``The patient's pulse was frequently >= 60 bpm.``
+::
+   The patient's pulse was frequently >= 60 bpm.
 
 8. A query of the general form <query_term> <words> <value>:
+::
+   Overall LVEF is severely depressed (20%).
 
-   ``Overall LVEF is severely depressed (20%).``
-
-Several of the context regexes will usually match a given query, requiring
-an overlap resolution process to select a winner.
+Multiple regexes typically match a given query, so an overlap resolution
+process is required to select the result.
 
 
 Overlap Resolution
 ------------------
 
-If multiple candidates are found for a given value, the overlap resolution
-process prunes the candidates and selects a winner. The rules for pruning
-candidates have been developed through many rounds of iterated testing.
-More may be uncovered in the future. The situations requiring pruning and the
-rules for doing so are as follows:
+If the value extractor finds more than one candidate for a given query, the
+overlap resolution process prunes the candidates and selects a winner. The
+rules for pruning candidates have been developed through many rounds of
+iterated testing. More rules may be discovered in the future. The situations
+requiring pruning and the rules for doing so are as follows:
 
-**1. If two candidate results overlap exactly, return the result with the longest matching term.**
+1. **If two candidate results overlap exactly, return the result with the longest matching term.**
 
    Example:
        | sentence:``T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC``
@@ -364,7 +372,7 @@ rules for doing so are as follows:
    the candidate for "O2 sat" as the winner since it is the longer of the
    two query terms and completely encompasses the other candidate.
    
-**2. If two results partially overlap, discard the first match if the extracted value is contained within the search term for the second.**
+2. **If two results partially overlap, discard the first match if the extracted value is contained within the search term for the second.**
 
    Example:
        | sentence:``BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.``
@@ -378,7 +386,7 @@ rules for doing so are as follows:
    is part of a search term, not an independent value, so that candidate
    result is discarded.
 
-**3. (text mode only) Whenever two results overlap and one result is a terminating substring of the other, discard the substring as a separate match.**
+3. (text mode only) **Whenever two results overlap and one result is a terminating substring of the other, discard the candidate with the contained substring.**
 
    Example:
        | sentence:``no enteric gram negative rods found``
@@ -392,7 +400,7 @@ rules for doing so are as follows:
     discarded. Note that this is a different situation from no. 1 above, since
     the matching text for the candidates have different starting offsets.
 
-**4. If two candidates have overlapping matching terms, keep the candidate with the longest matching term.**
+4. **If two candidates have overlapping matching terms, keep the candidate with the longest matching term.**
 
     Example:
        | sentence:``BLOOD PT-10.8 PTT-32.6 INR(PT)-1.0``
@@ -403,12 +411,12 @@ rules for doing so are as follows:
        | ``{"term":"ptt",    "value":32.6, "text":"PTT-32.6"}``
        | ``{"term":INR(PT)", "value":1.0,  "text":"INR(PT)-1.0"}``
 
-    The second and fourth candidates have overlapping matching text. The
-    longest matching term is ``INR(PT)``, so the second candidate is discarded.
-    This is a different situation from no. 3 above, which only applies in
-    text mode.
+    The second and fourth candidates have overlapping matching query terms.
+    The longest matching term is ``INR(PT)``, so candidate four is retained and
+    candidate two is discarded. This is a different situation from no. 3 above,
+    which only applies in text mode.
 
-**5. (text mode only) Keep both candidates if their matching terms are connected by "and" or "or".**
+5. (text mode only) **Keep both candidates if their matching terms are connected by "and" or "or".**
 
     Example:
         | sentence:``which grew gram positive and negative rods``
@@ -421,17 +429,25 @@ rules for doing so are as follows:
     The matching texts for each candidate consts of query terms connected by the word "and",
     so both results are kept.
 
-       
-If a match is found, the numeric values are extracted, and filters for min
-and max values and hypotheticals applied. If the values survive the filtering
-operations, a python namedtuple containing all relevant fields is created.
-All such namedtuples are appended to a list during processing. 
+6. **If two candidates have overlapping matching text but nonoverlapping query terms, keep the candidate with query term closest to the value.**
 
-When no more regex matches can be found, the list of result namedtuples is
-converted to JSON and returned to the caller.
+    Example:
+        | sentence:``received one bag of platelets dure to platelet count of 71k``
+        | termset:``platelets, platelet, platelet count``
+    Candidates:
+        | ``{"term":"platelets",      "value":71000, "text":"platelets due to platelet count of 71k"}``
+        | ``{"term":"platelet count", "value":71000, "text":"platelet count of 71k"}``
 
-Users can expect the value extractor to return the first valid numeric result
-following a query term.
+    These candidates have overlapping matching texts with nonoverlapping query
+    terms. Keep the candidate with query term "platelet count" since it is
+    closest to the value of 71000.
+
+After these pruning operations, any remaining candidates that express
+hypothetical conditions (see above) are discarded. The survivor(s) are
+converted to JSON and returned as the result(s).
+    
+In general, users can expect the value extractor to return the first valid
+numeric result following a query term.
 
 References
 ==========
