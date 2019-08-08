@@ -41,6 +41,17 @@ query term and value:
 ClarityNLP tries to understand these situations and correctly associate the
 value 98.6 with "temperature".
 
+We should state that this is a **generic** value extractor, which means that
+it is not specialized for finding any particular type of data, such as
+temperatures, blood pressures, or anything else. It instead uses an
+empirically-determined set of rules and regular expressions to find
+values (either numeric or textual - see below) that are likely to be associated
+with the supplied query terms.
+
+You can get better idea of what the value extractor does and the results that
+it finds by examining our comprehensive suite of
+`value extractor tests <https://github.com/ClarityNLP/ClarityNLP/blob/develop/nlp/algorithms/value_extraction/test_value_extractor.py>`_.
+
 Value Types
 -----------
 
@@ -79,6 +90,7 @@ Greater Than or Less Than          ``T > 98.6``, ``T<=98.6``, ``T .lt. 98.6``, `
 Narrative                          ``T was greater than 98.6``
 =================================  ==========================================================
 
+These are just a few of the many different variants that the value extractor supports.
 In general, the amount of whitespace between query and value is arbitrary.
 
 Result Filters
@@ -121,12 +133,13 @@ The entry point to the value extractor is the ``run`` function:
            sentence,                 # string, the sentence to be processed
            str_minval=None,          # minimum numeric value
            str_maxval=None,          # maximum numeric value
+           str_enumlist=None,        # comma-separated string of terms (see below)
            is_case_sensitive=False,  # set to True to preserve case
            is_denom_only=False)      # set to True to return denoms
 
 If the ``str_minval`` and ``str_maxval`` arguments are omitted, ClarityNLP accepts
-any numeric value that it finds for a given query. The other arguments should be
-self-explanatory.
+any numeric value that it finds for a given query. The ``str_enumlist`` argument
+will be explained below. The other arguments should be self-explanatory.
 
 Outputs
 -------
@@ -165,16 +178,55 @@ All JSON results will have an identical number of fields. Any fields that are
 not valid for a given result will have a value of EMPTY_FIELD and should be
 ignored.
 
+Text Mode and the Enumeration List
+----------------------------------
+
+The value extractor supports a mode of operation in which it can extract text
+strings instead of numeric values. Text mode can be enabled by supplying a
+comma-separated string of terms to the :ref:`enum_list <valueextractor>`
+parameter in your NLPQL statement. The enumlist acts like a term filter for the
+results. Only those terms appearing in the enumlist are returned in the
+``value`` field.
+
+To illustrate how this works, suppose you have the task of searching medical
+records for the presence of hepatitis B or C infections. You want to use
+ClarityNLP to scan the data and report any lab results that mention HBV or
+HCV. The presence or absence of HBV or HCV is typically reported as either
+"positive" or "negative", or sometimes as just "+" or "-".
+
+You would start by constructing an enumlist with the terms and
+symbols that you want, such as ``positive, negative, +, -``. This string would
+be supplied as the value for the enum list.  Your
+:ref:`termset <termset>` would be ``HBV, HCV``.
+
+When you run your data, suppose that ClarityNLP encounters the sentence
+``She was HCV negative, HBV +, IgM Titer-1:80, IgG positive``. The value
+extractor processes this sentence, notices that an enumlist is present, and
+puts itself into text mode. When finished processing the sentence it returns
+two results. The first JSON result has these values for the matching term and
+value fields (other fields omitted):
+::
+   {
+       "term":"HCV",
+       "value":"negative"
+   }
+
+The second JSON result has these values:
+::
+   {
+       "term":"HBV",
+       "value":"+"
+   }
+
 
 Algorithm
 =========
 
 The value extractor does its work in four stages. The first stage consists of
-preprocessing operations; the second stage consists of extracting candidate
-values; the third stage consists of overlap resolution to choose a winner
-from among the candidates; and the fourth stage consists of the removal of
-hypotheticals. All results that remain are converted to JSON format and
-returned to the caller.
+preprocessing operations; the second stage extracts candidate
+values; the third stage performs overlap resolution to choose a winner
+from among the candidates; and the fourth stage removes hypotheticals. All
+results that remain are converted to JSON format and returned to the caller.
 
 Preprocessing
 -------------
@@ -219,11 +271,11 @@ that it finds, subject to these restrictions:
 
 To illustrate the erasure process, consider this somewhat contrived example:
 ::
-   Her BP at 3:27 on 3/27 from her 12 cm. x9cm x6  cm. heart was 110/70.
+   Her BP at 3:27 on3/27 from her12 cm. x9cm x6  cm. heart was110/70.
 
 Here we see a sentence containing the time expression ``3:27``, a date
 expression ``3/27``, and a size measurement ``12 cm. x9cm x6  cm.``. The
-measurement is irregularly formatted, as is often the case with clinical
+sentence is irregularly formatted, as is often the case with clinical
 text.
 
 Suppose that the query term is ``BP``.  When the value extractor processes
@@ -251,7 +303,7 @@ The query regex is incorporated into a list of additional regular expressions.
 These regexes each scan the sentence and attempt to recognize various contexts
 from which to extract values. These contexts are:
 
-1. A range involving two fractions connected by between/and or from/to:
+1. A range involving two fractions connected by "between/and" or "from/to":
   
    ``BP varied from 110/70 to 120/80.``
 
@@ -267,7 +319,7 @@ from which to extract values. These contexts are:
 
    ``Platelets between 25k and 38k``
 
-5. A numeric range involving between/and or from/to:
+5. A numeric range involving "between/and" or "from/to":
 
    ``Respiration rate between 22 and 32``
 
@@ -285,11 +337,6 @@ from which to extract values. These contexts are:
 
 Several of the context regexes will usually match a given query, requiring
 a resolution process to select a winner.
-
-Enumerated Values
------------------
-
-TBD
 
 
 Overlap Resolution
