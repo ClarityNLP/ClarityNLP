@@ -52,10 +52,11 @@ You can get better idea of what the value extractor does and the results that
 it finds by examining our comprehensive suite of
 `value extractor tests <https://github.com/ClarityNLP/ClarityNLP/blob/develop/nlp/algorithms/value_extraction/test_value_extractor.py>`_.
 
+
 Value Types
 -----------
 
-ClarityNLP's value extractor can recognize several different value types:
+The value extractor can recognize several different value types:
 
 =================================  ===========================
 Value Type                         Example
@@ -75,7 +76,8 @@ the digit before the decimal point is optional.
 Value Relationships
 -------------------
 
-ClarityNLP can associate queries and values expressed in many different formats:
+The value extractor can associate queries and values expressed in many different
+formats:
 
 =================================  ==========================================================
 Format                             Example
@@ -96,7 +98,7 @@ In general, the amount of whitespace between query and value is arbitrary.
 Result Filters
 --------------
 
-ClarityNLP filters numerical results by user-specified min and max values.
+Numerical results can be filtered by user-specified min and max values.
 Any results that fall outside of the interval ``[min, max]`` are discarded.
 Any numeric value is accepted if these limits are omitted.
 
@@ -336,15 +338,90 @@ from which to extract values. These contexts are:
    ``Overall LVEF is severely depressed (20%).``
 
 Several of the context regexes will usually match a given query, requiring
-a resolution process to select a winner.
+an overlap resolution process to select a winner.
 
 
 Overlap Resolution
 ------------------
 
-TBD
+If multiple candidates are found for a given value, the overlap resolution
+process prunes the candidates and selects a winner. The rules for pruning
+candidates have been developed through many rounds of iterated testing.
+More may be uncovered in the future. The situations requiring pruning and the
+rules for doing so are as follows:
 
+**1. If two candidate results overlap exactly, return the result with the longest matching term.**
 
+   Example:
+       | sentence:``T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC``
+       | termset:``O2, O2 sat``
+   Candiates:
+       | ``{"term":"O2",     "value":100, "text":"O2 sat= 100"}``
+       | ``{"term":"O2 sat", "value":100, "text":"O2 sat= 100"}``
+
+   In this example, both "O2" and "O2 sat" match the value 100, and both
+   matches have identical start/end values. The value extractor returns
+   the candidate for "O2 sat" as the winner since it is the longer of the
+   two query terms and completely encompasses the other candidate.
+   
+**2. If two results partially overlap, discard the first match if the extracted value is contained within the search term for the second.**
+
+   Example:
+       | sentence:``BP 120/80 HR 60-80s RR  SaO2 96% 6L NC.``
+       | termset:``RR, SaO2``
+   Candidates:
+       | ``{"term":"RR",   "value":2,  "text":"RR  SaO2 96"}``
+       | ``{"term":"SaO2", "value":96, "text":"SaO2 96"}``
+       
+   Note that the search term ``RR`` has no matching value in the sentence,
+   so the value extractor keeps scanning and finds the 2 in "SaO2". The 2
+   is part of a search term, not an independent value, so that candidate
+   result is discarded.
+
+**3. (text mode only) Whenever two results overlap and one result is a terminating substring of the other, discard the substring as a separate match.**
+
+   Example:
+       | sentence:``no enteric gram negative rods found``
+       | termset:``gram negative, negative``
+       | enumlist:``rods``
+   Candidates:
+       | ``{"term":"gram negative", "value":"rods", "text":"gram negative rods"}``
+       | ``{"term":"negative",      "value":"rods", "text":"negative rods"}``
+
+    The second candidate is a terminating substring of the first and is
+    discarded. Note that this is a different situation from no. 1 above, since
+    the matching text for the candidates have different starting offsets.
+
+**4. If two candidates have overlapping matching terms, keep the candidate with the longest matching term.**
+
+    Example:
+       | sentence:``BLOOD PT-10.8 PTT-32.6 INR(PT)-1.0``
+       | termset:``pt, ptt, inr(pt)``
+    Candidates:
+       | ``{"term":"pt",     "value":10.8, "text":"PT-10.8"}``
+       | ``{"term":"pt",     "value":1.0,  "text":"PT)-1.0"}``
+       | ``{"term":"ptt",    "value":32.6, "text":"PTT-32.6"}``
+       | ``{"term":INR(PT)", "value":1.0,  "text":"INR(PT)-1.0"}``
+
+    The second and fourth candidates have overlapping matching text. The
+    longest matching term is ``INR(PT)``, so the second candidate is discarded.
+    This is a different situation from no. 3 above, which only applies in
+    text mode.
+
+**5. (text mode only) Keep both candidates if their matching terms are connected by "and" or "or".**
+
+    Example:
+        | sentence:``which grew gram positive and negative rods``
+        | termset:``gram positive, negative``
+        | enumlist:``rods``
+    Candidates:
+        | ``{"term":"gram positive", "value":"rods", "text":"gram positive and negative rods"}``
+        | ``{"term":"negative",      "value":"rods", "text":"negative rods"}``
+
+    The matching texts for each candidate consts of query terms connected by the word "and",
+    so both results are kept.
+
+       
 If a match is found, the numeric values are extracted, and filters for min
 and max values and hypotheticals applied. If the values survive the filtering
 operations, a python namedtuple containing all relevant fields is created.
