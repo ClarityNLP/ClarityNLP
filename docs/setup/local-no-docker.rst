@@ -45,8 +45,8 @@ This can be accomplished via settings in a ClarityNLP configuration file, as
 explained below. These users would install and run Postgres, Mongo, Luigi, and
 Flask on their laptops.
 
-At GA Tech we have hosted versions of Solr, Postgres, and MongoDB. Our bare
-bones ClarityNLP users only need to install and run Luigi and Flask on their
+At GA Tech we have hosted versions of Solr, Postgres, and MongoDB. Our native
+ClarityNLP users only need to install and run Luigi and Flask on their
 laptops, and then setup their configuration file to "point" to the hosted
 instances.
 
