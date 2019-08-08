@@ -41,17 +41,20 @@ PostgresSQL
 -----------
 
 `PostgreSQL <https://www.postgresql.org/>`_ is one of the leading open-source
-relational database systems, distinguished by its robust feature set, ACID
-compliance, and excellent performance. ClarityNLP uses Postgres to store data
-required to manage each NLPQL job. Postgres is also used to store a large
-amount of medical vocabulary and concept data.
+relational database systems, distinguished by its robust feature set,
+`ACID <https://en.wikipedia.org/wiki/ACID>`_ compliance, and excellent
+performance. ClarityNLP uses Postgres to store data required to manage each
+NLPQL job. Postgres is also used to store a large amount of medical vocabulary
+and concept data.
 
 
 MongoDB
 -------
 
-`MongoDB <https://www.mongodb.com/>`_ is a popular NoSQL document store. A
-mongo *document* is a JSON object with user-defined fields and values. There
+`MongoDB <https://www.mongodb.com/>`_ is a popular
+`NoSQL <https://en.wikipedia.org/wiki/NoSQL>`_  document store. A
+mongo *document* is a `JSON <https://en.wikipedia.org/wiki/JSON>`_
+object with user-defined fields and values. There
 is no rigid structure imposed on documents. Multiple documents form groups
 called *collections*, and one or more collections comprise a *database*.
 
