@@ -46,7 +46,7 @@ _KEY_UNIT                = 'unit'
 _KEY_VALUE               = 'value'
 _KEY_VALUE_QUANTITY      = 'valueQuantity'
 
-_STR_BUNDLE      = 'FhirBundleCursorStu3'
+_STR_BUNDLE      = 'FhirBundleCursorStu2'
 #_STR_CONCEPT     = 'Concept'
 _STR_CONDITION   = 'Condition'
 _STR_OBSERVATION = 'Observation'
