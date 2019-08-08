@@ -825,7 +825,7 @@ def _remove_simple_overlap(results):
 
     3. This applies to the enumlist option: whenever two results overlap and
        one result is a terminating substring of the other, discard the
-       substring result as a separate match.
+       result with the contained substring.
 
        Example:
 

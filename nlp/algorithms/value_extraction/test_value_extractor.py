@@ -606,7 +606,7 @@ def test_value_extractor_full():
             _Result('bp', 110, None, ve.STR_EQUAL),
             _Result('bp', 115, None, ve.STR_EQUAL)
         ],
-        'Her BP at 3:27 on 3/27 from her 12 cm. x9 cm x6 cm. heart was 110/70.':[
+        'Her BP at 3:27 on3/27 from her12 cm. x9cm x6  cm. heart was110/70.':[
             _Result('bp', 110, None, ve.STR_EQUAL)
         ],
         "her BP was near the 120/80's":[
