@@ -189,8 +189,8 @@ Text Mode and the Enumeration List
 The value extractor supports a mode of operation ("text mode") in which it
 extracts text strings instead of numeric values. Text mode can be enabled by
 supplying a comma-separated string of terms to the
-:ref:`enum_list <valueextractor>` parameter in your NLPQL statement.
- The enumlist acts like a term filter for the results. Only those terms
+:ref:`enum_list <valueextractor>` parameter in your NLPQL statement. The
+enumlist acts like a term filter for the results. Only those terms
 appearing in the enumlist are returned in the ``value`` field of the JSON
 result.
 
@@ -224,8 +224,8 @@ The second JSON result would have these values:
        "value":"+"
    }
 
-Thus the value extractor supports the extraction of textual "values" in
-addition to numeric values.
+In this manner the value extractor supports the extraction of textual
+"values" in addition to numeric values.
 
 Algorithm
 =========
@@ -292,7 +292,7 @@ lowercase, then scans for dates, measurements, and times. The date and time
 expressions satisfy the criteria for erasure specified above. The resulting
 sentence after preprocessing is:
 ::
-   her bp at      on      from her                     heart was 110/70.
+   her bp at      on     from her                    heart was110/70.
 
 This is the text that the value extractor uses for subsequent stages. Observe
 that the erasure process preserves character offsets.
@@ -306,8 +306,8 @@ To understand why, consider a temperature query involving the term ``t``.
 Term matching would result in a match for every letter t in the text.
 
 The query regex enforces the constraint that the search term can only be found
-at a word boundary (and not inside other text). The query regex accomodates
-variable amounts of whitespace, separators, and fill words.
+at a word boundary and not as a substring of another word. The query regex
+accomodates variable amounts of whitespace, separators, and fill words.
 
 The query regex is incorporated into a list of additional regular expressions.
 These regexes each scan the sentence and attempt to recognize various contexts
@@ -346,7 +346,7 @@ from which to extract values. These contexts are, with examples:
    Overall LVEF is severely depressed (20%).
 
 Multiple regexes typically match a given query, so an overlap resolution
-process is required to select the result.
+process is required to select the final result.
 
 
 Overlap Resolution
