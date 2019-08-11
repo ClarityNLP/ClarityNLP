@@ -47,6 +47,10 @@ NLPQL_EXPR_OPSTRINGS       = list(set(_TOKEN_MAP.values()))
 NLPQL_EXPR_OPSTRINGS_LC    = [op.lower() for op in NLPQL_EXPR_OPSTRINGS]
 NLPQL_EXPR_LOGIC_OPERATORS = ['or', 'OR', 'and', 'AND', 'not', 'NOT']
 
+_TOKEN_NOT = 'NOT'
+_TOKEN_AND = 'AND'
+_TOKEN_ANDNOT = 'ANDNOT'
+
 
 ###############################################################################
 def _get_logic_ops(infix_expr):
@@ -120,13 +124,15 @@ class NlpqlExpressionParser(Parser):
                | nlpql_expr != nlpql_expr
                | nlpql_expr OR nlpql_expr
                | nlpql_expr AND nlpql_expr
-               | nlpql_expr NOT nlpql_expr
+               | nlpql_expr NOT nlpql_expr  # equivalent to A AND NOT B
+               #| NOT nlpql_expr
                | term
 
     term   : NUM_LITERAL
            | VARIABLE
            | NLPQL_FEATURE
            | LPAREN nlpql_expr RPAREN
+
 
     """
     
@@ -151,6 +157,14 @@ class NlpqlExpressionParser(Parser):
         else:
             return '( {0} {1} {2} )'.format(p[0], op_text, p[2])
 
+    # @_('NOT nlpql_expr')
+    # def nlpql_expr(self, p):
+    #     op_text = _TOKEN_MAP[ p[0] ]
+    #     if _POSTFIX:
+    #         return '{0} {1}'.format(p[1], op_text)
+    #     else:
+    #         return '( {0} {1} )'.format(op_text, p[1])
+        
     @_('nlpql_expr OR     nlpql_expr',
        'nlpql_expr AND    nlpql_expr',
        'nlpql_expr NOT    nlpql_expr'
@@ -159,6 +173,8 @@ class NlpqlExpressionParser(Parser):
         p0 = p[0]
         p2 = p[2]
         op_text = _TOKEN_MAP[ p[1] ]
+        if _TOKEN_NOT == op_text:
+            op_text = _TOKEN_ANDNOT
         p0_is_logic = -1 == p0.find('.')
         p2_is_logic = -1 == p2.find('.')
                     
@@ -189,9 +205,15 @@ class NlpqlExpressionParser(Parser):
                     p2 = _strip_parens(p2)
 
         if _POSTFIX:
-            return '{0} {1} {2}'.format(p0, p2, op_text)
+            if _TOKEN_ANDNOT == op_text:
+                return '{0} {1} {2} {3}'.format(p0, p2, _TOKEN_NOT, _TOKEN_AND)
+            else:
+                return '{0} {1} {2}'.format(p0, p2, op_text)
         else:
-            return '( {0} {1} {2} )'.format(p0, op_text, p2)
+            if _TOKEN_ANDNOT == op_text:
+                return '( {0} {1} {2} {3} )'.format(p0, _TOKEN_AND, _TOKEN_NOT, p2)
+            else:
+                return '( {0} {1} {2} )'.format(p0, op_text, p2)
         
     @_('term')
     def nlpql_expr(self, p):

@@ -46,8 +46,22 @@ _TEST_ID            = 'EXPR_TEST'
 _TEST_NLPQL_FEATURE = 'EXPR_TEST'
 
 
-_FILE_DATA_FIELDS = ['context', 'names', 'tasks', 'expressions']
+_FILE_DATA_FIELDS = [
+    'context',            # value of context variable in NLPQL file
+    'names',              # all defined names in the NLPQL file
+    'tasks',              # list of ClarityNLP tasks defined in the NLPQL file
+    'primitives',         # names actually used in expressions
+    'expressions',        # list of (nlpql_feature, string_def) tuples
+    'reduced_expressions' # same but with string_def expressed with primitives
+]
 FileData = namedtuple('FileData', _FILE_DATA_FIELDS)
+
+
+###############################################################################
+def _enable_debug():
+
+    global _TRACE
+    _TRACE = True
 
 
 ###############################################################################
@@ -405,6 +419,76 @@ def _run_tests(job_id,
 
 
 ###############################################################################
+def _reduce_expressions(file_data):
+
+    # this needs to be done after token resolution with the name_list
+    # also need whitespace between all tokens
+    # (expr_eval.is_valid)
+
+    if _TRACE:
+        print('called _reduce_expressions...')
+    
+    task_names = set(file_data.tasks)
+    defined_names = set(file_data.names)
+    
+    expr_dict = OrderedDict()
+    for expr_name, expr_def in file_data.expressions:
+        expr_dict[expr_name] = expr_def
+
+    all_primitive = False
+    while not all_primitive:
+        all_primitive = True
+        for expr_name, expr_def in expr_dict.items():
+            tokens = expr_def.split()
+            is_composite = False
+            for index, token in enumerate(tokens):
+                # only want NLPQL-defined names
+                if token not in defined_names:
+                    #print('not in defined_names: {0}'.format(token))
+                    continue
+                elif token in task_names:
+                    # cannot reduce further
+                    #print('Expression "{0}": primitive name "{1}"'.
+                    #      format(expr_name, token))
+                    continue
+                elif token != expr_name and token in expr_dict:
+                    is_composite = True
+                    #print('Expression "{0}": composite name "{1}"'.
+                    #      format(expr_name, token))
+                    # expand and surround with space-separated parens
+                    new_token = '( ' + expr_dict[token] + r' )'
+                    tokens[index] = new_token
+            if is_composite:
+                expr_dict[expr_name] = ' '.join(tokens)
+                all_primitive = False
+
+    # scan RHS of each expression and ensure expressed entirely in primitives
+    primitives = set()
+    for expr_name, expr_def in expr_dict.items():
+        tokens = expr_def.split()
+        for token in tokens:
+            if -1 != token.find('.'):
+                nlpql_feature, field = token.split('.')
+            else:
+                nlpql_feature = token
+            if token not in defined_names:
+                continue
+            assert nlpql_feature in task_names
+            primitives.add(nlpql_feature)
+
+    assert 0 == len(file_data.reduced_expressions)
+    for expr_name, reduced_expr in expr_dict.items():
+        file_data.reduced_expressions.append( (expr_name, reduced_expr) )
+    assert len(file_data.reduced_expressions) == len(file_data.expressions)
+    
+    assert 0 == len(file_data.primitives)
+    for p in primitives:
+        file_data.primitives.append(p)
+        
+    return file_data
+
+
+###############################################################################
 def _parse_file(filepath):
     """
     Read the NLPQL file and extract the context, nlpql_features, and 
@@ -448,7 +532,7 @@ def _parse_file(filepath):
     iterator = regex_expr_statement.finditer(text)
     for match in iterator:
         feature = match.group('feature').strip()
-        expression    = match.group('expr').strip()
+        expression = match.group('expr').strip()
         if feature in expression_dict:
             print('*** parse_file: multiple definitions for "{0}" ***'.
                   format(feature))
@@ -479,14 +563,33 @@ def _parse_file(filepath):
         name_list.append(task_name)
     for expression_name in expression_dict.keys():
         name_list.append(expression_name)
-        
+
     file_data = FileData(
         context = context,
         names = name_list,
+        primitives = [],   # computed later
         tasks = task_list,
+        reduced_expressions = [],
         expressions = [ (expr_name, expr_def) for
                         expr_name,expr_def in expression_dict.items()]
     )
+
+    # reduce the expressions to their most primitive form
+    file_data = _reduce_expressions(file_data)
+
+    if _TRACE:
+        print('FILE DATA AFTER EXPRESSION REDUCTION: ')
+        print('\t  context:  {0}'.format(file_data.context))
+        print('\ttask_names: {0}'.format(file_data.tasks))
+        print('\t     names: {0}'.format(file_data.names))
+        print('\tprimitives: {0}'.format(file_data.primitives))
+        print('\texpressions: ')
+        for i in range(len(file_data.expressions)):
+            expr_name, expr_def = file_data.expressions[i]
+            expr_name, expr_reduced = file_data.reduced_expressions[i]
+            print('{0}'.format(expr_name))
+            print('\toriginal: {0}'.format(expr_def))
+            print('\t reduced: {0}'.format(expr_reduced))
 
     return file_data
         
@@ -568,6 +671,7 @@ if __name__ == '__main__':
     debug = False
     if opts.debug:
         debug = True
+        _enable_debug()
 
     if opts.job_id is None:
         print('The job_id (-j command line option) must be provided.')
@@ -643,6 +747,7 @@ if __name__ == '__main__':
                    name_list,
                    debug)
     else:
+        # compute all expressions defined in the NLPQL file
         context = file_data.context
         for nlpql_feature, expression in file_data.expressions:
             _run_tests(job_id,

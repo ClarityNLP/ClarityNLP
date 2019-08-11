@@ -179,7 +179,7 @@ EXPR_TYPE_MIXED   = 'mixed' # math+logic or math with different NLPQL features
 EXPR_TYPE_UNKNOWN = 'unknown'
 
 # unsupported operator strings (should match entries in NLPQL_EXPR_OPSTRINGS)
-EXPR_UNSUPPORTED_OPSTRINGS = ['NOT']
+EXPR_UNSUPPORTED_OPSTRINGS = []#['NOT']
 
 # expression object, contains info on a primitive expression to be evaluated
 EXPR_OBJ_FIELDS = [
@@ -292,8 +292,8 @@ _PYTHON_OPERATOR_MAP = {
 }
 
 # convert from operator mnemonic to MongoDB aggregation operator
-# (the unary operator 'not' is handled separately)
 _MONGO_OPS = {
+    'not':'$not',
     'or':'$or',
     'and':'$and',
     'eq':'$eq',
@@ -332,7 +332,7 @@ _PRECEDENCE_MAP = {
 }
 
 # unary operators
-_UNITARY_OPS = ['not']
+#_UNARY_OPS = ['not']
 
 # operators with right-to-left associativity
 _R_TO_L_OPS = ['^'] # exponentiation
@@ -1393,15 +1393,15 @@ def _eval_math_expr(job_id,
     for token in postfix_tokens:
         if not _is_operator(token):
             stack.append(token)
-            if _TRACE: print('\tPushed postfix token "{0}"'.format(token))
+            if _TRACE: print('\t(M) Pushed postfix token "{0}"'.format(token))
         else:
-            if token in _UNITARY_OPS:
-                operand = stack.pop()
-                result = _mongo_math_format(token, operand)
-            else:
-                operand2 = stack.pop()
-                operand1 = stack.pop()
-                result = _mongo_math_format(token, operand1, operand2)
+            #if token in _UNARY_OPS:
+            #    operand = stack.pop()
+            #    result = _mongo_math_format(token, operand)
+            #else:
+            operand2 = stack.pop()
+            operand1 = stack.pop()
+            result = _mongo_math_format(token, operand1, operand2)
                 
             stack.append(result)
 
@@ -1547,11 +1547,14 @@ def _eval_logic_expr(job_id,
             if not match:
                 stack.append(token)
                 nlpql_features.append(token)
-                if _TRACE: print('\tPushed postfix token "{0}"'.format(token))
+                if _TRACE: print('\t(L) Pushed postfix token "{0}"'.format(token))
             else:
+                # only binary not is supported by the parser
+                # the parser converted "A NOT B" to "A AND NOT B"
+                # with this trick the _mongo_logic_format code still works
                 if 'not' == token:
                     operand = stack.pop()
-                    result = _mongo_logic_format(token, operand)
+                    result = _mongo_logic_format(token, [operand])
                 else:
                     operator, n = _decode_operator(token)
 
@@ -1566,7 +1569,7 @@ def _eval_logic_expr(job_id,
 
     # should only have a single element left on the stack, the result
     assert 1 == len(stack)
-    
+
     # add preamble/postamble to this stage
     op_stage = {"$match": {"$expr": stack[0]}}
 
@@ -1574,7 +1577,7 @@ def _eval_logic_expr(job_id,
         print('LOGIC_OP PIPELINE STAGE: ')
         print(op_stage)
         print()
-    
+
     pipeline = [
         
         # initial filter, match on job_id and check nlpql_feature field
@@ -1912,11 +1915,21 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
     cursor = mongo_collection_obj.find({'_id': {'$in': doc_ids}})
 
     # load all docs into a map for quick access to data
+    features = set()
     doc_map = {}
     for doc in cursor:
         # ObjectId is the key
         oid = doc['_id']
         doc_map[oid] = doc
+
+        if _TRACE:
+            # count distinct features
+            feature = doc['nlpql_feature']
+            features.add(feature)
+
+    if _TRACE:
+        print('\tFEATURE SET: {0}'.format(features))
+    sys.exit(0)
 
     # list of ObjectID lists, one list for each group
     oid_lists = []
