@@ -39,26 +39,26 @@ pipeline{
             }
           }
         }
-        // stage('Deploy Private'){
-        //   steps{
-        //     script{
-        //       docker.withRegistry("https://${GTRI_IMAGE_REGISTRY}"){
-        //         idpImage.push("latest")
-        //         identityAndAccessProxyImage.push("latest")
-        //         nlpApiImage.push("latest")
-        //         nlpSolrImage.push("latest")
-        //         nlpMongoImage.push("latest")
-        //         nlpPostgresImage.push("latest")
-        //         ingestApiImage.push("latest")
-        //         ingestMongoImage.push("latest")
-        //         ingestClientImage.push("latest")
-        //         viewerClientImage.push("latest")
-        //         dashboardClientImage.push("latest")
-        //       }
-        //     }
-        //   }
-        // }
-        stage('Deploy Public'){
+        stage('Push images to private registry'){
+          steps{
+            script{
+              docker.withRegistry("https://${GTRI_IMAGE_REGISTRY}"){
+                idpImage.push("latest")
+                identityAndAccessProxyImage.push("latest")
+                nlpApiImage.push("latest")
+                nlpSolrImage.push("latest")
+                nlpMongoImage.push("latest")
+                nlpPostgresImage.push("latest")
+                ingestApiImage.push("latest")
+                ingestMongoImage.push("latest")
+                ingestClientImage.push("latest")
+                viewerClientImage.push("latest")
+                dashboardClientImage.push("latest")
+              }
+            }
+          }
+        }
+        stage('Push images to public registry'){
           steps{
             script{
               docker.withRegistry('', CLARITYNLP_DOCKERHUB_CREDS){
