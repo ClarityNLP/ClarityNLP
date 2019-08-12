@@ -6,7 +6,7 @@ pipeline{
       GTRI_IMAGE_REGISTRY = credentials('gtri-image-registry')
       GTRI_RANCHER_API_ENDPOINT = credentials('gtri-rancher-api-endpoint')
       GTRI_HDAP_ENV_ID = credentials('hdap-aws-rancher-env')
-      CLARITYNLP_DOCKERHUB_CREDS = credentials('claritynlp-dockerhub')
+      CLARITYNLP_DOCKERHUB_CREDS = 'claritynlp-dockerhub'
       idpImage = ''
       identityAndAccessProxyImage = ''
       nlpApiImage = ''
