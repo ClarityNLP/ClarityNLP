@@ -6,7 +6,6 @@ export ADMIN_USERNAME=admin
 export ADMIN_PASSWORD=admin
 export CLIENT_CLI_SECRET=secret
 export CLIENT_NLPASS_SECRET=secret
-export CLIENT_FORMBUILDER_SECRET=secret
 export IDP_SIGNING_CREDS_PASSPHRASE=mysecurepassphrase
 
 # IDP MSSQL
@@ -27,7 +26,7 @@ export NLP_API_DEBUG_MODE=true
 export NLP_API_THREADED=true
 export NLP_API_TMP_DIR=/data/tmp
 export NLP_API_LOG_DIR=/tmp
-export NLP_API_URL=http://nlp-api:5000
+export NLP_API_URL=http://localhost:5000
 export BATCH_SIZE=25
 export OHDSI_WEBAPI_URL=http://api.ohdsi.org/WebAPI
 export SOLR_TEXT_FIELD=report_text
@@ -37,7 +36,7 @@ export SOLR_SOURCE_FIELD=source
 export SOLR_REPORT_DATE_FIELD=report_date
 export SOLR_SUBJECT_FIELD=subject
 export SOLR_REPORT_TYPE_FIELD=report_type
-export USE_MEMORY_CACHING=true
+export USE_MEMORY_CACHING=false
 export USE_PRECOMPUTED_SEGMENTATION=false
 export USE_REORDERED_NLPQL=false
 export USE_REDIS_CACHING=false
@@ -84,6 +83,7 @@ export NLP_PG_CONTAINER_PORT=5432
 export NLP_PG_USER=pg
 export NLP_PG_PASSWORD=pg
 export NLP_PG_DATABASE=clarity
+export INIT_OMOP=false
 
 # INGEST API
 export INGEST_API_HOSTNAME=ingest-api
@@ -141,23 +141,3 @@ export DASHBOARD_CLIENT_SUBDOMAIN=dashboard
 export DASHBOARD_API_HOSTNAME=dashboard-api
 export DASHBOARD_API_CONTAINER_PORT=8750
 export INTERVAL=5000
-
-# NLPAAS
-export CLARITYNLPAAS_HOSTNAME=nlpaas
-export CLARITYNLPAAS_HOST_PORT=7200
-export CLARITYNLPAAS_CONTAINER_PORT=5000
-export CLARITYNLPAAS_CUSTOM_S3_URL=
-export CLARITYNLPAAS_CUSTOM_DIR=custom_s3
-export CLARITYNLPAAS_CLARITYNLP_URL=${NLP_API_URL}
-export CLARITYNLPAAS_TOKEN_URL=
-export CLARITYNLPAAS_SECRET=
-
-# CQL / FHIR
-export FHIR_CQL_EVAL_URL=https://gt-apps.hdap.gatech.edu/cql/evaluate
-export FHIR_DATA_SERVICE_URI=https://apps.hdap.gatech.edu/gt-fhir/fhir/
-export FHIR_AUTH_TYPE=
-export FHIR_AUTH_TOKEN=
-export FHIR_TERMINOLOGY_SERVICE_URI=https://cts.nlm.nih.gov/fhir/
-export FHIR_TERMINOLOGY_SERVICE_ENDPOINT=Terminology Service Endpoint
-export FHIR_TERMINOLOGY_USER_NAME=username
-export FHIR_TERMINOLOGY_USER_PASSWORD=password
