@@ -182,6 +182,7 @@ services:
       POSTGRES_USER: ${NLP_PG_USER}
       POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
       POSTGRES_DB: ${NLP_PG_DATABASE}
+      INIT_OMOP: ${INIT_OMOP}
     ports:
       - ${NLP_PG_HOST_PORT}:${NLP_PG_CONTAINER_PORT}
     volumes:
