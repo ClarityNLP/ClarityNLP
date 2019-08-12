@@ -2,6 +2,8 @@
 
 set -e
 
+if [ "$INIT_OMOP" = true ] ; then
+
 >&2 echo "Downloading OMOP Vocabs"
 
 TMPFILE=`mktemp`
@@ -11,3 +13,5 @@ unzip -d "/tmp/vocabs" $TMPFILE
 rm $TMPFILE
 
 >&2 echo "Finished unpacking OMOP Vocabs"
+
+fi
