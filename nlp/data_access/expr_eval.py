@@ -142,8 +142,6 @@ Test code has been moved to 'expr_tester.py'.
 LIMITATIONS:
 
 
-The 'not' operator is not supported. You will need to use positive logic.
-
 Database operations involving syntax such as 'predicate IS NOT? NULL',
 'predicate NOT? LIKE predicate (STRING)?' are not yet supported.
 
@@ -236,7 +234,7 @@ regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
 _regex_temp_nlpql_logic_feature = re.compile(r'\Alogic_\d+_\d+\Z')
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -686,7 +684,7 @@ def _count_spaces(text):
 
 
 ###############################################################################
-def _make_n_ary(postfix_tokens):
+def _make_nary(postfix_tokens):
     """
     Find instances of n-ary AND and n-ary OR and replace with ORn and ANDn,
     where 'n' is an integer literal.
@@ -702,7 +700,7 @@ def _make_n_ary(postfix_tokens):
     All tokens are assumed to be lowercase.
     """
 
-    if _TRACE: print('calling _make_n_ary')
+    if _TRACE: print('calling _make_nary')
     
     postfix_string = ' '.join(postfix_tokens)
     if _TRACE: print('\tStarting postfix: {0}'.format(postfix_tokens))
@@ -922,7 +920,8 @@ def _decode_operator(token):
             n = 2
             
     if _TRACE:
-        print('\tFound operator "{0}", n == {1}'.format(operator, n))
+        print('\t[_decode_operator] Found operator "{0}", n == {1}'.
+              format(operator, n))
 
     return (operator, n)
         
@@ -940,23 +939,15 @@ def _is_temp_feature(label):
     
 
 ###############################################################################
-def _make_temp_feature(counter, token_list, expr_index, math_or_logic=_TMP_FEATURE_MATH):
+def _make_temp_feature(counter, token_list, expr_index,
+                       math_or_logic=_TMP_FEATURE_MATH):
     """
-    Create a unique NLPQL feature name for a mathematical subexpression.
-    This new name becomes the 'nlpql_feature' label that gets substituted
-    in place of the math subexpression.
+    Create a unique NLPQL feature name for a subexpression.
+    This new name becomes the 'nlpql_feature' label attached to the
+    subexpression.
 
     If this code is changed, the code in _is_temp_feature needs to be changed
     to match.
-
-    The new label consists of a prefix followed by the MD5 hash of the tokens
-    joined with an underscore. The prefix includes a counter, and the hash is
-    converted to hex for the final result.
-
-    The benefit of using a hash is that we avoid exceeding the MongoDB limit
-    on string length. Simply using a fixed-length slice of the joined strings
-    is not adequate, since lengthy expressions may use the same variables and
-    not differ until beyond the slice point.
     """
     
     if _TRACE:
@@ -1529,7 +1520,7 @@ def _eval_logic_expr(job_id,
     postfix_tokens = _infix_to_postfix(infix_tokens)
 
     # convert to n-ary and, or, if possible
-    postfix_tokens = _make_n_ary(postfix_tokens)
+    postfix_tokens = _make_nary(postfix_tokens)
     
     if _TRACE: print('\tpostfix: {0}'.format(postfix_tokens))
 
@@ -1758,11 +1749,16 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
 
     """
 
-    if _TRACE: print('Called generate_logical_result')
-    
+    if _TRACE:
+        print('Called generate_logical_result')
+        print('\tPostfix tokens: {0}'.format(eval_result.postfix_tokens))
+        print('\tFeature map: ')
+        for k,v in feature_map.items():
+            print('\t\t{0} => {1}'.format(k,v))
+
     postfix_tokens = eval_result.postfix_tokens
     assert len(postfix_tokens) > 1
-
+    
     # only strings get pushed onto the evaluation stack
     stack = []
 
@@ -1770,16 +1766,37 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
     oid_list = []
 
     counter = 0
-    for token in postfix_tokens:
+    for token_index, token in enumerate(postfix_tokens):
         match = _regex_logic_operator.match(token)
         if not match:
             stack.append(token)
-            if _TRACE: print('\tPushed postfix token "{0}"'.format(token))
+            if _TRACE: print('\tPushed postfix feature "{0}"'.format(token))
         else:
             if 'not' == token:
-                operand = stack.pop()
-                assert False # support for logicval 'not' is TBD
-                #result = _mongo_logic_format(token, operand)
+                print('\tSTACK AT NOT: ')
+                for item in stack:
+                    print('\t\t{0}'.format(item))
+                print('\tFEATURE MAP AT NOT: ')
+                for k,v in feature_map.items():
+                    print('\t\t{0} => {1}'.format(k,v))
+                # A logical 'not' is processed as "AND NOT"; should be followed
+                # by AND in the postfix token list
+                assert token_index < len(postfix_tokens) - 1
+                assert 'and' == postfix_tokens[token_index + 1]
+                # this feature shouldn't be present in the group
+                feature = stack.pop()
+                print('\tNOT feature: {0}'.format(feature))
+                # find this feature in the feature map
+                assert feature in feature_map
+                feature_count,index,index_list = feature_map[feature]
+                # should have NO features of this type
+                assert 0 == len(index_list)
+                # remove from feature_map
+                del feature_map[feature]
+                # skip the following 'and' token
+                token_index += 1
+                #assert False # support for logicval 'not' is TBD
+                continue
             else:
                 operator, n = _decode_operator(token)
 
@@ -1860,7 +1877,8 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
 
                 if _TRACE:
                     print('OID LIST (end): ')
-                    print(oid_list)
+                    for i, l in enumerate(oid_list):
+                        print('\t[{0}]:\t{1}'.format(i, l))
                     print()
 
                 # replace the old features in the feature_map with the new
@@ -1870,7 +1888,7 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                     if feature in feature_map:
                         feature_count, current_index, index_list = feature_map[feature]
 
-                        # remove ole feature entry
+                        # remove old feature entry
                         del feature_map[feature]
 
                         # accumulate count and indices for the old features,
@@ -1903,7 +1921,7 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
 
     doc_ids = eval_result.doc_ids
     group_list  = eval_result.group_list
-    
+
     if _TRACE:
         print('\tFinal NLPQL feature: {0}'.format(eval_result.nlpql_feature))
         print('\tExpression text: {0}'.format(eval_result.expr_text))
@@ -1929,8 +1947,11 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
 
     if _TRACE:
         print('\tFEATURE SET: {0}'.format(features))
-    sys.exit(0)
 
+extract postfix_tokens from eval_result, remove NOT expressions and
+send the simplified version to _generate_logical_result
+        
+        
     # list of ObjectID lists, one list for each group
     oid_lists = []
         
