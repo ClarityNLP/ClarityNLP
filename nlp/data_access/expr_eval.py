@@ -272,7 +272,7 @@ _regex_nary_and = re.compile(_str_nary_and, re.IGNORECASE)
 _regex_temp_feature = re.compile(r't\d+', re.IGNORECASE)
 
 # logic op after postfix conversion, includes tokens such as or3, and5, etc.
-_regex_logic_operator = re.compile(r'\A((and|or)(\d+)?|not)\Z')
+_regex_logic_operator = re.compile(r'\A((and|or)(\d+)?|notand|not)\Z')
 
 _PYTHON_OPERATOR_MAP = {
     'PLUS':'+',
@@ -1723,14 +1723,20 @@ def _get_docs_with_feature(feature, feature_map, group):
 
 
 ###############################################################################
-def _generate_logical_result(eval_result, group, doc_map, feature_map):
+def _generate_logical_result(
+        postfix_tokens,  # current expression in postfix form
+        expr_index,      # index of the current expression in the NLPQL file
+        group,           # result of MongoDB $group operation on context var
+        doc_map,         # dict: _id => document data
+        feature_map):    # see docstring for build_feature_map
     """
     Generate the groups of output documents that result from the evaluation of
     a logical expression.
 
     The parameters are:
 
-        eval_result: namedtuple containing the evaluation results
+        postfix_tokens: expression in postfix form
+        expr_index: index of expression in NLPQL file
         group: list of _id values for all docs in the result group
         doc_map: dict mapping document _id values to the actual document data
         feature_map: dict mapping nlpql_feature -> triplet consisting of
@@ -1751,14 +1757,13 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
 
     if _TRACE:
         print('Called generate_logical_result')
-        print('\tPostfix tokens: {0}'.format(eval_result.postfix_tokens))
+        print('\tPostfix tokens: {0}'.format(postfix_tokens))
         print('\tFeature map: ')
         for k,v in feature_map.items():
             print('\t\t{0} => {1}'.format(k,v))
 
-    postfix_tokens = eval_result.postfix_tokens
     assert len(postfix_tokens) > 1
-    
+
     # only strings get pushed onto the evaluation stack
     stack = []
 
@@ -1766,35 +1771,25 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
     oid_list = []
 
     counter = 0
-    for token_index, token in enumerate(postfix_tokens):
+    for token in postfix_tokens:
         match = _regex_logic_operator.match(token)
         if not match:
             stack.append(token)
             if _TRACE: print('\tPushed postfix feature "{0}"'.format(token))
         else:
-            if 'not' == token:
-                print('\tSTACK AT NOT: ')
-                for item in stack:
-                    print('\t\t{0}'.format(item))
-                print('\tFEATURE MAP AT NOT: ')
-                for k,v in feature_map.items():
-                    print('\t\t{0} => {1}'.format(k,v))
-                # A logical 'not' is processed as "AND NOT"; should be followed
-                # by AND in the postfix token list
-                assert token_index < len(postfix_tokens) - 1
-                assert 'and' == postfix_tokens[token_index + 1]
-                # this feature shouldn't be present in the group
+            if 'notand' == token:
+                # print('\tSTACK AT NOTAND: ')
+                # for item in stack:
+                #     print('\t\t{0}'.format(item))
+                # print('\tFEATURE MAP AT NOT: ')
+                # for k,v in feature_map.items():
+                #     print('\t\t{0} => {1}'.format(k,v))
                 feature = stack.pop()
-                print('\tNOT feature: {0}'.format(feature))
-                # find this feature in the feature map
-                assert feature in feature_map
-                feature_count,index,index_list = feature_map[feature]
-                # should have NO features of this type
-                assert 0 == len(index_list)
-                # remove from feature_map
-                del feature_map[feature]
-                # skip the following 'and' token
-                token_index += 1
+                #print('\tNOT feature: {0}'.format(feature))
+                if feature in feature_map:
+                    feature_count, cur_indx, indx_list = feature_map[feature]
+                    assert 0 == len(indx_list)
+                    del feature_map[feature]
                 #assert False # support for logicval 'not' is TBD
                 continue
             else:
@@ -1812,7 +1807,7 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
                 # construct a new feature name for this operation
                 new_feature_name = _make_temp_feature(counter,
                                                       operands,
-                                                      eval_result.expr_index,
+                                                      expr_index,
                                                       _TMP_FEATURE_LOGIC)
                 if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
                 counter += 1
@@ -1908,6 +1903,27 @@ def _generate_logical_result(eval_result, group, doc_map, feature_map):
     
 
 ###############################################################################
+def _fixup_not_tokens(postfix_tokens):
+    """
+    Scan the postfix tokens and change occurrences of 'not and' to 'notand'.
+    """
+
+    new_tokens = []
+
+    token_index = 0
+    while token_index < len(postfix_tokens):
+        token = postfix_tokens[token_index]
+        if 'not' == token:
+            token = 'notand'
+            token_index += 1
+            assert 'and' == postfix_tokens[token_index]
+        new_tokens.append(token)
+        token_index += 1
+        
+    return new_tokens
+
+
+###############################################################################
 def flatten_logical_result(eval_result, mongo_collection_obj):
     """
     Generate the groups of MongoDB _id values representing the result set.
@@ -1948,9 +1964,9 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
     if _TRACE:
         print('\tFEATURE SET: {0}'.format(features))
 
-extract postfix_tokens from eval_result, remove NOT expressions and
-send the simplified version to _generate_logical_result
-        
+    # scan the postfix tokens and replace 'not' followed by 'and' with 'notand',
+    # to simplify some upcoming processing
+    postfix_tokens = _fixup_not_tokens(eval_result.postfix_tokens)
         
     # list of ObjectID lists, one list for each group
     oid_lists = []
@@ -1993,7 +2009,12 @@ send the simplified version to _generate_logical_result
             # a single NLPQL feature means single-document groups
             oid_list = [[oid] for oid in oid_list]
         else:
-            oid_list = _generate_logical_result(eval_result, group, doc_map, feature_map)
+            oid_list = _generate_logical_result(
+                postfix_tokens,
+                eval_result.expr_index,
+                group,
+                doc_map,
+                feature_map)
             
         oid_lists.append(oid_list)
         
