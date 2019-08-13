@@ -216,27 +216,28 @@ def _run_tests(job_id,
 
     EXPRESSIONS = [
 
+        # counts for job 11222
         # # pure math expressions
-        # 'Temperature.value >= 100.4',
-        # 'Temperature.value >= 1.0004e2',
-        # '100.4 <= Temperature.value',
-        # '(Temperature.value >= 100.4)',
-        # 'Temperature.value == 100.4', # 28 results
-        # 'Temperature.value + 3 ^ 2 < 109',      # temp < 100, 659 results
-        # 'Temperature.value ^ 3 + 2 < 941194',   # temp < 98, 218 results
-        # 'Temperature.value % 3 ^ 2 == 2',       # temp == 101, 169 results
-        # 'Temperature.value * 4 ^ 2 >= 1616',    # temp >= 101, 1128 results
-        # 'Temperature.value / 98.6 ^ 2 < 0.01',  # temp < 97.2196, 114 results
-        # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581, 590 results
-        # '0 == Temperature.value % 20',          # temp == 100, 145 results
-        # '(Lesion.dimension_X <= 5) OR (Lesion.dimension_X >= 45)',
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',             # 1174 results
-        # '((Lesion.dimension_X) > (15)) AND (((Lesion.dimension_X) < (30)))', # 1174 results
+        # 'Temperature.value >= 100.4',    # 488 results
+        # 'Temperature.value >= 1.004e2',  # 488 results
+        # '100.4 <= Temperature.value',    # 488 results
+        # '(Temperature.value >= 100.4)',  # 488 results
+        # 'Temperature.value == 100.4',    # 14 results
+        # 'Temperature.value + 3 ^ 2 < 109',      # temp < 100, 374 results
+        # 'Temperature.value ^ 3 + 2 < 941194',   # temp < 98,  118 results
+        # 'Temperature.value % 3 ^ 2 == 2',       # temp == 101, 68 results
+        # 'Temperature.value * 4 ^ 2 >= 1616',    # temp >= 101, 417 results
+        # 'Temperature.value / 98.6 ^ 2 < 0.01',  # temp < 97.2196, 66 results
+        # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581, 325 results
+        # '0 == Temperature.value % 20',          # temp == 100, 40 results
+        # '(Lesion.dimension_X <= 5) OR (Lesion.dimension_X >= 45)', # 746 results
+        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',  # 528 results
+        # '((Lesion.dimension_X) > (15)) AND (((Lesion.dimension_X) < (30)))', # 528 results
 
         # # math involving multiple NLPQL features
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR (Temperature.value >= 100.4)',
-        # '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) OR (Temperature.value >= 100.4)',
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4',
+        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR (Temperature.value >= 100.4)', # 1016 results
+        '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND Temperature.value > 100.4',
+        #'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4',
         # # #### not legal, since each math expression must produce a Boolean result:
         # # # '(Temp.value/98.6) * (HR.value/60.0) * (BP.systolic/110) < 1.1',
 
@@ -247,7 +248,7 @@ def _run_tests(job_id,
         # 'Temperature AND hasSepsisSymptoms',
         # 'hasTachycardia AND hasShock', # subjects 14894, 20417
         # 'hasTachycardia OR hasShock',
-        'hasTachycardia NOT hasShock',
+        # 'hasTachycardia NOT hasShock',
         # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
         # '((hasShock) AND (hasDyspnea))',
         # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
@@ -309,13 +310,14 @@ def _run_tests(job_id,
     the_name_list = NAME_LIST
     if name_list is not None:
         the_name_list = name_list
+
+    if command_line_expression is None:
+        expressions = EXPRESSIONS
+    else:
+        expressions = [command_line_expression]
         
     counter = 1
-    for e in EXPRESSIONS:
-
-        # override with expression from the command line, if any
-        if command_line_expression is not None:
-            e = command_line_expression
+    for e in expressions:
 
         print('[{0:3}]: "{1}"'.format(counter, e))
 
@@ -591,6 +593,7 @@ def _parse_file(filepath):
             print('\toriginal: {0}'.format(expr_def))
             print('\t reduced: {0}'.format(expr_reduced))
 
+    sys.exit(0)
     return file_data
         
 

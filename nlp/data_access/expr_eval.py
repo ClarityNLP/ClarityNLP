@@ -1821,18 +1821,11 @@ def _generate_logical_result(
             else: # 'and' == operator
                 # a logical AND requires all features to exist
                 max_count = 0
-                all_exist = True
                 for feature in operands:
-                    if isinstance(feature, str) and not feature in feature_map:
-                        all_exist = False
-                        break
-                    else:
-                        feature_count,index,index_list = feature_map[feature]
-                        if feature_count > max_count:
-                            max_count = feature_count
-                if not all_exist:
-                    stack.append('None')                    
-                    continue
+                    assert feature in feature_map
+                    feature_count, index, index_list = feature_map[feature]
+                    if feature_count > max_count:
+                        max_count = feature_count
 
                 # Generate 'max_count' ntuples; each ntuple has len(operands)
                 # features. For those features appearing fewer than max_count
