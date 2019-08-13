@@ -272,7 +272,7 @@ _regex_nary_and = re.compile(_str_nary_and, re.IGNORECASE)
 _regex_temp_feature = re.compile(r't\d+', re.IGNORECASE)
 
 # logic op after postfix conversion, includes tokens such as or3, and5, etc.
-_regex_logic_operator = re.compile(r'\A((and|or)(\d+)?|notand|not)\Z')
+_regex_logic_operator = re.compile(r'\A((and|or)(\d+)?|not)\Z')
 
 _PYTHON_OPERATOR_MAP = {
     'PLUS':'+',
@@ -1775,127 +1775,112 @@ def _generate_logical_result(
         match = _regex_logic_operator.match(token)
         if not match:
             stack.append(token)
-            if _TRACE: print('\tPushed postfix feature "{0}"'.format(token))
+            if _TRACE:
+                print('\tPushed postfix feature "{0}"'.format(token))
+            continue
         else:
-            if 'notand' == token:
-                # print('\tSTACK AT NOTAND: ')
-                # for item in stack:
-                #     print('\t\t{0}'.format(item))
-                # print('\tFEATURE MAP AT NOT: ')
-                # for k,v in feature_map.items():
-                #     print('\t\t{0} => {1}'.format(k,v))
-                feature = stack.pop()
-                #print('\tNOT feature: {0}'.format(feature))
-                if feature in feature_map:
-                    feature_count, cur_indx, indx_list = feature_map[feature]
-                    assert 0 == len(indx_list)
-                    del feature_map[feature]
-                #assert False # support for logicval 'not' is TBD
-                continue
-            else:
-                operator, n = _decode_operator(token)
+            operator, n = _decode_operator(token)
 
-                # pop n operands from the stack
-                operands = []
-                new_feature_name = ''
-                for i in range(n):
-                    operand = stack.pop()
-                    operands.append(operand)
-                operands.reverse()
-                if _TRACE: print('\tOperands: {0}'.format(operands))
+            # pop n operands from the stack
+            operands = []
+            new_feature_name = ''
+            for i in range(n):
+                operand = stack.pop()
+                operands.append(operand)
+            operands.reverse()
+            if _TRACE: print('\tOperands: {0}'.format(operands))
 
-                # construct a new feature name for this operation
-                new_feature_name = _make_temp_feature(counter,
-                                                      operands,
-                                                      expr_index,
-                                                      _TMP_FEATURE_LOGIC)
-                if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
-                counter += 1
+            # construct a new feature name for this operation
+            new_feature_name = _make_temp_feature(counter,
+                                                  operands,
+                                                  expr_index,
+                                                  _TMP_FEATURE_LOGIC)
+            if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
+            counter += 1
 
-                # An 'ntuple' is a group of result documents; it is one of the
-                # inner lists in the result list-of-lists that this function
-                # returns. An evaluation of an OR or an AND usually generates
-                # multiple ntuples.
-                ntuples = []
-                if 'or' == operator:
-                    for feature in operands:
-                        match = _regex_temp_nlpql_logic_feature.match(feature)
-                        if not match:
-                            # simple feature
-                            if feature in feature_map:
-                                oids = _get_docs_with_feature(feature,
-                                                              feature_map,
-                                                              group)
-                                for oid in oids:
-                                    # each OR'd feature is an ntuple in itself
-                                    ntuples.append([oid])
-                        else:
-                            # result from prior logical operation; accept as is
-                            ntuples.extend(oid_list)
-                else: # 'and' == operator
-
-                    # a logical AND requires all features to exist
-                    max_count = 0
-                    all_exist = True
-                    for feature in operands:
-                        if isinstance(feature, str) and not feature in feature_map:
-                            all_exist = False
-                            break
-                        else:
-                            feature_count,index,index_list = feature_map[feature]
-                            if feature_count > max_count:
-                                max_count = feature_count
-                    if not all_exist:
-                        stack.append('None')
-                        continue
-
-                    # Generate 'max_count' ntuples; each ntuple has len(operands)
-                    # features. For those features appearing fewer than max_count
-                    # times, repeat until max_count has been reached.
-                    while len(ntuples) < max_count:
-                        ntuple = []
-                        for feature in operands:
-                            v = feature_map[feature]
-                            feature_count = v[0]
-                            current_index = v[1]
-                            index_list    = v[2]
-                            ntuple.append(group[index_list[current_index]])
-                            current_index += 1
-                            if current_index >= feature_count:
-                                current_index = 0
-                            feature_map[feature] = (feature_count, current_index, index_list)
-                        ntuples.append(ntuple)
-
-                # the newly-generated ntuples replace the previous state
-                oid_list = []
-                oid_list = copy.deepcopy(ntuples)
-
-                if _TRACE:
-                    print('OID LIST (end): ')
-                    for i, l in enumerate(oid_list):
-                        print('\t[{0}]:\t{1}'.format(i, l))
-                    print()
-
-                # replace the old features in the feature_map with the new
-                new_oid_count = 0
-                new_indices = []
+            # An 'ntuple' is a group of result documents; it is one of the
+            # inner lists in the result list-of-lists that this function
+            # returns. An evaluation of an OR or an AND usually generates
+            # multiple ntuples.
+            ntuples = []
+            if 'or' == operator:
                 for feature in operands:
-                    if feature in feature_map:
-                        feature_count, current_index, index_list = feature_map[feature]
+                    match = _regex_temp_nlpql_logic_feature.match(feature)
+                    if not match:
+                        # simple feature
+                        if feature in feature_map:
+                            oids = _get_docs_with_feature(feature,
+                                                          feature_map,
+                                                          group)
+                            for oid in oids:
+                                # each OR'd feature is an ntuple in itself
+                                ntuples.append([oid])
+                    else:
+                        # result from prior logical operation; accept as is
+                        ntuples.extend(oid_list)
+            else: # 'and' == operator
+                # a logical AND requires all features to exist
+                max_count = 0
+                all_exist = True
+                for feature in operands:
+                    if isinstance(feature, str) and not feature in feature_map:
+                        all_exist = False
+                        break
+                    else:
+                        feature_count,index,index_list = feature_map[feature]
+                        if feature_count > max_count:
+                            max_count = feature_count
+                if not all_exist:
+                    stack.append('None')                    
+                    continue
 
-                        # remove old feature entry
-                        del feature_map[feature]
+                # Generate 'max_count' ntuples; each ntuple has len(operands)
+                # features. For those features appearing fewer than max_count
+                # times, repeat until max_count has been reached.
+                while len(ntuples) < max_count:
+                    ntuple = []
+                    for feature in operands:
+                        v = feature_map[feature]
+                        feature_count = v[0]
+                        current_index = v[1]
+                        index_list    = v[2]
+                        ntuple.append(group[index_list[current_index]])
+                        current_index += 1
+                        if current_index >= feature_count:
+                            current_index = 0
+                        feature_map[feature] = (feature_count, current_index, index_list)
+                    ntuples.append(ntuple)
 
-                        # accumulate count and indices for the old features,
-                        # which now have the label 'new_feature_name'
-                        new_oid_count += feature_count
-                        new_indices.extend(index_list)
+            # the newly-generated ntuples replace the previous state
+            oid_list = []
+            oid_list = copy.deepcopy(ntuples)
 
-                # add a new entry for the new features
-                feature_map[new_feature_name] = (new_oid_count, 0, copy.deepcopy(new_indices))
+            if _TRACE:
+                print('OID LIST (end): ')
+                for i, l in enumerate(oid_list):
+                    print('\t[{0}]:\t{1}'.format(i, l))
+                print()
 
-            # the new feature name now replaces what was popped
-            stack.append(new_feature_name)
+            # replace the old features in the feature_map with the new
+            new_oid_count = 0
+            new_indices = []
+            for feature in operands:
+                if feature in feature_map:
+                    feature_count, current_index, index_list = feature_map[feature]
+
+                    # remove old feature entry
+                    del feature_map[feature]
+
+                    # accumulate count and indices for the old features,
+                    # which now have the label 'new_feature_name'
+                    new_oid_count += feature_count
+                    new_indices.extend(index_list)
+
+            # add a new entry for the new features
+            feature_map[new_feature_name] = (new_oid_count, 0, copy.deepcopy(new_indices))
+
+        # the new feature name now replaces what was popped
+        stack.append(new_feature_name)
 
     # should only have a single element left on the stack, the result
     assert 1 == len(stack)
@@ -1903,23 +1888,59 @@ def _generate_logical_result(
     
 
 ###############################################################################
-def _fixup_not_tokens(postfix_tokens):
+def _remove_negated_expressions(postfix_tokens):
     """
-    Scan the postfix tokens and change occurrences of 'not and' to 'notand'.
+    Remove negated expressions from the postfix expression supplied as input.
     """
+    TOKEN_NOTAND = 'notand'
 
+    if _TRACE:
+        print('Calling _remove_negated_expressions...')
+        print('\tinitial postfix tokens: {0}'.format(postfix_tokens))
+    
     new_tokens = []
 
+    # replace 'not and' with 'notand' to simplify evaluation
     token_index = 0
     while token_index < len(postfix_tokens):
         token = postfix_tokens[token_index]
         if 'not' == token:
-            token = 'notand'
+            token = TOKEN_NOTAND
             token_index += 1
             assert 'and' == postfix_tokens[token_index]
         new_tokens.append(token)
         token_index += 1
-        
+
+    # 'evaluate' the token stream and remove arguments of 'notand'
+    stack = []
+    for token in new_tokens:
+        if TOKEN_NOTAND == token:
+            # pop the top of the stack and discard
+            assert len(stack) > 0
+            stack.pop()
+            continue
+        match = _regex_logic_operator.match(token)
+        if match:
+            # pop n operands, join in proper order with commas,
+            # append operator token, and push on stack
+            operator, n = _decode_operator(token)
+            operands = []
+            for i in range(n):
+                operand = stack.pop()
+                operands.append(operand)
+            operands.reverse()
+            operands.append(token)
+            eval_string = ','.join(operands)
+            stack.append(eval_string)
+        else:
+            stack.append(token)
+
+    assert 1 == len(stack)
+    new_tokens = stack[0].split(',')
+
+    if _TRACE:
+        print('\t  final postfix tokens: {0}'.format(new_tokens))
+
     return new_tokens
 
 
@@ -1964,9 +1985,9 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
     if _TRACE:
         print('\tFEATURE SET: {0}'.format(features))
 
-    # scan the postfix tokens and replace 'not' followed by 'and' with 'notand',
-    # to simplify some upcoming processing
-    postfix_tokens = _fixup_not_tokens(eval_result.postfix_tokens)
+    # remove negated expressions to simplify output generation
+    # the MongoDB aggregation stage has already removed the data
+    postfix_tokens = _remove_negated_expressions(eval_result.postfix_tokens)
         
     # list of ObjectID lists, one list for each group
     oid_lists = []
