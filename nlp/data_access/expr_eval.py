@@ -226,12 +226,11 @@ EXPR_RESULT_FIELDS = [
 
 EvalResult = namedtuple('EvalResult', EXPR_RESULT_FIELDS)
 
-# regex that identifies a temporary NLPQL feature
-# 32 hex digits in the MD5 hash, needs to be exportable
+# regex that identifies a temporary NLPQL feature, exportable
 regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
-    
-# identifies a temp logic feature, not exported
-_regex_temp_nlpql_logic_feature = re.compile(r'\Alogic_\d+_\d+\Z')
+
+
+###############################################################################
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 4
@@ -269,10 +268,15 @@ _str_nary_and = _str_identifier + r'\s'            +\
             _str_identifier + r'\sand\b'
 _regex_nary_and = re.compile(_str_nary_and, re.IGNORECASE)
 
-_regex_temp_feature = re.compile(r't\d+', re.IGNORECASE)
-
 # logic op after postfix conversion, includes tokens such as or3, and5, etc.
 _regex_logic_operator = re.compile(r'\A((and|or)(\d+)?|not)\Z')
+
+# identifies a temp logic feature, not exported
+_regex_temp_nlpql_logic_feature = re.compile(r'\Alogic_\d+_\d+\Z')
+
+# identifies a temp math feature, not exported
+_regex_temp_math_feature = re.compile(r'\Amath_\d+_\d+\Z')
+
 
 _PYTHON_OPERATOR_MAP = {
     'PLUS':'+',
@@ -330,7 +334,7 @@ _PRECEDENCE_MAP = {
 }
 
 # unary operators
-#_UNARY_OPS = ['not']
+_UNARY_OPS = ['not']
 
 # operators with right-to-left associativity
 _R_TO_L_OPS = ['^'] # exponentiation
@@ -399,10 +403,15 @@ def _is_math_expr(infix_tokens):
     mixed type.
     """
 
+    if _TRACE:
+        print('called _is_math_expr...')
+        print('\tinfix_tokens: {0}'.format(infix_tokens))
+    
     nlpql_feature_set = set()
     value_set = set()
 
     for token in infix_tokens:
+        print('\t[_is_math_expr] token "{0}"'.format(token))
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
             continue
         match = _regex_variable.match(token)
@@ -417,10 +426,19 @@ def _is_math_expr(infix_tokens):
         match = _regex_numeric_literal.match(token)
         if match:
             continue
+        match = _regex_temp_math_feature.match(token)
+        if match:
+            continue
 
         # if here, not a pure math expression
+        print('\tNot a math expression')
         return False
+    
+    #need new criteria for diagnosing a math expression
+    #N temp math features connected by AND or OR is also a math expression
 
+    print('\tFound these nlpql features: {0}'.format(nlpql_feature_set))
+    print('\tIs a math expression: {0}'.format(1 == len(nlpql_feature_set)))
     return 1 == len(nlpql_feature_set)
 
 
@@ -939,7 +957,9 @@ def _is_temp_feature(label):
     
 
 ###############################################################################
-def _make_temp_feature(counter, token_list, expr_index,
+def _make_temp_feature(counter,
+                       #token_list,
+                       expr_index,
                        math_or_logic=_TMP_FEATURE_MATH):
     """
     Create a unique NLPQL feature name for a subexpression.
@@ -952,7 +972,7 @@ def _make_temp_feature(counter, token_list, expr_index,
     
     if _TRACE:
         print('Called _make_temp_feature')
-        print('\t    tokens: {0}'.format(token_list))
+        #print('\t    tokens: {0}'.format(token_list))
         print('\texpr_index: {0}, counter: {1}'.format(expr_index, counter))
 
     if _TMP_FEATURE_MATH == math_or_logic:
@@ -1033,7 +1053,7 @@ def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
                             del math_expressions[m]
                     nlpql_expression = ' '.join(expr_tokens)
                     nlpql_feature = _make_temp_feature(counter,
-                                                       saved_tokens,
+                                                       #saved_tokens,
                                                        expr_index)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
@@ -1101,12 +1121,28 @@ def _resolve_mixed(infix_expression, expr_index):
             while _LEFT_PARENS != s:
                 expr_tokens.append(s)
                 s = stack.pop()
-
             expr_tokens.reverse()
+            
             nlpql_expression = ' '.join(expr_tokens)
             expr_type = _expr_type(nlpql_expression)
             variable_set, feature_set, field_set = _extract_variables(nlpql_expression)
             if EXPR_TYPE_MATH == expr_type:
+
+                # found a math expression; check to see if preceded by 'not'
+                print('FOUND MATH EXPRESSION: "{0}"'.format(nlpql_expression))
+                if len(stack) > 0 and 'NOT' == stack[-1]:
+                    print('\tPRECEDED BY NOT!')
+                    print('\tExpr tokens: {0}'.format(expr_tokens))
+                    # prefix the NOT token and surround expr with parens
+                    nlpql_expression = 'NOT ( ' + nlpql_expression + ' )'
+                    expr_tokens = nlpql_expression.split()
+                    is_math = _is_math_expr(expr_tokens)
+                    print('\tis_math: {0}'.format(is_math))
+                    print('\t New expression: "{0}"'.format(nlpql_expression))
+                    print('\tNew expr_tokens: {0}'.format(expr_tokens))
+                    # pop the not operator from the stack
+                    stack.pop()
+                
                 # if single parenthesized token, push with no parens
                 if 1 == len(expr_tokens):
                     stack.append(expr_tokens.pop())
@@ -1114,7 +1150,7 @@ def _resolve_mixed(infix_expression, expr_index):
                     # push replacement token with no parens
                     feature = feature_set.pop()
                     nlpql_feature = _make_temp_feature(counter,
-                                                       expr_tokens,
+                                                       #expr_tokens,
                                                        expr_index)
                     stack.append(nlpql_feature)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
@@ -1342,7 +1378,7 @@ def _mongo_math_format(operator, op1, op2=None):
               '"{0}", op1: "{1}", op2: "{2}"'.format(operator, op1, op2))
     
     if 'not' == operator:
-        result = {'$not': [_format_math_operand]}
+        result = {'$not': [_format_math_operand(op1)]}
     else:
         opstring = '{0}'.format(_MONGO_OPS[operator])
         operand1 = _format_math_operand(op1)
@@ -1389,13 +1425,13 @@ def _eval_math_expr(job_id,
             stack.append(token)
             if _TRACE: print('\t(M) Pushed postfix token "{0}"'.format(token))
         else:
-            #if token in _UNARY_OPS:
-            #    operand = stack.pop()
-            #    result = _mongo_math_format(token, operand)
-            #else:
-            operand2 = stack.pop()
-            operand1 = stack.pop()
-            result = _mongo_math_format(token, operand1, operand2)
+            if token in _UNARY_OPS:
+                operand = stack.pop()
+                result = _mongo_math_format(token, operand)
+            else:
+                operand2 = stack.pop()
+                operand1 = stack.pop()
+                result = _mongo_math_format(token, operand1, operand2)
                 
             stack.append(result)
 
@@ -1451,7 +1487,7 @@ def _eval_math_expr(job_id,
         doc_ids        = copy.deepcopy(doc_ids),
         group_list     = [] # no groups for math expressions
     )
-    
+
     return result
     
         
@@ -1868,7 +1904,7 @@ def _generate_logical_result(
 
             # construct a new feature name for this operation
             new_feature_name = _make_temp_feature(counter,
-                                                  operands,
+                                                  #operands,
                                                   expr_index,
                                                   _TMP_FEATURE_LOGIC)
             if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
@@ -2080,7 +2116,7 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
                 print('\t{0}'.format(zipped))
         
         group_index += 1
-                
+        
     return doc_map, oid_lists
     
 
@@ -2291,7 +2327,9 @@ def generate_expressions(final_nlpql_feature, parse_result):
         # ensure the final expression is of logic type
         final_expr_type = _expr_type(final_infix_expr)
         assert EXPR_TYPE_LOGIC == final_expr_type
-
+        
+        sys.exit(0)
+        
         # check types of all subexpressions
         for sub_feature, sub_expr in subexpressions:
             subexpr_type = _expr_type(sub_expr)
