@@ -125,7 +125,6 @@ class NlpqlExpressionParser(Parser):
                | nlpql_expr OR nlpql_expr
                | nlpql_expr AND nlpql_expr
                | nlpql_expr NOT nlpql_expr  # equivalent to A AND NOT B
-               #| NOT nlpql_expr
                | term
 
     term   : NUM_LITERAL
@@ -157,14 +156,6 @@ class NlpqlExpressionParser(Parser):
         else:
             return '( {0} {1} {2} )'.format(p[0], op_text, p[2])
 
-    # @_('NOT nlpql_expr')
-    # def nlpql_expr(self, p):
-    #     op_text = _TOKEN_MAP[ p[0] ]
-    #     if _POSTFIX:
-    #         return '{0} {1}'.format(p[1], op_text)
-    #     else:
-    #         return '( {0} {1} )'.format(op_text, p[1])
-        
     @_('nlpql_expr OR     nlpql_expr',
        'nlpql_expr AND    nlpql_expr',
        'nlpql_expr NOT    nlpql_expr'
@@ -217,27 +208,22 @@ class NlpqlExpressionParser(Parser):
         
     @_('term')
     def nlpql_expr(self, p):
-        #return NlpqlTerm(p.expr, p.term)
         return '{0}'.format(p.term)
 
     @_('NUM_LITERAL')
     def term(self, p):
-        #return NlpqlTerm('NUM_LITERAL', p.NUM_LITERAL)
         return '{0}'.format(p.NUM_LITERAL)
 
     @_('VARIABLE')
     def term(self, p):
-        #return NlpqlTerm('VARIABLE', p.VARIABLE)
         return '{0}'.format(p.VARIABLE)
 
     @_('NLPQL_FEATURE')
     def term(self, p):
-        #return NlpqlTerm('NLPQL_FEATURE', p.NLPQL_FEATURE)
         return '{0}'.format(p.NLPQL_FEATURE)
     
     @_('LPAREN nlpql_expr RPAREN')
     def term(self, p):
-        #return NlpqlTerm('NLPQL_EXPR', p.nlpql_expr)
         return '{0}'.format(p.nlpql_expr)
 
     def error(self, p):

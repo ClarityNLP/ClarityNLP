@@ -216,69 +216,126 @@ def _run_tests(job_id,
 
     EXPRESSIONS = [
 
-        # counts for job 11222
+        # counts are for job 11222
+        
+        # all temperature measurements
+        # 'Temperature', # 945 results
+
+        # all lesion measurements
+        # 'Lesion',      # 2425 results
+
+        # all instances of a temp measurement AND a lesion measurement
+        # 'Temperature AND Lesion', # 17 results
+
+        # all instances of the given symptoms
+        # 'hasTachycardia', # 1996 results
+        # 'hasRigors',      # 683 results
+        # 'hasShock',       # 2117 results
+        # 'hasDyspnea',     # 3277 results
+        # 'hasNausea',      # 2261 results
+        # 'hasVomiting',    # 2303 results
+
+        # all instances of a temp measurement and another symptom
+        # 'Temperature AND hasTachycardia', # 55 results
+        # 'Temperature AND hasRigors',      # 11 results
+        # 'Temperature AND hasShock',       # 50 results
+        # 'Temperature AND hasDyspnea',     # 64 results
+        # 'Temperature AND hasNausea',      # 91 results
+        # 'Temperature AND hasVomiting',    # 74 results
+
+        # all instances of a lesion measurement and another symptom
+        # 'Lesion AND hasTachycardia', # 131 results
+        # 'Lesion AND hasRigors',      # 50 results
+        # 'Lesion AND hasShock',       # 43 results
+        # 'Lesion AND hasDyspnea',     # 103 results
+        # 'Lesion AND hasNausea',      # 136 results
+        # 'Lesion AND hasVomiting',    # 150 results
+        
         # # pure math expressions
         # 'Temperature.value >= 100.4',    # 488 results
         # 'Temperature.value >= 1.004e2',  # 488 results
         # '100.4 <= Temperature.value',    # 488 results
         # '(Temperature.value >= 100.4)',  # 488 results
         # 'Temperature.value == 100.4',    # 14 results
-        # 'Temperature.value + 3 ^ 2 < 109',      # temp < 100, 374 results
-        # 'Temperature.value ^ 3 + 2 < 941194',   # temp < 98,  118 results
-        # 'Temperature.value % 3 ^ 2 == 2',       # temp == 101, 68 results
-        # 'Temperature.value * 4 ^ 2 >= 1616',    # temp >= 101, 417 results
+        # 'Temperature.value + 3 ^ 2 < 109',      # temp < 100,     374 results
+        # 'Temperature.value ^ 3 + 2 < 941194',   # temp < 98,      118 results
+        # 'Temperature.value % 3 ^ 2 == 2',       # temp == 101,    68 results
+        # 'Temperature.value * 4 ^ 2 >= 1616',    # temp >= 101,    417 results
         # 'Temperature.value / 98.6 ^ 2 < 0.01',  # temp < 97.2196, 66 results
-        # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581, 325 results
-        # '0 == Temperature.value % 20',          # temp == 100, 40 results
-        # '(Lesion.dimension_X <= 5) OR (Lesion.dimension_X >= 45)', # 746 results
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',  # 528 results
+        # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581,  325 results
+        # '0 == Temperature.value % 20',          # temp == 100,    40 results
+        # '(Lesion.dimension_X <= 5) OR (Lesion.dimension_X >= 45)',           # 746 results
+        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',               # 528 results
         # '((Lesion.dimension_X) > (15)) AND (((Lesion.dimension_X) < (30)))', # 528 results
 
-        # # math involving multiple NLPQL features
+        # math involving multiple NLPQL features
         # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR (Temperature.value >= 100.4)', # 1016 results
-        '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND Temperature.value > 100.4',
-        #'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4',
-        # # #### not legal, since each math expression must produce a Boolean result:
-        # # # '(Temp.value/98.6) * (HR.value/60.0) * (BP.systolic/110) < 1.1',
+        # '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND Temperature.value > 100.4', # 2 results
+        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4', # 2 results
+        
+        # 'hasTachycardia AND hasShock',                  # 191 results
+        # 'hasTachycardia OR hasShock',                   # 4113 results
+        # 'hasTachycardia NOT hasShock',                  # 1891 results
+        # '(hasTachycardia AND hasDyspnea) NOT hasRigors' # 229 results
+        # 'hasTachycardia AND hasDyspnea',                # 240 results
+        # '((hasShock) AND (hasDyspnea))',                # 155 results
+        # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 546 results
+        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',       # 546 results
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea)',   # 1800 results
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)',     # 1702 results
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea or hasVomiting)', # 1622 results
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock)', 1528 results
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
+        # 'OR Temperature)', # 1491 results
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
+        # 'OR Temperature OR Lesion)', # 1448 results
 
-        # # pure logic expressions
-        # 'hasTachycardia',
-        # 'hasSepsis',
-        # 'hasTempAndSepsisSymptoms',
-        # 'Temperature AND hasSepsisSymptoms',
-        # 'hasTachycardia AND hasShock', # subjects 14894, 20417
-        # 'hasTachycardia OR hasShock',
-        # 'hasTachycardia NOT hasShock',
-        # 'hasTachycardia AND hasDyspnea', # subjects 22059, 24996, 
-        # '((hasShock) AND (hasDyspnea))',
-        # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 313
-        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',
-        # 'hasRigors AND hasTachycardia AND hasDyspnea', # 13732, 16182, 24799, 5701
-        # 'hasRigors OR hasTachycardia AND hasDyspnea', # 2662
-        # 'hasRigors AND hasDyspnea AND hasTachycardia', # 13732, 16182, 24799, 7480, 5701,
-        # '(hasRigors OR hasDyspnea) AND hasTachycardia', #286
-        # 'hasRigors AND (hasTachycardia AND hasNausea)',
-        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)',
-        # 'hasFever AND (hasDyspnea OR hasTachycardia)',
+        # 'hasTachycardia NOT (hasRigors AND hasDyspnea)',  # 1987 results
+        # 'hasRigors AND hasTachycardia AND hasDyspnea',    # 11 results
+        # 'hasRigors AND hasDyspnea AND hasTachycardia',    # 11 results
+        # 'hasRigors OR hasTachycardia AND hasDyspnea',     # 923 results
+        # '(hasRigors OR hasDyspnea) AND hasTachycardia',   # 340 results
+        # 'hasRigors AND (hasTachycardia AND hasNausea)',   # 22 results
+        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)', # 743 results
+        # '(hasShock OR hasDyspnea) NOT (hasTachycardia OR hasNausea)', 
+        
+        # 'Temperature AND (hasDyspnea OR hasTachycardia)',  # 106 results
+        # 'Lesion AND (hasDyspnea OR hasTachycardia)',       # 234 results
 
         # mixed math and logic 
-        # 'hasNausea AND Temperature.value >= 100.4',
-        # 'Lesion.dimension < 10 OR hasRigors',
-        # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND (Temperature.value >= 100.4)',
-        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 AND (hasRigors OR hasTachycardia or hasDyspnea)',
-        # 'Lesion.dimension_X > 10 OR Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia or hasDyspnea',
-        # '((Temperature.value >= 100.4) AND (hasRigors AND hasTachycardia AND hasNausea))',
+        # 'hasNausea AND Temperature.value >= 100.4', # 73 results
+        # 'Lesion.dimension < 10 OR hasRigors',       # 683 results
+        # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND ' \
+        # '(Temperature.value >= 100.4)', # 180 results
+        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR (hasRigors OR hasTachycardia AND hasDyspnea)',
+        # 'Lesion.dimension_X > 10 OR Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia OR hasDyspnea',
+        # 'hasRigors AND hasTachycardia AND hasNausea',
+        
+        # 'Temperature AND hasDyspnea AND hasNausea AND hasVomiting', # 22 results
+        # '(Temperature.value > 100.4) AND hasDyspnea AND hasNausea AND hasVomiting', # 20 results
         # 'Temperature.value >= 100.4 OR hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea',
-        # 'hasRigors AND hasTachycardia AND hasDyspnea AND hasNausea AND Temperature.value >= 100.4',
         # 'hasRigors OR (hasTachycardia AND hasDyspnea) AND Temperature.value >= 100.4',
         # 'hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea AND Temperature.value >= 100.4',
-        ### 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
-        # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 20 AND Lesion.dimension_X > 35 OR hasNausea and hasDyspnea',
-        # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 OR hasNausea and hasDyspnea',
-        # 'M.x > 12 AND M.x > 15 OR M.x < 25 AND M.x < 32 AND hasNausea OR hasDyspnea',
+        # 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30',
+        # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 20 AND Lesion.dimension_X > 35 ' \
+        # 'OR hasNausea and hasDyspnea',
+        # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR ' \
+        # 'Lesion.dimension_X < 25 AND Lesion.dimension_X < 32 OR hasNausea and hasDyspnea',
+        # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR '   \
+        # 'Lesion.dimension_X < 25 AND Lesion.dimension_X < 32 AND hasNausea OR hasDyspnea',
 
-        # problem (dimension_X and dimension_Y)
-        # 'Temperature.value >= 100.4 OR hasRigors AND hasDyspnea OR Lesion.dimension_X > 10 OR Lesion.dimension_Y < 30',
+        # 
+        # '(hasRigors OR hasDyspnea OR hasTachycardia) AND Temperature', # 117 results, 25 groups
+        # '(hasRigors OR hasDyspnea OR hasTachycardia) AND (Temperature.value >= 100.4)', # 82 results, 20 groups
+        # '(hasRigors OR hasDyspnea OR hasTachycardia) AND (Temperature.value < 100.4)',  # 53 results, 10 groups
+
+        # 'Temperature.value < 100.4',  # 457 results
+        # 'hasRigors OR hasDyspnea OR hasTachycardia', # 5956 results
+        '(hasRigors OR hasDyspnea OR hasTachycardia) NOT (Temperature.value >= 100.4)',  # 5874 results (wrong)
+        
+        # dimension_X and dimension_Y
+        # 'Temperature.value >= 100.4 OR hasRigors AND hasDyspnea OR ' \
+        # 'Lesion.dimension_X > 10 OR Lesion.dimension_Y < 30',
 
         # # error
         #'This is junk and should cause a parser exception',
@@ -286,7 +343,10 @@ def _run_tests(job_id,
         # expansion theorem: p(a OR b OR c) = (a) OR (b) OR (c) NOT
         #                                     ( (a AND b) OR (a AND c) OR (b AND c) ) OR
         #                                     (a AND b AND c)
-        
+
+        # # #### not legal, since each math expression must produce a Boolean result:
+        # # # '(Temp.value/98.6) * (HR.value/60.0) * (BP.systolic/110) < 1.1',
+
     ]
 
     # must either be a patient or document context

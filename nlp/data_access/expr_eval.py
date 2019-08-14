@@ -1177,8 +1177,11 @@ def _print_math_results(doc_ids, mongo_collection_obj, nlpql_feature):
     print('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
     count = 0
     for doc in cursor:
-        print('{0:5}\t_id: {1}, value: {2}'.
-              format(count, doc['_id'], doc['value']))
+        print('\t{0}: value: {1}\tsubject: {2}\treport_id: {3}'.
+              format(doc['_id'],
+                     doc['value'],
+                     doc['subject'],
+                     doc['report_id']))
 
         count += 1
 
@@ -1723,8 +1726,77 @@ def _get_docs_with_feature(feature, feature_map, group):
 
 
 ###############################################################################
+def _remove_negated_subexpressions(postfix_tokens):
+    """
+    Remove negated subexpressions from the input postfix tokens.
+    For instance, the string '(hasTachycardia AND hasDyspnea) NOT hasRigors'
+    looks like this in postfix:
+    
+        hasTachycardia hasDyspnea AND hasRigors NOT
+
+    Removing the negated expression gives this result:
+
+        hasTachycardia hasDyspnea AND
+    """
+    TOKEN_NOTAND = 'notand'
+
+    if _TRACE:
+        print('Calling _remove_negated_subexpressions...')
+        print('\tinitial postfix tokens: {0}'.format(postfix_tokens))
+    
+    new_tokens = []
+
+    # The expression parser substitutes 'AND NOT' for each occurrence of 'NOT',
+    # to simplify subsequent processing. In postfix this becomes 'NOT AND'.
+    # Replace all occurrences of 'NOT AND' with 'NOTAND' to simplify the
+    # removal process.
+    token_index = 0
+    while token_index < len(postfix_tokens):
+        token = postfix_tokens[token_index]
+        if 'not' == token:
+            token = TOKEN_NOTAND
+            token_index += 1
+            assert 'and' == postfix_tokens[token_index]
+        new_tokens.append(token)
+        token_index += 1
+
+    # Now 'evaluate' the token stream and remove arguments of the 'NOTAND'
+    # operator.
+    stack = []
+    for token in new_tokens:
+        if TOKEN_NOTAND == token:
+            # pop the top of the stack and discard
+            assert len(stack) > 0
+            stack.pop()
+            continue
+        match = _regex_logic_operator.match(token)
+        if match:
+            # pop n operands, join in proper order with commas,
+            # append operator token, and push on stack
+            operator, n = _decode_operator(token)
+            operands = []
+            for i in range(n):
+                operand = stack.pop()
+                operands.append(operand)
+            operands.reverse()
+            operands.append(token)
+            eval_string = ','.join(operands)
+            stack.append(eval_string)
+        else:
+            stack.append(token)
+
+    assert 1 == len(stack)
+    new_tokens = stack[0].split(',')
+
+    if _TRACE:
+        print('\t  final postfix tokens: {0}'.format(new_tokens))
+
+    return new_tokens
+
+
+###############################################################################
 def _generate_logical_result(
-        postfix_tokens,  # current expression in postfix form
+        postfix_tokens,  # expression in postfix form, negations removed
         expr_index,      # index of the current expression in the NLPQL file
         group,           # result of MongoDB $group operation on context var
         doc_map,         # dict: _id => document data
@@ -1735,7 +1807,7 @@ def _generate_logical_result(
 
     The parameters are:
 
-        postfix_tokens: expression in postfix form
+        postfix_tokens: expression in postfix form with negations removed
         expr_index: index of expression in NLPQL file
         group: list of _id values for all docs in the result group
         doc_map: dict mapping document _id values to the actual document data
@@ -1761,6 +1833,10 @@ def _generate_logical_result(
         print('\tFeature map: ')
         for k,v in feature_map.items():
             print('\t\t{0} => {1}'.format(k,v))
+
+    # scan the postfix tokens and verify that 'not' has been removed
+    for token in postfix_tokens:
+        assert 'not' != token.lower()
 
     assert len(postfix_tokens) > 1
 
@@ -1799,9 +1875,8 @@ def _generate_logical_result(
             counter += 1
 
             # An 'ntuple' is a group of result documents; it is one of the
-            # inner lists in the result list-of-lists that this function
-            # returns. An evaluation of an OR or an AND usually generates
-            # multiple ntuples.
+            # inner lists in the list-of-lists that this function returns.
+            # Ealuation of an OR or an AND usually generates multiple ntuples.
             ntuples = []
             if 'or' == operator:
                 for feature in operands:
@@ -1819,14 +1894,27 @@ def _generate_logical_result(
                         # result from prior logical operation; accept as is
                         ntuples.extend(oid_list)
             else: # 'and' == operator
-                # a logical AND requires all features to exist
+                
+                # A logical AND requires all features to exist in the feature
+                # map for this group. If any feature is not present, this AND
+                # operation can produce no results.
+                all_present = True
                 max_count = 0
                 for feature in operands:
-                    assert feature in feature_map
+                    if feature not in feature_map:
+                        all_present = False
+                        break
                     feature_count, index, index_list = feature_map[feature]
                     if feature_count > max_count:
                         max_count = feature_count
-
+                        
+                if not all_present:
+                    # Append the new feature name to the stack so that the
+                    # evaluation process can continue, but make no entries
+                    # in the feature map for this group.
+                    stack.append(new_feature_name)
+                    continue
+                        
                 # Generate 'max_count' ntuples; each ntuple has len(operands)
                 # features. For those features appearing fewer than max_count
                 # times, repeat until max_count has been reached.
@@ -1878,63 +1966,6 @@ def _generate_logical_result(
     # should only have a single element left on the stack, the result
     assert 1 == len(stack)
     return oid_list
-    
-
-###############################################################################
-def _remove_negated_expressions(postfix_tokens):
-    """
-    Remove negated expressions from the postfix expression supplied as input.
-    """
-    TOKEN_NOTAND = 'notand'
-
-    if _TRACE:
-        print('Calling _remove_negated_expressions...')
-        print('\tinitial postfix tokens: {0}'.format(postfix_tokens))
-    
-    new_tokens = []
-
-    # replace 'not and' with 'notand' to simplify evaluation
-    token_index = 0
-    while token_index < len(postfix_tokens):
-        token = postfix_tokens[token_index]
-        if 'not' == token:
-            token = TOKEN_NOTAND
-            token_index += 1
-            assert 'and' == postfix_tokens[token_index]
-        new_tokens.append(token)
-        token_index += 1
-
-    # 'evaluate' the token stream and remove arguments of 'notand'
-    stack = []
-    for token in new_tokens:
-        if TOKEN_NOTAND == token:
-            # pop the top of the stack and discard
-            assert len(stack) > 0
-            stack.pop()
-            continue
-        match = _regex_logic_operator.match(token)
-        if match:
-            # pop n operands, join in proper order with commas,
-            # append operator token, and push on stack
-            operator, n = _decode_operator(token)
-            operands = []
-            for i in range(n):
-                operand = stack.pop()
-                operands.append(operand)
-            operands.reverse()
-            operands.append(token)
-            eval_string = ','.join(operands)
-            stack.append(eval_string)
-        else:
-            stack.append(token)
-
-    assert 1 == len(stack)
-    new_tokens = stack[0].split(',')
-
-    if _TRACE:
-        print('\t  final postfix tokens: {0}'.format(new_tokens))
-
-    return new_tokens
 
 
 ###############################################################################
@@ -1978,9 +2009,10 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
     if _TRACE:
         print('\tFEATURE SET: {0}'.format(features))
 
-    # remove negated expressions to simplify output generation
-    # the MongoDB aggregation stage has already removed the data
-    postfix_tokens = _remove_negated_expressions(eval_result.postfix_tokens)
+    # Remove negated subexpressions to simplify output generation, which needs
+    # the postfix version of the expression. The MongoDB aggregation stage has
+    # already removed the data.
+    postfix_tokens = _remove_negated_subexpressions(eval_result.postfix_tokens)
         
     # list of ObjectID lists, one list for each group
     oid_lists = []
@@ -2014,9 +2046,9 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
 
         # 'evaluate' the postfix expression and generate the result set
 
-        if 1 == len(eval_result.postfix_tokens):
+        if 1 == len(postfix_tokens):
             # take all the docs in the group with this feature
-            feature = eval_result.postfix_tokens[0]
+            feature = postfix_tokens[0]
             if _TRACE: print('SINGLE FEATURE: {0}'.format(feature))
             oid_list = _get_docs_with_feature(feature, feature_map, group)
             if _TRACE: print('OID LIST: {0}'.format(oid_list))
