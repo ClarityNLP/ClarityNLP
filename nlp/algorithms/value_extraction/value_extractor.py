@@ -1364,6 +1364,11 @@ def run(term_string,             # comma-separated string of query terms
         print('\t    is_denom_only: {0}'.format(is_denom_only))
 
     assert term_string is not None
+
+    # treat empty enumlist as None
+    if str_enumlist is not None and isinstance(str_enumlist, list) and \
+       0 == len(str_enumlist):
+        str_enumlist = None
     
     # use default minval and maxval if not provided
     if str_enumlist is None and str_minval is None:
