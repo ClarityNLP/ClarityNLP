@@ -324,6 +324,9 @@ def _run_tests(job_id,
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR '   \
         # 'Lesion.dimension_X < 25 AND Lesion.dimension_X < 32 AND hasNausea OR hasDyspnea',
 
+        '(hasRigors OR hasDyspnea) AND (Temperature AND Lesion)',
+        #'(hasRigors OR hasDyspnea) AND (Temperature AND Lesion)',
+        
         #  of this group of four, the final two expressions are identical
         # '(hasRigors OR hasDyspnea OR hasTachycardia) AND Temperature', # 117 results, 25 groups
         # '(hasRigors OR hasDyspnea OR hasTachycardia) AND (Temperature.value >= 100.4)', # 82 results, 20 groups
@@ -332,7 +335,7 @@ def _run_tests(job_id,
 
         # '(hasRigors OR hasDyspnea) AND Temperature', # 75 results, 14 groups
         # '(hasRigors OR hasDyspnea) AND (Temperature.value >= 99.5 AND Temperature.value <= 101.5)', # 34d, 7g
-        '(hasRigors OR hasDyspnea) NOT (Temperature.value < 99.5 OR Temperature.value > 101.5)',
+        ###'(hasRigors OR hasDyspnea) NOT (Temperature.value < 99.5 OR Temperature.value > 101.5)',
 
         # need to do this:
         # '(hasRigors OR hasDyspnea) AND Lesion'

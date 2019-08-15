@@ -406,12 +406,13 @@ def _is_math_expr(infix_tokens):
     if _TRACE:
         print('called _is_math_expr...')
         print('\tinfix_tokens: {0}'.format(infix_tokens))
-    
+
+    tmp_feature_count = 0
     nlpql_feature_set = set()
     value_set = set()
 
     for token in infix_tokens:
-        print('\t[_is_math_expr] token "{0}"'.format(token))
+        #print('\t[_is_math_expr] token "{0}"'.format(token))
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
             continue
         match = _regex_variable.match(token)
@@ -426,20 +427,28 @@ def _is_math_expr(infix_tokens):
         match = _regex_numeric_literal.match(token)
         if match:
             continue
-        match = _regex_temp_math_feature.match(token)
-        if match:
-            continue
+        #match = _regex_temp_math_feature.match(token)
+        #if match:
+        #    tmp_feature_count += 1
+        #    continue
 
         # if here, not a pure math expression
-        print('\tNot a math expression')
+        if _TRACE: print('\tNot a math expression')
         return False
-    
-    #need new criteria for diagnosing a math expression
-    #N temp math features connected by AND or OR is also a math expression
 
-    print('\tFound these nlpql features: {0}'.format(nlpql_feature_set))
-    print('\tIs a math expression: {0}'.format(1 == len(nlpql_feature_set)))
-    return 1 == len(nlpql_feature_set)
+    nlpql_feature_count = len(nlpql_feature_set)
+
+    is_math_expr = False
+    #if 0 == nlpql_feature_count and tmp_feature_count > 0:
+    #    is_math_expr = True
+    #elif 1 == nlpql_feature_count:
+    #    is_math_expr = True
+    if 1 == nlpql_feature_count:
+        is_math_expr = True
+    
+    #print('\tFound these nlpql features: {0}'.format(nlpql_feature_set))
+    if _TRACE: print('\tIs a math expression: {0}'.format(is_math_expr))
+    return is_math_expr
 
 
 ###############################################################################
@@ -1950,7 +1959,9 @@ def _generate_logical_result(
                     # in the feature map for this group.
                     stack.append(new_feature_name)
                     continue
-                        
+
+                if _TRACE: print('\t\tall present in feature map')
+                
                 # Generate 'max_count' ntuples; each ntuple has len(operands)
                 # features. For those features appearing fewer than max_count
                 # times, repeat until max_count has been reached.
@@ -1971,7 +1982,7 @@ def _generate_logical_result(
             # the newly-generated ntuples replace the previous state
             oid_list = []
             oid_list = copy.deepcopy(ntuples)
-
+            
             if _TRACE:
                 print('OID LIST (end): ')
                 for i, l in enumerate(oid_list):
@@ -1999,6 +2010,12 @@ def _generate_logical_result(
         # the new feature name now replaces what was popped
         stack.append(new_feature_name)
 
+        if _TRACE:
+            print('\tFeature map after evaluation: ')
+            for k,v in feature_map.items():
+                print('\t\t{0} => {1}'.format(k,v))
+
+        
     # should only have a single element left on the stack, the result
     assert 1 == len(stack)
     return oid_list
@@ -2327,8 +2344,6 @@ def generate_expressions(final_nlpql_feature, parse_result):
         # ensure the final expression is of logic type
         final_expr_type = _expr_type(final_infix_expr)
         assert EXPR_TYPE_LOGIC == final_expr_type
-        
-        sys.exit(0)
         
         # check types of all subexpressions
         for sub_feature, sub_expr in subexpressions:
