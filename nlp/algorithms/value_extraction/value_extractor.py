@@ -697,8 +697,12 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
             # explicit units omitted from first number
             units1 = units2
         if units1 == units2:
-            num1 = float(match.group('num1'))
-            num2 = float(match.group('num2'))
+            str_num1 = match.group('num1')
+            str_num2 = match.group('num2')
+            str_num1_no_commas = re.sub(r',', '', str_num1)
+            str_num2_no_commas = re.sub(r',', '', str_num2)
+            num1 = float(str_num1_no_commas)
+            num2 = float(str_num2_no_commas)
             if 'k' == units1.lower():
                 num1 *= 1000.0
                 num2 *= 1000.0
