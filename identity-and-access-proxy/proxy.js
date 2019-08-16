@@ -138,6 +138,8 @@ const proxyServer = http.createServer(function(req, res) {
   //check whitelist
   const whitelistTarget = whitelist.match(req);
 
+  console.log('whitelistTarget: ',whitelistTarget);
+
   if (whitelistTarget) {
     return proxy.web(
       req,
@@ -146,6 +148,8 @@ const proxyServer = http.createServer(function(req, res) {
         target: whitelistTarget
       },
       function(err) {
+        console.log('proxy.web error');
+        console.log(err);
         sendError(res, err);
       }
     );
