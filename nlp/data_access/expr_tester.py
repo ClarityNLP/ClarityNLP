@@ -231,7 +231,7 @@ def _run_tests(job_id,
         # 'hasTachycardia', # 1996 results
         # 'hasRigors',      # 683 results
         # 'hasShock',       # 2117 results
-        # 'hasDyspnea',     # 3277 results
+        'hasDyspnea',     # 3277 results
         # 'hasNausea',      # 2261 results
         # 'hasVomiting',    # 2303 results
 
@@ -250,7 +250,7 @@ def _run_tests(job_id,
         # 'Lesion AND hasDyspnea',     # 103 results
         # 'Lesion AND hasNausea',      # 136 results
         # 'Lesion AND hasVomiting',    # 150 results
-        
+
         # # pure math expressions
         # 'Temperature.value >= 100.4',    # 488 results
         # 'Temperature.value >= 1.004e2',  # 488 results
@@ -272,6 +272,10 @@ def _run_tests(job_id,
         # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR (Temperature.value >= 100.4)', # 1016 results
         # '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND Temperature.value > 100.4', # 2 results
         # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4', # 2 results
+
+        # need to remove duplicate results for the same patient?? TBD
+        # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5)',
+        # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND (Temperature.value >= 103)',
         
         # 'hasTachycardia AND hasShock',                  # 191 results
         # 'hasTachycardia OR hasShock',                   # 4113 results
@@ -282,7 +286,7 @@ def _run_tests(job_id,
         # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 546 results
         # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',       # 546 results
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea)',   # 1800 results
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)',     # 1702 results
+#         'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)',     # 1702 results
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea or hasVomiting)', # 1622 results
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock)', 1528 results
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
@@ -297,7 +301,7 @@ def _run_tests(job_id,
         # '(hasRigors OR hasDyspnea) AND hasTachycardia',   # 340 results
         # 'hasRigors AND (hasTachycardia AND hasNausea)',   # 22 results
         # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)', # 743 results
-        # '(hasShock OR hasDyspnea) NOT (hasTachycardia OR hasNausea)', 
+        # '(hasShock OR hasDyspnea) NOT (hasTachycardia OR hasNausea)', # *** problem ***
         
         # 'Temperature AND (hasDyspnea OR hasTachycardia)',  # 106 results
         # 'Lesion AND (hasDyspnea OR hasTachycardia)',       # 234 results
@@ -309,7 +313,6 @@ def _run_tests(job_id,
         # '(Temperature.value >= 100.4)', # 180 results
         # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR (hasRigors OR hasTachycardia AND hasDyspnea)',
         # 'Lesion.dimension_X > 10 OR Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia OR hasDyspnea',
-        # 'hasRigors AND hasTachycardia AND hasNausea',
         
         # 'Temperature AND hasDyspnea AND hasNausea AND hasVomiting', # 22 results
         # '(Temperature.value > 100.4) AND hasDyspnea AND hasNausea AND hasVomiting', # 20 results
@@ -324,8 +327,8 @@ def _run_tests(job_id,
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR '   \
         # 'Lesion.dimension_X < 25 AND Lesion.dimension_X < 32 AND hasNausea OR hasDyspnea',
 
-        '(hasRigors OR hasDyspnea) AND (Temperature AND Lesion)',
-        #'(hasRigors OR hasDyspnea) AND (Temperature AND Lesion)',
+        # problem - pure logic
+        ###'(hasRigors OR hasDyspnea) AND (Temperature AND Lesion)',
         
         #  of this group of four, the final two expressions are identical
         # '(hasRigors OR hasDyspnea OR hasTachycardia) AND Temperature', # 117 results, 25 groups
@@ -418,7 +421,7 @@ def _run_tests(job_id,
             print('Subexpression type: {0}'.format(expr_obj.expr_type))
             print('      Result count: {0}'.format(len(output_docs)))
             print('     NLPQL feature: {0}'.format(expr_obj.nlpql_feature))
-            print('Results: ')
+            print('\nResults: ')
 
             n = len(output_docs)
             if 0 == n:
@@ -451,8 +454,8 @@ def _run_tests(job_id,
                 for k in range(n):
                     if k < num or k > n-num:
                         doc = output_docs[k]
-                        print('[{0:6}]: Document {1}, NLPQL feature {2}:'.
-                              format(k, str(doc['_id']),
+                        print('[{0:6}]: Document ...{1}, NLPQL feature {2}:'.
+                              format(k, str(doc['_id'])[-6:],
                                      expr_obj.nlpql_feature))
 
                         if is_final:
@@ -472,10 +475,10 @@ def _run_tests(job_id,
                                 else:
                                     context_str = 'report_id: {0:8}'.format(tup.report_id)
 
-                                print('\t_id: {0} operation: {1:20} '  \
+                                print('\t\t_id: ...{0} operation: {1:20} '  \
                                       'nlpql_feature: {2:16} {3} ' \
                                       'data: {4} '.
-                                      format(tup.oid, tup.pipeline_type,
+                                      format(str(tup.oid)[-6:], tup.pipeline_type,
                                              tup.nlpql_feature, context_str,
                                              data_string))
                     elif k == num:
