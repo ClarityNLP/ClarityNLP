@@ -2119,8 +2119,6 @@ def _generate_logical_result(
                             index = 0
                             
                 stack.append(new_lists)
-                            
-                
 
     # if _TRACE:
     #     print('STACK TOP (end): ')
@@ -2418,7 +2416,7 @@ def parse_expression(nlpql_infix_expression, name_list=None):
 def generate_expressions(final_nlpql_feature, parse_result):
     """
     Parse the NLPQL expression, evaluate any literal subexpressions, and
-    resolve whateve remains into a set of subexpressions of either
+    resolve whatever remains into a set of subexpressions of either
     math or logic type. The primitive subexpressions are returned in a list
     of ExpressionObject namedtuples.
     """
