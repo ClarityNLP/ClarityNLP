@@ -1105,8 +1105,7 @@ def _resolve_mixed(infix_expression, expr_index):
     All tokens (including parens) are assumed to be separated by whitespace.
 
     Returns a list of (nlpql_feature, nlpql_expression) tuples along with the
-    original expression containing the subexpression substitutions. The
-    substitute nlpql_feature values begin with 'm0', 'm1', 'm2', etc. All of 
+    original expression containing the subexpression substitutions. All of 
     these subexpressions have type EXPR_TYPE_MATH, so that the overall result
     is a pure logic expression involving the substituted symbols.
     """
@@ -1157,9 +1156,7 @@ def _resolve_mixed(infix_expression, expr_index):
                 else:
                     # push replacement token with no parens
                     feature = feature_set.pop()
-                    nlpql_feature = _make_temp_feature(counter,
-                                                       #expr_tokens,
-                                                       expr_index)
+                    nlpql_feature = _make_temp_feature(counter, expr_index)
                     stack.append(nlpql_feature)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
@@ -1349,7 +1346,7 @@ def _convert_variables(infix_expr):
 
     new_expr = ' '.join(new_infix_tokens)
     if _TRACE: print('\tConverted expression: "{0}"'.format(new_expr))
-    
+
     return (new_expr, nlpql_feature, list(field_set))
 
          
@@ -2504,7 +2501,6 @@ def generate_expressions(final_nlpql_feature, parse_result):
                              expr_obj.expr_text))
 
     _EXPR_INDEX += 1
-    
     return expression_object_list
 
 

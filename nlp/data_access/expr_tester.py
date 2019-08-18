@@ -266,7 +266,7 @@ def _run_tests(job_id,
         # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581,  325 results
         # '0 == Temperature.value % 20',          # temp == 100,    40 results
         # '(Lesion.dimension_X <= 5) OR (Lesion.dimension_X >= 45)',           # 746 results
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',               # 528 results
+        'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',               # 528 results
         # '((Lesion.dimension_X) > (15)) AND (((Lesion.dimension_X) < (30)))', # 528 results
 
         # math involving multiple NLPQL features
