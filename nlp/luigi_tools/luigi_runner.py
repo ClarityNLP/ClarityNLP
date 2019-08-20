@@ -1,7 +1,9 @@
 from subprocess import call
+
+import luigi
+
 from data_access import *
 from luigi_tools.phenotype_helper import *
-import luigi
 
 
 def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
@@ -33,7 +35,6 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
 
 
 def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: int):
-
     pipelines = get_pipelines_from_phenotype(phenotype_model)
     pipeline_ids = []
     if pipelines and len(pipelines) > 0:
@@ -66,8 +67,9 @@ if __name__ == "__main__":
     test_model.debug = True
     p_id = insert_phenotype_model(test_model, util.conn_string)
     the_job_id = jobs.create_new_job(jobs.NlpJob(job_id=-1, name="Test Phenotype", description=test_model.description,
-                                             owner=test_model.owner, status=jobs.STARTED, date_ended=None,
-                                             phenotype_id=p_id, pipeline_id=-1, date_started=datetime.datetime.now(),
-                                             job_type='PHENOTYPE'), util.conn_string)
+                                                 owner=test_model.owner, status=jobs.STARTED, date_ended=None,
+                                                 phenotype_id=p_id, pipeline_id=-1,
+                                                 date_started=datetime.datetime.now(),
+                                                 job_type='PHENOTYPE'), util.conn_string)
 
     run_phenotype(test_model, p_id, the_job_id)

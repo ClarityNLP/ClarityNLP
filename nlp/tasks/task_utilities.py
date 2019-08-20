@@ -1,20 +1,20 @@
 import datetime
+import json
 import sys
 import traceback
 
-import json
 import luigi
+from cachetools import LRUCache, cached, keys
 from pymongo import MongoClient
-from algorithms import segmentation
+
 import util
-import datetime
+from algorithms import segmentation
+from algorithms.sec_tag import *
+from data_access import base_model
 from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
-from data_access import base_model
-from algorithms.sec_tag import *
-from cachetools import LRUCache, cached, keys
 
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
@@ -126,7 +126,7 @@ def get_config_string(pipeline_config, key, default=''):
 
 
 def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_config: pipeline_config.PipelineConfig,
-                          doc, data_fields: dict, prefix: str='', phenotype_final: bool = False):
+                          doc, data_fields: dict, prefix: str = '', phenotype_final: bool = False):
     db = client[util.mongo_db]
 
     if not data_fields:
@@ -175,7 +175,6 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
 
 
 class BaseCollector(base_model.BaseModel):
-
     collector_name = "ClarityNLPLuigiCollector"
 
     def run(self, pipeline_id, job, owner, pipeline_type, p_config):
@@ -189,7 +188,6 @@ class BaseCollector(base_model.BaseModel):
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
-
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
         print('please implement run_custom_task')
@@ -211,7 +209,6 @@ class BaseCollector(base_model.BaseModel):
 
 
 class BaseTask(luigi.Task):
-
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
     start = luigi.IntParameter()
@@ -264,7 +261,6 @@ class BaseTask(luigi.Task):
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             print(ex)
 
-
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,
                                                                        str(self.start)))
@@ -272,7 +268,7 @@ class BaseTask(luigi.Task):
     def set_name(self, name):
         self.task_name = name
 
-    def write_result_data(self, temp_file, mongo_client, doc, data: dict, prefix: str='', phenotype_final: bool=False):
+    def write_result_data(self, temp_file, mongo_client, doc, data: dict, prefix: str = ''):
         inserted = pipeline_mongo_writer(mongo_client, self.pipeline, self.task_name, self.job, self.batch,
                                          self.pipeline_config, doc, data, prefix=prefix)
         if temp_file is not None:
@@ -280,11 +276,11 @@ class BaseTask(luigi.Task):
             temp_file.write('\n')
         return inserted
 
-    def write_multiple_result_data(self, temp_file, mongo_client, doc, data: list, prefix: str=''):
+    def write_multiple_result_data(self, temp_file, mongo_client, doc, data: list, prefix: str = ''):
         ids = list()
         for d in data:
             inserted = pipeline_mongo_writer(mongo_client, self.pipeline, self.task_name, self.job, self.batch,
-                                         self.pipeline_config, doc, d, prefix=prefix)
+                                             self.pipeline_config, doc, d, prefix=prefix)
             ids.append(inserted)
             if temp_file is not None:
                 temp_file.write(str(inserted))
@@ -302,7 +298,7 @@ class BaseTask(luigi.Task):
         if doc and util.solr_text_field in doc:
             txt = doc[util.solr_text_field]
             if type(txt) == str:
-                txt_val =  txt
+                txt_val = txt
             elif type(txt) == list:
                 txt_val = ' '.join(txt)
             else:
@@ -330,8 +326,3 @@ class BaseTask(luigi.Task):
     def get_document_sections(self, doc):
         names, section_texts = document_sections(doc)
         return names, section_texts
-
-
-
-
-
