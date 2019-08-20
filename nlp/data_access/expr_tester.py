@@ -149,13 +149,14 @@ def _delete_prev_results(job_id, mongo_collection_obj):
     """
 
     # delete all assigned results from a previous run of this code
-    result = mongo_collection_obj.delete_many({"job_id":job_id,
-                                               "nlpql_feature":_TEST_NLPQL_FEATURE})
+    result = mongo_collection_obj.delete_many(
+        {"job_id":job_id, "nlpql_feature":_TEST_NLPQL_FEATURE})
     print('Removed {0} result docs with the test feature.'.
           format(result.deleted_count))
 
     # delete all temp results from a previous run of this code
-    result = mongo_collection_obj.delete_many({"nlpql_feature":expr_eval.regex_temp_nlpql_feature})
+    result = mongo_collection_obj.delete_many(
+        {"nlpql_feature":expr_eval.regex_temp_nlpql_feature})
     print('Removed {0} docs with temp NLPQL features.'.
           format(result.deleted_count))
     
@@ -326,13 +327,18 @@ def _run_tests(job_id,
         # '(Lesion.dimension_X > 10 AND Lesion.dimension_X < 30) NOT (hasRigors OR hasTachycardia OR hasDyspnea)',
 
         # demo
-        #'hasTachycardia OR hasDyspnea',
-        #'(hasTachycardia OR hasDyspnea) NOT hasRigors',
-        #'(hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)',
-        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND Temperature.value >= 100.4',
-        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND (Temperature.value >= 100.4 AND Temperature.value < 102)',
-        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ( (Temperature.value >= 100.4 AND Temperature.value < 102) OR Lesion)',
-        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ( (Temperature.value >= 100.4 AND Temperature.value < 102) OR (Lesion.dimension_X >= 10 AND Lesion.dimension_X <= 30))',
+        # 'hasTachycardia OR hasDyspnea', # 5273 results
+        # '(hasTachycardia OR hasDyspnea) NOT hasRigors', # 5104 results
+        # '(hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)', # 4777 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
+        # 'Temperature.value >= 100.4', # 51 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
+        # '(Temperature.value >= 100.4 AND Temperature.value < 102)', # 36 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND '
+        # '( (Temperature.value >= 100.4 AND Temperature.value < 102) OR Lesion)', # 150 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
+        # '( (Temperature.value >= 100.4 AND Temperature.value < 102) OR '     \
+        # '(Lesion.dimension_X >= 10 AND Lesion.dimension_X <= 30))', # 137 results
         
         # 'Temperature AND hasDyspnea AND hasNausea AND hasVomiting', # 22 results
         # '(Temperature.value > 100.4) AND hasDyspnea AND hasNausea AND hasVomiting', # 20 results
@@ -346,7 +352,7 @@ def _run_tests(job_id,
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50', # 246 results
         # '(Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
         # '(Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
-        '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
+        # '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
 
         # 518 results as well; must merge all math tokens
         #'(Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR '
@@ -413,12 +419,23 @@ def _run_tests(job_id,
         #'( (hasRigors OR hasDyspnea) AND Lesion) NOT (Lesion.dimension_X < 10 OR Lesion.dimension_Y >= 10)',
 
         
-        # then with (Lesion.dimension_X >= 10 AND Temperature.value < 100.4) as the math part
+        # '(hasRigors OR hasDyspnea)', # 3960 docs, 1048 groups
+        # '(hasRigors OR hasDyspnea) AND Lesion',       # 153 docs, 32 groups
+        # '(hasRigors OR hasDyspnea) AND Temperature',  # 75 docs, 14 groups
+        # '(Lesion.dimension_X >= 15 AND Temperature.value > 101)',   # 8 docs, 3 groups
+        # '(hasRigors OR hasDyspnea) AND (Lesion.dimension_X >= 15)', # 104 docs, 25 groups
+        # '(hasRigors OR hasDyspnea) AND (Temperature.value > 101)',    # 24 docs, 7 groups
+        # '(hasRigors OR hasDyspnea) AND Lesion AND Temperature',     # 6 docs, 1 groups
+        # '(hasRigors OR hasDyspnea) AND (Lesion.dimension_X >= 15 AND Temperature.value > 101)', # 6d, 1g
         
-        # dimension_X and dimension_Y
-        #'Temperature.value >= 100.4 OR hasRigors AND hasDyspnea OR ' \
-        #'Lesion.dimension_X > 10 OR Lesion.dimension_Y < 30',
-
+        # all dimensions
+        # 'Lesion', # 2425 docs, 594 groups
+        # 'Lesion.dimension_X > 20',  # 817 docs
+        # 'Lesion.dimension_X > 20 AND Lesion.dimension_Y > 20', # 452 docs
+        # 'Lesion.dimension_X > 20 AND Lesion.dimension_Y > 20 AND Lesion.dimension_Z > 20', # 76 docs
+        # '(Lesion.dimension_X > 20 AND Lesion.dimension_Y > 20 AND Lesion.dimension_Z > 20) AND ' \
+        # 'hasRigors', # 4d 2g
+        
         # # error
         #'This is junk and should cause a parser exception',
 
@@ -449,8 +466,8 @@ def _run_tests(job_id,
     _delete_prev_results(job_id, mongo_collection_obj)
 
     if debug:
+        _enable_debug()
         expr_eval.enable_debug()
-        _TRACE = True
 
     # get all defined names, helps resolve tokens if bad expression formatting
     the_name_list = NAME_LIST
