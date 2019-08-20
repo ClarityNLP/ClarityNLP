@@ -32,6 +32,7 @@ Arguments
          Name                 Type          Required                  Notes
 =====================  ===================  ========= ======================================
 termset                :ref:`termset`       Yes
+excluded_termset       :ref:`termset`       No        Matches that should be excluded if these terms are found
 documentset            :ref:`documentset`   No
 cohort                 :ref:`cohort`        No
 sections               List[str]            No        Limit terms to specific sections
