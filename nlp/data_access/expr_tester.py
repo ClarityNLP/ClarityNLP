@@ -229,31 +229,30 @@ def _run_tests(job_id,
         # 'Temperature AND Lesion', # 17 results
 
         # all instances of the given symptoms
-        # 'hasTachycardia', # 1996 results
-        # 'hasRigors',      # 683 results
-        # 'hasShock',       # 2117 results
-
-        # 'hasDyspnea',     # 3277 results
-        # 'hasNausea',      # 2261 results
-        # 'hasVomiting',    # 2303 results
+        # 'hasTachycardia', # 1996 results, 757 groups
+        # 'hasRigors',      # 683 results, 286 groups
+        # 'hasShock',       # 2117 results, 521 groups
+        # 'hasDyspnea',     # 3277 results, 783 groups
+        # 'hasNausea',      # 2261 results, 753 groups
+        # 'hasVomiting',    # 2303 results, 679 groups
 
         # all instances of a temp measurement and another symptom
-        # 'Temperature AND hasTachycardia', # 55 results
-        # 'Temperature AND hasRigors',      # 11 results
-        # 'Temperature AND hasShock',       # 50 results
-        # 'Temperature AND hasDyspnea',     # 64 results
-        # 'Temperature AND hasNausea',      # 91 results
-        # 'Temperature AND hasVomiting',    # 74 results
+        # 'Temperature AND hasTachycardia', # 55 results, 13 groups
+        # 'Temperature AND hasRigors',      # 11 results, 5 groups
+        # 'Temperature AND hasShock',       # 50 results, 11 groups
+        # 'Temperature AND hasDyspnea',     # 64 results, 11 groups
+        # 'Temperature AND hasNausea',      # 91 results, 17 groups
+        # 'Temperature AND hasVomiting',    # 74 results, 13 groups
 
         # all instances of a lesion measurement and another symptom
-        # 'Lesion AND hasTachycardia', # 131 results
-        # 'Lesion AND hasRigors',      # 50 results
-        # 'Lesion AND hasShock',       # 43 results
-        # 'Lesion AND hasDyspnea',     # 103 results
-        # 'Lesion AND hasNausea',      # 136 results
-        # 'Lesion AND hasVomiting',    # 150 results
+        # 'Lesion AND hasTachycardia', # 131 results, 24 groups
+        # 'Lesion AND hasRigors',      # 50 results, 11 groups
+        # 'Lesion AND hasShock',       # 43 results, 10 groups
+        # 'Lesion AND hasDyspnea',     # 103 results, 21 groups
+        # 'Lesion AND hasNausea',      # 136 results, 30 groups
+        # 'Lesion AND hasVomiting',    # 150 results, 26 groups
 
-        # # pure math expressions
+        # pure math expressions
         # 'Temperature.value >= 100.4',    # 488 results
         # 'Temperature.value >= 1.004e2',  # 488 results
         # '100.4 <= Temperature.value',    # 488 results
@@ -279,93 +278,81 @@ def _run_tests(job_id,
         # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5)',  # 4 results
         # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND (Temperature.value >= 103)', # 2 results
         
-        # 'hasTachycardia AND hasShock',                  # 191 results
-        # 'hasTachycardia OR hasShock',                   # 4113 results
-        # 'hasTachycardia NOT hasShock',                  # 1891 results
-        # '(hasTachycardia AND hasDyspnea) NOT hasRigors' # 229 results
-        # 'hasTachycardia AND hasDyspnea',                # 240 results
-        # '((hasShock) AND (hasDyspnea))',                # 155 results
-        # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 546 results
-        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',       # 546 results
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea)',   # 1800 results
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)',     # 1702 results
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea or hasVomiting)', # 1622 results
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock)', # 1529 results
+        # 'hasTachycardia AND hasShock',                  # 191 results, 25 groups
+        # 'hasTachycardia OR hasShock',                   # 4113 results, 1253 groups
+        # 'hasTachycardia NOT hasShock',                  # 1891 results, 732 groups
+        # '(hasTachycardia AND hasDyspnea) NOT hasRigors' # 229 results, 46 groups
+        # 'hasTachycardia AND hasDyspnea',                # 240 results, 49 groups
+        # '((hasShock) AND (hasDyspnea))',                # 155 results, 22 groups
+        # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 546 results, 112 groups
+        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',       # 546 results, 112 groups
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea)',   # 1800 results, 683 groups
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)',     # 1702 results, 645 groups
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea or hasVomiting)', # 1622 results, 619 groups
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock)', # 1529r, 599 g
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
-        # 'OR Temperature)', # 1491 results
+        # 'OR Temperature)', # 1491 results, 589 groups
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
-        # 'OR Temperature OR Lesion)', # 1448 results
+        # 'OR Temperature OR Lesion)', # 1448 results, 569 groups
 
-        # 'hasTachycardia NOT (hasRigors AND hasDyspnea)',  # 1987 results
-        # 'hasRigors AND hasTachycardia AND hasDyspnea',    # 11 results
-        # 'hasRigors AND hasDyspnea AND hasTachycardia',    # 11 results
-        # 'hasRigors OR hasTachycardia AND hasDyspnea',     # 923 results
-        # '(hasRigors OR hasDyspnea) AND hasTachycardia',   # 340 results
-        # 'hasRigors AND (hasTachycardia AND hasNausea)',   # 22 results
-        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)', # 743 results
-        # '(hasShock OR hasDyspnea) NOT (hasTachycardia OR hasNausea)', # 4783 results
+        # 'hasTachycardia NOT (hasRigors AND hasDyspnea)',  # 1987 results, 754 groups
+        # 'hasRigors AND hasTachycardia AND hasDyspnea',    # 11 results, 3 groups
+        # 'hasRigors AND hasDyspnea AND hasTachycardia',    # 11 results, 3 groups
+        # 'hasRigors OR hasTachycardia AND hasDyspnea',     # 923 results, 332 groups
+        # '(hasRigors OR hasDyspnea) AND hasTachycardia',   # 340 results, 74 groups
+        # 'hasRigors AND (hasTachycardia AND hasNausea)',   # 22 results, 5 groups
+        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)', # 743 results, 129 groups
+        # '(hasShock OR hasRigors) NOT (hasTachycardia OR hasNausea)', # 2468 results, 705 groups
         
-        # 'Temperature AND (hasDyspnea OR hasTachycardia)',  # 106 results
-        # 'Lesion AND (hasDyspnea OR hasTachycardia)',       # 234 results
+        # 'Temperature AND (hasDyspnea OR hasTachycardia)',  # 106 results, 22 groups
+        # 'Lesion AND (hasDyspnea OR hasTachycardia)',       # 234 results, 45 groups
 
         # mixed math and logic 
-        # 'hasNausea AND Temperature.value >= 100.4', # 73 results
-        # 'Lesion AND hasRigors', # 50 results
-        # 'Lesion.dimension_X < 10 AND hasRigors',    # 19 results
-        # 'Lesion.dimension_X < 10', # 841 results
-        # 'Lesion.dimension_X < 10 OR hasRigors',     # 1524 results (841 + 683)
+        # 'hasNausea AND Temperature.value >= 100.4', # 73 results, 16 groups
+        # 'Lesion AND hasRigors',                     # 50 results, 11 groups
+        # 'Lesion.dimension_X < 10 AND hasRigors',    # 19 results, 7 groups
+        # 'Lesion.dimension_X < 10',                  # 841 results
+        # 'Lesion.dimension_X < 10 OR hasRigors',     # 1524 results, 633 groups
         # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND ' \
-        # '(Temperature.value >= 100.4)', # 180 results
+        # '(Temperature.value >= 100.4)',             # 180 results, 38 groups
 
-        # 1808 results
+        # 1808 results, 702 groups
         # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR (hasRigors OR hasTachycardia AND hasDyspnea)',
 
-        # 8372 results
-        # 'Lesion.dimension_X > 10 OR Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia OR hasDyspnea',
+        # 6841 results, 2072 groups
+        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia OR hasDyspnea',
 
-        # 797 results
+        # 797 results, 341 groups
         # '(Lesion.dimension_X > 10 AND Lesion.dimension_X < 30) NOT (hasRigors OR hasTachycardia OR hasDyspnea)',
 
-        # demo
-        # 'hasTachycardia OR hasDyspnea', # 5273 results
-        # '(hasTachycardia OR hasDyspnea) NOT hasRigors', # 5104 results
-        # '(hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)', # 4777 results
-        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
-        # 'Temperature.value >= 100.4', # 51 results
-        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
-        # '(Temperature.value >= 100.4 AND Temperature.value < 102)', # 36 results
-        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND '
-        # '( (Temperature.value >= 100.4 AND Temperature.value < 102) OR Lesion)', # 150 results
-        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
-        # '( (Temperature.value >= 100.4 AND Temperature.value < 102) OR '     \
-        # '(Lesion.dimension_X >= 10 AND Lesion.dimension_X <= 30))', # 137 results
-        
-        # 'Temperature AND hasDyspnea AND hasNausea AND hasVomiting', # 22 results
-        # '(Temperature.value > 100.4) AND hasDyspnea AND hasNausea AND hasVomiting', # 20 results
-        # 'Temperature.value >= 100.4 OR hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea', # 8705 results
-        # 'hasRigors OR (hasTachycardia AND hasDyspnea) AND Temperature.value >= 100.4', # 692 results
-        # '(hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea) AND Temperature.value >= 100.4', # 155 results
-        # 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30', # 851 results
+        # 'Temperature AND hasDyspnea AND hasNausea AND hasVomiting', # 22 results, 2 groups
+        # '(Temperature.value > 100.4) AND hasDyspnea AND hasNausea AND hasVomiting', # 20 results, 2 groups
+        # 692 results, 287 groups
+        # 'hasRigors OR (hasTachycardia AND hasDyspnea) AND Temperature.value >= 100.4',
+        # 155 results, 33 groups
+        # '(hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea) AND Temperature.value >= 100.4',
+        # 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30', # 851 results, 356 groups
 
+        # redundant math expressions
         # 'Lesion.dimension_X > 50',  # 246 results
         # 'Lesion.dimension_X > 30 AND Lesion.dimension_X > 50',  # 246 results
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50', # 246 results
-        # '(Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
-        # '(Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
-        # '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
-
-        # 518 results as well; must merge all math tokens
-        #'(Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR '
-        #'(hasNausea AND hasDyspnea)',
+        # '(Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results, 195 groups
+        # 518 results, 195 groups
+        # '(Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)',
+        # 518 results, 195 groups
+        # '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)',
+        # 518 results, 195 groups
+        # '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR '
+        # '(hasNausea AND hasDyspnea)',
         
-        # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR ' \
-        # 'Lesion.dimension_X < 25 AND Lesion.dimension_X < 32 OR hasNausea and hasDyspnea',
-        # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR '   \
-        # 'Lesion.dimension_X < 25 AND Lesion.dimension_X < 32 AND hasNausea OR hasDyspnea',
+        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30', # 885 results
+        # 'Lesion.dimension_X > 5 AND Lesion.dimension_X > 10 AND ' \
+        # 'Lesion.dimension_X < 40 AND Lesion.dimension_X < 30',   # 885 results
+        # '(Lesion.dimension_X > 8 AND Lesion.dimension_X > 5 AND Lesion.dimension_X > 10) AND '
+        # '(Lesion.dimension_X < 40 AND Lesion.dimension_X < 30 AND Lesion.dimension_X < 45)', # 885 results
 
-        # 'hasRigors AND (Temperature AND Lesion)', # 0 results
-        # 'hasDyspnea AND (Temperature AND Lesion)', # 6 results
-        # '(hasRigors OR hasDyspnea) AND (Temperature AND Lesion)', # 6 results
+        # checking NOT with positive logic
         
         #  of this group of four, the final two expressions are identical
         # '(hasRigors OR hasDyspnea OR hasTachycardia) AND Temperature', # 117 results, 25 groups
@@ -375,16 +362,99 @@ def _run_tests(job_id,
 
         # final two in this group should be identical
         # '(hasRigors OR hasDyspnea) AND Temperature', # 75 results, 14 groups
-        # '(hasRigors OR hasDyspnea) AND (Temperature.value >= 99.5 AND Temperature.value <= 101.5)', # 34d, 7g
-        # '(hasRigors OR hasDyspnea)  NOT (Temperature.value < 99.5  OR  Temperature.value > 101.5)',
+        # '(hasRigors OR hasDyspnea) AND (Temperature.value >= 99.5 AND Temperature.value <= 101.5)', # 34r, 7g
+        # '(hasRigors OR hasDyspnea)  NOT (Temperature.value < 99.5  OR  Temperature.value > 101.5)', # 34r, 7g
 
-        # '(hasRigors OR hasDyspnea)', # 3960 results, 1048 groups
-        # 'Temperature', # 945 docs, 364 groups
-        # '(hasRigors OR hasDyspnea) NOT Temperature', # 3894 results, 1034 groups
-        # '(hasRigors OR hasDyspnea) AND Temperature',  # 75 docs, 14 groups
-        # check: 4905 docs, 1398 groups
-        # '(hasRigors OR hasDyspnea) OR Temperature NOT( (hasRigors OR hasDyspnea) AND Temperature)',
-        # groups: 1048 + 364 - 14 = 1398
+        
+        # Checking the behavior of NOT with set theory relations, which are:
+        #     (P == probability, or for our purposes the count of unique elements):
+        #
+        #     P(A OR B) == P(A) + P(B) - P(A AND B)
+        # 
+        #     P(A OR B OR C) == P(A) + P(B) + P(C) - (P(A AND B) + P(A AND C) + P(B AND C)) + P(A AND B AND C)
+        #
+        # If 'Eval' is the result of the expression evaluator, and if 'Groups' is the number of groups
+        # in the expression evaluator result, these relations should hold:
+        #
+        #     Eval[A OR B] == Eval[A OR B NOT (A AND B)]
+        #     Groups[A OR B] == Groups[A] + Groups[B] - Groups[A AND B]
+        #
+        #     Eval[A OR B OR C] == Eval[A OR B OR C NOT ((A AND B) OR (A AND C) OR (B AND C) ) OR (A AND B AND C)]
+        #     Groups[A OR B OR C] == Groups[A] + Groups[B] + Groups[C] -
+        #                            ( Groups[A AND B] + Groups[A AND C] + Groups[B AND C] ) +
+        #                            Groups[ A AND B AND C ]
+
+
+        # 1. hasRigors OR hasDyspnea
+        # ----------------------------
+        # '(hasRigors OR hasDyspnea)', # 3960 results, 1048 groups direct evaluation
+        # 'hasRigors',                 # 683 results, 286 groups
+        # 'hasDyspnea',                # 3277 results, 783 groups
+        # 'hasRigors AND hasDyspnea',  # 89 results, 21 groups
+        # 'hasRigors OR hasDyspnea NOT (hasRigors AND hasDyspnea)', # 3960 results, 1048 groups
+        # formula (groups): 286 + 783 - 21 == 1048, same as direct eval of both sides
+
+        # 2. hasTachycardia OR hasShock
+        # -------------------------------
+        # 'hasTachycardia OR hasShock',  # 4113 results, 1253 groups
+        # 'hasTachycardia',              # 1996 results, 757 groups
+        # 'hasShock',                    # 2117 results, 521 groups
+        # 'hasTachycardia AND hasShock', # 191 results, 25 groups
+        # 'hasTachycardia OR hasShock NOT (hasTachycardia AND hasShock)', # 4113 results, 1253 groups
+        # formula (groups): 757 + 521 - 25 == 1253, same as direct eval of both sides
+
+        # 3. hasTachycardia OR hasShock OR hasRigors
+        # ------------------------------------------
+        # 'hasTachycardia OR hasShock OR hasRigors',   # 4796 results, 1502 groups
+        # 'hasTachycardia',                            # 1996 results, 757 groups
+        # 'hasShock',                                  # 2117 results, 521 groups
+        # 'hasRigors',                                 # 683 results, 286 groups
+        # 'hasTachycardia AND hasShock',               # 191 results, 25 groups
+        # 'hasTachycardia AND hasRigors',              # 104 results, 28 groups
+        # 'hasShock AND hasRigors',                    # 52 results, 11 groups
+        # 'hasTachycardia AND hasShock AND hasRigors', # 11 results, 2 groups
+
+        # something is order-dependent in the evaluator involving NOT
+        # Always make NOT the final statement?
+        #'(hasTachycardia OR hasShock OR hasRigors) NOT ( (hasTachycardia AND hasShock) OR (hasTachycardia AND hasRigors) OR (hasShock AND hasRigors) ) OR (hasTachycardia AND hasShock AND hasRigors)', # 4371 results, 1444 groups?
+        '(hasTachycardia OR hasShock OR hasRigors) OR (hasTachycardia AND hasShock AND hasRigors) NOT ( (hasTachycardia AND hasShock) OR (hasTachycardia AND hasRigors) OR (hasShock AND hasRigors) )', # 4807 results, 1502 groups
+
+        
+        # change the order to hasShock OR hasRigors OR hasTachycardia
+        # 'hasShock OR hasRigors OR hasTachycardia ' \
+        # 'NOT ( (hasShock AND hasRigors) OR (hasShock AND hasTachycardia) OR (hasRigors AND hasTachycardia) ) ' \
+        # 'OR (hasShock AND hasRigors AND hasTachycardia)', # 4807 results, 1502 groups, agrees with direct eval
+
+        # formula (groups): 757 + 521 + 286 - (25 + 28 + 11) + 2 == 1502 groups
+
+        # the same, but group as (hasTachycardia OR hasShock) OR hasRigors and use two-component formula
+        # ----------------------------------------------------------------------------------------------
+        # 'hasTachycardia OR hasShock',                 # 4113 results, 1253 groups
+        # 'hasRigors',                                  # 683 results, 286 groups
+        # '(hasTachycardia OR hasShock) AND hasRigors', # 152 results, 37 groups
+        # formula (groups): 1253 + 286 - 37 == 1502 groups, identical to direct eval
+
+        # the same, but group as hasTachycardia OR (hasShock OR hasRigors) and use two-component formula
+        # ----------------------------------------------------------------------------------------------
+        # 'hasTachycardia', # 1996 results, 757 groups
+        # 'hasShock OR hasRigors', # 2800 results, 796 groups
+        # 'hasTachycardia AND (hasShock OR hasRigors)', # 292 results, 51 groups
+        # formula (groups): 757 + 796 - 51 == 1502 groups, identical to direct eval
+
+        # 4. hasShock OR hasDyspnea OR hasTachycardia
+        # -------------------------------------------
+        # 'hasShock OR hasDyspnea OR hasTachycardia', # 7390 results, 1967 groups
+        # 'hasShock', # 2117 results, 521 groups
+        # 'hasDyspnea', # 3277 results, 783 groups
+        # 'hasTachycardia', # 1996 results, 757 groups
+        # 'hasShock AND hasDyspnea', # 155 results, 22 groups
+        # 'hasShock AND hasTachycardia', # 191 results, 25 groups
+        # 'hasDyspnea AND hasTachycardia', # 240 results, 49 groups
+        # 'hasShock AND hasDyspnea AND hasTachycardia', # 11 results, 2 groups
+        # 'hasShock OR hasDyspnea OR hasTachycardia ' \
+        # 'NOT ( (hasShock AND hasDyspnea) OR (hasShock AND hasTachycardia) OR (hasDyspnea AND hasTachycardia) ) ' \
+        # 'OR (hasShock AND hasDyspnea AND hasTachycardia)', # 7401 results, 1967 groups
+        # formula (groups): 521 + 783 + 757 - (22 + 25 + 49) + 2 == 1967 groups, identical to direct eval
         
         # Should the final two in this group be identical??
         # '(hasRigors OR hasDyspnea)', # 3960 docs, 1048 groups
@@ -435,6 +505,22 @@ def _run_tests(job_id,
         # 'Lesion.dimension_X > 20 AND Lesion.dimension_Y > 20 AND Lesion.dimension_Z > 20', # 76 docs
         # '(Lesion.dimension_X > 20 AND Lesion.dimension_Y > 20 AND Lesion.dimension_Z > 20) AND ' \
         # 'hasRigors', # 4d 2g
+
+        # demo
+        # 'hasTachycardia OR hasDyspnea', # 5273 results
+        # '(hasTachycardia OR hasDyspnea) NOT hasRigors', # 5104 results
+        # '(hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)', # 4777 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
+        # 'Temperature.value >= 100.4', # 51 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
+        # '(Temperature.value >= 100.4 AND Temperature.value < 102)', # 36 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND '
+        # '( (Temperature.value >= 100.4 AND Temperature.value < 102) OR Lesion)', # 150 results
+        # '((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ' \
+        # '( (Temperature.value >= 100.4 AND Temperature.value < 102) OR '     \
+        # '(Lesion.dimension_X >= 10 AND Lesion.dimension_X <= 30))', # 137 results
+        
+
         
         # # error
         #'This is junk and should cause a parser exception',
