@@ -276,7 +276,7 @@ def _run_tests(job_id,
 
         # need to remove duplicate results for the same patient?? TBD
         # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5)',  # 4 results
-        # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND (Temperature.value >= 103)', # 4 results
+        # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND (Temperature.value >= 103)', # 2 results
         
         # 'hasTachycardia AND hasShock',                  # 191 results
         # 'hasTachycardia OR hasShock',                   # 4113 results
@@ -316,7 +316,7 @@ def _run_tests(job_id,
         # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND ' \
         # '(Temperature.value >= 100.4)', # 180 results
 
-        # 1809 results
+        # 1808 results
         # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR (hasRigors OR hasTachycardia AND hasDyspnea)',
 
         # 8372 results
@@ -346,10 +346,12 @@ def _run_tests(job_id,
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50', # 246 results
         # '(Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
         # '(Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
-        # '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
+        '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results
 
-        # problem
-        #'(Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', 
+        # 518 results as well; must merge all math tokens
+        #'(Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR '
+        #'(hasNausea AND hasDyspnea)',
+        
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR ' \
         # 'Lesion.dimension_X < 25 AND Lesion.dimension_X < 32 OR hasNausea and hasDyspnea',
         # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 15 OR '   \
@@ -381,10 +383,10 @@ def _run_tests(job_id,
         # Should the final two in this group be identical??
         # '(hasRigors OR hasDyspnea)', # 3960 docs, 1048 groups
         # '(hasRigors OR hasDyspnea) AND Lesion', # 153 docs, 32 groups
-        '(Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', # 68 docs, 56 groups (hand count)
+        # '(Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', # 68 docs, 56 groups (hand count)
 
         # 5 docs, 1 group, all lesion measurements satisfy constraints
-        #'(hasRigors OR hasDyspnea) AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', #5d, 1 g
+        # '(hasRigors OR hasDyspnea) AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',
         
         # 5 docs, 1 g
         #'(hasRigors OR hasDyspnea) NOT (Lesion.dimension_X < 10 OR Lesion.dimension_Y >= 10)',
@@ -398,12 +400,13 @@ def _run_tests(job_id,
         # 'hasRigors', # 683 docs, 286 groups
         #' hasDyspnea',
         # 'hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',
-        
-        #'(hasRigors OR hasDyspnea OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) ' \
-        #'NOT ( (hasRigors AND hasDyspnea) OR ' \
-        #'      (hasRigors AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) OR ' \
-        #'      (hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) ) OR ' \
-        #'(hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) '
+
+        # 3886 docs, 1082 groups
+        # '(hasRigors OR hasDyspnea OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) ' \
+        # 'NOT ( (hasRigors AND hasDyspnea) OR ' \
+        # '      (hasRigors AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) OR ' \
+        # '      (hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) ) OR ' \
+        # '(hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) '
         
         # *** 5 docs, 1 group, results identical, but not all lesion measurements satisfy constraints ***
         #'( (hasRigors OR hasDyspnea) AND Lesion) AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',

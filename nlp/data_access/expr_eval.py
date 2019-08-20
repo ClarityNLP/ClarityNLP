@@ -404,7 +404,7 @@ def _is_math_expr(infix_tokens):
     """
 
     if _TRACE:
-        print('called _is_math_expr...')
+        print('Called _is_math_expr...')
         print('\tinfix_tokens: {0}'.format(infix_tokens))
 
     tmp_feature_count = 0
@@ -1042,6 +1042,11 @@ def _merge_math_tokens(
                 expr_tokens.append(s)
                 s = stack.pop()
             expr_tokens.reverse()
+
+            if _TRACE:
+                print('\tCandidate tokens: {0}'.format(expr_tokens))
+                print('\t\tAll math: {0}'.format(all_math_tokens))
+            
             if all_math_tokens:                
                 # can merge into single expression if single nlpql_feature
                 # and multiple tokens
@@ -1076,26 +1081,25 @@ def _merge_math_tokens(
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
 
-                    # push back on stack with parens if more than a single token
-                    if len(expr_tokens) > 1:
-                        stack.append(_LEFT_PARENS)
-                        stack.append(nlpql_feature)
-                        stack.append(_RIGHT_PARENS)
-                    else:
-                        stack.append(nlpql_feature)
+                    # push back on stack with no parens
+                    stack.append(nlpql_feature)
+                    
                 else:
                     # push back with parens
                     stack.append(_LEFT_PARENS)
                     for et in expr_tokens:
                         stack.append(et)
                     stack.append(_RIGHT_PARENS)
-                    
             else:
                 # push back with parens
                 stack.append(_LEFT_PARENS)
                 for et in expr_tokens:
                     stack.append(et)
                 stack.append(_RIGHT_PARENS)
+
+            if _TRACE:
+                print('\tCurent stack: ')
+                print('\t\t{0}'.format(stack))
                 
     new_infix_expr = ' '.join(stack)
     
@@ -1188,7 +1192,7 @@ def _resolve_mixed(infix_expression, expr_index):
                 stack.append(_RIGHT_PARENS)
                 
     new_infix_expr = ' '.join(stack)
-    if _TRACE: print('\t   M EXPR: {0}'.format(new_infix_expr))
+    if _TRACE: print('\tEXPR AFTER RESOLUTION: {0}'.format(new_infix_expr))
 
     # combine math expressions where possible
     prev = new_infix_expr
