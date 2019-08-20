@@ -150,7 +150,6 @@ class NlpqlExpressionParser(Parser):
     )
     def nlpql_expr(self, p):
         op_text = _TOKEN_MAP[ p[1] ]
-        #return NlpqlToken('EXPR', op_text, p[0], p[2])
         if _POSTFIX:
             return '{0} {1} {2}'.format(p[0], p[2], op_text)
         else:

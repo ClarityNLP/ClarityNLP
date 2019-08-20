@@ -427,10 +427,6 @@ def _is_math_expr(infix_tokens):
         match = _regex_numeric_literal.match(token)
         if match:
             continue
-        #match = _regex_temp_math_feature.match(token)
-        #if match:
-        #    tmp_feature_count += 1
-        #    continue
 
         # if here, not a pure math expression
         if _TRACE: print('\tNot a math expression')
@@ -439,15 +435,11 @@ def _is_math_expr(infix_tokens):
     nlpql_feature_count = len(nlpql_feature_set)
 
     is_math_expr = False
-    #if 0 == nlpql_feature_count and tmp_feature_count > 0:
-    #    is_math_expr = True
-    #elif 1 == nlpql_feature_count:
-    #    is_math_expr = True
     if 1 == nlpql_feature_count:
         is_math_expr = True
     
-    #print('\tFound these nlpql features: {0}'.format(nlpql_feature_set))
-    if _TRACE: print('\tIs a math expression: {0}'.format(is_math_expr))
+    if _TRACE:
+        print('\tIs a math expression: {0}'.format(is_math_expr))
     return is_math_expr
 
 
@@ -997,7 +989,11 @@ def _make_temp_feature(counter,
 
 
 ###############################################################################
-def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
+def _merge_math_tokens(
+        tokens,            # list of infix tokens
+        math_expressions,  # dict: math_tmp_feature => (expression_str, feature)
+        expr_index,        # index of expr in the NLPQL file
+        counter):          # int, used for tmp feature creation
     """
     Replace two distinct pure math expressions (represented by tokens such as
     m0 or m1) with a compound pure math expression represented by a single
@@ -1023,6 +1019,14 @@ def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
          (Temp.value > 100.4) and (Meas.x < 10)
 
     """
+
+    if _TRACE:
+        print('Called _merge_math_tokens...')
+        print('\tTokens: {0}'.format(tokens))
+        print('\tMath_expressions: ')
+        for k,v in math_expressions.items():
+            print('\t\t{0} => {1}'.format(k,v))
+
     stack = []
     for t in tokens:
         if _RIGHT_PARENS != t:
@@ -1037,12 +1041,12 @@ def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
                     all_math_tokens = False
                 expr_tokens.append(s)
                 s = stack.pop()
-
             expr_tokens.reverse()
-            if all_math_tokens:
-                
+            if all_math_tokens:                
                 # can merge into single expression if single nlpql_feature
                 # and multiple tokens
+                if _TRACE:
+                    print('\tMerging these tokens: {0}'.format(expr_tokens))
                 feature_set = set() 
                 for m in expr_tokens:
                     if m in math_expressions:
@@ -1060,9 +1064,15 @@ def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
                             expr_tokens[j] = expr
                             del math_expressions[m]
                     nlpql_expression = ' '.join(expr_tokens)
-                    nlpql_feature = _make_temp_feature(counter,
-                                                       #saved_tokens,
-                                                       expr_index)
+
+                    # check if preceded by NOT; if so, include in the expr
+                    if len(stack) > 0 and 'NOT' == stack[-1]:
+                        print('\tExpr is preceded by NOT')
+                        nlpql_expression = 'NOT ( ' + nlpql_expression + ' )'
+                        # pop the NOT operator from the stack
+                        stack.pop()
+                    
+                    nlpql_feature = _make_temp_feature(counter, expr_index)
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
 
@@ -1088,10 +1098,15 @@ def _merge_math_tokens(tokens, math_expressions, expr_index, counter):
                 stack.append(_RIGHT_PARENS)
                 
     new_infix_expr = ' '.join(stack)
-    if _TRACE: print('  COMBINED M EXPR: {0}'.format(new_infix_expr))
     
+    if _TRACE:
+        print('\tMerge result: {0}'.format(new_infix_expr))
+        print('\tMath_expressions: ')
+        for k,v in math_expressions.items():
+            print('\t\t{0} => {1}'.format(k,v))
+
     return new_infix_expr, counter
-    
+
 
 ###############################################################################
 def _resolve_mixed(infix_expression, expr_index):
@@ -1110,10 +1125,12 @@ def _resolve_mixed(infix_expression, expr_index):
     is a pure logic expression involving the substituted symbols.
     """
 
-    if _TRACE: print('Called _resolve_mixed')
+    if _TRACE:
+        print('Called _resolve_mixed')
+        print('\tinfix expression: {0}'.format(infix_expression))
 
     tokens = infix_expression.split()
-
+    
     stack = []
     counter = 0
     math_expressions = {}
@@ -1136,20 +1153,20 @@ def _resolve_mixed(infix_expression, expr_index):
             if EXPR_TYPE_MATH == expr_type:
 
                 # found a math expression; check to see if preceded by 'not'
-                print('FOUND MATH EXPRESSION: "{0}"'.format(nlpql_expression))
                 if len(stack) > 0 and 'NOT' == stack[-1]:
-                    print('\tPRECEDED BY NOT!')
-                    print('\tExpr tokens: {0}'.format(expr_tokens))
                     # prefix the NOT token and surround expr with parens
                     nlpql_expression = 'NOT ( ' + nlpql_expression + ' )'
                     expr_tokens = nlpql_expression.split()
                     is_math = _is_math_expr(expr_tokens)
-                    print('\tis_math: {0}'.format(is_math))
-                    print('\t New expression: "{0}"'.format(nlpql_expression))
-                    print('\tNew expr_tokens: {0}'.format(expr_tokens))
                     # pop the not operator from the stack
                     stack.pop()
-                
+
+                    if _TRACE:
+                        print('\tFound math expr preceded by NOT')                        
+                        print('\t\tis_math: {0}'.format(is_math))
+                        print('\t\tNew expression: "{0}"'.format(nlpql_expression))
+                        print('\t\tNew expr_tokens: {0}'.format(expr_tokens))
+                    
                 # if single parenthesized token, push with no parens
                 if 1 == len(expr_tokens):
                     stack.append(expr_tokens.pop())

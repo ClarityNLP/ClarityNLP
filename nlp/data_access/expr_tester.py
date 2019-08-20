@@ -266,7 +266,7 @@ def _run_tests(job_id,
         # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581,  325 results
         # '0 == Temperature.value % 20',          # temp == 100,    40 results
         # '(Lesion.dimension_X <= 5) OR (Lesion.dimension_X >= 45)',           # 746 results
-        'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',               # 528 results
+        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',               # 528 results
         # '((Lesion.dimension_X) > (15)) AND (((Lesion.dimension_X) < (30)))', # 528 results
 
         # math involving multiple NLPQL features
@@ -324,6 +324,15 @@ def _run_tests(job_id,
 
         # 797 results
         # '(Lesion.dimension_X > 10 AND Lesion.dimension_X < 30) NOT (hasRigors OR hasTachycardia OR hasDyspnea)',
+
+        # demo
+        #'hasTachycardia OR hasDyspnea',
+        #'(hasTachycardia OR hasDyspnea) NOT hasRigors',
+        #'(hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)',
+        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND Temperature.value >= 100.4',
+        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND (Temperature.value >= 100.4 AND Temperature.value < 102)',
+        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ( (Temperature.value >= 100.4 AND Temperature.value < 102) OR Lesion)',
+        #'((hasTachycardia OR hasDyspnea) NOT (hasRigors OR hasNausea)) AND ( (Temperature.value >= 100.4 AND Temperature.value < 102) OR (Lesion.dimension_X >= 10 AND Lesion.dimension_X <= 30))',
         
         # 'Temperature AND hasDyspnea AND hasNausea AND hasVomiting', # 22 results
         # '(Temperature.value > 100.4) AND hasDyspnea AND hasNausea AND hasVomiting', # 20 results
@@ -359,13 +368,48 @@ def _run_tests(job_id,
         # final two in this group should be identical
         # '(hasRigors OR hasDyspnea) AND Temperature', # 75 results, 14 groups
         # '(hasRigors OR hasDyspnea) AND (Temperature.value >= 99.5 AND Temperature.value <= 101.5)', # 34d, 7g
-        ### problem '(hasRigors OR hasDyspnea) NOT (Temperature.value < 99.5 OR Temperature.value > 101.5)',
+        # '(hasRigors OR hasDyspnea)  NOT (Temperature.value < 99.5  OR  Temperature.value > 101.5)',
 
-        # final two in this group should be identical
-        # '(hasRigors OR hasDyspnea) AND Lesion', # 153 results
-        # '(hasRigors OR hasDyspnea) AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', # 5 results
-        ### problem '(hasRigors OR hasDyspnea) NOT (Lesion.dimension_X < 10 OR Lesion.dimension_Y >= 10)'
+        # '(hasRigors OR hasDyspnea)', # 3960 results, 1048 groups
+        # 'Temperature', # 945 docs, 364 groups
+        # '(hasRigors OR hasDyspnea) NOT Temperature', # 3894 results, 1034 groups
+        # '(hasRigors OR hasDyspnea) AND Temperature',  # 75 docs, 14 groups
+        # check: 4905 docs, 1398 groups
+        # '(hasRigors OR hasDyspnea) OR Temperature NOT( (hasRigors OR hasDyspnea) AND Temperature)',
+        # groups: 1048 + 364 - 14 = 1398
+        
+        # Should the final two in this group be identical??
+        # '(hasRigors OR hasDyspnea)', # 3960 docs, 1048 groups
+        # '(hasRigors OR hasDyspnea) AND Lesion', # 153 docs, 32 groups
+        '(Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', # 68 docs, 56 groups (hand count)
 
+        # 5 docs, 1 group, all lesion measurements satisfy constraints
+        #'(hasRigors OR hasDyspnea) AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', #5d, 1 g
+        
+        # 5 docs, 1 g
+        #'(hasRigors OR hasDyspnea) NOT (Lesion.dimension_X < 10 OR Lesion.dimension_Y >= 10)',
+        # check (4021 docs, 1103 groups):
+        #'((hasRigors OR hasDyspnea) OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) ' \
+        #'NOT ( (hasRigors OR hasDyspnea) AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10) )'
+        # formula for groups: 1048 + 56 - 1 = 1103 g
+
+        # '(hasRigors OR hasDyspnea) OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', 4028d, 1104 g
+
+        # 'hasRigors', # 683 docs, 286 groups
+        #' hasDyspnea',
+        # 'hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',
+        
+        #'(hasRigors OR hasDyspnea OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) ' \
+        #'NOT ( (hasRigors AND hasDyspnea) OR ' \
+        #'      (hasRigors AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) OR ' \
+        #'      (hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) ) OR ' \
+        #'(hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) '
+        
+        # *** 5 docs, 1 group, results identical, but not all lesion measurements satisfy constraints ***
+        #'( (hasRigors OR hasDyspnea) AND Lesion) AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',
+        #'( (hasRigors OR hasDyspnea) AND Lesion) NOT (Lesion.dimension_X < 10 OR Lesion.dimension_Y >= 10)',
+
+        
         # then with (Lesion.dimension_X >= 10 AND Temperature.value < 100.4) as the math part
         
         # dimension_X and dimension_Y
@@ -375,9 +419,13 @@ def _run_tests(job_id,
         # # error
         #'This is junk and should cause a parser exception',
 
-        # expansion theorem: p(a OR b OR c) = (a) OR (b) OR (c) NOT
-        #                                     ( (a AND b) OR (a AND c) OR (b AND c) ) OR
-        #                                     (a AND b AND c)
+        # expansion theorems:
+        #
+        # p(a OR b) = p(a) + p(b) - p(a AND b)
+        #
+        # p(a OR b OR c) = (a) OR (b) OR (c) NOT
+        #                  ( (a AND b) OR (a AND c) OR (b AND c) ) OR
+        #                  (a AND b AND c)
 
         # # #### not legal, since each math expression must produce a Boolean result:
         # # # '(Temp.value/98.6) * (HR.value/60.0) * (BP.systolic/110) < 1.1',
