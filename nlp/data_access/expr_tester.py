@@ -366,24 +366,56 @@ def _run_tests(job_id,
         # '(hasRigors OR hasDyspnea)  NOT (Temperature.value < 99.5  OR  Temperature.value > 101.5)', # 34r, 7g
 
         
-        # Checking the behavior of NOT with set theory relations, which are:
-        #     (P == probability, or for our purposes the count of unique elements):
+        # Checking the behavior of NOT with set theory relations:
+        #
+        #     Let P == probability, or for our purposes here, the count of unique elements.
+        #
+        #     'Groups' refers to grouping the results on the value of the context variable, which
+        #     is either the document ID or patient ID. So the group count is the number of distinct
+        #     values of the context variable (the unique docs or unique patients).
+        #
+        #     'Results' refers to the rows of output in the CSV file. This will vary with the
+        #     form of the expression and will contain some amount of redundancy. The redundancy
+        #     is required to flatten the data into a row-based spreadsheet format. What matters
+        #     is the UNIQUE data per patient or document, which is why groups are more important.
+        #
+        #     The set relations of interest are (think of Venn diagrams):
         #
         #     P(A OR B) == P(A) + P(B) - P(A AND B)
         # 
         #     P(A OR B OR C) == P(A) + P(B) + P(C) - (P(A AND B) + P(A AND C) + P(B AND C)) + P(A AND B AND C)
         #
-        # If 'Eval' is the result of the expression evaluator, and if 'Groups' is the number of groups
-        # in the expression evaluator result, these relations should hold:
+        # If 'Groups' denotes the number of groups in the expression evaluator result, these relations should hold:
         #
-        #     Eval[A OR B] == Eval[A OR B NOT (A AND B)]
         #     Groups[A OR B] == Groups[A] + Groups[B] - Groups[A AND B]
+        #     Groups[A OR B] == Groups[(A OR B) NOT (A AND B)] + Groups[A AND B]
         #
-        #     Eval[A OR B OR C] == Eval[A OR B OR C NOT ((A AND B) OR (A AND C) OR (B AND C) ) OR (A AND B AND C)]
         #     Groups[A OR B OR C] == Groups[A] + Groups[B] + Groups[C] -
         #                            ( Groups[A AND B] + Groups[A AND C] + Groups[B AND C] ) +
         #                            Groups[ A AND B AND C ]
-
+        #
+        #     For the second relation, we need to evaluate this expression:
+        #
+        #         (A OR B OR C) NOT ( (A AND B) OR (A AND C) OR (B AND ) ) OR (A AND B AND C)
+        #
+        #     This needs to be rearranged into this equivalent form, to make sure the NOT applies to ALL the
+        #     available docs, and to prevent dependencies on the evaluation order:
+        #
+        #         ((A OR B OR C) OR (A AND B AND C)) NOT ( (A AND B) OR (A AND C) OR (B AND C) )
+        #
+        #     The subexpression prior to the NOT is an OR of two terms. There could be duplicates between these two
+        #     sets, so the duplicates need to be subtracted out as well. A direct evaluation of this expression will
+        #     give the minimal result set PLUS any duplicates between (A OR B OR C) and (A AND B AND C).
+        #
+        #     Thus the relation for the second check becomes:
+        #
+        #     Groups[A OR B OR C] == Groups[ ((A OR B OR C) OR (A AND B AND C)) NOT ((A AND B) OR (A AND C) OR (B AND C) )] +
+        #                            Groups[A AND B] + Groups[A AND C] + Groups[B AND C] -
+        #                            Groups[A AND B AND C] -
+        #                            Groups[ (A OR B OR C) AND (A AND B AND C) ]
+        #
+        #     In the expressions below, anything contained in single quotes is sent to the evaluator.
+        #
 
         # 1. hasRigors OR hasDyspnea
         # ----------------------------
@@ -391,19 +423,36 @@ def _run_tests(job_id,
         # 'hasRigors',                 # 683 results, 286 groups
         # 'hasDyspnea',                # 3277 results, 783 groups
         # 'hasRigors AND hasDyspnea',  # 89 results, 21 groups
-        # 'hasRigors OR hasDyspnea NOT (hasRigors AND hasDyspnea)', # 3960 results, 1048 groups
-        # formula (groups): 286 + 783 - 21 == 1048, same as direct eval of both sides
+        # '(hasRigors OR hasDyspnea) NOT (hasRigors AND hasDyspnea)', # 3825 results, 1027 groups
+        # group check 1: 286 + 783 - 21 = 1048, same as direct eval of both sides
+        # group check 2: 1027 + 21 = 1048 groups, same as direct eval
 
         # 2. hasTachycardia OR hasShock
         # -------------------------------
-        # 'hasTachycardia OR hasShock',  # 4113 results, 1253 groups
+        # 'hasTachycardia OR hasShock',  # 4113 results, 1253 groups direct evaluation
         # 'hasTachycardia',              # 1996 results, 757 groups
         # 'hasShock',                    # 2117 results, 521 groups
         # 'hasTachycardia AND hasShock', # 191 results, 25 groups
-        # 'hasTachycardia OR hasShock NOT (hasTachycardia AND hasShock)', # 4113 results, 1253 groups
-        # formula (groups): 757 + 521 - 25 == 1253, same as direct eval of both sides
+        # '(hasTachycardia OR hasShock) NOT (hasTachycardia AND hasShock)', # 3867 results, 1228 groups
+        # group check 1: 757 + 521 - 25 = 1253, same as direct eval of both sides
+        # group check 2: 1228 + 25 = 1253, same as direct eval
 
-        # 3. hasTachycardia OR hasShock OR hasRigors
+        # 3. hasShock OR hasDyspnea OR hasTachycardia
+        # -------------------------------------------
+        # 'hasShock OR hasDyspnea OR hasTachycardia',     # 7390 results, 1967 groups
+        # 'hasShock',                                     # 2117 results, 521 groups
+        # 'hasDyspnea',                                   # 3277 results, 783 groups
+        # 'hasTachycardia',                               # 1996 results, 757 groups
+        # 'hasShock AND hasDyspnea',                      # 155 results, 22 groups
+        # 'hasShock AND hasTachycardia',                  # 191 results, 25 groups
+        # 'hasDyspnea AND hasTachycardia',                # 240 results, 49 groups
+        # 'hasShock AND hasDyspnea AND hasTachycardia',   # 11 results, 2 groups
+        # '((hasShock OR hasDyspnea OR hasTachycardia) OR (hasShock AND hasDyspnea AND hasTachycardia)) NOT ( (hasShock AND hasDyspnea) OR (hasShock AND hasTachycardia) OR (hasDyspnea AND hasTachycardia) )' # 6607 resutls, 1875 groups
+        # '((hasShock OR hasDyspnea OR hasTachycardia) AND (hasShock AND hasDyspnea AND hasTachycardia))', # 20 results, 2 groups
+        # group check 1: 521 + 783 + 757 - (22 + 25 + 49) + 2 == 1967 groups, identical to direct eval
+        # group check 2: 1875 + 22 + 25 + 49 - 2 - 2 = 1967 groups, identical to direct eval
+
+        # 4. hasTachycardia OR hasShock OR hasRigors
         # ------------------------------------------
         # 'hasTachycardia OR hasShock OR hasRigors',   # 4796 results, 1502 groups
         # 'hasTachycardia',                            # 1996 results, 757 groups
@@ -413,19 +462,10 @@ def _run_tests(job_id,
         # 'hasTachycardia AND hasRigors',              # 104 results, 28 groups
         # 'hasShock AND hasRigors',                    # 52 results, 11 groups
         # 'hasTachycardia AND hasShock AND hasRigors', # 11 results, 2 groups
-
-        # something is order-dependent in the evaluator involving NOT
-        # Always make NOT the final statement?
-        #'(hasTachycardia OR hasShock OR hasRigors) NOT ( (hasTachycardia AND hasShock) OR (hasTachycardia AND hasRigors) OR (hasShock AND hasRigors) ) OR (hasTachycardia AND hasShock AND hasRigors)', # 4371 results, 1444 groups?
-        '(hasTachycardia OR hasShock OR hasRigors) OR (hasTachycardia AND hasShock AND hasRigors) NOT ( (hasTachycardia AND hasShock) OR (hasTachycardia AND hasRigors) OR (hasShock AND hasRigors) )', # 4807 results, 1502 groups
-
-        
-        # change the order to hasShock OR hasRigors OR hasTachycardia
-        # 'hasShock OR hasRigors OR hasTachycardia ' \
-        # 'NOT ( (hasShock AND hasRigors) OR (hasShock AND hasTachycardia) OR (hasRigors AND hasTachycardia) ) ' \
-        # 'OR (hasShock AND hasRigors AND hasTachycardia)', # 4807 results, 1502 groups, agrees with direct eval
-
-        # formula (groups): 757 + 521 + 286 - (25 + 28 + 11) + 2 == 1502 groups
+        # '((hasTachycardia OR hasShock OR hasRigors) OR (hasTachycardia AND hasShock AND hasRigors)) NOT ( (hasTachycardia AND hasShock) OR (hasTachycardia AND hasRigors) OR (hasShock AND hasRigors) )', # 4338 results, 1442 groups
+        # '((hasTachycardia OR hasShock OR hasRigors) AND (hasTachycardia AND hasShock AND hasRigors))', # 22 results, 2 groups
+        # group check 1: 757 + 521 + 286 - (25 + 28 + 11) + 2 == 1502 groups, identical to direct eval
+        # group check 2: 1442 + 25 + 28 + 11 - 2 - 2 = 1502 groups, identical to direct eval
 
         # the same, but group as (hasTachycardia OR hasShock) OR hasRigors and use two-component formula
         # ----------------------------------------------------------------------------------------------
@@ -441,20 +481,9 @@ def _run_tests(job_id,
         # 'hasTachycardia AND (hasShock OR hasRigors)', # 292 results, 51 groups
         # formula (groups): 757 + 796 - 51 == 1502 groups, identical to direct eval
 
-        # 4. hasShock OR hasDyspnea OR hasTachycardia
-        # -------------------------------------------
-        # 'hasShock OR hasDyspnea OR hasTachycardia', # 7390 results, 1967 groups
-        # 'hasShock', # 2117 results, 521 groups
-        # 'hasDyspnea', # 3277 results, 783 groups
-        # 'hasTachycardia', # 1996 results, 757 groups
-        # 'hasShock AND hasDyspnea', # 155 results, 22 groups
-        # 'hasShock AND hasTachycardia', # 191 results, 25 groups
-        # 'hasDyspnea AND hasTachycardia', # 240 results, 49 groups
-        # 'hasShock AND hasDyspnea AND hasTachycardia', # 11 results, 2 groups
-        # 'hasShock OR hasDyspnea OR hasTachycardia ' \
-        # 'NOT ( (hasShock AND hasDyspnea) OR (hasShock AND hasTachycardia) OR (hasDyspnea AND hasTachycardia) ) ' \
-        # 'OR (hasShock AND hasDyspnea AND hasTachycardia)', # 7401 results, 1967 groups
-        # formula (groups): 521 + 783 + 757 - (22 + 25 + 49) + 2 == 1967 groups, identical to direct eval
+
+
+
         
         # Should the final two in this group be identical??
         # '(hasRigors OR hasDyspnea)', # 3960 docs, 1048 groups
