@@ -233,7 +233,7 @@ regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -1856,198 +1856,29 @@ def _remove_negated_subexpressions(postfix_tokens):
     return new_tokens
 
 
-# ###############################################################################
-# def _generate_logical_result(
-#         postfix_tokens,  # expression in postfix form, negations removed
-#         expr_index,      # index of the current expression in the NLPQL file
-#         group,           # result of MongoDB $group operation on context var
-#         doc_map,         # dict: _id => document data
-#         feature_map):    # see docstring for build_feature_map
-#     """
-#     Generate the groups of output documents that result from the evaluation of
-#     a logical expression.
-
-#     The parameters are:
-
-#         postfix_tokens: expression in postfix form with negations removed
-#         expr_index: index of expression in NLPQL file
-#         group: list of _id values for all docs in the result group
-#         doc_map: dict mapping document _id values to the actual document data
-#         feature_map: dict mapping nlpql_feature -> triplet consisting of
-#                      (doc_count, current_index, index_list)
-
-#     A list of lists is returned as the result. Each inner list contains
-#     MongoDB _id values and represents a single result group in the overall
-#     result.
-
-#     The individual result groups are composed by 'evaluating' the postfix
-#     form of the logic expression.
-
-#     This code does NOT compute the full Cartesian product for the result set.
-#     It instead computes the minimal set of documents that includes all
-#     result data.
-
-#     """
-
-#     if _TRACE:
-#         print('Called generate_logical_result')
-#         print('\tPostfix tokens: {0}'.format(postfix_tokens))
-#         print('\tFeature map: ')
-#         for k,v in feature_map.items():
-#             print('\t\t{0} => {1}'.format(k,v))
-
-#     # scan the postfix tokens and verify that 'not' has been removed
-#     for token in postfix_tokens:
-#         assert 'not' != token.lower()
-
-#     assert len(postfix_tokens) > 1
-
-#     # only strings get pushed onto the evaluation stack
-#     stack = []
-
-#     # list of lists of _id values; each sublist is a group of result docs
-#     oid_list = []
-
-#     counter = 0
-#     for token in postfix_tokens:
-#         match = _regex_logic_operator.match(token)
-#         if not match:
-#             stack.append(token)
-#             if _TRACE:
-#                 print('\tPushed postfix feature "{0}"'.format(token))
-#             continue
-#         else:
-#             operator, n = _decode_operator(token)
-
-#             # pop n operands from the stack
-#             operands = []
-#             new_feature_name = ''
-#             for i in range(n):
-#                 operand = stack.pop()
-#                 operands.append(operand)
-#             operands.reverse()
-#             if _TRACE: print('\tOperands: {0}'.format(operands))
-
-#             # construct a new feature name for this operation
-#             new_feature_name = _make_temp_feature(counter,
-#                                                   expr_index,
-#                                                   _TMP_FEATURE_LOGIC)
-#             if _TRACE: print('\tNew feature name: {0}'.format(new_feature_name))
-#             counter += 1
-
-#             # An 'ntuple' is a group of result documents; it is one of the
-#             # inner lists in the list-of-lists that this function returns.
-#             # Ealuation of an OR or an AND usually generates multiple ntuples.
-#             ntuples = []
-#             if 'or' == operator:
-#                 for feature in operands:
-#                     match = _regex_temp_nlpql_logic_feature.match(feature)
-#                     if not match:
-#                         # simple feature
-#                         if feature in feature_map:
-#                             oids = _get_docs_with_feature(feature,
-#                                                           feature_map,
-#                                                           group)
-#                             for oid in oids:
-#                                 # each OR'd feature is an ntuple in itself
-#                                 ntuples.append([oid])
-#                     else:
-#                         # result from prior logical operation; accept as is
-#                         print('*** HERE ***')
-#                         print('oid_list: {0}'.format(oid_list))
-#                         ntuples.extend(oid_list)
-#             else: # 'and' == operator
-                
-#                 # A logical AND requires all features to exist in the feature
-#                 # map for this group. If any feature is not present, this AND
-#                 # operation can produce no results.
-#                 all_present = True
-#                 max_count = 0
-#                 for feature in operands:
-#                     if feature not in feature_map:
-#                         all_present = False
-#                         break
-#                     feature_count, index, index_list = feature_map[feature]
-#                     if feature_count > max_count:
-#                         max_count = feature_count
-                        
-#                 if not all_present:
-#                     # this AND condition not satisfied, push False
-#                     stack.append(False)
-#                     continue
-
-#                 if _TRACE: print('\t\tall present in feature map')
-                
-#                 # Generate 'max_count' ntuples; each ntuple has len(operands)
-#                 # features. For those features appearing fewer than max_count
-#                 # times, repeat until max_count has been reached.
-#                 while len(ntuples) < max_count:
-#                     ntuple = []
-#                     for feature in operands:
-#                         v = feature_map[feature]
-#                         feature_count = v[0]
-#                         current_index = v[1]
-#                         index_list    = v[2]
-#                         ntuple.append(group[index_list[current_index]])
-#                         current_index += 1
-#                         if current_index >= feature_count:
-#                             current_index = 0
-#                         feature_map[feature] = (feature_count, current_index, index_list)
-#                     ntuples.append(ntuple)
-
-#             # the newly-generated ntuples replace the previous state
-#             print('previous state: ')
-#             print(oid_list)
-            
-#             oid_list = []
-#             oid_list = copy.deepcopy(ntuples)
-            
-#             if _TRACE:
-#                 print('OID LIST (end): ')
-#                 for i, l in enumerate(oid_list):
-#                     print('\t[{0}]:\t{1}'.format(i, l))
-#                 print()
-
-#             # replace the old features in the feature_map with the new
-#             new_oid_count = 0
-#             new_indices = []
-#             for feature in operands:
-#                 if feature in feature_map:
-#                     feature_count, current_index, index_list = feature_map[feature]
-
-#                     # remove old feature entry
-#                     del feature_map[feature]
-
-#                     # accumulate count and indices for the old features,
-#                     # which now have the label 'new_feature_name'
-#                     new_oid_count += feature_count
-#                     new_indices.extend(index_list)
-
-#             # add a new entry for the new features
-#             feature_map[new_feature_name] = (new_oid_count, 0, copy.deepcopy(new_indices))
-
-#         # the new feature name now replaces what was popped
-#         stack.append(new_feature_name)
-
-#         if _TRACE:
-#             print('\tFeature map after evaluation: ')
-#             for k,v in feature_map.items():
-#                 print('\t\t{0} => {1}'.format(k,v))
-
-        
-#     # should only have a single element left on the stack, the result
-#     assert 1 == len(stack)
-#     return oid_list
-
-
 ###############################################################################
 def _generate_logical_result(
         postfix_tokens,  # expression in postfix form, negations removed
         expr_index,      # index of the current expression in the NLPQL file
         group,           # result of MongoDB $group operation on context var
+                         # all members of the group share the same value of
+                         # the context variable
         doc_map,         # dict: _id => document data
-        feature_map):    # see docstring for build_feature_map
+        feature_map):    # dict: nlpql_feature => triplet consisting of
+                         #    (doc_count, current_index, index_list)
     """
+    Generate the groups of output documents that comprise the output from
+    the evaluation of a logical expression. This process is explained more
+    fully in the documentation for the expression evaluator.
+
+    A list of lists is returned as the result. Each inner list contains
+    MongoDB _id values, and it represents the output data for a single
+    input group, i.e. for a single patient or document, depending on the
+    context variable.
+
+    This code does NOT compute the full Cartesian product for the result set.
+    It instead computes the minimal set of documents that includes all
+    result data. See the documentation for more on this.
     """
 
     if _TRACE:
@@ -2063,8 +1894,11 @@ def _generate_logical_result(
 
     assert len(postfix_tokens) > 1
 
+    # The code below will push and pop lists of lists of MongoDB _id values
+    # on this stack. These _id values are also known as oid values, hence
+    # the terminology below.
     stack = []
-
+    
     for token in postfix_tokens:
         match = _regex_logic_operator.match(token)
         if not match:
@@ -2107,12 +1941,20 @@ def _generate_logical_result(
                     stack.append([])
                     continue
 
-                # construct the AND result, which is a list of lists
+                # Construct the AND result, which is a list of lists of oid
+                # values.
+                #
                 # length of outer list == length of longest operand
                 # length of inner lists = operand count == len(operands)
-                # 'tile' the individual operands to generate the result
-                # this is a miminal representation of the data
-                # emphatically NOT the Cartesian product
+                #
+                # This code 'tiles' the individual operands to generate the
+                # result, producing a miminal representation of the data. See
+                # the documentation for more. This is emphatically NOT the
+                # Cartesian product, which would explode the result data and
+                # generate lots of needless redundancy.
+                #
+                # In short, this output generation code produces the MINIMAL
+                # amount of redundancy for a given context variable group.
                 
                 meta = [ (len(op), op) for op in operands]
                 meta = sorted(meta, key=lambda x: x[0], reverse=True)
@@ -2146,20 +1988,6 @@ def _generate_logical_result(
 
     assert 1 == len(stack)
     return stack[-1]
-        # if _TRACE:
-        #     print('STACK TOP: ')
-        #     for l in stack[-1]:
-        #         assert isinstance(l, list)
-        #         suffixes = []
-        #         features = []
-        #         for oid in l:
-        #             doc = doc_map[oid]
-        #             oid_suffix = str(oid)[-4:]
-        #             doc_feature = doc['nlpql_feature']
-        #             suffixes.append(oid_suffix)
-        #             features.append(doc_feature)
-        #         zipped = list(zip(suffixes, features))
-        #         print('\t{0}'.format(zipped))
 
 
 ###############################################################################

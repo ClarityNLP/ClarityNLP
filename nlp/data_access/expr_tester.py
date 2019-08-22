@@ -421,7 +421,7 @@ def _run_tests(job_id,
 
         # 1. hasRigors OR hasDyspnea
         # ----------------------------
-        # '(hasRigors OR hasDyspnea)', # 3960 results, 1048 groups direct evaluation
+        '(hasRigors OR hasDyspnea)', # 3960 results, 1048 groups direct evaluation
         # 'hasRigors',                 # 683 results, 286 groups
         # 'hasDyspnea',                # 3277 results, 783 groups
         # 'hasRigors AND hasDyspnea',  # 89 results, 21 groups
