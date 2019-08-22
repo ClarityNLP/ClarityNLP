@@ -123,8 +123,8 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
 
     for doc in docs:
         objs = get_cached_terms(name, doc[util.solr_report_id_field], pipeline_config.terms, pipeline_config.
-                                synonyms, pipeline_config
-                                .descendants, pipeline_config.ancestors, pipeline_config
+                                include_synonyms, pipeline_config
+                                .include_descendants, pipeline_config.include_ancestors, pipeline_config
                                 .vocabulary, filters, has_special_filters)
         if objs and len(objs) > 0:
             for obj in objs:
