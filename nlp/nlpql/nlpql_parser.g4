@@ -153,7 +153,8 @@ unaryOperator:
 
 logicalOperator:
     AND |
-    OR
+    OR |
+    NOT
     ;
 
 comparisonOperator:

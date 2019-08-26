@@ -601,7 +601,7 @@ def run_nlpql_parser(nlpql_txt: str):
 
 
 if __name__ == '__main__':
-    with open('samples/simple.nlpql') as f:
+    with open('samples/sample2.nlpql') as f:
         nlpql_txt = f.read()
         results = run_nlpql_parser(nlpql_txt)
         if results['has_errors'] or results['has_warnings']:
