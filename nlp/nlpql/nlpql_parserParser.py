@@ -44,7 +44,7 @@ def serializedATN():
         buf.write("\n,\3-\3-\3-\3-\3-\3-\3-\3-\3-\3-\3-\3-\5-\u0187\n-\3")
         buf.write("-\2\4\60\66.\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"")
         buf.write("$&(*,.\60\62\64\668:<>@BDFHJLNPRTVX\2\n\4\2\"\"PP\4\2")
-        buf.write("#$PP\3\2&\'\4\2++\65\65\3\2)*\3\2\4\5\4\2\"\"UU\6\2\t")
+        buf.write("#$PP\3\2&\'\4\2++\65\65\3\2)+\3\2\4\5\4\2\"\"UU\6\2\t")
         buf.write("\t\f\30\33\35\37!\2\u019f\2]\3\2\2\2\4p\3\2\2\2\6t\3\2")
         buf.write("\2\2\bv\3\2\2\2\ny\3\2\2\2\f|\3\2\2\2\16~\3\2\2\2\20\u0083")
         buf.write("\3\2\2\2\22\u0086\3\2\2\2\24\u008b\3\2\2\2\26\u0093\3")
@@ -2033,6 +2033,9 @@ class nlpql_parserParser ( Parser ):
         def OR(self):
             return self.getToken(nlpql_parserParser.OR, 0)
 
+        def NOT(self):
+            return self.getToken(nlpql_parserParser.NOT, 0)
+
         def getRuleIndex(self):
             return nlpql_parserParser.RULE_logicalOperator
 
@@ -2048,7 +2051,7 @@ class nlpql_parserParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 283
             _la = self._input.LA(1)
-            if not(_la==nlpql_parserParser.AND or _la==nlpql_parserParser.OR):
+            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << nlpql_parserParser.AND) | (1 << nlpql_parserParser.OR) | (1 << nlpql_parserParser.NOT))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
