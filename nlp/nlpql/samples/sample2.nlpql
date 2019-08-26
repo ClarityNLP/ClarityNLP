@@ -1,0 +1,76 @@
+limit 100;
+phenotype "Test Setdiff" version "1";
+include ClarityCore version "1.0" called Clarity;
+///////////////////////////////////////////////////////////////////////////////
+//
+//                          Documents
+//
+///////////////////////////////////////////////////////////////////////////////
+// documentset Docs:
+//     Clarity.createDocumentSet({
+//         "report_types":[
+//             "Physician",
+//             "Nurse",
+//             "Note",
+//             "Discharge Summary"
+//         ],
+//         "source":"MIMIC"
+//     });
+///////////////////////////////////////////////////////////////////////////////
+//
+//                          Termsets
+//
+///////////////////////////////////////////////////////////////////////////////
+termset RigorsTerms: [
+    "Rigors",
+    "Rigoring",
+    "Shivers",
+    "Shivering"
+];
+termset DyspneaTerms: [
+    "Labored respiration",
+    "Shortness of breath",
+    "Short of breath",
+    "SOB",
+    "Respiration labored",
+    "Labored breathing",
+    "Dyspnea",
+    "Difficulty breathing"
+];
+///////////////////////////////////////////////////////////////////////////////
+//
+//                          Provider Assertions
+//
+///////////////////////////////////////////////////////////////////////////////
+define hasRigors:
+    Clarity.ProviderAssertion({
+        termset: [RigorsTerms]
+    });
+define hasDyspnea:
+    Clarity.ProviderAssertion({
+        termset: [DyspneaTerms]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//                         Context
+//
+///////////////////////////////////////////////////////////////////////////////
+context Patient;
+///////////////////////////////////////////////////////////////////////////////
+//
+//                         Expressions
+//
+///////////////////////////////////////////////////////////////////////////////
+define RigorsOrDyspnea:
+    where hasRigors OR hasDyspnea;
+define RigorsAndDyspnea:
+    where hasRigors AND hasDyspnea;
+define hasRigorsOrDyspneaButNotBoth:
+    where (hasRigors OR hasDyspnea) NOT (hasRigors AND hasDyspnea);
+define complexNotLogic:
+    where (hasTachycardia OR hasShock OR hasRigors) NOT ( (hasTachycardia AND hasShock) OR (hasTachycardia AND hasRigors) OR (hasShock AND hasRigors) );
+define LogicAndMath1:
+    where (hasRigors OR hasDyspnea OR hasTachycardia) NOT ( (Temperature.value >= 100.4) AND (Temperature.value <= 102) );
+define LogicAndMath2:
+    where (Lesion.dimension_X > 10 AND Lesion.dimension_X < 30) NOT (hasRigors OR hasTachycardia OR hasDyspnea);
