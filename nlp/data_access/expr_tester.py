@@ -491,6 +491,37 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
     if computed != expected:
         return False
 
+    # redundant math expressions
+    
+    expr = 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$gt':10}},
+                {'dimension_X':{'$lt':30}}
+            ]
+        })
+    expected = _to_context_set(cf, docs)
+    if computed != expected:
+        return False
+
+    expr = 'Lesion.dimension_X > 5 AND Lesion.dimension_X > 10 AND ' \
+        'Lesion.dimension_X < 40 AND Lesion.dimension_X < 30'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+
+    expr = '(Lesion.dimension_X > 8 AND Lesion.dimension_X > 5 AND ' \
+        'Lesion.dimension_X > 10) AND (Lesion.dimension_X < 40 AND ' \
+        'Lesion.dimension_X < 30 AND Lesion.dimension_X < 45)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+
+    
     return True
 
 
@@ -763,6 +794,222 @@ def _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
     
     return True
 
+
+###############################################################################
+def _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
+
+    # rename some precomputed sets
+    tachy  = data['hasTachycardia']
+    shock  = data['hasShock']
+    rigors = data['hasRigors']
+    dysp   = data['hasDyspnea']
+    nau    = data['hasNausea']
+    vom    = data['hasVomiting']
+    temp   = data['Temperature']
+    lesion = data['Lesion']
+
+    expr = 'hasNausea AND Temperature.value >= 100.4'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gte':100.4}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = nau & set1
+    if computed != expected:
+        return False
+
+    expr = 'Lesion.dimension_X < 10 AND hasRigors'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$lt':10}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = set1 & rigors
+    if computed != expected:
+        return False
+
+    expr = 'Lesion.dimension_X < 10 OR hasRigors'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$lt':10}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = set1 | rigors
+    if computed != expected:
+        return False
+
+    expr = '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting OR ' \
+        'hasShock) AND '                                                  \
+        '(Temperature.value >= 100.4 AND Temperature.value < 102)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gte':100.4}},
+                {'value':{'$lt':102}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = (rigors | tachy | nau | vom | shock) & set1
+    if computed != expected:
+        return False
+
+    expr = 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR ' \
+        '(hasRigors OR hasTachycardia AND hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$gt':10}},
+                {'dimension_X':{'$lt':30}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = set1 | (rigors | tachy & dysp)
+    if computed != expected:
+        return False
+
+    expr = 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR ' \
+        'hasRigors OR hasTachycardia OR hasDyspnea'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = set1 | rigors | tachy | dysp
+    if computed != expected:
+        return False
+
+    expr = '(Lesion.dimension_X > 10 AND Lesion.dimension_X < 30) NOT ' \
+        '(hasRigors OR hasTachycardia OR hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = set1 - (rigors | tachy | dysp)
+    if computed != expected:
+        return False
+
+    expr = '(Temperature.value >= 100.4) AND ' \
+        'hasDyspnea AND hasNausea AND hasVomiting'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gt':100.4}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = set1 & dysp & nau & vom
+    if computed != expected:
+        return False
+
+    expr = 'hasRigors OR (hasTachycardia AND hasDyspnea) AND ' \
+        'Temperature.value >= 100.4'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = rigors | (tachy & dysp) & set1
+    if computed != expected:
+        return False
+
+    expr = '(hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea) AND ' \
+        'Temperature.value >= 100.4'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = (rigors | tachy | dysp | nau) & set1
+    if computed != expected:
+        return False
+
+    expr = 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs1 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$lt':10}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs1)
+    docs2 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$gt':30}}
+            ]
+        })
+    set2 = _to_context_set(cf, docs2)
+    expected = set1 | rigors & set2
+    if computed != expected:
+        return False
+
+    # redundant math expressions
+
+    expr = 'Lesion.dimension_X > 50'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$gt':50}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    if computed != set1:
+        return False
+
+    expr = 'Lesion.dimension_X > 30 AND Lesion.dimension_X > 50'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != set1:
+        return False
+
+    expr = 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND ' \
+        'Lesion.dimension_X > 50'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != set1:
+        return False
+
+    expr = '(Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = set1 | (nau & dysp)
+    if computed != expected:
+        return False
+
+    expr = '(Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR ' \
+        '(hasNausea AND hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+
+    expr = '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR ' \
+        '(hasNausea AND hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+
+    expr = '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND ' \
+        'Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+    
+    return True
+
+
 ###############################################################################
 def run_self_tests(job_id,
                    context_var,
@@ -839,6 +1086,8 @@ def run_self_tests(job_id,
     if not _test_math_with_multiple_features(job_id, cf, mongo_obj):
         return False
     if not _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
+        return False
+    if not _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
         return False
     
     # drop the collection and database
@@ -958,7 +1207,7 @@ def _run_tests(job_id,
         # 'Lesion.dimension_X < 10 AND hasRigors',    # 19 results, 7 groups
         # 'Lesion.dimension_X < 10',                  # 841 results
         # 'Lesion.dimension_X < 10 OR hasRigors',     # 1524 results, 633 groups
-        # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting or hasShock) AND ' \
+        # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting OR hasShock) AND ' \
         # '(Temperature.value >= 100.4)',             # 180 results, 38 groups
 
         # 1808 results, 702 groups
