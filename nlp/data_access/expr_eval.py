@@ -1072,7 +1072,7 @@ def _merge_math_tokens(
 
                     # check if preceded by NOT; if so, include in the expr
                     if len(stack) > 0 and 'NOT' == stack[-1]:
-                        print('\tExpr is preceded by NOT')
+                        if _TRACE: print('\tExpr is preceded by NOT')
                         nlpql_expression = 'NOT ( ' + nlpql_expression + ' )'
                         # pop the NOT operator from the stack
                         stack.pop()
