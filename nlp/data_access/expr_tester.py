@@ -240,26 +240,6 @@ def _run_selftest_expression(job_id,
 
 
 ###############################################################################
-def _compare_sets(set1, set2):
-    """
-    """
-
-    # check set equality
-    if len(set1) != len(set2):
-        return False
-    
-    for e in set1:
-        if e not in set2:
-            return False
-        
-    for m in set2:
-        if m not in set1:
-            return False
-
-    return True
-
-
-###############################################################################
 def _to_context_set(context_field, docs):
 
     feature_set = set()
@@ -294,6 +274,10 @@ def _test_basic_expressions(job_id,     # integer job id from data file
         'hasDyspnea', 'hasNausea', 'hasVomiting'
     ]
 
+    # rename some precomputed sets
+    temp   = data['Temperature']
+    lesion = data['Lesion']
+
     for expr in BASIC_EXPRESSIONS:
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = data[expr]
@@ -302,7 +286,7 @@ def _test_basic_expressions(job_id,     # integer job id from data file
 
     expr = 'Temperature AND Lesion'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-    expected = set.intersection(data['Temperature'], data['Lesion'])
+    expected = temp & lesion
     if computed != expected:
         return False
 
@@ -310,13 +294,13 @@ def _test_basic_expressions(job_id,     # integer job id from data file
     for field in BASIC_EXPRESSIONS[2:]:
         expr = 'Temperature AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = set.intersection(data['Temperature'], data[field])
+        expected = temp & data[field]
         if computed != expected:
             return False
 
         expr = 'Lesion AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = set.intersection(data['Lesion'], data[field])
+        expected = lesion & data[field]
         if computed != expected:
             return False
 
@@ -324,13 +308,13 @@ def _test_basic_expressions(job_id,     # integer job id from data file
     for field in BASIC_EXPRESSIONS[2:]:
         expr = 'Temperature OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = set.union(data['Temperature'], data[field])
+        expected = temp | data[field]
         if computed != expected:
             return False
 
         expr = 'Lesion OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = set.union(data['Lesion'], data[field])
+        expected = lesion | data[field]
         if computed != expected:
             return False
 
@@ -350,7 +334,7 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
             'value': {'$gte': 100.4}
         })
     expected = _to_context_set(cf, docs)
-    if not _compare_sets(computed, expected):
+    if computed != expected:
         return False
 
     expr = 'Temperature.value >= 1.004e2'
