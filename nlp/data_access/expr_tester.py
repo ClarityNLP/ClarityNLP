@@ -233,7 +233,8 @@ def _run_selftest_expression(job_id,
     result_set = set()
     for expr_obj, docs in eval_results:
         for doc in docs:
-            result_set.add(doc[context_field])
+            if _TEST_NLPQL_FEATURE == doc['nlpql_feature']:
+                result_set.add(doc[context_field])
     
     return result_set
 
@@ -305,7 +306,7 @@ def _test_basic_expressions(job_id,     # integer job id from data file
     if computed != expected:
         return False
 
-    'Temperature AND field', 'Lesion AND field'
+    # 'Temperature AND field', 'Lesion AND field'
     for field in BASIC_EXPRESSIONS[2:]:
         expr = 'Temperature AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
@@ -319,7 +320,7 @@ def _test_basic_expressions(job_id,     # integer job id from data file
         if computed != expected:
             return False
 
-    'Temperature OR field', 'Lesion OR field'
+    # 'Temperature OR field', 'Lesion OR field'
     for field in BASIC_EXPRESSIONS[2:]:
         expr = 'Temperature OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
@@ -491,17 +492,142 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
         return False
 
     return True
+
+
+###############################################################################
+def _test_math_with_multiple_features(job_id, cf, mongo_obj):
+
+    expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR (Temperature.value >= 100.4)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$or':
+            [
+                {
+                    '$and':
+                    [
+                        {'nlpql_feature':'Lesion'},
+                        {'dimension_X':{'$gt':15}},
+                        {'dimension_X':{'$lt':30}}
+                    ]
+                },
+                {
+                    '$and':
+                    [
+                        {'nlpql_feature':'Temperature'},
+                        {'value':{'$gte':100.4}}
+                    ]
+                }
+            ]
+        })
+    expected = _to_context_set(cf, docs)
+    if computed != expected:
+        return False
+
+    expr = '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND Temperature.value > 100.4'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs1 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$gt':15}},
+                {'dimension_X':{'$lt':30}}
+            ]
+        })
+    expected1 = _to_context_set(cf, docs1)
+    docs2 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gt':100.4}}
+            ]
+        })
+    expected2 = _to_context_set(cf, docs2)
+    expected = set.intersection(expected1, expected2)
+    if computed != expected:
+        return False
+
+    expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4'    
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+
+    expr = '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs1 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gte':102}}
+            ]
+        })
+    expected1 = _to_context_set(cf, docs1)
+    docs2 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$lte':5}}
+            ]
+        })
+    expected2 = _to_context_set(cf, docs2)
+    expected = set.intersection(expected1, expected2)
+    if computed != expected:
+        return False
+
+    expr = '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND (Temperature.value >= 103)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs1 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gte':102}}
+            ]
+        })
+    expected1 = _to_context_set(cf, docs1)
+    docs2 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$lte':5}}
+            ]
+        })
+    expected2 = _to_context_set(cf, docs2)
+    docs3 = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gte':103}}
+            ]
+        })
+    expected3 = _to_context_set(cf, docs3)
+    expected = set.intersection(expected1, expected2, expected3)
+    if computed != expected:
+        return False
     
+    return True
+
 
 ###############################################################################
 def run_self_tests(job_id,
                    context_var,
                    mongohost,
-                   mongoport):
+                   mongoport,
+                   debug=False):
     """
     Run test expressions and verify with independent MongoDB queries.
     """
 
+    if debug:
+        _enable_debug()
+        expr_eval.enable_debug()
+    
     DB_NAME         = 'claritynlp_eval_test'
     COLLECTION_NAME = 'eval_test_data'
     TEST_FILE_NAME  = 'expr_test_data.json'
@@ -557,13 +683,12 @@ def run_self_tests(job_id,
     data['hasTachycardia'] = _get_feature_set(mongo_obj, cf, 'hasTachycardia')
 
     
-    if not _test_basic_expressions(job_id, cf, data, mongo_obj):
+    #if not _test_basic_expressions(job_id, cf, data, mongo_obj):
+    #    return False
+    #if not _test_pure_math_expressions(job_id, cf, mongo_obj):
+    #    return False
+    if not _test_math_with_multiple_features(job_id, cf, mongo_obj):
         return False
-    
-    if not _test_pure_math_expressions(job_id, cf, mongo_obj):
-        return False
-
-    
     
     # drop the collection and database
     mongo_obj.drop()
@@ -1346,5 +1471,6 @@ if __name__ == '__main__':
         assert run_self_tests(job_id,
                               context,
                               mongohost,
-                              mongoport)
+                              mongoport,
+                              debug)
         
