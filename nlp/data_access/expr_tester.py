@@ -1011,6 +1011,66 @@ def _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
+def _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
+
+    # rename some precomputed sets
+    tachy  = data['hasTachycardia']
+    rigors = data['hasRigors']
+    dysp   = data['hasDyspnea']
+
+    # expression without using NOT
+    expr = '(hasRigors OR hasDyspnea OR hasTachycardia) AND ' \
+        '(Temperature.value < 100.4)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$lt':100.4}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = (rigors | dysp | tachy) & set1
+    if computed != expected:
+        return False
+
+    # equivalent using NOT
+    expr = '(hasRigors OR hasDyspnea OR hasTachycardia) NOT ' \
+        '(Temperature.value >= 100.4)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+
+    # expression 2 without using NOT
+    expr = '(hasRigors OR hasDyspnea) AND ' \
+        '(Temperature.value >= 99.5 AND Temperature.value <= 101.5)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gte':99.5}},
+                {'value':{'$lte':101.5}}
+            ]
+        })
+    set1 = _to_context_set(cf, docs)
+    expected = (rigors | dysp) & set1
+    if computed != expected:
+        return False
+
+    # equivalent using NOT
+    expr = '(hasRigors OR hasDyspnea) NOT ' \
+        '(Temperature.value < 99.5 OR Temperature.value > 101.5)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+    
+    return True
+
+
+###############################################################################
 def run_self_tests(job_id,
                    context_var,
                    mongohost,
@@ -1089,6 +1149,9 @@ def run_self_tests(job_id,
         return False
     if not _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
         return False
+    if not _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
+        return False
+    
     
     # drop the collection and database
     mongo_obj.drop()
