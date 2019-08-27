@@ -2179,27 +2179,28 @@ def is_valid(parse_result, name_list=None):
         else:
             # the token was not found in the list of known names
             # try to resolve into known_name + logic_op + remainder
-            print('\tUnrecognized token: "{0}", resolving...'.format(token))
+            if _TRACE:
+                print('\tUnrecognized token: "{0}", resolving...'.format(token))
             # parenthesize its replacement, if any
             new_tokens.append(_LEFT_PARENS)
             while True:
                 found_it = False
                 start_token = token
                 for name in name_list:
-                    print('\tSearching for {0} in {1}'.format(name, token))
+                    if _TRACE: print('\tSearching for {0} in {1}'.format(name, token))
                     if token.startswith(name):
-                        print('\t\tFound: {0}'.format(name))
+                        if _TRACE: print('\t\tFound: {0}'.format(name))
                         new_tokens.append(name)
                         token = token[len(name):]
-                        print('\t\tRemaining token: ->{0}<-'.format(token))
+                        if _TRACE: print('\t\tRemaining token: ->{0}<-'.format(token))
                         if len(token) > 0:
                             # need logic op
                             for lop in NLPQL_EXPR_LOGIC_OPERATORS:
                                 if token.startswith(lop):
-                                    print('\t\tFound logic op: {0}'.format(lop))
+                                    if _TRACE: print('\t\tFound logic op: {0}'.format(lop))
                                     new_tokens.append(lop)
                                     token = token[len(lop):]
-                                    print('\t\tRemaining token: ->{0}<-'.format(token))
+                                    if _TRACE: print('\t\tRemaining token: ->{0}<-'.format(token))
                                     found_it = True
                         else:
                             # no more text to match
