@@ -497,7 +497,8 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
 ###############################################################################
 def _test_math_with_multiple_features(job_id, cf, mongo_obj):
 
-    expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR (Temperature.value >= 100.4)'
+    expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR ' \
+        '(Temperature.value >= 100.4)'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     docs = mongo_obj.find(
         {
@@ -524,7 +525,8 @@ def _test_math_with_multiple_features(job_id, cf, mongo_obj):
     if computed != expected:
         return False
 
-    expr = '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND Temperature.value > 100.4'
+    expr = '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND ' \
+        'Temperature.value > 100.4'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     docs1 = mongo_obj.find(
         {
@@ -549,7 +551,8 @@ def _test_math_with_multiple_features(job_id, cf, mongo_obj):
     if computed != expected:
         return False
 
-    expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4'    
+    expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND ' \
+        'Temperature.value > 100.4'    
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     if computed != expected:
         return False
@@ -578,7 +581,8 @@ def _test_math_with_multiple_features(job_id, cf, mongo_obj):
     if computed != expected:
         return False
 
-    expr = '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND (Temperature.value >= 103)'
+    expr = '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND ' \
+        '(Temperature.value >= 103)'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     docs1 = mongo_obj.find(
         {
@@ -613,6 +617,151 @@ def _test_math_with_multiple_features(job_id, cf, mongo_obj):
     
     return True
 
+
+###############################################################################
+def _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
+
+    # rename some precomputed sets
+    tachy  = data['hasTachycardia']
+    shock  = data['hasShock']
+    rigors = data['hasRigors']
+    dysp   = data['hasDyspnea']
+    nau    = data['hasNausea']
+    vom    = data['hasVomiting']
+    temp   = data['Temperature']
+    lesion = data['Lesion']
+    
+    expr = 'hasTachycardia NOT hasShock'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - shock
+    if computed != expected:
+        return False
+
+    expr = '(hasTachycardia AND hasDyspnea) NOT hasRigors'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = (tachy & dysp) - rigors
+    if computed != expected:
+        return False
+
+    expr = '((hasShock) AND (hasDyspnea))'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = shock & dysp
+    if computed != expected:
+        return False
+
+    expr = '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    set1 = data['hasRigors'] | data['hasDyspnea'] | data['hasNausea']
+    expected = tachy & (rigors | dysp | nau)
+    if computed != expected:
+        return False
+
+    expr = '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    if computed != expected:
+        return False
+
+    expr = 'hasTachycardia NOT (hasRigors OR hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - (rigors | dysp)
+    if computed != expected:
+        return False
+
+    expr = 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - (rigors | dysp | nau)
+    if computed != expected:
+        return False
+
+    expr = 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR ' \
+        'hasVomiting)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - (rigors | dysp | nau | vom)
+    if computed != expected:
+        return False
+
+    expr = 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR ' \
+        'hasVomiting OR hasShock)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - (rigors | dysp | nau | vom | shock)
+    if computed != expected:
+        return False
+
+    expr = 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR ' \
+        'hasVomiting OR hasShock OR Temperature)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - (rigors | dysp | nau | vom | shock | temp)
+    if computed != expected:
+        return False
+    
+    expr = 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR ' \
+        'hasVomiting OR hasShock OR Temperature OR Lesion)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - (rigors | dysp | nau | vom | shock | temp | lesion)
+    if computed != expected:
+        return False
+
+    expr = 'hasTachycardia NOT (hasRigors AND hasDyspnea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = tachy - (rigors & dysp)
+    if computed != expected:
+        return False
+
+    expr = 'hasRigors AND hasTachycardia AND hasDyspnea'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = rigors & tachy & dysp
+    if computed != expected:
+        return False
+
+    expr = 'hasRigors AND hasDyspnea AND hasTachycardia'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = rigors & dysp & tachy
+    if computed != expected:
+        return False
+    
+    expr = 'hasRigors OR hasTachycardia AND hasDyspnea'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = rigors | tachy & dysp
+    if computed != expected:
+        return False
+    
+    expr = '(hasRigors OR hasDyspnea) AND hasTachycardia'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = (rigors | dysp) & tachy
+    if computed != expected:
+        return False
+    
+    expr = 'hasRigors AND (hasTachycardia AND hasNausea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = rigors & (tachy & nau)
+    if computed != expected:
+        return False
+    
+    expr = '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = (shock | dysp) & (tachy | nau)
+    if computed != expected:
+        return False
+    
+    expr = '(hasShock OR hasRigors) NOT (hasTachycardia OR hasNausea)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = (shock | rigors) - (tachy | nau)
+    if computed != expected:
+        return False
+    
+    expr = 'Temperature AND (hasDyspnea OR hasTachycardia)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = temp & (dysp | tachy)
+    if computed != expected:
+        return False
+    
+    expr = 'Lesion AND (hasDyspnea OR hasTachycardia)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected = lesion & (dysp | tachy)
+    if computed != expected:
+        return False
+    
+    return True
 
 ###############################################################################
 def run_self_tests(job_id,
@@ -683,11 +832,13 @@ def run_self_tests(job_id,
     data['hasTachycardia'] = _get_feature_set(mongo_obj, cf, 'hasTachycardia')
 
     
-    #if not _test_basic_expressions(job_id, cf, data, mongo_obj):
-    #    return False
-    #if not _test_pure_math_expressions(job_id, cf, mongo_obj):
-    #    return False
+    if not _test_basic_expressions(job_id, cf, data, mongo_obj):
+        return False
+    if not _test_pure_math_expressions(job_id, cf, mongo_obj):
+        return False
     if not _test_math_with_multiple_features(job_id, cf, mongo_obj):
+        return False
+    if not _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
         return False
     
     # drop the collection and database
@@ -782,7 +933,7 @@ def _run_tests(job_id,
         # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',       # 546 results, 112 groups
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea)',   # 1800 results, 683 groups
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)',     # 1702 results, 645 groups
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea or hasVomiting)', # 1622 results, 619 groups
+        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting)', # 1622 results, 619 groups
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock)', # 1529r, 599 g
         # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
         # 'OR Temperature)', # 1491 results, 589 groups
