@@ -1072,34 +1072,42 @@ def _test_set_relations_1(job_id, cf, data, mongo_obj):
         return False
 
     expr2 = 'hasRigors'
-    computed_rigors = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    computed_rigors = _run_selftest_expression(job_id, cf, expr2, mongo_obj)
     if computed_rigors != rigors:
         return False
 
     expr3 = 'hasDyspnea'
-    computed_dysp = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    computed_dysp = _run_selftest_expression(job_id, cf, expr3, mongo_obj)
     if computed_dysp != dysp:
         return False
 
     expr4 = 'hasRigors AND hasDyspnea'
-    computed_and = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    computed_and = _run_selftest_expression(job_id, cf, expr4, mongo_obj)
     expected_and = rigors & dysp
     if computed_and != expected_and:
         return False
     
     expr5 = '(hasRigors OR hasDyspnea) NOT (hasRigors AND hasDyspnea)'
-    computed5 = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-    expected5 = (rigors | dysp) NOT (rigors & dysp)
-    if computed5 != expected5:
+    computed_5 = _run_selftest_expression(job_id, cf, expr5, mongo_obj)
+    expected_5 = (rigors | dysp) - (rigors & dysp)
+    if computed_5 != expected_5:
         return False
 
-    num_rigors          = len(rigors)
-    num_dysp            = len(dysp)
-    num_rigors_and_dysp = len(rigors & dysp)
+    # use vertical bars to denote set cardinality
     
-    # first check: |rigors OR dysp| == |rigors| + |dysp| - |rigors & dysp|
+    # first check:
+    #     |rigors OR dysp| == |rigors| + |dysp| - |rigors & dysp|
     lhs = len(computed_or)
     rhs = len(computed_rigors) + len(computed_dysp) - len(computed_and)
+    if lhs != rhs:
+        return False
+    if lhs != len(expected_or):
+        return False
+
+    # second check:
+    #    |rigors OR dysp| == |(rigors | dysp) - (rigors & dysp)| + |rigors & dysp|
+    lhs = len(computed_or)
+    rhs = len(computed_5) + len(computed_and)
     if lhs != rhs:
         return False
     if lhs != len(expected_or):
@@ -1177,18 +1185,18 @@ def run_self_tests(job_id,
     data['hasTachycardia'] = _get_feature_set(mongo_obj, cf, 'hasTachycardia')
 
     
-    # if not _test_basic_expressions(job_id, cf, data, mongo_obj):
-    #     return False
-    # if not _test_pure_math_expressions(job_id, cf, mongo_obj):
-    #     return False
-    # if not _test_math_with_multiple_features(job_id, cf, mongo_obj):
-    #     return False
-    # if not _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
-    #     return False
-    # if not _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
-    #     return False
-    # if not _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
-    #     return False
+    if not _test_basic_expressions(job_id, cf, data, mongo_obj):
+        return False
+    if not _test_pure_math_expressions(job_id, cf, mongo_obj):
+        return False
+    if not _test_math_with_multiple_features(job_id, cf, mongo_obj):
+        return False
+    if not _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
+        return False
+    if not _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
+        return False
+    if not _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
+        return False
     if not _test_set_relations_1(job_id, cf, data, mongo_obj):
         return False
     
