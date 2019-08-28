@@ -69,6 +69,14 @@ _NAME_LIST = [
     'hasLesionTempAndSepsisSymptoms'
 ]
 
+_BASIC_FEATURES = [
+    'Temperature', 'Lesion', 'hasTachycardia', 'hasRigors', 'hasShock',
+    'hasDyspnea', 'hasNausea', 'hasVomiting'
+]
+
+# store computed sets here, to speed things up
+_CACHE = {}
+
 
 ###############################################################################
 def _enable_debug():
@@ -272,17 +280,11 @@ def _test_basic_expressions(job_id,     # integer job id from data file
                             data,       # dict of basic query results
                             mongo_obj):
 
-    # do simplest expressions first
-    BASIC_EXPRESSIONS = [
-        'Temperature', 'Lesion', 'hasTachycardia', 'hasRigors', 'hasShock',
-        'hasDyspnea', 'hasNausea', 'hasVomiting'
-    ]
-
     # rename some precomputed sets
     temp   = data['Temperature']
     lesion = data['Lesion']
 
-    for expr in BASIC_EXPRESSIONS:
+    for expr in _BASIC_FEATURES:
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = data[expr]
         if computed != expected:
@@ -293,34 +295,39 @@ def _test_basic_expressions(job_id,     # integer job id from data file
     expected = temp & lesion
     if computed != expected:
         return False
+    _CACHE[expr] = expected
 
     # 'Temperature AND field', 'Lesion AND field'
-    for field in BASIC_EXPRESSIONS[2:]:
+    for field in _BASIC_FEATURES[2:]:
         expr = 'Temperature AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = temp & data[field]
         if computed != expected:
             return False
+        _CACHE[expr] = expected
 
         expr = 'Lesion AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = lesion & data[field]
         if computed != expected:
             return False
+        _CACHE[expr] = expected
 
     # 'Temperature OR field', 'Lesion OR field'
-    for field in BASIC_EXPRESSIONS[2:]:
+    for field in _BASIC_FEATURES[2:]:
         expr = 'Temperature OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = temp | data[field]
         if computed != expected:
             return False
+        _CACHE[expr] = expected
 
         expr = 'Lesion OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = lesion | data[field]
         if computed != expected:
             return False
+        _CACHE[expr] = expected
 
     return True
 
@@ -1059,59 +1066,124 @@ def _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
-def _test_set_relations_1(job_id, cf, data, mongo_obj):
+def _test_binary_or(job_id, cf, data, mongo_obj):
+    """
+    Compute 'feature1 OR feature2' and check the cardinality against the
+    equivalent expression using NOT.  This relation holds, letting f1 and f2
+    denote two different features such as 'hasTachycardia', 'hasDyspnea', etc."
 
-    # rename some precomputed sets
-    rigors = data['hasRigors']
-    dysp   = data['hasDyspnea']
+        |f1 OR f2| == |f1| + |f2| - |f1 AND f2|
+
+    (Think of a Venn diagram. The number of elements in the union of two sets
+    equals the sum of the cardinalities of both sets minus the overlap,
+    if any.)
+
+    In NLPQL, we can get the unique number of elements in the union by
+    evaluating this expression:
+
+        (f1 OR 2) NOT (f1 AND f2)
+
+    Then, this relation must also hold:
+
+        |f1 OR f2| == |(f1 OR f2) NOT (f1 AND f2)| + |f1 AND f2|
+
+    The code below evaluates these expressions for all pairs of features
+    in _BASIC_FEATURES.
+
+    """
     
-    expr = 'hasRigors OR hasDyspnea'
-    computed_or = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-    expected_or = rigors | dysp
-    if computed_or != expected_or:
-        return False
+    for i, feature1 in enumerate(_BASIC_FEATURES):
+        if feature1 == _BASIC_FEATURES[-1]:
+            break
 
-    expr2 = 'hasRigors'
-    computed_rigors = _run_selftest_expression(job_id, cf, expr2, mongo_obj)
-    if computed_rigors != rigors:
-        return False
+        # expr == 'feature1'
+        if feature1 in _CACHE:
+            computed_f1 = _CACHE[feature1]
+        else:
+            computed_f1 = _run_selftest_expression(job_id, cf, feature1, mongo_obj)
+            expected_f1 = data[feature1]
+            if computed_f1 != expected_f1:
+                print('*** 1 ***')
+                return False
+            _CACHE[feature1] = expected_f1
 
-    expr3 = 'hasDyspnea'
-    computed_dysp = _run_selftest_expression(job_id, cf, expr3, mongo_obj)
-    if computed_dysp != dysp:
-        return False
+        # set of all context variable values for feature1
+        set1 = _CACHE[feature1]
+        
+        for j in range(i+1, len(_BASIC_FEATURES)):
+            feature2 = _BASIC_FEATURES[j]
+            print('{0} OR {1}'.format(feature1, feature2))
 
-    expr4 = 'hasRigors AND hasDyspnea'
-    computed_and = _run_selftest_expression(job_id, cf, expr4, mongo_obj)
-    expected_and = rigors & dysp
-    if computed_and != expected_and:
-        return False
-    
-    expr5 = '(hasRigors OR hasDyspnea) NOT (hasRigors AND hasDyspnea)'
-    computed_5 = _run_selftest_expression(job_id, cf, expr5, mongo_obj)
-    expected_5 = (rigors | dysp) - (rigors & dysp)
-    if computed_5 != expected_5:
-        return False
+            # expr == 'feature2'
+            if feature2 in _CACHE:
+                computed_f2 = _CACHE[feature2]
+            else:
+                computed_f2 = _run_selftest_expression(job_id, cf, feature2, mongo_obj)
+                expected_f2 = data[feature2]
+                if computed_f2 != expected_f2:
+                    print('*** 3 ***')
+                    return False
+                _CACHE[feature2] = expected_f2
 
-    # use vertical bars to denote set cardinality
-    
-    # first check:
-    #     |rigors OR dysp| == |rigors| + |dysp| - |rigors & dysp|
-    lhs = len(computed_or)
-    rhs = len(computed_rigors) + len(computed_dysp) - len(computed_and)
-    if lhs != rhs:
-        return False
-    if lhs != len(expected_or):
-        return False
+            # set of all context variable values for feature2
+            set2 = _CACHE[feature2]
 
-    # second check:
-    #    |rigors OR dysp| == |(rigors | dysp) - (rigors & dysp)| + |rigors & dysp|
-    lhs = len(computed_or)
-    rhs = len(computed_5) + len(computed_and)
-    if lhs != rhs:
-        return False
-    if lhs != len(expected_or):
-        return False
+            # expr == 'feature1 OR feature2'
+            expr = '{0} OR {1}'.format(feature1, feature2)
+            if expr in _CACHE:
+                computed_or = _CACHE[expr]
+                expected_or = computed_or
+            else:
+                computed_or = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+                expected_or = set1 | set2
+                if computed_or != expected_or:
+                    print('*** 2 ***')
+                    return False
+                _CACHE[expr] = expected_or
+
+            # expr == 'feature1 AND feature2'
+            expr = '{0} AND {1}'.format(feature1, feature2)
+            if expr in _CACHE:
+                computed_and = _CACHE[expr]
+                expected_and = computed_and
+            else:
+                computed_and = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+                expected_and = set1 & set2
+                if computed_and != expected_and:
+                    print('*** 4 ***')
+                    return False
+                _CACHE[expr] = expected_and
+
+            # expr == '(feature1 OR feature2) NOT (feature1 AND feature2)'
+            expr = '({0} OR {1}) NOT ({0} AND {1})'.format(feature1, feature2)
+            computed_not = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+            expected_not = (set1 | set2) - (set1 & set2)
+            if computed_not != expected_not:
+                return False
+
+            # vertical bars to denote set cardinality
+
+            # first check:
+            #     |f1 OR f2| == |f1| + |f2| - |f1 AND f2|
+            lhs = len(computed_or)
+            rhs = len(computed_f1) + len(computed_f2) - len(computed_and)
+            if lhs != rhs:
+                print('*** 6 ***')
+                return False
+            if lhs != len(expected_or):
+                print('*** 7 ***')
+                return False
+
+            # second check:
+            #    |f1 OR f2| == |(f1 OR f2) NOT (f1 AND f2)| + |f1 AND f2|
+            lhs = len(computed_or)
+            rhs = len(computed_not) + len(computed_and)
+            if lhs != rhs:
+                print('*** 8 ***')
+                return False
+            if lhs != len(expected_or):
+                print('*** 9 ***')
+                return False
     
     return True
 
@@ -1197,9 +1269,9 @@ def run_self_tests(job_id,
         return False
     if not _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
         return False
-    if not _test_set_relations_1(job_id, cf, data, mongo_obj):
+    if not _test_binary_or(job_id, cf, data, mongo_obj):
         return False
-    
+
     # drop the collection and database
     mongo_obj.drop()
     mongo_client_obj.drop_database(DB_NAME)
