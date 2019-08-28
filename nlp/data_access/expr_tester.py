@@ -225,6 +225,10 @@ def _run_selftest_expression(job_id,
     evaluation context. Returns the set of unique context variables.
     """
 
+    # first check the cache and return result if previously evaluated
+    if expression_str in _CACHE:
+        return _CACHE[expression_str]
+    
     parse_result = expr_eval.parse_expression(expression_str, _NAME_LIST)
     if 0 == len(parse_result):
         return set()
@@ -247,7 +251,10 @@ def _run_selftest_expression(job_id,
         for doc in docs:
             if _TEST_NLPQL_FEATURE == doc['nlpql_feature']:
                 result_set.add(doc[context_field])
-    
+
+    # insert into cache
+    _CACHE[expression_str] = result_set
+                
     return result_set
 
 
@@ -295,7 +302,6 @@ def _test_basic_expressions(job_id,     # integer job id from data file
     expected = temp & lesion
     if computed != expected:
         return False
-    _CACHE[expr] = expected
 
     # 'Temperature AND field', 'Lesion AND field'
     for field in _BASIC_FEATURES[2:]:
@@ -304,14 +310,12 @@ def _test_basic_expressions(job_id,     # integer job id from data file
         expected = temp & data[field]
         if computed != expected:
             return False
-        _CACHE[expr] = expected
 
         expr = 'Lesion AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = lesion & data[field]
         if computed != expected:
             return False
-        _CACHE[expr] = expected
 
     # 'Temperature OR field', 'Lesion OR field'
     for field in _BASIC_FEATURES[2:]:
@@ -320,14 +324,12 @@ def _test_basic_expressions(job_id,     # integer job id from data file
         expected = temp | data[field]
         if computed != expected:
             return False
-        _CACHE[expr] = expected
 
         expr = 'Lesion OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
         expected = lesion | data[field]
         if computed != expected:
             return False
-        _CACHE[expr] = expected
 
     return True
 
@@ -1066,11 +1068,12 @@ def _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
-def _test_binary_or(job_id, cf, data, mongo_obj):
+def _test_two_component_or(job_id, cf, data, mongo_obj):
     """
     Compute 'feature1 OR feature2' and check the cardinality against the
-    equivalent expression using NOT.  This relation holds, letting f1 and f2
-    denote two different features such as 'hasTachycardia', 'hasDyspnea', etc."
+    equivalent expression using NOT.  The relation below holds, letting f1 and
+    f2 denote two different features such as 'hasTachycardia', 'hasDyspnea',
+    etc.
 
         |f1 OR f2| == |f1| + |f2| - |f1 AND f2|
 
@@ -1081,9 +1084,11 @@ def _test_binary_or(job_id, cf, data, mongo_obj):
     In NLPQL, we can get the unique number of elements in the union by
     evaluating this expression:
 
-        (f1 OR 2) NOT (f1 AND f2)
+        (f1 OR f2) NOT (f1 AND f2)
 
     Then, this relation must also hold:
+
+        (union with overlap) == (union excluding overlap) + (overlap)
 
         |f1 OR f2| == |(f1 OR f2) NOT (f1 AND f2)| + |f1 AND f2|
 
@@ -1097,15 +1102,11 @@ def _test_binary_or(job_id, cf, data, mongo_obj):
             break
 
         # expr == 'feature1'
-        if feature1 in _CACHE:
-            computed_f1 = _CACHE[feature1]
-        else:
-            computed_f1 = _run_selftest_expression(job_id, cf, feature1, mongo_obj)
-            expected_f1 = data[feature1]
-            if computed_f1 != expected_f1:
-                print('*** 1 ***')
-                return False
-            _CACHE[feature1] = expected_f1
+        computed_f1 = _run_selftest_expression(job_id, cf, feature1, mongo_obj)
+        expected_f1 = data[feature1]
+        if computed_f1 != expected_f1:
+            print('*** 1 ***')
+            return False
 
         # set of all context variable values for feature1
         set1 = _CACHE[feature1]
@@ -1115,44 +1116,30 @@ def _test_binary_or(job_id, cf, data, mongo_obj):
             print('{0} OR {1}'.format(feature1, feature2))
 
             # expr == 'feature2'
-            if feature2 in _CACHE:
-                computed_f2 = _CACHE[feature2]
-            else:
-                computed_f2 = _run_selftest_expression(job_id, cf, feature2, mongo_obj)
-                expected_f2 = data[feature2]
-                if computed_f2 != expected_f2:
-                    print('*** 3 ***')
-                    return False
-                _CACHE[feature2] = expected_f2
+            computed_f2 = _run_selftest_expression(job_id, cf, feature2, mongo_obj)
+            expected_f2 = data[feature2]
+            if computed_f2 != expected_f2:
+                print('*** 3 ***')
+                return False
 
             # set of all context variable values for feature2
             set2 = _CACHE[feature2]
 
             # expr == 'feature1 OR feature2'
             expr = '{0} OR {1}'.format(feature1, feature2)
-            if expr in _CACHE:
-                computed_or = _CACHE[expr]
-                expected_or = computed_or
-            else:
-                computed_or = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-                expected_or = set1 | set2
-                if computed_or != expected_or:
-                    print('*** 2 ***')
-                    return False
-                _CACHE[expr] = expected_or
+            computed_or = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+            expected_or = set1 | set2
+            if computed_or != expected_or:
+                print('*** 2 ***')
+                return False
 
             # expr == 'feature1 AND feature2'
             expr = '{0} AND {1}'.format(feature1, feature2)
-            if expr in _CACHE:
-                computed_and = _CACHE[expr]
-                expected_and = computed_and
-            else:
-                computed_and = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-                expected_and = set1 & set2
-                if computed_and != expected_and:
-                    print('*** 4 ***')
-                    return False
-                _CACHE[expr] = expected_and
+            computed_and = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+            expected_and = set1 & set2
+            if computed_and != expected_and:
+                print('*** 4 ***')
+                return False
 
             # expr == '(feature1 OR feature2) NOT (feature1 AND feature2)'
             expr = '({0} OR {1}) NOT ({0} AND {1})'.format(feature1, feature2)
@@ -1184,6 +1171,217 @@ def _test_binary_or(job_id, cf, data, mongo_obj):
             if lhs != len(expected_or):
                 print('*** 9 ***')
                 return False
+    
+    return True
+
+
+###############################################################################
+def _test_three_component_or(feature_A, feature_B, feature_C,
+                             job_id, cf, data, mongo_obj):
+    """
+    Compute 'feature1 OR feature2 OR feature3' and check the cardinality
+    against the equivalent expression using NOT.  The relation below holds,
+    letting A, B, and C denote different features such as 'hasTachycardia',
+    'hasDyspnea', etc.
+
+        |A OR B OR C| == |A| + |B| + |C|
+                         - (|A AND B| + |A AND C| + |B AND C|)
+                         + |A AND B AND C|   
+
+    This is essentially a statement about a three-set Venn diagram. The
+    number of elements in the union of the three sets equals the sum of
+    the elements in the individual sets, minus the pairwise overlap. But
+    removing the pairwise overlap subtracts out any simultaneous overlap
+    among the three sets TWICE, so it gets added back in.
+
+    In NLPQL, we can get the unique number of elements in the union with
+    this expression:
+
+        (A OR B OR C) NOT ( (A AND B) OR (A AND C) OR (B AND C) ) OR (A AND B AND C)
+
+    This needs to be rearranged into this equivalent form, so that the NOT
+    applies to ALL the available documents or patients:
+
+        ((A OR B OR C) OR (A AND B AND C)) NOT ( (A AND B) OR (A AND C) OR (B AND C) )
+
+    One further consideration applies. The OR operation using the parenthesized
+    operands prior to the NOT actually includes any overlap between those two
+    operands. This overlap needs to be subtracted, as was done in the function
+    _test_two_component_or.
+
+    With these considerations, this relation must hold between the
+    cardinalities of both sides:
+
+        |A OR B OR C| == |((A OR B OR C) OR (A AND B AND C)) NOT ( (A AND B) OR (A AND C) OR (B AND C) )|
+                        +|A AND B| + |A AND C| + |B AND C|
+                        -|A AND B AND C|
+                        -|(A OR B OR C) AND (A AND B AND C)|
+ 
+    """
+
+    if feature_A in _CACHE:
+        A = _CACHE[feature_A]
+    else:
+        A = data[feature_A]
+
+    if feature_B in _CACHE:
+        B = _CACHE[feature_B]
+    else:
+        B = data[feature_B]
+
+    if feature_C in _CACHE:
+        C = _CACHE[feature_C]
+    else:
+        C = data[feature_C]
+
+    # A  OR  B  OR  C
+    expr = '{0} OR {1} OR {2}'.format(feature_A, feature_B, feature_C)
+    
+    computed_or = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected_or = A | B | C
+    if computed_or != expected_or:
+        print('*** 1 ***')
+        return False
+
+    len_A = len(A)
+    len_B = len(B)
+    len_C = len(C)
+    len_A_or_B_or_C = len(computed_or)
+
+    # A AND B
+    expr = '{0} AND {1}'.format(feature_A, feature_B)
+    computed_AB = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected_AB = A & B
+    if computed_AB != expected_AB:
+        print('*** 2 ***')
+        return False
+
+    len_AB = len(computed_AB)
+
+    # A AND C
+    expr = '{0} AND {1}'.format(feature_A, feature_C)
+    computed_AC = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected_AC = A & C
+    if computed_AC != expected_AC:
+        print('*** 3 ***')
+        return False
+
+    len_AC = len(computed_AC)
+
+    # B AND C
+    expr = '{0} AND {1}'.format(feature_B, feature_C)
+    computed_BC = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected_BC = B & C
+    if computed_BC != expected_BC:
+        print('*** 4 ***')
+        return False
+
+    len_BC = len(computed_BC)
+
+    # A AND B AND C
+    expr = '{0} AND {1} AND {2}'.format(feature_A, feature_B, feature_C)
+    computed_ABC = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected_ABC = A & B & C
+    if computed_ABC != expected_ABC:
+        print('*** 5 ***')
+        return False
+
+    len_ABC = len(computed_ABC)
+    
+    # complex expression involving NOT
+    expr = '(({0} OR {1} OR {2}) OR ({0} AND {1} AND {2})) NOT ' \
+        '( ({0} AND {1}) OR ({0} AND {2}) OR ({1} AND {2}) )'.format(
+            feature_A, feature_B, feature_C)
+    computed_not = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    set1 = (A | B | C) | (A & B & C)
+    set2 = (A & B) | (A & C) | (B & C)
+    expected_not = set1 - set2
+    if computed_not != expected_not:
+        print('*** 6 ***')
+        return False
+
+    len_not = len(computed_not)
+
+    # extra overlap
+    expr = '({0} OR {1} OR {2}) AND ({0} AND {1} AND {2})'.format(
+        feature_A, feature_B, feature_C)
+    computed_extra = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    expected_extra = (A | B | C) & (A & B & C)
+    if computed_extra != expected_extra:
+        print('*** 7 ***')
+        return False
+
+    len_extra = len(computed_extra)
+    
+    # first check
+    rhs = len_A + len_B + len_C - (len_AB + len_AC + len_BC) + len_ABC
+    if len_A_or_B_or_C != rhs:
+        print('*** 8 ***')
+        return False
+
+    # second check
+    rhs = len_not + len_AB + len_AC + len_BC - len_ABC - len_extra
+    if len_A_or_B_or_C != rhs:
+        return False
+    
+    return True
+
+
+###############################################################################
+def _test_three_component_or_with_math(job_id, cf, data, mongo_obj):
+    """
+    Evaluate some math expressions to load into _CACHE, then test the
+    cardinality of the result.
+    """
+
+    _run_selftest_expression(job_id, cf, 'hasDyspnea', mongo_obj)
+    _run_selftest_expression(job_id, cf, 'hasNausea', mongo_obj)
+    
+    expr = '(Temperature.value >= 100.4 AND Temperature.value < 102)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Temperature'},
+                {'value':{'$gte':100.4}},
+                {'value':{'$lt':102}}
+            ]
+        })
+    expected = _to_context_set(cf, docs)
+    if computed != expected:
+        print('*** 1 ***')
+        return False
+    
+    if not _test_three_component_or('hasDyspnea',
+                                    'hasNausea',
+                                    expr,
+                                    job_id, cf, data, mongo_obj):
+        print('*** 2 ***')
+        return False
+
+    expr = '(Lesion.dimension_X >= 5 AND Lesion.dimension_Y < 30)'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            '$and':
+            [
+                {'nlpql_feature':'Lesion'},
+                {'dimension_X':{'$gte':5}},
+                {'dimension_Y':{'$lt':30}}
+            ]
+        })
+    expected = _to_context_set(cf, docs)
+    if computed != expected:
+        print('*** 3 ***')
+        return False
+
+    if not _test_three_component_or('hasDyspnea',
+                                    expr,
+                                    'hasNausea',
+                                    job_id, cf, data, mongo_obj):
+        print('*** 3 ***')
+        return False
     
     return True
 
@@ -1269,9 +1467,24 @@ def run_self_tests(job_id,
         return False
     if not _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
         return False
-    if not _test_binary_or(job_id, cf, data, mongo_obj):
+    if not _test_two_component_or(job_id, cf, data, mongo_obj):
         return False
 
+    if not _test_three_component_or('hasShock',
+                                    'hasDyspnea',
+                                    'hasTachycardia',
+                                    job_id, cf, data, mongo_obj):
+        return False
+
+    if not _test_three_component_or('hasRigors',
+                                    'hasDyspnea',
+                                    'hasNausea',
+                                    job_id, cf, data, mongo_obj):
+        return False
+
+    if not _test_three_component_or_with_math(job_id, cf, data, mongo_obj):
+        return False
+    
     # drop the collection and database
     mongo_obj.drop()
     mongo_client_obj.drop_database(DB_NAME)
