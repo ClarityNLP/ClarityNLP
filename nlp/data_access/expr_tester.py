@@ -61,20 +61,18 @@ _FILE_DATA_FIELDS = [
 FileData = namedtuple('FileData', _FILE_DATA_FIELDS)
 
 # names defined in the test data set
-_NAME_LIST = [
-    'hasRigors', 'hasDyspnea', 'hasNausea', 'hasVomiting', 'hasShock',
-    'hasTachycardia', 'hasLesion', 'Temperature', 'Lesion',
-    'hasFever', 'hasSepsisSymptoms', 'hasTempAndSepsisSymptoms',
-    'hasSepsis', 'hasLesionAndSepsisSymptoms', 'hasLesionAndTemp',
-    'hasLesionTempAndSepsisSymptoms'
-]
-
 _BASIC_FEATURES = [
-    'Temperature', 'Lesion', 'hasTachycardia', 'hasRigors', 'hasShock',
-    'hasDyspnea', 'hasNausea', 'hasVomiting'
+    'Temperature',
+    'Lesion',
+    'hasTachycardia',
+    'hasRigors',
+    'hasShock',
+    'hasDyspnea',
+    'hasNausea',
+    'hasVomiting'
 ]
 
-# store computed sets here, to speed things up
+# store computed result sets here, to speed things up
 _CACHE = {}
 
 
@@ -83,6 +81,26 @@ def _enable_debug():
 
     global _TRACE
     _TRACE = True
+
+
+###############################################################################
+def _connect_to_mongo(mongohost = 'localhost',
+                      mongoport = 27017):
+    """
+    Attempt to connect to MongoDB; return None if no connection.
+    """
+    
+    mongo_client_obj = None
+    try:
+        mongo_client_obj = MongoClient(mongohost, mongoport)
+    except pymongo.errors.ConnectionFailure as e:
+        print('*** Could not connect to MongoDB ***')
+        print('\tMongo host: {0}'.format(mongohost))
+        print('\tMongo port: {0}'.format(mongoport))
+        print('\t{0}'.format(e))
+        return None
+
+    return mongo_client_obj
 
 
 ###############################################################################
@@ -183,7 +201,7 @@ def _delete_prev_results(job_id, mongo_collection_obj):
     
 
 ###############################################################################
-def banner_print(msg):
+def _banner_print(msg):
     """
     Print the message centered in a border of stars.
     """
@@ -225,11 +243,13 @@ def _run_selftest_expression(job_id,
     evaluation context. Returns the set of unique context variables.
     """
 
+    global _CACHE
+    
     # first check the cache and return result if previously evaluated
     if expression_str in _CACHE:
         return _CACHE[expression_str]
     
-    parse_result = expr_eval.parse_expression(expression_str, _NAME_LIST)
+    parse_result = expr_eval.parse_expression(expression_str, _BASIC_FEATURES)
     if 0 == len(parse_result):
         return set()
 
@@ -284,16 +304,16 @@ def _get_feature_set(mongo_collection_obj, context_field, nlpql_feature):
 ###############################################################################
 def _test_basic_expressions(job_id,     # integer job id from data file
                             cf,         # context field, 'document' or 'subject'
-                            data,       # dict of basic query results
                             mongo_obj):
-
+    print('Called _test_basic_expressions...')
+    
     # rename some precomputed sets
-    temp   = data['Temperature']
-    lesion = data['Lesion']
+    temp   = _CACHE['Temperature']
+    lesion = _CACHE['Lesion']
 
     for expr in _BASIC_FEATURES:
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = data[expr]
+        expected = _CACHE[expr]
         if computed != expected:
             return False
 
@@ -307,13 +327,13 @@ def _test_basic_expressions(job_id,     # integer job id from data file
     for field in _BASIC_FEATURES[2:]:
         expr = 'Temperature AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = temp & data[field]
+        expected = temp & _CACHE[field]
         if computed != expected:
             return False
 
         expr = 'Lesion AND {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = lesion & data[field]
+        expected = lesion & _CACHE[field]
         if computed != expected:
             return False
 
@@ -321,13 +341,13 @@ def _test_basic_expressions(job_id,     # integer job id from data file
     for field in _BASIC_FEATURES[2:]:
         expr = 'Temperature OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = temp | data[field]
+        expected = temp | _CACHE[field]
         if computed != expected:
             return False
 
         expr = 'Lesion OR {0}'.format(field)
         computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-        expected = lesion | data[field]
+        expected = lesion | _CACHE[field]
         if computed != expected:
             return False
 
@@ -339,6 +359,8 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
                                 cf,         # context field, 'document' or 'subject'
                                 mongo_obj):
 
+    print('Called _test_pure_math_expressions...')
+    
     expr = 'Temperature.value >= 100.4'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     docs = mongo_obj.find(
@@ -523,8 +545,12 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
 
 
 ###############################################################################
-def _test_math_with_multiple_features(job_id, cf, mongo_obj):
+def _test_math_with_multiple_features(job_id,   # integer job id from data file
+                                      cf,       # context field
+                                      mongo_obj):
 
+    print('Called _test_math_with_multiple_features...')
+    
     expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR ' \
         '(Temperature.value >= 100.4)'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
@@ -647,17 +673,21 @@ def _test_math_with_multiple_features(job_id, cf, mongo_obj):
 
 
 ###############################################################################
-def _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
+def _test_pure_logic_expressions(job_id, # integer job id
+                                 cf,     # context field
+                                 mongo_obj):
 
+    print('Called _test_pure_logic_expressions...')
+    
     # rename some precomputed sets
-    tachy  = data['hasTachycardia']
-    shock  = data['hasShock']
-    rigors = data['hasRigors']
-    dysp   = data['hasDyspnea']
-    nau    = data['hasNausea']
-    vom    = data['hasVomiting']
-    temp   = data['Temperature']
-    lesion = data['Lesion']
+    tachy  = _CACHE['hasTachycardia']
+    shock  = _CACHE['hasShock']
+    rigors = _CACHE['hasRigors']
+    dysp   = _CACHE['hasDyspnea']
+    nau    = _CACHE['hasNausea']
+    vom    = _CACHE['hasVomiting']
+    temp   = _CACHE['Temperature']
+    lesion = _CACHE['Lesion']
     
     expr = 'hasTachycardia NOT hasShock'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
@@ -679,7 +709,7 @@ def _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
 
     expr = '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
-    set1 = data['hasRigors'] | data['hasDyspnea'] | data['hasNausea']
+    set1 = _CACHE['hasRigors'] | _CACHE['hasDyspnea'] | _CACHE['hasNausea']
     expected = tachy & (rigors | dysp | nau)
     if computed != expected:
         return False
@@ -793,17 +823,21 @@ def _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
-def _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
+def _test_mixed_math_and_logic_expressions(job_id, # integer job id
+                                           cf,     # context field
+                                           mongo_obj):
 
+    print('Called _test_mixed_math_and_logic_expressions...')
+    
     # rename some precomputed sets
-    tachy  = data['hasTachycardia']
-    shock  = data['hasShock']
-    rigors = data['hasRigors']
-    dysp   = data['hasDyspnea']
-    nau    = data['hasNausea']
-    vom    = data['hasVomiting']
-    temp   = data['Temperature']
-    lesion = data['Lesion']
+    tachy  = _CACHE['hasTachycardia']
+    shock  = _CACHE['hasShock']
+    rigors = _CACHE['hasRigors']
+    dysp   = _CACHE['hasDyspnea']
+    nau    = _CACHE['hasNausea']
+    vom    = _CACHE['hasVomiting']
+    temp   = _CACHE['Temperature']
+    lesion = _CACHE['Lesion']
 
     expr = 'hasNausea AND Temperature.value >= 100.4'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
@@ -1008,12 +1042,16 @@ def _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
-def _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
+def _test_not_with_positive_logic(job_id, # integer job id
+                                  cf,     # context field
+                                  mongo_obj):
 
+    print('Called _test_not_with_positive_logic...')
+    
     # rename some precomputed sets
-    tachy  = data['hasTachycardia']
-    rigors = data['hasRigors']
-    dysp   = data['hasDyspnea']
+    tachy  = _CACHE['hasTachycardia']
+    rigors = _CACHE['hasRigors']
+    dysp   = _CACHE['hasDyspnea']
 
     # expression without using NOT
     expr = '(hasRigors OR hasDyspnea OR hasTachycardia) AND ' \
@@ -1068,7 +1106,9 @@ def _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
-def _test_two_component_or(job_id, cf, data, mongo_obj):
+def _test_two_component_or(job_id, # integer job id
+                           cf,     # context field
+                           mongo_obj):
     """
     Compute 'feature1 OR feature2' and check the cardinality against the
     equivalent expression using NOT.  The relation below holds, letting f1 and
@@ -1096,6 +1136,8 @@ def _test_two_component_or(job_id, cf, data, mongo_obj):
     in _BASIC_FEATURES.
 
     """
+
+    print('Called _test_two_component_or...')
     
     for i, feature1 in enumerate(_BASIC_FEATURES):
         if feature1 == _BASIC_FEATURES[-1]:
@@ -1103,7 +1145,7 @@ def _test_two_component_or(job_id, cf, data, mongo_obj):
 
         # expr == 'feature1'
         computed_f1 = _run_selftest_expression(job_id, cf, feature1, mongo_obj)
-        expected_f1 = data[feature1]
+        expected_f1 = _CACHE[feature1]
         if computed_f1 != expected_f1:
             print('*** 1 ***')
             return False
@@ -1113,11 +1155,11 @@ def _test_two_component_or(job_id, cf, data, mongo_obj):
         
         for j in range(i+1, len(_BASIC_FEATURES)):
             feature2 = _BASIC_FEATURES[j]
-            print('{0} OR {1}'.format(feature1, feature2))
+            print('\t{0} OR {1}'.format(feature1, feature2))
 
             # expr == 'feature2'
             computed_f2 = _run_selftest_expression(job_id, cf, feature2, mongo_obj)
-            expected_f2 = data[feature2]
+            expected_f2 = _CACHE[feature2]
             if computed_f2 != expected_f2:
                 print('*** 3 ***')
                 return False
@@ -1176,8 +1218,12 @@ def _test_two_component_or(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
-def _test_three_component_or(feature_A, feature_B, feature_C,
-                             job_id, cf, data, mongo_obj):
+def _test_three_component_or(feature_A,  # feature or expr in _CACHE
+                             feature_B,
+                             feature_C,
+                             job_id,     # ClarityNLP job id
+                             cf,         # context field
+                             mongo_obj):
     """
     Compute 'feature1 OR feature2 OR feature3' and check the cardinality
     against the equivalent expression using NOT.  The relation below holds,
@@ -1219,20 +1265,11 @@ def _test_three_component_or(feature_A, feature_B, feature_C,
  
     """
 
-    if feature_A in _CACHE:
-        A = _CACHE[feature_A]
-    else:
-        A = data[feature_A]
-
-    if feature_B in _CACHE:
-        B = _CACHE[feature_B]
-    else:
-        B = data[feature_B]
-
-    if feature_C in _CACHE:
-        C = _CACHE[feature_C]
-    else:
-        C = data[feature_C]
+    print('Called _test_three_component_or...')
+    
+    A = _CACHE[feature_A]
+    B = _CACHE[feature_B]
+    C = _CACHE[feature_C]
 
     # A  OR  B  OR  C
     expr = '{0} OR {1} OR {2}'.format(feature_A, feature_B, feature_C)
@@ -1328,11 +1365,15 @@ def _test_three_component_or(feature_A, feature_B, feature_C,
 
 
 ###############################################################################
-def _test_three_component_or_with_math(job_id, cf, data, mongo_obj):
+def _test_three_component_or_with_math(job_id,      # ClarityNLP job id
+                                       cf,          # context field
+                                       mongo_obj):
     """
     Evaluate some math expressions to load into _CACHE, then test the
     cardinality of the result.
     """
+
+    print('Called _test_three_component_or_with_math...')
 
     _run_selftest_expression(job_id, cf, 'hasDyspnea', mongo_obj)
     _run_selftest_expression(job_id, cf, 'hasNausea', mongo_obj)
@@ -1356,7 +1397,7 @@ def _test_three_component_or_with_math(job_id, cf, data, mongo_obj):
     if not _test_three_component_or('hasDyspnea',
                                     'hasNausea',
                                     expr,
-                                    job_id, cf, data, mongo_obj):
+                                    job_id, cf, mongo_obj):
         print('*** 2 ***')
         return False
 
@@ -1379,7 +1420,7 @@ def _test_three_component_or_with_math(job_id, cf, data, mongo_obj):
     if not _test_three_component_or('hasDyspnea',
                                     expr,
                                     'hasNausea',
-                                    job_id, cf, data, mongo_obj):
+                                    job_id, cf, mongo_obj):
         print('*** 3 ***')
         return False
     
@@ -1387,11 +1428,60 @@ def _test_three_component_or_with_math(job_id, cf, data, mongo_obj):
 
 
 ###############################################################################
-def run_self_tests(job_id,
-                   context_var,
-                   mongohost,
-                   mongoport,
-                   debug=False):
+def _selftest(job_id,      # integer job ID from a ClarityNLP run
+              cf,          # context field
+              mongo_obj):  # connected MongoDB collection object
+
+    # compute some basic expressions and load cache
+    _CACHE['Temperature']    = _get_feature_set(mongo_obj, cf, 'Temperature')
+    _CACHE['Lesion']         = _get_feature_set(mongo_obj, cf, 'Lesion')
+    _CACHE['hasRigors']      = _get_feature_set(mongo_obj, cf, 'hasRigors')
+    _CACHE['hasDyspnea']     = _get_feature_set(mongo_obj, cf, 'hasDyspnea')
+    _CACHE['hasNausea']      = _get_feature_set(mongo_obj, cf, 'hasNausea')
+    _CACHE['hasVomiting']    = _get_feature_set(mongo_obj, cf, 'hasVomiting')
+    _CACHE['hasShock']       = _get_feature_set(mongo_obj, cf, 'hasShock')
+    _CACHE['hasTachycardia'] = _get_feature_set(mongo_obj, cf, 'hasTachycardia')
+
+    
+    if not _test_basic_expressions(job_id, cf, mongo_obj):
+        return False
+    if not _test_pure_math_expressions(job_id, cf, mongo_obj):
+        return False
+    if not _test_math_with_multiple_features(job_id, cf, mongo_obj):
+        return False
+    if not _test_pure_logic_expressions(job_id, cf, mongo_obj):
+        return False
+    if not _test_mixed_math_and_logic_expressions(job_id, cf, mongo_obj):
+        return False
+    if not _test_not_with_positive_logic(job_id, cf, mongo_obj):
+        return False
+    if not _test_two_component_or(job_id, cf, mongo_obj):
+        return False
+
+    if not _test_three_component_or('hasShock',
+                                    'hasDyspnea',
+                                    'hasTachycardia',
+                                    job_id, cf, mongo_obj):
+        return False
+
+    if not _test_three_component_or('hasRigors',
+                                    'hasDyspnea',
+                                    'hasNausea',
+                                    job_id, cf, mongo_obj):
+        return False
+
+    if not _test_three_component_or_with_math(job_id, cf, mongo_obj):
+        return False
+
+    return True
+
+
+###############################################################################
+def run_self_tests(job_id      = 11222,
+                   context_var = 'patient',
+                   mongohost   = 'localhost',
+                   mongoport   = 27017,
+                   debug       = False):
     """
     Run test expressions and verify with independent MongoDB queries.
     """
@@ -1439,57 +1529,27 @@ def run_self_tests(job_id,
         cf = 'report_id'
 
     # connect to this collection
-    mongo_client_obj = MongoClient(mongohost, mongoport)
+    mongo_client_obj = _connect_to_mongo(mongohost, mongoport)
+    if mongo_client_obj is None:
+        print('*** No connection to MongoDB ***')
+        return False
+    
     mongo_db_obj = mongo_client_obj[DB_NAME]
     mongo_obj = mongo_db_obj[COLLECTION_NAME]
 
-    # direct Mongo query results; will perform set ops with python on these
-    data = {}
-    data['Temperature']    = _get_feature_set(mongo_obj, cf, 'Temperature')
-    data['Lesion']         = _get_feature_set(mongo_obj, cf, 'Lesion')
-    data['hasRigors']      = _get_feature_set(mongo_obj, cf, 'hasRigors')
-    data['hasDyspnea']     = _get_feature_set(mongo_obj, cf, 'hasDyspnea')
-    data['hasNausea']      = _get_feature_set(mongo_obj, cf, 'hasNausea')
-    data['hasVomiting']    = _get_feature_set(mongo_obj, cf, 'hasVomiting')
-    data['hasShock']       = _get_feature_set(mongo_obj, cf, 'hasShock')
-    data['hasTachycardia'] = _get_feature_set(mongo_obj, cf, 'hasTachycardia')
-
-    
-    if not _test_basic_expressions(job_id, cf, data, mongo_obj):
-        return False
-    if not _test_pure_math_expressions(job_id, cf, mongo_obj):
-        return False
-    if not _test_math_with_multiple_features(job_id, cf, mongo_obj):
-        return False
-    if not _test_pure_logic_expressions(job_id, cf, data, mongo_obj):
-        return False
-    if not _test_mixed_math_and_logic_expressions(job_id, cf, data, mongo_obj):
-        return False
-    if not _test_not_with_positive_logic(job_id, cf, data, mongo_obj):
-        return False
-    if not _test_two_component_or(job_id, cf, data, mongo_obj):
-        return False
-
-    if not _test_three_component_or('hasShock',
-                                    'hasDyspnea',
-                                    'hasTachycardia',
-                                    job_id, cf, data, mongo_obj):
-        return False
-
-    if not _test_three_component_or('hasRigors',
-                                    'hasDyspnea',
-                                    'hasNausea',
-                                    job_id, cf, data, mongo_obj):
-        return False
-
-    if not _test_three_component_or_with_math(job_id, cf, data, mongo_obj):
-        return False
+    # run the test suite
+    all_ok = _selftest(job_id, cf, mongo_obj)
     
     # drop the collection and database
     mongo_obj.drop()
     mongo_client_obj.drop_database(DB_NAME)
-    
-    return True
+
+    if all_ok:
+        print('\nAll tests passed.')
+    else:
+        print('\nOne or more tests failed.')
+        
+    return all_ok
 
     
 ###############################################################################
@@ -1836,7 +1896,7 @@ def _run_tests(job_id,
         expr_eval.enable_debug()
 
     # get all defined names, helps resolve tokens if bad expression formatting
-    the_name_list = _NAME_LIST
+    the_name_list = _BASIC_FEATURES
     if name_list is not None:
         the_name_list = name_list
 
@@ -1869,7 +1929,7 @@ def _run_tests(job_id,
                                         context_field,
                                         is_final)
 
-        banner_print(e)
+        _banner_print(e)
         for expr_obj, output_docs in results:
             print()
             print('Subexpression text: {0}'.format(expr_obj.expr_text))
@@ -2153,7 +2213,7 @@ if __name__ == '__main__':
                         help='expression evaluation context, either ' \
                         '"patient" or "document", default is "patient"')
     parser.add_argument('-j', '--jobid',
-                        required=True,
+                        default=11222,
                         help='integer job id of a previous ClarityNLP run')
     parser.add_argument('-i', '--isfinal',
                         action='store_true',
@@ -2217,10 +2277,14 @@ if __name__ == '__main__':
 
         file_data = _parse_file(filename)
         name_list = file_data.names
-
+        
     if filename is not None or expr is not None:
         # live test, connect to ClarityNLP mongo collection nlp.phenotype_results
-        mongo_client_obj = MongoClient(mongohost, mongoport)
+        mongo_client_obj = _connect_to_mongo(mongohost, mongoport)
+        if mongo_client_obj is None:
+            print('*** No connection to MongoDB ***')
+            sys.exit(-1)
+            
         mongo_db_obj = mongo_client_obj['nlp']
         mongo_collection_obj = mongo_db_obj['phenotype_results']
         
@@ -2261,8 +2325,6 @@ if __name__ == '__main__':
                    name_list,
                    debug)        
     else:
-        
-        # compute the command line expression, if any, or run test suite
         assert run_self_tests(job_id,
                               context,
                               mongohost,
