@@ -1,17 +1,44 @@
 #!/usr/bin/env python3
 """
-This is a program for testing the ClarityNLP NLPQL expression evaluator.
+This is a program for testing the ClarityNLP NLPQL expression evaluator. It has
+three modes of operation:
 
-It assumes that a run of the NLPQL file 'data_gen.nlpql' has already been
-performed. You will need to know the job_id from that run to use this code.
+    1. Load a compressed test data file and run a self-checking suite of
+       tests on the expression evaluator.
 
-Add your desired expression to the list in _run_tests, then evaluate it using
-the data from your ClarityNLP run.
-Use this command:
+    2. Connect to a MongoDB instance containing data from a ClarityNLP run
+       and interactively evaluate expressions on the data.
 
-    python3 ./expr_tester.py --jobid <job_id> --mongohost <ip address>
-                             --port <port number> --num <number> [--debug]
+    3. Connect to a MongoDB instance containing data from a ClarityNLP run,
+       load an NLPQL file, and evaluate the expressions it contains using
+       the data stored in MongoDB.
 
+To run option 1:
+
+    Start a local instance of MongoDB
+    Launch the self-checking test suite with this command:
+
+        python3 ./expr_tester.py
+
+To run option 2:
+
+    Start a remote instance of MongoDB that contains ClarityNLP results.
+    Note the job id for the run you are interested in.
+    Run the test program with:
+
+        python3 ./expr_tester.py --jobid <job_id> --mongohost <ip address>
+                                --mongoport <port_no> [--debug] 
+                                --expr 'my expression here'
+
+To run option 3:
+
+    Start a remote instance of MongoDB that contains ClarityNLP results.
+    Note the job id for the run you are interested in.
+    Run the test program with:
+
+        python3 ./expr_tester.py --jobid <job_id> --mongohost <ip address>
+                                 --port <port number> [--debug]
+                                 --file <path to NLPQL file>
 
 Help for the command line interface can be obtained via this command:
 
@@ -44,7 +71,7 @@ except:
     from data_access import expr_result
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME   = 'expr_tester.py'
 
 _TRACE = False
@@ -1566,321 +1593,8 @@ def _run_tests(job_id,
                name_list=None,
                debug=False):
 
-    EXPRESSIONS = [
-
-        # counts are for job 11222
-        
-        # all temperature measurements
-        # 'Temperature', # 945 results
-
-        # all lesion measurements
-        # 'Lesion',      # 2425 results
-
-        # all instances of a temp measurement AND a lesion measurement
-        # 'Temperature AND Lesion', # 17 results
-
-        # all instances of the given symptoms
-        # 'hasTachycardia', # 1996 results, 757 groups
-        # 'hasRigors',      # 683 results, 286 groups
-        # 'hasShock',       # 2117 results, 521 groups
-        # 'hasDyspnea',     # 3277 results, 783 groups
-        # 'hasNausea',      # 2261 results, 753 groups
-        # 'hasVomiting',    # 2303 results, 679 groups
-
-        # all instances of a temp measurement and another symptom
-        # 'Temperature AND hasTachycardia', # 55 results, 13 groups
-        # 'Temperature AND hasRigors',      # 11 results, 5 groups
-        # 'Temperature AND hasShock',       # 50 results, 11 groups
-        # 'Temperature AND hasDyspnea',     # 64 results, 11 groups
-        # 'Temperature AND hasNausea',      # 91 results, 17 groups
-        # 'Temperature AND hasVomiting',    # 74 results, 13 groups
-
-        # all instances of a lesion measurement and another symptom
-        # 'Lesion AND hasTachycardia', # 131 results, 24 groups
-        # 'Lesion AND hasRigors',      # 50 results, 11 groups
-        # 'Lesion AND hasShock',       # 43 results, 10 groups
-        # 'Lesion AND hasDyspnea',     # 103 results, 21 groups
-        # 'Lesion AND hasNausea',      # 136 results, 30 groups
-        # 'Lesion AND hasVomiting',    # 150 results, 26 groups
-
-        # pure math expressions
-        # 'Temperature.value >= 100.4',    # 488 results
-        # 'Temperature.value >= 1.004e2',  # 488 results
-        # '100.4 <= Temperature.value',    # 488 results
-        # '(Temperature.value >= (100.4))',  # 488 results
-        # 'Temperature.value == 100.4',    # 14 results
-        # 'Temperature.value + 3 ^ 2 < 109',      # temp < 100,     374 results
-        # 'Temperature.value ^ 3 + 2 < 941194',   # temp < 98,      118 results
-        # 'Temperature.value % 3 ^ 2 == 2',       # temp == 101,    68 results
-        # 'Temperature.value * 4 ^ 2 >= 1616',    # temp >= 101,    417 results
-        # 'Temperature.value / 98.6 ^ 2 < 0.01',  # temp < 97.2196, 66 results
-        # '(Temperature.value / 98.6)^2 < 1.02',  # temp < 99.581,  325 results
-        # '0 == Temperature.value % 20',          # temp == 100,    40 results
-        # '(Lesion.dimension_X <= 5) OR (Lesion.dimension_X >= 45)',           # 746 results
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30',               # 528 results
-        # '((Lesion.dimension_X) > (15)) AND (((Lesion.dimension_X) < (30)))', # 528 results
-
-        # math involving multiple NLPQL features
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR (Temperature.value >= 100.4)', # 1016 results
-        # '(Lesion.dimension_X > 15 AND Lesion.dimension_X < 30) AND Temperature.value > 100.4', # 2 results
-        # 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 AND Temperature.value > 100.4', # 2 results
-
-        # need to remove duplicate results for the same patient?? TBD
-        # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5)',  # 4 results
-        # '(Temperature.value >= 102) AND (Lesion.dimension_X <= 5) AND (Temperature.value >= 103)', # 2 results
-
-        # pure logic
-        # 'hasTachycardia AND hasShock',                  # 191 results, 25 groups
-        # 'hasTachycardia OR hasShock',                   # 4113 results, 1253 groups
-        # 'hasTachycardia NOT hasShock',                  # 1891 results, 732 groups
-        # '(hasTachycardia AND hasDyspnea) NOT hasRigors' # 229 results, 46 groups
-        # 'hasTachycardia AND hasDyspnea',                # 240 results, 49 groups
-        # '((hasShock) AND (hasDyspnea))',                # 155 results, 22 groups
-        # '((hasTachycardia) AND (hasRigors OR hasDyspnea OR hasNausea))', # 546 results, 112 groups
-        # '((hasTachycardia)AND(hasRigorsORhasDyspneaORhasNausea))',       # 546 results, 112 groups
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea)',   # 1800 results, 683 groups
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea)',     # 1702 results, 645 groups
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting)', # 1622 results, 619 groups
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock)', # 1529r, 599 g
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
-        # 'OR Temperature)', # 1491 results, 589 groups
-        # 'hasTachycardia NOT (hasRigors OR hasDyspnea OR hasNausea OR hasVomiting OR hasShock ' \
-        # 'OR Temperature OR Lesion)', # 1448 results, 569 groups
-
-        # 'hasTachycardia NOT (hasRigors AND hasDyspnea)',  # 1987 results, 754 groups
-        # 'hasRigors AND hasTachycardia AND hasDyspnea',    # 11 results, 3 groups
-        # 'hasRigors AND hasDyspnea AND hasTachycardia',    # 11 results, 3 groups
-        # 'hasRigors OR hasTachycardia AND hasDyspnea',     # 923 results, 332 groups
-        # '(hasRigors OR hasDyspnea) AND hasTachycardia',   # 340 results, 74 groups
-        # 'hasRigors AND (hasTachycardia AND hasNausea)',   # 22 results, 5 groups
-        # '(hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)', # 743 results, 129 groups
-        # '(hasShock OR hasRigors) NOT (hasTachycardia OR hasNausea)', # 2468 results, 705 groups
-        
-        # 'Temperature AND (hasDyspnea OR hasTachycardia)',  # 106 results, 22 groups
-        # 'Lesion AND (hasDyspnea OR hasTachycardia)',       # 234 results, 45 groups
-
-        # mixed math and logic 
-        # 'hasNausea AND Temperature.value >= 100.4', # 73 results, 16 groups
-        # 'Lesion AND hasRigors',                     # 50 results, 11 groups
-        # 'Lesion.dimension_X < 10 AND hasRigors',    # 19 results, 7 groups
-        # 'Lesion.dimension_X < 10',                  # 841 results
-        # 'Lesion.dimension_X < 10 OR hasRigors',     # 1524 results, 633 groups
-        # '(hasRigors OR hasTachycardia OR hasNausea OR hasVomiting OR hasShock) AND ' \
-        # '(Temperature.value >= 100.4)',             # 180 results, 38 groups
-
-        # 1808 results, 702 groups
-        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR (hasRigors OR hasTachycardia AND hasDyspnea)',
-
-        # 6841 results, 2072 groups
-        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30 OR hasRigors OR hasTachycardia OR hasDyspnea',
-
-        # 797 results, 341 groups
-        # '(Lesion.dimension_X > 10 AND Lesion.dimension_X < 30) NOT (hasRigors OR hasTachycardia OR hasDyspnea)',
-
-        # 'Temperature AND hasDyspnea AND hasNausea AND hasVomiting', # 22 results, 2 groups
-        # '(Temperature.value > 100.4) AND hasDyspnea AND hasNausea AND hasVomiting', # 20 results, 2 groups
-        # 692 results, 287 groups
-        # 'hasRigors OR (hasTachycardia AND hasDyspnea) AND Temperature.value >= 100.4',
-        # 155 results, 33 groups
-        # '(hasRigors OR hasTachycardia OR hasDyspnea OR hasNausea) AND Temperature.value >= 100.4',
-        # 'Lesion.dimension_X < 10 OR hasRigors AND Lesion.dimension_X > 30', # 851 results, 356 groups
-
-        # redundant math expressions
-        # 'Lesion.dimension_X > 50',  # 246 results
-        # 'Lesion.dimension_X > 30 AND Lesion.dimension_X > 50',  # 246 results
-        # 'Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50', # 246 results
-        # '(Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)', # 518 results, 195 groups
-        # 518 results, 195 groups
-        # '(Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)',
-        # 518 results, 195 groups
-        # '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 50) OR (hasNausea AND hasDyspnea)',
-        # 518 results, 195 groups
-        # '(Lesion.dimension_X > 12 AND Lesion.dimension_X > 30 AND Lesion.dimension_X > 50) OR '
-        # '(hasNausea AND hasDyspnea)',
-        
-        # 'Lesion.dimension_X > 10 AND Lesion.dimension_X < 30', # 885 results
-        # 'Lesion.dimension_X > 5 AND Lesion.dimension_X > 10 AND ' \
-        # 'Lesion.dimension_X < 40 AND Lesion.dimension_X < 30',   # 885 results
-        # '(Lesion.dimension_X > 8 AND Lesion.dimension_X > 5 AND Lesion.dimension_X > 10) AND '
-        # '(Lesion.dimension_X < 40 AND Lesion.dimension_X < 30 AND Lesion.dimension_X < 45)', # 885 results
-
-        # checking NOT with positive logic
-        
-        #  of this group of four, the final two expressions are identical
-        # '(hasRigors OR hasDyspnea OR hasTachycardia) AND Temperature', # 117 results, 25 groups
-        # '(hasRigors OR hasDyspnea OR hasTachycardia) AND (Temperature.value >= 100.4)', # 82 results, 20 groups
-        # '(hasRigors OR hasDyspnea OR hasTachycardia) AND (Temperature.value < 100.4)',  # 53 results, 10 groups
-        # '(hasRigors OR hasDyspnea OR hasTachycardia) NOT (Temperature.value >= 100.4)', # 53 results, 10 groups
-
-        # final two in this group should be identical
-        # '(hasRigors OR hasDyspnea) AND Temperature', # 75 results, 14 groups
-        # '(hasRigors OR hasDyspnea) AND (Temperature.value >= 99.5 AND Temperature.value <= 101.5)', # 34r, 7g
-        # '(hasRigors OR hasDyspnea) NOT (Temperature.value < 99.5  OR  Temperature.value > 101.5)', # 34r, 7g
-
-        
-        # Checking the behavior of NOT with set theory relations:
-        #
-        #     Let P == probability, or for our purposes here, the unique element count in a given set.
-        #
-        #     'Groups' refers to grouping the results on the value of the context variable, which
-        #     is either the document ID or patient ID. So the group count is the number of distinct
-        #     values of the context variable (the unique docs or unique patients).
-        #
-        #     'Results' refers to the rows of output in the CSV file. This will vary with the
-        #     form of the expression and will contain some amount of redundancy. The redundancy
-        #     is required to flatten the data into a row-based spreadsheet format. What matters
-        #     is the UNIQUE data per patient or document, which is why groups are more important.
-        #
-        #     The set relations of interest are (think of Venn diagrams):
-        #
-        #     P(A OR B) == P(A) + P(B) - P(A AND B)
-        # 
-        #     P(A OR B OR C) == P(A) + P(B) + P(C) - (P(A AND B) + P(A AND C) + P(B AND C)) + P(A AND B AND C)
-        #
-        # If 'Groups' denotes the number of context variable groups in the expression evaluator result,
-        # these relations should hold:
-        #
-        #     Groups[A OR B] == Groups[A] + Groups[B] - Groups[A AND B]
-        #     Groups[A OR B] == Groups[(A OR B) NOT (A AND B)] + Groups[A AND B]
-        #
-        #     Groups[A OR B OR C] == Groups[A] + Groups[B] + Groups[C] -
-        #                            ( Groups[A AND B] + Groups[A AND C] + Groups[B AND C] ) +
-        #                            Groups[ A AND B AND C ]
-        #
-        #     For the second relation, we need to evaluate this expression:
-        #
-        #         (A OR B OR C) NOT ( (A AND B) OR (A AND C) OR (B AND ) ) OR (A AND B AND C)
-        #
-        #     This needs to be rearranged into this equivalent form, to make sure the NOT applies to ALL the
-        #     available docs, and to prevent dependencies on the evaluation order:
-        #
-        #         ((A OR B OR C) OR (A AND B AND C)) NOT ( (A AND B) OR (A AND C) OR (B AND C) )
-        #
-        #     The subexpression prior to the NOT is an OR of two terms. There could be duplicates between these two
-        #     sets, so the duplicates need to be subtracted out as well. A direct evaluation of this expression will
-        #     give the minimal result set PLUS any duplicates between (A OR B OR C) and (A AND B AND C).
-        #
-        #     Thus the relation for the second check becomes:
-        #
-        #     Groups[A OR B OR C] == Groups[ ((A OR B OR C) OR (A AND B AND C)) NOT ((A AND B) OR (A AND C) OR (B AND C) )] +
-        #                            Groups[A AND B] + Groups[A AND C] + Groups[B AND C] -
-        #                            Groups[A AND B AND C] -
-        #                            Groups[ (A OR B OR C) AND (A AND B AND C) ]
-        #
-        #     In the expressions below, anything contained in single quotes is sent to the evaluator.
-        #
-
-        # 1. hasRigors OR hasDyspnea
-        # ----------------------------
-        # '(hasRigors OR hasDyspnea)', # 3960 results, 1048 groups direct evaluation
-        # 'hasRigors',                 # 683 results, 286 groups
-        # 'hasDyspnea',                # 3277 results, 783 groups
-        # 'hasRigors AND hasDyspnea',  # 89 results, 21 groups
-        # '(hasRigors OR hasDyspnea) NOT (hasRigors AND hasDyspnea)', # 3825 results, 1027 groups
-        # group check 1:  Groups[hasRigors] + Groups[hasDyspnea] - Groups[hasRigors AND hasDyspnea]
-        #                   286 + 783 - 21 = 1048, identical to Groups[hasRigors OR hasDyspnea]
-        # group check 2:  Groups[(hasRigors OR hasDyspnea) NOT (hasRigors AND hasDyspnea)] + Groups[hasRigors AND hasDyspnea]
-        #                   1027 + 21 = 1048 groups, identical to Groups[hasRigors OR hasDyspnea]
-
-        # 2. hasTachycardia OR hasShock
-        # -------------------------------
-        # 'hasTachycardia OR hasShock',  # 4113 results, 1253 groups direct evaluation
-        # 'hasTachycardia',              # 1996 results, 757 groups
-        # 'hasShock',                    # 2117 results, 521 groups
-        # 'hasTachycardia AND hasShock', # 191 results, 25 groups
-        # '(hasTachycardia OR hasShock) NOT (hasTachycardia AND hasShock)', # 3867 results, 1228 groups
-        # group check 1: Groups[hasTachycardia] + Groups[hasShock] - Groups[hasTachycardia AND hasShock]
-        #                  757 + 521 - 25 = 1253, identical to Groups[hasTachycardia OR hasShock]
-        # group check 2: Groups[(hasTachycardia OR hasShock) NOT (hasTachycardia AND hasShock)] + Groups[hasTachycardia AND hasShock]
-        #                 1228 + 25 = 1253, identical to Groups[hasTachycardia OR hasShock]
-
-        # 3. hasShock OR hasDyspnea OR hasTachycardia
-        # -------------------------------------------
-        # 'hasShock OR hasDyspnea OR hasTachycardia',     # 7390 results, 1967 groups
-        # 'hasShock',                                     # 2117 results, 521 groups
-        # 'hasDyspnea',                                   # 3277 results, 783 groups
-        # 'hasTachycardia',                               # 1996 results, 757 groups
-        # 'hasShock AND hasDyspnea',                      # 155 results, 22 groups
-        # 'hasShock AND hasTachycardia',                  # 191 results, 25 groups
-        # 'hasDyspnea AND hasTachycardia',                # 240 results, 49 groups
-        # 'hasShock AND hasDyspnea AND hasTachycardia',   # 11 results, 2 groups
-        # '((hasShock OR hasDyspnea OR hasTachycardia) OR (hasShock AND hasDyspnea AND hasTachycardia)) NOT ( (hasShock AND hasDyspnea) OR (hasShock AND hasTachycardia) OR (hasDyspnea AND hasTachycardia) )' # 6607 results, 1875 groups
-        # '((hasShock OR hasDyspnea OR hasTachycardia) AND (hasShock AND hasDyspnea AND hasTachycardia))', # 20 results, 2 groups
-        # group check 1: Groups[hasShock] + Groups[hasDyspnea] + Groups[hasTachycardia] -
-        #                (Groups[hasShock AND hasDyspnea] + Groups[hasShock AND hasTachycardia] + Groups[hasDyspnea AND hasTachycardia]) +
-        #                Groups[hasShock + hasDyspnea + hasTachycardia]
-        #                521 + 783 + 757 - (22 + 25 + 49) + 2 = 1967 groups, identical to Groups[hasShock OR hasDyspnea OR hasTachycardia]
-        # group check 2: Groups[((shock OR dysp OR tachy) OR (shock AND dysp AND tachy)) NOT ( (shock AND dysp) OR (shock AND tachy) OR (dysp AND tachy)] +
-        #                Groups[shock and dysp] + Groups[shock and tachy] + Groups[dysp and tachy] -
-        #                Groups[shock AND dysp AND tachy] -
-        #                Groups[(shock OR dysp OR tachy) AND (shock AND dysp AND tachy)]
-        #                1875 + 22 + 25 + 49 - 2 - 2 = 1967 groups, identical to Groups[hasShock OR hasDyspnea OR hasTachycardia]
-
-        # 4. hasTachycardia OR hasShock OR hasRigors
-        # ------------------------------------------
-        # 'hasTachycardia OR hasShock OR hasRigors',   # 4796 results, 1502 groups
-        # 'hasTachycardia',                            # 1996 results, 757 groups
-        # 'hasShock',                                  # 2117 results, 521 groups
-        # 'hasRigors',                                 # 683 results, 286 groups
-        # 'hasTachycardia AND hasShock',               # 191 results, 25 groups
-        # 'hasTachycardia AND hasRigors',              # 104 results, 28 groups
-        # 'hasShock AND hasRigors',                    # 52 results, 11 groups
-        # 'hasTachycardia AND hasShock AND hasRigors', # 11 results, 2 groups
-        # '((hasTachycardia OR hasShock OR hasRigors) OR (hasTachycardia AND hasShock AND hasRigors)) NOT ( (hasTachycardia AND hasShock) OR (hasTachycardia AND hasRigors) OR (hasShock AND hasRigors) )', # 4338 results, 1442 groups
-        # '((hasTachycardia OR hasShock OR hasRigors) AND (hasTachycardia AND hasShock AND hasRigors))', # 22 results, 2 groups
-        # group check 1: 757 + 521 + 286 - (25 + 28 + 11) + 2 = 1502 groups, identical to direct eval
-        # group check 2: 1442 + 25 + 28 + 11 - 2 - 2 = 1502 groups, identical to direct eval
-
-        #     Groups[A OR B] == Groups[A] + Groups[B] - Groups[A AND B]
-        #     Groups[A OR B] == Groups[(A OR B) NOT (A AND B)] + Groups[A AND B]
-        
-        # the same, but group as (hasTachycardia OR hasShock) OR hasRigors and use two-component formula
-        # ----------------------------------------------------------------------------------------------
-        # 'hasTachycardia OR hasShock',                 # 4113 results, 1253 groups
-        # 'hasRigors',                                  # 683 results, 286 groups
-        # '(hasTachycardia OR hasShock) AND hasRigors', # 152 results, 37 groups
-        # '((hasTachycardia OR hasShock) OR hasRigors) NOT ( (hasTachycardia OR hasShock) AND hasRigors)', # 4568 results, 1465 groups
-        # group check 1: Groups[hasTachycardia OR hasShock] + Groups[hasRigors] - Groups[(hasTachycardia OR hasShock) AND hasRigors]
-        #                  1253 + 286 - 37 == 1502 groups, identical to Groups[hasTachycardia OR hasShock OR hasRigors]
-        # group check 2: Groups[((hasTachycardia OR hasShock) OR hasRigors) NOT ( (hasTachycardia OR hasShock) AND hasRigors)] + Groups[(hasTachycardia OR hasShock) AND hasRigors]
-        #                  1465 + 37 = 1502 groups, identical to Groups[hasTachycardia OR hasShock OR hasRigors]
-
-        # the same, but group as hasTachycardia OR (hasShock OR hasRigors) and use two-component formula
-        # ----------------------------------------------------------------------------------------------
-        # 'hasTachycardia',                             # 1996 results, 757 groups
-        # 'hasShock OR hasRigors',                      # 2800 results, 796 groups
-        # 'hasTachycardia AND (hasShock OR hasRigors)', # 292 results, 51 groups
-        # '(hasTachycardia OR (hasShock OR hasRigors)) NOT ( hasTachycardia AND (hasShock OR hasRigors) )', # 4402 results, 1451 groups
-        # group check 1: Groups[hasTachycardia] + Groups[hasShock or hasRigors] - Groups[hasTachycardia AND (hasShock OR hasRigors)]
-        #                  757 + 796 - 51 = 1502 groups, identical to Groups[hasTachycardia OR hasShock OR hasRigors]
-        # group check 2: Groups[(hasTachycardia OR (hasShock OR hasRigors)) NOT ( hasTachycardia AND (hasShock OR hasRigors) )] + Groups[hasTachycardia AND (hasShock OR hasRigors)]
-        #                  1451 + 51 = 1502 groups, identical to Groups[hasTachycardia OR hasShock OR hasRigors]
-
-        # 5. hasRigors OR hasDyspnea OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10), mixed logic and math
-        # ----------------------------------------------------------------------------------------------------------
-        # 'hasRigors OR hasDyspnea OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',   # 4028 results, 1104 groups
-        # 'hasRigors',                                                                           # 683 results, 286 groups
-        # 'hasDyspnea',                                                                          # 3277 results, 783 groups
-        # '(Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',                              # 67 results, 57 groups
-        # 'hasRigors AND hasDyspnea',                                                            # 89 results, 21 groups
-        # 'hasRigors AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',                # 0 results, 0 groups
-        # 'hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)',               # 5 results, 1 group
-        # 'hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)', # 0 results, 0 groups
-        # # 3886 results, 1082 groups
-        # '((hasRigors OR hasDyspnea OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) OR (hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10))) ' \
-        # 'NOT( (hasRigors AND hasDyspnea) OR (hasRigors AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) OR (hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)))'
-        # 0 results, 0 groups
-        # '((hasRigors OR hasDyspnea OR (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)) AND (hasRigors AND hasDyspnea AND (Lesion.dimension_X >= 10 AND Lesion.dimension_Y < 10)))',
-        # group check 1: 286 + 783 + 57 - (21 + 0 + 1) + 0 = 1104 groups, expected result
-        # group check 2: 1082 + 21 + 0 + 1 - 0 - 0 = 1104 groups, expected result
-        
-        # should generate a parser exception
-        # 'This is junk and should cause a parser exception',
-
-        # not a valid expression, since each math expression must produce a Boolean result
-        # '(Temp.value/98.6) * (HR.value/60.0) * (BP.systolic/110) < 1.1',
-    ]
-
+    assert command_line_expression is not None    
+    
     # must either be a patient or document context
     context_var = context_var.lower()
     assert 'patient' == context_var or 'document' == context_var
@@ -1902,11 +1616,8 @@ def _run_tests(job_id,
     the_name_list = _BASIC_FEATURES
     if name_list is not None:
         the_name_list = name_list
-
-    if command_line_expression is None:
-        expressions = EXPRESSIONS
-    else:
-        expressions = [command_line_expression]
+        
+    expressions = [command_line_expression]
         
     counter = 1
     for e in expressions:
