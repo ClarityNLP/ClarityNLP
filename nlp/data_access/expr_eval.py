@@ -25,8 +25,8 @@ enforce precedence or evaluation order. Some examples:
     LesionMeasurement.dimension_X > 10 AND Temperature.value > 98.6
     etc.
 
-There are many more examples towards the end of this file in the _run_tests
-function.
+There are many more examples in the expression evaluator test program,
+'expr_tester.py'.
 
 The expression is assumed to have already been validated by the NLPQL parser,
 which means that parentheses are balanced, the operators and variables are
@@ -130,6 +130,8 @@ Each document can be accessed by iteration:
     for doc in cursor:
         # do something with doc
 
+Examples of how to use the expression evaluator can be found in the test
+program 'expr_tester.py'.
 
 
 TESTING:
@@ -233,7 +235,7 @@ regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -600,7 +602,7 @@ def _precedence(operator_token):
 def _infix_to_postfix(infix_tokens):
     """
     Convert an infix expression of the form A OP1 B OP2 C ... into the
-    equivalent postfix form. Parentheses may also be present as separete tokens
+    equivalent postfix form. Parentheses may also be present as separate tokens
     and are assumed to be balanced.
 
     The 'infix_tokens' argument is a list of strings.
