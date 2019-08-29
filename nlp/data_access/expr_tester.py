@@ -23,13 +23,16 @@ Extensive debugging info can be generated with the --debug option.
 
 import re
 import os
+import bz2
 import sys
 import copy
 import string
 import argparse
 import datetime
+import tempfile
 import subprocess
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 from collections import namedtuple, OrderedDict
 #from bson import ObjectId
 
@@ -81,26 +84,6 @@ def _enable_debug():
 
     global _TRACE
     _TRACE = True
-
-
-###############################################################################
-def _connect_to_mongo(mongohost = 'localhost',
-                      mongoport = 27017):
-    """
-    Attempt to connect to MongoDB; return None if no connection.
-    """
-    
-    mongo_client_obj = None
-    try:
-        mongo_client_obj = MongoClient(mongohost, mongoport)
-    except pymongo.errors.ConnectionFailure as e:
-        print('*** Could not connect to MongoDB ***')
-        print('\tMongo host: {0}'.format(mongohost))
-        print('\tMongo port: {0}'.format(mongoport))
-        print('\t{0}'.format(e))
-        return None
-
-    return mongo_client_obj
 
 
 ###############################################################################
@@ -1477,13 +1460,13 @@ def _selftest(job_id,      # integer job ID from a ClarityNLP run
 
 
 ###############################################################################
-def run_self_tests(job_id      = 11222,
-                   context_var = 'patient',
-                   mongohost   = 'localhost',
-                   mongoport   = 27017,
-                   debug       = False):
+def _run_self_tests(job_id      = 11222,
+                    context_var = 'patient',
+                    mongohost   = 'localhost',
+                    mongoport   = 27017,
+                    debug       = False):
     """
-    Run test expressions and verify with independent MongoDB queries.
+    Run test expressions and verify results.
     """
 
     if debug:
@@ -1492,32 +1475,48 @@ def run_self_tests(job_id      = 11222,
     
     DB_NAME         = 'claritynlp_eval_test'
     COLLECTION_NAME = 'eval_test_data'
-    TEST_FILE_NAME  = 'expr_test_data.json'
+    TEST_FILE_NAME  = 'expr_test_data.json.bz2'
 
-    # use mongoimport to load JSON file containing test data
-    command = []
-    command.append('mongoimport')
-    command.append('--host')
-    command.append(str(mongohost))
-    command.append('--port')
-    command.append(str(mongoport))
-    command.append('--db')
-    command.append(DB_NAME)
-    command.append('--collection')
-    command.append(COLLECTION_NAME)
-    command.append('--file')
-    command.append(TEST_FILE_NAME)
-    command.append('--stopOnError')
-    command.append('--drop')
+    # decompress, read, and decode the data file
+    test_data = None
+    with bz2.open(TEST_FILE_NAME, 'rb') as infile:
+        test_data = infile.read().decode('utf-8')
 
-    cp = subprocess.run(command,
-                        stdout=subprocess.PIPE,
-                        universal_newlines=True)
-    if 0 != len(cp.stdout):
-        # an error occurred
-        print(cp.stdout)
+    if test_data is None:
+        print('*** Error decompressing test data file ***')
+        print('\tFilename: {0}'.format(TEST_FILE_NAME))
         return False
-    
+
+    # write data to temp file, then load into Mongo via mongoimport
+    with tempfile.TemporaryDirectory() as dirname:
+        json_file = os.path.join(dirname, 'expr_test_data.json')
+        with open(json_file, 'wt') as outfile:
+            outfile.write(test_data)
+
+        # use mongoimport to load JSON file containing test data
+        command = []
+        command.append('mongoimport')
+        command.append('--host')
+        command.append(str(mongohost))
+        command.append('--port')
+        command.append(str(mongoport))
+        command.append('--db')
+        command.append(DB_NAME)
+        command.append('--collection')
+        command.append(COLLECTION_NAME)
+        command.append('--file')
+        command.append(json_file)
+        command.append('--stopOnError')
+        command.append('--drop')
+
+        cp = subprocess.run(command,
+                            stdout=subprocess.PIPE,
+                            universal_newlines=True)
+        if 0 != len(cp.stdout):
+            # an error occurred
+            print(cp.stdout)
+            return False
+
     # must either be a patient or document context
     context_var = context_var.lower()
     assert 'patient' == context_var or 'document' == context_var
@@ -1528,21 +1527,25 @@ def run_self_tests(job_id      = 11222,
     else:
         cf = 'report_id'
 
-    # connect to this collection
-    mongo_client_obj = _connect_to_mongo(mongohost, mongoport)
-    if mongo_client_obj is None:
-        print('*** No connection to MongoDB ***')
-        return False
+    all_ok = False
     
-    mongo_db_obj = mongo_client_obj[DB_NAME]
-    mongo_obj = mongo_db_obj[COLLECTION_NAME]
+    try:
+        mongo_client_obj = MongoClient(mongohost, mongoport)
+        mongo_db_obj = mongo_client_obj[DB_NAME]
+        mongo_obj = mongo_db_obj[COLLECTION_NAME]
 
-    # run the test suite
-    all_ok = _selftest(job_id, cf, mongo_obj)
-    
+        # run the test suite
+        all_ok = _selftest(job_id, cf, mongo_obj)
+        
+    except ConnectionFailure as e:
+        print('*** Mongo exception: ConnectionFailure ***')
+        print(e)
+        
     # drop the collection and database
-    mongo_obj.drop()
-    mongo_client_obj.drop_database(DB_NAME)
+    if mongo_obj is not None:
+        mongo_obj.drop()
+    if mongo_client_obj is not None:
+        mongo_client_obj.drop_database(DB_NAME)
 
     if all_ok:
         print('\nAll tests passed.')
@@ -2280,11 +2283,7 @@ if __name__ == '__main__':
         
     if filename is not None or expr is not None:
         # live test, connect to ClarityNLP mongo collection nlp.phenotype_results
-        mongo_client_obj = _connect_to_mongo(mongohost, mongoport)
-        if mongo_client_obj is None:
-            print('*** No connection to MongoDB ***')
-            sys.exit(-1)
-            
+        mongo_client_obj = MongoClient(mongohost, mongoport)
         mongo_db_obj = mongo_client_obj['nlp']
         mongo_collection_obj = mongo_db_obj['phenotype_results']
         
@@ -2325,9 +2324,9 @@ if __name__ == '__main__':
                    name_list,
                    debug)        
     else:
-        assert run_self_tests(job_id,
-                              context,
-                              mongohost,
-                              mongoport,
-                              debug)
+        _run_self_tests(job_id,
+                        context,
+                        mongohost,
+                        mongoport,
+                        debug)
         
