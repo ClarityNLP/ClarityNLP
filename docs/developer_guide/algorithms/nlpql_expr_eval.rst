@@ -47,24 +47,15 @@ consumes the task results and uses it to generate new results from the
 expression statements.
 
 We now turn our attention to a description of how the expression evaluator
-works. We should state at the outset that the descriptions below apply to the
-expression evaluator built on
-`MongoDB aggregation <https://docs.mongodb.com/manual/aggregation/>`_. This
-evaluator is currently in a testing phase and must be explicitly enabled by
-adding the following line to the ``project.cfg`` file in the ``[local]``
-section:
-::
-   [local]
-   evaluator=mongo
+works.
 
-A Pandas-based evaluator will be used if this line is absent or is commented
-out with a `#` character. The Pandas evaluator uses different techniques from
-those described below.
-
-Why use MongoDB aggregation to evaluate NLPQL expressions? The basic reason
-is that the data resides in a Mongo collection, and it is more efficient to
-evaluate expressions using MongoDB capabilities than to use something else.
-Use of a non-Mongo evaluator requires ClarityNLP to:
+The expression evaluator is built upon the
+`MongoDB aggregation <https://docs.mongodb.com/manual/aggregation/>`_
+framework. Why use MongoDB aggregation to evaluate NLPQL expressions? The basic
+reason is that ClarityNLP writes results from each run to a MongoDB collection,
+and it is more efficient to evaluate expressions using MongoDB facilities
+than to use something else. Use of a non-Mongo evaluator would require
+ClarityNLP to:
 
 - Run a set of queries to extract the data from MongoDB
 - Transmit the query results across a network (if the Mongo instance is hosted
@@ -75,8 +66,8 @@ Use of a non-Mongo evaluator requires ClarityNLP to:
   remotely)
 - Insert the results into MongoDB.
    
-Evaluation via the MongoDB aggregation framework should prove to be much more
-efficient than this process, since all data remains inside MongoDB.
+Evaluation via the MongoDB aggregation framework is more efficient than this
+process, since all data resides inside MongoDB.
 
 
 NLPQL Expression Types
@@ -111,11 +102,13 @@ written to a new MongoDB result document.
 -----------------------------
 
 A simple logic expression is a string containing NLPQL features,
-parentheses, and the logic operators ``AND`` and/or ``OR``. For instance:
+parentheses, and the logic operators ``AND``, ``OR``, and ``NOT``.
+For instance:
 ::
    hasRigors OR hasDyspnea
    hasFever AND (hasDyspnea OR hasTachycardia)
    (hasShock OR hasDyspnea) AND (hasTachycardia OR hasNausea)
+   (hasFever AND hasNausea) NOT (hasRigors OR hasDyspnea)
 
 Logic expressions operate on high-level NLPQL features, **not** on numeric
 literals or NLPQL variables. The presence of a numeric literal or NLPQL
@@ -125,6 +118,13 @@ or possibly invalid.
 Simple logic expressions produce a result from data contained in one or more
 task result documents. The result from the expression evaluation is written to
 one or more new MongoDB result documents (the details will be explained below).
+
+The ``NOT`` operator requires additional commentary. ClarityNLP supports the
+use of ``NOT`` as a synonym for ``SETDIFF``. In other words, ``A NOT B`` means
+all elements of set ``A`` that are NOT also elements of set ``B``. The use of
+``NOT`` to mean "set complement" is not supported. Hence expressions such as
+``NOT A``, ``NOT hasRigors``, etc., are invalid NLPQL statements. The ``NOT``
+operator **must** appear between two other expressions.
    
 3. Mixed Expressions
 --------------------
@@ -373,8 +373,11 @@ has a lower precedence than ``+``, etc.
 ========  ================
 Operator  Precedence Value
 ========  ================
+(         0
+)         0
 or        1
 and       2
+not       3
 <         4
 <=        4
 >         4
