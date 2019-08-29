@@ -6,17 +6,21 @@
 Dashboard
 =============
 
-The Dashboard Client is designed to give you a summary of your ClarityNLP instance at a glance. On page load, you can see the latest:
+The Dashboard is designed to give you a summary of your ClarityNLP instance at a glance.
+The Dashboard shows you the following:
 
-* The amount and name of Documents you have uploaded
-* The name and verison of NLPQL you have created and saved via the `Query Builder`_
-* the name, date, runtime, cohort size, and validation of Results from jobs that have been run
+* The document types (and number of each type) stored in your Solr instance
+* The NLPQL queries you have created and saved via the `Query Builder`_
+* The name, date, runtime, cohort size, and validation status of your NLPQL jobs
 
 .. image:: ./images/claritynlp_dashboard_1.png
 
 --------
 
-In order to view all of your documents, results, or nlpql; simply click on the expand button to the top right of the corresponding box. This will expand the box to full screen and provide more information on the given field. To return to the default view, simply click on the collapse button located in the top right corner.
+To view all of your documents, results, or NLPQL queries, simply click on the expand
+button at the top right of the corresponding box.
+This action expands the box to full screen and provides more information on the given field.
+To return to the default view, click on the collapse button located at the top right corner.
 
 .. image:: ./images/claritynlp_dashboard_2.png
 .. image:: ./images/claritynlp_dashboard_3.png
@@ -25,8 +29,16 @@ In order to view all of your documents, results, or nlpql; simply click on the e
 Additional Features
 --------
 
-If you would like to quickly navigate to the results of one your recent jobs. You can click on the job row in the results table to go directly to that job's results in the `Results Viewer`_.
+If you would like to quickly navigate to the results of one your recent jobs,
+you can click on that job's row in the results table to go directly to the results
+in the `Results Viewer`_.
 
-Alternatively, if you would like to open the NLPQL of a previously saved query, you can click on the respective row in the NLPQL table to open that query in the `Query Builder`_.
+Alternatively, if you would like to open the NLPQL file of a previously saved query,
+click on the respective row in the NLPQL table to open that query in the `Query Builder`_.
 
-You can also run or delete NLPQL from the NLPQL table using the play button or trash can on the corresponding row of the query.
+You can run saved queries by pressing the play button (right-pointing arrowhead)
+in the same row as the query.
+
+You can delete a saved query by pressing the trash can icon next to the name of the query.
+
+
