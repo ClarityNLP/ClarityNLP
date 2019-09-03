@@ -278,7 +278,7 @@ services:
       - nlp-api
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.socket.rule=PathPrefix(`/socket.io`,`/__getcookie`)"
+      - "traefik.http.routers.socket-secure.rule=PathPrefix(`/socket.io`,`/__getcookie`)"
       - "traefik.http.routers.socket-secure.entrypoints=websecure"
       - "traefik.http.routers.socket-secure.tls=true"
       - "traefik.http.routers.socket-secure.tls.certresolver=mytlschallenge"
