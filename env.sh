@@ -1,12 +1,12 @@
 # IDENTITY PROVIDER
 export ASPNETCORE_URLS=http://*:5000
 export IDENTITY_PROVIDER_CONTAINER_PORT=5000
-export IDENTITY_PROVIDER_SUBDOMAIN=idp
 export ADMIN_USERNAME=admin
 export ADMIN_PASSWORD=admin
 export CLIENT_CLI_SECRET=secret
 export CLIENT_NLPASS_SECRET=secret
 export IDP_SIGNING_CREDS_PASSPHRASE=mysecurepassphrase
+export IDP_PREFIX=idp
 
 # IDP MSSQL
 export IDP_DB_CONTAINER_PORT=1433
@@ -16,7 +16,7 @@ export IDP_DB_HOSTNAME=mssql
 
 # IDENTITY AND ACCESS PROXY
 export IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT=6010
-export IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN=api
+export IAAP_PREFIX=api
 
 # NLP API
 export NLP_API_HOSTNAME=nlp-api
@@ -52,7 +52,7 @@ export SCHEDULER_PASSWORD=admin
 export LUIGI_WORKERS=1
 export LUIGI_URL=http://localhost:8082
 export LUIGI_SCHEDULER_URL=http://scheduler:8082
-export SCHEDULER_SUBDOMAIN=luigi
+export SCHEDULER_PREFIX=luigi
 
 # NLP SOLR
 export NLP_SOLR_HOSTNAME=nlp-solr
@@ -62,7 +62,7 @@ export NLP_CORE_NAME=sample
 export NLP_SOLR_URL=http://nlp-solr:8983/solr/sample
 export NLP_SOLR_URL_TOP_LEVEL=http://nlp-solr:8983
 export SOLR_HEAP=4096m
-export SOLR_SUBDOMAIN=solr
+export SOLR_PREFIX=solr
 export SOLR_USERNAME=admin
 export SOLR_PASSWORD=admin
 
@@ -106,7 +106,7 @@ export INGEST_CLIENT_HOST_PORT=8500
 export INGEST_CLIENT_CONTAINER_PORT=3000
 export INGEST_CLIENT_CHOKIDAR_USEPOLLING=true
 export INGEST_CLIENT_VIRTUAL_PORT=3000
-export INGEST_CLIENT_SUBDOMAIN=ingest
+export INGEST_PREFIX=ingest
 
 # REDIS
 export REDIS_HOSTNAME=redis
@@ -117,17 +117,17 @@ export REDIS_CONTAINER_PORT=6379
 export RESULTS_CLIENT_HOSTNAME=results-client
 export RESULTS_CLIENT_HOST_PORT=8200
 export RESULTS_CLIENT_CONTAINER_PORT=3000
-export RESULTS_URL=http://viewer.claritynlp.dev/
+export RESULTS_URL=http://viewer.claritynlp.test/
 export RESULTS_CLIENT_CHOKIDAR_USEPOLLING=true
 export RESULTS_CLIENT_VIRTUAL_PORT=3000
-export RESULTS_CLIENT_SUBDOMAIN=viewer
+export RESULTS_PREFIX=results
 
 # GENERIC
 export BASE_URL=http://localhost
-export DOMAIN=claritynlp.dev
+export HOST=localhost
 export PROTOCOL=https
 export USE_SSL=true
-export TLD=dev
+export ACME_EMAIL=postmaster@mydomain.com
 
 # DASHBOARD CLIENT
 export DASHBOARD_CLIENT_HOSTNAME=dashboard-client
@@ -135,7 +135,7 @@ export DASHBOARD_CLIENT_HOST_PORT=8700
 export DASHBOARD_CLIENT_CONTAINER_PORT=3000
 export DASHBOARD_CLIENT_CHOKIDAR_USEPOLLING=true
 export DASHBOARD_CLIENT_VIRTUAL_PORT=3000
-export DASHBOARD_CLIENT_SUBDOMAIN=dashboard
+export DASHBOARD_PREFIX=dashboard
 
 # DASHBOARD API
 export DASHBOARD_API_HOSTNAME=dashboard-api
