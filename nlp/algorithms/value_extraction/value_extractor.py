@@ -165,7 +165,7 @@ ValueMeasurement = namedtuple('ValueMeasurement',
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 14
+_VERSION_MINOR = 15
 _MODULE_NAME = 'value_extractor.py'
 
 # set to True to enable debug output
@@ -204,7 +204,7 @@ _str_comma_num = r'\d{1,3}(,\d{3})+'
 _str_int = r'(\d{2,}' + r'|' + r'(?<!x)(?<!X)\d)'
 
 # floating point numbers
-_str_float = r'(\d+(\.\d+)|\.\d+)'
+_str_float = r'(\d+\.\d+|\.\d+)'
 _regex_float = re.compile(_str_float)
 
 # any number (always surround this with parens or place in a capture group)
@@ -696,11 +696,19 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
         if 0 == len(units1):
             # explicit units omitted from first number
             units1 = units2
+        if 0 == len(units1) and 0 == len(units2):
+            if _TRACE: print('\t\tboth unit strings are empty')
+            continue
         if units1 == units2:
             str_num1 = match.group('num1')
             str_num2 = match.group('num2')
             str_num1_no_commas = re.sub(r',', '', str_num1)
             str_num2_no_commas = re.sub(r',', '', str_num2)
+            if _TRACE:
+                print('\tUnits1: {0}'.format(units1))
+                print('\tUnits2: {0}'.format(units2))
+                print('\t  num1: {0}'.format(str_num1_no_commas))
+                print('\t  num2: {0}'.format(str_num2_no_commas))
             num1 = float(str_num1_no_commas)
             num2 = float(str_num2_no_commas)
             if 'k' == units1.lower():

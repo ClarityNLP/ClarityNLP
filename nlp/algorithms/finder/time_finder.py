@@ -195,7 +195,7 @@ STR_PM = 'pm'
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME = 'time_finder.py'
 
 # set to True to see debug output
@@ -376,12 +376,13 @@ _str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r')'                    +\
 _str_iso_zone = r'((?P<timezone>Z)|'                                         +\
                 r'(?P<gmt_sign>[-+])' + _str_iso_zone_hm + r')'
 
-# note the essential negative lookahead in these
-_str_iso_hh_only = r'(?<!\d)(?P<hours>' + _str_iso_hh + r'(?!\d))'           +\
+# note the essential negative lookahead in these, prevents matching of
+# portions of floating point numbers
+_str_iso_hh_only = r'(?<!\d)(?P<hours>' + _str_iso_hh + r'(?!\d)(?!\.))'     +\
                    r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
 _str_iso_hhmm_only = r'(?<!\d)(?P<hours>' + _str_iso_hh + r')'               +\
-                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d))'              +\
+                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d)(?!\.))'        +\
                      r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
 _str_iso_hms = r'(?<!\d)(?P<hours>'  + _str_iso_hh + r'):?'                  +\

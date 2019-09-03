@@ -20,7 +20,7 @@ except:
     from algorithms.value_extraction import value_extractor as ve
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
@@ -895,6 +895,35 @@ def test_value_extractor_full():
     if not _compare_results(term_string, test_data, minval, maxval):
         return False
 
+    # other errors found during test and evaluation
+    term_string = 'wbc, white count, white blood cell count'
+    test_data = {
+        'White blood cell count was up at 13.3':[
+            _Result('white blood cell count', 13.3, None, ve.STR_EQUAL)
+        ],
+        'White blood cell count was up at 13.':[
+            _Result('white blood cell count', 13, None, ve.STR_EQUAL)
+        ],
+        'rising white count now at 24.4, stable hematocrit 32.4 with':[
+            _Result('white count', 24.4, None, ve.STR_EQUAL)
+        ],
+        'The abdomen was soft.  Hematocrit was 31.  White blood cell count '\
+        'was 12.  Potassium was 4.2.  Calcium was 7.8, magnesium of 1.8.':[
+            _Result('white blood cell count', 12, None, ve.STR_EQUAL)
+        ],
+        "the patient's abdominal examination worsened with more tenderness " \
+        "in her lower quadrant and a repeat white blood cell count had "     \
+        "risen from 7.7 to 12.":[
+            _Result('white blood cell count', 7.7, 12, ve.STR_RANGE)
+        ],
+        "The patient's white count increased from 12 to 20.1; however, ":[
+            _Result('white count', 12, 20.1, ve.STR_RANGE)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
+    
     return True
 
 
