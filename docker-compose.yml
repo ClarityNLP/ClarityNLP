@@ -1,43 +1,70 @@
-version: "3"
+version: "3.3"
 
 networks:
   clarity:
     driver: bridge
 
 volumes:
+  mssql-data:
+  idp-signing-creds:
   redisdata:
   nlp-solrdata:
   nlp-pgdata:
   nlp-mongodata:
   ingest-files:
   ingest-mongodata:
-  vhost:
-  html:
-  dhparam:
-  htpasswd:
+  luigi-frontend:
 
 services:
+  mssql:
+    container_name: IDP_MSSQL
+    hostname: ${IDP_DB_HOSTNAME}
+    image: microsoft/mssql-server-linux
+    expose:
+      - ${IDP_DB_CONTAINER_PORT}
+    volumes:
+      - mssql-data:/var/opt/mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${IDP_DB_PASSWORD}
+      - MSSQL_PID=Developer
+    networks:
+      - clarity
+
   identity-provider:
     container_name: IDENTITY_PROVIDER
     hostname: identity-provider
     build: ./identity-provider
     expose:
       - ${IDENTITY_PROVIDER_CONTAINER_PORT}
+    volumes:
+      - idp-signing-creds:/app/creds
+    entrypoint:
+      - /app/wait-for-it-extra.sh
+      - ${IDP_DB_HOSTNAME}:${IDP_DB_CONTAINER_PORT}
+      - --timeout=420
+      - --extra=15
+      - --
+      - docker-entrypoint.sh
+    command: dotnet IdentityServer.dll
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
-      - VIRTUAL_HOST=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${IDENTITY_PROVIDER_CONTAINER_PORT}
       - PROTOCOL=${PROTOCOL}
-      - DOMAIN=${DOMAIN}
-      - SUBDOMAIN=${IDENTITY_PROVIDER_SUBDOMAIN}
-      - DASHBOARD_SUBDOMAIN=${DASHBOARD_CLIENT_SUBDOMAIN}
-      - INGEST_SUBDOMAIN=${INGEST_CLIENT_SUBDOMAIN}
-      - RESULTS_SUBDOMAIN=${RESULTS_CLIENT_SUBDOMAIN}
+      - HOST=${HOST}
+      - IDP_URL=${HOST}/${IDP_PREFIX}
+      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
+      - INGEST_URL=${HOST}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CLIENT_CLI_SECRET=${CLIENT_CLI_SECRET}
       - CLIENT_NLPASS_SECRET=${CLIENT_NLPASS_SECRET}
+      - IDP_DB_PASSWORD=${IDP_DB_PASSWORD}
+      - IDP_DATABASE=${IDP_DATABASE}
+      - IDP_SIGNING_CREDS_PASSPHRASE=${IDP_SIGNING_CREDS_PASSPHRASE}
+    depends_on:
+      - mssql
     networks:
       - clarity
 
@@ -47,14 +74,8 @@ services:
     build: ./identity-and-access-proxy
     expose:
       - ${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
-    environment:
-      - VIRTUAL_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
-      - PROTOCOL=${PROTOCOL}
-      - DOMAIN=${DOMAIN}
-      - DASHBOARD_CLIENT_SUBDOMAIN=${DASHBOARD_CLIENT_SUBDOMAIN}
-      - INGEST_CLIENT_SUBDOMAIN=${INGEST_CLIENT_SUBDOMAIN}
-      - RESULTS_CLIENT_SUBDOMAIN=${RESULTS_CLIENT_SUBDOMAIN}
+    entrypoint: pm2-runtime
+    command: proxy.js
     networks:
       - clarity
 
@@ -123,17 +144,37 @@ services:
       - nlp-solr
       - nlp-mongo
       - nlp-postgres
-      - scheduler
+      - luigid
 
-  scheduler:
-    container_name: LUIGI_SCHEDULER
-    hostname: ${SCHEDULER_HOSTNAME}
+  luigid:
+    container_name: scheduler
+    hostname: scheduler
     image: axiom/docker-luigi:2.7.1
     expose:
       - ${SCHEDULER_CONTAINER_PORT}
-    environment:
-      - VIRTUAL_HOST=${SCHEDULER_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${SCHEDULER_CONTAINER_PORT}
+    volumes:
+      - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+    networks:
+      - clarity
+
+  frontend-ctrl:
+    restart: always
+    build: ./front-ctrl
+    volumes:
+      - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+    links:
+      - luigid:luigid
+      - identity-provider:identity-provider
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.appsecure.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.appsecure.entrypoints=websecure"
+      - "traefik.http.routers.appsecure.tls=true"
+      - "traefik.http.routers.appsecure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.app.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
+      - "traefik.http.routers.app.middlewares=https-only"
     networks:
       - clarity
 
@@ -147,20 +188,18 @@ services:
       - nlp-solrdata:/opt/solr/server/solr/mycores
     environment:
       - SOLR_HEAP=${SOLR_HEAP}
-      - VIRTUAL_HOST=${SOLR_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${NLP_SOLR_CONTAINER_PORT}
     networks:
       - clarity
 
   nlp-mongo:
     container_name: NLP_MONGO
     hostname: ${NLP_MONGO_HOSTNAME}
-    image: mongo
+    build:
+      context: ./utilities/nlp-mongo
+      dockerfile: Dockerfile.prod
     expose:
       - ${NLP_MONGO_CONTAINER_PORT}
     volumes:
-      - ./utilities/nlp-mongo/setup.js:/docker-entrypoint-initdb.d/setup.js
-      - ./utilities/nlp-mongo/users.sh:/docker-entrypoint-initdb.d/users.sh
       - nlp-mongodata:/data/db
     environment:
       - MONGO_DATA_DIR=/data/db
@@ -193,7 +232,6 @@ services:
     hostname: ${INGEST_API_HOSTNAME}
     build: ./utilities/ingest-api
     volumes:
-      - ./utilities/ingest-api:/app
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
       - ingest-files:/var/lib/ingest-files
     expose:
@@ -206,10 +244,10 @@ services:
       - ${NLP_API_HOSTNAME}:${NLP_API_CONTAINER_PORT}
       - --timeout=420
       - --
-      - pm2-dev
-    command: process.json
+      - pm2-runtime
+    command: app.js
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - JOB_TYPES=ingest
       - NLP_SOLR_HOSTNAME=${NLP_SOLR_HOSTNAME}
       - NLP_SOLR_CONTAINER_PORT=${NLP_SOLR_CONTAINER_PORT}
@@ -229,8 +267,8 @@ services:
       - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
       - PROTOCOL=${PROTOCOL}
       - DOMAIN=${DOMAIN}
-      - INGEST_CLIENT_SUBDOMAIN=${INGEST_CLIENT_SUBDOMAIN}
-      - DASHBOARD_CLIENT_SUBDOMAIN=${DASHBOARD_CLIENT_SUBDOMAIN}
+      - DASHBOARD_URL=${HOST}
+      - INGEST_URL=${HOST}
     networks:
       - clarity
     depends_on:
@@ -238,11 +276,23 @@ services:
       - redis
       - nlp-solr
       - nlp-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.socket.rule=PathPrefix(`/socket.io`,`/__getcookie`)"
+      - "traefik.http.routers.socket-secure.entrypoints=websecure"
+      - "traefik.http.routers.socket-secure.tls=true"
+      - "traefik.http.routers.socket-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.socket.rule=PathPrefix(`/socket.io`,`/__getcookie`)"
+      - "traefik.http.routers.socket.entrypoints=web"
+      - "traefik.http.middlewares.socket-https-only.redirectscheme.scheme=https"
+      - "traefik.http.routers.socket.middlewares=socket-https-only"
 
   ingest-mongo:
     container_name: ${INGEST_MONGO_CONTAINER_NAME}
     hostname: ${INGEST_MONGO_HOSTNAME}
-    image: mongo:3.4.2
+    build:
+      context: ./utilities/ingest-mongo
+      dockerfile: Dockerfile.prod
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
@@ -252,26 +302,7 @@ services:
     expose:
       - ${INGEST_MONGO_CONTAINER_PORT}
     volumes:
-      - ./utilities/ingest-mongo/users.sh:/docker-entrypoint-initdb.d/users.sh:ro
       - ingest-mongodata:/data/db
-    networks:
-      - clarity
-
-  ingest-client:
-    container_name: INGEST_CLIENT
-    hostname: ${INGEST_CLIENT_HOSTNAME}
-    build: ./utilities/ingest-client
-    volumes:
-      - ./utilities/ingest-client:/app
-      - /app/node_modules
-    environment:
-      - PORT=${INGEST_CLIENT_CONTAINER_PORT}
-      - VIRTUAL_HOST=${INGEST_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${INGEST_CLIENT_VIRTUAL_PORT}
-      - REACT_APP_IDENTITY_PROVIDER_URL=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_DASHBOARD_URL=${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_RESULTS_URL=${RESULTS_CLIENT_SUBDOMAIN}.${DOMAIN}
     networks:
       - clarity
 
@@ -286,97 +317,125 @@ services:
     networks:
       - clarity
 
+  ingest-client:
+    container_name: INGEST_CLIENT
+    hostname: ${INGEST_CLIENT_HOSTNAME}
+    build:
+      context: ./utilities/ingest-client
+      dockerfile: Dockerfile.prod
+    volumes:
+      - /app/node_modules
+    environment:
+      - PORT=${INGEST_CLIENT_CONTAINER_PORT}
+      - IDENTITY_PROVIDER_URL=${HOST}/${IDP_PREFIX}
+      - API_HOST=${HOST}/${IAAP_PREFIX}
+      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
+      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
+      - INGEST_URL=${HOST}/${INGEST_PREFIX}
+      - SOCKET_URL=${HOST}
+      - PUBLIC_URL=/ingest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
+      - "traefik.http.routers.ingest-secure.rule=PathPrefix(`/${INGEST_PREFIX}`)"
+      - "traefik.http.routers.ingest-secure.entrypoints=websecure"
+      - "traefik.http.routers.ingest-secure.tls=true"
+      - "traefik.http.routers.ingest-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.middlewares.ingest-secure-stripprefix.stripprefix.prefixes=/${INGEST_PREFIX}"
+      - "traefik.http.routers.ingest-secure.middlewares=ingest-secure-stripprefix"
+      - "traefik.http.routers.ingest.rule=PathPrefix(`/${INGEST_PREFIX}`)"
+      - "traefik.http.routers.ingest.entrypoints=web"
+      - "traefik.http.middlewares.ingest-https-only.redirectscheme.scheme=https"
+      - "traefik.http.routers.ingest.middlewares=ingest-https-only"
+    networks:
+      - clarity
+
   results-client:
     container_name: RESULTS_CLIENT
     hostname: ${RESULTS_CLIENT_HOSTNAME}
-    build: ./utilities/results-client
+    build:
+      context: ./utilities/results-client
+      dockerfile: Dockerfile.prod
     volumes:
-      - ./utilities/results-client:/app
       - /app/node_modules
     environment:
       - PORT=${RESULTS_CLIENT_CONTAINER_PORT}
-      - VIRTUAL_HOST=${RESULTS_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${RESULTS_CLIENT_VIRTUAL_PORT}
-      - REACT_APP_IDENTITY_PROVIDER_URL=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_DASHBOARD_URL=${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_INGEST_URL=${INGEST_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_LUIGI_URL=${SCHEDULER_SUBDOMAIN}.${DOMAIN}
+      - IDENTITY_PROVIDER_URL=${HOST}/${IDP_PREFIX}
+      - API_HOST=${HOST}/${IAAP_PREFIX}
+      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
+      - INGEST_URL=${HOST}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
+      - SOLR_URL=${HOST}/${SOLR_PREFIX}
+      - LUIGI_URL=${HOST}/${SCHEDULER_PREFIX}
+      - PUBLIC_URL=/results
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
+      - "traefik.http.routers.results-secure.rule=PathPrefix(`/${RESULTS_PREFIX}`)"
+      - "traefik.http.routers.results-secure.entrypoints=websecure"
+      - "traefik.http.routers.results-secure.tls=true"
+      - "traefik.http.routers.results-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.middlewares.results-secure-stripprefix.stripprefix.prefixes=/${RESULTS_PREFIX}"
+      - "traefik.http.routers.results-secure.middlewares=results-secure-stripprefix"
+      - "traefik.http.routers.results.rule=PathPrefix(`/${RESULTS_PREFIX}`)"
+      - "traefik.http.routers.results.entrypoints=web"
+      - "traefik.http.middlewares.results-https-only.redirectscheme.scheme=https"
+      - "traefik.http.routers.results.middlewares=results-https-only"
     networks:
       - clarity
 
   dashboard-client:
     container_name: DASHBOARD_CLIENT
     hostname: ${DASHBOARD_CLIENT_HOSTNAME}
-    build: ./utilities/dashboard-client/client
+    build:
+      context: ./utilities/dashboard-client/client
+      dockerfile: Dockerfile.prod
     volumes:
-      - ./utilities/dashboard-client/client:/app
       - /app/node_modules
     environment:
       - PORT=${DASHBOARD_CLIENT_CONTAINER_PORT}
-      - VIRTUAL_HOST=${DASHBOARD_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - VIRTUAL_PORT=${DASHBOARD_CLIENT_VIRTUAL_PORT}
-      - REACT_APP_IDENTITY_PROVIDER_URL=${IDENTITY_PROVIDER_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_API_HOST=${IDENTITY_AND_ACCESS_PROXY_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_INGEST_URL=${INGEST_CLIENT_SUBDOMAIN}.${DOMAIN}
-      - REACT_APP_RESULTS_URL=${RESULTS_CLIENT_SUBDOMAIN}.${DOMAIN}
+      - IDENTITY_PROVIDER_URL=${HOST}/${IDP_PREFIX}
+      - API_HOST=${HOST}/${IAAP_PREFIX}
+      - INGEST_URL=${HOST}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
+      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
+      - SOCKET_URL=${HOST}
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
+      - PUBLIC_URL=/dashboard
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=${DASHBOARD_CLIENT_CONTAINER_PORT}"
+      - "traefik.http.routers.dashboard-secure.rule=PathPrefix(`/${DASHBOARD_PREFIX}`)"
+      - "traefik.http.routers.dashboard-secure.entrypoints=websecure"
+      - "traefik.http.routers.dashboard-secure.tls=true"
+      - "traefik.http.routers.dashboard-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.middlewares.dashboard-secure-stripprefix.stripprefix.prefixes=/${DASHBOARD_PREFIX}"
+      - "traefik.http.routers.dashboard-secure.middlewares=dashboard-secure-stripprefix"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/${DASHBOARD_PREFIX}`)"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.middlewares.dashboard-https-only.redirectscheme.scheme=https"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-https-only"
     networks:
       - clarity
 
-  nginx-proxy:
-    container_name: NGINX_PROXY
-    hostname: nginx-proxy
-    build: ./nginx-proxy
+  traefik:
+    image: "traefik:v2.0.0-beta1"
+    container_name: "traefik"
+    command:
+      - "--log.level=INFO"
+      - "--api=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
+      - "--certificatesresolvers.mytlschallenge.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
     volumes:
-      - ./certs/claritynlp.dev.crt:/etc/nginx/certs/claritynlp.dev.crt
-      - ./certs/claritynlp.dev.key:/etc/nginx/certs/claritynlp.dev.key
-      - vhost:/etc/nginx/vhost.d
-      - html:/usr/share/nginx/html
-      - dhparam:/etc/nginx/dhparam
-      - htpasswd:/etc/nginx/htpasswd
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-    environment:
-      - SOLR_USERNAME=${SOLR_USERNAME}
-      - SOLR_PASSWORD=${SOLR_PASSWORD}
-      - SOLR_SUBDOMAIN=${SOLR_SUBDOMAIN}
-      - SCHEDULER_USERNAME=${SCHEDULER_USERNAME}
-      - SCHEDULER_PASSWORD=${SCHEDULER_PASSWORD}
-      - SCHEDULER_SUBDOMAIN=${SCHEDULER_SUBDOMAIN}
-      - DOMAIN=${DOMAIN}
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - clarity
-
-  dnsmasq:
-    container_name: DNSMASQ
-    hostname: dnsmasq
-    image: jpillora/dnsmasq
-    ports:
-      - 53:53/udp
-    volumes:
-      - ./dnsmasq.conf:/etc/dnsmasq.conf
-    logging:
-      options:
-        max-size: "200k"
-    restart: always
-
-  nlpaas:
-    container_name: NLPAAS
-    hostname: ${CLARITYNLPAAS_HOSTNAME}
-    build: ./utilities/nlpaas
-    expose:
-      - ${CLARITYNLPAAS_CONTAINER_PORT}
-    environment:
-      - CUSTOM_S3_URL=${CLARITYNLPAAS_CUSTOM_S3_URL}
-      - CUSTOM_DIR=${CLARITYNLPAAS_CUSTOM_DIR}
-      - NLP_SOLR_URL=${NLP_SOLR_URL}
-      - CLARITY_NLP_URL=${CLARITYNLPAAS_CLARITYNLP_URL}
-      - CLARITY_TOKEN_URL=${CLARITYNLPAAS_TOKEN_URL}
-      - CLARITY_NLP_SECRET=${CLARITYNLPAAS_SECRET}
-    networks:
-      - clarity
-    depends_on:
-      - nlp-api
