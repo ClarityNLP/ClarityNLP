@@ -168,7 +168,7 @@ services:
       - identity-provider:identity-provider
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.appsecure.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.appsecure.rule=Host(`*`) && PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.appsecure.entrypoints=websecure"
       - "traefik.http.routers.appsecure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.appsecure.tls=true"
@@ -419,7 +419,7 @@ services:
     image: "traefik:v2.0.0-rc1"
     container_name: "traefik"
     command:
-      - "--log.level=DEBUG"
+      - "--log.level=INFO"
       - "--api=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
