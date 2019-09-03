@@ -416,10 +416,10 @@ services:
       - clarity
 
   traefik:
-    image: "traefik:v2.0.0-beta1"
+    image: "traefik:v2.0.0-rc"
     container_name: "traefik"
     command:
-      - "--log.level=INFO"
+      - "--log.level=DEBUG"
       - "--api=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
