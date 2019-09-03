@@ -27,3 +27,5 @@ identity-provider/bin
 identity-provider/obj
 identity-provider/identityserver4_log.txt
 certs/claritynlp.*
+certs/localhost*
+certs/rootCA*
