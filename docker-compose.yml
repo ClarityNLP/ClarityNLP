@@ -171,6 +171,7 @@ services:
       - "traefik.http.routers.appsecure.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.appsecure.entrypoints=websecure"
       - "traefik.http.routers.appsecure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.appsecure.tls=true"
       - "traefik.http.routers.app.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.app.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
