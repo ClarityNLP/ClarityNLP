@@ -14,6 +14,7 @@ volumes:
   ingest-files:
   ingest-mongodata:
   luigi-frontend:
+  letsencrypt:
 
 services:
   mssql:
@@ -437,5 +438,6 @@ services:
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - letsencrypt:/letsencrypt
     networks:
       - clarity
