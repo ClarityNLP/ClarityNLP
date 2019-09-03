@@ -168,7 +168,7 @@ services:
       - identity-provider:identity-provider
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.appsecure.rule=Host(`*`) && PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.appsecure.rule=Host(`18.218.68.244`) && PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.appsecure.entrypoints=websecure"
       - "traefik.http.routers.appsecure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.appsecure.tls=true"
