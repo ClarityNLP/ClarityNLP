@@ -350,7 +350,7 @@ services:
       - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
       - INGEST_URL=${INGEST_PREFIX}.${HOST}
       - SOCKET_URL=${IAAP_PREFIX}.${HOST}
-      - PUBLIC_URL=/ingest
+      - PUBLIC_URL=/
     labels:
       - "traefik.enable=true"
       - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
@@ -381,7 +381,7 @@ services:
       - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
       - SOLR_URL=${SOLR_PREFIX}.${HOST}
       - LUIGI_URL=${SCHEDULER_PREFIX}.${HOST}
-      - PUBLIC_URL=/results
+      - PUBLIC_URL=/
     labels:
       - "traefik.enable=true"
       - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
@@ -412,7 +412,7 @@ services:
       - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
       - SOCKET_URL=${IAAP}.${HOST}
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
-      - PUBLIC_URL=/dashboard
+      - PUBLIC_URL=/
     labels:
       - "traefik.enable=true"
       - "traefik.port=${DASHBOARD_CLIENT_CONTAINER_PORT}"
