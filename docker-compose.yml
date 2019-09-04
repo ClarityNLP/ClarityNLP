@@ -324,6 +324,8 @@ services:
     build:
       context: ./utilities/ingest-client
       dockerfile: Dockerfile.prod
+      args:
+        PUBLIC_URL: "/ingest"
     volumes:
       - /app/node_modules
     environment:
@@ -334,7 +336,6 @@ services:
       - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
       - INGEST_URL=${HOST}/${INGEST_PREFIX}
       - SOCKET_URL=${HOST}
-      - PUBLIC_URL=/ingest
     labels:
       - "traefik.enable=true"
       - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
@@ -356,6 +357,8 @@ services:
     build:
       context: ./utilities/results-client
       dockerfile: Dockerfile.prod
+      args:
+        PUBLIC_URL: "/results"
     volumes:
       - /app/node_modules
     environment:
@@ -367,7 +370,6 @@ services:
       - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
       - SOLR_URL=${HOST}/${SOLR_PREFIX}
       - LUIGI_URL=${HOST}/${SCHEDULER_PREFIX}
-      - PUBLIC_URL=/results
     labels:
       - "traefik.enable=true"
       - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
@@ -389,6 +391,8 @@ services:
     build:
       context: ./utilities/dashboard-client/client
       dockerfile: Dockerfile.prod
+      args:
+        PUBLIC_URL: "/dashboard"
     volumes:
       - /app/node_modules
     environment:
@@ -400,7 +404,6 @@ services:
       - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
       - SOCKET_URL=${HOST}
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
-      - PUBLIC_URL=/dashboard
     labels:
       - "traefik.enable=true"
       - "traefik.port=${DASHBOARD_CLIENT_CONTAINER_PORT}"
