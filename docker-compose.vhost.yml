@@ -63,6 +63,7 @@ services:
       - IDP_DB_PASSWORD=${IDP_DB_PASSWORD}
       - IDP_DATABASE=${IDP_DATABASE}
       - IDP_SIGNING_CREDS_PASSPHRASE=${IDP_SIGNING_CREDS_PASSPHRASE}
+      - IS_VHOST=${IS_VHOST}
     depends_on:
       - mssql
     labels:
