@@ -414,7 +414,7 @@ services:
       - INGEST_URL=${INGEST_PREFIX}.${HOST}
       - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
       - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
-      - SOCKET_URL=${IAAP}.${HOST}
+      - SOCKET_URL=${IAAP_PREFIX}.${HOST}
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
     labels:
       - "traefik.enable=true"
