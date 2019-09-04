@@ -9,6 +9,12 @@ start-clarity:
 stop-clarity:
 		docker-compose -f docker-compose.yml down --remove-orphans
 
+start-clarity-vhost:
+		docker-compose -f docker-compose.vhost.yml up --build
+
+stop-clarity-vhost:
+		docker-compose -f docker-compose.vhost.yml down --remove-orphans
+
 start-clarity-dev:
 		docker-compose -f docker-compose.dev.yml up --build
 
