@@ -7,7 +7,6 @@ export CLIENT_CLI_SECRET=secret
 export CLIENT_NLPASS_SECRET=secret
 export IDP_SIGNING_CREDS_PASSPHRASE=mysecurepassphrase
 export IDP_PREFIX=idp
-export IS_VHOST=false
 
 # IDP MSSQL
 export IDP_DB_CONTAINER_PORT=1433

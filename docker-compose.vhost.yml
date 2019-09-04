@@ -34,7 +34,7 @@ services:
   identity-provider:
     container_name: IDENTITY_PROVIDER
     hostname: identity-provider
-    build: ./identity-provider
+    image: claritynlp/identity-provider
     expose:
       - ${IDENTITY_PROVIDER_CONTAINER_PORT}
     volumes:
@@ -63,7 +63,7 @@ services:
       - IDP_DB_PASSWORD=${IDP_DB_PASSWORD}
       - IDP_DATABASE=${IDP_DATABASE}
       - IDP_SIGNING_CREDS_PASSPHRASE=${IDP_SIGNING_CREDS_PASSPHRASE}
-      - IS_VHOST=${IS_VHOST}
+      - IS_VHOST=true
     depends_on:
       - mssql
     labels:
@@ -82,7 +82,7 @@ services:
   identity-and-access-proxy:
     container_name: IDENTITY_AND_ACCESS_PROXY
     hostname: identity-and-access-proxy
-    build: ./identity-and-access-proxy
+    image: claritynlp/identity-and-access-proxy
     expose:
       - ${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
     entrypoint: pm2-runtime
@@ -103,7 +103,7 @@ services:
   nlp-api:
     container_name: NLP_API
     hostname: ${NLP_API_HOSTNAME}
-    build: ./nlp
+    image: claritynlp/nlp-api
     expose:
       - ${NLP_API_CONTAINER_PORT}
     volumes:
@@ -189,7 +189,7 @@ services:
   nlp-solr:
     container_name: NLP_SOLR
     hostname: ${NLP_SOLR_HOSTNAME}
-    build: ./utilities/nlp-solr
+    image: claritynlp/nlp-solr
     expose:
       - ${NLP_SOLR_CONTAINER_PORT}
     volumes:
@@ -212,9 +212,7 @@ services:
   nlp-mongo:
     container_name: NLP_MONGO
     hostname: ${NLP_MONGO_HOSTNAME}
-    build:
-      context: ./utilities/nlp-mongo
-      dockerfile: Dockerfile.prod
+    image: claritynlp/nlp-mongo
     expose:
       - ${NLP_MONGO_CONTAINER_PORT}
     volumes:
@@ -231,7 +229,7 @@ services:
   nlp-postgres:
     container_name: NLP_POSTGRES
     hostname: ${NLP_PG_HOSTNAME}
-    build: ./utilities/nlp-postgres
+    image: claritynlp/nlp-postgres
     command: postgres -c 'shared_buffers=512MB' -c 'max_connections=500'
     environment:
       POSTGRES_USER: ${NLP_PG_USER}
@@ -248,7 +246,7 @@ services:
   ingest-api:
     container_name: INGEST_API
     hostname: ${INGEST_API_HOSTNAME}
-    build: ./utilities/ingest-api
+    image: claritynlp/ingest-api
     volumes:
       - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
       - ingest-files:/var/lib/ingest-files
@@ -294,22 +292,11 @@ services:
       - redis
       - nlp-solr
       - nlp-api
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.socket-secure.rule=Host(`${HOST}`) && PathPrefix(`/socket.io`,`/__getcookie`)"
-    #   - "traefik.http.routers.socket-secure.entrypoints=websecure"
-    #   - "traefik.http.routers.socket-secure.tls.certresolver=mytlschallenge"
-    #   - "traefik.http.routers.socket.rule=Host(`${HOST}`) && PathPrefix(`/socket.io`,`/__getcookie`)"
-    #   - "traefik.http.routers.socket.entrypoints=web"
-    #   - "traefik.http.middlewares.socket-https-only.redirectscheme.scheme=https"
-    #   - "traefik.http.routers.socket.middlewares=socket-https-only"
 
   ingest-mongo:
     container_name: ${INGEST_MONGO_CONTAINER_NAME}
     hostname: ${INGEST_MONGO_HOSTNAME}
-    build:
-      context: ./utilities/ingest-mongo
-      dockerfile: Dockerfile.prod
+    image: claritynlp/ingest-mongo
     environment:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
@@ -337,11 +324,7 @@ services:
   ingest-client:
     container_name: INGEST_CLIENT
     hostname: ${INGEST_CLIENT_HOSTNAME}
-    build:
-      context: ./utilities/ingest-client
-      dockerfile: Dockerfile.prod
-      args:
-        PUBLIC_URL: "/"
+    image: claritynlp/ingest-client:latest-vhost
     volumes:
       - /app/node_modules
     environment:
@@ -368,11 +351,7 @@ services:
   results-client:
     container_name: RESULTS_CLIENT
     hostname: ${RESULTS_CLIENT_HOSTNAME}
-    build:
-      context: ./utilities/results-client
-      dockerfile: Dockerfile.prod
-      args:
-        PUBLIC_URL: "/"
+    image: claritynlp/results-client:latest-vhost
     volumes:
       - /app/node_modules
     environment:
@@ -400,11 +379,7 @@ services:
   dashboard-client:
     container_name: DASHBOARD_CLIENT
     hostname: ${DASHBOARD_CLIENT_HOSTNAME}
-    build:
-      context: ./utilities/dashboard-client/client
-      dockerfile: Dockerfile.prod
-      args:
-        PUBLIC_URL: "/"
+    image: claritynlp/dashboard-client:latest-vhost
     volumes:
       - /app/node_modules
     environment:
