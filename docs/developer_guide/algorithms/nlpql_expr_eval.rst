@@ -43,8 +43,8 @@ follows:
 
 Thus ClarityNLP evaluates expressions **after** all tasks have finished running
 and have written their individual results to MongoDB. The expression evaluator
-consumes the task results and uses it to generate new results from the
-expression statements.
+consumes the task results inside MongoDB and uses them to generate new results
+from the expression statements.
 
 We now turn our attention to a description of how the expression evaluator
 works.
@@ -116,11 +116,13 @@ variable indicates that the expression is either a mathematical expression
 or possibly invalid.
 
 Simple logic expressions produce a result from data contained in one or more
-task result documents. The result from the expression evaluation is written to
-one or more new MongoDB result documents (the details will be explained below).
+task result documents. In other words, logic expressions operate on **sets**
+of result documents. The result from the logical expression evaluation
+is written to one or more new MongoDB result documents (the details will be
+explained below).
 
 The ``NOT`` operator requires additional commentary. ClarityNLP supports the
-use of ``NOT`` as a synonym for ``SETDIFF``. In other words, ``A NOT B`` means
+use of ``NOT`` as a synonym for "set difference". Thus ``A NOT B`` means
 all elements of set ``A`` that are NOT also elements of set ``B``. The use of
 ``NOT`` to mean "set complement" is not supported. Hence expressions such as
 ``NOT A``, ``NOT hasRigors``, etc., are invalid NLPQL statements. The ``NOT``
@@ -848,3 +850,40 @@ six ``hasTachycardia`` entries.  No data for this patient has been lost,
 and the result is 11 documents in a flattened format satisfying the
 logic of the original expression.
 
+Testing the Expression Evaluator
+================================
+
+There is a comprehensive test program for the expression evaluator in the file
+``nlp/data/access/expr_tester.py``.  The test program requires a running
+instance of MongoDB. We strongly recommend running Mongo on the same machine
+as the test program to minimize data transfer delays.
+
+The test program loads a data file into MongoDB and evaluates a suite of
+expressions using the data. The expression logic is separately evaluated with
+Python set operations. The results from the two evaluations are compared and
+the tests pass only if both evaluations produce identical sets of patients.
+
+The test program can be run from the command line. For usage info, run with
+the ``--help`` option:
+::
+   python3 ./expr_tester.py --help
+
+The test program assumes that the user has permission create a database without
+authentication.
+
+To run the test suite with the default options, first launch MongoDB on your
+local system. Information about how to do that can be found in our
+:ref:`native setup guide<nativesetup>`.
+
+After MongoDB initializes, run the test program with this command, assuming the
+default Mongo port of 27017:
+::
+   python3 ./expr_tester.py
+
+If your MongoDB instance is hosted elsewhere or uses a non-default port
+number, provide the connection parameters explicitly:
+::
+   python3 ./expr_tester.py --mongohost <ip_address> --mongoport <port_number>
+
+The test program takes several minutes to run. Upon completion it should
+report that all tests passed.
