@@ -57,9 +57,9 @@ pipeline{
                 ingestClientImage.push("latest")
                 viewerClientImage.push("latest")
                 dashboardClientImage.push("latest")
-                ingestClientImageVhost.push("latest")
-                viewerClientImageVhost.push("latest")
-                dashboardClientImageVhost.push("latest")
+                ingestClientImageVhost.push("latest-vhost")
+                viewerClientImageVhost.push("latest-vhost")
+                dashboardClientImageVhost.push("latest-vhost")
               }
             }
           }
