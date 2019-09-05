@@ -346,7 +346,7 @@ services:
   results-client:
     container_name: RESULTS_CLIENT
     hostname: ${RESULTS_CLIENT_HOSTNAME}
-    image: claritynlp/results-client
+    image: claritynlp/viewer-client
     volumes:
       - /app/node_modules
     environment:
