@@ -25,7 +25,7 @@ pipeline{
         stage('Building images') {
           steps{
             script {
-              idpImage = docker.build("claritynlp/idp:1.0", "./identity-provider")
+              idpImage = docker.build("claritynlp/identity-provider:1.0", "./identity-provider")
               identityAndAccessProxyImage = docker.build("claritynlp/identity-and-access-proxy:1.0", "./identity-and-access-proxy")
               nlpApiImage = docker.build("claritynlp/nlp-api:1.0", "./nlp")
               nlpSolrImage = docker.build("claritynlp/nlp-solr:1.0", "./utilities/nlp-solr")
