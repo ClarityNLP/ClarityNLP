@@ -127,7 +127,7 @@ DoseQuantityObj = namedtuple('DoseQuantityObj', DOSE_QUANTITY_FIELDS)
 MEDICATION_STATEMENT_FIELDS = [
     'id_value',
     'context_reference',
-    'medication_codeable_concept',
+    'coding_systems_list',
     'subject_reference',
     'subject_display',
     'taken',         # Boolean
@@ -140,7 +140,7 @@ MedicationStatementResource = namedtuple('MedicationStatementResource',
 
 MEDICATION_REQUEST_FIELDS = [
     'id_value',
-    'medication_codeable_concept',
+    'coding_systems_list',
     'subject_reference',
     'subject_display',
     'date_time'
@@ -367,7 +367,7 @@ def _decode_medication_statement(obj):
     med_stmt = MedicationStatementResource(
         id_value = id_value,
         context_reference = context_reference,
-        medication_codeable_concept = code_systems_list,
+        coding_systems_list = code_systems_list,
         subject_reference = subject_reference,
         subject_display = subject_display,
         taken = taken,
@@ -402,7 +402,7 @@ def _decode_medication_request(obj):
 
     med_req = MedicationRequestResource (
         id_value = id_value,
-        medication_codeable_concept = code_systems_list,
+        coding_systems_list = code_systems_list,
         subject_reference = subject_reference,
         subject_display = subject_display,
         date_time = date_time
