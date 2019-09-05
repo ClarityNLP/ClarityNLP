@@ -20,6 +20,7 @@ _TRACE = False
 
 # dict keys used to extract portions of the JSON data
 _KEY_ABATEMENT_DATE_TIME  = 'abatementDateTime'
+_KEY_AUTHORED_ON          = 'authoredOn'
 _KEY_CATEGORY             = 'category'
 _KEY_CODE                 = 'code'
 _KEY_CODING               = 'coding'
@@ -61,6 +62,8 @@ _STR_OBSERVATION          = 'Observation'
 _STR_PATIENT              = 'Patient'
 _STR_PROCEDURE            = 'Procedure'
 _STR_MEDICATION_STATEMENT = 'MedicationStatement'
+_STR_MEDICATION_ORDER     = 'MedicationOrder'
+_STR_MEDICATION_REQUEST   = 'MedicationRequest'
 
 # fields extracted from a 'Patient' FHIR resource
 PATIENT_FIELDS = [
@@ -134,6 +137,17 @@ MEDICATION_STATEMENT_FIELDS = [
 ]
 MedicationStatementResource = namedtuple('MedicationStatementResource',
                                          MEDICATION_STATEMENT_FIELDS)
+
+MEDICATION_REQUEST_FIELDS = [
+    'id_value',
+    'medication_codeable_concept',
+    'subject_reference',
+    'subject_display',
+    'date_time'
+]
+
+MedicationRequestResource = namedtuple('MedicationRequestResource',
+                                       MEDICATION_REQUEST_FIELDS)
 
 # regex used to recognize UTC offsets in a FHIR datetime string
 _regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
@@ -364,6 +378,38 @@ def _decode_medication_statement(obj):
 
     return med_stmt
 
+
+###############################################################################
+def _decode_medication_request(obj):
+    """
+    Decode A CQL Engine 'MedicationRequest' or 'MedicationOrder' JSON object.
+    """
+
+    if _TRACE: print('Decoding MedicationRequest/Order resource...')
+
+    obj_type = type(obj)
+    assert dict == obj_type
+
+    id_value = _decode_id_value(obj)
+    subject_reference, subject_display = _decode_subject_info(obj)
+    code_systems_list = _decode_code_dict(obj)
+
+    date_time = None
+    if _KEY_AUTHORED_ON in obj:
+        date_time = obj[_KEY_AUTHORED_ON]
+        date_time = _fixup_fhir_datetime(date_time)
+        date_time = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z')
+
+    med_req = MedicationRequestResource (
+        id_value = id_value,
+        medication_codeable_concept = code_systems_list,
+        subject_reference = subject_reference,
+        subject_display = subject_display,
+        date_time = date_time
+    )
+
+    return med_req
+    
 
 ###############################################################################
 def _decode_observation(obj):
@@ -634,6 +680,11 @@ def _decode_bundle(name, bundle_obj):
             elif _STR_MEDICATION_STATEMENT == resource_type_str:
                 med_statement = _decode_medication_statement(elt)
                 bundled_objs.append(med_statement)
+            elif _STR_MEDICATION_REQUEST == resource_type_str or \
+                 _STR_MEDICATION_ORDER   == resource_type_str:
+                # identical processing for both
+                med_request = _decode_medication_request(elt)
+                bundled_objs.append(med_request)
     
     return bundled_objs
 
