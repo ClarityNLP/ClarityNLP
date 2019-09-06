@@ -146,16 +146,16 @@ namespace IdentityServer
                     RequireClientSecret = false,
                     RedirectUris =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}/silent_renew.html",
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}/callback.html"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_URL"]}/silent_renew.html",
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_URL"]}/callback.html"
                     },
                     PostLogoutRedirectUris =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}/csv"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_URL"]}/csv"
                     },
                     AllowedCorsOrigins =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_URL"]}"
                     },
                     AllowedScopes =
                     {
@@ -175,16 +175,16 @@ namespace IdentityServer
                     RequireClientSecret = false,
                     RedirectUris =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}/silent_renew.html",
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}/callback.html"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_URL"]}/silent_renew.html",
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_URL"]}/callback.html"
                     },
                     PostLogoutRedirectUris =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_URL"]}"
                     },
                     AllowedCorsOrigins =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_URL"]}"
                     },
                     AllowedScopes =
                     {
@@ -203,16 +203,16 @@ namespace IdentityServer
                     RequireClientSecret = false,
                     RedirectUris =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}/silent_renew.html",
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}/callback.html"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_URL"]}/silent_renew.html",
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_URL"]}/callback.html"
                     },
                     PostLogoutRedirectUris =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_URL"]}"
                     },
                     AllowedCorsOrigins =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_SUBDOMAIN"]}.{Startup.StaticConfig["DOMAIN"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_URL"]}"
                     },
                     AllowedScopes =
                     {

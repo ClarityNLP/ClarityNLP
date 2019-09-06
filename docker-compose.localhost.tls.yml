@@ -14,7 +14,6 @@ volumes:
   ingest-files:
   ingest-mongodata:
   luigi-frontend:
-  letsencrypt:
 
 services:
   mssql:
@@ -169,11 +168,10 @@ services:
       - identity-provider:identity-provider
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.appsecure.rule=Host(`${HOST}`) && PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.appsecure.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.appsecure.entrypoints=websecure"
-      - "traefik.http.routers.appsecure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.appsecure.tls=true"
-      - "traefik.http.routers.app.rule=Host(`${HOST}`) && PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.app.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.app.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
       - "traefik.http.routers.app.middlewares=https-only"
@@ -278,10 +276,10 @@ services:
       - nlp-api
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.socket-secure.rule=Host(`${HOST}`) && PathPrefix(`/socket.io`,`/__getcookie`)"
+      - "traefik.http.routers.socket-secure.rule=PathPrefix(`/socket.io`,`/__getcookie`)"
       - "traefik.http.routers.socket-secure.entrypoints=websecure"
-      - "traefik.http.routers.socket-secure.tls.certresolver=mytlschallenge"
-      - "traefik.http.routers.socket.rule=Host(`${HOST}`) && PathPrefix(`/socket.io`,`/__getcookie`)"
+      - "traefik.http.routers.socket-secure.tls=true"
+      - "traefik.http.routers.socket.rule=PathPrefix(`/socket.io`,`/__getcookie`)"
       - "traefik.http.routers.socket.entrypoints=web"
       - "traefik.http.middlewares.socket-https-only.redirectscheme.scheme=https"
       - "traefik.http.routers.socket.middlewares=socket-https-only"
@@ -331,12 +329,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
-      - "traefik.http.routers.ingest-secure.rule=Host(`${HOST}`) && PathPrefix(`/${INGEST_PREFIX}`)"
+      - "traefik.http.routers.ingest-secure.rule=PathPrefix(`/${INGEST_PREFIX}`)"
       - "traefik.http.routers.ingest-secure.entrypoints=websecure"
-      - "traefik.http.routers.ingest-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.ingest-secure.tls=true"
       - "traefik.http.middlewares.ingest-secure-stripprefix.stripprefix.prefixes=/${INGEST_PREFIX}"
       - "traefik.http.routers.ingest-secure.middlewares=ingest-secure-stripprefix"
-      - "traefik.http.routers.ingest.rule=Host(`${HOST}`) && PathPrefix(`/${INGEST_PREFIX}`)"
+      - "traefik.http.routers.ingest.rule=PathPrefix(`/${INGEST_PREFIX}`)"
       - "traefik.http.routers.ingest.entrypoints=web"
       - "traefik.http.middlewares.ingest-https-only.redirectscheme.scheme=https"
       - "traefik.http.routers.ingest.middlewares=ingest-https-only"
@@ -361,12 +359,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
-      - "traefik.http.routers.results-secure.rule=Host(`${HOST}`) && PathPrefix(`/${RESULTS_PREFIX}`)"
+      - "traefik.http.routers.results-secure.rule=PathPrefix(`/${RESULTS_PREFIX}`)"
       - "traefik.http.routers.results-secure.entrypoints=websecure"
-      - "traefik.http.routers.results-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.results-secure.tls=true"
       - "traefik.http.middlewares.results-secure-stripprefix.stripprefix.prefixes=/${RESULTS_PREFIX}"
       - "traefik.http.routers.results-secure.middlewares=results-secure-stripprefix"
-      - "traefik.http.routers.results.rule=Host(`${HOST}`) && PathPrefix(`/${RESULTS_PREFIX}`)"
+      - "traefik.http.routers.results.rule=PathPrefix(`/${RESULTS_PREFIX}`)"
       - "traefik.http.routers.results.entrypoints=web"
       - "traefik.http.middlewares.results-https-only.redirectscheme.scheme=https"
       - "traefik.http.routers.results.middlewares=results-https-only"
@@ -391,12 +389,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.port=${DASHBOARD_CLIENT_CONTAINER_PORT}"
-      - "traefik.http.routers.dashboard-secure.rule=Host(`${HOST}`) && PathPrefix(`/${DASHBOARD_PREFIX}`)"
+      - "traefik.http.routers.dashboard-secure.rule=PathPrefix(`/${DASHBOARD_PREFIX}`)"
       - "traefik.http.routers.dashboard-secure.entrypoints=websecure"
-      - "traefik.http.routers.dashboard-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.dashboard-secure.tls=true"
       - "traefik.http.middlewares.dashboard-secure-stripprefix.stripprefix.prefixes=/${DASHBOARD_PREFIX}"
       - "traefik.http.routers.dashboard-secure.middlewares=dashboard-secure-stripprefix"
-      - "traefik.http.routers.dashboard.rule=Host(`${HOST}`) && PathPrefix(`/${DASHBOARD_PREFIX}`)"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/${DASHBOARD_PREFIX}`)"
       - "traefik.http.routers.dashboard.entrypoints=web"
       - "traefik.http.middlewares.dashboard-https-only.redirectscheme.scheme=https"
       - "traefik.http.routers.dashboard.middlewares=dashboard-https-only"
@@ -404,24 +402,19 @@ services:
       - clarity
 
   traefik:
-    image: "traefik:v2.0.0-rc1"
+    image: "traefik:v2.0.0-beta1"
     container_name: "traefik"
-    command:
-      - "--log.level=INFO"
-      - "--api=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
-      - "--certificatesresolvers.mytlschallenge.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - letsencrypt:/letsencrypt
+      - ./certs/localhost.crt:/sslcerts/localhost.crt
+      - ./certs/localhost.key:/sslcerts/localhost.key
+      - ./certs/rootCA-key.pem:/sslcerts/rootCA-key.pem
+      - ./certs/rootCA.pem:/sslcerts/rootCA.pem
+      - ./traefik.toml:/etc/traefik/traefik.toml
+      - ./dynamic_conf.toml:/etc/traefik/dynamic_conf.toml
     networks:
       - clarity

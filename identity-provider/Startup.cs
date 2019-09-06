@@ -48,7 +48,7 @@ namespace IdentityServer
 
             var builder = services.AddIdentityServer(options =>
                 {
-                    options.PublicOrigin = $"{_config["PROTOCOL"]}://{_config["SUBDOMAIN"]}.{_config["DOMAIN"]}";
+                    options.PublicOrigin = $"{_config["PROTOCOL"]}://{_config["IDP_URL"]}";
                 })
                 .AddTestUsers(Config.GetUsers());
             if (Environment.IsDevelopment())
