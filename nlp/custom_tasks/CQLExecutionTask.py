@@ -86,27 +86,41 @@ def _sort_by_datetime_desc(result_list):
     to least recent.
     """
 
-    patient_list = []
-    other_list   = []
+    patient_list     = []
+    datetime_list    = []
+    no_datetime_list = []
     for i, obj in enumerate(result_list):
         if isinstance(obj, crp.PatientResource):
             # patient has no date_time
-            patient_list.append( (obj, i) )
+            patient_list.append(i)
         else:
             dt = getattr(obj, 'date_time', None)
-            assert dt is not None
-            other_list.append( (dt, i) )
+            if dt is not None:
+                datetime_list.append( (dt, i) )
+            else:
+                no_datetime_list.append(i)
 
-    other_list = sorted(other_list, key=lambda x: x[0], reverse=True)
-    if len(other_list) >= 1:
-        earliest = other_list[-1][0]
-        latest   = other_list[0][0]
+    datetime_list = sorted(datetime_list, key=lambda x: x[0], reverse=True)
 
-    # build sorted result list with patient resources first
+    earliest = None
+    latest   = None
+    if len(datetime_list) > 0:
+        earliest = datetime_list[-1][0]
+        latest   = datetime_list[0][0]
+
+    # build new time-sorted result list
     new_results = []
-    for obj, index in patient_list:
+
+    # patients go first
+    for index in patient_list:
         new_results.append(result_list[index])
-    for obj, index in other_list:
+
+    # then any results lacking timestamps
+    for index in no_datetime_list:
+        new_results.append(result_list[index])
+
+    # then sorted timestamped results
+    for obj, index in datetime_list:
         new_results.append(result_list[index])
 
     assert len(new_results) == len(result_list)
@@ -180,6 +194,24 @@ def _extract_coding_systems_list(obj, mongo_obj, prefix):
 
 
 ###############################################################################
+def _extract_subject_reference(obj, mongo_obj, prefix):
+    """
+    Extract and convert the subject reference data.
+    """
+
+    subject_ref = getattr(obj, 'subject_reference', None)
+
+    # The subject_ref has the form Patient/9940, where the number after the
+    # fwd slash is the patient ID. Extract this ID and store in the 'subject'
+    # field.
+    if subject_ref is not None:
+        assert '/' in subject_ref
+        text, num = subject_ref.split('/')
+        mongo_obj['subject'] = num
+    mongo_obj['{0}_subject_ref'.format(prefix)] = subject_ref
+    
+        
+###############################################################################
 def _extract_patient_resource(obj, mongo_obj):
     """
     Extract data from the FHIR patient resource and load into mongo dict.
@@ -236,8 +268,7 @@ def _extract_procedure_resource(obj, mongo_obj):
 
     _extract_coding_systems_list(obj, mongo_obj, 'procedure')
 
-    subject_ref = getattr(obj, 'subject_reference', None)
-    mongo_obj['procedure_subject_ref'] = subject_ref
+    _extract_subject_reference(obj, mongo_obj, 'procedure')
 
     subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['procedure_subject_display'] = subject_display
@@ -289,8 +320,7 @@ def _extract_condition_resource(obj, mongo_obj):
 
     _extract_coding_systems_list(obj, mongo_obj, 'condition')
         
-    subject_ref = getattr(obj, 'subject_reference', None)
-    mongo_obj['condition_subject_ref'] = subject_ref
+    _extract_subject_reference(obj, mongo_obj, 'condition')
 
     subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['condition_subject_display'] = subject_display
@@ -334,17 +364,8 @@ def _extract_observation_resource(obj, mongo_obj):
         # no data returned
         return
 
-    subject_ref = getattr(obj, 'subject_reference', None)
-
-    # The subject_ref has the form Patient/9940, where the number after the
-    # fwd slash is the patient ID. Extract this ID and store in the 'subject'
-    # field.
-    if subject_ref is not None:
-        assert '/' in subject_ref
-        text, num = subject_ref.split('/')
-        mongo_obj['subject'] = num
-    mongo_obj['obs_subject_ref'] = subject_ref
-
+    _extract_subject_reference(obj, mongo_obj, 'obs')
+    
     subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['obs_subject_display'] = subject_display
 
@@ -406,18 +427,9 @@ def _extract_medication_statement_resource(obj, mongo_obj):
     mongo_obj['med_stmt_context_ref'] = context_ref
     
     _extract_coding_systems_list(obj, mongo_obj, 'med_stmt')
+
+    _extract_subject_reference(obj, mongo_obj, 'med_stmt')
     
-    subject_ref = getattr(obj, 'subject_reference', None)
-
-    # The subject_ref has the form Patient/9940, where the number after the
-    # fwd slash is the patient ID. Extract this ID and store in the 'subject'
-    # field.
-    if subject_ref is not None:
-        assert '/' in subject_ref
-        text, num = subject_ref.split('/')
-        mongo_obj['subject'] = num
-    mongo_obj['med_stmt_subject_ref'] = subject_ref
-
     subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['med_stmt_subject_display'] = subject_display
 
@@ -471,7 +483,7 @@ def _extract_medication_statement_resource(obj, mongo_obj):
 ###############################################################################
 def _extract_medication_request_resource(obj, mongo_obj):
     """
-    Extract data from the FHIR MedicationRequest resource and load into
+    Extract data from the MedicationRequest resource and load into
     mongo dict.
     """
 
@@ -485,18 +497,9 @@ def _extract_medication_request_resource(obj, mongo_obj):
     mongo_obj['med_req_id_value'] = id_value
     
     _extract_coding_systems_list(obj, mongo_obj, 'med_req')
+
+    _extract_subject_reference(obj, mongo_obj, 'med_req')
     
-    subject_ref = getattr(obj, 'subject_reference', None)
-
-    # The subject_ref has the form Patient/9940, where the number after the
-    # fwd slash is the patient ID. Extract this ID and store in the 'subject'
-    # field.
-    if subject_ref is not None:
-        assert '/' in subject_ref
-        text, num = subject_ref.split('/')
-        mongo_obj['subject'] = num
-    mongo_obj['med_req_subject_ref'] = subject_ref
-
     subject_display = getattr(obj, 'subject_display', None)
     mongo_obj['med_req_subject_display'] = subject_display
 
@@ -517,6 +520,29 @@ def _extract_medication_request_resource(obj, mongo_obj):
         'highlights':[value_name, value, units]
     }
     mongo_obj['result_display'] = result_display_obj
+    
+
+###############################################################################
+def _extract_medication_administration_resource(obj, mongo_obj):
+    """
+    Extract data from the FHIR MedicationAdministration resource and load into
+    mongo dict.
+    """
+
+    assert isinstance(obj, crp.MedicationAdministrationResource)
+
+    if _KEY_ERROR in obj:
+        # no data returned
+        return
+
+    id_value = getattr(obj, 'id_value', None)
+    mongo_obj['med_admin_id_value'] = id_value
+
+    _extract_coding_systems_list(obj, mongo_obj, 'med_admin')
+
+    _extract_subject_reference(obj, mongo_obj, 'med_admin')
+
+    # others TBD
     
     
 ###############################################################################
@@ -868,6 +894,9 @@ if __name__ == '__main__':
                 elif isinstance(obj, crp.MedicationRequestResource):
                     print('\tFOUND MEDICATION REQUEST RESOURCE')
                     _extract_medication_request_resource(obj, mongo_obj)
+                elif isinstance(obj, crp.MedicationAdministrationResource):
+                    print('\tFOUND MEDICATION ADMINISTRATION RESOURCE')
+                    _extract_medication_administration_resource(obj, mongo_obj)
                 else:
                     print('\tFOUND UNKNOWN RESOURCE')
                     continue

@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from collections import namedtuple
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME   = 'cibmtr_data_parser.py'
 
 # set to True to enable debug output
@@ -54,16 +54,16 @@ _KEY_UNIT                 = 'unit'
 _KEY_VALUE                = 'value'
 _KEY_VALUE_QUANTITY       = 'valueQuantity'
 
-#_STR_CONCEPT             = 'Concept'
-_STR_BUNDLE2              = 'FhirBundleCursorStu2'
-_STR_BUNDLE3              = 'FhirBundleCursorStu3'
-_STR_CONDITION            = 'Condition'
-_STR_OBSERVATION          = 'Observation'
-_STR_PATIENT              = 'Patient'
-_STR_PROCEDURE            = 'Procedure'
-_STR_MEDICATION_STATEMENT = 'MedicationStatement'
-_STR_MEDICATION_ORDER     = 'MedicationOrder'
-_STR_MEDICATION_REQUEST   = 'MedicationRequest'
+_STR_BUNDLE2                   = 'FhirBundleCursorStu2'
+_STR_BUNDLE3                   = 'FhirBundleCursorStu3'
+_STR_CONDITION                 = 'Condition'
+_STR_OBSERVATION               = 'Observation'
+_STR_PATIENT                   = 'Patient'
+_STR_PROCEDURE                 = 'Procedure'
+_STR_MEDICATION_ADMINISTRATION = 'MedicationAdministration'
+_STR_MEDICATION_STATEMENT      = 'MedicationStatement'
+_STR_MEDICATION_ORDER          = 'MedicationOrder'
+_STR_MEDICATION_REQUEST        = 'MedicationRequest'
 
 # fields extracted from a 'Patient' FHIR resource
 PATIENT_FIELDS = [
@@ -148,6 +148,19 @@ MEDICATION_REQUEST_FIELDS = [
 
 MedicationRequestResource = namedtuple('MedicationRequestResource',
                                        MEDICATION_REQUEST_FIELDS)
+
+# temporary - need confirmation on fields returned by CQL Engine
+MEDICATION_ADMINISTRATION_FIELDS = [
+    'id_value',
+    'coding_systems_list',
+    'subject_reference',
+    'subject_display',
+    'dosage_list'
+    'date_time'
+]
+
+MedicationAdministrationResource = namedtuple('MedicationAdministrationResource',
+                                              MEDICATION_ADMINISTRATION_FIELDS)
 
 # regex used to recognize UTC offsets in a FHIR datetime string
 _regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
@@ -293,11 +306,13 @@ def _decode_effective_period(obj):
     if _KEY_START in obj:
         start_date_time = obj[_KEY_START]
         start_date_time = _fixup_fhir_datetime(start_date_time)
-        start_date_time = datetime.strptime(start_date_time, '%Y-%m-%dT%H:%M:%S%z')
+        start_date_time = datetime.strptime(start_date_time,
+                                            '%Y-%m-%dT%H:%M:%S%z')
     if _KEY_END in obj:
         end_date_time = obj[_KEY_END]
         end_date_time = _fixup_fhir_datetime(end_date_time)
-        end_date_time = datetime.strptime(end_date_time, '%Y-%m-%dT%H:%M:%S%z')
+        end_date_time = datetime.strptime(end_date_time,
+                                          '%Y-%m-%dT%H:%M:%S%z')
         
     return (start_date_time, end_date_time)
 
@@ -337,7 +352,7 @@ def _decode_dosage(obj):
 ###############################################################################
 def _decode_medication_statement(obj):
     """
-    Decode a CQL Engine 'MedicationStatement' JSON object.    
+    Decode a CQL Engine 'MedicationStatement' result.
     """
 
     if _TRACE: print('Decoding MedicationStatement resource...')
@@ -382,7 +397,7 @@ def _decode_medication_statement(obj):
 ###############################################################################
 def _decode_medication_request(obj):
     """
-    Decode A CQL Engine 'MedicationRequest' or 'MedicationOrder' JSON object.
+    Decode A CQL Engine 'MedicationRequest' or 'MedicationOrder' result.
     """
 
     if _TRACE: print('Decoding MedicationRequest/Order resource...')
@@ -412,9 +427,41 @@ def _decode_medication_request(obj):
     
 
 ###############################################################################
+def _decode_medication_administration(obj):
+    """
+    Decode a CQL Engine 'MedicationAdministration' result.
+    """
+
+    if _TRACE: print('Decoding MedicationAdministration resource...')
+
+    obj_type = type(obj)
+    assert dict == obj_type
+
+    id_value = _decode_id_value(obj)
+    subject_reference, subject_display = _decode_subject_info(obj)
+    code_systems_list = _decode_code_dict(obj)
+
+    dosage_list = _decode_dosage(obj)
+
+    date_time = None
+    # need date_time key name
+
+    med_admin = MedicationAdministrationResource(
+        id_value = id_value,
+        coding_systems_list = code_systems_list,
+        subject_reference = subject_reference,
+        subject_display = subject_display,
+        dosage_list = dosage_list,
+        date_time = date_time
+    )
+
+    return med_admin
+
+
+###############################################################################
 def _decode_observation(obj):
     """
-    Decode a FHIR observation result from the 'obj' dict.
+    Decode a CQL Engine 'Observation' result.
     """
 
     # First decipher the coding info, which includes the code system, the
@@ -462,7 +509,7 @@ def _decode_observation(obj):
 ###############################################################################
 def _decode_condition(obj):
     """
-    Decode a FHIR 'Condition' object from the JSON data.
+    Decode a CQL Engine 'Condition' result.
     """
 
     if _TRACE: print('Decoding CONDITION resource...')
@@ -528,7 +575,7 @@ def _decode_condition(obj):
 ###############################################################################
 def _decode_procedure(obj):
     """
-    Decode a FHIR 'Procedure' object from the JSON data.
+    Decode a CQL Engine 'Procedure' result.
     """
 
     if _TRACE: print('Decoding PROCEDURE resource...')
@@ -569,7 +616,7 @@ def _decode_procedure(obj):
 ###############################################################################
 def _decode_patient(name, patient_obj):
     """
-    Decode a FHIR 'Patient' object from the JSON data.
+    Decode a CQL Engine 'Patient' result.
     """
 
     if _TRACE: print('Decoding PATIENT resource...')
@@ -640,7 +687,7 @@ def _decode_patient(name, patient_obj):
 ###############################################################################
 def _decode_bundle(name, bundle_obj):
     """
-    Decode a FHIR bundle object from the JSON data.
+    Decode a CQL Engine bundle object.
     """
 
     if _TRACE: print('Decoding BUNDLE resource...')
@@ -685,6 +732,9 @@ def _decode_bundle(name, bundle_obj):
                 # identical processing for both
                 med_request = _decode_medication_request(elt)
                 bundled_objs.append(med_request)
+            elif _STR_MEDICATION_ADMINISTRATION == resource_type_str:
+                med_admin = _decode_medication_administration(elt)
+                bundled_objs.append(med_admin)
     
     return bundled_objs
 
@@ -692,8 +742,7 @@ def _decode_bundle(name, bundle_obj):
 ###############################################################################
 def decode_top_level_obj(obj):
     """
-    Decode the outermost object type returned by the FHIR server via the
-    CQL wrapper.
+    Decode the outermost object type returned by the CQL Engine.
     """
 
     result_obj = None
