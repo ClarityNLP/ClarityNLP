@@ -797,12 +797,12 @@ class CQLExecutionTask(BaseTask):
 
             # remove results outside of the desired time window
             results = _apply_datetime_filter(results, datetime_start, datetime_end)
-                        
+
             patient_obj = {}
             for obj in results:
 
                 mongo_obj = {}
-                
+
                 # get patient info once
                 # all others duplicate the patient info in new records
                 # move the mongo write to after each observation
@@ -827,6 +827,9 @@ class CQLExecutionTask(BaseTask):
                 elif isinstance(obj, crp.MedicationRequestResource):
                     print('\tFOUND MEDICATION REQUEST RESOURCE')
                     _extract_medication_request_resource(obj, mongo_obj)
+                elif isinstance(obj, crp.MedicationAdministrationResource):
+                    print('\tFOUND MEDICATION ADMINISTRATION RESOURCE')
+                    _extract_medication_administration_resource(obj, mongo_obj)
                 else:
                     print('\tFOUND UNKNOWN RESOURCE')
                     continue
