@@ -87,106 +87,31 @@ def _sort_by_datetime_desc(result_list):
     """
 
     patient_list = []
-    procedure_list = []
-    condition_list = []
-    observation_list = []
-    medication_request_list = []
-    medication_statement_list = []
-
-    # build list of (datetime_obj, index) from each type of namedtuple
-    for i in range(len(result_list)):
-        obj = result_list[i]
-        if obj is None:
-            print('\n\n******* CQLExecutionTask: OBJ IS NONE ******\n\n')
-        
-        if isinstance(obj, crp.ObservationResource):
-            dt = getattr(obj, 'date_time', None)
-            assert dt is not None
-            observation_list.append( (dt, i) )
-        elif isinstance(obj, crp.ConditionResource):
-            dt = getattr(obj, 'date_time', None)
-            assert dt is not None
-            condition_list.append( (dt, i) )
-        elif isinstance(obj, crp.ProcedureResource):
-            dt = getattr(obj, 'date_time', None)
-            assert dt is not None
-            procedure_list.append( (dt, i) )
-        elif isinstance(obj, crp.MedicationStatementResource):
-            dt = getattr(obj, 'date_time', None)
-            assert dt is not None
-            medication_statement_list.append( (dt, i) )
-        elif isinstance(obj, crp.MedicationRequestResource):
-            dt = getattr(obj, 'date_time', None)
-            assert dt is not None
-            medication_request_list.append( (dt, i) )
-        elif isinstance(obj, crp.PatientResource):
+    other_list   = []
+    for i, obj in enumerate(result_list):
+        if isinstance(obj, crp.PatientResource):
             # patient has no date_time
             patient_list.append( (obj, i) )
         else:
-            print('\n*** CQLExecutionTask _sort_by_datetime_desc: ***')
-            print('  *** unknown namedtuple: {0} ***\n'.format(obj))
-            return result_list
+            dt = getattr(obj, 'date_time', None)
+            assert dt is not None
+            other_list.append( (dt, i) )
 
-    assert 1 == len(patient_list)
-        
-    # sort each by datetime in descending order of date
-    # only a single list, if any, should have nonzero length, since the FHIR
-    # data is either {patient, observation+}, {patient, condition+}, or
-    # {patient, procedure+}
-    nonzero_count = 0
-    the_list = None
-    if len(observation_list) > 0:
-        nonzero_count += 1
-        observation_list = sorted(observation_list, key=lambda x: x[0], reverse=True)
-        the_list = observation_list
-    if len(condition_list) > 0:
-        nonzero_count += 1
-        condition_list = sorted(condition_list, key=lambda x: x[0], reverse=True)
-        the_list = condition_list
-    if len(procedure_list) > 0:
-        nonzero_count += 1
-        procedure_list = sorted(procedure_list, key=lambda x: x[0], reverse=True)
-        the_list = procedure_list
-    if len(medication_statement_list) > 0:
-        nonzero_count += 1
-        medication_statement_list = sorted(medication_statement_list,
-                                           key=lambda x: x[0],
-                                           reverse=True)
-        the_list = medication_statement_list
-    if len(medication_request_list) > 0:
-        nonzero_count += 1
-        medication_request_list = sorted(medication_request_list,
-                                         key=lambda x: x[0],
-                                         reverse=True)
-        the_list = medication_request_list
-        
-    if nonzero_count > 1:
-        print('\n *** CQLExecutionTask: found multiple FHIR resources ***\n')
-        assert nonzero_count <= 1
-    else:
-        # extract earliest and latest datetimes
-        earliest = the_list[-1][0]
-        latest = the_list[0][0]
-        
-    # read out each element in order to assemble sorted list
-    # put patient data in front
+    other_list = sorted(other_list, key=lambda x: x[0], reverse=True)
+    if len(other_list) >= 1:
+        earliest = other_list[-1][0]
+        latest   = other_list[0][0]
+
+    # build sorted result list with patient resources first
     new_results = []
     for obj, index in patient_list:
         new_results.append(result_list[index])
-    for dt,index in procedure_list:
-        new_results.append(result_list[index])
-    for dt, index in condition_list:
-        new_results.append(result_list[index])
-    for dt, index in observation_list:
-        new_results.append(result_list[index])
-    for dt, index in medication_statement_list:
-        new_results.append(result_list[index])
-    for dt, index in medication_request_list:
+    for obj, index in other_list:
         new_results.append(result_list[index])
 
     assert len(new_results) == len(result_list)
     return (new_results, earliest, latest)
-    
+
 
 ###############################################################################
 def _json_to_objs(json_obj):
