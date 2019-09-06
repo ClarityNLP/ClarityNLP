@@ -1,0 +1,20 @@
+[providers]
+  [providers.file]
+    filename = "/etc/traefik/dynamic_conf.toml"
+  [providers.docker]
+    watch = true
+    exposedbydefault = false
+    endpoint = "unix:///var/run/docker.sock"
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+  [entryPoints.websecure]
+    address = ":443"
+
+[api]
+  dashboard = true
+  debug = true
+
+[log]
+  level = "INFO"

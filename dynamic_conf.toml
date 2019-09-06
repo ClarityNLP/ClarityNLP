@@ -1,0 +1,15 @@
+[tls]
+  [[tls.certificates]]
+    certFile = "/sslcerts/localhost.crt"
+    keyFile = "/sslcerts/localhost.key"
+    stores = ["default"]
+  [tls.options]
+    [tls.options.default]
+      [tls.options.default.clientAuth]
+        caFiles = ["/sslcerts/rootCA.pem"]
+        clientAuthType = "NoClientCert"
+  [tls.stores]
+    [tls.stores.default]
+      [tls.stores.default.defaultCertificate]
+        certFile = "/sslcerts/localhost.crt"
+        keyFile = "/sslcerts/localhost.key"
