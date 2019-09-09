@@ -74,7 +74,7 @@ use a DNS-01 challenge instead. Follow the instructions on configuring a DNS-01
 challenge by reading the `Traefik documentation <https://docs.traefik.io/v2.0/https/acme/#dnschallenge>`_.
 
 Let's Encrypt does not issue certificates for public IP addresses, `only domain
-names<https://community.letsencrypt.org/t/certificate-for-public-ip-without-domain-name/6082/14>`_.
+names <https://community.letsencrypt.org/t/certificate-for-public-ip-without-domain-name/6082/14>`_.
 
 If you are not using a domain name, a default certificate will be generated.
 This certificate is not backed by a CA. ClarityNLP will still function, however
