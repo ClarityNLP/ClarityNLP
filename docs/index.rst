@@ -23,11 +23,9 @@ Documentation
    setup/index
    user_guide/index
    developer_guide/index
-   it_guide/index
    nlpql_reference/index
    api_reference/index
    faq/index
-   troubleshooting/index
    about/index
 
 
