@@ -1,7 +1,11 @@
 Team
 =====
 
-The team works from Information and Communications Laboratory (ICL) at the Georgia Tech Research Institute (GTRI).
+The team works from the Information and Communications Laboratory (ICL) at
+the `Georgia Tech Research Institute (GTRI) <https://gtri.gatech.edu/>`_.
+
+The team is closely associated with the Georgia Tech
+`Center for Health Analytics and Informatics (CHAI) <http://chai.gatech.edu/>`_.
 
 Members
 -------
@@ -10,11 +14,13 @@ Members
 * Richard Boyd
 * Trey Schneider
 * Christine Herlihy
+* Caleb Sides
 
 Current Students
 ----------------
-* Chirag Jamadagni
+
 
 Former Students
 ---------------
+* Chirag Jamadagni
 * Prathamesh Prabhudesai

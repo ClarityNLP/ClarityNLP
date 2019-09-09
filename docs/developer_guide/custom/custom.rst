@@ -1,3 +1,5 @@
+.. _customtaskalgo:
+
 Custom Task Algorithms
 ======================
 

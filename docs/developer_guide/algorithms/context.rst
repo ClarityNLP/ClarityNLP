@@ -1,4 +1,4 @@
-.. _context:
+.. _contextalgo:
 
 ConText
 *******
