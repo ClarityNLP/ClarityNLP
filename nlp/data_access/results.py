@@ -1,6 +1,6 @@
 import csv
-import os
 import math
+import os
 import sys
 import traceback
 from datetime import datetime
@@ -26,6 +26,32 @@ pipeline_output_positions = [
     'concept_code'
 ]
 page_size = 100
+
+
+def display_mapping(x):
+    if not x or 'result_display' in x:
+        return x
+
+    val = ''
+    if 'value' in x:
+        val = x['value']
+    elif 'term' in x:
+        val = x['term']
+    highlight = val
+
+    sentence = ''
+    if 'sentence' in x:
+        sentence = x['sentence']
+    elif 'text' in x:
+        sentence = x['text']
+
+    x['result_display'] = {
+        "date": '',
+        "result_content": val,
+        "highlights": [highlight],
+        "sentence": sentence
+    }
+    return x
 
 
 def job_results(job_type: str, job: str):
@@ -63,9 +89,9 @@ def phenotype_performance_results(jobs: list):
             has_comments = 0
             count = 0
             correct = 0
-            results = db['result_feedback'].find(query)
+            query_results = db['result_feedback'].find(query)
             # ['comments', 'feature', 'is_correct', 'job_id', 'subject', 'report_id', 'result_id']
-            for res in results:
+            for res in query_results:
                 if len(res['comments']) > 0:
                     has_comments += 1
                 else:
@@ -89,7 +115,6 @@ def phenotype_performance_results(jobs: list):
     return metrics
 
 
-
 def phenotype_feedback_results(job: str):
     job_type = 'annotations'
     client = util.mongo_client()
@@ -104,10 +129,10 @@ def phenotype_feedback_results(job: str):
             header_written = False
             query = {"job_id": int(job)}
 
-            results = db['result_feedback'].find(query)
+            query_results = db['result_feedback'].find(query)
             columns = sorted(['comments', 'feature', 'is_correct', 'job_id', 'subject', 'report_id', 'result_id'])
 
-            for res in results:
+            for res in query_results:
                 keys = list(res.keys())
                 if not header_written:
                     length = len(columns)
@@ -135,7 +160,6 @@ def pipeline_results(job: str):
     client = util.mongo_client()
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
     filename = '/tmp/job%s_pipeline_%s.csv' % (job, today)
-    length = len(pipeline_output_positions)
 
     db = client[util.mongo_db]
 
@@ -216,9 +240,9 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
             else:
                 query = {"job_id": int(job)}
 
-            results = db[job_type + "_results"].find(query)
+            query_results = db[job_type + "_results"].find(query)
             columns = sorted(get_columns(db, job, job_type, phenotype_final))
-            for res in results:
+            for res in query_results:
                 keys = list(res.keys())
                 if not header_written:
                     length = len(columns)
@@ -249,10 +273,10 @@ def lookup_phenotype_result_by_id(id: str):
 
     try:
         obj = db.phenotype_results.find_one({'_id': ObjectId(id)})
+        obj = display_mapping(obj)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         obj['success'] = False
-
 
     return obj
 
@@ -265,7 +289,8 @@ def lookup_phenotype_results_by_id(id_list: list):
     obj['indexes'] = dict()
 
     try:
-        # db.phenotype_results.find({"_id": { $in: [ObjectId("5b117352bcf26f020e392a9c"), ObjectId("5b117352bcf26f020e3926e2")]}})
+        # db.phenotype_results.find({"_id": { $in: [ObjectId("5b117352bcf26f020e392a9c"),
+        # ObjectId("5b117352bcf26f020e3926e2")]}})
         # TODO TODO TODO
         ids = list(map(lambda x: ObjectId(x), id_list))
         res = db.phenotype_results.find({
@@ -276,6 +301,7 @@ def lookup_phenotype_results_by_id(id_list: list):
         obj['results'] = list(res)
         n = 0
         for o in obj['results']:
+            o = display_mapping(o)
             id = str(o['_id'])
             obj['indexes'][id] = n
             n = n + 1
@@ -295,24 +321,24 @@ def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '
     try:
         columns = sorted(get_columns(db, job_id, 'phenotype', phenotype_final))
         if last_id == '' and last_id != '-1':
-            results = list(db.phenotype_results.find({"job_id": int(job_id), "phenotype_final": phenotype_final}).limit(
+            res = list(db.phenotype_results.find({"job_id": int(job_id), "phenotype_final": phenotype_final}).limit(
                 page_size))
             obj['count'] = int(
                 db.phenotype_results.find({"job_id": int(job_id), "phenotype_final": phenotype_final}).count())
         else:
-            results = list(db.phenotype_results.find({"_id": {"$gt": ObjectId(last_id)}, "job_id": int(job_id),
-                                                      "phenotype_final": phenotype_final}).limit(page_size))
+            res = list(db.phenotype_results.find({"_id": {"$gt": ObjectId(last_id)}, "job_id": int(job_id),
+                                                  "phenotype_final": phenotype_final}).limit(page_size))
 
-        results_length = len(results)
+        results_length = len(res)
         no_more = False
         if results_length < page_size:
             no_more = True
         if results_length > 0:
-            new_last_id = results[-1]['_id']
+            new_last_id = res[-1]['_id']
         else:
             new_last_id = ''
 
-        obj['results'] = results
+        obj['results'] = list(map(display_mapping, res))
         obj['no_more'] = no_more
         obj['new_last_id'] = new_last_id
         obj['columns'] = columns
@@ -329,7 +355,7 @@ def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '
 def phenotype_subjects(job_id: str, phenotype_final: bool):
     client = util.mongo_client()
     db = client[util.mongo_db]
-    results = []
+    res = []
     # db.phenotype_results.aggregate([  {"$match":{"job_id":{"$eq":10201}, "phenotype_final":{"$eq":true}}},
     #  {"$group" : {_id:"$subject", count:{$sum:1}}} ])
     try:
@@ -352,32 +378,34 @@ def phenotype_subjects(job_id: str, phenotype_final: bool):
                 }
             }
         ]
-        results = list(db.phenotype_results.aggregate(q))
-        results = sorted(results, key=lambda r: r['count'], reverse=True)
+        res = list(db.phenotype_results.aggregate(q))
+        res = sorted(res, key=lambda r: r['count'], reverse=True)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
 
-    return results
+    return res
+
 
 def phenotype_stats(job_id: str, phenotype_final: bool):
-    results = phenotype_subjects(job_id, phenotype_final)
+    res = phenotype_subjects(job_id, phenotype_final)
     stats = {
         "subjects": 0,
         "results": 0
     }
-    if len(results) > 0:
-        subjects = len(results)
+    if len(res) > 0:
+        subjects = len(res)
         documents = 0
-        for r in results:
+        for r in res:
             documents += int(r['count'])
         stats["subjects"] = subjects
         stats["results"] = documents
     return stats
 
+
 def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
     client = util.mongo_client()
     db = client[util.mongo_db]
-    results = []
+    res = []
     try:
         query = {"job_id": int(job_id), "phenotype_final": phenotype_final, "subject": subject}
 
@@ -388,43 +416,43 @@ def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
                 val = r[k]
                 if (isinstance(val, int) or isinstance(val, float)) and math.isnan(val):
                     del obj[k]
-            results.append(obj)
+            res.append(obj)
 
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
 
-    return results
+    return res
 
 
 def phenotype_feature_results(job_id: str, feature: str, subject: str):
     client = util.mongo_client()
     db = client[util.mongo_db]
-    results = []
+    res = []
     try:
         query = {"job_id": int(job_id), "nlpql_feature": feature, "subject": subject}
 
-        results = list(db["phenotype_results"].find(query))
+        res = list(db["phenotype_results"].find(query))
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
 
-    return results
+    return res
 
 
-def phenotype_results_by_context(context: str, query_filters:dict):
+def phenotype_results_by_context(context: str, query_filters: dict):
     client = util.mongo_client()
     db = client[util.mongo_db]
-    results = []
+    res = []
     try:
         if context.lower() == 'patient' or context.lower() == 'subject':
             project = 'subject'
         else:
             project = 'report_id'
-        results = list(db["phenotype_results"].find(query_filters, {project: 1}))
+        res = list(db["phenotype_results"].find(query_filters, {project: 1}))
 
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
 
-    return results
+    return res
 
 
 def remove_tmp_file(filename):
@@ -434,5 +462,5 @@ def remove_tmp_file(filename):
 
 if __name__ == "__main__":
     # job_results("pipeline", "97")
-    results = phenotype_performance_results("2152")
+    results = phenotype_performance_results(["2152"])
     print(results)

@@ -30,3 +30,7 @@
 	path = utilities/dashboard-client
 	url = https://github.com/ClarityNLP/dashboard-client.git
 	branch = .
+[submodule "utilities/nlpaas"]
+	path = utilities/nlpaas
+	url = https://github.com/ClarityNLP/ClarityNLPaaS.git
+	branch = .

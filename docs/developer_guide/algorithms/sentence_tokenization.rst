@@ -75,8 +75,9 @@ The text cleanup process first searches the report text for cut-and-paste
 section headers found between ``(Over)`` and ``(Cont)`` tokens. These headers
 are often inserted directly into a sentence, producing a confusing result.
 Here is an example:
+   
+| "There are two subcentimeter right renal hypodensities, 1 in\\n                                                             (Over)\\n\\n [\**2728-6-8\**] 5:24 PM\\n CT CHEST W/CONTRAST; CT ABD & PELVIS W & W/O CONTRAST, ADDL SECTIONSClip # [\**Telephone/Fax (1) 103840\**]\\n Reason: Evaluate for metastasis/lymphadenopathy related to ? GI [\**Country \**]\\n Admitting Diagnosis: UPPER GI BLEED\\n  Contrast: OMNIPAQUE Amt: 130\\n ______________________________________________________________________________\\n                                 FINAL REPORT\\n (Cont)\\n the upper pole and 1 in the lower pole, both of which are too small to\\n characterize."
 
-"There are two subcentimeter right renal hypodensities, 1 in\\n                                                             (Over)\\n\\n [\**2728-6-8\**] 5:24 PM\\n CT CHEST W/CONTRAST; CT ABD & PELVIS W & W/O CONTRAST, ADDL SECTIONSClip # [\**Telephone/Fax (1) 103840\**]\\n Reason: Evaluate for metastasis/lymphadenopathy related to ? GI [\**Country \**]\\n Admitting Diagnosis: UPPER GI BLEED\\n  Contrast: OMNIPAQUE Amt: 130\\n ______________________________________________________________________________\\n                                 FINAL REPORT\\n (Cont)\\n the upper pole and 1 in the lower pole, both of which are too small to\\n characterize."
 
 By looking at this text closely, you can see how the ``(Over)..(Cont)`` section
 has been pasted into this sentence:
@@ -198,21 +199,21 @@ as a JSON-formatted file. The sentence tokenization module will read the
 input file, split the text into sentences as described above, and write the
 results to stdout. Help for the command line interface can be obtained by
 running this command from the ``nlp/algorithms/segmentation`` folder:
-
-    ``python3 ./segmentation.py --help``
+::
+   python3 ./segmentation.py --help
 
 Some examples:
 
 To tokenize all reports in myreports.json and print each sentence to stdout:
-
-        ``python3 ./segmentation.py --file /path/to/myreports.json``
+::
+   python3 ./segmentation.py --file /path/to/myreports.json
 
 To tokenize only the first 10 reports (indices begin with 0):
-
-        ``python3 ./segmentation.py --file myreports.json --end 9``
+::
+   python3 ./segmentation.py --file myreports.json --end 9``
 
 To tokenize reports 115 through 134 inclusive, and to also show the report text
 after cleanup and token substitution (i.e. the actual input to the spaCy
 sentence tokenizer):
-
-        ``python3 ./segmentation.py --file myreports.json --start 115 --end 134 --debug``
+::
+   python3 ./segmentation.py --file myreports.json --start 115 --end 134 --debug

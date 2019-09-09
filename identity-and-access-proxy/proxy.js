@@ -26,6 +26,7 @@ var proxyRules = new HttpProxyRules({
     // SOLR-API
     '/solr/(.*)': 'http://nlp-solr:8983/solr/$1',
     // NLP-API
+    '/nlp/library': 'http://nlp-api:5000/library',
     '/nlp/pipeline_types': 'http://nlp-api:5000/pipeline_types', //NLP-API --> GET pipeline_types
     '/nlp/phenotype_jobs/ALL': 'http://nlp-api:5000/phenotype_jobs/ALL',
     '/nlp/phenotype_subjects/(.+)/(.+)':
@@ -44,8 +45,7 @@ var proxyRules = new HttpProxyRules({
     '/nlp/phenotype': 'http://nlp-api:5000/phenotype',
     '/nlp/phenotype_results_by_id/(.+)':
       'http://nlp-api:5000/phenotype_results_by_id/$1',
-    '/nlp/status/(.+)':
-      'http://nlp-api:5000/status/$1',
+    '/nlp/status/(.+)': 'http://nlp-api:5000/status/$1',
     '/nlp/phenotype_structure/(.+)':
       'http://nlp-api:5000/phenotype_structure/$1',
     '/nlp/delete_job/(.+)': 'http://nlp-api:5000/delete_job/$1',
@@ -75,7 +75,8 @@ var proxyRules = new HttpProxyRules({
     '/ingest/(.+)/schedule': 'http://ingest-api:1337/ingest/$1/schedule', //INGEST-API --> POST /ingest/:ingestId/schedule
     '/ingest': 'http://ingest-api:1337/ingest', //INGEST-API --> GET /ingest
     '/ingest/(.+)/delete': 'http://ingest-api:1337/ingest/$1/delete', //INGEST-API --> GET /ingest/:ingestId/delete
-    '/socket.io': 'ws://ingest-api:1337/socket.io', //TODO rename ingest to consolidated socket server
+    '/nlpaas/(.*)': 'http://nlpaas:5000/$1',
+    '/socket.io': 'ws://ingest-api:1337/socket.io' //TODO rename ingest to consolidated socket server
   }
 });
 
@@ -137,6 +138,8 @@ const proxyServer = http.createServer(function(req, res) {
   //check whitelist
   const whitelistTarget = whitelist.match(req);
 
+  console.log('whitelistTarget: ',whitelistTarget);
+
   if (whitelistTarget) {
     return proxy.web(
       req,
@@ -145,6 +148,8 @@ const proxyServer = http.createServer(function(req, res) {
         target: whitelistTarget
       },
       function(err) {
+        console.log('proxy.web error');
+        console.log(err);
         sendError(res, err);
       }
     );

@@ -1,10 +1,10 @@
 .. _sectiontagging:
 
 Section Tagging
-***************
+===============
 
 Overview
-========
+--------
 
 The section tagger ingests clinical documents and uses textual clues to
 partition the documents into sections. Sections consist of groups of
@@ -17,7 +17,7 @@ The starting point for the section tagger is the open-source *SecTag*
 database of J. Denny and colleagues [1]_.
 
 Source Code
-===========
+^^^^^^^^^^^
 
 The source code for the section tagger is located in
 ``nlp/algorithms/sec_tag``.
@@ -34,7 +34,7 @@ the file with this command:  ``python3 ./sec_tag_file.py``. This interactive
 application writes results (input file with tag annotations) to stdout.
 
 SecTag Database
----------------
+^^^^^^^^^^^^^^^
 
 The section tagger requires three input files for its operation, all of which
 can be found in the ``nlp/algorithms/sec_tag/data`` folder. These files are
@@ -71,14 +71,14 @@ and find ``SecTag_Terminology.sql``.
 
 Populate the database as the sectag user with this command, entering the
 password 'sectag' when prompted:
-
-    ``mysql -p -u sectag SecTag_Terminology < SecTag_Terminology.sql``
-
+::
+   mysql -p -u sectag SecTag_Terminology < SecTag_Terminology.sql
+   
 The SecTag database name is "SecTag_Terminology". Additional information on
 the contents of the database can be found in [1]_ and [2]_.
 
 Concepts and Synonyms
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 The section tagger operates by scanning the report text and recognizing
 synonyms for an underlying set of concepts. The synonyms recognized in the text
@@ -96,8 +96,8 @@ the SecTag database; adds new synonyms to the list; adds a few new concepts;
 corrects various errors occurring in the SecTag database, and writes output to
 the ``nlp/algorithms/sec_tag/data`` folder. Run the extraction code with
 this command:
-
-    ``python3 ./sec_tag_db_extract.py``
+::
+   python3 ./sec_tag_db_extract.py
 
 Each concept has a "treecode", which is a string consisting of integers
 separated by periods, such as ``6.41.149.234.160.165`` (the treecode for the
@@ -114,7 +114,7 @@ code that represents a path through the graph from the highest-level concepts
 to it.
 
 SecTag Errors
--------------
+^^^^^^^^^^^^^
 
 There are a few errors in the SecTag database. Two concepts are misspelled.
 These are concept 127, "principal_diagnosis", misspelled as
@@ -128,11 +128,11 @@ extraction program converts this to just "sleep_habits".
 Concept 2921, "preoperative_medications" is missing a treecode. A closely
 related concept, number 441 "postoperative_medications" has treecode
 ``5.37.106.127`` and no children. This concept hierarchy resolves to:
-
-|    ``patient_history:          5``
-|    ``medications:              5.37``
-|    ``medications_by_situation: 5.37.106``
-|    ``preoperative_medications: 5.37.106.127``
+::
+   patient_history:          5
+   medications:              5.37
+   medications_by_situation: 5.37.106
+   preoperative_medications: 5.37.106.127
 
 Using this hierarchy as a guide, the extraction program assigns the
 treecode ``5.37.106.500`` to the concept "preoperative_medications".
@@ -181,10 +181,10 @@ extremities_mra                  6.41.500.1.1.2.5
 ================================ ===========================
 
 Algorithm
-=========
+---------
 
 Initialization and Sentence Tokenization
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The section tagger begins its operation with an initialization phase in which
 it loads the data files mentioned above and creates various data structures.
@@ -202,7 +202,7 @@ comprises large chunks of report text spanning multiple sentences and sentence
 fragments.
 
 Synonym Matching
-----------------
+^^^^^^^^^^^^^^^^
 
 The section tagger scans each sentence and looks for strings indicating the
 start of a new section. Clinical note sections tend to be delimited by one
@@ -256,7 +256,7 @@ process to decide on the winning concept. The ambiguity resolver uses a
 concept stack to guide its decisions, which we describe next.
 
 The Concept Stack
------------------
+^^^^^^^^^^^^^^^^^
 
 The sections in a clinincal note tend to be arranged as flattened hierarchies
 extending over several consecutive sections. For instance, in a discharge
@@ -297,7 +297,7 @@ same level of specificity (or less specific) than C. The concepts in the stack
 represent the full set of open concept scopes at any stage of processing.
 
 Concept Ambiguity Resolution
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The section tagger uses the concept stack to select a single concept from
 a list of candidates, such the candidate concepts produced by the synonym
@@ -349,13 +349,13 @@ Example
 
 An example may help to clarify all of this. Consider this snippet
 of text from one of the MIMIC discharge notes:
-
-|  ``...CV:  The patient's vital signs were routinely monitored, and``
-|  ``was put on vasopressin, norepinephrine and epinephrine during her``
-|  ``stay to maintain appropriate hemodynamics. Pulmonary:  Vital``
-|  ``signs were routinely monitored. She was intubated and sedated``
-|  ``throughout her admission, and her ventilation settings were``
-|  ``adjusted based on ABG values...``
+::
+   ...CV:  The patient's vital signs were routinely monitored, and
+   was put on vasopressin, norepinephrine and epinephrine during her
+   stay to maintain appropriate hemodynamics. Pulmonary:  Vital
+   signs were routinely monitored. She was intubated and sedated
+   throughout her admission, and her ventilation settings were
+   adjusted based on ABG values...
 
 As the section tagger scans this text it finds a regex match for the text
 ``Pulmonary:``. No additional words match at this point, since this text
@@ -365,18 +365,18 @@ terminating colon and converts the text to lowercase, producing
 with the text ``pulmonary``. It tries an exact match first, which succeeds
 and produces the following list of candidate concepts and their treecodes
 (the list L above):
-
-|    ``L[0]  PULMONARY_COURSE         [5.32.77.87]``
-|    ``L[1]  PULMONARY_FAMILY_HISTORY [5.34.79.103.71]``
-|    ``L[2]  PULMONARY_REVIEW         [5.39.132]``
-|    ``L[3]  PULMONARY_EXAM           [6.40.139.195.128]``
-|    ``L[4]  PULMONARY_PLAN           [13.51.157.296]``
+::
+   L[0]  PULMONARY_COURSE         [5.32.77.87]
+   L[1]  PULMONARY_FAMILY_HISTORY [5.34.79.103.71]
+   L[2]  PULMONARY_REVIEW         [5.39.132]
+   L[3]  PULMONARY_EXAM           [6.40.139.195.128]
+   L[4]  PULMONARY_PLAN           [13.51.157.296]
 
 These are the candidate concepts in list L. The concept stack S at this
 point is:
-
-|    ``S[0]  CARDIOVASCULAR_COURSE  [5.32.77.75]``
-|    ``S[1]  HOSPITAL_COURSE        [5.32]``
+::
+   S[0]  CARDIOVASCULAR_COURSE  [5.32.77.75]
+   S[1]  HOSPITAL_COURSE        [5.32]
 
 How does the section tagger use S to choose the "best" section tag from
 concepts in L?
@@ -398,12 +398,12 @@ shared prefix string for concepts A and B.
 
 Computing the common ancestors of the concept at the top of the stack,
 ``CARDIOVASCULAR_COURSE [5.32.77.75]``, and each concept in L gives:
-
-|  ``S[0] & L[0]: [5.32.77]``
-|  ``S[0] & L[1]: [5]``
-|  ``S[0] & L[2]: [5]``
-|  ``S[0] & L[3]: [ ]``
-|  ``S[0] & L[4]: [ ]``
+::
+   S[0] & L[0]: [5.32.77]
+   S[0] & L[1]: [5]
+   S[0] & L[2]: [5]
+   S[0] & L[3]: [ ]
+   S[0] & L[4]: [ ]
 
 Concepts ``S[0]`` and ``L[0]`` share the longest prefix string. Concepts
 ``L[3]`` and ``L[4]`` share no common ancestor with concept ``S[0]``, as the
@@ -412,12 +412,12 @@ empty brackets indicate. The section tagger declares concept
 longest shared prefix string with concept ``S[0]``, indicating that it is
 closer to ``S[0]`` than all other candidate concepts. It then proceeds to the
 next level in the stack and repeats the procedure, generating these results:
-
-|  ``S[1] & L[0]: [5.32]``
-|  ``S[1] & L[1]: [5]``
-|  ``S[1] & L[2]: [5]``
-|  ``S[1] & L[3]: [ ]``
-|  ``S[1] & L[4]: [ ]``
+::
+   S[1] & L[0]: [5.32]
+   S[1] & L[1]: [5]
+   S[1] & L[2]: [5]
+   S[1] & L[3]: [ ]
+   S[1] & L[4]: [ ]
 
 The winner of this round is also ``L[0]``, indicating that the node with
 treecode ``5.32`` is the nearest common ancestor for concepts
@@ -439,16 +439,15 @@ stack is ``CARDIOVASCULAR_COURSE  [5.32.77.75]``. Since concepts C and T
 have identical treecode lengths, they have the same specificity. Following
 the stack manipulation rules described above, the section tagger pops the
 stack and pushes C, which yields this result for the concept stack:
-
-|    ``S[0]  PULMONARY_COURSE  [5.32.77.87]``
-|    ``S[1]  HOSPITAL_COURSE   [5.32]``
+::
+   S[0]  PULMONARY_COURSE  [5.32.77.87]
+   S[1]  HOSPITAL_COURSE   [5.32]
 
 After these stack adjustments the section tagger resumes scanning and the
 process continues.
 
-
 References
-==========
+----------
 
 .. [1] | J. Denny, A. Spickard, K. Johnson, N. Peterson, J. Peterson, R. Miller
        | **Evaluation of a Method to Identify and Categorize Section Headers**

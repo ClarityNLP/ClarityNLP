@@ -1,8 +1,9 @@
 ### General Document Ingestion
 
-See guide to [Solr](http://clarity-nlp.readthedocs.io/en/latest/solr.html) for more information about Solr setup with ClarityNLP.
+See guide to [Solr](../../developer_guide/technical_background/solr.html) for
+more information about Solr setup with ClarityNLP.
 
-Solr has built-in APIs for ingesting documents, which is documented [here](https://lucene.apache.org/solr/guide/7_3/uploading-data-with-index-handlers.html). The simplest way is generally to use `curl` to upload JSON, CSV, or XML. Documents need to be pre-processed as plain text before they are uploaded into ClarityNLP.
+Solr has built-in APIs for ingesting documents, which are documented [here](https://lucene.apache.org/solr/guide/7_3/uploading-data-with-index-handlers.html). The simplest way is generally to use `curl` to upload JSON, CSV, or XML. Documents need to be pre-processed as plain text before they are uploaded into ClarityNLP.
 
 Sample JSON upload for ClarityNLP:
 ```bash

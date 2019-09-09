@@ -1,19 +1,15 @@
-Getting Up and Running on a Single Machine With Docker
-======================================================
-  
+Local Machine Setup With Docker
+===============================
+
 The instructions below will get you up and running with a Docker-based
-ClarityNLP development environment on your laptop or desktop. We walk you
+ClarityNLP instance on your laptop or desktop. We walk you
 through how to configure and deploy a set of Docker containers comprising a
 complete ClarityNLP installation for a single user. There is no need for you to
 separately install Solr, MongoDB, PostgreSQL, or any of the other technologies
-that ClarityNLP uses. Everything in the Docker containers has been setup and
-configured for you.
+that ClarityNLP uses.
 
-Multi-user deployments of ClarityNLP should instead follow the instructions
-for a production or enterprise deployment.
-
-If you want a single-user deployment without using Docker, then you need our
-:ref:`barebonessetup`.
+If you want to run ClarityNLP without using Docker, then you need our
+:ref:`nativesetup`.
 
 
 Prerequisites
@@ -25,13 +21,12 @@ Download Source Code
 
   git clone https://github.com/ClarityNLP/ClarityNLP
 
-Initialize Submodules
+Checkout Branch
 ~~~~~~~~~~~~~~~~~~~~~
 ::
 
   cd ClarityNLP
   git checkout <branch> # develop for latest, master for stable, or tagged version
-  git submodule update --init --recursive --remote
 
 Install Docker
 ~~~~~~~~~~~~~~
@@ -48,91 +43,20 @@ Install Docker Compose
 ~~~~~~~~~~~~~~~~~~~~~~
 Follow the `installation guide <https://docs.docker.com/compose/install/>`_.
 
-Install mkcert
-~~~~~~~~~~~~~~
-The mkcert utility automatically creates and installs a local certificate
-authority (CA) in the system root store. It also generates locally-trusted
-certificates.
-
-macOS
-"""""
-
-On macOS, use `Homebrew <https://brew.sh/>`_. ::
-
-  brew install mkcert
-  brew install nss # if you use Firefox
-
-or `MacPorts <https://www.macports.org/>`_. ::
-
-  sudo port selfupdate
-  sudo port install mkcert
-  sudo port install nss # if you use Firefox
-
-Linux
-"""""
-
-On Linux, first install certutil. ::
-
-  sudo apt install libnss3-tools
-      -or-
-  sudo yum install nss-tools
-      -or-
-  sudo pacman -S nss
-
-Then you can install using `Linuxbrew <https://docs.brew.sh/Homebrew-on-Linux>`_ ::
-
-  brew install mkcert
-
-Windows
-"""""""
-
-On Windows, use Chocolatey ::
-
-  choco install mkcert
-
-or use Scoop ::
-
-  scoop bucket add extras
-  scoop install mkcert
-
-Generate Development Certificates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-First, create the local certificate authority:
-::
-
-  mkcert -install
-
-Run the following command at the root of the ClarityNLP project: ::
-
-  mkcert -cert-file certs/claritynlp.dev.crt -key-file certs/claritynlp.dev.key claritynlp.dev "*.claritynlp.dev"
-
-Extra Prerequisites for Windows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-On Windows, install Cygwin and its dependencies ::
-
-  choco install cygwin
-  choco install cyg-get git git-completion make
 
 Run the Stack
 -------------
 
-The first time running it will take some time to build the Docker images, but
-subsequent runs will occur quickly. First, start Docker if it is not already
-running. Next, open a terminal (Cygwin on Windows) at the project root and run
-the following for local development:
+The first time running it will take a couple minutes to pull the pre-built images from the
+Docker Hub registry. Open a terminal at the project root and run the following:
 ::
 
-  make start-clarity
+  make start-clarity-localhost
 
-The stack is running in the foreground, and can be stopped by simultaneously
-pressing the ``CTRL`` and ``C`` keys.
-
-After stopping the stack, run this command to remove the containers and
-any networks that were created:
+To stop the stack, run this command:
 ::
 
-  make stop-clarity
+  make stop-clarity-localhost
 
 Tips & Tricks
 -------------
@@ -161,11 +85,11 @@ and all should have a status of ``Up`` when the system has fully initialized:
    6dc0f7f21a48        claritynlp_nginx-proxy                 "/app/docker-entrypo…"   About a minute ago   Up 56 seconds       0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp   NGINX_PROXY
    1d601b064a1c        axiom/docker-luigi:2.7.1               "/sbin/my_init --qui…"   About a minute ago   Up 57 seconds       8082/tcp                                   LUIGI_SCHEDULER
    7ab4b8e19c86        mongo:3.4.2                            "docker-entrypoint.s…"   About a minute ago   Up 58 seconds       27017/tcp                                  INGEST_MONGO
-  
+
 The Luigi container will monitor for active tasks. Once everything initializes,
 you should periodically see the following lines in the console output:
 ::
-   
+
   LUIGI_SCHEDULER   | 2018-10-16 19:46:19,149 luigi.scheduler INFO     Starting pruning of task graph
   LUIGI_SCHEDULER   | 2018-10-16 19:46:19,149 luigi.scheduler INFO     Done pruning task graph
 
@@ -174,12 +98,8 @@ ClarityNLP Links
 ----------------
 
 The user interface (UI) components of ClarityNLP can be accessed on your
-machine by opening a web browser and entering the URLs provided below. Each
-different user interface component has been mapped to a unique URL in the
-``.dev`` top level domain.
+machine by opening a web browser and entering the URLs provided below.
 
-**All Docker containers must be fully initialized for the UI components to**
-**become active.**
 
 Dashboard
 ~~~~~~~~~
@@ -188,7 +108,7 @@ The :ref:`ui_dashboard` is the main user interface to ClarityNLP. It provides
 controls for ingesting documents, creating NLPQL files, accessing results and
 lots more.
 
-Dashboard URL: https://dashboard.claritynlp.dev
+Dashboard URL: http://localhost/dashboard
 
 
 Solr Administrative User Interface
@@ -205,7 +125,7 @@ which lets you submit queries to Solr and find documents of interest. The
 ClarityNLP Solr installation provides more than 7000 documents in a core called
 ``sample``.
 
-Solr Admin Interface URL: https://solr.claritynlp.dev
+Solr Admin Interface URL: http://localhost/solr
 
 
 Luigi Task Monitor
@@ -217,7 +137,7 @@ the workload into parallel tasks that are scheduled by Luigi. The task
 monitor displays the number of running tasks, how many have finished, any
 failures, etc. You can update the task counts by simply refreshing the page.
 
-Lugi Task Monitor URL: https://luigi.claritynlp.dev
+Lugi Task Monitor URL: http://localhost/luigi
 
 
 Ingest Client
@@ -227,7 +147,7 @@ The :ref:`ui_ingest_client` provides an easy-to-use interface to help you load n
 documents into your ClarityNLP Solr instance. It also helps you map the fields
 in your documents to the fields that ClarityNLP expects.
 
-Ingest Client URL: https://ingest.claritynlp.dev
+Ingest Client URL: http://localhost/ingest
 
 
 Results Viewer
@@ -238,7 +158,7 @@ ClarityNLP runs. It highlights specific terms and values and provides an
 evaluation mechanism that you can use to score the results that ClarityNLP
 found.
 
-Clarity Results Viewer URL: https://viewer.claritynlp.dev
+Clarity Results Viewer URL: http://localhost/results
 
 
 NLP API
@@ -246,4 +166,4 @@ NLP API
 
 <TODO - example of how to POST an NLPQL file using Postman or curl with access tokens>
 
-.. * ClarityNLP API --> https://api.claritynlp.dev
+.. * ClarityNLP API --> http://localhost/api

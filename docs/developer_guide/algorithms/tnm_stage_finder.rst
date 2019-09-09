@@ -1,3 +1,5 @@
+.. _tnmalgo:
+
 Extracting Tumor Stage Information
 **********************************
 
@@ -11,7 +13,7 @@ the tumor, lymph node involvement, whether it has metastasized, and several
 other descriptive factors. The code also includes staging information.
 ClarityNLP can locate these codes in medical reports and decode them. This
 document describes the TNM system and the information that ClarityNLP provides
-with each decode.
+for each TNM code that it recognizes.
 
 Information on the TNM system was taken from the reference document [1]_ and
 the explanatory supplement [2]_. Information on serum marker values was

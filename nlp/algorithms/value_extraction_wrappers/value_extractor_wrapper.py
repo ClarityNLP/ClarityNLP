@@ -12,7 +12,6 @@ print('Done initializing models for value extractor...')
 
 
 def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enumlist=None, is_case_sensitive_text=False, denom_only=False):
-
     if enumlist is None:
         enumlist = list()
     sentence_list = segmentor.parse_sentences(text)
@@ -25,7 +24,15 @@ def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enum
         match = matcher.search(sentence)
         if match:
             term = match.group(0)
-            value_str = run_value_extractor(term, sentence, str_minval=minimum_value, str_maxval=maximum_value, enumlist=enumlist, is_case_sensitive=is_case_sensitive_text, is_denom_only=denom_only)
+            value_str = run_value_extractor(
+                term,
+                sentence,
+                str_minval=minimum_value,
+                str_maxval=maximum_value,
+                str_enumlist=enumlist,
+                is_case_sensitive=is_case_sensitive_text,
+                is_denom_only=denom_only)
+
             if len(value_str) > 0:
                 value_results = json.loads(value_str)
                 if 'measurementList' in value_results:

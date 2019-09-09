@@ -7,17 +7,17 @@ Overview
 Measurement-subject resolution is the process of associating size measurements
 in a sentence with the object(s) possessing those measurements. For instance,
 in the sentence
-
-    ``The spleen measures 7.5 cm.``
+::
+   The spleen measures 7.5 cm.
 
 the measurement ``7.5 cm`` is associated with ``spleen``. The word
 ``spleen`` is said to be the *subject* of the measurement ``7.5 cm``. In this
 example the subject of the measurement also happens to be the subject of the
 sentence. This is not always the case, as the next sentence illustrates:
-
-    ``The liver is normal in architecture and echogenicity, and is``
-    ``seen to contain numerous small cysts ranging in size from a few``
-    ``millimeters to approximately 1.2 cm in diameter.``
+::
+   The liver is normal in architecture and echogenicity, and is seen to contain
+   numerous small cysts ranging in size from a few millimeters to approximately
+   1.2 cm in diameter.
 
 Here the subject of the sentence is ``liver``, but the subject of the
 ``1.2 cm`` measurement is ``cysts``.
@@ -103,7 +103,7 @@ Dependencies
 
 The measurement subject finder has a dependency on ClarityNLP's size measurement
 finder module, whose documentation can be found here:
-:ref:`size-measurement-finder`.
+:ref:`measurementfinderalgo`.
 
 .. _spaCy: https://spacy.io/
      
@@ -187,8 +187,8 @@ Sometimes spaCy generates an incorrect dependency parse. This happens often
 in sentences that contain medical terminology, especially when medical terms
 are used in different contexts from those of the training corpora.
 For instance, the simple sentence
-
-    ``The spleen measures 7.5 cm.``
+::
+   The spleen measures 7.5 cm.
 
 has this dependency parse:
 
@@ -255,16 +255,16 @@ These rules guarantee that spaCy will interpret the words ``measures``,
 ``measure``, ``measured``, and ``measuring`` as verbs.
 
 The words that ClarityNLP substitutes for medical ngrams are:
-
-|    ``car, city, year, news, math, hall, poet, fact,``
-|    ``idea, oven, poem, dirt, tale, world, hotel``
+::
+   car, city, year, news, math, hall, poet, fact,
+   idea, oven, poem, dirt, tale, world, hotel
 
 These are all common English words that only occur as nouns.
 
 One additional illustration can help to make this process clearer.
 Consider this sentence:
-
-``There is a fusiform infrarenal abdominal aortic aneurysm measuring M.``
+::
+   There is a fusiform infrarenal abdominal aortic aneurysm measuring M.
 
 The dependency parse for this sentence, using the special tokenization rules,
 is:
@@ -278,8 +278,8 @@ The adjective ``fusiform`` was also not deduced to be a modifier of ``aneurysm``
 Since the ngram ``abdominal aortic aneurysm`` is in the ClarityNLP ngram list,
 substituting ``car`` for ``abdominal aortic aneurysm`` produces this
 sentence:
-
-    ``There is a fusiform infrarenal car measuring M.``
+::
+   There is a fusiform infrarenal car measuring M.
 
 The dependency parse for this new sentence is:
 
@@ -335,34 +335,34 @@ resolution problem. Thse removals include:
 * Finding size measurements and replacing the measurement text with ``M``
 
 This last item deserves some explanation. The sentence
-
-    ``The spleen measures 7.5 cm.``
+::
+   The spleen measures 7.5 cm.
 
 is transformed by the measurement replacement operation to this:
-
-    ``The spleen measures M.``
+::
+   The spleen measures M.
 
 The reason for the M-replacement is to facilitate the recognition of sentence
 patterns in the text. We call these sentence patterns "sentence templates".
 Sentences that fit a common template pattern provide clues about the sentence
 structure and can be analyzed in identical ways. For instance, size
 measurements in medical texts are often reported as
-
-    ``{Something} measures {size_measurement}``.
+::
+   {Something} measures {size_measurement}.
 
 Some examples:
-
-|     ``The spleen is unremarkable measuring 8.6 cm.``
-|     ``The cyst in the upper pole of the kidney measures 1.2 cm.``
-|     ``The duct tapers smoothly to the head of the pancreas,``
-|     ``where it measures approximately 5 mm.``
+::
+   The spleen is unremarkable measuring 8.6 cm.
+   The cyst in the upper pole of the kidney measures 1.2 cm.
+   The duct tapers smoothly to the head of the pancreas,
+   where it measures approximately 5 mm.
 
 After M-replacement, these sentences become:
-
-|     ``The spleen is unremarkable measuring M.``
-|     ``The cyst in the upper pole of the kidney measures M.``
-|     ``The duct tapers smoothly to the head of the pancreas,``
-|     ``where it measures approximately M.``
+::
+   The spleen is unremarkable measuring M.
+   The cyst in the upper pole of the kidney measures M.
+   The duct tapers smoothly to the head of the pancreas,
+   where it measures approximately M.
 
 A regular expression designed to find a capital M preceded by a measurement
 verb could easily identify all of these sentences as belonging to the same

@@ -16,18 +16,19 @@ POST JSON to run spaCy's NER. Sample input JSON `here <https://github.com/Clarit
 /nlpql
 ------
 POST NLPQL plain text file to run phenotype against data in Solr. Returns links to view job status and results.
-Learn more about NLPQL `here <http://clarity-nlp.readthedocs.io/en/latest/nlpql.html>`_ and see samples of NLPQL `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql>`_.
+Learn more about NLPQL :ref:`here<intro-overview>` and see samples of NLPQL `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlpql>`_.
 
+.. _nlpql_tester_api:
 
 /nlpql_tester
 -------------
 POST NLPQL text file to test if parses successfully. Either returns phenotype JSON or errors, if any.
-Learn more about NLPQL `here <http://clarity-nlp.readthedocs.io/en/latest/nlpql.html>`_ and see samples of NLPQL `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql>`_.
+Learn more about NLPQL :ref:`here<intro-overview>` and see samples of NLPQL `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlpql>`_.
 
 
 /nlpql_expander
 ---------------
-POST to expand NLPQL termset macros. Read more `here <https://clarity-nlp.readthedocs.io/en/latest/user_guide/nlpql/macros.html?highlight=Expansion>`_.
+POST to expand NLPQL termset macros. Read more :ref:`here<macros>`.
 
 
 /nlpql_samples
@@ -43,7 +44,7 @@ GET NLPQL sample by name.
 /phenotype
 ----------
 POST Phenotype JSON to run phenotype against data in Solr. Same as posting to `/nlpql`, but with the finalized JSON structured instead of raw NLPQL. Using `/nlpql` will be preferred for most users.
-See sample `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/nlpql/NLPQL_JSON>`_.
+See sample `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/phenotype>`_.
 
 
 /phenotype_feature_results/<int:job_id>/<string:feature>/<string:subject>
@@ -99,7 +100,7 @@ GET phenotype_subjects.
 /pipeline
 ---------
 POST a pipeline job (JSON) to run on the Luigi pipeline. Most users will use `/nlpql`.
-Read more about pipelines `here <http://clarity-nlp.readthedocs.io/en/latest/pipelines.html>`_.
+Read more about pipelines `here <../../developer_guide/technical_background/pipelines.html>`_.
 See sample JSON `here <https://github.com/ClarityNLP/ClarityNLP/tree/master/nlp/samples/pipelines>`_.
 
 /pipeline_id/<int:pipeline_id>

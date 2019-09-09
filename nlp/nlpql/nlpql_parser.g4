@@ -153,7 +153,8 @@ unaryOperator:
 
 logicalOperator:
     AND |
-    OR
+    OR |
+    NOT
     ;
 
 comparisonOperator:
@@ -220,6 +221,7 @@ named:
     CODE_SYSTEM |
     VALUE_SET |
     TERM_SET |
+    EXCLUDED_TERM_SET |
     DOCUMENT_SET |
     COHORT |
     POPULATION |

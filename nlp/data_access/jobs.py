@@ -171,31 +171,40 @@ def delete_job(job_id: str, connection_string: str):
     return flag
 
 
-def query_phenotype_jobs(status: str, connection_string: str):
+def query_phenotype_jobs(status: str, connection_string: str, limit=100, skip=0):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     jobs = list()
 
+    limit = str(limit)
+    skip = str(skip)
     try:
         if status == '' or status == 'ALL':
-            cursor.execute("""select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
+            q = """select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
                                INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                               where jb.job_type = 'PHENOTYPE'
-                              order by jb.date_started DESC""")
+                              order by jb.date_started DESC 
+                              limit %s OFFSET %s"""
+            print(q)
+            cursor.execute(q, [limit, skip])
         elif status == 'INCOMPLETE':
-            cursor.execute("""select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
+            q = """select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
                              INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                             where jb.job_type = 'PHENOTYPE'
                             and (jb.status <> %s and jb.status <> %s and jb.status <> %s)
-                            order by jb.date_started DESC""",
-                           [COMPLETED, FAILURE, KILLED])
+                            order by jb.date_started DESC 
+                            limit %s OFFSET %s"""
+            print(q)
+            cursor.execute(q, [COMPLETED, FAILURE, KILLED, limit, skip])
         else:
-            cursor.execute("""select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
+            q = """select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
                              INNER JOIN nlp.phenotype pt on pt.phenotype_id = jb.phenotype_id
                             where jb.job_type = 'PHENOTYPE'
                             and jb.status = %s 
-                            order by jb.date_started DESC""",
-                           [status])
+                            order by jb.date_started DESC 
+                            limit %s OFFSET %s"""
+            print(q)
+            cursor.execute(q, [status, limit, skip])
 
         rows = cursor.fetchall()
 

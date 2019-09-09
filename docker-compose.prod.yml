@@ -217,6 +217,7 @@ services:
       POSTGRES_USER: ${NLP_PG_USER}
       POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
       POSTGRES_DB: ${NLP_PG_DATABASE}
+      INIT_OMOP: ${INIT_OMOP}
     expose:
       - ${NLP_PG_CONTAINER_PORT}
     volumes:
@@ -410,3 +411,21 @@ services:
       - nginx-proxy
     networks:
       - clarity
+
+  nlpaas:
+    container_name: NLPAAS
+    hostname: ${CLARITYNLPAAS_HOSTNAME}
+    build: ./utilities/nlpaas
+    expose:
+      - ${CLARITYNLPAAS_CONTAINER_PORT}
+    environment:
+      - CUSTOM_S3_URL=${CLARITYNLPAAS_CUSTOM_S3_URL}
+      - CUSTOM_DIR=${CLARITYNLPAAS_CUSTOM_DIR}
+      - NLP_SOLR_URL=${NLP_SOLR_URL}
+      - CLARITY_NLP_URL=${CLARITYNLPAAS_CLARITYNLP_URL}
+      - CLARITY_TOKEN_URL=${CLARITYNLPAAS_TOKEN_URL}
+      - CLARITY_NLP_SECRET=${CLARITYNLPAAS_SECRET}
+    networks:
+      - clarity
+    depends_on:
+      - nlp-api

@@ -14,16 +14,15 @@ SECTIONS_FILTER = "sections"
 
 @cached(init_cache)
 def get_finder(key):
-    type_name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, has_special_filters, filters = get_values_from_key(key)
-    finder_obj = TermFinder(term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
+    _, _, term_list, synonyms, descendants, ancestors, vocab, _, filters = get_values_from_key(key)
+    finder_obj = TermFinder(term_list, synonyms, descendants, ancestors, vocab,
                             filters=filters)
 
     return finder_obj
 
 
 def get_term_matches(key):
-    type_name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, has_special_filters, filters = get_values_from_key(
-        key)
+    _, doc_id, term_list, synonyms, descendants, ancestors, vocab, _, filters = get_values_from_key(key)
 
     objs = list()
     doc = get_document_by_id(doc_id)
@@ -52,14 +51,14 @@ def get_term_matches(key):
     return objs
 
 
-def setup_key(name, doc_id, term_list, include_synonyms, include_descendants,
-                                   include_ancestors, vocabulary, filters, has_special_filters):
+def setup_key(name, doc_id, term_list, synonyms, descendants,
+              ancestors, vocab, filters, has_special_filters):
     if isinstance(term_list, list):
         term_list = json.dumps(term_list)
     if isinstance(filters, dict):
         filters = json.dumps(filters)
-    thing = '%s|%s|%s|%r|%r|%r|%s|%r' % (name, doc_id, term_list, include_synonyms, include_descendants,
-                                   include_ancestors, vocabulary, has_special_filters)
+    thing = '%s|%s|%s|%r|%r|%r|%s|%r' % (name, doc_id, term_list, synonyms, descendants,
+                                         ancestors, vocab, has_special_filters)
     if has_special_filters:
         thing += ("|%s" + filters)
     else:
@@ -72,10 +71,10 @@ def get_values_from_key(key):
     type_name = keys[0]
     doc_id = keys[1]
     term_list = json.loads(keys[2])
-    include_synonyms = keys[3] == "True"
-    include_descendants = keys[4] == "True"
-    include_ancestors = keys[5] == "True"
-    vocabulary = keys[6]
+    synonyms = keys[3] == "True"
+    descendants = keys[4] == "True"
+    ancestors = keys[5] == "True"
+    vocab = keys[6]
     has_special_filters = keys[7] == "True"
     if len(keys[8]) > 0:
         filters = json.loads(keys[8])
@@ -84,7 +83,7 @@ def get_values_from_key(key):
             filters = provider_assertion_filters
         else:
             filters = dict()
-    return type_name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary, has_special_filters, filters
+    return type_name, doc_id, term_list, synonyms, descendants, ancestors, vocab, has_special_filters, filters
 
 
 @cached(pipeline_cache)
@@ -93,10 +92,10 @@ def _get_cached_terms(key):
     return get_term_matches(key)
 
 
-def get_cached_terms(name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
+def get_cached_terms(name, doc_id, term_list, synonyms, descendants, ancestors, vocab,
                      filters, has_special_filters):
-    thing = setup_key(name, doc_id, term_list, include_synonyms, include_descendants, include_ancestors, vocabulary,
-                     filters, has_special_filters)
+    thing = setup_key(name, doc_id, term_list, synonyms, descendants, ancestors, vocab,
+                      filters, has_special_filters)
     if util.use_redis_caching == "true":
         # TODO use better key method, some recoverable hash
         hashed_str = name + ':' + thing
@@ -108,11 +107,11 @@ def get_cached_terms(name, doc_id, term_list, include_synonyms, include_descenda
             util.add_cache_compute_count()
             objs = get_term_matches(thing)
             util.write_to_redis_cache(hashed_str, json.dumps(objs))
-    elif util.use_memory_caching == "true":
+    else:
         util.add_cache_query_count()
         objs = _get_cached_terms(thing)
-    else:
-        objs = get_term_matches(thing)
+        if not objs or len(objs) == 0:
+            objs = get_term_matches(thing)
     return objs
 
 
@@ -123,35 +122,18 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
     write_log_data(jobs.IN_PROGRESS, "Finding Terms with " + name)
 
     for doc in docs:
-        # if util.use_dl_trained_terms == 'true':
-        #     # TODO implement other filters like synonyms, etc.
-        #     predictions = do_term_lookup(pipeline_config.terms, document_text(doc))
-        #     for p in predictions.keys():
-        #         val = predictions[p]
-        #         if val:
-        #             obj = {
-        #                 "sentence": 'UNKNOWN',
-        #                 "section": 'UNKNOWN',
-        #                 "term": p.replace('is_', ''),
-        #                 "start": 0,
-        #                 "end": 0,
-        #                 "negation": 'UNKNOWN',
-        #                 "temporality": 'UNKNOWN',
-        #                 "experiencer": 'UNKNOWN'
-        #             }
-        #             write_result_data(temp_file, mongo_client, doc, obj)
-        if util.use_memory_caching == 'true' or util.use_redis_caching == "true":
-            objs = get_cached_terms(name, doc[util.solr_report_id_field], pipeline_config.terms, pipeline_config.
-                                    include_synonyms, pipeline_config
-                                    .include_descendants, pipeline_config.include_ancestors, pipeline_config
-                                    .vocabulary, filters, has_special_filters)
+        objs = get_cached_terms(name, doc[util.solr_report_id_field], pipeline_config.terms, pipeline_config.
+                                include_synonyms, pipeline_config
+                                .include_descendants, pipeline_config.include_ancestors, pipeline_config
+                                .vocabulary, filters, has_special_filters)
+        if objs and len(objs) > 0:
             for obj in objs:
                 write_result_data(temp_file, mongo_client, doc, obj)
         else:
             if not term_matcher:
                 term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
-                                          .include_descendants, pipeline_config.include_ancestors, pipeline_config
-                                          .vocabulary, filters=filters)
+                                          .include_descendants, pipeline_config.ancestors, pipeline_config
+                                          .vocabulary, filters=filters, excluded_terms=pipeline_config.excluded_terms)
             section_headers, section_texts = document_sections(doc)
             terms_found = term_matcher.get_term_full_text_matches(document_text(doc), section_headers, section_texts)
             for term in terms_found:
@@ -170,7 +152,7 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     "result_display": {
                         "date": doc[util.solr_report_date_field],
                         "result_content": term.sentence,
-                        "sentence":'',
+                        "sentence": '',
                         "highlights": [term.term]
                     }
                 }

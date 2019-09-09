@@ -1,4 +1,4 @@
-.. _size-measurement-finder:
+.. _measurementfinderalgo:
 
 Finding Size Measurements
 *************************
@@ -120,9 +120,8 @@ x cm view by y cm view by z cm view  3 cm craniocaudal by 5cm transverse by 7 cm
 
 ClarityNLP can also find size measurements with nonuniform spacing between the
 various components, as several of the examples above demonstrate. Newlines can
-also be present within a measurement. Floating point numbers can include a
-space either before or after the decimal point, such as ``1. 5 cm``. Inconsistent
-spacing such as this appears frequently in electronic health records.
+also be present within a measurement. Inconsistent spacing such as this
+appears frequently in electronic health records.
 
 Details
 -------
@@ -142,12 +141,11 @@ its use as a unit of length. **It cannot correctly identify all such instances.*
 Hence the word 'in' preceded by a numeric value may sometimes generate false
 positive results.
 
-Numeric values can be integers (sequence of digits) or floating point values
-with optional whitespace either before or after the decimal point.  The digit
-before the decimal point is optional. Some examples:
+Numeric values can be integers (sequence of digits) or floating point values.
+The digit before the decimal point is optional. Some examples:
 
 * 3, 42
-* 12.4, 12 .4, 12. 4
+* 12.4887
 * .314, 0.314
 
 

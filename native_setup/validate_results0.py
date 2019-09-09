@@ -28,125 +28,216 @@ def _fields_exist(field_list, row_dict):
 
 
 ###############################################################################
-def _race_is_valid(row_dict):
+def _validate_race_results(results):
 
     FIELDS = ['value', 'value_normalized']
-    if not _fields_exist(FIELDS, row_dict):
+
+    if 1 != len(results):
         return False
 
-    v = row_dict['value']
-    vn = row_dict['value_normalized']
+    for result in results:
+    
+        if not _fields_exist(FIELDS, result):
+            return False
 
-    if v == 'caucasian' and vn == 'white':
-        return True
-    return False
+        v = result['value']
+        vn = result['value_normalized']
+
+        if v != 'caucasian' or vn != 'white':
+            return False
+        
+    return True
 
 
 ###############################################################################
-def _measurement_is_valid(row_dict):
+def _validate_measurement_results(results):
 
     FIELDS = ['dimension_X', 'dimension_Y', 'dimension_Z', 'condition', 'units']
-    if not _fields_exist(FIELDS, row_dict):
-        return False
 
-    x = row_dict['dimension_X']
-    y = row_dict['dimension_Y']
-    z = row_dict['dimension_Z']
-    condition = row_dict['condition']
-    units = row_dict['units']
+    EXPECTED_VALUES = set(['13', '1400', '15', '17', '19', '21'])
     
-    if '13' == x:
-        if _EQ == condition and _MM == units:
-            return True
-    elif '1400' == x:
-        if _EQ == condition and _MM3 == units:
-            return True
-    elif '15' == x:
-        if '16' == y and 'RANGE' == condition and _MM == units:
-            return True
-    elif '17' == x:
-        if '18' == y and _EQ == condition and _MM == units:
-            return True
-    elif '19' == x:
-        if '20' == y and _EQ == condition and _MM == units:
-            return True
-    elif '21' == x:
-        if '22' == y and '23' == z and _EQ == condition and _MM == units:
-            return True
+    if 6 != len(results):
+        return False
+    
+    for result in results:
+    
+        if not _fields_exist(FIELDS, result):
+            return False
+
+        x = result['dimension_X']
+        y = result['dimension_Y']
+        z = result['dimension_Z']
+        condition = result['condition']
+        units = result['units']
+
+        if '13' == x:
+            if _EQ != condition or _MM != units:
+                return False
+            if '13' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('13')
+            else:
+                return False
+        elif '1400' == x:
+            if _EQ != condition or _MM3 != units:
+                return False
+            if '1400' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('1400')
+            else:
+                return False
+        elif '15' == x:
+            if '16' != y or 'RANGE' != condition or _MM != units:
+                return False
+            if '15' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('15')
+            else:
+                return False
+        elif '17' == x:
+            if '18' != y or _EQ != condition or _MM != units:
+                return False
+            if '17' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('17')
+            else:
+                return False
+        elif '19' == x:
+            if '20' != y or _EQ != condition or _MM != units:
+                return False
+            if '19' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('19')
+            else:
+                return False
+        elif '21' == x:
+            if '22' != y or '23' != z or _EQ != condition or _MM != units:
+                return False
+            if '21' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('21')
+            else:
+                return False
+        else:
+            return False
         
-    return False
+    return True
 
 
 ###############################################################################
-def _provider_assertion_is_valid(row_dict):
+def _validate_provider_assertion_results(results):
 
     FIELDS = ['negation', 'term']
-    if not _fields_exist(FIELDS, row_dict):
+
+    if 1 != len(results):
         return False
 
-    if row_dict['negation'] != 'Affirmed':
-        return False
-    if row_dict['term'] != 'fever':
-        return False
+    for result in results:
+    
+        if not _fields_exist(FIELDS, result):
+            return False
+
+        if 'Affirmed' != result['negation']:
+            return False
+        if 'fever' != result['term']:
+            return False
+
     return True
 
 
 ###############################################################################
-def _term_proximity_is_valid(row_dict):
+def _validate_term_proximity_results(results):
 
     FIELDS = ['word1', 'word2']
-    if not _fields_exist(FIELDS, row_dict):
+
+    EV0 = ('cancer', 'prostate')
+    EV1 = ('prostate', 'gleason')
+    EXPECTED_VALUES = set([EV0, EV1])
+
+    if 2 != len(results):
         return False
+    
+    for result in results:
+    
+        if not _fields_exist(FIELDS, result):
+            return False
 
-    w1 = row_dict['word1']
-    w2 = row_dict['word2']
-
-    if (w1 == 'cancer' and w2 == 'prostate') or (w1 == 'prostate' and w2 == 'gleason'):
-        return True
-    return False
+        w1 = result['word1']
+        w2 = result['word2']
+        t = (w1, w2)
+        
+        if EV0 == t:
+            if EV0 in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove(EV0)
+            else:
+                return False
+        elif EV1 == t:
+            if EV1 in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove(EV1)
+            else:
+                return False
+        else:
+            return False
+        
+    return True
 
 
 ###############################################################################
-def _ejection_fraction_is_valid(row_dict):
+def _validate_ejection_fraction_results(results):
 
     FIELDS = ['text', 'value', 'condition']
-    if not _fields_exist(FIELDS, row_dict):
-        return False
 
-    text  = row_dict['text']
-    value = row_dict['value']
-    condition = row_dict['condition']
+    EXPECTED_VALUES = set(['40', '75'])
+
+    if 2 != len(results):
+        return False
     
-    if value == '40':
-        if text != 'LVEF' and condition != 'LESS_THAN':
+    for result in results:
+    
+        if not _fields_exist(FIELDS, result):
             return False
-    elif value == '75':
-        if text != 'ejection fraction' and condition != 'EQUAL':
-            return False
-    else:
-        return False            
+
+        text  = result['text']
+        value = result['value']
+        condition = result['condition']
+
+        if value == '40':
+            if text != 'LVEF' and condition != 'LESS_THAN':
+                return False
+            if '40' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('40')
+            else:
+                return False
+        elif value == '75':
+            if text != 'ejection fraction' and condition != 'EQUAL':
+                return False
+            if '75' in EXPECTED_VALUES:
+                EXPECTED_VALUES.remove('75')
+            else:
+                return False
+        else:
+            return False            
     
     return True
 
 
 ###############################################################################
-def _gleason_is_valid(row_dict):
+def _validate_gleason_results(results):
 
     FIELDS = ['value', 'value_first', 'value_second']
-    if not _fields_exist(FIELDS, row_dict):
-        return False
 
-    if row_dict['value'] != '5':
-        return False
-    if row_dict['value_first'] != '2':
-        return False
-    if row_dict['value_second'] != '3':
-        return False
+    assert 1 == len(results)
+    for result in results:
+    
+        if not _fields_exist(FIELDS, result):
+            return False
+
+        if result['value'] != '5':
+            return False
+        if result['value_first'] != '2':
+            return False
+        if result['value_second'] != '3':
+            return False
+        
     return True
 
 
 ###############################################################################
-def _tnm_is_valid(row_dict):
+def _validate_tnm_results(results):
 
     # pT4bpN1bM0 (stage IIIC)
     
@@ -155,27 +246,33 @@ def _tnm_is_valid(row_dict):
                           'm_code',
               'stage_number', 'stage_letter']
 
-    if not _fields_exist(FIELDS, row_dict):
+    if 1 != len(results):
         return False
+    
+    for result in results:
+    
+        if not _fields_exist(FIELDS, result):
+            return False
 
-    if row_dict['t_prefix'] != 'p':
-        return False
-    if row_dict['t_code'] != '4':
-        return False
-    if row_dict['t_suffixes'] != "['b']":
-        return False
-    if row_dict['n_prefix'] != 'p':
-        return False
-    if row_dict['n_code'] != '1':
-        return False
-    if row_dict['n_suffixes'] != "['b']":
-        return False
-    if row_dict['m_code'] != '0':
-        return False
-    if row_dict['stage_number'] != '3':
-        return False
-    if row_dict['stage_letter'] != 'c':
-        return False
+        if result['t_prefix'] != 'p':
+            return False
+        if result['t_code'] != '4':
+            return False
+        if result['t_suffixes'] != "['b']":
+            return False
+        if result['n_prefix'] != 'p':
+            return False
+        if result['n_code'] != '1':
+            return False
+        if result['n_suffixes'] != "['b']":
+            return False
+        if result['m_code'] != '0':
+            return False
+        if result['stage_number'] != '3':
+            return False
+        if result['stage_letter'] != 'c':
+            return False
+
     return True
 
 
@@ -186,44 +283,61 @@ def _run(csv_file):
     and check with what is expected.
     """
 
+    tnm_results     = []
+    gleason_results = []
+    ef_results      = []
+    tp_results      = []
+    pa_results      = []
+    meas_results    = []
+    race_results    = []
+    
     print('Validating results...')
     with open(csv_file, 'rt') as infile:
         dict_reader = csv.DictReader(infile)
+        for result in dict_reader:
 
-        ok = True
-        for row_dict in dict_reader:
-            nlpql_feature = row_dict['nlpql_feature']
-
+            nlpql_feature = result['nlpql_feature']
+            
             if 'TNMCode' == nlpql_feature:
-                if not _tnm_is_valid(row_dict):
-                    print('*** TNMCode is invalid ***')
-                    ok = False
+                tnm_results.append(result)
             elif 'GleasonScore' == nlpql_feature:
-                if not _gleason_is_valid(row_dict):
-                    print('*** GleasonScore is invalid ***')
-                    ok = False
+                gleason_results.append(result)
             elif 'EjectionFraction' == nlpql_feature:
-                if not _ejection_fraction_is_valid(row_dict):
-                    print('*** EjectionFraction is invalid ***')
-                    ok = False
+                ef_results.append(result)
             elif 'hasProstateCancer' == nlpql_feature:
-                if not _term_proximity_is_valid(row_dict):
-                    print('*** TermProximity is invalid ***')
-                    ok = False
+                tp_results.append(result)
             elif 'hasFever' == nlpql_feature:
-                if not _provider_assertion_is_valid(row_dict):
-                    print('*** ProviderAssertion is invalid ***')
-                    ok = False
+                pa_results.append(result)
             elif 'Measurement' == nlpql_feature:
-                if not _measurement_is_valid(row_dict):
-                    print('*** Measurement is invalid ***')
-                    ok = False
+                meas_results.append(result)
             elif 'Race' == nlpql_feature:
-                if not _race_is_valid(row_dict):
-                    print('*** Race is invalid ***')
-                    ok = False
+                race_results.append(result)
 
-    if ok:
+    all_valid = True
+    
+    if not _validate_tnm_results(tnm_results):
+        print('*** TNM results are invalid. ***')
+        all_valid = False
+    if not _validate_gleason_results(gleason_results):
+        print('*** Gleason results are invalid. ***')
+        all_valid = False
+    if not _validate_ejection_fraction_results(ef_results):
+        print('*** Ejection fraction results are invalid. ***')
+        all_valid = False
+    if not _validate_term_proximity_results(tp_results):
+        print('*** Prostate cancer results are invalid. ***')
+        all_valid = False
+    if not _validate_provider_assertion_results(pa_results):
+        print('*** Fever results are invalid. ***')
+        all_valid = False
+    if not _validate_measurement_results(meas_results):
+        print('*** Measurement results are invalid. ***')
+        all_valid = False
+    if not _validate_race_results(race_results):
+        print('*** Race results are invalid. ***')
+        all_valid = False
+        
+    if all_valid:
         print('All results are valid.')
                 
 
