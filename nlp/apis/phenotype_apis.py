@@ -174,7 +174,15 @@ def nlpql_expander():
 def phenotype_jobs(status_string: str):
     """GET a phenotype jobs JSON based on the job status"""
     try:
-        p = query_phenotype_jobs(status_string, util.conn_string)
+        limit = request.args.get('limit', '100')
+        skip = request.args.get('skip', '0')
+        try:
+            limit = int(limit)
+            skip = int(skip)
+        except Exception as ex:
+            limit = 100
+            skip = 0
+        p = query_phenotype_jobs(status_string, util.conn_string, limit=limit, skip=skip)
         return json.dumps(p, indent=4, sort_keys=True, default=str)
     except Exception as ex:
         traceback.print_exc(file=sys.stderr)

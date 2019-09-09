@@ -8,6 +8,9 @@ include ClarityCore version "1.0" called Clarity;
 termset neoterm:
 	["neoplasm", "neoplasms"];
 
+termset normal:
+	["normal"];
+
 documentset neodocs:
 	Clarity.createDocumentSet({
 		source: ["AACT"]
@@ -16,6 +19,7 @@ documentset neodocs:
 define final neomention:
 	Clarity.TermFinder({
 		termset: [neoterm],
+		excluded_termset:[normal],
 		cql: """
 
 		

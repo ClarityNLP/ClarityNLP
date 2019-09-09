@@ -13,6 +13,7 @@ Arguments
          Name                 Type                   Required                              Notes
 =====================  =====================  ==================== ======================================
 termset                :ref:`termset`         See implementation
+excluded_termset       :ref:`termset`         No                   If terms are present, feature should be excluded from results (depends on task implementation)
 documentset            :ref:`documentset`     No
 cohort                 :ref:`cohort`          No
 =====================  =====================  ==================== ======================================

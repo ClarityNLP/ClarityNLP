@@ -1,6 +1,8 @@
+import sys
+
 import psycopg2
 import psycopg2.extras
-import sys
+
 import util
 
 try:
@@ -25,12 +27,13 @@ class Pipeline(BaseModel):
 
 class PipelineConfig(BaseModel):
 
-    def __init__(self, config_type, name, terms: list=None, description='', limit=0, concept_code='', concept_code_system='',
+    def __init__(self, config_type, name, terms: list = None, excluded_terms=None, description='', limit=0,
+                 concept_code='', concept_code_system='',
                  owner='system', include_synonyms=False, include_descendants=False, include_ancestors=False,
-                 report_tags: list=None, vocabulary='SNOMED', sections: list=None, report_type_query='',
-                 minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list=None, sources: list=None,
-                 is_phenotype=False, report_types: list=None, custom_query='', filter_query='',
-                 custom_arguments: dict=None, enum_list: list=None, final: bool=False, job_results: dict=None,
+                 report_tags: list = None, vocabulary='SNOMED', sections: list = None, report_type_query='',
+                 minimum_value=0, maximum_value=10000, case_sensitive=False, cohort: list = None, sources: list = None,
+                 is_phenotype=False, report_types: list = None, custom_query='', filter_query='',
+                 custom_arguments: dict = None, enum_list: list = None, final: bool = False, job_results: dict = None,
                  pipeline_id=-1, cql='', display_name=''):
 
         # This code initializes mutable params in a manner that prevents the
@@ -50,6 +53,11 @@ class PipelineConfig(BaseModel):
             self.terms = list()
         else:
             self.terms = terms
+
+        if excluded_terms is None:
+            self.excluded_terms = list()
+        else:
+            self.excluded_terms = excluded_terms
         self.description = description
         self.limit = limit
         self.concept_code = concept_code
@@ -105,7 +113,6 @@ class PipelineConfig(BaseModel):
 
 
 def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
-
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
     pipeline_id = -1
@@ -117,7 +124,8 @@ def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
                           INSERT INTO
                           nlp.pipeline_config(owner, config, pipeline_type, name, description, date_created)
                           VALUES(%s, %s, %s, %s, %s, current_timestamp) RETURNING pipeline_id
-                          """, (pipeline.owner, pipeline_json, pipeline.config_type, pipeline.name, pipeline.description))
+                          """,
+                           (pipeline.owner, pipeline_json, pipeline.config_type, pipeline.name, pipeline.description))
 
             pipeline_id = cursor.fetchone()[0]
             conn.commit()
@@ -132,7 +140,6 @@ def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
 
 
 def update_pipeline_config(pipeline: PipelineConfig, connection_string: str):
-
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
 

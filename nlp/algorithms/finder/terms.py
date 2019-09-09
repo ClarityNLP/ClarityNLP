@@ -5,13 +5,18 @@ from algorithms.vocabulary import get_related_terms
 from algorithms.context import *
 from algorithms.sec_tag import *
 from algorithms.segmentation import *
+from cachetools import cached, LRUCache
 
 print('Initializing models for term finder...')
-section_tagger_init()
+try:
+    section_tagger_init()
+except Exception:
+    print('Error initializing sed tagger')
 c_text = Context()
 segmentor = Segmentation()
 spacy = segmentation_init()
 print('Done initializing models for term finder...')
+regex_cache = LRUCache(maxsize=1000)
 
 
 class IdentifiedTerm(BaseModel):
@@ -56,16 +61,18 @@ def filter_match(lookup, filters):
 
 
 def get_matches(matcher, sentence: str, section='UNKNOWN', filters=None):
-    if filters is None:
-        filters = dict()
-    matches = []
+    matches = list()
     match = matcher.search(sentence)
-    temporality_filters = get_filter_values(filters, "temporality")
-    experiencer_filters = get_filter_values(filters, "experiencer")
-    negex_filters = get_filter_values(filters, "negex")
-    section_filters = get_filter_values(filters, "sections")
 
     if match:
+        if filters is None:
+            filters = dict()
+
+        temporality_filters = get_filter_values(filters, "temporality")
+        experiencer_filters = get_filter_values(filters, "experiencer")
+        negex_filters = get_filter_values(filters, "negex")
+        section_filters = get_filter_values(filters, "sections")
+
         context_matches = c_text.run_context(match.group(0), sentence)
         term = IdentifiedTerm(sentence, match.group(), str(context_matches.negex.name),
                               str(context_matches.temporality.name), str(context_matches.experiencier.name),
@@ -77,13 +84,16 @@ def get_matches(matcher, sentence: str, section='UNKNOWN', filters=None):
     return matches
 
 
-def get_full_text_matches(matchers, text: str, filters=None, section_headers=None, section_texts=None):
+def get_full_text_matches(matchers, text: str, filters=None, section_headers=None, section_texts=None,
+                          excluded_matchers=None):
     if filters is None:
         filters = {}
     if section_headers is None:
         section_headers = [UNKNOWN]
     if section_texts is None:
         section_texts = [text]
+    has_exclusions = excluded_matchers and len(excluded_matchers) > 0
+
     found_terms = list()
 
     for idx in range(0, len(section_headers)):
@@ -92,22 +102,38 @@ def get_full_text_matches(matchers, text: str, filters=None, section_headers=Non
         # section_code = ".".join([str(i) for i in section_headers[idx].treecode_list])
 
         list_product = itertools.product(matchers, sentences)
+
         for l in list_product:
             found = get_matches(l[0], l[1], section_headers[idx], filters)
             if found:
-                found_terms.extend(found)
+                excluded = False
+                if has_exclusions:
+                    for e in excluded_matchers:
+                        if not excluded:
+                            found_excluded = get_matches(e, l[1], section_headers[idx], filters)
+                            if found_excluded:
+                                excluded = True
+                                break
+                if not excluded:
+                    found_terms.extend(found)
     return found_terms
+
+
+@cached(regex_cache)
+def get_matcher(t):
+    return re.compile(r"\b%s\b" % t, re.IGNORECASE)
 
 
 class TermFinder(BaseModel):
 
     def __init__(self, match_terms,  include_synonyms=True,
                  include_descendants=False, include_ancestors=False,
-                 vocabulary='SNOMED', filters=None):
+                 vocabulary='SNOMED', filters=None, excluded_terms=None):
         if filters is None:
             self.filters = {}
         else:
             self.filters = filters
+
         self.terms = match_terms
         self.matchers = []
         added = []
@@ -119,7 +145,11 @@ class TermFinder(BaseModel):
         #     print("added the following terms through vocab expansion %s" % str(added))
             self.terms.extend(added)
         # print("all terms to find %s" % str(self.terms))
-        self.matchers = [re.compile(r"\b%s\b" % t, re.IGNORECASE) for t in self.terms]
+        self.matchers = [get_matcher(t) for t in self.terms]
+        if excluded_terms and len(excluded_terms) > 0:
+            self.excluded_matchers = [get_matcher(t) for t in excluded_terms]
+        else:
+            self.excluded_matchers = list()
 
     def get_term_matches(self, sentence: str, section='UNKNOWN'):
         term_matches = list()
@@ -133,12 +163,22 @@ class TermFinder(BaseModel):
             section_headers = [UNKNOWN]
         if section_texts is None:
             section_texts = [full_text]
-        return get_full_text_matches(self.matchers, full_text, self.filters, section_headers, section_texts)
+        return get_full_text_matches(self.matchers, full_text, self.filters, section_headers, section_texts,
+                                     excluded_matchers=self.excluded_matchers)
 
 
 if __name__ == "__main__":
-    stf = TermFinder(["heart", "cardiovascular"])
-    terms = stf.get_term_matches("there is a heart in the cardiovascular system", "UNKNOWN")
-    txt = "Admitting Diagnosis: CEREBRAL BLEED\n  REASON FOR THIS EXAMINATION:\n  assess for chf\n \n FINAL REPORT\n HX:  Trauma. SOB - assess for CHF. \n\n SUPINE AP CHEST AT 6:18 AM:  Given the supine examination performed at the\n bedside, the cardiovascular status is difficult to assess.  The heart and\n mediastinum is unchanged in appearance from the study one day ago. Bibasilar\n opacities, which may reflect atelectasis, are unchanged.  There are diffuse\n interstitial markings as described on the prior study, also unchanged.\n\n IMPRESSION: Allowing for technical differences, there is little change since\n the study of one day ago.  The cardiovascular status of the patient is\n difficult to assess."
+
+    stf = TermFinder(["heart", "cardiovascular"], excluded_terms=['chf'])
+    txt = "Admitting Diagnosis: CEREBRAL BLEED\n  REASON FOR THIS EXAMINATION:\n  assess for chf\n \n FINAL REPORT\n " \
+          "HX:  Trauma. SOB - assess for CHF. \n\n SUPINE AP CHEST AT 6:18 AM:  Given the supine examination performed " \
+          "at the\n bedside, the cardiovascular status is difficult to assess.  The heart and\n mediastinum is " \
+          "unchanged in appearance from the study one day ago. Bibasilar\n opacities, which may reflect atelectasis, " \
+          "are unchanged.  There are diffuse\n interstitial markings as described on the prior study, also unchanged." \
+          "\n\n IMPRESSION: Allowing for technical differences, there is little change since\n the study of one day " \
+          "ago.  The cardiovascular status of the patient is\n difficult to assess."
     full_terms = stf.get_term_full_text_matches(txt)
-    print(full_terms)
+    for ft in full_terms:
+        print()
+        print(ft)
+

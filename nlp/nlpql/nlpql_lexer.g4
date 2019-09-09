@@ -19,6 +19,7 @@ CODE: 'code';
 CODE_SYSTEM: 'codesystem';
 VALUE_SET: 'valueset';
 TERM_SET: 'termset';
+EXCLUDED_TERM_SET: 'excluded_termset';
 REPORT_TYPES: 'report_types';
 REPORT_TAGS: 'report_tags';
 FILTER_QUERY: 'filter_query';

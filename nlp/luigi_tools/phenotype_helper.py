@@ -1,24 +1,23 @@
+import collections
 import datetime
 import sys
-import copy
 import traceback
 from functools import reduce
-import collections
 
 import pandas as pd
-import util
 
-from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations, results
+import util
+from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
 from data_access import expr_eval, expr_result
 from ohdsi import getCohort
 
-#import json
-#from bson import json_util, ObjectId
+# import json
+# from bson import json_util, ObjectId
 
 DEBUG_LIMIT = 1000
 COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
 
-pipeline_keys = PipelineConfig('test', 'test', 'test').__dict__.keys()
+pipeline_keys = PipelineConfig('test', 'test').__dict__.keys()
 numeric_comp_operators = ['==', '=', '>', '<', '<=', '>=']
 
 
@@ -129,6 +128,7 @@ def get_item_by_key(dictionary, keys: list):
 manually_mapped_keys = ['owner', 'limit', 'name', 'config_type', 'terms', 'cohort', 'job_results', 'concept_code',
                         'concept_code_system', 'cql', 'cql_source', 'named_arguments', 'display_name']
 
+
 def map_arguments(pipeline: PipelineConfig, e, all_terms):
     for k in e.keys():
         if k not in manually_mapped_keys:
@@ -172,9 +172,9 @@ def get_cohort_items(cohort_name, cohort_source, job_results):
 
 
 def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug,
-                               cohorts, phenotype_limit=0, report_types: dict=None,
-                               custom_query: dict=None, filter_query: dict=None, source: dict=None,
-                               job_results: dict=None):
+                               cohorts, phenotype_limit=0, report_types: dict = None,
+                               custom_query: dict = None, filter_query: dict = None, source: dict = None,
+                               job_results: dict = None):
     if report_types is None:
         report_types = dict()
     if custom_query is None:
@@ -192,6 +192,8 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         e['named_arguments']['value_sets'] = []
     if 'termsets' not in e['named_arguments']:
         e['named_arguments']['termsets'] = []
+    if 'excluded_termsets' not in e['named_arguments']:
+        e['named_arguments']['excluded_termsets'] = []
 
     if e['library'] == "Clarity" or e['library'] == 'ClarityNLP':
         # config_type, name, description, terms
@@ -216,6 +218,13 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
             terms = e['named_arguments']["termsets"]
         else:
             terms = list()
+
+        if 'excluded_termset' in e['named_arguments']:
+            excluded_terms = e['named_arguments']["excluded_termset"]
+        elif 'excluded_termsets' in e['named_arguments']:
+            excluded_terms = e['named_arguments']["excluded_termsets"]
+        else:
+            excluded_terms = list()
 
         if 'code' in e['named_arguments']:
             code = e['named_arguments']["code"]
@@ -266,6 +275,9 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   get_terms_by_keys(all_terms, terms,
                                                     e['named_arguments']['value_sets']
                                                     ),
+                                  excluded_terms=get_terms_by_keys(all_terms, excluded_terms,
+                                                                   e['named_arguments']['value_sets'])
+                                  ,
                                   owner=owner,
                                   limit=limit,
                                   cohort=cohort,
@@ -470,7 +482,6 @@ def process_nested_data_entity(de, new_de_name, db, job, phenotype: PhenotypeMod
 
 
 def get_all_names(phenotype: PhenotypeModel):
-
     names = set()
 
     if 'data_entities' in phenotype:
@@ -478,19 +489,18 @@ def get_all_names(phenotype: PhenotypeModel):
         for de in data_entities:
             if 'name' in de:
                 names.add(de['name'])
-                
+
     if 'operations' in phenotype:
         operations = phenotype['operations']
         for op in operations:
             if 'name' in op:
                 names.add(op['name'])
-            
+
     return list(names)
-    
-            
+
+
 def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
                        final=False):
-
     try:
         evaluator = util.expression_evaluator
     except:
@@ -527,15 +537,15 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
                 mongo_failed = True
             else:
                 mongo_process_operations(expr_list, db, job, phenotype,
-                                         phenotype_id, phenotype_owner,c, final)
-                
+                                         phenotype_id, phenotype_owner, c, final)
+
     if 'pandas' == evaluator or mongo_failed:
         print('Using pandas evaluator for expression "{0}"'.format(expression))
         pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
 
 
 def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenotype_owner, c: PhenotypeOperations,
-                       final=False):
+                              final=False):
     operation_name = c['name']
 
     if phenotype.context == 'Document':
@@ -732,7 +742,7 @@ def mongo_process_operations(expr_obj_list,
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 
     is_final_save = c['final']
-    
+
     for expr_obj in expr_obj_list:
 
         # the 'is_final' flag only applies to the last subexpression
@@ -740,23 +750,23 @@ def mongo_process_operations(expr_obj_list,
             is_final = False
         else:
             is_final = is_final_save
-        
+
         # evaluate the (sub)expression in expr_obj
         eval_result = expr_eval.evaluate_expression(expr_obj,
                                                     job_id,
                                                     context_field,
                                                     mongo_collection_obj)
-            
+
         # query MongoDB to get result docs
         cursor = mongo_collection_obj.find({'_id': {'$in': eval_result.doc_ids}})
 
         # initialize for MongoDB result document generation
         phenotype_info = expr_result.PhenotypeInfo(
-            job_id = job_id,
-            phenotype_id = phenotype_id,
-            owner = phenotype_owner,
-            context_field = context_field,
-            is_final = is_final
+            job_id=job_id,
+            phenotype_id=phenotype_id,
+            owner=phenotype_owner,
+            context_field=context_field,
+            is_final=is_final
         )
 
         # generate result documents
@@ -771,19 +781,18 @@ def mongo_process_operations(expr_obj_list,
             # flatten the result set into a set of Mongo documents
             doc_map, oid_list_of_lists = expr_eval.flatten_logical_result(eval_result,
                                                                           mongo_collection_obj)
-            
+
             output_docs = expr_result.to_logic_result_docs(eval_result,
                                                            phenotype_info,
                                                            doc_map,
                                                            oid_list_of_lists)
-            
+
         if len(output_docs) > 0:
             mongo_collection_obj.insert_many(output_docs)
         else:
             print('mongo_process_operations ({0}): ' \
                   'no phenotype matches on "{1}".'.format(eval_result.expr_type,
                                                           eval_result.expr_text))
-
 
 
 def get_dependencies(po, deps: list):

@@ -29,7 +29,7 @@ from:
 3. **Server Setup**
 
    Choose this option if you want ClarityNLP deployed on a network-accessible
-   server. This is a Docker-based installation with OAuth2 security, Traefik, 
+   server. This is a Docker-based installation with OAuth2 security, Traefik,
    and Let's Encrypt.
 
 
