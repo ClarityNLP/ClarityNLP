@@ -286,7 +286,7 @@ def _decode_attachment(obj):
         result[field_data] = decoded
 
     return result
-        
+                     
 
 ###############################################################################
 def _decode_time(obj):
@@ -391,6 +391,46 @@ def _decode_period(obj):
     for field_name in FIELD_NAMES:
         if field_name in obj:
             result[field_name] = _decode_date_time(obj[field_name])
+
+    return result
+
+
+###############################################################################
+def _decode_human_name(obj):
+    """
+    Decode a FHIR STU2 HumanName object (1.19.0.12).
+    """
+
+    result = {}
+    
+    SIMPLE_FIELDS = ['use', 'text', 'family', 'given', 'prefix', 'suffix']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_PERIOD = 'period'
+    if FIELD_PERIOD in obj:
+        result['period'] = _decode_period(obj)
+
+    return result
+
+
+###############################################################################
+def _decode_contact_point(obj):
+    """
+    Decode a FHIR STU2 ContactPoint object (1.19.0.14).
+    """
+
+    result = {}
+
+    SIMPLE_FIELDS = ['system', 'value', 'use', 'rank']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_PERIOD = 'period'
+    if FIELD_PERIOD in obj:
+        result['period'] = _decode_period(obj)
 
     return result
 
@@ -669,6 +709,30 @@ def _decode_observation_stu2(obj):
     return observation
 
 
+###############################################################################
+def _decode_patient_stu2(obj):
+    """
+    Decode a FHIR STU2 Patient resource object (5.1.2).
+    """
+
+    patient = {}
+
+    # extract the DomainResource and BaseResource fields
+    if 'id' in obj:
+        patient['id'] = obj['id']
+        # others ignored
+
+    structure = [
+        ('identifier',           list,     _decode_identifier),
+        ('active',               None,     None),
+        ('name',                 list,     _decode_human_name),
+        ('telecom',              list,     _decode_contact_point),
+        ('gender',               None,     None),
+    ]
+
+    _decode_from_structure(obj, structure, patient)
+        
+    return patient
 
 
 
@@ -1301,7 +1365,11 @@ if __name__ == '__main__':
         obj = json_data
         result = None
         if 'resourceType' in obj:
-            result = _decode_observation_stu2(obj)
+            rt = obj['resourceType']
+            if 'Observation' == rt:
+                result = _decode_observation_stu2(obj)
+            elif 'Patient' == rt:
+                result = _decode_patient_stu2(obj)
 
         if result is not None:
             for k,v in result.items():
