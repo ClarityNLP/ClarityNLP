@@ -13,8 +13,8 @@ from datetime import datetime, timezone, time
 from collections import namedtuple
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
-_MODULE_NAME   = 'cibmtr_data_parser.py'
+_VERSION_MINOR = 5
+_MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
 _TRACE = False
@@ -164,7 +164,12 @@ MedicationAdministrationResource = namedtuple('MedicationAdministrationResource'
                                               MEDICATION_ADMINISTRATION_FIELDS)
 
 # regex used to recognize UTC offsets in a FHIR datetime string
-_regex_fhir_utc_offset = re.compile(r'\+\d\d:\d\d\Z')
+_regex_fhir_utc_offset = re.compile(r'[-\+]\d\d:\d\d\Z')
+
+# regexes used to recognize date formats
+_regex_ymd = re.compile(r'\d\d\d\d-\d\d-\d\d')
+_regex_ym  = re.compile(r'\d\d\d\d-\d\d')
+_regex_y   = re.compile(r'\d\d\d\d')
 
 
 ###############################################################################
@@ -367,11 +372,27 @@ def _decode_date_time(obj):
     elif _regex_y.match(tmp):
         datetime_obj = datetime.strptime(tmp, '%Y')
     else:
-        print('\n*** cql_result_parser: unknown time format: "{0}"'.
-              format(instant_str))
+        print('\n*** {0}: unknown time format: "{1}"'.
+              format(_MODULE_NAME, instant_str))
         return None
         
     return datetime_obj
+
+
+###############################################################################
+def _decode_period(obj):
+    """
+    Decode a FHIR STU2 Period object (2.14.0.10).
+    """
+
+    FIELD_NAMES = ['start', 'end']
+
+    result = {}
+    for field_name in FIELD_NAMES:
+        if field_name in obj:
+            result[field_name] = _decode_date_time(obj[field_name])
+
+    return result
 
 
 ###############################################################################
@@ -411,26 +432,6 @@ def _decode_codeable_concept(obj):
     if 'text' in obj:
         result['text'] = obj['text']
             
-    return result
-
-
-    
-
-
-
-###############################################################################
-def _decode_period(obj):
-    """
-    Decode a FHIR STU2 Period object (2.14.0.10).
-    """
-
-    FIELD_NAMES = ['start', 'end']
-
-    result = {}
-    for field_name in FIELD_NAMES:
-        if field_name in obj:
-            result[field_name] = _decode_date_time(obj[field_name])
-
     return result
 
 
@@ -475,7 +476,7 @@ def _decode_identifier(obj):
         if decoder is None:
             result[field_name] = obj[field_name]
         else:
-            result[field_name] = decoder(obj)
+            result[field_name] = decoder(obj[field_name])
 
     return result
 
@@ -619,7 +620,7 @@ def _decode_component(obj):
     if FIELD_AR in obj:
         result[FIELD_AR] = _decode_codeable_concept(obj[FIELD_AR])
 
-    # skip the reference range array
+    # skip the reference range array for now
     
     return result
         
@@ -663,33 +664,7 @@ def _decode_observation_stu2(obj):
     ]
 
     _decode_value(obj, observation)
-
     _decode_from_structure(obj, structure, observation)
-    # for field_name, obj_type, decoder in structure:
-    #     result = {}
-    #     if field_name not in obj:
-    #         continue
-
-    #     if decoder is None:
-    #         if obj_type is None:
-    #             # scalar
-    #             observation[field_name] = obj[field_name]
-    #         elif obj_type is list:
-    #             counter = 0
-    #             for elt in obj[field_name]:
-    #                 new_field_name = '{0}_{1}'.format(field_name, counter)
-    #                 observation[new_field_name] = elt
-    #                 counter += 1
-    #     else:
-    #         if obj_type is None:
-    #             result = decoder(obj[field_name])
-    #             observation[field_name] = result
-    #         elif obj_type is list:
-    #             counter = 0
-    #             for elt in obj[field_name]:
-    #                 new_field_name = '{0}_{1}'.format(field_name, counter)
-    #                 observation[new_field_name] = decoder(elt)
-    #                 counter += 1
 
     return observation
 
