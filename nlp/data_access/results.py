@@ -34,22 +34,41 @@ def display_mapping(x):
 
     val = ''
     if 'value' in x:
-        val = x['value']
+        val = x.get('value')
     elif 'term' in x:
-        val = x['term']
+        val = x.get('term')
     highlight = val
 
     sentence = ''
     if 'sentence' in x:
-        sentence = x['sentence']
+        sentence = x.get('sentence')
     elif 'text' in x:
-        sentence = x['text']
+        sentence = x.get('text')
+
+    start = 0
+    end = 0
+    if 'start' in x:
+        start = x.get('start')
+    if 'end' in x:
+        end = x.get('end')
+
+    dt = ''
+    if 'report_date' in x:
+        dt = x.get('report_date')
+    elif 'date' in x:
+        dt = x.get('date')
+
+    highlight_values = []
+    if highlight and len(highlight) > 0:
+        highlight_values = [highlight]
 
     x['result_display'] = {
-        "date": '',
+        "date": dt,
         "result_content": val,
-        "highlights": [highlight],
-        "sentence": sentence
+        "highlights": highlight_values,
+        "sentence": sentence,
+        "start": [start],
+        "end": [end]
     }
     return x
 

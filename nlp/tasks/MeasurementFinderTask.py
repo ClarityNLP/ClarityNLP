@@ -35,7 +35,17 @@ class MeasurementFinderTask(BaseTask):
                     "value2": meas.value2,
                     "temporality": meas.temporality,
                     "min_value": meas.min_value,
-                    "max_value": meas.max_value
+                    "max_value": meas.max_value,
+                    "result_display": {
+                        "date": doc[util.solr_report_date_field],
+                        "result_content": "{0} {1} {2}".format(meas.text,
+                                                               value,
+                                                               meas.units),
+                        "sentence": meas.sentence,
+                        "highlights": [meas.text, value, meas.units],
+                        "start": [meas.start],
+                        "end": [meas.end]
+                    }
                 }
 
                 self.write_result_data(temp_file, mongo_client, doc, obj)
