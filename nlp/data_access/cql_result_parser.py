@@ -7,8 +7,9 @@ import re
 import os
 import sys
 import json
+import base64
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, time
 from collections import namedtuple
 
 _VERSION_MAJOR = 0
@@ -174,6 +175,140 @@ def enable_debug():
 
 
 ###############################################################################
+def _decode_quantity(obj):
+    """
+    Decode a FHIR STU2 'Quantity' object (1.19.0.6).
+    """
+
+    # all simple fields
+    FIELD_NAMES = ['value', 'comparator', 'unit', 'system', 'code']
+
+    result = {}
+    for field_name in FIELD_NAMES:
+        if field_name in obj:
+            result[field_name] = obj[field_name]
+
+    return result
+
+
+###############################################################################
+def _decode_range(obj):
+    """
+    Decode a FHIR STU2 'Range' object (1.19.0.7).
+    """
+
+    # all Quantity objects
+    FIELD_NAMES = ['low', 'high']
+
+    result = {}
+    for field_name in FIELD_NAMES:
+        if field_name in obj:
+            result[field_name] = _decode_quantity(obj[field_name])
+
+    return result
+
+
+###############################################################################
+def _decode_ratio(obj):
+    """
+    Decode a FHIR STU2 'Ratio' object (1.19.0.8).
+    """
+
+    # all Quantity objects
+    FIELD_NAMES = ['numerator', 'denominator']
+
+    result = {}
+    for field_name in FIELD_NAMES:
+        if field_name in obj:
+            result[field_name] = _decode_quantity(obj[field_name])
+
+    return result
+
+
+###############################################################################
+def _decode_sampled_data(obj):
+    """
+    Decode a FHIR STU2 'SampledData' object (1.19.0.10).
+    """
+
+    FIELD_ORIGIN = 'origin'
+
+    result = {}
+    if FIELD_ORIGIN in obj:
+        result[FIELD_ORIGIN] = _decode_quantity(obj[FIELD_ORIGIN])
+
+    SIMPLE_FIELDS = ['period', 'factor', 'lowerLimit',
+                     'upperLimit', 'dimensions', 'data']
+
+    for field_name in SIMPLE_FIELDS:
+        if field_name in obj:
+            result[field_name] = obj[field_name]
+
+    return result
+
+
+###############################################################################
+def _decode_attachment(obj):
+    """
+    Decode a FHIR STU2 'Attachment' object (1.19.0.3).
+    """
+
+    SIMPLE_FIELDS = ['contentType', 'language', 'url', 'size', 'title']
+    
+    # the 'creation' field is a dateTime
+    FIELD_CREATION = 'creation'
+
+    # these fields are bse64 binary
+    FIELD_DATA = 'data'
+    FIELD_HASH = 'hash'
+    
+    result = {}
+    
+    for field_name in SIMPLE_FIELDS:
+        if field_name in obj:
+            result[field_name] = obj[field_name]
+    
+    if FIELD_CREATION in obj:
+        result[FIELD_CREATION] = _decode_date_time(obj[FIELD_CREATION])
+
+    if FIELD_HASH in obj:
+        # convert hash to hex string
+        result[FIELD_HASH] = '{0:x}'.format(obj[FIELD_HASH])
+
+    if FIELD_DATA in obj:
+        base64_encoded = obj[FIELD_DATA]
+        decoded = base64.b64decode(base64_encoded)
+        result[field_data] = decoded
+
+    return result
+        
+
+###############################################################################
+def _decode_time(obj):
+    """
+    Decode a FHIR STU2 time value.
+
+    Valid formats:
+        HH:MM:SS
+        HH:MM:SS.sss...
+    """
+
+    assert str == type(obj)
+    time_str = obj.strip()
+
+    # extract microseconds, if any
+    us = 0
+    pos = time_str.find('.')
+    if -1 != pos:
+        us = float(time_str[pos:])
+        us = int(1000000.0 * us)
+        time_str = time_str[:pos]
+
+    h,m,s = time_str.split(':')
+    return time(int(h), int(m), int(s), us)
+        
+
+###############################################################################
 def _fixup_fhir_datetime(fhir_datetime_str):
     """
     The FHIR server returns a date time as follows:
@@ -192,7 +327,378 @@ def _fixup_fhir_datetime(fhir_datetime_str):
         
     return new_str
 
+
+###############################################################################
+def _decode_date_time(obj):
+    """
+    Decode a FHIR 'instant' or 'dateTime' timestring and return a python
+    datetime obj.
+
+    Valid formats:
+        YYYY                           %Y 
+        YYYY-MM                        %Y-%m
+        YYYY-MM-DD                     %Y-%m-%d
+        YYYY-MM-DDThh:mm:ssZ
+        YYYY-MM-DDThh:mm:ss+zzzz       %Y-%m-%dT%H:%M:%S%z
+        YYYY-MM-DDThh:mm:ss.sss+zzzz   %Y-%m-%dT%H:%M:%S.%f%z
+    """
+
+    assert str == type(obj)
+    instant_str = obj.strip()
     
+    # correct the UTC offset, if any (change +zz:zz to +zzzz)
+    tmp = _fixup_fhir_datetime(instant_str)
+    
+    pos = tmp.find('.')
+    if -1 != pos:
+        # only format with a '.' char and a UTC offset
+        assert tmp[-5] == '+' or tmp[-5] == '-'    
+        datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f%z')
+    elif -1 != tmp.find('Z'):
+        # only remaining format with a 'Z' char
+        datetime_obj = datetime.strptime(tmp[-1], '%Y-%m-%dT%H:%M:%S')
+    elif -1 != tmp.find('T'):
+        # only remaining format with a 'T' char
+        datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S%z')
+    elif _regex_ymd.match(tmp):
+        datetime_obj = datetime.strptime(tmp, '%Y-%m-%d')
+    elif _regex_ym.match(tmp):
+        datetime_obj = datetime.strptime(tmp, '%Y-%m')
+    elif _regex_y.match(tmp):
+        datetime_obj = datetime.strptime(tmp, '%Y')
+    else:
+        print('\n*** cql_result_parser: unknown time format: "{0}"'.
+              format(instant_str))
+        return None
+        
+    return datetime_obj
+
+
+###############################################################################
+def _decode_coding(obj):
+    """
+    Decode a FHIR STU2 Coding object (1.19.0.4).
+    """
+
+    # all simple fields
+    FIELD_NAMES = ['system', 'version', 'code', 'display', 'userSelected']
+
+    result = {}
+    for field_name in FIELD_NAMES:
+        if field_name in obj:
+            result[field_name] = obj[field_name]
+
+    return result
+
+    
+###############################################################################
+def _decode_codeable_concept(obj):
+    """
+    Decode a FHIR STU2 CodeableConcept object (1.19.0.5).
+    """
+
+    result = {}
+    
+    # decode the 'Coding' field
+    if 'coding' in obj:
+        coding_list = obj['coding']
+        counter = 0
+        for elt in coding_list:
+            result['coding_{0}'.format(counter)] = _decode_coding(elt)
+            counter += 1
+
+    # get the text field
+    if 'text' in obj:
+        result['text'] = obj['text']
+            
+    return result
+
+
+    
+
+
+
+###############################################################################
+def _decode_period(obj):
+    """
+    Decode a FHIR STU2 Period object (2.14.0.10).
+    """
+
+    FIELD_NAMES = ['start', 'end']
+
+    result = {}
+    for field_name in FIELD_NAMES:
+        if field_name in obj:
+            result[field_name] = _decode_date_time(obj[field_name])
+
+    return result
+
+
+###############################################################################
+def _decode_reference_no_identifier(obj):
+    """
+    Decode a FHIR SHU2 Reference object (2.3.0) and ignore the contained
+    Identifier, if any. This function is only called from a _decode_identifier
+    call and prevents circular references.
+    """
+
+    # all simple fields
+    FIELD_NAMES = ['reference', 'type', 'display']
+    
+    result = {}
+    for field_name in FIELD_NAMES:
+        if field_name in obj:
+            result[field_name] = obj[field_name]
+
+    return result
+
+
+###############################################################################
+def _decode_identifier(obj):
+    """
+    Decode a FHIR STU2 Identifier object (1.19.0.11).
+    """
+
+    structure = [
+        ('use',      None),
+        ('type',     _decode_codeable_concept),
+        ('system',   None),
+        ('value',    None),
+        ('period',   _decode_period),
+        ('assigner', _decode_reference_no_identifier)
+    ]
+
+    result = {}
+    for field_name, decoder in structure:
+        if field_name not in obj:
+            continue
+        if decoder is None:
+            result[field_name] = obj[field_name]
+        else:
+            result[field_name] = decoder(obj)
+
+    return result
+
+
+###############################################################################
+def _decode_reference(obj):
+    """
+    Decode a FHIR STU2 Reference object (2.3.0).
+    """
+
+    SIMPLE_FIELDS = ['reference', 'type', 'display']
+
+    result = {}
+    for field_name in SIMPLE_FIELDS:
+        if field_name in obj:
+            result[field_name] = obj[field_name]
+
+    if 'identifier' in obj:
+        result['identifier'] = _decode_identifier(obj['identifier'])
+
+    return result
+        
+
+###############################################################################
+def _decode_reference_range(obj):
+    """
+    Decode a FHIR STU2 referenceRange internal object.
+    Currently ignores extensions.
+    """
+
+    result = {}
+    
+    # SimpleQuantity fields
+    SQ_FIELDS = ['low', 'high']
+    for f in SQ_FIELDS:
+        if f in obj:
+            result[f] = _decode_quantity(obj[f])
+
+    FIELD_MEANING = 'meaning'
+    if FIELD_MEANING in obj:
+        result[FIELD_MEANING] = _decode_codeable_concept(obj[FIELD_MEANING])
+
+    FIELD_AGE = 'age'
+    if FIELD_AGE in obj:
+        result[FIELD_AGE] = _decode_range(obj[FIELD_AGE])
+
+    FIELD_TEXT = 'text'
+    if FIELD_TEXT in obj:
+        result[FIELD_TEXT] = obj[FIELD_TEXT]
+        
+    return result
+
+
+###############################################################################
+def _decode_related(obj):
+    """
+    Decode a FHIR STU2 related internal object.
+    Currently ignores extensions.
+    """
+
+    result = {}
+    
+    FIELD_TYPE = 'type'
+    if FIELD_TYPE in obj:
+        result[FIELD_TYPE] = obj[FIELD_TYPE]
+
+    FIELD_TARGET = 'target'
+    if FIELD_TARGET in obj:
+        result[FIELD_TARGET] = _decode_reference(obj[FIELD_TARGET])
+
+    return result
+
+
+###############################################################################
+def _decode_from_structure(obj, structure, result):
+    """
+    Decode fields of obj using the field structure info.
+    """
+
+    for field_name, obj_type, decoder in structure:
+        if field_name not in obj:
+            continue
+
+        if decoder is None:
+            if obj_type is None:
+                # scalar
+                result[field_name] = obj[field_name]
+            elif obj_type is list:
+                counter = 0
+                for elt in obj[field_name]:
+                    new_field_name = '{0}_{1}'.format(field_name, counter)
+                    result[new_field_name] = elt
+                    counter += 1
+        else:
+            if obj_type is None:
+                result[field_name] = decoder(obj[field_name])
+            elif obj_type is list:
+                counter = 0
+                for elt in obj[field_name]:
+                    new_field_name = '{0}_{1}'.format(field_name, counter)
+                    result[new_field_name] = decoder(elt)
+                    counter += 1
+
+
+###############################################################################
+def _decode_value(obj, result):
+    """
+    Decode a FHIR STU2 value field.
+    """
+
+    structure = [
+        ('valueQuantity',        None,     _decode_quantity),
+        ('valueCodeableConcept', None,     _decode_codeable_concept),
+        ('valueString',          None,     None),
+        ('valueRange',           None,     _decode_range),
+        ('valueRatio',           None,     _decode_ratio),
+        ('valueSampledData',     None,     _decode_sampled_data),
+        ('valueAttachment',      None,     _decode_attachment),
+        ('valueTime',            None,     _decode_time),
+        ('valuePeriod',          None,     _decode_period),
+    ]
+
+    _decode_from_structure(obj, structure, result)
+
+
+###############################################################################
+def _decode_component(obj):
+    """
+    Decode a FHIR STU2 'component' internal object.
+    """
+
+    result = {}
+
+    FIELD_CODE = 'code'
+    if FIELD_CODE in obj:
+        result[FIELD_CODE] = _decode_codeable_concept(obj[FIELD_CODE])
+        
+    _decode_value(obj, result)
+
+    FIELD_AR = 'dataAbsentReason'
+    if FIELD_AR in obj:
+        result[FIELD_AR] = _decode_codeable_concept(obj[FIELD_AR])
+
+    # skip the reference range array
+    
+    return result
+        
+    
+###############################################################################
+def _decode_observation_stu2(obj):
+    """
+    Decode a FHIR STU2 Observation resource object (4.20.3).
+    """
+
+    observation = {}
+
+    # extract the DomainResource and BaseResource fields
+    if 'id' in obj:
+        observation['id'] = obj['id']
+        # others ignored
+
+    # structure of this resource
+    structure = [
+        ('identifier',           list,     _decode_identifier),
+        ('status',               None,     None),
+        ('category',             list,     _decode_codeable_concept),
+        ('code',                 None,     _decode_codeable_concept),
+        ('subject',              None,     _decode_reference),
+        ('encounter',            None,     _decode_reference),
+        ('effectiveDateTime',    None,     _decode_date_time),
+        ('effectivePeriod',      None,     _decode_period),
+        ('issued',               None,     _decode_date_time),
+        # value handled separately
+        ('performer',            list,     _decode_reference),
+        ('dataAbsentReason',     None,     _decode_codeable_concept),
+        ('interpretation',       None,     _decode_codeable_concept),
+        ('comments',             None,     None),
+        ('bodySite',             None,     _decode_codeable_concept),
+        ('method',               None,     _decode_codeable_concept),
+        ('specimen',             None,     _decode_reference),
+        ('device',               None,     _decode_reference),
+        ('referenceRange',       list,     _decode_reference_range),
+        ('related',              list,     _decode_related),
+        ('component',            list,     _decode_component)
+    ]
+
+    _decode_value(obj, observation)
+
+    _decode_from_structure(obj, structure, observation)
+    # for field_name, obj_type, decoder in structure:
+    #     result = {}
+    #     if field_name not in obj:
+    #         continue
+
+    #     if decoder is None:
+    #         if obj_type is None:
+    #             # scalar
+    #             observation[field_name] = obj[field_name]
+    #         elif obj_type is list:
+    #             counter = 0
+    #             for elt in obj[field_name]:
+    #                 new_field_name = '{0}_{1}'.format(field_name, counter)
+    #                 observation[new_field_name] = elt
+    #                 counter += 1
+    #     else:
+    #         if obj_type is None:
+    #             result = decoder(obj[field_name])
+    #             observation[field_name] = result
+    #         elif obj_type is list:
+    #             counter = 0
+    #             for elt in obj[field_name]:
+    #                 new_field_name = '{0}_{1}'.format(field_name, counter)
+    #                 observation[new_field_name] = decoder(elt)
+    #                 counter += 1
+
+    return observation
+
+
+
+
+
+
+
 ###############################################################################
 def _decode_value_quantity(obj):
     value_quantity_dict = obj[_KEY_VALUE_QUANTITY]
@@ -810,10 +1316,23 @@ if __name__ == '__main__':
         json_string = infile.read()
         json_data = json.loads(json_string)
 
-        for obj in json_data:
-            result = decode_top_level_obj(obj)
-            if result is not None:
-                for elt in result:
-                    print(elt)
+        # for obj in json_data:
+        #     result = decode_top_level_obj(obj)
+        #     if result is not None:
+        #         for elt in result:
+        #             print(elt)
         
-        
+
+        obj = json_data
+        result = None
+        if 'resourceType' in obj:
+            result = _decode_observation_stu2(obj)
+
+        if result is not None:
+            for k,v in result.items():
+                if dict == type(v):
+                    print('{0}'.format(k))
+                    for k2,v2 in v.items():
+                        print('\t{0} => {1}'.format(k2, v2))
+                else:
+                    print('{0} => {1}'.format(k,v))
