@@ -363,6 +363,7 @@ def _decode_date_time(obj):
         YYYY-MM                        %Y-%m
         YYYY-MM-DD                     %Y-%m-%d
         YYYY-MM-DDThh:mm:ssZ
+        YYYY-MM-DDThh:mm:ss.sss
         YYYY-MM-DDThh:mm:ss.sssZ
         YYYY-MM-DDThh:mm:ss+zzzz       %Y-%m-%dT%H:%M:%S%z
         YYYY-MM-DDThh:mm:ss.sss+zzzz   %Y-%m-%dT%H:%M:%S.%f%z
@@ -376,14 +377,20 @@ def _decode_date_time(obj):
 
     pos = tmp.find('.')
     if -1 != pos:
-
         if tmp.endswith('Z'):
+            # fractional seconds and endswith 'Z'
             tmp = tmp[:-1]
             datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f')
         else:
-            # only format with a '.' char and a UTC offset
-            assert tmp[-5] == '+' or tmp[-5] == '-'    
-            datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f%z')
+            end_str = tmp[pos+1:]
+            has_plus  = -1 != end_str.find('+')
+            has_minus = -1 != end_str.find('-')
+            if has_plus or has_minus:
+                # fractional seconds and a UTC offset
+                datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f%z')
+            else:
+                # fractional seconds only
+                datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f')
     elif -1 != tmp.find('Z'):
         # only remaining format with a 'Z' char
         datetime_obj = datetime.strptime(tmp[:-1], '%Y-%m-%dT%H:%M:%S')
@@ -831,6 +838,62 @@ def _decode_from_structure(obj, structure, result):
                 
 
 ###############################################################################
+def _decode_annotation(obj):
+    """
+    Decode a FHIR STU2 Annotation object (1.19.0.17).
+    """
+
+    result = {}
+
+    structure = [
+        ('authorReference',   None,   _decode_reference),
+        ('authorString',      None,   None),
+        ('time',              None,   _decode_date_time),
+        ('text',              None,   None)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_procedure_focal_device(obj):
+    """
+    Decode a FHIR STU2 performer focal device object  embedded in a
+    Procedure resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('modifierExtension',   list,   _decode_extension),
+        ('action',              None,   _decode_codeable_concept),
+        ('manipulated',         None,   _decode_reference)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_procedure_performer(obj):
+    """
+    Decode a FHIR STU2 performer object embedded in a Procedure resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('modifierExtension',   list,   _decode_extension),
+        ('actor',               None,   _decode_reference),
+        ('role',                None,   _decode_codeable_concept)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+                
+###############################################################################
 def _decode_obs_reference_range(obj):
     """
     Decode a FHIR STU2 referenceRange object embedded in an Observation
@@ -1016,8 +1079,29 @@ def _decode_procedure_stu2(obj):
     _decode_domain_resource(obj, procedure)
 
     structure = [
-        ('identifier',           list,     _decode_identifier),
-        ('subject',              None,     _decode_reference)
+        ('identifier',            list,     _decode_identifier),
+        ('subject',               None,     _decode_reference),
+        ('status',                None,     None),
+        ('category',              None,     _decode_codeable_concept),
+        ('code',                  None,     _decode_codeable_concept),
+        ('notPerformed',          None,     _decode_boolean),
+        ('reasonNotPerformed',    list,     _decode_codeable_concept),
+        ('bodySite',              list,     _decode_codeable_concept),
+        ('reasonCodeableConcept', None,     _decode_codeable_concept),
+        ('reasonReference',       None,     _decode_codeable_concept),
+        ('performer',             list,     _decode_procedure_performer),
+        ('performedDateTime',     None,     _decode_date_time),
+        ('performedPeriod',       None,     _decode_period),
+        ('encounter',             None,     _decode_reference),
+        ('location',              None,     _decode_reference),
+        ('outcome',               None,     _decode_codeable_concept),
+        ('report',                list,     _decode_reference),
+        ('complication',          list,     _decode_codeable_concept),
+        ('followUp',              list,     _decode_codeable_concept),
+        ('request',               None,     _decode_reference),
+        ('notes',                 list,     _decode_annotation),
+        ('focalDevice',           list,     _decode_procedure_focal_device),
+        ('used',                  list,     _decode_reference)
     ]
 
     _decode_from_structure(obj, structure, procedure)
