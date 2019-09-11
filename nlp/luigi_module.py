@@ -159,7 +159,6 @@ def run_pipeline(pipeline, pipelinetype, job, owner):
     jobs.update_job_status(str(job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % pipelinetype)
 
 
-
 class PipelineTask(luigi.Task):
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
