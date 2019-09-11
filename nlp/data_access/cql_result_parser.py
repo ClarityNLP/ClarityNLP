@@ -178,6 +178,25 @@ def enable_debug():
     global _TRACE
     _TRACE = True
 
+    
+###############################################################################
+def _decode_boolean(obj):
+
+    obj_type = type(obj)
+    assert bool == obj_type or str == obj_type
+    
+    if bool == obj_type:
+        if obj:
+            return True
+        else:
+            return False
+    else:
+        tf = obj.lower()
+        if 'true' == tf:
+            return True
+        else:
+            return False
+
 
 ###############################################################################
 def _decode_quantity(obj):
@@ -286,7 +305,7 @@ def _decode_attachment(obj):
         result[field_data] = decoded
 
     return result
-        
+                     
 
 ###############################################################################
 def _decode_time(obj):
@@ -344,6 +363,7 @@ def _decode_date_time(obj):
         YYYY-MM                        %Y-%m
         YYYY-MM-DD                     %Y-%m-%d
         YYYY-MM-DDThh:mm:ssZ
+        YYYY-MM-DDThh:mm:ss.sssZ
         YYYY-MM-DDThh:mm:ss+zzzz       %Y-%m-%dT%H:%M:%S%z
         YYYY-MM-DDThh:mm:ss.sss+zzzz   %Y-%m-%dT%H:%M:%S.%f%z
     """
@@ -353,15 +373,20 @@ def _decode_date_time(obj):
     
     # correct the UTC offset, if any (change +zz:zz to +zzzz)
     tmp = _fixup_fhir_datetime(instant_str)
-    
+
     pos = tmp.find('.')
     if -1 != pos:
-        # only format with a '.' char and a UTC offset
-        assert tmp[-5] == '+' or tmp[-5] == '-'    
-        datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f%z')
+
+        if tmp.endswith('Z'):
+            tmp = tmp[:-1]
+            datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f')
+        else:
+            # only format with a '.' char and a UTC offset
+            assert tmp[-5] == '+' or tmp[-5] == '-'    
+            datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S.%f%z')
     elif -1 != tmp.find('Z'):
         # only remaining format with a 'Z' char
-        datetime_obj = datetime.strptime(tmp[-1], '%Y-%m-%dT%H:%M:%S')
+        datetime_obj = datetime.strptime(tmp[:-1], '%Y-%m-%dT%H:%M:%S')
     elif -1 != tmp.find('T'):
         # only remaining format with a 'T' char
         datetime_obj = datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S%z')
@@ -396,6 +421,86 @@ def _decode_period(obj):
 
 
 ###############################################################################
+def _decode_address(obj):
+    """
+    Decode a FHIR STU2 Address object (1.19.0.13).
+    """
+
+    result = {}
+
+    SIMPLE_FIELDS = ['use', 'type', 'text', 'city',
+                     'district', 'state', 'postalCode', 'country']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_LINE = 'line'
+    if FIELD_LINE in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_LINE]
+        for elt in elt_list:
+            decoded_obj = elt
+            decoded_list.append(elt)
+        result[FIELD_LINE] = decoded_list
+
+    FIELD_PERIOD = 'period'
+    if FIELD_PERIOD in obj:
+        result[FIELD_PERIOD] = _decode_period(obj[FIELD_PERIOD])
+
+    return result
+
+
+###############################################################################
+def _decode_human_name(obj):
+    """
+    Decode a FHIR STU2 HumanName object (1.19.0.12).
+    """
+
+    result = {}
+    
+    SCALAR_FIELDS = ['use', 'text']
+    for f in SCALAR_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    ARRAY_FIELDS = ['family', 'given', 'prefix', 'suffix']
+    for f in ARRAY_FIELDS:
+        if f in obj:
+            decoded_list = []
+            elt_list = obj[f]
+            for elt in elt_list:
+                decoded_obj = elt
+                decoded_list.append(elt)
+            result[f] = decoded_list
+            
+    FIELD_PERIOD = 'period'
+    if FIELD_PERIOD in obj:
+        result[FIELD_PERIOD] = _decode_period(obj[FIELD_PERIOD])
+
+    return result
+
+
+###############################################################################
+def _decode_contact_point(obj):
+    """
+    Decode a FHIR STU2 ContactPoint object (1.19.0.14).
+    """
+
+    result = {}
+
+    SIMPLE_FIELDS = ['system', 'value', 'use', 'rank']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_PERIOD = 'period'
+    if FIELD_PERIOD in obj:
+        result[FIELD_PERIOD] = _decode_period(obj[FIELD_PERIOD])
+
+    return result
+
+
+###############################################################################
 def _decode_coding(obj):
     """
     Decode a FHIR STU2 Coding object (1.19.0.4).
@@ -420,17 +525,18 @@ def _decode_codeable_concept(obj):
 
     result = {}
     
-    # decode the 'Coding' field
-    if 'coding' in obj:
-        coding_list = obj['coding']
-        counter = 0
-        for elt in coding_list:
-            result['coding_{0}'.format(counter)] = _decode_coding(elt)
-            counter += 1
-
-    # get the text field
-    if 'text' in obj:
-        result['text'] = obj['text']
+    FIELD_CODING = 'coding'
+    if FIELD_CODING in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_CODING]
+        for elt in elt_list:
+            decoded_obj = _decode_coding(elt)
+            decoded_list.append(decoded_obj)
+        result[FIELD_CODING] = decoded_list
+        
+    FIELD_TEXT = 'text'
+    if FIELD_TEXT in obj:
+        result[FIELD_TEXT] = obj[FIELD_TEXT]
             
     return result
 
@@ -551,54 +657,50 @@ def _decode_related(obj):
 
 
 ###############################################################################
-def _decode_from_structure(obj, structure, result):
-    """
-    Decode fields of obj using the field structure info.
-    """
-
-    for field_name, obj_type, decoder in structure:
-        if field_name not in obj:
-            continue
-
-        if decoder is None:
-            if obj_type is None:
-                # scalar
-                result[field_name] = obj[field_name]
-            elif obj_type is list:
-                counter = 0
-                for elt in obj[field_name]:
-                    new_field_name = '{0}_{1}'.format(field_name, counter)
-                    result[new_field_name] = elt
-                    counter += 1
-        else:
-            if obj_type is None:
-                result[field_name] = decoder(obj[field_name])
-            elif obj_type is list:
-                counter = 0
-                for elt in obj[field_name]:
-                    new_field_name = '{0}_{1}'.format(field_name, counter)
-                    result[new_field_name] = decoder(elt)
-                    counter += 1
-
-
-###############################################################################
 def _decode_value(obj, result):
     """
     Decode a FHIR STU2 value field.
     """
 
     structure = [
-        ('valueQuantity',        None,     _decode_quantity),
-        ('valueCodeableConcept', None,     _decode_codeable_concept),
+        ('valueDateTime',        None,     _decode_date_time),
+        ('valueDate',            None,     _decode_date_time),
+        ('valueInstant',         None,     _decode_date_time),
         ('valueString',          None,     None),
+        ('valueUri',             None,     None),
+        ('valueCode',            None,     None),
+        ('valueCoding',          None,     _decode_coding),
+        ('valueCodeableConcept', None,     _decode_codeable_concept),
+        ('valueIdentifier',      None,     _decode_identifier),
+        ('valueQuantity',        None,     _decode_quantity),
         ('valueRange',           None,     _decode_range),
+        ('valuePeriod',          None,     _decode_period),
         ('valueRatio',           None,     _decode_ratio),
+        ('valueHumanName',       None,     _decode_human_name),
         ('valueSampledData',     None,     _decode_sampled_data),
         ('valueAttachment',      None,     _decode_attachment),
         ('valueTime',            None,     _decode_time),
-        ('valuePeriod',          None,     _decode_period),
     ]
 
+    FIELD_VI = 'valueInteger'
+    if FIELD_VI in obj:
+        result[FIELD_VI] = int(obj[FIELD_VI])
+        return
+
+    FIELD_VD = 'valueDecimal'
+    if FIELD_VD in obj:
+        result[FIELD_VD] = float(obj[FIELD_VD])
+        return
+
+    FIELD_VB = 'valueBoolean'
+    if FIELD_VB in obj:
+        tf = obj[FIELD_VB].lower()
+        if 'true' == tf:
+            result[FIELD_VB] = True
+        else:
+            result[FIELD_VB] = False
+        return
+    
     _decode_from_structure(obj, structure, result)
 
 
@@ -624,7 +726,208 @@ def _decode_component(obj):
     
     return result
         
+
+###############################################################################
+def _decode_meta(obj):
+    """
+    Decode a FHIR STU2 ResourceMetadata object (1.11.3.3).
+    """
+
+    result = {}
+
+    SIMPLE_FIELDS = ['versionId', 'profile']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_LU = 'lastUpdated'
+    if FIELD_LU in obj:
+        result[FIELD_LU] = _decode_date_time(obj[FIELD_LU])
+
+    CODING_FIELDS = ['security', 'tag']
+    for f in CODING_FIELDS:
+        decoded_list = []
+        if f in obj:
+            # these are lists
+            elt_list = obj[f]
+            for elt in elt_list:
+                decoded_obj = _decode_coding(obj[f])
+                decoded_list.append(decoded_obj)
+            result[f] = decoded_list
+
+    return result
+
+
+###############################################################################
+def _decode_narrative(obj):
+    """
+    Decode a FHIR STU2 Narrative object (1.16.0).
+    """
+
+    result = {}
     
+    FIELD_NAMES = ['status', 'div']
+    for f in FIELD_NAMES:
+        if f in obj:
+            result[f] = obj[f]
+        
+    return result
+
+
+###############################################################################
+def _decode_extension(obj):
+    """
+    Decode A FHIR STU2 Extension object (1.17.0.1).
+    """
+
+    result = {}
+
+    FIELD_URL = 'url'
+    if FIELD_URL in obj:
+        result[FIELD_URL] = obj[FIELD_URL]
+
+    _decode_value(obj, result)
+
+    # check for contained extensions and make recursive call
+    FIELD_EXT = 'extension'
+    if FIELD_EXT in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_EXT]
+        for elt in elt_list:
+            decoded_ext = _decode_extension(elt)
+            decoded_list.append(decoded_ext)
+        result[FIELD_EXT] = decoded_list
+    
+    return result
+
+
+###############################################################################
+def _decode_base_resource(obj, result):
+    """
+    Decode a FHIR STU2 BaseResource object (1.11.3).
+    """
+
+    SIMPLE_FIELDS = ['id', 'uri', 'code']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_META = 'meta'
+    if FIELD_META in obj:
+        result[FIELD_META] = _decode_meta(obj[FIELD_META])
+        
+    return result
+
+
+###############################################################################
+def _decode_domain_resource(obj, result):
+    """
+    Decode a FHIR STU2 DomainResource object (1.20.3).
+    """
+
+    FIELD_TEXT = 'text'
+    if FIELD_TEXT in obj:
+        result[FIELD_TEXT] = _decode_narrative(obj[FIELD_TEXT])
+
+    FIELD_CONTAINED = 'contained'
+    if FIELD_CONTAINED in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_CONTAINED]
+        for elt in elt_list:
+            decoded_obj = _decode_base_resource(elt)
+            decoded_list.append(decoded_obj)
+        result[FIELD_CONTAINED] = decoded_list
+
+    EXT_FIELDS = ['extension', 'modifierExtension']
+    for f in EXT_FIELDS:
+        if f in obj:
+            decoded_list = []
+            elt_list = obj[f]
+            for elt in elt_list:
+                decoded_obj = _decode_extension(elt)
+                decoded_list.append(decoded_obj)
+            result[f] = decoded_list
+            
+    
+###############################################################################
+def _decode_from_structure(obj, structure, result):
+    """
+    Decode fields of obj using the field structure info.
+    """
+
+    for field_name, obj_type, decoder in structure:
+        if field_name not in obj:
+            continue
+
+        if decoder is None:
+            if obj_type is None:
+                # scalar
+                result[field_name] = obj[field_name]
+            elif obj_type is list:
+                decoded_list = []
+                elt_list = obj[field_name]
+                for elt in elt_list:
+                    decoded_list.append(elt)
+                result[field_name] = decoded_list
+        else:
+            if obj_type is None:
+                result[field_name] = decoder(obj[field_name])
+            elif obj_type is list:
+                decoded_list = []
+                elt_list = obj[field_name]
+                for elt in elt_list:
+                    decoded_obj = decoder(elt)
+                    decoded_list.append(decoded_obj)
+                result[field_name] = decoded_list
+                
+
+###############################################################################
+def _decode_patient_contact(obj):
+    """
+    Decode a FHIR STU2 Contact object embedded in a Patient resource.
+    """
+
+    result = {}
+
+    structure = [
+        # from BackboneElememnt
+        ('modifierExtension',  list,    _decode_extension),
+
+        # from embedded contact object
+        ('relationship',       list,    _decode_codeable_concept),
+        ('name',               None,    _decode_human_name),
+        ('telecom',            list,    _decode_contact_point),
+        ('address',            None,    _decode_address),
+        ('gender',             None,    None),
+        ('organization',       None,    _decode_reference),
+        ('period',             None,    _decode_period)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_patient_communication(obj):
+    """
+    Decode a FHIR STU2 Communiation object embedded in a Patient resource.
+    """
+
+    result = {}
+
+    structure = [
+        # from BackboneElement
+        ('modifierExtension',   list,   _decode_extension),
+
+        # from embedded communication object
+        ('language',            None,   _decode_codeable_concept),
+        ('preferred',           None,   _decode_boolean)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
 ###############################################################################
 def _decode_observation_stu2(obj):
     """
@@ -633,10 +936,8 @@ def _decode_observation_stu2(obj):
 
     observation = {}
 
-    # extract the DomainResource and BaseResource fields
-    if 'id' in obj:
-        observation['id'] = obj['id']
-        # others ignored
+    _decode_base_resource(obj, observation)
+    _decode_domain_resource(obj, observation)
 
     # structure of this resource
     structure = [
@@ -669,6 +970,38 @@ def _decode_observation_stu2(obj):
     return observation
 
 
+###############################################################################
+def _decode_patient_stu2(obj):
+    """
+    Decode a FHIR STU2 Patient resource object (5.1.2).
+    """
+
+    patient = {}
+
+    _decode_base_resource(obj, patient)
+    _decode_domain_resource(obj, patient)
+
+    structure = [
+        ('identifier',           list,     _decode_identifier),
+        ('active',               None,     None),
+        ('name',                 list,     _decode_human_name),
+        ('telecom',              list,     _decode_contact_point),
+        ('gender',               None,     None),
+        ('birthDate',            None,     _decode_date_time),
+        ('deceasedBoolean',      None,     _decode_boolean),
+        ('deceasedDateTime',     None,     _decode_date_time),
+        ('address',              None,     _decode_address),
+        ('maritalStatus',        None,     _decode_codeable_concept),
+        ('multipleBirthBoolean', None,     _decode_boolean),
+        ('multipleBirthInteger', None,     None),
+        ('contact',              list,     _decode_patient_contact),
+        ('communication',        list,     _decode_patient_communication),
+        ('careProvider',         list,     _decode_reference)
+    ]
+
+    _decode_from_structure(obj, structure, patient)
+        
+    return patient
 
 
 
@@ -1301,7 +1634,11 @@ if __name__ == '__main__':
         obj = json_data
         result = None
         if 'resourceType' in obj:
-            result = _decode_observation_stu2(obj)
+            rt = obj['resourceType']
+            if 'Observation' == rt:
+                result = _decode_observation_stu2(obj)
+            elif 'Patient' == rt:
+                result = _decode_patient_stu2(obj)
 
         if result is not None:
             for k,v in result.items():
@@ -1309,5 +1646,9 @@ if __name__ == '__main__':
                     print('{0}'.format(k))
                     for k2,v2 in v.items():
                         print('\t{0} => {1}'.format(k2, v2))
+                elif list == type(v):
+                    print('{0}'.format(k))
+                    for index, v2 in enumerate(v):
+                        print('\t[{0}]:\t{1}'.format(index, v2))
                 else:
                     print('{0} => {1}'.format(k,v))
