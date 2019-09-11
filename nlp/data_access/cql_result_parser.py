@@ -178,6 +178,25 @@ def enable_debug():
     global _TRACE
     _TRACE = True
 
+    
+###############################################################################
+def _decode_boolean(obj):
+
+    obj_type = type(obj)
+    assert bool == obj_type or str == obj_type
+    
+    if bool == obj_type:
+        if obj:
+            return True
+        else:
+            return False
+    else:
+        tf = obj.lower()
+        if 'true' == tf:
+            return True
+        else:
+            return False
+
 
 ###############################################################################
 def _decode_quantity(obj):
@@ -402,6 +421,36 @@ def _decode_period(obj):
 
 
 ###############################################################################
+def _decode_address(obj):
+    """
+    Decode a FHIR STU2 Address object (1.19.0.13).
+    """
+
+    result = {}
+
+    SIMPLE_FIELDS = ['use', 'type', 'text', 'city',
+                     'district', 'state', 'postalCode', 'country']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_LINE = 'line'
+    if FIELD_LINE in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_LINE]
+        for elt in elt_list:
+            decoded_obj = elt
+            decoded_list.append(elt)
+        result[FIELD_LINE] = decoded_list
+
+    FIELD_PERIOD = 'period'
+    if FIELD_PERIOD in obj:
+        result[FIELD_PERIOD] = _decode_period(obj[FIELD_PERIOD])
+
+    return result
+
+
+###############################################################################
 def _decode_human_name(obj):
     """
     Decode a FHIR STU2 HumanName object (1.19.0.12).
@@ -409,14 +458,24 @@ def _decode_human_name(obj):
 
     result = {}
     
-    SIMPLE_FIELDS = ['use', 'text', 'family', 'given', 'prefix', 'suffix']
-    for f in SIMPLE_FIELDS:
+    SCALAR_FIELDS = ['use', 'text']
+    for f in SCALAR_FIELDS:
         if f in obj:
             result[f] = obj[f]
 
+    ARRAY_FIELDS = ['family', 'given', 'prefix', 'suffix']
+    for f in ARRAY_FIELDS:
+        if f in obj:
+            decoded_list = []
+            elt_list = obj[f]
+            for elt in elt_list:
+                decoded_obj = elt
+                decoded_list.append(elt)
+            result[f] = decoded_list
+            
     FIELD_PERIOD = 'period'
     if FIELD_PERIOD in obj:
-        result['period'] = _decode_period(obj)
+        result[FIELD_PERIOD] = _decode_period(obj[FIELD_PERIOD])
 
     return result
 
@@ -436,7 +495,7 @@ def _decode_contact_point(obj):
 
     FIELD_PERIOD = 'period'
     if FIELD_PERIOD in obj:
-        result['period'] = _decode_period(obj)
+        result[FIELD_PERIOD] = _decode_period(obj[FIELD_PERIOD])
 
     return result
 
@@ -466,17 +525,18 @@ def _decode_codeable_concept(obj):
 
     result = {}
     
-    # decode the 'Coding' field
-    if 'coding' in obj:
-        coding_list = obj['coding']
-        counter = 0
-        for elt in coding_list:
-            result['coding_{0}'.format(counter)] = _decode_coding(elt)
-            counter += 1
-
-    # get the text field
-    if 'text' in obj:
-        result['text'] = obj['text']
+    FIELD_CODING = 'coding'
+    if FIELD_CODING in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_CODING]
+        for elt in elt_list:
+            decoded_obj = _decode_coding(elt)
+            decoded_list.append(decoded_obj)
+        result[FIELD_CODING] = decoded_list
+        
+    FIELD_TEXT = 'text'
+    if FIELD_TEXT in obj:
+        result[FIELD_TEXT] = obj[FIELD_TEXT]
             
     return result
 
@@ -788,7 +848,7 @@ def _decode_domain_resource(obj, result):
                 decoded_list.append(decoded_obj)
             result[f] = decoded_list
             
-
+    
 ###############################################################################
 def _decode_from_structure(obj, structure, result):
     """
@@ -804,21 +864,69 @@ def _decode_from_structure(obj, structure, result):
                 # scalar
                 result[field_name] = obj[field_name]
             elif obj_type is list:
-                counter = 0
-                for elt in obj[field_name]:
-                    new_field_name = '{0}_{1}'.format(field_name, counter)
-                    result[new_field_name] = elt
-                    counter += 1
+                decoded_list = []
+                elt_list = obj[field_name]
+                for elt in elt_list:
+                    decoded_list.append(elt)
+                result[field_name] = decoded_list
         else:
             if obj_type is None:
                 result[field_name] = decoder(obj[field_name])
             elif obj_type is list:
-                counter = 0
-                for elt in obj[field_name]:
-                    new_field_name = '{0}_{1}'.format(field_name, counter)
-                    result[new_field_name] = decoder(elt)
-                    counter += 1
-                    
+                decoded_list = []
+                elt_list = obj[field_name]
+                for elt in elt_list:
+                    decoded_obj = decoder(elt)
+                    decoded_list.append(decoded_obj)
+                result[field_name] = decoded_list
+                
+
+###############################################################################
+def _decode_patient_contact(obj):
+    """
+    Decode a FHIR STU2 Contact object embedded in a Patient resource.
+    """
+
+    result = {}
+
+    structure = [
+        # from BackboneElememnt
+        ('modifierExtension',  list,    _decode_extension),
+
+        # from embedded contact object
+        ('relationship',       list,    _decode_codeable_concept),
+        ('name',               None,    _decode_human_name),
+        ('telecom',            list,    _decode_contact_point),
+        ('address',            None,    _decode_address),
+        ('gender',             None,    None),
+        ('organization',       None,    _decode_reference),
+        ('period',             None,    _decode_period)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_patient_communication(obj):
+    """
+    Decode a FHIR STU2 Communiation object embedded in a Patient resource.
+    """
+
+    result = {}
+
+    structure = [
+        # from BackboneElement
+        ('modifierExtension',   list,   _decode_extension),
+
+        # from embedded communication object
+        ('language',            None,   _decode_codeable_concept),
+        ('preferred',           None,   _decode_boolean)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
 
 ###############################################################################
 def _decode_observation_stu2(obj):
@@ -879,6 +987,16 @@ def _decode_patient_stu2(obj):
         ('name',                 list,     _decode_human_name),
         ('telecom',              list,     _decode_contact_point),
         ('gender',               None,     None),
+        ('birthDate',            None,     _decode_date_time),
+        ('deceasedBoolean',      None,     _decode_boolean),
+        ('deceasedDateTime',     None,     _decode_date_time),
+        ('address',              None,     _decode_address),
+        ('maritalStatus',        None,     _decode_codeable_concept),
+        ('multipleBirthBoolean', None,     _decode_boolean),
+        ('multipleBirthInteger', None,     None),
+        ('contact',              list,     _decode_patient_contact),
+        ('communication',        list,     _decode_patient_communication),
+        ('careProvider',         list,     _decode_reference)
     ]
 
     _decode_from_structure(obj, structure, patient)
