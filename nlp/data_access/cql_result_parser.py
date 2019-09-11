@@ -524,7 +524,7 @@ def _decode_codeable_concept(obj):
     """
 
     result = {}
-    
+
     FIELD_CODING = 'coding'
     if FIELD_CODING in obj:
         decoded_list = []
@@ -604,36 +604,6 @@ def _decode_reference(obj):
         result['identifier'] = _decode_identifier(obj['identifier'])
 
     return result
-        
-
-###############################################################################
-def _decode_reference_range(obj):
-    """
-    Decode a FHIR STU2 referenceRange internal object.
-    Currently ignores extensions.
-    """
-
-    result = {}
-    
-    # SimpleQuantity fields
-    SQ_FIELDS = ['low', 'high']
-    for f in SQ_FIELDS:
-        if f in obj:
-            result[f] = _decode_quantity(obj[f])
-
-    FIELD_MEANING = 'meaning'
-    if FIELD_MEANING in obj:
-        result[FIELD_MEANING] = _decode_codeable_concept(obj[FIELD_MEANING])
-
-    FIELD_AGE = 'age'
-    if FIELD_AGE in obj:
-        result[FIELD_AGE] = _decode_range(obj[FIELD_AGE])
-
-    FIELD_TEXT = 'text'
-    if FIELD_TEXT in obj:
-        result[FIELD_TEXT] = obj[FIELD_TEXT]
-        
-    return result
 
 
 ###############################################################################
@@ -703,29 +673,6 @@ def _decode_value(obj, result):
     
     _decode_from_structure(obj, structure, result)
 
-
-###############################################################################
-def _decode_component(obj):
-    """
-    Decode a FHIR STU2 'component' internal object.
-    """
-
-    result = {}
-
-    FIELD_CODE = 'code'
-    if FIELD_CODE in obj:
-        result[FIELD_CODE] = _decode_codeable_concept(obj[FIELD_CODE])
-        
-    _decode_value(obj, result)
-
-    FIELD_AR = 'dataAbsentReason'
-    if FIELD_AR in obj:
-        result[FIELD_AR] = _decode_codeable_concept(obj[FIELD_AR])
-
-    # skip the reference range array for now
-    
-    return result
-        
 
 ###############################################################################
 def _decode_meta(obj):
@@ -865,6 +812,7 @@ def _decode_from_structure(obj, structure, result):
                 result[field_name] = obj[field_name]
             elif obj_type is list:
                 decoded_list = []
+                assert list == type(elt_list)
                 elt_list = obj[field_name]
                 for elt in elt_list:
                     decoded_list.append(elt)
@@ -875,11 +823,65 @@ def _decode_from_structure(obj, structure, result):
             elif obj_type is list:
                 decoded_list = []
                 elt_list = obj[field_name]
+                assert list == type(elt_list)
                 for elt in elt_list:
                     decoded_obj = decoder(elt)
                     decoded_list.append(decoded_obj)
                 result[field_name] = decoded_list
                 
+
+###############################################################################
+def _decode_obs_reference_range(obj):
+    """
+    Decode a FHIR STU2 referenceRange object embedded in an Observation
+    resource.
+    """
+
+    result = {}
+
+    structure = [
+        # from BackboneElement
+        ('modifierExtension',   list,   _decode_extension),
+        ('low',                 None,   None),
+        ('high',                None,   None),
+        ('meaning',             None,   _decode_codeable_concept),
+        ('age',                 None,   _decode_range),
+        ('text',                None,   None)
+    ]
+    
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_obs_component(obj):
+    """
+    Decode a FHIR STU2 'component' object embedded in an Observation resource.
+    """
+
+    result = {}
+
+    FIELD_CODE = 'code'
+    if FIELD_CODE in obj:
+        result[FIELD_CODE] = _decode_codeable_concept(obj[FIELD_CODE])
+        
+    _decode_value(obj, result)
+
+    FIELD_AR = 'dataAbsentReason'
+    if FIELD_AR in obj:
+        result[FIELD_AR] = _decode_codeable_concept(obj[FIELD_AR])
+
+    FIELD_RR = 'referenceRange'
+    if FIELD_RR in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_RR]
+        for elt in elt_list:
+            decoded_obj = _decode_obs_reference_range(elt)
+            decoded_list.append(decoded_obj)
+        result[FIELD_RR] = decoded_list
+    
+    return result
+
 
 ###############################################################################
 def _decode_patient_contact(obj):
@@ -943,7 +945,7 @@ def _decode_observation_stu2(obj):
     structure = [
         ('identifier',           list,     _decode_identifier),
         ('status',               None,     None),
-        ('category',             list,     _decode_codeable_concept),
+        ('category',             None,     _decode_codeable_concept),
         ('code',                 None,     _decode_codeable_concept),
         ('subject',              None,     _decode_reference),
         ('encounter',            None,     _decode_reference),
@@ -959,13 +961,13 @@ def _decode_observation_stu2(obj):
         ('method',               None,     _decode_codeable_concept),
         ('specimen',             None,     _decode_reference),
         ('device',               None,     _decode_reference),
-        ('referenceRange',       list,     _decode_reference_range),
+        ('referenceRange',       list,     _decode_obs_reference_range),
         ('related',              list,     _decode_related),
-        ('component',            list,     _decode_component)
+        ('component',            list,     _decode_obs_component)
     ]
 
-    _decode_value(obj, observation)
     _decode_from_structure(obj, structure, observation)
+    _decode_value(obj, observation)
 
     return observation
 
