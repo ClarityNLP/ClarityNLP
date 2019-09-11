@@ -968,7 +968,6 @@ def _decode_observation_stu2(obj):
 
     _decode_from_structure(obj, structure, observation)
     _decode_value(obj, observation)
-
     return observation
 
 
@@ -1002,11 +1001,27 @@ def _decode_patient_stu2(obj):
     ]
 
     _decode_from_structure(obj, structure, patient)
-        
     return patient
 
 
+###############################################################################
+def _decode_procedure_stu2(obj):
+    """
+    Decode a FHIR STU2 Procedure resource object (4.8.3).
+    """
 
+    procedure = {}
+
+    _decode_base_resource(obj, procedure)
+    _decode_domain_resource(obj, procedure)
+
+    structure = [
+        ('identifier',           list,     _decode_identifier),
+        ('subject',              None,     _decode_reference)
+    ]
+
+    _decode_from_structure(obj, structure, procedure)
+    return procedure
 
 
 ###############################################################################
@@ -1641,6 +1656,8 @@ if __name__ == '__main__':
                 result = _decode_observation_stu2(obj)
             elif 'Patient' == rt:
                 result = _decode_patient_stu2(obj)
+            elif 'Procedure' == rt:
+                result = _decode_procedure_stu2(obj)
 
         if result is not None:
             for k,v in result.items():
