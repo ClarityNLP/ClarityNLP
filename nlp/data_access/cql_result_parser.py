@@ -857,6 +857,42 @@ def _decode_annotation(obj):
 
 
 ###############################################################################
+def _decode_condition_evidence(obj):
+    """
+    Decode a FHIR STU2 evidence object embedded in a Condition resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('modifierExtension',   list,    _decode_extension),
+        ('code',                None,    _decode_codeable_concept),
+        ('detail',              list,    _decode_reference)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_condition_stage(obj):
+    """
+    Decode a FHIR STU2 stage object embedded in a Condition resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('modifierExtension',   list,    _decode_extension),
+        ('summary',             None,    _decode_codeable_concept),
+        ('assessment',          list,    _decode_reference)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
 def _decode_procedure_focal_device(obj):
     """
     Decode a FHIR STU2 performer focal device object  embedded in a
@@ -1106,6 +1142,49 @@ def _decode_procedure_stu2(obj):
 
     _decode_from_structure(obj, structure, procedure)
     return procedure
+
+
+###############################################################################
+def _decode_condition_stu2(obj):
+    """
+    Decode a FHIR STU2 Condition resource object (4.3.3).
+    """
+
+    condition = {}
+
+    _decode_base_resource(obj, condition)
+    _decode_domain_resource(obj, condition)
+
+    structure = [
+        ('identifier',            list,     _decode_identifier),
+        ('patient',               None,     _decode_reference),
+        ('encounter',             None,     _decode_reference),
+        ('asserter',              None,     _decode_reference),
+        ('dateRecorded',          None,     _decode_date_time),
+        ('code',                  None,     _decode_codeable_concept),
+        ('category',              None,     _decode_codeable_concept),
+        ('clinicalStatus',        None,     None),
+        ('verificationStatus',    None,     None),
+        ('severity',              None,     _decode_codeable_concept),
+        ('onsetDateTime',         None,     _decode_date_time),
+        ('onsetQuantity',         None,     None),
+        ('onsetPeriod',           None,     _decode_period),
+        ('onsetRange',            None,     _decode_range),
+        ('onsetString',           None,     None),
+        ('abatementDateTime',     None,     _decode_date_time),
+        ('abatementQuantity',     None,     None),
+        ('abatementBoolean',      None,     _decode_boolean),
+        ('abatementPeriod',       None,     _decode_period),
+        ('abatementRange',        None,     _decode_range),
+        ('abatementString',       None,     None),
+        ('stage',                 None,     _decode_condition_stage),
+        ('evidence',              list,     _decode_condition_evidence),
+        ('bodySite',              list,     _decode_codeable_concept),
+        ('notes',                 None,     None)
+    ]
+
+    _decode_from_structure(obj, structure, condition)
+    return condition
 
 
 ###############################################################################
@@ -1742,6 +1821,8 @@ if __name__ == '__main__':
                 result = _decode_patient_stu2(obj)
             elif 'Procedure' == rt:
                 result = _decode_procedure_stu2(obj)
+            elif 'Condition' == rt:
+                result = _decode_condition_stu2(obj)
 
         if result is not None:
             for k,v in result.items():
