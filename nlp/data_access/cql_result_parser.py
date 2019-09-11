@@ -407,7 +407,7 @@ def _decode_date_time(obj):
         print('\n*** {0}: unknown time format: "{1}"'.
               format(_MODULE_NAME, instant_str))
         return None
-        
+
     return datetime_obj
 
 
@@ -783,14 +783,16 @@ def _decode_domain_resource(obj, result):
     if FIELD_TEXT in obj:
         result[FIELD_TEXT] = _decode_narrative(obj[FIELD_TEXT])
 
-    FIELD_CONTAINED = 'contained'
-    if FIELD_CONTAINED in obj:
-        decoded_list = []
-        elt_list = obj[FIELD_CONTAINED]
-        for elt in elt_list:
-            decoded_obj = _decode_base_resource(elt)
-            decoded_list.append(decoded_obj)
-        result[FIELD_CONTAINED] = decoded_list
+    # handling contained resources is TBD
+    
+    # FIELD_CONTAINED = 'contained'
+    # if FIELD_CONTAINED in obj:
+    #     decoded_list = []
+    #     elt_list = obj[FIELD_CONTAINED]
+    #     for elt in elt_list:
+    #         decoded_obj = _decode_base_resource(elt)
+    #         decoded_list.append(decoded_obj)
+    #     result[FIELD_CONTAINED] = decoded_list
 
     EXT_FIELDS = ['extension', 'modifierExtension']
     for f in EXT_FIELDS:
@@ -850,6 +852,80 @@ def _decode_annotation(obj):
         ('authorString',      None,   None),
         ('time',              None,   _decode_date_time),
         ('text',              None,   None)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_timing_repeat(obj):
+    """
+    Decode a FHIR STU2 repeat object embedded in a Timing object.
+    """
+
+    result = {}
+
+    structure = [
+        ('boundsQuantity',   None,   None),
+        ('boundsRange',      None,   _decode_range),
+        ('boundsPeriod',     None,   _decode_period),
+        ('count',            None,   None),
+        ('duration',         None,   None),
+        ('durationMax',      None,   None),
+        ('durationUnits',    None,   None),
+        ('frequency',        None,   None),
+        ('frequencyMax',     None,   None),
+        ('period',           None,   None),
+        ('periodMax',        None,   None),
+        ('periodUnits',      None,   None),
+        ('when',             None,   None)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_timing(obj):
+    """
+    Decode a FHIR STU2 Timing object (1.19.0.15).
+    """
+
+    result = {}
+
+    structure = [
+        ('event',     list,    _decode_date_time),
+        ('repeat',    None,    _decode_timing_repeat),
+        ('code',      None,    _decode_codeable_concept)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_med_dosage(obj):
+    """
+    Decode a FHIR dosage object embedded in a medication resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('text',                    None,    None),
+        ('timing',                  None,    _decode_timing),
+        ('asNeededBoolean',         None,    _decode_boolean),
+        ('asNeededCodeableConcept', None,    _decode_codeable_concept),
+        ('siteCodeableConcept',     None,    _decode_codeable_concept),
+        ('siteReference',           None,    _decode_reference),
+        ('route',                   None,    _decode_codeable_concept),
+        ('method',                  None,    _decode_codeable_concept),
+        ('quantityQuantity',        None,    _decode_quantity),
+        ('quantityRange',           None,    _decode_range),
+        ('rateRatio',               None,    _decode_ratio),
+        ('rateRange',               None,    _decode_range),
+        ('maxDosePerPeriod',        None,    _decode_ratio)
     ]
 
     _decode_from_structure(obj, structure, result)
@@ -1185,6 +1261,39 @@ def _decode_condition_stu2(obj):
 
     _decode_from_structure(obj, structure, condition)
     return condition
+
+
+###############################################################################
+def _decode_medication_statement_stu2(obj):
+    """
+    Decode a FHIR STU2 MedicationStatement resource object (4.16.3).
+    """
+
+    med_stmt = {}
+
+    _decode_base_resource(obj, med_stmt)
+    _decode_domain_resource(obj, med_stmt)
+
+    structure = [
+        ('identifier',                  list,     _decode_identifier),
+        ('patient',                     None,     _decode_reference),
+        ('informationSource',           None,     _decode_reference),
+        ('dateAsserted',                None,     _decode_date_time),
+        ('status',                      None,     None),
+        ('wasNotTaken',                 None,     _decode_boolean),
+        ('reasonForUseCodeableConcept', None,     _decode_codeable_concept),
+        ('reasonForUseReference',       None,     _decode_reference),
+        ('effectiveDateTime',           None,     _decode_date_time),
+        ('effectivePeriod',             None,     _decode_period),
+        ('note',                        None,     None),
+        ('supportingInformation',       list,     _decode_reference),
+        ('medicationCodeableConcept',   None,     _decode_codeable_concept),
+        ('medicationReference',         None,     _decode_reference),
+        ('dosage',                      list,     _decode_med_dosage)
+    ]
+
+    _decode_from_structure(obj, structure, med_stmt)
+    return med_stmt
 
 
 ###############################################################################
@@ -1823,6 +1932,8 @@ if __name__ == '__main__':
                 result = _decode_procedure_stu2(obj)
             elif 'Condition' == rt:
                 result = _decode_condition_stu2(obj)
+            elif 'MedicationStatement' == rt:
+                result = _decode_medication_statement_stu2(obj)
 
         if result is not None:
             for k,v in result.items():
@@ -1836,3 +1947,6 @@ if __name__ == '__main__':
                         print('\t[{0}]:\t{1}'.format(index, v2))
                 else:
                     print('{0} => {1}'.format(k,v))
+
+        # TODO - fix contained resource in _decode_domain_resource
+        #        see cerner_med_stmt4.json
