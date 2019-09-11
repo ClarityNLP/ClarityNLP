@@ -753,56 +753,6 @@ def _decode_extension(obj):
         result[FIELD_EXT] = decoded_list
     
     return result
-
-
-###############################################################################
-def _decode_base_resource(obj, result):
-    """
-    Decode a FHIR STU2 BaseResource object (1.11.3).
-    """
-
-    SIMPLE_FIELDS = ['id', 'uri', 'code']
-    for f in SIMPLE_FIELDS:
-        if f in obj:
-            result[f] = obj[f]
-
-    FIELD_META = 'meta'
-    if FIELD_META in obj:
-        result[FIELD_META] = _decode_meta(obj[FIELD_META])
-        
-    return result
-
-
-###############################################################################
-def _decode_domain_resource(obj, result):
-    """
-    Decode a FHIR STU2 DomainResource object (1.20.3).
-    """
-
-    FIELD_TEXT = 'text'
-    if FIELD_TEXT in obj:
-        result[FIELD_TEXT] = _decode_narrative(obj[FIELD_TEXT])
-
-    # handling contained resources is TBD
-    
-    # FIELD_CONTAINED = 'contained'
-    # if FIELD_CONTAINED in obj:
-    #     decoded_list = []
-    #     elt_list = obj[FIELD_CONTAINED]
-    #     for elt in elt_list:
-    #         decoded_obj = _decode_base_resource(elt)
-    #         decoded_list.append(decoded_obj)
-    #     result[FIELD_CONTAINED] = decoded_list
-
-    EXT_FIELDS = ['extension', 'modifierExtension']
-    for f in EXT_FIELDS:
-        if f in obj:
-            decoded_list = []
-            elt_list = obj[f]
-            for elt in elt_list:
-                decoded_obj = _decode_extension(elt)
-                decoded_list.append(decoded_obj)
-            result[f] = decoded_list
             
     
 ###############################################################################
@@ -838,6 +788,185 @@ def _decode_from_structure(obj, structure, result):
                     decoded_list.append(decoded_obj)
                 result[field_name] = decoded_list
                 
+                
+###############################################################################
+def _decode_base_resource(obj, result):
+    """
+    Decode a FHIR STU2 BaseResource object (1.11.3).
+    """
+
+    SIMPLE_FIELDS = ['id', 'uri', 'code']
+    for f in SIMPLE_FIELDS:
+        if f in obj:
+            result[f] = obj[f]
+
+    FIELD_META = 'meta'
+    if FIELD_META in obj:
+        result[FIELD_META] = _decode_meta(obj[FIELD_META])
+        
+    #return result
+
+
+###############################################################################
+def _decode_package_content(obj):
+    """
+    Decode the FHIR STU2 content object contained in a Medication resource
+    package object.
+    """
+
+    result = {}
+
+    structure = [
+        ('item',   None,   None),
+        ('amount', None,   None)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+    
+###############################################################################
+def _decode_medication_package(obj):
+    """
+    Decode the FHIR STU2 package object contained in a Medication resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('container',  None,  _decode_codeable_concept),
+        ('content',    list,  _decode_package_content)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+    
+###############################################################################
+def _decode_product_batch(obj):
+    """
+    Decode the FHIR STU2 batch object contained in a Medication
+    product object.
+    """
+
+    result = {}
+
+    structure = [
+        ('lotNumber',      None,  None),
+        ('expirationDate', None,  _decode_date_time)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+    
+
+###############################################################################
+def _decode_product_ingredient(obj):
+    """
+    Decode the FHIR STU2 ingredient object contained in a Medication
+    product object.
+    """
+
+    result = {}
+
+    structure = [
+        ('item',   None,  _decode_reference),
+        ('amount', None,  _decode_ratio)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+    
+###############################################################################
+def _decode_medication_product(obj):
+    """
+    Decode the FHIR STU2 product object contained in a Medication resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('form',        None,   _decode_codeable_concept),
+        ('ingredient',  list,   _decode_product_ingredient),
+        ('batch',       list,   _decode_product_batch),
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+    
+###############################################################################
+def _decode_medication(obj):
+    """
+    Decode a FHIR STU2 Medication resource object (4.12.2). This can be
+    a contained resource inside other Medication-related resources.
+    """
+
+    result = {}
+
+    _decode_base_resource(obj, result)
+
+    # decode domain resource fields, if any
+    # no 'text' field (narrative) for contained resources
+    # no contained resources either
+
+    EXT_FIELDS = ['extension', 'modifierExtension']
+    for f in EXT_FIELDS:
+        if f in obj:
+            decoded_list = []
+            elt_list = obj[f]
+            for elt in elt_list:
+                decoded_obj = _decode_extension(elt)
+                decoded_list.append(decoded_obj)
+            result[f] = decoded_list
+
+    structure = [
+        ('code',          None,   _decode_codeable_concept),
+        ('isBrand',       None,   _decode_boolean),
+        ('manufacturer',  None,   _decode_reference),
+        ('product',       None,   _decode_medication_product),
+        ('package',       None,   _decode_medication_package),
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_domain_resource(obj, result):
+    """
+    Decode a FHIR STU2 DomainResource object (1.20.3).
+    """
+
+    FIELD_TEXT = 'text'
+    if FIELD_TEXT in obj:
+        result[FIELD_TEXT] = _decode_narrative(obj[FIELD_TEXT])
+
+    FIELD_CONTAINED = 'contained'
+    if FIELD_CONTAINED in obj:
+        decoded_list = []
+        elt_list = obj[FIELD_CONTAINED]
+        for elt in elt_list:
+            FIELD_RT = 'resourceType'
+            if FIELD_RT in elt:
+                rt = elt[FIELD_RT]
+                if 'Medication' == rt:
+                    decoded_obj = _decode_medication(elt)
+                    decoded_list.append(decoded_obj)
+        if len(decoded_list) > 0:
+            result[FIELD_CONTAINED] = decoded_list
+
+    EXT_FIELDS = ['extension', 'modifierExtension']
+    for f in EXT_FIELDS:
+        if f in obj:
+            decoded_list = []
+            elt_list = obj[f]
+            for elt in elt_list:
+                decoded_obj = _decode_extension(elt)
+                decoded_list.append(decoded_obj)
+            result[f] = decoded_list
+
 
 ###############################################################################
 def _decode_annotation(obj):
@@ -1294,6 +1423,29 @@ def _decode_medication_statement_stu2(obj):
 
     _decode_from_structure(obj, structure, med_stmt)
     return med_stmt
+
+
+###############################################################################
+def _decode_medication_order_stu2(obj):
+    """
+    Decode a FHIR STU2 MedicationOrder resource object (4.13.3).
+    """
+
+    med_order = {}
+
+    _decode_base_resource(obj, med_order)
+    _decode_domain_resource(obj, med_order)
+
+    structure = [
+        ('identifier',                  list,     _decode_identifier),
+        ('dateWritten',                 None,     _decode_date_time),
+        
+    ]
+
+    _decode_from_structure(obj, structure, med_order)
+    return med_order
+
+
 
 
 ###############################################################################
@@ -1934,6 +2086,8 @@ if __name__ == '__main__':
                 result = _decode_condition_stu2(obj)
             elif 'MedicationStatement' == rt:
                 result = _decode_medication_statement_stu2(obj)
+            elif 'MedicationOrder' == rt:
+                result = _decode_medication_order_stu2(obj)
 
         if result is not None:
             for k,v in result.items():
