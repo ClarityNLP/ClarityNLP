@@ -263,14 +263,13 @@ def query_phenotype_job_by_id(job_id: str, connection_string: str):
     return job
 
 
-def get_job_performance(job_ids: list(), connection_string: str):
+def get_job_performance(job_ids: list, connection_string: str):
+    if not job_ids or len(job_ids) == 0:
+        return dict()
+
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
     metrics = dict()
-
-    if len(job_ids) == 0:
-        return metrics
-
 
     try:
         in_clause = ''
@@ -283,7 +282,8 @@ def get_job_performance(job_ids: list(), connection_string: str):
             where nlp_job_id in ({})
             """.format(in_clause),
                        job_ids)
-
+        status = None
+        job_id = -1
         statuses = cursor.fetchall()
         for s in statuses:
             status = s[0]
@@ -313,7 +313,7 @@ def get_job_performance(job_ids: list(), connection_string: str):
             job_id = row[3]
 
             performance = metrics[job_id]
-            counts_found = performance['counts_found']
+            counts_found = performance.get('counts_found', 0)
 
             if status_name == 'STATS_FINAL_SUBJECTS':
                 performance['final_subjects'] = status_value
@@ -331,7 +331,7 @@ def get_job_performance(job_ids: list(), connection_string: str):
 
         for k in metrics.keys():
             performance = metrics[k]
-            counts_found = performance['counts_found']
+            counts_found = performance.get('counts_found', 0)
             if counts_found == 0 and status == COMPLETED:
                 final_subjects = util.get_from_redis_cache('final_subjects_{}'.format(k))
                 final_results = util.get_from_redis_cache('final_results{}'.format(k))
@@ -351,7 +351,7 @@ def get_job_performance(job_ids: list(), connection_string: str):
                 int_results = util.get_from_redis_cache('intermediate_results{}'.format(k))
                 if int_subjects and int_results:
                     performance['intermediate_subjects'] = int_subjects
-                    performance['intermediate_results'] = intermediate_stats["results"]
+                    performance['intermediate_results'] = int_results
                 else:
                     intermediate_stats = phenotype_stats(str(job_id), False)
 
@@ -361,7 +361,8 @@ def get_job_performance(job_ids: list(), connection_string: str):
                     util.write_to_redis_cache('intermediate_subjects_{}'.format(k), intermediate_stats["subjects"])
                     util.write_to_redis_cache('intermediate_results_{}'.format(k), intermediate_stats["results"])
 
-            del performance['counts_found']
+            if 'counts_found' in performance:
+                del performance['counts_found']
             metrics[job_id] = performance
     except Exception as ex:
         traceback.print_exc(file=sys.stdout)

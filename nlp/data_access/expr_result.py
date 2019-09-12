@@ -179,6 +179,48 @@ def init_history(source_doc):
     return history_elt
 
 
+def get_default_result_display(ret):
+    rd = dict()
+    rd['date'] = ''
+    rd['sentence'] = ''
+    rd['result_content'] = ''
+
+    dates = list()
+    sentences = list()
+    starts = list()
+    ends = list()
+    hl = list()
+    for k, v in ret.items():
+        if k.startswith('report_date_'):
+            dates.append(v)
+        if k.startswith('sentence_'):
+            sentences.append(v)
+        if k.startswith('term_'):
+            hl.append(v)
+        if k.startswith('value_'):
+            hl.append(v)
+        if k.startswith('start_'):
+            starts.append(v)
+        if k.startswith('end_'):
+            ends.append(v)
+
+    if len(dates) > 0:
+        if all(x == dates[0] for x in dates):
+            rd['date'] = dates[0]
+    if len(sentences) > 0:
+        if all(x == sentences[0] for x in sentences):
+            rd['sentence'] = sentences[0]
+        else:
+            rd['sentence'] = ''
+        rd['result_content'] = '\n'.join(sentences)
+
+    rd['highlights'] = hl
+    rd['start'] = starts
+    rd['end'] = ends
+
+    return rd
+
+
 ###############################################################################
 def to_math_result_docs(eval_result, phenotype_info, cursor):
     """
@@ -223,6 +265,7 @@ def to_math_result_docs(eval_result, phenotype_info, cursor):
 
         # use the pipeline_type field to record the type of expression
         ret['pipeline_type'] = 'EvalMathExpr'
+        ret["result_display"] = get_default_result_display(ret)
 
         # documents for math operations are generated from
         # ValueExtractor and other tasks, hence no history field
@@ -329,7 +372,7 @@ def to_logic_result_docs(eval_result,
 
             # use the pipeline_type field to record the type of expression
             ret['pipeline_type'] = 'EvalLogicExpr'
-            ret["result_display"] = {}
+            ret["result_display"] = get_default_result_display(ret)
 
             # add source _ids and nlpql_features (1-based indexing)
             if is_final:
