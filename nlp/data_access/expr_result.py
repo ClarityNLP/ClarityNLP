@@ -329,6 +329,7 @@ def to_logic_result_docs(eval_result,
 
             # use the pipeline_type field to record the type of expression
             ret['pipeline_type'] = 'EvalLogicExpr'
+            ret["result_display"] = {}
 
             # add source _ids and nlpql_features (1-based indexing)
             if is_final:
