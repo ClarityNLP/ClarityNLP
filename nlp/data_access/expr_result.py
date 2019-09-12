@@ -191,13 +191,15 @@ def get_default_result_display(ret):
     ends = list()
     hl = list()
     for k, v in ret.items():
-        if k.startswith('report_date_'):
+        if not v or len(v) == '':
+            continue
+        if k.startswith('report_date'):
             dates.append(v)
-        if k.startswith('sentence_'):
+        if k.startswith('sentence'):
             sentences.append(v)
         if k.startswith('term_'):
             hl.append(v)
-        if k.startswith('value_'):
+        if k.startswith('value'):
             hl.append(v)
         if k.startswith('start_'):
             starts.append(v)
