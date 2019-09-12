@@ -197,7 +197,13 @@ def _decode_boolean(obj):
         else:
             return False
 
+###############################################################################
+def _decode_int(obj):
 
+    assert int == type(obj)
+    return int(obj)
+
+        
 ###############################################################################
 def _decode_quantity(obj):
     """
@@ -804,8 +810,6 @@ def _decode_base_resource(obj, result):
     if FIELD_META in obj:
         result[FIELD_META] = _decode_meta(obj[FIELD_META])
         
-    #return result
-
 
 ###############################################################################
 def _decode_package_content(obj):
@@ -1036,7 +1040,8 @@ def _decode_timing(obj):
 ###############################################################################
 def _decode_med_dosage(obj):
     """
-    Decode a FHIR dosage object embedded in a medication resource.
+    Decode a FHIR STU2 dosage object embedded in a medication-related
+    resource.
     """
 
     result = {}
@@ -1055,6 +1060,76 @@ def _decode_med_dosage(obj):
         ('rateRatio',               None,    _decode_ratio),
         ('rateRange',               None,    _decode_range),
         ('maxDosePerPeriod',        None,    _decode_ratio)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_med_dosage_instruction(obj):
+    """
+    Decode a FHIR STU2 dosage instruction object embedded in a
+    MedicationOrder resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('text',                    None,   None),
+        ('additionalInstructions',  None,  _decode_codeable_concept),
+        ('timing',                  None,  _decode_timing),
+        ('asNeededBoolean',         None,  _decode_boolean),
+        ('asNeededCodeableConcept', None,  _decode_codeable_concept),
+        ('siteCodeableConcept',     None,  _decode_codeable_concept),
+        ('siteReference',           None,  _decode_reference),
+        ('route',                   None,  _decode_codeable_concept),
+        ('method',                  None,  _decode_codeable_concept),
+        ('doseRange',               None,  _decode_range),
+        ('doseQuantity',            None,  _decode_quantity),
+        ('rateRatio',               None,  _decode_ratio),
+        ('rateRange',               None,  _decode_range),
+        ('maxDosePeriod',           None,  _decode_ratio)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_med_dispense_request(obj):
+    """
+    Decode a FHIR STU2 dispense request object embedded in a
+    MedicationOrder resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('medicationCodeableConcept',   None,   _decode_codeable_concept),
+        ('medicationReference',         None,   _decode_reference),
+        ('validityPeriod',              None,   _decode_period),
+        ('numberOfRepeatsAllowed',      None,   _decode_int),
+        ('quantity',                    None,   _decode_quantity),
+        ('expectedSupplyDuration',      None,   None)
+    ]
+
+    _decode_from_structure(obj, structure, result)
+    return result
+
+
+###############################################################################
+def _decode_med_substitution(obj):
+    """
+    Decode a FHIR STU2 'substitution' object embedded in a MedicationOrder
+    resource.
+    """
+
+    result = {}
+
+    structure = [
+        ('type',   None,  _decode_codeable_concept),
+        ('reason', None,  _decode_codeable_concept)
     ]
 
     _decode_from_structure(obj, structure, result)
@@ -1439,11 +1514,27 @@ def _decode_medication_order_stu2(obj):
     structure = [
         ('identifier',                  list,     _decode_identifier),
         ('dateWritten',                 None,     _decode_date_time),
-        
+        ('status',                      None,     None),
+        ('dateEnded',                   None,     _decode_date_time),
+        ('reasonEnded',                 None,     _decode_codeable_concept),
+        ('patient',                     None,     _decode_reference),
+        ('prescriber',                  None,     _decode_reference),
+        ('encounter',                   None,     _decode_reference),
+        ('reasonCodeableConcept',       None,     _decode_codeable_concept),
+        ('reasonReference',             None,     _decode_reference),
+        ('note',                        None,     None),
+        ('medicationCodeableConcept',   None,     _decode_codeable_concept),
+        ('medicationReference',         None,     _decode_reference),
+        ('dosageInstruction',           list,     _decode_med_dosage_instruction),
+        ('dispenseRequest',             None,     _decode_med_dispense_request),
+        ('substitution',                None,     _decode_med_substitution),
+        ('priorPrescription',           None,     _decode_reference)
     ]
 
     _decode_from_structure(obj, structure, med_order)
     return med_order
+
+
 
 
 
@@ -2102,5 +2193,4 @@ if __name__ == '__main__':
                 else:
                     print('{0} => {1}'.format(k,v))
 
-        # TODO - fix contained resource in _decode_domain_resource
-        #        see cerner_med_stmt4.json
+        # TODO - what about _text field? See cerner_med_order4.json
