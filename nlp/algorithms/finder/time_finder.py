@@ -195,7 +195,7 @@ STR_PM = 'pm'
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 _MODULE_NAME = 'time_finder.py'
 
 # set to True to see debug output
@@ -255,7 +255,7 @@ _regex_h12_am_pm = re.compile(_str_h12_am_pm)
 # hour and minutes:
 #    4:08, 10:14
 _str_h12m = r'\b(?P<hours>' + _str_h12 + r')'+ _str_sep                       +\
-            r'(?P<minutes>' + _str_MM  + r'(?!\d))'
+            r'(?P<minutes>' + _str_MM  + r'(?![\d:]))'
 _regex_h12m = re.compile(_str_h12m)
 
 # hour and minutes, with am_pm:
@@ -290,13 +290,13 @@ _regex_h12msf_am_pm = re.compile(_str_h12msf_am_pm)
 #    08:12, T23:43
 _str_h24m = _str_t                                        +\
            r'(?P<hours>'   + _str_h24 + r')' + _str_sep   +\
-           r'(?P<minutes>' + _str_MM  + r'(?!\d))'
+           r'(?P<minutes>' + _str_MM  + r'(?![\d:]))'
 _regex_h24m = re.compile(_str_h24m)
 
 # hour and minutes, no colon
 _str_h24m_no_colon = _str_t                              +\
                     r'(?P<hours>'   + _str_h24 + r')'    +\
-                    r'(?P<minutes>' + _str_MM  + r'(?!\d))'
+                    r'(?P<minutes>' + _str_MM  + r'(?![-\d:]))'
 _regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
 
 # hour, minutes, and seconds
@@ -311,7 +311,7 @@ _regex_h24ms = re.compile(_str_h24ms)
 _str_h24ms_no_colon = _str_t                             +\
                      r'(?P<hours>'   + _str_h24 + r')'   +\
                      r'(?P<minutes>' + _str_MM  + r')'   +\
-                     r'(?P<seconds>' + _str_MM  + r'(?!\d))'
+                     r'(?P<seconds>' + _str_MM  + r'(?![-\d:]))'
 _regex_h24ms_no_colon = re.compile(_str_h24ms_no_colon)
 
 # hour, minutes, seconds, and timezone
@@ -370,7 +370,7 @@ _str_iso_hh = r'([01][0-9]|2[0-4])'
 _str_iso_mm = r'[0-5][0-9]'
 _str_iso_ss = r'([0-5][0-9]|60)'
 
-_str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r')'                    +\
+_str_iso_zone_hm = r'(?P<gmt_hours>' + _str_iso_hh + r'(?![-+]))'            +\
                    r'(:?' + r'(?P<gmt_minutes>' + _str_iso_mm + r'))?'
 
 _str_iso_zone = r'((?P<timezone>Z)|'                                         +\
@@ -378,14 +378,18 @@ _str_iso_zone = r'((?P<timezone>Z)|'                                         +\
 
 # note the essential negative lookahead in these, prevents matching of
 # portions of floating point numbers
-_str_iso_hh_only = r'(?<!\d)(?P<hours>' + _str_iso_hh + r'(?!\d)(?!\.))'     +\
+_str_iso_hh_only = r'(?<![-\d])(?P<hours>' + _str_iso_hh + r'(?![\d\.:]))'   +\
                    r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
-_str_iso_hhmm_only = r'(?<!\d)(?P<hours>' + _str_iso_hh + r')'               +\
-                     r'(?P<minutes>' + _str_iso_mm + r'(?!\d)(?!\.))'        +\
-                     r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
+_str_iso_hhmm_only_1 = r'(?<![-\d])(?P<hours>' + _str_iso_hh + r')'          +\
+                       r'(?P<minutes>' + _str_iso_mm + r')'                  +\
+                       r'((?P<gmt_delta>' + _str_iso_zone + r'))'
 
-_str_iso_hms = r'(?<!\d)(?P<hours>'  + _str_iso_hh + r'):?'                  +\
+_str_iso_hhmm_only_2 = r'(?<![-\d])(?P<hours>' + _str_iso_hh + r')'          +\
+                       r'(?P<minutes>' + _str_iso_mm + r'(?![-+\d\.]))'
+
+
+_str_iso_hms = r'(?<![-\d])(?P<hours>'  + _str_iso_hh + r'):?'               +\
                r'((?P<minutes>' + _str_iso_mm + r')):?'                      +\
                r'((?P<seconds>' + _str_iso_ss + r'))'                        +\
                r'((?P<frac>'    + r'\.\d+'   + r'))?'
@@ -393,31 +397,34 @@ _str_iso_hms = r'(?<!\d)(?P<hours>'  + _str_iso_hh + r'):?'                  +\
 _str_iso_time = _str_iso_hms + r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
 _regex_iso_hh   = re.compile(_str_iso_hh_only)
-_regex_iso_hhmm = re.compile(_str_iso_hhmm_only)
+_regex_iso_hhmm1 = re.compile(_str_iso_hhmm_only_1)
+_regex_iso_hhmm2 = re.compile(_str_iso_hhmm_only_2)
 _regex_iso_time = re.compile(_str_iso_time)
 
 # ISO datetime format: YYYY-MM-DDTHH:MM:SS.ffffff
 # fractional seconds are optional
-_str_iso_datetime = r'(?<!\d-)\d{4}\-\d\d\-\d\dT' + _str_iso_hms
+# negative lookahead prevents extraction of a subset of a larger expression
+_str_iso_datetime = r'(?<!\d-)\d{4}\-\d\d\-\d\dT' + _str_iso_hms + r'(?![-+\d\.])'
 _regex_iso_datetime = re.compile(_str_iso_datetime)
 
 _regexes = [
     _regex_iso_datetime,         # 0
-    _regex_iso_hhmm,             # 1
-    _regex_iso_hh,               # 2
-    _regex_iso_time,             # 3
-    _regex_h24ms_with_gmt_delta, # 4
-    _regex_h24ms_with_timezone,  # 5
-    _regex_h24ms_no_colon,       # 6
-    _regex_h24m_no_colon,        # 7
-    _regex_h12msf_am_pm,         # 8
-    _regex_h12ms_am_pm,          # 9
-    _regex_h12m_am_pm,           # 10
-    _regex_h12_am_pm,            # 11
-    _regex_h24msf,               # 12
-    _regex_h24ms,                # 13
-    _regex_h24m,                 # 14
-    _regex_h12m,                 # 15
+    _regex_iso_hhmm1,            # 1
+    _regex_iso_hhmm2,            # 2
+    _regex_iso_hh,               # 3
+    _regex_iso_time,             # 4
+    _regex_h24ms_with_gmt_delta, # 5
+    _regex_h24ms_with_timezone,  # 6
+    _regex_h24ms_no_colon,       # 7
+    _regex_h24m_no_colon,        # 8
+    _regex_h12msf_am_pm,         # 9
+    _regex_h12ms_am_pm,          # 10
+    _regex_h12m_am_pm,           # 11
+    _regex_h12_am_pm,            # 12
+    _regex_h24msf,               # 13
+    _regex_h24ms,                # 14
+    _regex_h24m,                 # 15
+    _regex_h12m,                 # 16
 ]
 
 # index of the ISO datetime regex in the _regexes array
@@ -471,18 +478,23 @@ def run(sentence):
         iterator = regex.finditer(sentence)
         for match in iterator:
             match_text = match.group().strip()
+            t_adjustment = 0
             if _ISO_DATETIME_REGEX_INDEX == regex_index:
                 # extract only the time portion
                 t_pos = match_text.find('T')
                 assert -1 != t_pos
                 match_text = match_text[t_pos+1:]
-            if _TRACE:
-                print('[{0:2}]: MATCH TEXT: ->{1}<-'.
-                      format(regex_index, match_text))
-            start = match.start()
-            end   = match.end()
+                t_adjustment = t_pos+1
+                if _TRACE:
+                    print('\tt_adjustment: {0}'.format(t_adjustment))
+            start = match.start() + t_adjustment
+            end = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex))
+            if _TRACE:
+                print('[{0:2}]: [{1:2}, {2:2})\tMATCH TEXT: ->{3}<-'.
+                      format(regex_index, start, end, match_text))
 
+            
     # sort the candidates in descending order of length, which is needed for
     # one-pass overlap resolution later on
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
