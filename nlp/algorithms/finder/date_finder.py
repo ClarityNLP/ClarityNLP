@@ -129,7 +129,7 @@ DateValue.__new__.__defaults__ = (EMPTY_FIELD,) * len(DateValue._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 _MODULE_NAME   = 'date_finder.py'
 
 # set to True to enable debug output
@@ -245,7 +245,7 @@ _regex_12 = re.compile(_str_dtm, re.IGNORECASE)
 
 # GNU four-digit year and month
 _str_gnu_ym = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'               +\
-              r'(?P<month>' + _str_mm + r')\b'
+              r'(?P<month>' + _str_mm + r')(?![-])\b'
 _regex_13 = re.compile(_str_gnu_ym, re.IGNORECASE)
 
 # textual month and four-digit year
@@ -259,7 +259,7 @@ _str_y4tm = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'[-.\t ]*'          +\
 _regex_15 = re.compile(_str_y4tm, re.IGNORECASE)
 
 # year only
-_str_year = r'(?<!\d)(?P<year>' + _str_YY + r')\b'
+_str_year = r'(?<![-+\d])(?P<year>' + _str_YY + r'(?![-]))\b'
 _regex_16 = re.compile(_str_year, re.IGNORECASE)
 
 # textual month only
@@ -276,7 +276,7 @@ _regex_iso_1 = re.compile(_str_iso_8)
 
 # optional sign, four-digit year, two-digit month, two-digit day, dashes
 _str_iso_s4y2m2d = r'(?P<sign>[-+]?)'                                   +\
-                   r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'                 +\
+                   r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'          +\
                    r'(?P<month>' + _str_MM + r')' + r'-'                +\
                    r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_2 = re.compile(_str_iso_s4y2m2d)

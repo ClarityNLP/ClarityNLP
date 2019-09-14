@@ -254,7 +254,7 @@ _regex_h12_am_pm = re.compile(_str_h12_am_pm)
 
 # hour and minutes:
 #    4:08, 10:14
-_str_h12m = r'\b(?P<hours>' + _str_h12 + r')'+ _str_sep                       +\
+_str_h12m = r'\b(?<![:])(?P<hours>' + _str_h12 + r')'+ _str_sep               +\
             r'(?P<minutes>' + _str_MM  + r'(?![\d:]))'
 _regex_h12m = re.compile(_str_h12m)
 
@@ -288,14 +288,14 @@ _regex_h12msf_am_pm = re.compile(_str_h12msf_am_pm)
 
 # hour and minutes:
 #    08:12, T23:43
-_str_h24m = _str_t                                        +\
-           r'(?P<hours>'   + _str_h24 + r')' + _str_sep   +\
+_str_h24m = _str_t                                                   +\
+           r'(?<![:])(?P<hours>'   + _str_h24 + r')' + _str_sep      +\
            r'(?P<minutes>' + _str_MM  + r'(?![\d:]))'
 _regex_h24m = re.compile(_str_h24m)
 
 # hour and minutes, no colon
-_str_h24m_no_colon = _str_t                              +\
-                    r'(?P<hours>'   + _str_h24 + r')'    +\
+_str_h24m_no_colon = _str_t                                          +\
+                    r'(?<![-+\.:])(?P<hours>'   + _str_h24 + r')'    +\
                     r'(?P<minutes>' + _str_MM  + r'(?![-\d:]))'
 _regex_h24m_no_colon = re.compile(_str_h24m_no_colon)
 
@@ -378,18 +378,18 @@ _str_iso_zone = r'((?P<timezone>Z)|'                                         +\
 
 # note the essential negative lookahead in these, prevents matching of
 # portions of floating point numbers
-_str_iso_hh_only = r'(?<![-\d])(?P<hours>' + _str_iso_hh + r'(?![\d\.:]))'   +\
+_str_iso_hh_only = r'(?<![-+\d:])(?P<hours>' + _str_iso_hh + r'(?![\d\.:]))' +\
                    r'((?P<gmt_delta>' + _str_iso_zone + r'))?'
 
-_str_iso_hhmm_only_1 = r'(?<![-\d])(?P<hours>' + _str_iso_hh + r')'          +\
+_str_iso_hhmm_only_1 = r'(?<![-+\d:])(?P<hours>' + _str_iso_hh + r')'        +\
                        r'(?P<minutes>' + _str_iso_mm + r')'                  +\
                        r'((?P<gmt_delta>' + _str_iso_zone + r'))'
 
-_str_iso_hhmm_only_2 = r'(?<![-\d])(?P<hours>' + _str_iso_hh + r')'          +\
+_str_iso_hhmm_only_2 = r'(?<![-+\d:])(?P<hours>' + _str_iso_hh + r')'        +\
                        r'(?P<minutes>' + _str_iso_mm + r'(?![-+\d\.]))'
 
 
-_str_iso_hms = r'(?<![-\d])(?P<hours>'  + _str_iso_hh + r'):?'               +\
+_str_iso_hms = r'(?<![-+\d:])(?P<hours>'  + _str_iso_hh + r'):?'             +\
                r'((?P<minutes>' + _str_iso_mm + r')):?'                      +\
                r'((?P<seconds>' + _str_iso_ss + r'))'                        +\
                r'((?P<frac>'    + r'\.\d+'   + r'))?'
@@ -485,13 +485,11 @@ def run(sentence):
                 assert -1 != t_pos
                 match_text = match_text[t_pos+1:]
                 t_adjustment = t_pos+1
-                if _TRACE:
-                    print('\tt_adjustment: {0}'.format(t_adjustment))
             start = match.start() + t_adjustment
             end = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex))
             if _TRACE:
-                print('[{0:2}]: [{1:2}, {2:2})\tMATCH TEXT: ->{3}<-'.
+                print('[{0:2}]: [{1:3}, {2:3})\tMATCH TEXT: ->{3}<-'.
                       format(regex_index, start, end, match_text))
 
             
