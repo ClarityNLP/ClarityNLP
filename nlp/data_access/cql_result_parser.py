@@ -38,7 +38,6 @@ _KEY_DOSAGE               = 'dosage'
 _KEY_DOSE_QUANTITY        = 'doseQuantity'
 _KEY_EFF_DATE_TIME        = 'effectiveDateTime'
 _KEY_EFF_PERIOD           = 'effectivePeriod'
-_KEY_END                  = 'end'
 _KEY_FAMILY_NAME          = 'family'
 _KEY_GENDER               = 'gender'
 _KEY_GIVEN_NAME           = 'given'
@@ -52,7 +51,6 @@ _KEY_REFERENCE            = 'reference'
 _KEY_RESOURCE_TYPE        = 'resourceType'
 _KEY_RESULT               = 'result'
 _KEY_RESULT_TYPE          = 'resultType'
-_KEY_START                = 'start'
 _KEY_STATUS               = 'status'
 _KEY_SUBJECT              = 'subject'
 _KEY_SYSTEM               = 'system'
@@ -177,12 +175,105 @@ _regex_ymd = re.compile(r'\d\d\d\d-\d\d-\d\d')
 _regex_ym  = re.compile(r'\d\d\d\d-\d\d')
 _regex_y   = re.compile(r'\d\d\d\d')
 
+## KEEP
+
+# regex used to recognize components of datetime strings
+_str_datetime = r'\A(?P<year>\d\d\d\d)-(?P<month>\d\d)-(?P<day>\d\d)' \
+    r'(T(?P<time>\d\d:\d\d:\d\d[-+\.Z\d:]*))?\Z'
+_regex_datetime = re.compile(_str_datetime)
+
+_regex_coding = re.compile(r'\Acode_coding_(?P<num>\d)_')
+
+_KEY_DATE_TIME     = 'date_time'
+_KEY_END           = 'end'
+_KEY_END_DATE_TIME = 'end_date_time'
+_KEY_START         = 'start'
+
 
 ###############################################################################
 def enable_debug():
 
     global _TRACE
     _TRACE = True
+
+
+###############################################################################
+def _dump_dict(dict_obj, msg=None):
+    """
+    Print to stdout the key-value pairs for the given dict.
+    """
+
+    assert dict == type(dict_obj)
+
+    if msg is not None:
+        print(msg)
+    for k,v in dict_obj.items():
+        print('\t{0} => {1}'.format(k, v))
+
+    
+###############################################################################
+def _convert_datetimes(flattened_obj):
+    """
+    Convert FHIR datetimes to python datetime objects. The input is a flattened
+    JSON representation of a FHIR resource.
+    """
+
+    assert dict == type(flattened_obj)
+    
+    for k,v in flattened_obj.items():
+        if str == type(v):
+            match = _regex_datetime.match(v)
+            if match:
+                year  = int(match.group('year'))
+                month = int(match.group('month'))
+                day   = int(match.group('day'))
+                time_str = match.group('time')
+
+                if time_str is None:
+                    datetime_obj = datetime(
+                        year  = year,
+                        month = month,
+                        day   = day
+                    )
+                else:
+                    json_time = time_finder.run(time_str)
+                    time_list = json.loads(json_time)
+                    assert 1 == len(time_list)
+                    the_time = time_list[0]
+                    time_obj = time_finder.TimeValue(**the_time)
+
+                    us = 0
+                    if time_obj.fractional_seconds is not None:
+                        us = time_obj.fractional_seconds % 999999
+
+                    # get correct sign for UTC offset
+                    mult = 1
+                    if '-' == time_obj.gmt_delta_sign:
+                        mult = -1
+                    delta_hours = mult * time_obj.gmt_delta_hours
+                    delta_min   = time_obj.gmt_delta_minutes
+                    offset = timedelta(
+                        hours=delta_hours,
+                        minutes = delta_min
+                    )
+                
+                    datetime_obj = datetime(
+                        year        = year,
+                        month       = month,
+                        day         = day,
+                        hour        = time_obj.hours,
+                        minute      = time_obj.minutes,
+                        second      = time_obj.seconds,
+                        microsecond = us,
+                        tzinfo      = timezone(offset=offset)
+                    )
+
+                flattened_obj[k] = datetime_obj
+                
+    return flattened_obj
+
+
+
 
     
 ###############################################################################
@@ -1828,6 +1919,175 @@ def _decode_medication_administration(obj):
 
 
 ###############################################################################
+def _set_list_length(obj, prefix_str):
+    """
+    Determine the length of a flattened list whose element keys share the
+    given prefix string. Add a new key of the form 'len_' + prefix_str that
+    contains this length.
+    """
+
+    str_search = r'\A' + prefix_str + r'_(?P<num>\d)_'
+    
+    max_num = None
+    for k,v in obj.items():
+        match = re.match(str_search, k)
+        if match:
+            num = int(match.group('num'))
+            if max_num is None:
+                max_num = 0
+            if num > max_num:
+                max_num = num
+
+    if max_num is None:
+        return 0
+    else:
+        length = max_num + 1
+        obj['len_' + prefix_str] = length
+        return length
+
+
+###############################################################################
+def _base_init(obj):
+    """
+    Initialize list lengths in the base resource objects.
+    """
+
+    _set_list_length(obj, 'identifier')
+    
+    extension_count = _set_list_length(obj, 'extension')
+    for i in range(extension_count):
+        # set lengths of inner extension lists
+        key_name = 'extension_{0}_extension'.format(i)
+        _set_list_length(obj, key_name)
+    
+
+###############################################################################
+def _decode_flattened_observation(obj):
+    """
+    Decode a flattened FHIR 'Observation' resource.
+    """
+
+    assert dict == type(obj)
+
+    _base_init(obj)
+    
+    # add 'date_time' field for time sorting
+    KEY_EDT = 'effectiveDateTime'
+    if KEY_EDT in obj:
+        edt = obj[KEY_EDT]
+        obj[_KEY_DATE_TIME] = edt
+
+    _set_list_length(obj, 'code_coding')
+    _set_list_length(obj, 'performer')
+    _set_list_length(obj, 'referenceRange')
+    component_count = _set_list_length(obj, 'component')
+    for i in range(component_count):
+        key = 'component_{0}_referenceRange'
+        if key in obj:
+            _set_list_length(obj, key)
+
+    if _TRACE:
+        _dump_dict(obj, 'Flattened Observation: ')
+            
+    return obj
+
+
+###############################################################################
+def _decode_flattened_procedure(obj):
+    """
+    Decode a flattened FHIR 'Procedure' resource.
+    """
+
+    assert dict == type(obj)
+
+    # add date_time fields for sorting
+    KEY_PDT = 'performedDateTime'
+    KEY_PP  = 'performedPeriod'
+    if KEY_PDT in obj:
+        # only a single timestamp
+        pdt = obj[KEY_PDT]
+        obj[_KEY_DATE_TIME] = pdt
+    if KEY_PP in obj:
+        # period, one or both timestamps could be present
+        if _KEY_START in obj[KEY_PP]:
+            start = obj[KEY_PP][_KEY_START]
+            obj[_KEY_DATE_TIME] = start
+        if _KEY_END in obj[KEY_PP]:
+            end = obj[KEY_PP][_KEY_END]
+            obj[_KEY_END_DATE_TIME] = end
+    
+    _base_init(obj)
+    _set_list_length(obj, 'code_coding')
+    _set_list_length(obj, 'reasonNotPerformed')
+    _set_list_length(obj, 'performer')
+    _set_list_length(obj, 'report')
+    _set_list_length(obj, 'complication')
+    _set_list_length(obj, 'followUp')
+    _set_list_length(obj, 'notes')
+    _set_list_length(obj, 'focalDevice')
+    _set_list_length(obj, 'used')
+
+    if _TRACE:
+        _dump_dict(obj, 'Flattened Procedure: ')
+
+    return obj
+    
+
+###############################################################################
+def _decode_flattened_patient(obj):
+    """
+    Flatten and decode a FHIR 'Patient' resource.
+    """
+
+    # should be the string representation of a dict at this point
+    obj_type = type(obj)
+    assert str == obj_type
+
+    try:
+        obj = json.loads(obj)
+    except json.decoder.JSONDecoderError as e:
+        print('\t{0}: String conversion (patient) failed with error: "{1}"'.
+              format(_MODULE_NAME, e))
+        return result
+
+    # the type instantiated from the string should be a dict
+    obj_type = type(obj)
+    assert dict == obj_type
+
+    flattened_patient = flatten(obj)
+    flattened_patient = _convert_datetimes(flattened_patient)
+
+    _base_init(flattened_patient)
+
+    name_count = _set_list_length(flattened_patient, 'name')
+    for i in range(name_count):
+        for field in ['family', 'given', 'prefix', 'suffix']:
+            key = 'name_{0}_{1}'.format(i, field)
+            if key in flattened_patient:
+                _set_list_length(flattened_patient, key)
+
+    _set_list_length(flattened_patient, 'telecom')
+    _set_list_length(flattened_patient, 'address')
+    _set_list_length(flattened_patient, 'careProvider')
+    
+    contact_count = _set_list_length(flattened_patient, 'contact')
+    for i in range(contact_count):
+        for field in ['relationship', 'telecom']:
+            key = 'contact_{0}_{1}'.format(i, field)
+            if key in flattened_patient:
+                _set_list_length(flattened_patient, key)
+
+    if _TRACE:
+        _dump_dict(flattened_patient, '[AFTER] Flattened Patient resource: ')
+
+    return flattened_patient
+
+
+
+
+
+
+###############################################################################
 def _decode_observation(obj):
     """
     Decode a CQL Engine 'Observation' result.
@@ -2051,68 +2311,6 @@ def _decode_patient(name, patient_obj):
     )
 
     return patient
-    
-
-###############################################################################
-def _convert_datetimes(flattened_obj):
-    """
-    Convert FHIR datetimes to python datetime objects. The input is a flattened
-    JSON representation of a FHIR resource.
-    """
-
-    assert dict == type(flattened_obj)
-
-    _str_datetime = r'\A(?P<year>\d\d\d\d)-(?P<month>\d\d)-(?P<day>\d\d)' \
-        r'(T(?P<time>\d\d:\d\d:\d\d[-+\.Z\d:]*))?\Z'
-    _regex_datetime = re.compile(_str_datetime)
-
-    
-    for k,v in flattened_obj.items():
-        #print('{0} => {1}'.format(k,v))
-        if str == type(v):
-            match = _regex_datetime.match(v)
-            if match:
-                print('\tmatched "{0}"'.format(v))
-                year  = int(match.group('year'))
-                month = int(match.group('month'))
-                day   = int(match.group('day'))
-                time_str = match.group('time')
-
-                json_time = time_finder.run(time_str)
-                time_list = json.loads(json_time)
-                assert 1 == len(time_list)
-                the_time = time_list[0]
-                time_obj = time_finder.TimeValue(**the_time)
-
-                us = 0
-                if time_obj.fractional_seconds is not None:
-                    us = time_obj.fractional_seconds % 999999
-
-                # get correct sign for UTC offset
-                mult = 1
-                if '-' == time_obj.gmt_delta_sign:
-                    mult = -1
-                delta_hours = mult * time_obj.gmt_delta_hours
-                delta_min   = time_obj.gmt_delta_minutes
-                offset = timedelta(
-                    hours=delta_hours,
-                    minutes = delta_min
-                )
-                
-                datetime_obj = datetime(
-                    year        = year,
-                    month       = month,
-                    day         = day,
-                    hour        = time_obj.hours,
-                    minute      = time_obj.minutes,
-                    second      = time_obj.seconds,
-                    microsecond = us,
-                    tzinfo      = timezone(offset=offset)
-                )
-
-                flattened_obj[k] = datetime_obj
-                
-    return flattened_obj
 
 
 ###############################################################################
@@ -2150,19 +2348,15 @@ def _decode_bundle(name, bundle_obj):
         flattened_elt = flatten(elt)
         flattened_elt = _convert_datetimes(flattened_elt)
 
-        for k,v in flattened_elt.items():
-            print('{0} => {1}'.format(k,v))
-        sys.exit(0)
-
         # read the resource type and process accordingly
         if STR_RES_TYPE in flattened_elt:
             rt = elt[STR_RES_TYPE]
             if 'Observation' == rt:
-                observation = _decode_observation(flattened_elt)
+                observation = _decode_flattened_observation(flattened_elt)
                 bundled_objs.append(observation)
-            # elif 'Procedure' == rt:
-            #     procedure = _decode_procedure(elt)
-            #     bundled_objs.append(procedure)
+            elif 'Procedure' == rt:
+                procedure = _decode_flattened_procedure(flattened_elt)
+                bundled_objs.append(procedure)
             # elif 'Condition' == rt:
             #     condition = _decode_condition(elt)
             #     bundled_objs.append(condition)
@@ -2207,7 +2401,7 @@ def decode_top_level_obj(obj):
             result_type_str = obj[KEY_RESULT_TYPE]
             
             if STR_PATIENT == result_type_str:
-                result_obj = _decode_patient(name, result_obj)
+                result_obj = _decode_flattened_patient(result_obj)
                 if _TRACE: print('decoded patient')
             elif STR_BUNDLE2 == result_type_str or STR_BUNDLE3 == result_type_str:
                 result_obj = _decode_bundle(name, result_obj)

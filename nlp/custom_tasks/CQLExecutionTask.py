@@ -853,6 +853,10 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--filepath',
                         help='path to JSON file containing CQL Engine results')
 
+    parser.add_argument('--debug',
+                        action='store_true',
+                        help='print debugging information')
+
     args = parser.parse_args()
 
     filpath = None
@@ -862,6 +866,9 @@ if __name__ == '__main__':
             print('Unknown file specified: "{0}"'.format(filepath))
             sys.exit(-1)
 
+    if 'debug' in args and args.debug:
+        crp.enable_debug()
+        
     with open(filepath, 'rt') as infile:
         json_string = infile.read()
         json_data = json.loads(json_string)
@@ -875,7 +882,7 @@ if __name__ == '__main__':
             for obj in results:
 
                 mongo_obj = {}
-                
+
                 # get patient info once
                 # all others duplicate the patient info in new records
                 # move the mongo write to after each observation
