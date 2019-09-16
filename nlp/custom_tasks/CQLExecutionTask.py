@@ -697,6 +697,9 @@ class CQLExecutionTask(BaseTask):
 
             # initialize payload
             payload = {
+                # hardcode the FHIR version to DSTU2 for now
+                "fhirVersion":"DSTU2",
+                
                 # the requests lib will properly escape the raw string
                 "code":cql_code,
                 "fhirServiceUri":fhir_terminology_service_endpoint,
