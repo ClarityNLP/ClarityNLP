@@ -1993,6 +1993,53 @@ def _decode_flattened_observation(obj):
 
 
 ###############################################################################
+def _decode_flattened_condition(obj):
+    """
+    Decode a flattened FHIR 'Condition' resource.
+    """
+
+    assert dict == type(obj)
+
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE] Flattened Condition: ')
+    
+    KEY_ODT = 'onsetDateTime'
+    KEY_OP  = 'onsetPeriod'
+    KEY_ADT = 'abatementDateTime'
+    KEY_AP  = 'abatementPeriod'
+
+    if KEY_ODT in obj:
+        odt = obj[KEY_ODT]
+        obj[_KEY_DATE_TIME] = odt
+    if KEY_ADT in obj:
+        adt = obj[KEY_ADT]
+        obj[_KEY_END_DATE_TIME] = adt
+
+    if KEY_OP in obj:
+        start = obj[KEY_OP][_KEY_START]
+        obj[_KEY_DATE_TIME] = start
+    if KEY_AP in obj:
+        end = obj[KEY_AP][_KEY_END]
+        obj[_KEY_END_DATE_TIME] = end
+    
+    _base_init(obj)
+    _set_list_length(obj, 'code_coding')
+    _set_list_length(obj, 'category_coding')
+    _set_list_length(obj, 'stage_assessment')
+    evidence_len = _set_list_length(obj, 'evidence')
+    for i in range(evidence_len):
+        key = 'evidence_{0}_{1}'.format('evidence', 'detail')
+        if key in obj:
+            _set_list_length(obj, key)
+    _set_list_length(obj, 'bodySite')
+
+    if _TRACE:
+        _dump_dict(obj, '[AFTER] Flattened Condition: ')
+
+    return obj
+    
+
+###############################################################################
 def _decode_flattened_procedure(obj):
     """
     Decode a flattened FHIR 'Procedure' resource.
@@ -2357,9 +2404,9 @@ def _decode_bundle(name, bundle_obj):
             elif 'Procedure' == rt:
                 procedure = _decode_flattened_procedure(flattened_elt)
                 bundled_objs.append(procedure)
-            # elif 'Condition' == rt:
-            #     condition = _decode_condition(elt)
-            #     bundled_objs.append(condition)
+            elif 'Condition' == rt:
+                condition = _decode_flattened_condition(flattened_elt)
+                bundled_objs.append(condition)
             # elif 'MedicationStatement' == rt:
             #     med_statement = _decode_medication_statement(elt)
             #     bundled_objs.append(med_statement)
