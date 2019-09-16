@@ -9,8 +9,14 @@ import sys
 import json
 import base64
 import argparse
-from datetime import datetime, timezone, time
 from collections import namedtuple
+from datetime import datetime, timezone, timedelta, time
+
+if __name__ == '__main__':
+    from flatten import flatten
+else:
+    from data_access.flatten import flatten
+    from algorithms.finder import time_finder
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 5
@@ -1535,7 +1541,24 @@ def _decode_medication_order_stu2(obj):
     return med_order
 
 
+###############################################################################
+def _decode_medication_administration_stu2(obj):
+    """
+    Decode a FHIR STU2 MedicationAdministration resource object (4.14.3).
+    """
 
+    med_admin = {}
+
+    _decode_base_resource(obj, med_admin)
+    _decode_domain_resource(obj, med_admin)
+
+    structure = [
+        ('identifier',                 list,     _decode_identifier),
+        TBD
+    ]
+
+    _decode_from_structure(obj, structure, med_admin)
+    return med_admin
 
 
 
@@ -1741,7 +1764,7 @@ def _decode_medication_statement(obj):
 
 
 ###############################################################################
-def _decode_medication_request(obj):
+def _decode_medication_order(obj):
     """
     Decode A CQL Engine 'MedicationRequest' or 'MedicationOrder' result.
     """
@@ -2029,7 +2052,69 @@ def _decode_patient(name, patient_obj):
 
     return patient
     
+
+###############################################################################
+def _convert_datetimes(flattened_obj):
+    """
+    Convert FHIR datetimes to python datetime objects. The input is a flattened
+    JSON representation of a FHIR resource.
+    """
+
+    assert dict == type(flattened_obj)
+
+    _str_datetime = r'\A(?P<year>\d\d\d\d)-(?P<month>\d\d)-(?P<day>\d\d)' \
+        r'(T(?P<time>\d\d:\d\d:\d\d[-+\.Z\d:]*))?\Z'
+    _regex_datetime = re.compile(_str_datetime)
+
     
+    for k,v in flattened_obj.items():
+        #print('{0} => {1}'.format(k,v))
+        if str == type(v):
+            match = _regex_datetime.match(v)
+            if match:
+                print('\tmatched "{0}"'.format(v))
+                year  = int(match.group('year'))
+                month = int(match.group('month'))
+                day   = int(match.group('day'))
+                time_str = match.group('time')
+
+                json_time = time_finder.run(time_str)
+                time_list = json.loads(json_time)
+                assert 1 == len(time_list)
+                the_time = time_list[0]
+                time_obj = time_finder.TimeValue(**the_time)
+
+                us = 0
+                if time_obj.fractional_seconds is not None:
+                    us = time_obj.fractional_seconds % 999999
+
+                # get correct sign for UTC offset
+                mult = 1
+                if '-' == time_obj.gmt_delta_sign:
+                    mult = -1
+                delta_hours = mult * time_obj.gmt_delta_hours
+                delta_min   = time_obj.gmt_delta_minutes
+                offset = timedelta(
+                    hours=delta_hours,
+                    minutes = delta_min
+                )
+                
+                datetime_obj = datetime(
+                    year        = year,
+                    month       = month,
+                    day         = day,
+                    hour        = time_obj.hours,
+                    minute      = time_obj.minutes,
+                    second      = time_obj.seconds,
+                    microsecond = us,
+                    tzinfo      = timezone(offset=offset)
+                )
+
+                flattened_obj[k] = datetime_obj
+                
+    return flattened_obj
+
+
 ###############################################################################
 def _decode_bundle(name, bundle_obj):
     """
@@ -2038,6 +2123,8 @@ def _decode_bundle(name, bundle_obj):
 
     if _TRACE: print('Decoding BUNDLE resource...')
 
+    STR_RES_TYPE = 'resourceType'
+    
     bundled_objs = []
 
     # this bundle should be a string representation of a list of dicts
@@ -2058,29 +2145,36 @@ def _decode_bundle(name, bundle_obj):
     for elt in obj:
         obj_type = type(elt)
         assert dict == obj_type
-        
-        if _KEY_RESOURCE_TYPE in elt:
-            resource_type_str = elt[_KEY_RESOURCE_TYPE]
-            if _STR_OBSERVATION == resource_type_str:
-                observation = _decode_observation(elt)
+
+        # flatten the JSON, convert time strings to datetimes
+        flattened_elt = flatten(elt)
+        flattened_elt = _convert_datetimes(flattened_elt)
+
+        for k,v in flattened_elt.items():
+            print('{0} => {1}'.format(k,v))
+        sys.exit(0)
+
+        # read the resource type and process accordingly
+        if STR_RES_TYPE in flattened_elt:
+            rt = elt[STR_RES_TYPE]
+            if 'Observation' == rt:
+                observation = _decode_observation(flattened_elt)
                 bundled_objs.append(observation)
-            elif _STR_PROCEDURE == resource_type_str:
-                procedure = _decode_procedure(elt)
-                bundled_objs.append(procedure)
-            elif _STR_CONDITION == resource_type_str:
-                condition = _decode_condition(elt)
-                bundled_objs.append(condition)
-            elif _STR_MEDICATION_STATEMENT == resource_type_str:
-                med_statement = _decode_medication_statement(elt)
-                bundled_objs.append(med_statement)
-            elif _STR_MEDICATION_REQUEST == resource_type_str or \
-                 _STR_MEDICATION_ORDER   == resource_type_str:
-                # identical processing for both
-                med_request = _decode_medication_request(elt)
-                bundled_objs.append(med_request)
-            elif _STR_MEDICATION_ADMINISTRATION == resource_type_str:
-                med_admin = _decode_medication_administration(elt)
-                bundled_objs.append(med_admin)
+            # elif 'Procedure' == rt:
+            #     procedure = _decode_procedure(elt)
+            #     bundled_objs.append(procedure)
+            # elif 'Condition' == rt:
+            #     condition = _decode_condition(elt)
+            #     bundled_objs.append(condition)
+            # elif 'MedicationStatement' == rt:
+            #     med_statement = _decode_medication_statement(elt)
+            #     bundled_objs.append(med_statement)
+            # elif 'MedicationOrder' == rt:
+            #     med_order = _decode_medication_order(elt)
+            #     bundled_objs.append(med_request)
+            # elif 'MedicationAdministration' == rt:
+            #     med_admin = _decode_medication_administration(elt)
+            #     bundled_objs.append(med_admin)
     
     return bundled_objs
 
@@ -2091,6 +2185,14 @@ def decode_top_level_obj(obj):
     Decode the outermost object type returned by the CQL Engine.
     """
 
+    KEY_NAME        = 'name'
+    KEY_RESULT      = 'result'
+    KEY_RESULT_TYPE = 'resultType'
+    
+    STR_PATIENT     = 'Patient'
+    STR_BUNDLE2     = 'FhirBundleCursorStu2'
+    STR_BUNDLE3     = 'FhirBundleCursorStu3'
+    
     result_obj = None
     
     obj_type = type(obj)
@@ -2098,19 +2200,16 @@ def decode_top_level_obj(obj):
         if _TRACE: print('top_level_obj dict keys: {0}'.format(obj.keys()))
 
         name = None
-        if _KEY_NAME in obj:
-            name = obj[_KEY_NAME]
-        if _KEY_RESULT_TYPE in obj and _KEY_RESULT in obj:
-            result_obj = obj[_KEY_RESULT]
-            result_type_str = obj[_KEY_RESULT_TYPE]
+        if KEY_NAME in obj:
+            name = obj[KEY_NAME]
+        if KEY_RESULT_TYPE in obj and KEY_RESULT in obj:
+            result_obj = obj[KEY_RESULT]
+            result_type_str = obj[KEY_RESULT_TYPE]
             
-            #if _RESULT_TYPE_CONCEPT == result_type_str:
-                # skip the concept, just a string
-            #    pass
-            if _STR_PATIENT == result_type_str:
+            if STR_PATIENT == result_type_str:
                 result_obj = _decode_patient(name, result_obj)
                 if _TRACE: print('decoded patient')
-            elif _STR_BUNDLE2 == result_type_str or _STR_BUNDLE3 == result_type_str:
+            elif STR_BUNDLE2 == result_type_str or STR_BUNDLE3 == result_type_str:
                 result_obj = _decode_bundle(name, result_obj)
             else:
                 if _TRACE: print('no decode')
@@ -2161,7 +2260,11 @@ if __name__ == '__main__':
         #     if result is not None:
         #         for elt in result:
         #             print(elt)
-        
+
+        # flattened = flatten(json_data)
+        # for k,v in flattened.items():
+        #    print('{0} => {1}'.format(k,v))
+        # sys.exit(0)
 
         obj = json_data
         result = None
@@ -2179,6 +2282,8 @@ if __name__ == '__main__':
                 result = _decode_medication_statement_stu2(obj)
             elif 'MedicationOrder' == rt:
                 result = _decode_medication_order_stu2(obj)
+            elif 'MedicationAdministration' == rt:
+                result = _decode_medication_administration_stu2(obj)
 
         if result is not None:
             for k,v in result.items():
@@ -2194,3 +2299,11 @@ if __name__ == '__main__':
                     print('{0} => {1}'.format(k,v))
 
         # TODO - what about _text field? See cerner_med_order4.json
+    # STR_RT        = 'resourceType'
+    # STR_OBS       = 'Observation'
+    # STR_PT        = 'Patient'
+    # STR_PROC      = 'Procedure'
+    # STR_COND      = 'Condition'
+    # STR_MED_STMT  = 'MedicationStatement'
+    # STR_MED_ORD   = 'MedicationOrder'
+    # STR_MED_ADMIN = 'MedicationAdministration'

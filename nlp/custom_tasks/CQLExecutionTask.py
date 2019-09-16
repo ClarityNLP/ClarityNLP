@@ -16,7 +16,7 @@ if __name__ == '__main__':
     nlp_dir, tail = os.path.split(cur_dir)
     sys.path.append(nlp_dir)
     sys.path.append(os.path.join(nlp_dir, 'tasks'))
-    sys.path.append(os.path.join(nlp_dir, 'data_acess'))
+    sys.path.append(os.path.join(nlp_dir, 'data_access'))
 
 # ClarityNLP imports
 import util
