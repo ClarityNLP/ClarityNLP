@@ -1971,14 +1971,49 @@ def _base_init(obj):
     """
 
     _set_list_length(obj, 'identifier')
-    
-    extension_count = _set_list_length(obj, 'extension')
-    for i in range(extension_count):
-        # set lengths of inner extension lists
-        key_name = 'extension_{0}_extension'.format(i)
-        _set_list_length(obj, key_name)
-    
 
+    for field in ['extension', 'modifierExtension']:
+        count = _set_list_length(obj, field)
+        for i in range(count):
+            key_name = '{0}_{1}_valueCodeableConcept_coding'.format(field, i)
+            _set_list_length(obj, key_name)
+            key_name = '{0}_{1}_valueTiming_event'.format(field, i)
+            _set_list_length(obj, key_name)
+            key_name = '{0}_{1}_valueTiming_code_coding'.format(field, i)
+            _set_list_length(obj, key_name)
+            key_name = '{0}_{1}_valueAddress_line'.format(field, i)
+            _set_list_length(obj, key_name)
+            for hn_field in ['family', 'given', 'prefix', 'suffix']:
+                key_name = '{0}_{1}_valueHumanName_{2}'.format(field, i, hn_field)
+                _set_list_length(obj, key_name)
+            key_name = '{0}_{1}_valueSignature_type_coding'.format(field, i)
+            _set_list_length(obj, key_name)
+            # set lengths of inner extension lists
+            key_name = '{0}_{1}_extension'.format(field, i)
+            _set_list_length(obj, key_name)
+        
+
+###############################################################################        
+def _contained_med_resource_init(obj):
+    """
+    Decode a flattened FHIR DSTU2 Medication resource. These appear only as
+    contained resources in the CarePlan, Group, MedicationAdministration,
+    MedicationDispense, MedicationOrder, MedicationStatement, Procedure,
+    SupplyDelivery, and SupplyRequest resources.
+
+    For more info see: http://hl7.org/fhir/DSTU2/medication.html.
+    """
+
+    contained_count = _set_list_length(obj, 'contained')
+    for i in range(contained_count):
+        for field in [
+                'code_coding', 'product_form', 'product_ingredient',
+                'product_batch', 'package_container_coding',
+                'package_content']:
+            key_name = 'contained_{0}_{1}'.format(i, field)
+            _set_list_length(obj, key_name)
+            
+    
 ###############################################################################
 def _decode_flattened_observation(obj):
     """
@@ -2040,6 +2075,9 @@ def _decode_flattened_medication_administration(obj):
 
     assert dict == type(obj)
 
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened MedicationAdministration: ')
+    
     # add fields for time sorting
     KEY_EDT = 'effectiveTimeDateTime'
     KEY_EP  = 'effectiveTimePeriod'
@@ -2055,16 +2093,16 @@ def _decode_flattened_medication_administration(obj):
             obj[KEY_END_DATE_TIME] = end
 
     _base_init(obj)
+    _contained_med_resource_init(obj)
+    
     reason_count = _set_list_length(obj, 'reasonNotGiven')
     for i in range(reason_count):
         key = 'reasonNotGiven_{0}_coding'
-        if key in obj:
-            _set_list_length(obj, key)
+        _set_list_length(obj, key)
     reason_count = _set_list_length(obj, 'reasonGiven')
     for i in range(reason_count):
         key = 'reasonGiven_{0}_coding'
-        if key in obj:
-            _set_list_length(obj, key)
+        _set_list_length(obj, key)
     _set_list_length(obj, 'medicationCodeableConcept_coding')
     _set_list_length(obj, 'device')
     _set_list_length(obj, 'dosage_siteCodeableConcept_coding')
@@ -2072,7 +2110,7 @@ def _decode_flattened_medication_administration(obj):
     _set_list_length(obj, 'dosage_method_coding')
 
     if _TRACE:
-        _dump_dict(obj, 'Flattened MedicationAdministration: ')
+        _dump_dict(obj, '[AFTER]: Flattened MedicationAdministration: ')
 
     return obj
             
@@ -2085,6 +2123,9 @@ def _decode_flattened_medication_order(obj):
 
     assert dict == type(obj)
 
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened MedicationOrder: ')
+    
     # add fields for time sorting
     KEY_DW = 'dateWritten'
     if KEY_DW in obj:
@@ -2097,24 +2138,26 @@ def _decode_flattened_medication_order(obj):
         obj[_KEY_END_DATE_TIME] = de
 
     _base_init(obj)
+    _contained_med_resource_init(obj)
+    
     _set_list_length(obj, 'reasonEnded_coding')
     _set_list_length(obj, 'reasonCodeableConcept_coding')
     _set_list_length(obj, 'medicationCodeableConcept_coding')
     inst_count = _set_list_length(obj, 'dosageInstruction')
     for i in range(inst_count):
         for field in ['additionalInstructions_coding',
+                      'timing_code_coding',
                       'asNeededCodeableConcept_coding',
                       'siteCodeableConcept_coding',
                       'route_coding', 'method_coding']:
             key = 'dosageInstruction_{0}_{1}'.format(i, field)
-            if key in obj:
-                _set_list_length(obj, key)
+            _set_list_length(obj, key)
     _set_list_length(obj, 'dispenseRequest_medicationCodeableConcept_coding')
     _set_list_length(obj, 'substitution_type_coding')
     _set_list_length(obj, 'substitution_reason_coding')
 
     if _TRACE:
-        _dump_dict(obj, 'Flattened MedicationOrder: ')
+        _dump_dict(obj, '[AFTER]: Flattened MedicationOrder: ')
 
     return obj
                 
@@ -2127,6 +2170,9 @@ def _decode_flattened_medication_statement(obj):
 
     assert dict == type(obj)
 
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened Medication Statement: ')    
+
     # add fields for time sorting
     KEY_DA = 'dateAsserted'
     if KEY_DA in obj:
@@ -2134,11 +2180,12 @@ def _decode_flattened_medication_statement(obj):
         obj[_KEY_DATE_TIME] = da
     
     _base_init(obj)
+    _contained_med_resource_init(obj)
+    
     reason_count = _set_list_length(obj, 'reasonNotTaken')
     for i in range(reason_count):
         key = 'reason_{0}_coding'
-        if key in obj:
-            _set_list_length(obj, key)
+        _set_list_length(obj, key)
     _set_list_length(obj, 'reasonForUseCodeableConcept_coding')
     _set_list_length(obj, 'supportingInformation')
     _set_list_length(obj, 'medicationCodeableConcept_coding')
@@ -2148,11 +2195,10 @@ def _decode_flattened_medication_statement(obj):
                       'siteCodeableConcept_coding',
                       'route_coding', 'method_coding']:
             key = 'dosage_{0}_{1}'.format(i, field)
-            if key in obj:
-                _set_list_length(obj, key)
+            _set_list_length(obj, key)
     
     if _TRACE:
-        _dump_dict(obj, 'Flattened Medication Statement: ')
+        _dump_dict(obj, '[AFTER]: Flattened Medication Statement: ')
 
     return obj
 
@@ -2164,6 +2210,9 @@ def _decode_flattened_condition(obj):
     """
 
     assert dict == type(obj)
+
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened Condition: ')    
 
     KEY_ODT = 'onsetDateTime'
     KEY_OP  = 'onsetPeriod'
@@ -2188,16 +2237,20 @@ def _decode_flattened_condition(obj):
     _base_init(obj)
     _set_list_length(obj, 'code_coding')
     _set_list_length(obj, 'category_coding')
+    _set_list_length(obj, 'severity_coding')
     _set_list_length(obj, 'stage_assessment')
     evidence_len = _set_list_length(obj, 'evidence')
     for i in range(evidence_len):
-        key = 'evidence_{0}_{1}'.format(i, 'detail')
-        if key in obj:
+        for field in ['code_coding', 'detail']:
+            key = 'evidence_{0}_{1}'.format(i, field)
             _set_list_length(obj, key)
-    _set_list_length(obj, 'bodySite')
+    site_count = _set_list_length(obj, 'bodySite')
+    for i in range(site_count):
+        key_name = 'bodySite_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
 
     if _TRACE:
-        _dump_dict(obj, '[AFTER] Flattened Condition: ')
+        _dump_dict(obj, '[AFTER]: Flattened Condition: ')
 
     return obj
     
@@ -2227,6 +2280,8 @@ def _decode_flattened_procedure(obj):
             obj[_KEY_END_DATE_TIME] = end
     
     _base_init(obj)
+    _contained_med_resource_init(obj)
+    
     _set_list_length(obj, 'code_coding')
     _set_list_length(obj, 'reasonNotPerformed')
     _set_list_length(obj, 'performer')
