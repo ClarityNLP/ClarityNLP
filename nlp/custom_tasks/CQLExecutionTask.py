@@ -52,6 +52,16 @@ _shared_array = multiprocessing.Array('i', [-1]*_MAX_TASK_INDEX)
 _ARG_TIME_START = 'time_start'
 _ARG_TIME_END   = 'time_end'
 
+_KEY_RT = 'resourceType'
+
+_RT_PATIENT     = 'Patient'
+_RT_OBSERVATION = 'Observation'
+_RT_PROCEDURE   = 'Procedure'
+_RT_CONDITION   = 'Condition'
+_RT_MED_STMT    = 'MedicationStatement'
+_RT_MED_ORDER   = 'MedicationOrder'
+_RT_MED_ADMIN   = 'MedicationAdministration'
+
 
 ###############################################################################
 def _atomic_check(task_index):
@@ -90,15 +100,17 @@ def _sort_by_datetime_desc(result_list):
     datetime_list    = []
     no_datetime_list = []
     for i, obj in enumerate(result_list):
-        if isinstance(obj, crp.PatientResource):
-            # patient has no date_time
-            patient_list.append(i)
-        else:
-            dt = getattr(obj, 'date_time', None)
-            if dt is not None:
-                datetime_list.append( (dt, i) )
+        if _KEY_RT in obj:
+            resource_type = obj[_KEY_RT]
+            if _RT_PATIENT == resource_type:
+                # patient has no date_time field
+                patient_list.append(i)
             else:
-                no_datetime_list.append(i)
+                dt = getattr(obj, 'date_time', None)
+                if dt is not None:
+                    datetime_list.append( (dt, i) )
+                else:
+                    no_datetime_list.append(i)
 
     datetime_list = sorted(datetime_list, key=lambda x: x[0], reverse=True)
 
@@ -130,9 +142,10 @@ def _sort_by_datetime_desc(result_list):
 ###############################################################################
 def _json_to_objs(json_obj):
     """
-    Convert the JSON returned by the FHIR server to namedtuples.
+    Decode the data returned by the CQLEngine and sort it by timestamp from
+    most recent to least recent.
     """
-
+    
     results = []
 
     # assumes we either have a list of objects or a single obj
@@ -157,13 +170,15 @@ def _json_to_objs(json_obj):
     if 0 == len(results):
         return (None, None, None)
                 
-    # check for presence of the 'error' key in the patient resource
+    # check for presence of the 'error' key in the Patient resource
     # if present, FHIR server returned no useful data
-    for r in results:
-        if isinstance(r, crp.PatientResource):
-            if _KEY_ERROR in r:
-                print('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
-                return (None, None, None)
+    for obj in results:
+        if _KEY_RT in obj:
+            resource_type = obj[_KEY_RT]
+            if _RT_PATIENT == resource_type:
+                if _KEY_ERROR in obj:
+                    print('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
+                    return (None, None, None)
                 
     # sort by datetime from most to least recent
     # element[0] is the patient resource
@@ -172,80 +187,81 @@ def _json_to_objs(json_obj):
     return (results, earliest, latest)
 
 
-###############################################################################
-def _extract_coding_systems_list(obj, mongo_obj, prefix):
-    """
-    Extract the list of (code, system, display) tuples.
-    """
+# ###############################################################################
+# def _extract_coding_systems_list(obj, mongo_obj, prefix):
+#     """
+#     Extract the list of (code, system, display) tuples.
+#     """
     
-    coding_systems_list = getattr(obj, 'coding_systems_list', None)
-    if coding_systems_list is None:
-        return
+#     coding_systems_list = getattr(obj, 'coding_systems_list', None)
+#     if coding_systems_list is None:
+#         return
     
-    counter = 1
-    for coding_obj in coding_systems_list:
-        mongo_obj['{0}_codesys_code_{1}'.format(prefix, counter)] = coding_obj.code
-        mongo_obj['{0}_codesys_system_{1}'.format(prefix, counter)] = coding_obj.system
-        mongo_obj['{0}_codesys_display_{1}'.format(prefix, counter)] = coding_obj.display
-        if 1 == counter:
-            # set the 'source' field to match coding_obj.display
-            mongo_obj['source'] = coding_obj.display
-        counter += 1
+#     counter = 1
+#     for coding_obj in coding_systems_list:
+#         mongo_obj['{0}_codesys_code_{1}'.format(prefix, counter)] = coding_obj.code
+#         mongo_obj['{0}_codesys_system_{1}'.format(prefix, counter)] = coding_obj.system
+#         mongo_obj['{0}_codesys_display_{1}'.format(prefix, counter)] = coding_obj.display
+#         if 1 == counter:
+#             # set the 'source' field to match coding_obj.display
+#             mongo_obj['source'] = coding_obj.display
+#         counter += 1
 
 
-###############################################################################
-def _extract_subject_reference(obj, mongo_obj, prefix):
-    """
-    Extract and convert the subject reference data.
-    """
+# ###############################################################################
+# def _extract_subject_reference(obj, mongo_obj, prefix):
+#     """
+#     Extract and convert the subject reference data.
+#     """
 
-    subject_ref = getattr(obj, 'subject_reference', None)
+#     subject_ref = getattr(obj, 'subject_reference', None)
 
-    # The subject_ref has the form Patient/9940, where the number after the
-    # fwd slash is the patient ID. Extract this ID and store in the 'subject'
-    # field.
-    if subject_ref is not None:
-        assert '/' in subject_ref
-        text, num = subject_ref.split('/')
-        mongo_obj['subject'] = num
-    mongo_obj['{0}_subject_ref'.format(prefix)] = subject_ref
+#     # The subject_ref has the form Patient/9940, where the number after the
+#     # fwd slash is the patient ID. Extract this ID and store in the 'subject'
+#     # field.
+#     if subject_ref is not None:
+#         assert '/' in subject_ref
+#         text, num = subject_ref.split('/')
+#         mongo_obj['subject'] = num
+#     mongo_obj['{0}_subject_ref'.format(prefix)] = subject_ref
     
         
-###############################################################################
-def _extract_patient_resource(obj, mongo_obj):
-    """
-    Extract data from the FHIR patient resource and load into mongo dict.
-    """
+# ###############################################################################
+# def _extract_patient_resource(obj, mongo_obj):
+#     """
+#     Extract data from the FHIR patient resource and load into mongo dict.
+#     """
 
-    assert isinstance(obj, crp.PatientResource)
+#     assert _KEY_RT in obj
+#     assert _RT_PATIENT == obj[_KEY_RT]
 
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
+#     if _KEY_ERROR in obj:
+#         # no data returned
+#         return
 
-    # patient id is in the 'subject' field
-    patient_id = getattr(obj, 'subject', None)
-    mongo_obj['patient_subject'] = patient_id
+#     # patient id is in the 'subject' field
+#     patient_id = getattr(obj, 'subject', None)
+#     mongo_obj['patient_subject'] = patient_id
 
-    # get the list of (first_name, last_name) tuples and create numbered fields
-    name_list = getattr(obj, 'name_list', None)
-    if name_list is not None:
-        counter = 1
-        for first, last in name_list:
-            key_fname = 'patient_fname_{0}'.format(counter)
-            key_lname = 'patient_lname_{0}'.format(counter)
-            mongo_obj[key_fname] = first
-            mongo_obj[key_lname] = last
-            counter += 1
+#     # get the list of (first_name, last_name) tuples and create numbered fields
+#     name_list = getattr(obj, 'name_list', None)
+#     if name_list is not None:
+#         counter = 1
+#         for first, last in name_list:
+#             key_fname = 'patient_fname_{0}'.format(counter)
+#             key_lname = 'patient_lname_{0}'.format(counter)
+#             mongo_obj[key_fname] = first
+#             mongo_obj[key_lname] = last
+#             counter += 1
 
-    gender = getattr(obj, 'gender', None)
-    mongo_obj['patient_gender'] = gender
+#     gender = getattr(obj, 'gender', None)
+#     mongo_obj['patient_gender'] = gender
 
-    dob = getattr(obj, 'date_of_birth', None)
-    dob_str = None
-    if dob is not None:
-        dob_str = dob.isoformat()
-    mongo_obj['patient_date_of_birth'] = dob_str
+#     dob = getattr(obj, 'date_of_birth', None)
+#     dob_str = None
+#     if dob is not None:
+#         dob_str = dob.isoformat()
+#     mongo_obj['patient_date_of_birth'] = dob_str
 
 
 ###############################################################################
@@ -523,27 +539,40 @@ def _extract_medication_request_resource(obj, mongo_obj):
     
 
 ###############################################################################
-def _extract_medication_administration_resource(obj, mongo_obj):
+def _to_result_obj(obj, prefix):
     """
-    Extract data from the FHIR MedicationAdministration resource and load into
-    mongo dict.
+    Build the dict to be written to MongoDB by prefixing all fields with
+    the given prefix.
     """
 
-    assert isinstance(obj, crp.MedicationAdministrationResource)
+    # insert the display/formatting info
+    assert _KEY_RT in obj
+    resource_type = obj[_KEY_RT]
 
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
+    if _RT_PATIENT == resource_type:
+        pass
+    elif _RT_OBSERVATION == resource_type:
+        # Sometimes not a unique value (see cerner_observation_4.json, which
+        # only has a list of components. What to display in this case?
+        pass
+    elif _RT_PROCEDURE == resource_type:
+        pass
+    elif _RT_CONDITION == resource_type:
+        pass
+    elif _RT_MED_STMT == resource_type:
+        pass
+    elif _RT_MED_ORDER == resource_type:
+        pass
+    elif _RT_MED_ADMIN == resource_type:
+        pass
 
-    id_value = getattr(obj, 'id_value', None)
-    mongo_obj['med_admin_id_value'] = id_value
+    result = {}
+    for k,v in obj.items():
+        new_k = '{0}_{1}'.format(prefix, k)
+        result[new_k] = v
 
-    _extract_coding_systems_list(obj, mongo_obj, 'med_admin')
+    return result
 
-    _extract_subject_reference(obj, mongo_obj, 'med_admin')
-
-    # others TBD
-    
     
 ###############################################################################
 def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
@@ -801,45 +830,14 @@ class CQLExecutionTask(BaseTask):
             # remove results outside of the desired time window
             results = _apply_datetime_filter(results, datetime_start, datetime_end)
 
-            patient_obj = {}
             for obj in results:
 
-                mongo_obj = {}
-
-                # get patient info once
-                # all others duplicate the patient info in new records
-                # move the mongo write to after each observation
-                if isinstance(obj, crp.PatientResource):
-                    print('\tFOUND PATIENT RESOURCE')
-                    # don't write the patient resource yet; instead, include
-                    # the patient data with every additional write
-                    _extract_patient_resource(obj, patient_obj)
-                    continue
-                elif isinstance(obj, crp.ProcedureResource):
-                    print('\tFOUND PROCEDURE RESOURCE')
-                    _extract_procedure_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ConditionResource):
-                    print('\tFOUND CONDITION RESOURCE')
-                    _extract_condition_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ObservationResource):
-                    print('\tFOUND OBSERVATION RESOURCE')
-                    _extract_observation_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationStatementResource):
-                    print('\tFOUND MEDICATION STATEMENT RESOURCE')
-                    _extract_medication_statement_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationRequestResource):
-                    print('\tFOUND MEDICATION REQUEST RESOURCE')
-                    _extract_medication_request_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationAdministrationResource):
-                    print('\tFOUND MEDICATION ADMINISTRATION RESOURCE')
-                    _extract_medication_administration_resource(obj, mongo_obj)
-                else:
-                    print('\tFOUND UNKNOWN RESOURCE')
+                if obj is None:
                     continue
 
-                # copy patient data
-                for k,v in patient_obj.items():
-                    mongo_obj[k] = v
+                assert _KEY_RT in obj
+                resource_type = obj[_KEY_RT]
+                mongo_obj = _to_result_obj(obj, resource_type)
 
                 self.write_result_data(temp_file, mongo_client, None, mongo_obj)
 
@@ -877,48 +875,16 @@ if __name__ == '__main__':
         print('\tfound {0} results'.format(len(results)))
         if results is not None:
 
-            counter = 0
-            patient_obj = {}
-            for obj in results:
-
-                mongo_obj = {}
-
-                # get patient info once
-                # all others duplicate the patient info in new records
-                # move the mongo write to after each observation
-                if isinstance(obj, crp.PatientResource):
-                    print('\tFOUND PATIENT RESOURCE')
-                    # don't write the patient resource yet; instead, include
-                    # the patient data with every additional write
-                    _extract_patient_resource(obj, patient_obj)
-                    continue
-                elif isinstance(obj, crp.ProcedureResource):
-                    print('\tFOUND PROCEDURE RESOURCE')
-                    _extract_procedure_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ConditionResource):
-                    print('\tFOUND CONDITION RESOURCE')
-                    _extract_condition_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ObservationResource):
-                    print('\tFOUND OBSERVATION RESOURCE')
-                    _extract_observation_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationStatementResource):
-                    print('\tFOUND MEDICATION STATEMENT RESOURCE')
-                    _extract_medication_statement_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationRequestResource):
-                    print('\tFOUND MEDICATION REQUEST RESOURCE')
-                    _extract_medication_request_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationAdministrationResource):
-                    print('\tFOUND MEDICATION ADMINISTRATION RESOURCE')
-                    _extract_medication_administration_resource(obj, mongo_obj)
-                else:
-                    print('\tFOUND UNKNOWN RESOURCE')
+            for counter, obj in enumerate(results):
+                
+                if obj is None:
                     continue
 
-                # copy patient data
-                for k,v in patient_obj.items():
-                    mongo_obj[k] = v
+                assert _KEY_RT in obj
+                resource_type = obj[_KEY_RT]
+                mongo_obj = _to_result_obj(obj, resource_type)
 
-                # print out
+                # print to stdout
                 print('RESULT {0}'.format(counter))
                 for k,v in mongo_obj.items():
                     if dict == type(v):
@@ -927,4 +893,3 @@ if __name__ == '__main__':
                             print('\t\t{0} => {1}'.format(k2, v2))
                     else:
                         print('\t{0} => {1}'.format(k,v))
-                counter += 1
