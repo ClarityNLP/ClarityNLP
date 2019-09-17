@@ -1968,15 +1968,22 @@ def _decode_flattened_observation(obj):
     """
 
     assert dict == type(obj)
-
-    _base_init(obj)
     
     # add 'date_time' field for time sorting
     KEY_EDT = 'effectiveDateTime'
+    KEY_EP  = 'effectivePeriod'
     if KEY_EDT in obj:
         edt = obj[KEY_EDT]
         obj[_KEY_DATE_TIME] = edt
+    if KEY_EP in obj:
+        if _KEY_START in obj[KEY_EP]:
+            start = obj[KEY_EP][_KEY_START]
+            obj[_KEY_DATE_TIME] = start
+        if _KEY_END in obj[KEY_EP]:
+            end = obj[KEY_EP][_KEY_END]
+            obj[KEY_END_DATE_TIME] = end
 
+    _base_init(obj)            
     _set_list_length(obj, 'code_coding')
     _set_list_length(obj, 'performer')
     _set_list_length(obj, 'referenceRange')
@@ -1993,6 +2000,54 @@ def _decode_flattened_observation(obj):
 
 
 ###############################################################################
+def _decode_flattened_medication_order(obj):
+    """
+    Decode a flattened FHIR DSTU2 'MedicationOrder' resource.
+    """
+
+    assert dict == type(obj)
+
+    
+
+###############################################################################
+def _decode_flattened_medication_statement(obj):
+    """
+    Decode a flattened FHIR 'MedicationStatement' resource.
+    """
+
+    assert dict == type(obj)
+
+    # add 'date_time' field for time sorting
+    KEY_DA = 'dateAsserted'
+    if KEY_DA in obj:
+        da = obj[KEY_DA]
+        obj[_KEY_DATE_TIME] = da
+    
+    _base_init(obj)
+    reason_count = _set_list_length(obj, 'reasonNotTaken')
+    for i in range(reason_count):
+        key = 'reason_{0}_coding'
+        if key in obj:
+            _set_list_length(obj, key)
+    _set_list_length(obj, 'reasonForUseCodeableConcept_coding')
+    _set_list_length(obj, 'supportingInformation')
+    _set_list_length(obj, 'medicationCodeableConcept_coding')
+    dosage_count = _set_list_length(obj, 'dosage')
+    for i in range(dosage_count):
+        for field in ['asNeededCodeableConcept_coding',
+                      'siteCodeableConcept_coding',
+                      'route_coding', 'method_coding']:
+            key = 'dosage_{0}_{1}'.format(field)
+            if key in obj:
+                _set_list_length(obj, key)
+    
+    if _TRACE:
+        _dump_dict(obj, 'Flattened Medication Statement: ')
+
+    return obj
+
+
+###############################################################################
 def _decode_flattened_condition(obj):
     """
     Decode a flattened FHIR 'Condition' resource.
@@ -2000,9 +2055,6 @@ def _decode_flattened_condition(obj):
 
     assert dict == type(obj)
 
-    if _TRACE:
-        _dump_dict(obj, '[BEFORE] Flattened Condition: ')
-    
     KEY_ODT = 'onsetDateTime'
     KEY_OP  = 'onsetPeriod'
     KEY_ADT = 'abatementDateTime'
@@ -2407,12 +2459,12 @@ def _decode_bundle(name, bundle_obj):
             elif 'Condition' == rt:
                 condition = _decode_flattened_condition(flattened_elt)
                 bundled_objs.append(condition)
-            # elif 'MedicationStatement' == rt:
-            #     med_statement = _decode_medication_statement(elt)
-            #     bundled_objs.append(med_statement)
-            # elif 'MedicationOrder' == rt:
-            #     med_order = _decode_medication_order(elt)
-            #     bundled_objs.append(med_request)
+            elif 'MedicationStatement' == rt:
+                med_statement = _decode_flattened_medication_statement(flattened_elt)
+                bundled_objs.append(med_statement)
+            elif 'MedicationOrder' == rt:
+                med_order = _decode_flattened_medication_order(flattened_elt)
+                bundled_objs.append(med_request)
             # elif 'MedicationAdministration' == rt:
             #     med_admin = _decode_medication_administration(elt)
             #     bundled_objs.append(med_admin)
