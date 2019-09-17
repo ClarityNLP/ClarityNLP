@@ -1944,7 +1944,7 @@ def _set_list_length(obj, prefix_str):
     contains this length.
     """
 
-    str_search = r'\A' + prefix_str + r'_(?P<num>\d+)_'
+    str_search = r'\A' + prefix_str + r'_(?P<num>\d+)_?'
     
     max_num = None
     for k,v in obj.items():
@@ -1970,7 +1970,10 @@ def _base_init(obj):
     Initialize list lengths in the base resource objects.
     """
 
-    _set_list_length(obj, 'identifier')
+    identifier_count = _set_list_length(obj, 'identifier')
+    for i in range(identifier_count):
+        key_name = 'identifier_{0}_type_coding'.format(i)
+        _set_list_length(obj, key_name)
 
     for field in ['extension', 'modifierExtension']:
         count = _set_list_length(obj, field)
@@ -2263,6 +2266,9 @@ def _decode_flattened_procedure(obj):
 
     assert dict == type(obj)
 
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened Procedure: ')
+
     # add fields for time sorting
     KEY_PDT = 'performedDateTime'
     KEY_PP  = 'performedPeriod'
@@ -2281,19 +2287,38 @@ def _decode_flattened_procedure(obj):
     
     _base_init(obj)
     _contained_med_resource_init(obj)
-    
+
+    _set_list_length(obj, 'category_coding')
     _set_list_length(obj, 'code_coding')
-    _set_list_length(obj, 'reasonNotPerformed')
-    _set_list_length(obj, 'performer')
+    _set_list_length(obj, 'reasonNotPerformed_coding')
+    site_count = _set_list_length(obj, 'bodySite')
+    for i in range(site_count):
+        key_name = 'bodySite_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'reasonCodeableConcept_coding')
+    performer_count = _set_list_length(obj, 'performer')
+    for i in range(performer_count):
+        key_name = 'performer_{0}_role_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'outcome_coding')
     _set_list_length(obj, 'report')
-    _set_list_length(obj, 'complication')
-    _set_list_length(obj, 'followUp')
+    complication_count = _set_list_length(obj, 'complication')
+    for i in range(complication_count):
+        key_name = 'complication_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    followup_count = _set_list_length(obj, 'followUp')
+    for i in range(followup_count):
+        key_name = 'followUp_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
     _set_list_length(obj, 'notes')
-    _set_list_length(obj, 'focalDevice')
+    device_count = _set_list_length(obj, 'focalDevice')
+    for i in range(device_count):
+        key_name = 'focalDevice_{0}_action_coding'.format(i)
+        _set_list_length(obj, key_name)
     _set_list_length(obj, 'used')
 
     if _TRACE:
-        _dump_dict(obj, 'Flattened Procedure: ')
+        _dump_dict(obj, '[AFTER]: Flattened Procedure: ')
 
     return obj
     
@@ -2304,44 +2329,71 @@ def _decode_flattened_patient(obj):
     Flatten and decode a FHIR DSTU2 'Patient' resource.
     """
 
-    # should be the string representation of a dict at this point
     obj_type = type(obj)
-    assert str == obj_type
+    if str == obj_type:
+        # not flattened yet
 
-    try:
-        obj = json.loads(obj)
-    except json.decoder.JSONDecoderError as e:
-        print('\t{0}: String conversion (patient) failed with error: "{1}"'.
-              format(_MODULE_NAME, e))
-        return result
+        try:
+            obj = json.loads(obj)
+        except json.decoder.JSONDecoderError as e:
+            print('\t{0}: String conversion (patient) failed with error: "{1}"'.
+                  format(_MODULE_NAME, e))
+            return result
 
-    # the type instantiated from the string should be a dict
-    obj_type = type(obj)
+        # the type instantiated from the string should be a dict
+        obj_type = type(obj)
+        
     assert dict == obj_type
 
     flattened_patient = flatten(obj)
     flattened_patient = _convert_datetimes(flattened_patient)
 
+    if _TRACE:
+        _dump_dict(flattened_patient, '[BEFORE] Flattened Patient resource: ')
+    
     _base_init(flattened_patient)
 
     name_count = _set_list_length(flattened_patient, 'name')
     for i in range(name_count):
         for field in ['family', 'given', 'prefix', 'suffix']:
-            key = 'name_{0}_{1}'.format(i, field)
-            if key in flattened_patient:
+            key_name = 'name_{0}_{1}'.format(i, field)
+            print('key_name: {0}'.format(key_name))
+            count = _set_list_length(flattened_patient, key_name)
+            print('\tcount: {0}'.format(count))
+            for j in range(count):
+                key = '{0}_{1}'.format(key_name, j)
+                print('trying: {0}'.format(key))
                 _set_list_length(flattened_patient, key)
 
     _set_list_length(flattened_patient, 'telecom')
-    _set_list_length(flattened_patient, 'address')
-    _set_list_length(flattened_patient, 'careProvider')
+    addr_count = _set_list_length(flattened_patient, 'address')
+    for i in range(addr_count):
+        key_name = 'address_{0}_line'.format(i)
+        _set_list_length(flattened_patient, key_name)
+
+    _set_list_length(flattened_patient, 'maritalStatus_coding')
     
     contact_count = _set_list_length(flattened_patient, 'contact')
     for i in range(contact_count):
         for field in ['relationship', 'telecom']:
-            key = 'contact_{0}_{1}'.format(i, field)
-            if key in flattened_patient:
+            key_name = 'contact_{0}_{1}'.format(i, field)
+            count = _set_list_length(flattened_patient, key_name)
+            for j in range(count):
+                key = '{0}_{1}_coding'.format(key_name, j)
                 _set_list_length(flattened_patient, key)
 
+    _set_list_length(flattened_patient, 'animal_species_coding')
+    _set_list_length(flattened_patient, 'animal_breed_coding')
+    _set_list_length(flattened_patient, 'animal_genderStatus_coding')    
+
+    comm_count = _set_list_length(flattened_patient, 'communication')
+    for i in range(comm_count):
+        key_name = 'communication_{0}_language_coding'.format(i)
+        _set_list_length(flattened_patient, key_name)
+
+    _set_list_length(flattened_patient, 'careProvider')
+    _set_list_length(flattened_patient, 'link')
+        
     if _TRACE:
         _dump_dict(flattened_patient, '[AFTER] Flattened Patient resource: ')
 
@@ -2595,7 +2647,9 @@ def _process_resource(obj):
     result = None
     if _STR_RESOURCE_TYPE in flattened_obj:
         rt = obj[_STR_RESOURCE_TYPE]
-        if 'Observation' == rt:
+        if 'Patient' == rt:
+            result = _decode_flattened_patient(flattened_obj)
+        elif 'Observation' == rt:
             result = _decode_flattened_observation(flattened_obj)
         elif 'Procedure' == rt:
             result = _decode_flattened_procedure(flattened_obj)
