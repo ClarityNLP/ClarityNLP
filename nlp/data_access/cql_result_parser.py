@@ -13,6 +13,12 @@ from collections import namedtuple
 from datetime import datetime, timezone, timedelta, time
 
 if __name__ == '__main__':
+    # modify path for local testing
+    cur_dir = sys.path[0]
+    nlp_dir, tail = os.path.split(cur_dir)
+    sys.path.append(nlp_dir)
+    sys.path.append(os.path.join(nlp_dir, 'algorithms', 'finder'))    
+    import time_finder    
     from flatten import flatten
 else:
     from data_access.flatten import flatten
@@ -189,6 +195,8 @@ _KEY_END           = 'end'
 _KEY_END_DATE_TIME = 'end_date_time'
 _KEY_START         = 'start'
 
+_STR_RESOURCE_TYPE = 'resourceType'
+
 
 ###############################################################################
 def enable_debug():
@@ -208,7 +216,10 @@ def _dump_dict(dict_obj, msg=None):
     if msg is not None:
         print(msg)
     for k,v in dict_obj.items():
-        print('\t{0} => {1}'.format(k, v))
+        if k.endswith('div'):
+            print('\t{0} => {1}...'.format(k, v[:16]))
+        else:
+            print('\t{0} => {1}'.format(k, v))
 
     
 ###############################################################################
@@ -244,14 +255,21 @@ def _convert_datetimes(flattened_obj):
 
                     us = 0
                     if time_obj.fractional_seconds is not None:
-                        us = time_obj.fractional_seconds % 999999
+                        # convert to int and keep us resolution
+                        frac_seconds = int(time_obj.fractional_seconds)
+                        us = frac_seconds % 999999
 
                     # get correct sign for UTC offset
                     mult = 1
-                    if '-' == time_obj.gmt_delta_sign:
-                        mult = -1
-                    delta_hours = mult * time_obj.gmt_delta_hours
-                    delta_min   = time_obj.gmt_delta_minutes
+                    if time_obj.gmt_delta_sign is not None:
+                        if '-' == time_obj.gmt_delta_sign:
+                            mult = -1
+                    delta_hours = 0
+                    if time_obj.gmt_delta_hours is not None:
+                        delta_hours = mult * time_obj.gmt_delta_hours
+                    delta_min = 0
+                    if time_obj.gmt_delta_minutes is not None:
+                        delta_min   = time_obj.gmt_delta_minutes
                     offset = timedelta(
                         hours=delta_hours,
                         minutes = delta_min
@@ -1926,7 +1944,7 @@ def _set_list_length(obj, prefix_str):
     contains this length.
     """
 
-    str_search = r'\A' + prefix_str + r'_(?P<num>\d)_'
+    str_search = r'\A' + prefix_str + r'_(?P<num>\d+)_'
     
     max_num = None
     for k,v in obj.items():
@@ -1968,6 +1986,9 @@ def _decode_flattened_observation(obj):
     """
 
     assert dict == type(obj)
+
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened Observation: ')
     
     # add 'date_time' field for time sorting
     KEY_EDT = 'effectiveDateTime'
@@ -1983,22 +2004,79 @@ def _decode_flattened_observation(obj):
             end = obj[KEY_EP][_KEY_END]
             obj[KEY_END_DATE_TIME] = end
 
-    _base_init(obj)            
+    _base_init(obj)
+    _set_list_length(obj, 'category_coding')
     _set_list_length(obj, 'code_coding')
     _set_list_length(obj, 'performer')
-    _set_list_length(obj, 'referenceRange')
+    _set_list_length(obj, 'valueCodeableConcept_coding')
+    _set_list_length(obj, 'dataAbsentReason_coding')
+    _set_list_length(obj, 'interpretation_coding')
+    _set_list_length(obj, 'bodySite_coding')
+    _set_list_length(obj, 'method_coding')
+    rr_count = _set_list_length(obj, 'referenceRange')
+    for i in range(rr_count):
+        key = 'referenceRange_{0}_meaning_coding'.format(i)
+        _set_list_length(obj, key)
     component_count = _set_list_length(obj, 'component')
     for i in range(component_count):
-        key = 'component_{0}_referenceRange'
-        if key in obj:
+        for field in ['code_coding',
+                      'valueCodeableConcept_coding',
+                      'dataAbsentReason_coding',
+                      'referenceRange']:
+            key = 'component_{0}_{1}'.format(i, field)
             _set_list_length(obj, key)
 
     if _TRACE:
-        _dump_dict(obj, 'Flattened Observation: ')
+        _dump_dict(obj, '[AFTER] Flattened Observation: ')
             
     return obj
 
 
+###############################################################################
+def _decode_flattened_medication_administration(obj):
+    """
+    Decode a flattened FHIR DSTU2 'MedicationAdministration' resource.
+    """
+
+    assert dict == type(obj)
+
+    # add fields for time sorting
+    KEY_EDT = 'effectiveTimeDateTime'
+    KEY_EP  = 'effectiveTimePeriod'
+    if KEY_EDT in obj:
+        edt = obj[KEY_EDT]
+        obj[_KEY_DATE_TIME] = edt
+    if KEY_EP in obj:
+        if _KEY_START in obj[KEY_EP]:
+            start = obj[KEY_EP][_KEY_START]
+            obj[_KEY_DATE_TIME] = start
+        if _KEY_END in obj[KEY_EP]:
+            end = obj[KEY_EP][_KEY_END]
+            obj[KEY_END_DATE_TIME] = end
+
+    _base_init(obj)
+    reason_count = _set_list_length(obj, 'reasonNotGiven')
+    for i in range(reason_count):
+        key = 'reasonNotGiven_{0}_coding'
+        if key in obj:
+            _set_list_length(obj, key)
+    reason_count = _set_list_length(obj, 'reasonGiven')
+    for i in range(reason_count):
+        key = 'reasonGiven_{0}_coding'
+        if key in obj:
+            _set_list_length(obj, key)
+    _set_list_length(obj, 'medicationCodeableConcept_coding')
+    _set_list_length(obj, 'device')
+    _set_list_length(obj, 'dosage_siteCodeableConcept_coding')
+    _set_list_length(obj, 'dosage_route_coding')
+    _set_list_length(obj, 'dosage_method_coding')
+
+    if _TRACE:
+        _dump_dict(obj, 'Flattened MedicationAdministration: ')
+
+    return obj
+            
+    
 ###############################################################################
 def _decode_flattened_medication_order(obj):
     """
@@ -2007,17 +2085,49 @@ def _decode_flattened_medication_order(obj):
 
     assert dict == type(obj)
 
-    
+    # add fields for time sorting
+    KEY_DW = 'dateWritten'
+    if KEY_DW in obj:
+        dw = obj[KEY_DW]
+        obj[_KEY_DATE_TIME] = dw
+
+    KEY_DE = 'dateEnded'
+    if KEY_DE in obj:
+        de = obj[KEY_DE]
+        obj[_KEY_END_DATE_TIME] = de
+
+    _base_init(obj)
+    _set_list_length(obj, 'reasonEnded_coding')
+    _set_list_length(obj, 'reasonCodeableConcept_coding')
+    _set_list_length(obj, 'medicationCodeableConcept_coding')
+    inst_count = _set_list_length(obj, 'dosageInstruction')
+    for i in range(inst_count):
+        for field in ['additionalInstructions_coding',
+                      'asNeededCodeableConcept_coding',
+                      'siteCodeableConcept_coding',
+                      'route_coding', 'method_coding']:
+            key = 'dosageInstruction_{0}_{1}'.format(i, field)
+            if key in obj:
+                _set_list_length(obj, key)
+    _set_list_length(obj, 'dispenseRequest_medicationCodeableConcept_coding')
+    _set_list_length(obj, 'substitution_type_coding')
+    _set_list_length(obj, 'substitution_reason_coding')
+
+    if _TRACE:
+        _dump_dict(obj, 'Flattened MedicationOrder: ')
+
+    return obj
+                
 
 ###############################################################################
 def _decode_flattened_medication_statement(obj):
     """
-    Decode a flattened FHIR 'MedicationStatement' resource.
+    Decode a flattened FHIR DSTU2 'MedicationStatement' resource.
     """
 
     assert dict == type(obj)
 
-    # add 'date_time' field for time sorting
+    # add fields for time sorting
     KEY_DA = 'dateAsserted'
     if KEY_DA in obj:
         da = obj[KEY_DA]
@@ -2037,7 +2147,7 @@ def _decode_flattened_medication_statement(obj):
         for field in ['asNeededCodeableConcept_coding',
                       'siteCodeableConcept_coding',
                       'route_coding', 'method_coding']:
-            key = 'dosage_{0}_{1}'.format(field)
+            key = 'dosage_{0}_{1}'.format(i, field)
             if key in obj:
                 _set_list_length(obj, key)
     
@@ -2050,7 +2160,7 @@ def _decode_flattened_medication_statement(obj):
 ###############################################################################
 def _decode_flattened_condition(obj):
     """
-    Decode a flattened FHIR 'Condition' resource.
+    Decode a flattened FHIR DSTU2 'Condition' resource.
     """
 
     assert dict == type(obj)
@@ -2060,6 +2170,7 @@ def _decode_flattened_condition(obj):
     KEY_ADT = 'abatementDateTime'
     KEY_AP  = 'abatementPeriod'
 
+    # add fields for time sorting
     if KEY_ODT in obj:
         odt = obj[KEY_ODT]
         obj[_KEY_DATE_TIME] = odt
@@ -2080,7 +2191,7 @@ def _decode_flattened_condition(obj):
     _set_list_length(obj, 'stage_assessment')
     evidence_len = _set_list_length(obj, 'evidence')
     for i in range(evidence_len):
-        key = 'evidence_{0}_{1}'.format('evidence', 'detail')
+        key = 'evidence_{0}_{1}'.format(i, 'detail')
         if key in obj:
             _set_list_length(obj, key)
     _set_list_length(obj, 'bodySite')
@@ -2094,12 +2205,12 @@ def _decode_flattened_condition(obj):
 ###############################################################################
 def _decode_flattened_procedure(obj):
     """
-    Decode a flattened FHIR 'Procedure' resource.
+    Decode a flattened FHIR DSTU2 'Procedure' resource.
     """
 
     assert dict == type(obj)
 
-    # add date_time fields for sorting
+    # add fields for time sorting
     KEY_PDT = 'performedDateTime'
     KEY_PP  = 'performedPeriod'
     if KEY_PDT in obj:
@@ -2135,7 +2246,7 @@ def _decode_flattened_procedure(obj):
 ###############################################################################
 def _decode_flattened_patient(obj):
     """
-    Flatten and decode a FHIR 'Patient' resource.
+    Flatten and decode a FHIR DSTU2 'Patient' resource.
     """
 
     # should be the string representation of a dict at this point
@@ -2186,231 +2297,264 @@ def _decode_flattened_patient(obj):
 
 
 
-###############################################################################
-def _decode_observation(obj):
-    """
-    Decode a CQL Engine 'Observation' result.
-    """
+# ###############################################################################
+# def _decode_observation(obj):
+#     """
+#     Decode a CQL Engine 'Observation' result.
+#     """
 
-    # First decipher the coding info, which includes the code system, the
-    # code, and the name of whatever the code applies to. There could
-    # potentially be multiple coding tuples for the same object.
-    #
-    # For example:
-    #     system  = 'http://loinc.org'
-    #     code    = '804-5'
-    #     display = 'Leukocytes [#/volume] in Blood by Manual count'
-    #
+#     # First decipher the coding info, which includes the code system, the
+#     # code, and the name of whatever the code applies to. There could
+#     # potentially be multiple coding tuples for the same object.
+#     #
+#     # For example:
+#     #     system  = 'http://loinc.org'
+#     #     code    = '804-5'
+#     #     display = 'Leukocytes [#/volume] in Blood by Manual count'
+#     #
 
-    coding_systems_list = _decode_code_dict(obj)
-    subject_reference, subject_display = _decode_subject_info(obj)
-    context_reference = _decode_context_info(obj)
+#     coding_systems_list = _decode_code_dict(obj)
+#     subject_reference, subject_display = _decode_subject_info(obj)
+#     context_reference = _decode_context_info(obj)
             
-    value = None
-    unit = None
-    unit_system = None
-    unit_code = None
-    if _KEY_VALUE_QUANTITY in obj:
-        value, unit, unit_system, unit_code = _decode_value_quantity(obj)
+#     value = None
+#     unit = None
+#     unit_system = None
+#     unit_code = None
+#     if _KEY_VALUE_QUANTITY in obj:
+#         value, unit, unit_system, unit_code = _decode_value_quantity(obj)
 
-    date_time = None    
-    if _KEY_EFF_DATE_TIME in obj:
-        date_time = obj[_KEY_EFF_DATE_TIME]
-        date_time = _fixup_fhir_datetime(date_time)
-        date_time = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z')        
+#     date_time = None    
+#     if _KEY_EFF_DATE_TIME in obj:
+#         date_time = obj[_KEY_EFF_DATE_TIME]
+#         date_time = _fixup_fhir_datetime(date_time)
+#         date_time = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z')        
 
-    observation = ObservationResource(
-        subject_reference,
-        subject_display,
-        context_reference,
-        date_time,
-        value,
-        unit,
-        unit_system,
-        unit_code,
-        coding_systems_list
-    )
+#     observation = ObservationResource(
+#         subject_reference,
+#         subject_display,
+#         context_reference,
+#         date_time,
+#         value,
+#         unit,
+#         unit_system,
+#         unit_code,
+#         coding_systems_list
+#     )
         
-    return observation
+#     return observation
 
 
-###############################################################################
-def _decode_condition(obj):
-    """
-    Decode a CQL Engine 'Condition' result.
-    """
+# ###############################################################################
+# def _decode_condition(obj):
+#     """
+#     Decode a CQL Engine 'Condition' result.
+#     """
 
-    if _TRACE: print('Decoding CONDITION resource...')
+#     if _TRACE: print('Decoding CONDITION resource...')
 
-    result = []
+#     result = []
 
-    obj_type = type(obj)
-    assert dict == obj_type
+#     obj_type = type(obj)
+#     assert dict == obj_type
 
-    id_value = _decode_id_value(obj)
-    category_list = []
-    if _KEY_CATEGORY in obj:
-        obj_list = obj[_KEY_CATEGORY]
-        assert list == type(obj_list)
-        for elt in obj_list:
-            if dict == type(elt):
-                if _KEY_CODING in elt:
-                    coding_list = elt[_KEY_CODING]
-                    for coding_dict in coding_list:
-                        assert dict == type(coding_dict)
-                        code = None
-                        if _KEY_CODE in coding_dict:
-                            code = coding_dict[_KEY_CODE]
-                        system = None
-                        if _KEY_SYSTEM in coding_dict:
-                            system = coding_dict[_KEY_SYSTEM]
-                        display = None
-                        if _KEY_DISPLAY in coding_dict:
-                            display = coding_dict[_KEY_DISPLAY]
+#     id_value = _decode_id_value(obj)
+#     category_list = []
+#     if _KEY_CATEGORY in obj:
+#         obj_list = obj[_KEY_CATEGORY]
+#         assert list == type(obj_list)
+#         for elt in obj_list:
+#             if dict == type(elt):
+#                 if _KEY_CODING in elt:
+#                     coding_list = elt[_KEY_CODING]
+#                     for coding_dict in coding_list:
+#                         assert dict == type(coding_dict)
+#                         code = None
+#                         if _KEY_CODE in coding_dict:
+#                             code = coding_dict[_KEY_CODE]
+#                         system = None
+#                         if _KEY_SYSTEM in coding_dict:
+#                             system = coding_dict[_KEY_SYSTEM]
+#                         display = None
+#                         if _KEY_DISPLAY in coding_dict:
+#                             display = coding_dict[_KEY_DISPLAY]
 
-                        category_list.append( CodingObj(code, system, display))
+#                         category_list.append( CodingObj(code, system, display))
                 
-            # any other keys of relevance for elts of category_list?
-    coding_systems_list = _decode_code_dict(obj)
-    subject_reference, subject_display = _decode_subject_info(obj)
-    context_reference = _decode_context_info(obj)
+#             # any other keys of relevance for elts of category_list?
+#     coding_systems_list = _decode_code_dict(obj)
+#     subject_reference, subject_display = _decode_subject_info(obj)
+#     context_reference = _decode_context_info(obj)
 
-    onset_date_time = None
-    abatement_date_time = None
-    if _KEY_ONSET_DATE_TIME in obj:
-        onset_date_time = obj[_KEY_ONSET_DATE_TIME]
-        onset_date_time = _fixup_fhir_datetime(onset_date_time)
-        onset_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z')
-    if _KEY_ABATEMENT_DATE_TIME in obj:
-        abatement_date_time = obj[_KEY_ABATEMENT_DATE_TIME]
-        abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
-        abatement_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z')
+#     onset_date_time = None
+#     abatement_date_time = None
+#     if _KEY_ONSET_DATE_TIME in obj:
+#         onset_date_time = obj[_KEY_ONSET_DATE_TIME]
+#         onset_date_time = _fixup_fhir_datetime(onset_date_time)
+#         onset_date_time = datetime.strptime(onset_date_time, '%Y-%m-%dT%H:%M:%S%z')
+#     if _KEY_ABATEMENT_DATE_TIME in obj:
+#         abatement_date_time = obj[_KEY_ABATEMENT_DATE_TIME]
+#         abatement_date_time = _fixup_fhir_datetime(abatement_date_time)
+#         abatement_date_time = datetime.strptime(abatement_date_time, '%Y-%m-%dT%H:%M:%S%z')
 
-    condition = ConditionResource(
-        id_value,
-        category_list,
-        coding_systems_list,
-        subject_reference,
-        subject_display,
-        context_reference,
-        date_time=onset_date_time,
-        end_date_time=abatement_date_time
-    )
+#     condition = ConditionResource(
+#         id_value,
+#         category_list,
+#         coding_systems_list,
+#         subject_reference,
+#         subject_display,
+#         context_reference,
+#         date_time=onset_date_time,
+#         end_date_time=abatement_date_time
+#     )
         
-    return condition
+#     return condition
 
 
-###############################################################################
-def _decode_procedure(obj):
-    """
-    Decode a CQL Engine 'Procedure' result.
-    """
+# ###############################################################################
+# def _decode_procedure(obj):
+#     """
+#     Decode a CQL Engine 'Procedure' result.
+#     """
 
-    if _TRACE: print('Decoding PROCEDURE resource...')
+#     if _TRACE: print('Decoding PROCEDURE resource...')
 
-    result = []
+#     result = []
 
-    obj_type = type(obj)
-    assert dict == obj_type
+#     obj_type = type(obj)
+#     assert dict == obj_type
 
-    status = None
-    if _KEY_STATUS in obj:
-        status = obj[_KEY_STATUS]
+#     status = None
+#     if _KEY_STATUS in obj:
+#         status = obj[_KEY_STATUS]
 
-    id_value = _decode_id_value(obj)
-    coding_systems_list = _decode_code_dict(obj)
-    subject_reference, subject_display = _decode_subject_info(obj)
-    context_reference = _decode_context_info(obj)
+#     id_value = _decode_id_value(obj)
+#     coding_systems_list = _decode_code_dict(obj)
+#     subject_reference, subject_display = _decode_subject_info(obj)
+#     context_reference = _decode_context_info(obj)
 
-    dt = None
-    if _KEY_PERFORMED_DATE_TIME in obj:
-        performed_date_time = obj[_KEY_PERFORMED_DATE_TIME]
-        performed_date_time = _fixup_fhir_datetime(performed_date_time)
-        dt = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z')
+#     dt = None
+#     if _KEY_PERFORMED_DATE_TIME in obj:
+#         performed_date_time = obj[_KEY_PERFORMED_DATE_TIME]
+#         performed_date_time = _fixup_fhir_datetime(performed_date_time)
+#         dt = datetime.strptime(performed_date_time, '%Y-%m-%dT%H:%M:%S%z')
     
-    procedure = ProcedureResource(
-        id_value,
-        status,
-        coding_systems_list,
-        subject_reference,
-        subject_display,
-        context_reference,
-        date_time=dt
-    )
+#     procedure = ProcedureResource(
+#         id_value,
+#         status,
+#         coding_systems_list,
+#         subject_reference,
+#         subject_display,
+#         context_reference,
+#         date_time=dt
+#     )
     
-    return procedure
+#     return procedure
 
 
-###############################################################################
-def _decode_patient(name, patient_obj):
-    """
-    Decode a CQL Engine 'Patient' result.
-    """
+# ###############################################################################
+# def _decode_patient(name, patient_obj):
+#     """
+#     Decode a CQL Engine 'Patient' result.
+#     """
 
-    if _TRACE: print('Decoding PATIENT resource...')
+#     if _TRACE: print('Decoding PATIENT resource...')
 
-    result = []
+#     result = []
 
-    # the patient object should be the string representation of a dict
-    obj_type = type(patient_obj)
-    assert str == obj_type
+#     # the patient object should be the string representation of a dict
+#     obj_type = type(patient_obj)
+#     assert str == obj_type
 
-    try:
-        obj = json.loads(patient_obj)
-    except json.decoder.JSONDecoderError as e:
-        print('\t{0}: String conversion (patient) failed with error: "{1}"'.
-              format(_MODULE_NAME, e))
-        return result
+#     try:
+#         obj = json.loads(patient_obj)
+#     except json.decoder.JSONDecoderError as e:
+#         print('\t{0}: String conversion (patient) failed with error: "{1}"'.
+#               format(_MODULE_NAME, e))
+#         return result
 
-    # the type instantiated from the string should be a dict
-    obj_type = type(obj)
-    assert dict == obj_type
+#     # the type instantiated from the string should be a dict
+#     obj_type = type(obj)
+#     assert dict == obj_type
 
-    subject = None
-    if _KEY_ID in obj:
-        subject = obj[_KEY_ID]
-    name_list = []
-    if _KEY_NAME in obj:
-        # this is a list of dicts
-        name_entries = obj[_KEY_NAME]
-        obj_type = type(name_entries)
-        assert list == obj_type
-        for elt in name_entries:
-            assert dict == type(elt)
+#     subject = None
+#     if _KEY_ID in obj:
+#         subject = obj[_KEY_ID]
+#     name_list = []
+#     if _KEY_NAME in obj:
+#         # this is a list of dicts
+#         name_entries = obj[_KEY_NAME]
+#         obj_type = type(name_entries)
+#         assert list == obj_type
+#         for elt in name_entries:
+#             assert dict == type(elt)
 
-            # single last name, should be a string
-            last_name  = elt[_KEY_FAMILY_NAME]
-            assert str == type(last_name)
+#             # single last name, should be a string
+#             last_name  = elt[_KEY_FAMILY_NAME]
+#             assert str == type(last_name)
 
-            # list of first name strings
-            first_name_list = elt[_KEY_GIVEN_NAME]
-            assert list == type(first_name_list)
-            for first_name in first_name_list:
-                assert str == type(first_name)
-                name_list.append( (first_name, last_name))                
+#             # list of first name strings
+#             first_name_list = elt[_KEY_GIVEN_NAME]
+#             assert list == type(first_name_list)
+#             for first_name in first_name_list:
+#                 assert str == type(first_name)
+#                 name_list.append( (first_name, last_name))                
 
-    gender = None
-    if _KEY_GENDER in obj:
-        gender = obj[_KEY_GENDER]
-        assert str == type(gender)
+#     gender = None
+#     if _KEY_GENDER in obj:
+#         gender = obj[_KEY_GENDER]
+#         assert str == type(gender)
 
-    date_of_birth = None
-    if _KEY_DOB in obj:
-        dob = obj[_KEY_DOB]
-        assert str == type(dob)
+#     date_of_birth = None
+#     if _KEY_DOB in obj:
+#         dob = obj[_KEY_DOB]
+#         assert str == type(dob)
 
-        # dob is in YYYY-MM-DD format; convert to datetime obj
-        date_of_birth = datetime.strptime(dob, '%Y-%m-%d')
+#         # dob is in YYYY-MM-DD format; convert to datetime obj
+#         date_of_birth = datetime.strptime(dob, '%Y-%m-%d')
             
-    patient = PatientResource(
-        subject,
-        name_list,
-        gender,
-        date_of_birth
-    )
+#     patient = PatientResource(
+#         subject,
+#         name_list,
+#         gender,
+#         date_of_birth
+#     )
 
-    return patient
+#     return patient
 
+
+###############################################################################
+def _process_resource(obj):
+    """
+    Flatten and decode a FHIR DSTU2 resource.
+    """
+
+    obj_type = type(obj)
+    assert dict == obj_type
+
+    # flatten the JSON, convert time strings to datetimes
+    flattened_obj = flatten(obj)
+    flattened_obj = _convert_datetimes(flattened_obj)
+
+    # read the resource type and process accordingly
+    result = None
+    if _STR_RESOURCE_TYPE in flattened_obj:
+        rt = obj[_STR_RESOURCE_TYPE]
+        if 'Observation' == rt:
+            result = _decode_flattened_observation(flattened_obj)
+        elif 'Procedure' == rt:
+            result = _decode_flattened_procedure(flattened_obj)
+        elif 'Condition' == rt:
+            result = _decode_flattened_condition(flattened_obj)
+        elif 'MedicationStatement' == rt:
+            result = _decode_flattened_medication_statement(flattened_obj)
+        elif 'MedicationOrder' == rt:
+            result = _decode_flattened_medication_order(flattened_obj)
+        elif 'MedicationAdministration' == rt:
+            result = _decode_flattened_medication_administration(flattened_obj)
+
+    return result
+    
 
 ###############################################################################
 def _decode_bundle(name, bundle_obj):
@@ -2419,10 +2563,6 @@ def _decode_bundle(name, bundle_obj):
     """
 
     if _TRACE: print('Decoding BUNDLE resource...')
-
-    STR_RES_TYPE = 'resourceType'
-    
-    bundled_objs = []
 
     # this bundle should be a string representation of a list of dicts
     obj_type = type(bundle_obj)
@@ -2438,36 +2578,12 @@ def _decode_bundle(name, bundle_obj):
     # now find out what type of obj was created from the string
     obj_type = type(obj)
     assert list == obj_type
-    
+
+    bundled_objs = []    
     for elt in obj:
-        obj_type = type(elt)
-        assert dict == obj_type
-
-        # flatten the JSON, convert time strings to datetimes
-        flattened_elt = flatten(elt)
-        flattened_elt = _convert_datetimes(flattened_elt)
-
-        # read the resource type and process accordingly
-        if STR_RES_TYPE in flattened_elt:
-            rt = elt[STR_RES_TYPE]
-            if 'Observation' == rt:
-                observation = _decode_flattened_observation(flattened_elt)
-                bundled_objs.append(observation)
-            elif 'Procedure' == rt:
-                procedure = _decode_flattened_procedure(flattened_elt)
-                bundled_objs.append(procedure)
-            elif 'Condition' == rt:
-                condition = _decode_flattened_condition(flattened_elt)
-                bundled_objs.append(condition)
-            elif 'MedicationStatement' == rt:
-                med_statement = _decode_flattened_medication_statement(flattened_elt)
-                bundled_objs.append(med_statement)
-            elif 'MedicationOrder' == rt:
-                med_order = _decode_flattened_medication_order(flattened_elt)
-                bundled_objs.append(med_request)
-            # elif 'MedicationAdministration' == rt:
-            #     med_admin = _decode_medication_administration(elt)
-            #     bundled_objs.append(med_admin)
+        result = _process_resource(elt)
+        if result is not None:
+            bundled_objs.append(result)
     
     return bundled_objs
 
@@ -2523,19 +2639,25 @@ def _get_version():
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-        description='Decode results from the CQL Engine')
+        description='Decode Cerner DSTU2 FHIR resource examples')
 
     parser.add_argument('-v', '--version',
                         action='store_true',
                         help='show the version string and exit')
     parser.add_argument('-f', '--filepath',
                         help='path to JSON file containing CQL Engine results')
+    parser.add_argument('-d', '--debug',
+                        action='store_true',
+                        help='print debug info to stdout')
 
     args = parser.parse_args()
 
     if 'version' in args and args.version:
         print(_get_version())
         sys.exit(0)
+
+    if 'debug' in args and args.debug:
+        enable_debug()
 
     filepath = None
     if 'filepath' in args and args.filepath:
@@ -2559,44 +2681,18 @@ if __name__ == '__main__':
         #    print('{0} => {1}'.format(k,v))
         # sys.exit(0)
 
-        obj = json_data
-        result = None
-        if 'resourceType' in obj:
-            rt = obj['resourceType']
-            if 'Observation' == rt:
-                result = _decode_observation_stu2(obj)
-            elif 'Patient' == rt:
-                result = _decode_patient_stu2(obj)
-            elif 'Procedure' == rt:
-                result = _decode_procedure_stu2(obj)
-            elif 'Condition' == rt:
-                result = _decode_condition_stu2(obj)
-            elif 'MedicationStatement' == rt:
-                result = _decode_medication_statement_stu2(obj)
-            elif 'MedicationOrder' == rt:
-                result = _decode_medication_order_stu2(obj)
-            elif 'MedicationAdministration' == rt:
-                result = _decode_medication_administration_stu2(obj)
+        result = _process_resource(json_data)
 
+        print('RESULT: ')
         if result is not None:
             for k,v in result.items():
                 if dict == type(v):
-                    print('{0}'.format(k))
+                    print('\t{0}'.format(k))
                     for k2,v2 in v.items():
-                        print('\t{0} => {1}'.format(k2, v2))
+                        print('\t\t{0} => {1}'.format(k2, v2))
                 elif list == type(v):
-                    print('{0}'.format(k))
+                    print('\t{0}'.format(k))
                     for index, v2 in enumerate(v):
-                        print('\t[{0}]:\t{1}'.format(index, v2))
+                        print('\t\t[{0}]:\t{1}'.format(index, v2))
                 else:
-                    print('{0} => {1}'.format(k,v))
-
-        # TODO - what about _text field? See cerner_med_order4.json
-    # STR_RT        = 'resourceType'
-    # STR_OBS       = 'Observation'
-    # STR_PT        = 'Patient'
-    # STR_PROC      = 'Procedure'
-    # STR_COND      = 'Condition'
-    # STR_MED_STMT  = 'MedicationStatement'
-    # STR_MED_ORD   = 'MedicationOrder'
-    # STR_MED_ADMIN = 'MedicationAdministration'
+                    print('\t{0} => {1}'.format(k,v))
