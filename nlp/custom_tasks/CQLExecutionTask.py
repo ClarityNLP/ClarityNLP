@@ -453,10 +453,14 @@ class CQLExecutionTask(BaseTask):
                                               job_id,
                                               self.pipeline_config.custom_arguments)
 
+            # setup the request header; add authentication if credentials provided
             headers = {
-                'Content-Type':'application/json',
-                'Authorization':'{0} {1}'.format(fhir_auth_type, fhir_auth_token)
+                'Content-Type':'application/json'
             }
+
+            if fhir_auth_type is not None and fhir_auth_token is not None:
+                if len(fhir_auth_type) > 0 and len(fhir_auth_token) > 0:
+                    headers['Authorization'] = '{0} {1}'.format(fhir_auth_type, fhir_auth_token)
             
             # params for UMLS OID code lookup
             fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
