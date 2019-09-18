@@ -48,8 +48,10 @@ _regex_coding = re.compile(r'\Acode_coding_(?P<num>\d)_')
 _KEY_END           = 'end'
 _KEY_START         = 'start'
 
-_STR_BUNDLE2       = 'FhirBundleCursorStu2'
-_STR_BUNDLE3       = 'FhirBundleCursorStu3'
+# names for a DSTU2 and DSTU3 bundles seen from various FHIR servers
+_BUNDLE2_NAMES = ['FhirBundleCursorStu2', 'FhirBundleCursorDstu2']
+_BUNDLE3_NAMES = ['FhirBundleCursorStu3', 'FhirBundleCursorDstu3']
+
 _STR_PATIENT       = 'Patient'
 _STR_RESOURCE_TYPE = 'resourceType'
 
@@ -730,9 +732,9 @@ def _decode_bundle(name, bundle_obj, result_type_str):
 
     bundled_objs = []    
     for elt in obj:
-        if _STR_BUNDLE2 == result_type_str:
+        if result_type_str in _BUNDLE2_NAMES:
             result = _process_dstu2_resource(elt)
-        elif _STR_BUNDLE3 == result_type_str:
+        elif result_type_str in _BUNDLE3_NAMES:
             # process via the DSTU2 route for now...
             result = _process_dstu2_resource(elt)
         if result is not None:
@@ -767,7 +769,7 @@ def decode_top_level_obj(obj):
             if _STR_PATIENT == result_type_str:
                 result_obj = _decode_dstu2_patient(result_obj)
                 if _TRACE: print('decoded patient')
-            elif _STR_BUNDLE2 == result_type_str or _STR_BUNDLE3 == result_type_str:
+            elif result_type_str in _BUNDLE2_NAMES or result_type_str in _BUNDLE3_NAMES:
                 result_obj = _decode_bundle(name, result_obj, result_type_str)
             else:
                 if _TRACE: print('no decode')

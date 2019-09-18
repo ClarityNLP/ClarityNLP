@@ -28,6 +28,9 @@ import data_access.cql_result_parser as crp
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 10
 
+# set to True to enable debug output
+_TRACE = False
+
 # names of custom args accessible to CQLExecutionTask
 
 _FHIR_VERSION          = 'fhir_version'            # "DSTU2" or "DSTU3"
@@ -147,13 +150,21 @@ def _json_to_objs(json_obj):
     Decode the data returned by the CQLEngine and sort it by timestamp from
     most recent to least recent.
     """
+
+    if _TRACE:
+        print('CQLExecutionTask: Calling _json_to_objs...')
     
     results = []
 
     # assumes we either have a list of objects or a single obj
     obj_type = type(json_obj)
+    
     if list == obj_type:
+        if _TRACE:
+            print('\tfound list of length {0}'.format(len(json_obj)))
         for e in json_obj:
+            if _TRACE:
+                print('\t\tdecoding resource type {0}'.format(e['resultType']))
             result_obj = crp.decode_top_level_obj(e)
             if result_obj is None:
                 continue
@@ -162,6 +173,8 @@ def _json_to_objs(json_obj):
             else:
                 results.extend(result_obj)
     elif dict == obj_type:
+        if _TRACE:
+            print('\tfound dict of size {0}'.format(len(json_obj)))
         result_obj = crp.decode_top_level_obj(json_obj)
         if result_obj is not None:
             if list is not type(result_obj):
@@ -169,6 +182,10 @@ def _json_to_objs(json_obj):
             else:
                 results.extend(result_obj)
 
+    if _TRACE:
+        print('\tThere are {0} results after top-level decode'.
+              format(len(results)))
+                
     if 0 == len(results):
         return (results, None, None)
                 
@@ -195,6 +212,12 @@ def _to_result_obj(obj, key_prefix):
     Insert the 'result_display' information and build the object to be written
     to MongoDB.
     """
+
+    if _TRACE:
+        print('Calling _to_result_obj...')
+        print('obj: ')
+        print(obj)
+        print()
 
     KEY_RC = 'result_content'
     
@@ -223,8 +246,13 @@ def _to_result_obj(obj, key_prefix):
         result_display_obj[KEY_RC] = 'Patient: {0}, DOB: {1}'.format(value_name, date)
         
     elif _RT_OBSERVATION == resource_type:
-        value = obj[crp.KEY_VALUE]
-        units = obj[crp.KEY_UNITS]
+        value = ''
+        units = ''
+        if crp.KEY_VALUE in obj:
+            # sometimes a value is not present in an observation
+            value = obj[crp.KEY_VALUE]
+        if crp.KEY_UNITS in obj:
+            units = obj[crp.KEY_UNITS]
         result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
         result_display_obj['highlights']:[value_name, value, units]
         
@@ -319,8 +347,9 @@ def _get_datetime_window(custom_args, data_earliest, data_latest):
                                              data_earliest,
                                              data_latest)
 
-    print('\n*** DATETIME START: {0}'.format(datetime_start))
-    print('***   DATETIME END: {0}'.format(datetime_end))
+    if _TRACE:
+        print('\n*** datetime_start: {0}'.format(datetime_start))
+        print('***   datetime_end: {0}'.format(datetime_end))
         
     return (datetime_start, datetime_end)
 
@@ -333,6 +362,11 @@ def _apply_datetime_filter(samples, t0, t1):
     parser module.
     """
 
+    if _TRACE:
+        print('CQLExecutionTask: calling _apply_datetime_filter...')
+        print('\tt0: {0}, t1: {0}'.format(t0, t1))
+        print('\tlength of samples list: {0}'.format(len(samples)))
+
     if 0 == len(samples):
         return []
     
@@ -343,8 +377,9 @@ def _apply_datetime_filter(samples, t0, t1):
         # the 'date_time' field by the cql_result_parser.
         t = getattr(s, crp.KEY_DATE_TIME, None)
         if t is None:
+            # no timestamp in this sample
+            results.append(s)
             continue
-
         if t0 is not None and t <= t0:
             continue
         if t1 is not None and t >= t1:
@@ -522,7 +557,7 @@ class CQLExecutionTask(BaseTask):
                 # data_earliest == earliest datetime in the data
                 # data_latest   == latest datetime in the data
                 results, data_earliest, data_latest = _json_to_objs(r.json())
-                print('\tfound {0} results'.format(len(results)))
+                print('\tCQLExecutionTask: found {0} results'.format(len(results)))
             else:
                 print('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
                 return
@@ -540,11 +575,18 @@ class CQLExecutionTask(BaseTask):
 
             # remove results outside of the desired time window
             results = _apply_datetime_filter(results, datetime_start, datetime_end)
-
+            print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
+                  format(len(results)))
+            
             for obj in results:
 
                 if obj is None:
                     continue
+
+                if _TRACE:
+                    print('obj before _to_result_obj: ')
+                    print(obj)
+                    print()
 
                 assert _KEY_RT in obj
                 resource_type = obj[_KEY_RT]
