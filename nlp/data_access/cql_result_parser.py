@@ -32,7 +32,7 @@ KEY_DATE_TIME     = 'date_time'
 KEY_END_DATE_TIME = 'end_date_time'
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -48,6 +48,9 @@ _regex_coding = re.compile(r'\Acode_coding_(?P<num>\d)_')
 _KEY_END           = 'end'
 _KEY_START         = 'start'
 
+_STR_BUNDLE2       = 'FhirBundleCursorStu2'
+_STR_BUNDLE3       = 'FhirBundleCursorStu3'
+_STR_PATIENT       = 'Patient'
 _STR_RESOURCE_TYPE = 'resourceType'
 
 
@@ -226,7 +229,7 @@ def _contained_med_resource_init(obj):
             
     
 ###############################################################################
-def _decode_flattened_observation(obj):
+def _decode_dstu2_observation(obj):
     """
     Decode a flattened FHIR 'Observation' resource.
     """
@@ -290,7 +293,7 @@ def _decode_flattened_observation(obj):
 
 
 ###############################################################################
-def _decode_flattened_medication_administration(obj):
+def _decode_dstu2_medication_administration(obj):
     """
     Decode a flattened FHIR DSTU2 'MedicationAdministration' resource.
     """
@@ -347,7 +350,7 @@ def _decode_flattened_medication_administration(obj):
             
     
 ###############################################################################
-def _decode_flattened_medication_order(obj):
+def _decode_dstu2_medication_order(obj):
     """
     Decode a flattened FHIR DSTU2 'MedicationOrder' resource.
     """
@@ -403,7 +406,7 @@ def _decode_flattened_medication_order(obj):
                 
 
 ###############################################################################
-def _decode_flattened_medication_statement(obj):
+def _decode_dstu2_medication_statement(obj):
     """
     Decode a flattened FHIR DSTU2 'MedicationStatement' resource.
     """
@@ -453,7 +456,7 @@ def _decode_flattened_medication_statement(obj):
 
 
 ###############################################################################
-def _decode_flattened_condition(obj):
+def _decode_dstu2_condition(obj):
     """
     Decode a flattened FHIR DSTU2 'Condition' resource.
     """
@@ -510,7 +513,7 @@ def _decode_flattened_condition(obj):
     
 
 ###############################################################################
-def _decode_flattened_procedure(obj):
+def _decode_dstu2_procedure(obj):
     """
     Decode a flattened FHIR DSTU2 'Procedure' resource.
     """
@@ -580,7 +583,7 @@ def _decode_flattened_procedure(obj):
     
 
 ###############################################################################
-def _decode_flattened_patient(obj):
+def _decode_dstu2_patient(obj):
     """
     Flatten and decode a FHIR DSTU2 'Patient' resource.
     """
@@ -668,7 +671,7 @@ def _decode_flattened_patient(obj):
 
 
 ###############################################################################
-def _process_resource(obj):
+def _process_dstu2_resource(obj):
     """
     Flatten and decode a FHIR DSTU2 resource.
     """
@@ -685,25 +688,25 @@ def _process_resource(obj):
     if _STR_RESOURCE_TYPE in flattened_obj:
         rt = obj[_STR_RESOURCE_TYPE]
         if 'Patient' == rt:
-            result = _decode_flattened_patient(flattened_obj)
+            result = _decode_dstu2_patient(flattened_obj)
         elif 'Observation' == rt:
-            result = _decode_flattened_observation(flattened_obj)
+            result = _decode_dstu2_observation(flattened_obj)
         elif 'Procedure' == rt:
-            result = _decode_flattened_procedure(flattened_obj)
+            result = _decode_dstu2_procedure(flattened_obj)
         elif 'Condition' == rt:
-            result = _decode_flattened_condition(flattened_obj)
+            result = _decode_dstu2_condition(flattened_obj)
         elif 'MedicationStatement' == rt:
-            result = _decode_flattened_medication_statement(flattened_obj)
+            result = _decode_dstu2_medication_statement(flattened_obj)
         elif 'MedicationOrder' == rt:
-            result = _decode_flattened_medication_order(flattened_obj)
+            result = _decode_dstu2_medication_order(flattened_obj)
         elif 'MedicationAdministration' == rt:
-            result = _decode_flattened_medication_administration(flattened_obj)
+            result = _decode_dstu2_medication_administration(flattened_obj)
 
     return result
     
 
 ###############################################################################
-def _decode_bundle(name, bundle_obj):
+def _decode_bundle(name, bundle_obj, result_type_str):
     """
     Decode a CQL Engine bundle object.
     """
@@ -727,7 +730,11 @@ def _decode_bundle(name, bundle_obj):
 
     bundled_objs = []    
     for elt in obj:
-        result = _process_resource(elt)
+        if _STR_BUNDLE2 == result_type_str:
+            result = _process_dstu2_resource(elt)
+        elif _STR_BUNDLE3 == result_type_str:
+            # process via the DSTU2 route for now...
+            result = _process_dstu2_resource(elt)
         if result is not None:
             bundled_objs.append(result)
     
@@ -744,10 +751,6 @@ def decode_top_level_obj(obj):
     KEY_RESULT      = 'result'
     KEY_RESULT_TYPE = 'resultType'
     
-    STR_PATIENT     = 'Patient'
-    STR_BUNDLE2     = 'FhirBundleCursorStu2'
-    STR_BUNDLE3     = 'FhirBundleCursorStu3'
-    
     result_obj = None
     
     obj_type = type(obj)
@@ -761,11 +764,11 @@ def decode_top_level_obj(obj):
             result_obj = obj[KEY_RESULT]
             result_type_str = obj[KEY_RESULT_TYPE]
             
-            if STR_PATIENT == result_type_str:
-                result_obj = _decode_flattened_patient(result_obj)
+            if _STR_PATIENT == result_type_str:
+                result_obj = _decode_dstu2_patient(result_obj)
                 if _TRACE: print('decoded patient')
-            elif STR_BUNDLE2 == result_type_str or STR_BUNDLE3 == result_type_str:
-                result_obj = _decode_bundle(name, result_obj)
+            elif _STR_BUNDLE2 == result_type_str or _STR_BUNDLE3 == result_type_str:
+                result_obj = _decode_bundle(name, result_obj, result_type_str)
             else:
                 if _TRACE: print('no decode')
                 result_obj = None
@@ -816,7 +819,7 @@ if __name__ == '__main__':
         json_string = infile.read()
         json_data = json.loads(json_string)
 
-        result = _process_resource(json_data)
+        result = _process_dstu2_resource(json_data)
 
         print('RESULT: ')
         if result is not None:

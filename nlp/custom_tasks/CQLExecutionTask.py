@@ -26,7 +26,7 @@ from tasks.task_utilities import BaseTask
 import data_access.cql_result_parser as crp
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 9
+_VERSION_MINOR = 10
 
 # names of custom args accessible to CQLExecutionTask
 
@@ -170,7 +170,7 @@ def _json_to_objs(json_obj):
                 results.extend(result_obj)
 
     if 0 == len(results):
-        return (None, None, None)
+        return (results, None, None)
                 
     # check for presence of the 'error' key in the Patient resource
     # if present, FHIR server returned no useful data
@@ -189,364 +189,15 @@ def _json_to_objs(json_obj):
     return (results, earliest, latest)
 
 
-# ###############################################################################
-# def _extract_coding_systems_list(obj, mongo_obj, prefix):
-#     """
-#     Extract the list of (code, system, display) tuples.
-#     """
-    
-#     coding_systems_list = getattr(obj, 'coding_systems_list', None)
-#     if coding_systems_list is None:
-#         return
-    
-#     counter = 1
-#     for coding_obj in coding_systems_list:
-#         mongo_obj['{0}_codesys_code_{1}'.format(prefix, counter)] = coding_obj.code
-#         mongo_obj['{0}_codesys_system_{1}'.format(prefix, counter)] = coding_obj.system
-#         mongo_obj['{0}_codesys_display_{1}'.format(prefix, counter)] = coding_obj.display
-#         if 1 == counter:
-#             # set the 'source' field to match coding_obj.display
-#             mongo_obj['source'] = coding_obj.display
-#         counter += 1
-
-
-# ###############################################################################
-# def _extract_subject_reference(obj, mongo_obj, prefix):
-#     """
-#     Extract and convert the subject reference data.
-#     """
-
-#     subject_ref = getattr(obj, 'subject_reference', None)
-
-#     # The subject_ref has the form Patient/9940, where the number after the
-#     # fwd slash is the patient ID. Extract this ID and store in the 'subject'
-#     # field.
-#     if subject_ref is not None:
-#         assert '/' in subject_ref
-#         text, num = subject_ref.split('/')
-#         mongo_obj['subject'] = num
-#     mongo_obj['{0}_subject_ref'.format(prefix)] = subject_ref
-    
-        
-# ###############################################################################
-# def _extract_patient_resource(obj, mongo_obj):
-#     """
-#     Extract data from the FHIR patient resource and load into mongo dict.
-#     """
-
-#     assert _KEY_RT in obj
-#     assert _RT_PATIENT == obj[_KEY_RT]
-
-#     if _KEY_ERROR in obj:
-#         # no data returned
-#         return
-
-#     # patient id is in the 'subject' field
-#     patient_id = getattr(obj, 'subject', None)
-#     mongo_obj['patient_subject'] = patient_id
-
-#     # get the list of (first_name, last_name) tuples and create numbered fields
-#     name_list = getattr(obj, 'name_list', None)
-#     if name_list is not None:
-#         counter = 1
-#         for first, last in name_list:
-#             key_fname = 'patient_fname_{0}'.format(counter)
-#             key_lname = 'patient_lname_{0}'.format(counter)
-#             mongo_obj[key_fname] = first
-#             mongo_obj[key_lname] = last
-#             counter += 1
-
-#     gender = getattr(obj, 'gender', None)
-#     mongo_obj['patient_gender'] = gender
-
-#     dob = getattr(obj, 'date_of_birth', None)
-#     dob_str = None
-#     if dob is not None:
-#         dob_str = dob.isoformat()
-#     mongo_obj['patient_date_of_birth'] = dob_str
-
-
-# ###############################################################################
-# def _extract_procedure_resource(obj, mongo_obj):
-#     """
-#     Extract data from the FHIR procedure resource and load into mongo dict.
-#     """
-
-#     assert isinstance(obj, crp.ProcedureResource)
-
-#     if _KEY_ERROR in obj:
-#         # no data returned
-#         return
-
-#     id_value = getattr(obj, 'id_value', None)
-#     mongo_obj['procedure_id_value'] = id_value
-
-#     status = getattr(obj, 'status', None)
-#     mongo_obj['procedure_status'] = status
-
-#     _extract_coding_systems_list(obj, mongo_obj, 'procedure')
-
-#     _extract_subject_reference(obj, mongo_obj, 'procedure')
-
-#     subject_display = getattr(obj, 'subject_display', None)
-#     mongo_obj['procedure_subject_display'] = subject_display
-
-#     context_ref = getattr(obj, 'context_reference', None)
-#     mongo_obj['procedure_context_ref'] = context_ref
-
-#     dt = getattr(obj, 'date_time', None)
-#     dt_string = None
-#     if dt is not None:
-#         dt_string = dt.isoformat()
-#     mongo_obj['datetime'] = dt_string
-
-#     # add display/formatting info
-#     procedure_name = mongo_obj['procedure_codesys_display_1']
-#     result_display_obj = {
-#         'date': mongo_obj['datetime'],
-#         'result_content':'Procedure: {0}'.format(procedure_name),
-#         'sentence':'',
-#         'highlights': [procedure_name]
-#     }
-#     mongo_obj['result_display'] = result_display_obj
-
-
-# ###############################################################################
-# def _extract_condition_resource(obj, mongo_obj):
-#     """
-#     Extract dta from the FHIR condition resource and load into mongo dict.
-#     """
-
-#     assert isinstance(obj, crp.ConditionResource)
-
-#     if _KEY_ERROR in obj:
-#         # no data returned
-#         return
-
-#     id_value = getattr(obj, 'id_value', None)
-#     mongo_obj['condition_id_value'] = id_value
-
-#     category_list = getattr(obj, 'category_list', None)
-#     if category_list is not None:
-#         counter = 1
-#         for elt in category_list:
-#             if isinstance(elt, crp.CodingObj):
-#                 mongo_obj['condition_category_code_{0}'.format(counter)] = elt.code
-#                 mongo_obj['condition_category_system_{0}'.format(counter)] = elt.system
-#                 mongo_obj['condition_category_display_{0}'.format(counter)] = elt.display
-#                 counter += 1
-
-#     _extract_coding_systems_list(obj, mongo_obj, 'condition')
-        
-#     _extract_subject_reference(obj, mongo_obj, 'condition')
-
-#     subject_display = getattr(obj, 'subject_display', None)
-#     mongo_obj['condition_subject_display'] = subject_display
-
-#     context_ref = getattr(obj, 'context_reference', None)
-#     mongo_obj['condition_context_ref'] = context_ref
-
-#     date_time = getattr(obj, 'date_time', None)
-#     dt_string = None
-#     if date_time is not None:
-#         dt_string = date_time.isoformat()
-#     mongo_obj['datetime'] = dt_string
-    
-#     end_date_time = getattr(obj, 'end_date_time', None)
-#     dt_string = None
-#     if end_date_time is not None:
-#         dt_string = end_date_time.isoformat()
-#     mongo_obj['end_datetime'] = dt_string
-
-#     # add display/formatting info
-#     condition_name = mongo_obj['condition_codesys_display_1']
-#     result_display_obj = {
-#         'date': mongo_obj['datetime'],
-#         'result_content':'Condition: {0}, onset: {1}, abatement: {2}'.format(
-#             condition_name, mongo_obj['datetime'], mongo_obj['end_datetime']),
-#         'sentence':'',
-#         'highlights':[condition_name]
-#     }
-#     mongo_obj['result_display'] = result_display_obj
-    
-
-# ###############################################################################
-# def _extract_observation_resource(obj, mongo_obj):
-#     """
-#     Extract data from the FHIR observation resource and load into mongo dict.
-#     """
-
-#     assert isinstance(obj, crp.ObservationResource)
-
-#     if _KEY_ERROR in obj:
-#         # no data returned
-#         return
-
-#     _extract_subject_reference(obj, mongo_obj, 'obs')
-    
-#     subject_display = getattr(obj, 'subject_display', None)
-#     mongo_obj['obs_subject_display'] = subject_display
-
-#     context_ref = getattr(obj, 'context_reference', None)
-#     mongo_obj['obs_context_ref'] = context_ref
-
-#     date_time = getattr(obj, 'date_time', None)
-#     dt_string = None
-#     if date_time is not None:
-#         dt_string = date_time.isoformat()
-#     mongo_obj['datetime'] = dt_string
-    
-#     value = getattr(obj, 'value', None)
-#     if value is not None:
-#         # store this in the 'value' field also
-#         mongo_obj['value'] = value
-#     mongo_obj['obs_value'] = value
-
-#     unit = getattr(obj, 'unit', None)
-#     mongo_obj['obs_unit'] = unit
-
-#     unit_system = getattr(obj, 'unit_system', None)
-#     mongo_obj['obs_unit_system'] = unit_system
-
-#     unit_code = getattr(obj, 'unit_code', None)
-#     mongo_obj['obs_unit_code'] = unit_code
-
-#     _extract_coding_systems_list(obj, mongo_obj, 'obs')
-
-#     # add display/formatting info
-#     value_name = mongo_obj['obs_codesys_display_1']
-#     units = mongo_obj['obs_unit_code']
-#     result_display_obj = {
-#         'date': mongo_obj['datetime'],
-#         'result_content':'{0}: {1} {2}'.format(value_name, value, units),
-#         'sentence':'',
-#         'highlights':[value_name, value, units]
-#     }
-#     mongo_obj['result_display'] = result_display_obj
-    
-
-# ###############################################################################
-# def _extract_medication_statement_resource(obj, mongo_obj):
-#     """
-#     Extract data from the FHIR MedicationStatement resource and load into
-#     mongo dict.
-#     """
-
-#     assert isinstance(obj, crp.MedicationStatementResource)
-
-#     if _KEY_ERROR in obj:
-#         # no data returned
-#         return
-
-#     id_value = getattr(obj, 'id_value', None)
-#     mongo_obj['med_stmt_id_value'] = id_value
-    
-#     context_ref = getattr(obj, 'context_reference', None)
-#     mongo_obj['med_stmt_context_ref'] = context_ref
-    
-#     _extract_coding_systems_list(obj, mongo_obj, 'med_stmt')
-
-#     _extract_subject_reference(obj, mongo_obj, 'med_stmt')
-    
-#     subject_display = getattr(obj, 'subject_display', None)
-#     mongo_obj['med_stmt_subject_display'] = subject_display
-
-#     taken = getattr(obj, 'taken', None)
-#     mongo_obj['med_stmt_taken'] = taken
-
-#     # list of DoseQuantity objects
-#     dosage_list = getattr(obj, 'dosage_list', None)
-#     if dosage_list is not None:
-#         counter = 1
-#         for dq_obj in dosage_list:
-#             key = 'med_stmt_dosage_value_{0}'.format(counter)
-#             mongo_obj[key] = dq_obj.value
-#             key = 'med_stmt_dosage_unit_{0}'.format(counter)
-#             mongo_obj[key] = dq_obj.unit
-#             key = 'med_stmt_dosage_system_{0}'.format(counter)
-#             mongo_obj[key] = dq_obj.system
-#             key = 'med_stmt_dosage_code_{0}'.format(counter)
-#             mongo_obj[key] = dq_obj.code
-#             counter += 1
-
-#     date_time = getattr(obj, 'date_time', None)
-#     dt_string = None
-#     if date_time is not None:
-#         dt_string = date_time.isoformat()
-#     mongo_obj['datetime'] = dt_string
-    
-#     end_date_time = getattr(obj, 'end_date_time', None)
-#     dt_string = None
-#     if end_date_time is not None:
-#         dt_string = end_date_time.isoformat()
-#     mongo_obj['end_datetime'] = dt_string
-    
-#     # add display/formatting info
-#     value_name = mongo_obj['med_stmt_codesys_display_1']
-#     value = mongo_obj['med_stmt_dosage_value_1']
-#     if value is None:
-#         value = ''
-#     units = mongo_obj['med_stmt_dosage_unit_1']
-#     if units is None:
-#         units = ''
-#     result_display_obj = {
-#         'date': mongo_obj['datetime'],
-#         'result_content':'{0}: {1} {2}'.format(value_name, value, units),
-#         'sentence':'',
-#         'highlights':[value_name, value, units]
-#     }
-#     mongo_obj['result_display'] = result_display_obj
-
-
-# ###############################################################################
-# def _extract_medication_request_resource(obj, mongo_obj):
-#     """
-#     Extract data from the MedicationRequest resource and load into
-#     mongo dict.
-#     """
-
-#     assert isinstance(obj, crp.MedicationRequestResource)
-
-#     if _KEY_ERROR in obj:
-#         # no data returned
-#         return
-
-#     id_value = getattr(obj, 'id_value', None)
-#     mongo_obj['med_req_id_value'] = id_value
-    
-#     _extract_coding_systems_list(obj, mongo_obj, 'med_req')
-
-#     _extract_subject_reference(obj, mongo_obj, 'med_req')
-    
-#     subject_display = getattr(obj, 'subject_display', None)
-#     mongo_obj['med_req_subject_display'] = subject_display
-
-#     date_time = getattr(obj, 'date_time', None)
-#     dt_string = None
-#     if date_time is not None:
-#         dt_string = date_time.isoformat()
-#     mongo_obj['datetime'] = dt_string
-    
-#     # add display/formatting info
-#     value_name = mongo_obj['med_req_codesys_display_1']
-#     value = ''
-#     units = ''
-#     result_display_obj = {
-#         'date': mongo_obj['datetime'],
-#         'result_content':'{0}: {1} {2}'.format(value_name, value, units),
-#         'sentence':'',
-#         'highlights':[value_name, value, units]
-#     }
-#     mongo_obj['result_display'] = result_display_obj
-    
-
 ###############################################################################
-def _to_result_obj(obj, prefix):
+def _to_result_obj(obj, key_prefix):
     """
-    Build the dict to be written to MongoDB by prefixing all fields with
-    the given prefix.
+    Insert the 'result_display' information and build the object to be written
+    to MongoDB.
     """
 
+    KEY_RC = 'result_content'
+    
     # insert the display/formatting info
     assert _KEY_RT in obj
     resource_type = obj[_KEY_RT]
@@ -554,55 +205,30 @@ def _to_result_obj(obj, prefix):
     value_name = ''
     if crp.KEY_VALUE_NAME in obj:
         value_name = obj[crp.KEY_VALUE_NAME]
-    value = ''
-    if crp.KEY_VALUE in obj:
-        value = obj[crp.KEY_VALUE]
-    units = ''
-    if crp.KEY_UNITS in obj:
-        units = obj[crp.KEY_UNITS]
-    date = ''
+    date = 'UNKNOWN'
     if crp.KEY_DATE_TIME in obj:
         date = obj[crp.KEY_DATE_TIME]
-    
+
+    result_display_obj = {
+        'date':date,
+        'result_content':'{0}: {1}'.format(resource_type, value_name),
+        'sentence':'',
+        'highlights':[value_name]
+    }
+        
     if _RT_PATIENT == resource_type:
-        date = ''
         if 'birthDate' in obj:
             date = obj['birthDate']
-        else:
-            date = UNKNOWN
-        result_display_obj = {
-            'date': date,
-            'result_content':'Patient: {0}, DOB: {1}'.format(value_name, date),
-            'sentence':'',
-            'highlights':[value_name]
-        }
-        obj[_KEY_RES_DISP] = result_display_obj
+        result_display_obj['date'] = date
+        result_display_obj[KEY_RC] = 'Patient: {0}, DOB: {1}'.format(value_name, date)
+        
     elif _RT_OBSERVATION == resource_type:
-        result_display_obj = {
-            'date': date,
-            'result_content':'{0}: {1} {2}'.format(value_name, value, units),
-            'sentence':'',
-            'highlights':[value_name, value, units]
-        }
-        obj[_KEY_RES_DISP] = result_display_obj
-    elif _RT_PROCEDURE == resource_type:
-        result_display_obj = {
-            'date': date,
-            'result_content':'Procedure: {0}'.format(value_name),
-            'sentence':'',
-            'highlights': [procedure_name]
-        }
-        obj[_KEY_RES_DISP] = result_display_obj
-    elif _RT_CONDITION == resource_type:
-        result_display_obj = {
-            'date': date,
-            'result_content':'Condition: {0}'.format(value_name),
-            'sentence':'',
-            'highlights':[value_name]
-        }
-        obj[_KEY_RES_DISP] = result_display_obj
+        value = obj[crp.KEY_VALUE]
+        units = obj[crp.KEY_UNITS]
+        result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
+        result_display_obj['highlights']:[value_name, value, units]
+        
     elif _RT_MED_STMT == resource_type:
-        date = ''
         if 'effectiveDateTime' in obj:
             date = obj['effectiveDateTime']
         elif 'effectivePeriod_start' in obj:
@@ -611,29 +237,17 @@ def _to_result_obj(obj, prefix):
             if 'effectivePeriod_end' in obj:
                 end = obj['effectivePeriod_end']
                 date += ' to {0}'.format(end)
-        result_display_obj = {
-            'date': date,
-            'result_content':'Medication Statement: {0}'.format(value_name),
-            'sentence':'',
-            'highlights':[value_name]
-        }
-        obj[_KEY_RES_DISP] = result_display_obj
-    elif _RT_MED_ORDER == resource_type:
-        date = ''
+        result_display_obj['date'] = date
+        
+    elif _RT_MED_ORDER == resource_type:       
         if 'dateWritten' in obj:
             date = obj['dateWritten']
         if 'dateEnded' in obj:
             end = obj['dateEnded']
             date += ' to {0}'.format(end)
-        result_display_obj = {
-            'date': date,
-            'result_content':'Medication Order: {0}'.format(value_name),
-            'sentence':'',
-            'highlights':[value_name]
-        }
-        obj[_KEY_RES_DISP] = result_display_obj
+        result_display_obj['date'] = date
+        
     elif _RT_MED_ADMIN == resource_type:
-        date = ''
         if 'effectiveDateTime' in obj:
             date = obj['effectiveDateTime']
         elif 'effectivePeriod_start' in obj:
@@ -642,18 +256,14 @@ def _to_result_obj(obj, prefix):
             if 'effectivePeriod_end' in obj:
                 end = obj['effectivePeriod_end']
                 date += ' to {0}'.format(end)
-        result_display_obj = {
-            'date':date,
-            'result_content':'Medication Administration: {0}'.format(value_name),
-            'sentence':'',
-            'highlights':[value_name]
-        }
-        obj[_KEY_RES_DISP] = result_display_obj
+        result_display_obj['date'] = date
+
+    obj[_KEY_RES_DISP] = result_display_obj
 
     # construct result object by prefixing all keys
     result = {}
     for k,v in obj.items():
-        new_k = '{0}_{1}'.format(prefix, k)
+        new_k = '{0}_{1}'.format(key_prefix, k)
         result[new_k] = v
 
     return result
@@ -913,7 +523,7 @@ class CQLExecutionTask(BaseTask):
                 print('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
                 return
 
-            if results is None:
+            if results is None or (0 == len(results)):
                 return
 
             # parse datetime_start, datetime_end time commands, if any, and
