@@ -24,6 +24,13 @@ else:
     from data_access.flatten import flatten
     from algorithms.finder import time_finder
 
+# exported for result display
+KEY_VALUE_NAME    = 'value_name'
+KEY_VALUE         = 'value'
+KEY_UNITS         = 'unit'
+KEY_DATE_TIME     = 'date_time'
+KEY_END_DATE_TIME = 'end_date_time'
+    
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 6
 _MODULE_NAME   = 'cql_result_parser.py'
@@ -38,9 +45,7 @@ _regex_datetime = re.compile(_str_datetime)
 
 _regex_coding = re.compile(r'\Acode_coding_(?P<num>\d)_')
 
-_KEY_DATE_TIME     = 'date_time'
 _KEY_END           = 'end'
-_KEY_END_DATE_TIME = 'end_date_time'
 _KEY_START         = 'start'
 
 _STR_RESOURCE_TYPE = 'resourceType'
@@ -236,11 +241,11 @@ def _decode_flattened_observation(obj):
     KEY_EP  = 'effectivePeriod'
     if KEY_EDT in obj:
         edt = obj[KEY_EDT]
-        obj[_KEY_DATE_TIME] = edt
+        obj[KEY_DATE_TIME] = edt
     if KEY_EP in obj:
         if _KEY_START in obj[KEY_EP]:
             start = obj[KEY_EP][_KEY_START]
-            obj[_KEY_DATE_TIME] = start
+            obj[KEY_DATE_TIME] = start
         if _KEY_END in obj[KEY_EP]:
             end = obj[KEY_EP][_KEY_END]
             obj[KEY_END_DATE_TIME] = end
@@ -267,6 +272,17 @@ def _decode_flattened_observation(obj):
             key = 'component_{0}_{1}'.format(i, field)
             _set_list_length(obj, key)
 
+    # set value and units for result display
+    KEY_VQ = 'valueQuantity_value'
+    KEY_VU = 'valueQuantity_unit'
+    KEY_DISP = 'code_coding_0_display'
+    if KEY_VQ in obj:
+        obj[KEY_VALUE] = obj[KEY_VQ]
+    if KEY_VU in obj:
+        obj[KEY_UNITS] = obj[KEY_VU]
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+        
     if _TRACE:
         _dump_dict(obj, '[AFTER] Flattened Observation: ')
             
@@ -289,11 +305,11 @@ def _decode_flattened_medication_administration(obj):
     KEY_EP  = 'effectiveTimePeriod'
     if KEY_EDT in obj:
         edt = obj[KEY_EDT]
-        obj[_KEY_DATE_TIME] = edt
+        obj[KEY_DATE_TIME] = edt
     if KEY_EP in obj:
         if _KEY_START in obj[KEY_EP]:
             start = obj[KEY_EP][_KEY_START]
-            obj[_KEY_DATE_TIME] = start
+            obj[KEY_DATE_TIME] = start
         if _KEY_END in obj[KEY_EP]:
             end = obj[KEY_EP][_KEY_END]
             obj[KEY_END_DATE_TIME] = end
@@ -315,6 +331,15 @@ def _decode_flattened_medication_administration(obj):
     _set_list_length(obj, 'dosage_route_coding')
     _set_list_length(obj, 'dosage_method_coding')
 
+    # set data for result display
+    KEY_DISP = 'medicationCodeableConcept_coding_0_display'
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+    else:
+        KEY_REF = 'medicationReference_display'
+        if KEY_REF in obj:
+            obj[KEY_VALUE_NAME] = obj[KEY_REF]
+    
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened MedicationAdministration: ')
 
@@ -336,12 +361,12 @@ def _decode_flattened_medication_order(obj):
     KEY_DW = 'dateWritten'
     if KEY_DW in obj:
         dw = obj[KEY_DW]
-        obj[_KEY_DATE_TIME] = dw
+        obj[KEY_DATE_TIME] = dw
 
     KEY_DE = 'dateEnded'
     if KEY_DE in obj:
         de = obj[KEY_DE]
-        obj[_KEY_END_DATE_TIME] = de
+        obj[KEY_END_DATE_TIME] = de
 
     _base_init(obj)
     _contained_med_resource_init(obj)
@@ -362,6 +387,15 @@ def _decode_flattened_medication_order(obj):
     _set_list_length(obj, 'substitution_type_coding')
     _set_list_length(obj, 'substitution_reason_coding')
 
+    # set data for result display
+    KEY_DISP = 'medicationCodeableConcept_coding_0_display'
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+    else:
+        KEY_REF = 'medicationReference_display'
+        if KEY_REF in obj:
+            obj[KEY_VALUE_NAME] = obj[KEY_REF]
+    
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened MedicationOrder: ')
 
@@ -383,7 +417,7 @@ def _decode_flattened_medication_statement(obj):
     KEY_DA = 'dateAsserted'
     if KEY_DA in obj:
         da = obj[KEY_DA]
-        obj[_KEY_DATE_TIME] = da
+        obj[KEY_DATE_TIME] = da
     
     _base_init(obj)
     _contained_med_resource_init(obj)
@@ -402,7 +436,16 @@ def _decode_flattened_medication_statement(obj):
                       'route_coding', 'method_coding']:
             key = 'dosage_{0}_{1}'.format(i, field)
             _set_list_length(obj, key)
-    
+
+    # set data for result display
+    KEY_DISP = 'medicationCodeableConcept_coding_0_display'
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+    else:
+        KEY_REF = 'medicationReference_display'
+        if KEY_REF in obj:
+            obj[KEY_VALUE_NAME] = obj[KEY_REF]
+
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Medication Statement: ')
 
@@ -428,17 +471,17 @@ def _decode_flattened_condition(obj):
     # add fields for time sorting
     if KEY_ODT in obj:
         odt = obj[KEY_ODT]
-        obj[_KEY_DATE_TIME] = odt
+        obj[KEY_DATE_TIME] = odt
     if KEY_ADT in obj:
         adt = obj[KEY_ADT]
-        obj[_KEY_END_DATE_TIME] = adt
+        obj[KEY_END_DATE_TIME] = adt
 
     if KEY_OP in obj:
         start = obj[KEY_OP][_KEY_START]
-        obj[_KEY_DATE_TIME] = start
+        obj[KEY_DATE_TIME] = start
     if KEY_AP in obj:
         end = obj[KEY_AP][_KEY_END]
-        obj[_KEY_END_DATE_TIME] = end
+        obj[KEY_END_DATE_TIME] = end
     
     _base_init(obj)
     _set_list_length(obj, 'code_coding')
@@ -455,6 +498,11 @@ def _decode_flattened_condition(obj):
         key_name = 'bodySite_{0}_coding'.format(i)
         _set_list_length(obj, key_name)
 
+    # set data for result display
+    KEY_DISP = 'code_coding_0_display'
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+        
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Condition: ')
 
@@ -478,15 +526,15 @@ def _decode_flattened_procedure(obj):
     if KEY_PDT in obj:
         # only a single timestamp
         pdt = obj[KEY_PDT]
-        obj[_KEY_DATE_TIME] = pdt
+        obj[KEY_DATE_TIME] = pdt
     if KEY_PP in obj:
         # period, one or both timestamps could be present
         if _KEY_START in obj[KEY_PP]:
             start = obj[KEY_PP][_KEY_START]
-            obj[_KEY_DATE_TIME] = start
+            obj[KEY_DATE_TIME] = start
         if _KEY_END in obj[KEY_PP]:
             end = obj[KEY_PP][_KEY_END]
-            obj[_KEY_END_DATE_TIME] = end
+            obj[KEY_END_DATE_TIME] = end
     
     _base_init(obj)
     _contained_med_resource_init(obj)
@@ -520,6 +568,11 @@ def _decode_flattened_procedure(obj):
         _set_list_length(obj, key_name)
     _set_list_length(obj, 'used')
 
+    # set data for result display
+    KEY_DISP = 'code_coding_0_display'
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+    
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Procedure: ')
 
@@ -593,7 +646,21 @@ def _decode_flattened_patient(obj):
 
     _set_list_length(flattened_patient, 'careProvider')
     _set_list_length(flattened_patient, 'link')
-        
+
+    # set data for result display
+    family = ''
+    if 'name_0_family' in flattened_patient:
+        family = flattened_patient['name_0_family']
+    elif 'name_0_family_0' in flattened_patient:
+        family = flattened_patient['name_0_family_0']
+    given = ''
+    if 'name_0_given' in flattened_patient:
+        given = flattened_patient['name_0_given']
+    elif 'name_0_given_0' in flattened_patient:
+        given = flattened_patient['name_0_given_0']
+    name = '{0}, {1}'.format(family, given)
+    flattened_patient[KEY_VALUE_NAME] = name
+    
     if _TRACE:
         _dump_dict(flattened_patient, '[AFTER] Flattened Patient resource: ')
 
