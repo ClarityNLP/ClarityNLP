@@ -49,10 +49,9 @@ _KEY_END           = 'end'
 _KEY_START         = 'start'
 
 # names for a DSTU2 and DSTU3 bundles seen from various FHIR servers
-_BUNDLE2_NAMES = ['FhirBundleCursorStu2', 'FhirBundleCursorDstu2']
-_BUNDLE3_NAMES = ['FhirBundleCursorStu3', 'FhirBundleCursorDstu3']
+#_BUNDLE2_NAMES = ['FhirBundleCursorStu2', 'FhirBundleCursorDstu2']
+#_BUNDLE3_NAMES = ['FhirBundleCursorStu3', 'FhirBundleCursorDstu3']
 
-_STR_PATIENT       = 'Patient'
 _STR_RESOURCE_TYPE = 'resourceType'
 
 
@@ -730,11 +729,13 @@ def _decode_bundle(name, bundle_obj, result_type_str):
     obj_type = type(obj)
     assert list == obj_type
 
+    rts = result_type_str.lower()
+    
     bundled_objs = []    
     for elt in obj:
-        if result_type_str in _BUNDLE2_NAMES:
+        if rts.endswith('stu2'):
             result = _process_dstu2_resource(elt)
-        elif result_type_str in _BUNDLE3_NAMES:
+        elif rts.endswith('stu3'):
             # process via the DSTU2 route for now...
             result = _process_dstu2_resource(elt)
         if result is not None:
@@ -752,6 +753,7 @@ def decode_top_level_obj(obj):
     KEY_NAME        = 'name'
     KEY_RESULT      = 'result'
     KEY_RESULT_TYPE = 'resultType'
+    STR_PATIENT     = 'patient'
     
     result_obj = None
     
@@ -764,16 +766,18 @@ def decode_top_level_obj(obj):
             name = obj[KEY_NAME]
         if KEY_RESULT_TYPE in obj and KEY_RESULT in obj:
             result_obj = obj[KEY_RESULT]
-            result_type_str = obj[KEY_RESULT_TYPE]
+            result_type_str = obj[KEY_RESULT_TYPE].lower()
             
-            if _STR_PATIENT == result_type_str:
+            if STR_PATIENT == result_type_str:
                 result_obj = _decode_dstu2_patient(result_obj)
                 if _TRACE: print('decoded patient')
-            elif result_type_str in _BUNDLE2_NAMES or result_type_str in _BUNDLE3_NAMES:
-                result_obj = _decode_bundle(name, result_obj, result_type_str)
             else:
-                if _TRACE: print('no decode')
-                result_obj = None
+                # check for DSTU2 or DSTU3 resource bundles
+                if result_type_str.endswith('stu2') or result_type_str.endswith('stu3'):    
+                    result_obj = _decode_bundle(name, result_obj, result_type_str)
+                else:
+                    if _TRACE: print('no decode')
+                    result_obj = None
     else:
         # don't know what else to expect here
         assert False
