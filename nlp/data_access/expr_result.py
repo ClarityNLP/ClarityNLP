@@ -191,7 +191,7 @@ def get_default_result_display(ret):
     ends = list()
     hl = list()
     for k, v in ret.items():
-        if not v or len(v) == '':
+        if not v or (hasattr(v, '__len__') and len(v) == ''):
             continue
         if k.startswith('report_date'):
             dates.append(v)

@@ -526,6 +526,16 @@ class CQLExecutionTask(BaseTask):
                 payload['terminologyPass'] = fhir_terminology_user_password
                 
             # perform the request here, catch lots of different exceptions
+
+            print('\n*** CQLExecutionTask: Request ***')
+            print('Headers: ')
+            for k,v in headers.items():
+                print('\t{0} => {1}'.format(k,v))
+            print('Payload: ')
+            for k,v in payload.items():
+                print('\t{0} => {1}'.format(k,v))
+            print()
+            
             has_error = False
             try:
                 r = requests.post(cql_eval_url, headers=headers, json=payload)
@@ -544,15 +554,20 @@ class CQLExecutionTask(BaseTask):
 
             if has_error:
                 print('HTTP error, terminating CQLExecutionTask...')
+                print('RESPONSE CONTENT')
+                print(r.content)
+                print('RESPONSE HEADERS')
+                print(r.headers)
                 return
                 
             print('Response status code: {0}'.format(r.status_code))
 
             results = None
             if 200 == r.status_code:
-                print('\n*** CQL JSON RESULTS ***\n')
-                print(r.json())
-                print()
+                if _TRACE:
+                    print('\n*** CQL JSON RESULTS ***\n')
+                    print(r.json())
+                    print()
 
                 # data_earliest == earliest datetime in the data
                 # data_latest   == latest datetime in the data
@@ -565,18 +580,18 @@ class CQLExecutionTask(BaseTask):
             if results is None or (0 == len(results)):
                 return
 
-            # parse datetime_start, datetime_end time commands, if any, and
-            # filter data to specified time window
-            datetime_start, datetime_end = _get_datetime_window(
-                self.pipeline_config.custom_arguments,
-                data_earliest,
-                data_latest
-            )
+            # # parse datetime_start, datetime_end time commands, if any, and
+            # # filter data to specified time window
+            # datetime_start, datetime_end = _get_datetime_window(
+            #     self.pipeline_config.custom_arguments,
+            #     data_earliest,
+            #     data_latest
+            # )
 
-            # remove results outside of the desired time window
-            results = _apply_datetime_filter(results, datetime_start, datetime_end)
-            print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
-                  format(len(results)))
+            # # remove results outside of the desired time window
+            # results = _apply_datetime_filter(results, datetime_start, datetime_end)
+            # print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
+            #       format(len(results)))
             
             for obj in results:
 

@@ -277,15 +277,19 @@ def _decode_dstu2_observation(obj):
             _set_list_length(obj, key)
 
     # set value and units for result display
-    KEY_VQ = 'valueQuantity_value'
-    KEY_VU = 'valueQuantity_unit'
-    KEY_DISP = 'code_coding_0_display'
+    KEY_VQ    = 'valueQuantity_value'
+    KEY_VU    = 'valueQuantity_unit'
+    KEY_DISP  = 'code_text'
+    KEY_DISP2 = 'code_coding_0_display'
     if KEY_VQ in obj:
         obj[KEY_VALUE] = obj[KEY_VQ]
     if KEY_VU in obj:
         obj[KEY_UNITS] = obj[KEY_VU]
+
     if KEY_DISP in obj:
         obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+    elif KEY_DISP2 in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP2]
         
     if _TRACE:
         _dump_dict(obj, '[AFTER] Flattened Observation: ')
