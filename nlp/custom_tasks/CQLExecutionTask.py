@@ -207,7 +207,7 @@ def _json_to_objs(json_obj):
 
 
 ###############################################################################
-def _to_result_obj(obj, key_prefix):
+def _to_result_obj(obj):
     """
     Insert the 'result_display' information and build the object to be written
     to MongoDB.
@@ -288,15 +288,9 @@ def _to_result_obj(obj, key_prefix):
 
     obj[_KEY_RES_DISP] = result_display_obj
 
-    # construct result object by prefixing all keys
-    result = {}
-    for k,v in obj.items():
-        new_k = '{0}_{1}'.format(key_prefix, k)
-        result[new_k] = v
+    return obj
 
-    return result
 
-    
 ###############################################################################
 def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     """
@@ -580,18 +574,18 @@ class CQLExecutionTask(BaseTask):
             if results is None or (0 == len(results)):
                 return
 
-            # # parse datetime_start, datetime_end time commands, if any, and
-            # # filter data to specified time window
-            # datetime_start, datetime_end = _get_datetime_window(
-            #     self.pipeline_config.custom_arguments,
-            #     data_earliest,
-            #     data_latest
-            # )
+            # parse datetime_start, datetime_end time commands, if any, and
+            # filter data to specified time window
+            datetime_start, datetime_end = _get_datetime_window(
+                self.pipeline_config.custom_arguments,
+                data_earliest,
+                data_latest
+            )
 
-            # # remove results outside of the desired time window
-            # results = _apply_datetime_filter(results, datetime_start, datetime_end)
-            # print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
-            #       format(len(results)))
+            # remove results outside of the desired time window
+            results = _apply_datetime_filter(results, datetime_start, datetime_end)
+            print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
+                  format(len(results)))
             
             for obj in results:
 
@@ -605,7 +599,7 @@ class CQLExecutionTask(BaseTask):
 
                 assert _KEY_RT in obj
                 resource_type = obj[_KEY_RT]
-                mongo_obj = _to_result_obj(obj, resource_type)
+                mongo_obj = _to_result_obj(obj)
 
                 self.write_result_data(temp_file, mongo_client, None, mongo_obj)
 
@@ -650,7 +644,7 @@ if __name__ == '__main__':
 
                 assert _KEY_RT in obj
                 resource_type = obj[_KEY_RT]
-                mongo_obj = _to_result_obj(obj, resource_type)
+                mongo_obj = _to_result_obj(obj)
 
                 # print to stdout
                 print('RESULT {0}'.format(counter))
