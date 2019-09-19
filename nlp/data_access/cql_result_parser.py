@@ -45,8 +45,11 @@ _regex_datetime = re.compile(_str_datetime)
 
 _regex_coding = re.compile(r'\Acode_coding_(?P<num>\d)_')
 
-_KEY_END           = 'end'
-_KEY_START         = 'start'
+_KEY_END         = 'end'
+_KEY_START       = 'start'
+_KEY_SUBJECT     = 'subject'
+_KEY_PATIENT_REF = 'patient_reference'
+_KEY_SUBJECT_REF = 'subject_reference'
 
 # names for a DSTU2 and DSTU3 bundles seen from various FHIR servers
 #_BUNDLE2_NAMES = ['FhirBundleCursorStu2', 'FhirBundleCursorDstu2']
@@ -290,6 +293,11 @@ def _decode_dstu2_observation(obj):
         obj[KEY_VALUE_NAME] = obj[KEY_DISP]
     elif KEY_DISP2 in obj:
         obj[KEY_VALUE_NAME] = obj[KEY_DISP2]
+
+    # set patient id
+    if _KEY_SUBJECT_REF in obj:
+        resource_type, patient_id = obj[_KEY_SUBJECT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
         
     if _TRACE:
         _dump_dict(obj, '[AFTER] Flattened Observation: ')
@@ -347,7 +355,12 @@ def _decode_dstu2_medication_administration(obj):
         KEY_REF = 'medicationReference_display'
         if KEY_REF in obj:
             obj[KEY_VALUE_NAME] = obj[KEY_REF]
-    
+
+    # set patient id
+    if _KEY_PATIENT_REF in obj:
+        resource_type, patient_id = obj[_KEY_PATIENT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
+            
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened MedicationAdministration: ')
 
@@ -403,7 +416,12 @@ def _decode_dstu2_medication_order(obj):
         KEY_REF = 'medicationReference_display'
         if KEY_REF in obj:
             obj[KEY_VALUE_NAME] = obj[KEY_REF]
-    
+
+    # set patient id
+    if _KEY_PATIENT_REF in obj:
+        resource_type, patient_id = obj[_KEY_PATIENT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
+            
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened MedicationOrder: ')
 
@@ -454,6 +472,11 @@ def _decode_dstu2_medication_statement(obj):
         if KEY_REF in obj:
             obj[KEY_VALUE_NAME] = obj[KEY_REF]
 
+    # set patient id
+    if _KEY_PATIENT_REF in obj:
+        resource_type, patient_id = obj[_KEY_PATIENT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
+            
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Medication Statement: ')
 
@@ -510,6 +533,11 @@ def _decode_dstu2_condition(obj):
     KEY_DISP = 'code_coding_0_display'
     if KEY_DISP in obj:
         obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+
+    # set patient id
+    if _KEY_PATIENT_REF in obj:
+        resource_type, patient_id = obj[_KEY_PATIENT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
         
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Condition: ')
@@ -580,7 +608,12 @@ def _decode_dstu2_procedure(obj):
     KEY_DISP = 'code_coding_0_display'
     if KEY_DISP in obj:
         obj[KEY_VALUE_NAME] = obj[KEY_DISP]
-    
+
+    # set patient ID
+    if _KEY_SUBJECT_REF in obj:
+        resource_type, patient_id = obj[_KEY_SUBJECT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
+        
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Procedure: ')
 
@@ -668,6 +701,10 @@ def _decode_dstu2_patient(obj):
         given = flattened_patient['name_0_given_0']
     name = '{0}, {1}'.format(family, given)
     flattened_patient[KEY_VALUE_NAME] = name
+
+    # set 'subject' field to the patient_id
+    if 'id' in flattened_patient:
+        flattened_patient[_KEY_SUBJECT] = str(flattened_patient['id'])
     
     if _TRACE:
         _dump_dict(flattened_patient, '[AFTER] Flattened Patient resource: ')
