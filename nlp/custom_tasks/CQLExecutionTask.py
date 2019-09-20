@@ -447,19 +447,21 @@ class CQLExecutionTask(BaseTask):
                 print('\n*** CQLExecutionTask: no CQL code was found ***\n')
                 return
             
-            fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
-                                                                'fhir_terminology_service_endpoint',
-                                                                job_id,
-                                                                self.pipeline_config.custom_arguments)
+            # fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
+            #                                                     'fhir_terminology_service_endpoint',
+            #                                                     job_id,
+            #                                                     self.pipeline_config.custom_arguments)
              
+            # if fhir_terminology_service_endpoint is None:
+            #     return
+            
             fhir_data_service_uri = _get_custom_arg(_FHIR_DATA_SERVICE_URI,
                                                     'fhir_data_service_uri',
                                                     job_id,
                                                     self.pipeline_config.custom_arguments)
-            if fhir_terminology_service_endpoint is None:
-                return
             
             if fhir_data_service_uri is None:
+                print('\n*** CQLExecutionTask: fhir_data_service is None ***')
                 return
 
             # ensure '/' termination
@@ -471,7 +473,7 @@ class CQLExecutionTask(BaseTask):
                 # the requests lib will properly escape the raw string
                 "fhirVersion":fhir_version,
                 "code":cql_code,
-                "fhirServiceUri":fhir_terminology_service_endpoint,
+                #"fhirServiceUri":fhir_terminology_service_endpoint,
                 "dataServiceUri":fhir_data_service_uri,
                 "patientId":patient_id,
             }
@@ -515,13 +517,13 @@ class CQLExecutionTask(BaseTask):
                                                              job_id,
                                                              self.pipeline_config.custom_arguments)
             
-            # setup terminology server capability
-            if fhir_terminology_service_uri is not None and \
-               fhir_terminology_user_name is not None and fhir_terminology_user_name != 'username' and \
-               fhir_terminology_user_password is not None and fhir_terminology_user_password != 'password':
-                payload['terminologyServiceUri'] = fhir_terminology_service_uri
-                payload['terminologyUser'] = fhir_terminology_user_name
-                payload['terminologyPass'] = fhir_terminology_user_password
+            # # setup terminology server capability
+            # if fhir_terminology_service_uri is not None and \
+            #    fhir_terminology_user_name is not None and fhir_terminology_user_name != 'username' and \
+            #    fhir_terminology_user_password is not None and fhir_terminology_user_password != 'password':
+            #     payload['terminologyServiceUri'] = fhir_terminology_service_uri
+            #     payload['terminologyUser'] = fhir_terminology_user_name
+            #     payload['terminologyPass'] = fhir_terminology_user_password
                 
             # perform the request here, catch lots of different exceptions
 
