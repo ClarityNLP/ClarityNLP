@@ -538,7 +538,8 @@ class CQLExecutionTask(BaseTask):
             
             has_error = False
             try:
-                r = requests.post(cql_eval_url, headers=headers, json=payload)
+                r = requests.post('https://gt-apps.hdap.gatech.edu/cql/evaluate', #cql_eval_url,
+                                  headers=headers, json=payload)
             except requests.exceptions.HTTPError as e:
                 print('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
                 has_error = True
