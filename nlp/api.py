@@ -3,6 +3,7 @@ from flask import Flask
 from flask_cors import CORS
 import util
 
+
 def create_app(config_filename=None):
 
     clarity_app = Flask(__name__)
@@ -21,8 +22,9 @@ def create_app(config_filename=None):
 
 
 # needs to be visible to Flask via import
-app = create_app()
-CORS(app)
+application = create_app()
+CORS(application)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, threaded=True, debug=util.debug_mode)
+    print('starting claritynlp api...')
+    application.run(host='0.0.0.0', port=5000, threaded=True, debug=util.debug_mode)
