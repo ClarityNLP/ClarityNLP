@@ -302,10 +302,14 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     if str_key in custom_arg_dict:
         value = custom_arg_dict[str_key]
 
-    if not value:
+    if value is None:
         if str_key in util.properties:
             value = util.properties[str_key]
 
+    # treat empty strings as None
+    if str == type(value) and 0 == len(value):
+        value = None
+            
     # echo in job status and in log file
     msg = 'CQLExecutionTask: {0} == {1}'.format(str_variable_name, value)
     data_access.update_job_status(job_id,
