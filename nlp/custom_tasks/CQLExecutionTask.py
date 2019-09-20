@@ -420,13 +420,13 @@ class CQLExecutionTask(BaseTask):
                       format(fhir_version))
                 return
             
-            # URL of the FHIR server's CQL evaluation endpoint
-            cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
-                                           'cql_eval_url',
-                                           job_id,
-                                           self.pipeline_config.custom_arguments)
-            if cql_eval_url is None:
-                return
+            # # URL of the FHIR server's CQL evaluation endpoint
+            # cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
+            #                                'cql_eval_url',
+            #                                job_id,
+            #                                self.pipeline_config.custom_arguments)
+            # if cql_eval_url is None:
+            #     return
             
             patient_id = _get_custom_arg(_FHIR_PATIENT_ID,
                                          'patient_id',
