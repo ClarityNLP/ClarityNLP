@@ -29,7 +29,7 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 10
 
 # set to True to enable debug output
-_TRACE = False
+_TRACE = True
 
 # names of custom args accessible to CQLExecutionTask
 
