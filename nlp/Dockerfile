@@ -19,4 +19,4 @@ RUN python3 install_models.py
 
 COPY . .
 
-CMD ["gunicorn", "api", "--config", "config.py", "-b", ":$NLP_API_CONTAINER_PORT"]
+CMD ["gunicorn", "api", "--config", "config.py", "-b", "$NLP_API_CONTAINER_PORT"]
