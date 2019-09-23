@@ -25,8 +25,9 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
 
     scheduler = util.luigi_scheduler
     print("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s --scheduler-url %s > %s 2>&1 &" % (
-        str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id), owner, scheduler, luigi_log)
+    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s" \
+           " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
+                                                owner, scheduler, luigi_log)
     try:
         call(func, shell=True)
     except Exception as ex:

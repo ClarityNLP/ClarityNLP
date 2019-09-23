@@ -392,6 +392,7 @@ def _apply_datetime_filter(samples, t0, t1):
 class CQLExecutionTask(BaseTask):
     
     task_name = "CQLExecutionTask"
+    parallel_task = False
         
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         

@@ -227,6 +227,7 @@ class BaseTask(luigi.Task):
     start = luigi.IntParameter()
     solr_query = luigi.Parameter()
     batch = luigi.IntParameter()
+    parallel_task = True
     task_name = "ClarityNLPLuigiTask"
     docs = list()
     pipeline_config = config.PipelineConfig('', '')
