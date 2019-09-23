@@ -173,7 +173,7 @@ class PipelineTask(luigi.Task):
                 matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
                            for n in ranges]
             else:
-                matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=0)]
+                matches = [task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)]
 
             return matches
         except Exception as ex:
