@@ -613,6 +613,23 @@ def _decode_dstu2_procedure(obj):
     if _KEY_SUBJECT_REF in obj:
         resource_type, patient_id = obj[_KEY_SUBJECT_REF].split('/')
         obj[_KEY_SUBJECT] = patient_id
+
+    # STU3 only
+    _set_list_length(obj, 'definition')
+    _set_list_length(obj, 'basedOn')
+    _set_list_length(obj, 'partOf')
+    _set_list_length(obj, 'reasonNotDone_coding')
+    reason_count = _set_list_length(obj, 'reasonCode')
+    for i in range(reason_count):
+        key_name = 'reasonCode_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'reasonReference')
+    _set_list_length(obj, 'complicationDetail')
+    _set_list_length(obj, 'note')
+    used_code_count = _set_list_length(obj, 'usedCode')
+    for i in range(used_code_count):
+        key_name = 'usedCode_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
         
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Procedure: ')
@@ -685,7 +702,10 @@ def _decode_dstu2_patient(obj):
         key_name = 'communication_{0}_language_coding'.format(i)
         _set_list_length(flattened_patient, key_name)
 
+    # DSTU2 uses 'careProvider'; DSTU3 uses 'generalPractitioner'
     _set_list_length(flattened_patient, 'careProvider')
+    _set_list_length(flattened_patient, 'generalPractitioner')
+    
     _set_list_length(flattened_patient, 'link')
 
     # set data for result display
