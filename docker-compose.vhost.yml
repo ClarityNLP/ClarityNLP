@@ -117,7 +117,7 @@ services:
       - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
       - --timeout=420
       - --
-    command: gunicorn api --config config.py -b :5000
+    command: gunicorn api --config config.py --timeout 500 -b :5000
     environment:
       - NLP_API_TMP_DIR=${NLP_API_TMP_DIR}
       - NLP_API_LOG_DIR=${NLP_API_LOG_DIR}

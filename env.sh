@@ -49,8 +49,8 @@ export SCHEDULER_HOST_PORT=8082
 export SCHEDULER_CONTAINER_PORT=8082
 export SCHEDULER_USERNAME=admin
 export SCHEDULER_PASSWORD=admin
-export LUIGI_WORKERS=1
-export LUIGI_URL=http://localhost:8082
+export LUIGI_WORKERS=5
+export LUIGI_URL=http://scheduler:8082
 export LUIGI_SCHEDULER_URL=http://scheduler:8082
 export SCHEDULER_PREFIX=luigi
 
