@@ -529,6 +529,19 @@ def _decode_dstu2_condition(obj):
         key_name = 'bodySite_{0}_coding'.format(i)
         _set_list_length(obj, key_name)
 
+    # DSTU3 only
+    category_count = _set_list_length(obj, 'category')
+    for i in range(category_count):
+        key_name = 'category_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    for i in range(evidence_len):
+        key_name = 'evidence_{0}_code'
+        code_len = _set_list_length(obj, key_name)
+        for j in range(code_len):
+            key2_name = '{0}_{1}_coding'.format(key_name, j)
+            _set_list_length(obj, key2_name)
+    note_count = _set_list_length(obj, 'note')
+        
     # set data for result display
     KEY_DISP = 'code_coding_0_display'
     if KEY_DISP in obj:
@@ -604,17 +617,7 @@ def _decode_dstu2_procedure(obj):
         _set_list_length(obj, key_name)
     _set_list_length(obj, 'used')
 
-    # set data for result display
-    KEY_DISP = 'code_coding_0_display'
-    if KEY_DISP in obj:
-        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
-
-    # set patient ID
-    if _KEY_SUBJECT_REF in obj:
-        resource_type, patient_id = obj[_KEY_SUBJECT_REF].split('/')
-        obj[_KEY_SUBJECT] = patient_id
-
-    # STU3 only
+    # DSTU3 only
     _set_list_length(obj, 'definition')
     _set_list_length(obj, 'basedOn')
     _set_list_length(obj, 'partOf')
@@ -630,6 +633,16 @@ def _decode_dstu2_procedure(obj):
     for i in range(used_code_count):
         key_name = 'usedCode_{0}_coding'.format(i)
         _set_list_length(obj, key_name)
+    
+    # set data for result display
+    KEY_DISP = 'code_coding_0_display'
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+
+    # set patient ID
+    if _KEY_SUBJECT_REF in obj:
+        resource_type, patient_id = obj[_KEY_SUBJECT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
         
     if _TRACE:
         _dump_dict(obj, '[AFTER]: Flattened Procedure: ')
