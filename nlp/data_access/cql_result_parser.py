@@ -160,7 +160,7 @@ def _set_list_length(obj, prefix_str):
     """
 
     str_search = r'\A' + prefix_str + r'_(?P<num>\d+)_?'
-    
+
     max_num = None
     for k,v in obj.items():
         match = re.match(str_search, k)
@@ -535,11 +535,14 @@ def _decode_dstu2_condition(obj):
         key_name = 'category_{0}_coding'.format(i)
         _set_list_length(obj, key_name)
     for i in range(evidence_len):
-        key_name = 'evidence_{0}_code'
+        key_name = 'evidence_{0}_code'.format(i)
         code_len = _set_list_length(obj, key_name)
         for j in range(code_len):
             key2_name = '{0}_{1}_coding'.format(key_name, j)
-            _set_list_length(obj, key2_name)
+            coding_len = _set_list_length(obj, key2_name)
+            for k in range(coding_len):
+                key3_name = '{0}_{1}_coding'.format(key2_name, k)
+                _set_list_length(obj, key3_name)
     note_count = _set_list_length(obj, 'note')
         
     # set data for result display
