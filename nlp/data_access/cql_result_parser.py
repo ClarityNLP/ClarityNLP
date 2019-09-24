@@ -250,7 +250,25 @@ def _contained_med_resource_init(obj):
             key2_name = '{0}_{1}_coding'.format(key_name, j)
             _set_list_length(obj, key2_name)
     
-    
+
+###############################################################################
+def _set_dosage_fields(obj, dosage_field_name):
+    """
+    Set list lengths for a FHIR DSTU3 Dosage embedded resource.
+    """
+
+    dosage_count = _set_list_length(obj, dosage_field_name)
+    for i in range(dosage_count):
+        key_name = '{0}_{1}_additionalInstruction'.format(dosage_field_name, i)
+        count_j = _set_list_length(obj, key_name)
+        for j in range(count_j):
+            key2_name = '{0}_{1}_coding'.format(key_name, j)
+            _set_list_length(obj, key2_name)
+        for field in ['site', 'route', 'method']:
+            key_name = '{0}_{1}_{2}_coding'.format(dosage_field_name, i, field)
+            _set_list_length(obj, key_name)
+        
+            
 ###############################################################################
 def _decode_dstu2_observation(obj):
     """
@@ -384,7 +402,63 @@ def _decode_dstu2_medication_administration(obj):
         _dump_dict(obj, '[AFTER]: Flattened MedicationAdministration: ')
 
     return obj
+
+
+###############################################################################
+def _decode_medication_request(obj):
+    """
+    Decode a flattened FHIR 'MedicationRequest' resource.
+    """
+
+    assert dict == type(obj)
+
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened MedicationRequest: ')
+    
+    # add fields for time sorting
+    KEY_DW = 'authoredOn'
+    if KEY_DW in obj:
+        dw = obj[KEY_DW]
+        obj[KEY_DATE_TIME] = dw
+
+    _base_init(obj)
+    _contained_med_resource_init(obj)
+
+    _set_list_length(obj, 'definition')
+    _set_list_length(obj, 'basedOn')
+    _set_list_length(obj, 'groupIdentifier_type_coding')
+    _set_list_length(obj, 'category_coding')
+    _set_list_length(obj, 'medicationCodeableConcept_coding')
+    _set_list_length(obj, 'supportingInformation')
+    rc_count = _set_list_length(obj, 'reasonCode')
+    for i in range(rc_count):
+        key_name = 'reasonCode_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'reasonReference')
+    _set_list_length(obj, 'note')
+    _set_dosage_fields(obj, 'dosageInstruction')
+    _set_list_length(obj, 'detectedIssue')
+    _set_list_length(obj, 'eventHistory')
+    
+    # set data for result display
+    KEY_DISP = 'medicationCodeableConcept_coding_0_display'
+    if KEY_DISP in obj:
+        obj[KEY_VALUE_NAME] = obj[KEY_DISP]
+    else:
+        KEY_REF = 'medicationReference_display'
+        if KEY_REF in obj:
+            obj[KEY_VALUE_NAME] = obj[KEY_REF]
+
+    # set patient id
+    if _KEY_PATIENT_REF in obj:
+        resource_type, patient_id = obj[_KEY_PATIENT_REF].split('/')
+        obj[_KEY_SUBJECT] = patient_id
             
+    if _TRACE:
+        _dump_dict(obj, '[AFTER]: Flattened MedicationRequest: ')
+
+    return obj
+
     
 ###############################################################################
 def _decode_dstu2_medication_order(obj):
@@ -819,6 +893,8 @@ def _process_dstu2_resource(obj):
             result = _decode_dstu2_medication_statement(flattened_obj)
         elif 'MedicationOrder' == rt:
             result = _decode_dstu2_medication_order(flattened_obj)
+        elif 'MedicationRequest' == rt:
+            result = _decode_medication_request(flattened_obj)
         elif 'MedicationAdministration' == rt:
             result = _decode_dstu2_medication_administration(flattened_obj)
 
