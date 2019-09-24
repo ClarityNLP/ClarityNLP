@@ -384,6 +384,20 @@ def _decode_dstu2_medication_administration(obj):
     _set_list_length(obj, 'dosage_route_coding')
     _set_list_length(obj, 'dosage_method_coding')
 
+    # DSTU3
+    _set_list_length(obj, 'definition')
+    _set_list_length(obj, 'partOf')
+    _set_list_length(obj, 'category_coding')
+    _set_list_length(obj, 'supportingInformation')
+    _set_list_length(obj, 'performer')
+    reason_count = _set_list_length(obj, 'reasonCode')
+    for i in range(reason_count):
+        key_name = 'reasonCode_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'reasonReference')
+    _set_list_length(obj, 'note')
+    _set_list_length(obj, 'eventHistory')
+    
     # set data for result display
     KEY_DISP = 'medicationCodeableConcept_coding_0_display'
     if KEY_DISP in obj:
