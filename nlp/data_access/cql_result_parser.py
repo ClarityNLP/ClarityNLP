@@ -230,7 +230,26 @@ def _contained_med_resource_init(obj):
                 'package_content']:
             key_name = 'contained_{0}_{1}'.format(i, field)
             _set_list_length(obj, key_name)
-            
+
+    # DSTU3
+    for i in range(contained_count):
+        for field in ['form_coding', 'package_batch', 'image']:
+            key_name = 'contained_{0}_{1}'.format(i, field)
+            _set_list_length(obj, key_name)
+
+        key_name = 'contained_{0}_ingredient'.format(i)
+        ingredient_count = _set_list_length(obj, key_name)
+        for j in range(ingredient_count):
+            key2_name = '{0}_{1}_itemCodeableConcept_coding'.format(key_name, j)
+            len_k = _set_list_length(obj, key2_name)
+        key_name = 'contained_{0}_package_container_coding'.format(i)
+        _set_list_length(obj, key_name)
+        key_name = 'contained_{0}_package_content'.format(i)
+        len_j = _set_list_length(obj, key_name)
+        for j in range(len_j):
+            key2_name = '{0}_{1}_coding'.format(key_name, j)
+            _set_list_length(obj, key2_name)
+    
     
 ###############################################################################
 def _decode_dstu2_observation(obj):
@@ -463,6 +482,29 @@ def _decode_dstu2_medication_statement(obj):
             key = 'dosage_{0}_{1}'.format(i, field)
             _set_list_length(obj, key)
 
+    # DSTU3 only
+    _set_list_length(obj, 'basedOn')
+    _set_list_length(obj, 'partOf')
+    category_count = _set_list_length(obj, 'category')
+    for i in range(category_count):
+        key_name = 'category_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'derivedFrom')
+    reason_code_count = _set_list_length(obj, 'reasonCode')
+    for i in range(reason_code_count):
+        key_name = 'reasonCode_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    reason_ref_count = _set_list_length(obj, 'reasonReference')
+    _set_list_length(obj, 'note')
+    for i in range(dosage_count):
+        key_name = 'dosage_{0}_additionalInstruction'.format(i)
+        count_j = _set_list_length(obj, key_name)
+        for j in range(count_j):
+            key2_name = '{0}_{1}_coding'.format(key_name, j)
+            _set_list_length(obj, key2_name)
+        key_name = 'site_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    
     # set data for result display
     KEY_DISP = 'medicationCodeableConcept_coding_0_display'
     if KEY_DISP in obj:
