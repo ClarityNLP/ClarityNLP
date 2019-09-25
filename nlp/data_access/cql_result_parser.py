@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Module used to decode JSON results from the FHIR CQL wrapper.
+Module used to process JSON results from the FHIR CQL Engine. The CQL Engine
+project can be found here:
+
+    https://github.com/gt-health/cql_execution_service
 """
 
 import re
@@ -32,7 +35,7 @@ KEY_DATE_TIME     = 'date_time'
 KEY_END_DATE_TIME = 'end_date_time'
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -51,10 +54,6 @@ _KEY_SUBJECT     = 'subject'
 _KEY_PATIENT_REF = 'patient_reference'
 _KEY_SUBJECT_REF = 'subject_reference'
 
-# names for a DSTU2 and DSTU3 bundles seen from various FHIR servers
-#_BUNDLE2_NAMES = ['FhirBundleCursorStu2', 'FhirBundleCursorDstu2']
-#_BUNDLE3_NAMES = ['FhirBundleCursorStu3', 'FhirBundleCursorDstu3']
-
 _STR_RESOURCE_TYPE = 'resourceType'
 _CHAR_FWDSLASH = '/'
 
@@ -69,7 +68,7 @@ def enable_debug():
 ###############################################################################
 def _dump_dict(dict_obj, msg=None):
     """
-    Print to stdout the key-value pairs for the given dict.
+    Print the key-value pairs for the given dict to stdout.
     """
 
     assert dict == type(dict_obj)
@@ -215,12 +214,8 @@ def _base_init(obj):
 ###############################################################################        
 def _contained_med_resource_init(obj):
     """
-    Decode a flattened FHIR DSTU2 Medication resource. These appear only as
-    contained resources in the CarePlan, Group, MedicationAdministration,
-    MedicationDispense, MedicationOrder, MedicationStatement, Procedure,
-    SupplyDelivery, and SupplyRequest resources.
-
-    For more info see: http://hl7.org/fhir/DSTU2/medication.html.
+    Process a flattened FHIR Medication resource, which appears only as a
+    contained resource inside other FHIR resources. 
     """
 
     contained_count = _set_list_length(obj, 'contained')
@@ -271,9 +266,9 @@ def _set_dosage_fields(obj, dosage_field_name):
         
             
 ###############################################################################
-def _decode_observation(obj):
+def _process_observation(obj):
     """
-    Decode a flattened FHIR 'Observation' resource.
+    Process a flattened FHIR 'Observation' resource.
     """
 
     assert dict == type(obj)
@@ -296,7 +291,6 @@ def _decode_observation(obj):
             obj[KEY_END_DATE_TIME] = end
 
     _base_init(obj)
-    # could have a contained Patient resource - TBD
     _set_list_length(obj, 'category_coding')
     _set_list_length(obj, 'code_coding')
     _set_list_length(obj, 'performer')
@@ -319,6 +313,7 @@ def _decode_observation(obj):
             _set_list_length(obj, key)
 
     # DSTU3
+    # could have a contained Patient resource - TBD
     _set_list_length(obj, 'basedOn')
     category_count = _set_list_length(obj, 'category')
     for i in range(category_count):
@@ -366,9 +361,9 @@ def _decode_observation(obj):
 
 
 ###############################################################################
-def _decode_medication_administration(obj):
+def _process_medication_administration(obj):
     """
-    Decode a flattened FHIR DSTU2 'MedicationAdministration' resource.
+    Process a flattened FHIR 'MedicationAdministration' resource.
     """
 
     assert dict == type(obj)
@@ -447,9 +442,9 @@ def _decode_medication_administration(obj):
 
 
 ###############################################################################
-def _decode_medication_request(obj):
+def _process_medication_request(obj):
     """
-    Decode a flattened FHIR 'MedicationRequest' resource.
+    Process a flattened FHIR 'MedicationRequest' resource.
     """
 
     assert dict == type(obj)
@@ -508,9 +503,9 @@ def _decode_medication_request(obj):
 
     
 ###############################################################################
-def _decode_medication_order(obj):
+def _process_medication_order(obj):
     """
-    Decode a flattened FHIR DSTU2 'MedicationOrder' resource.
+    Process a flattened FHIR 'MedicationOrder' resource.
     """
 
     assert dict == type(obj)
@@ -574,9 +569,9 @@ def _decode_medication_order(obj):
                 
 
 ###############################################################################
-def _decode_medication_statement(obj):
+def _process_medication_statement(obj):
     """
-    Decode a flattened FHIR DSTU2 'MedicationStatement' resource.
+    Process a flattened FHIR 'MedicationStatement' resource.
     """
 
     assert dict == type(obj)
@@ -657,9 +652,9 @@ def _decode_medication_statement(obj):
 
 
 ###############################################################################
-def _decode_condition(obj):
+def _process_condition(obj):
     """
-    Decode a flattened FHIR DSTU2 'Condition' resource.
+    Process a flattened FHIR 'Condition' resource.
     """
 
     assert dict == type(obj)
@@ -740,9 +735,9 @@ def _decode_condition(obj):
     
 
 ###############################################################################
-def _decode_procedure(obj):
+def _process_procedure(obj):
     """
-    Decode a flattened FHIR DSTU2 'Procedure' resource.
+    Process a flattened FHIR 'Procedure' resource.
     """
 
     assert dict == type(obj)
@@ -837,15 +832,15 @@ def _decode_procedure(obj):
     
 
 ###############################################################################
-def _decode_patient(obj):
+def _process_patient(obj):
     """
-    Flatten and decode a FHIR DSTU2 'Patient' resource.
+    Process a FHIR 'Patient' resource.
     """
 
     obj_type = type(obj)
     if str == obj_type:
+        
         # not flattened yet
-
         try:
             obj = json.loads(obj)
         except json.decoder.JSONDecoderError as e:
@@ -932,9 +927,9 @@ def _decode_patient(obj):
 
 
 ###############################################################################
-def _process_dstu2_resource(obj):
+def _process_resource(obj):
     """
-    Flatten and decode a FHIR DSTU2 resource.
+    Flatten and process FHIR resources of the indicated types.
     """
 
     obj_type = type(obj)
@@ -949,29 +944,29 @@ def _process_dstu2_resource(obj):
     if _STR_RESOURCE_TYPE in flattened_obj:
         rt = obj[_STR_RESOURCE_TYPE]
         if 'Patient' == rt:
-            result = _decode_patient(flattened_obj)
+            result = _process_patient(flattened_obj)
         elif 'Observation' == rt:
-            result = _decode_observation(flattened_obj)
+            result = _process_observation(flattened_obj)
         elif 'Procedure' == rt:
-            result = _decode_procedure(flattened_obj)
+            result = _process_procedure(flattened_obj)
         elif 'Condition' == rt:
-            result = _decode_condition(flattened_obj)
+            result = _process_condition(flattened_obj)
         elif 'MedicationStatement' == rt:
-            result = _decode_medication_statement(flattened_obj)
+            result = _process_medication_statement(flattened_obj)
         elif 'MedicationOrder' == rt:
-            result = _decode_medication_order(flattened_obj)
+            result = _process_medication_order(flattened_obj)
         elif 'MedicationRequest' == rt:
-            result = _decode_medication_request(flattened_obj)
+            result = _process_medication_request(flattened_obj)
         elif 'MedicationAdministration' == rt:
-            result = _decode_medication_administration(flattened_obj)
+            result = _process_medication_administration(flattened_obj)
 
     return result
     
 
 ###############################################################################
-def _decode_bundle(name, bundle_obj, result_type_str):
+def _process_bundle(name, bundle_obj, result_type_str):
     """
-    Decode a CQL Engine bundle object.
+    Process a DSTU2 or DSTU3 resource bundle returned from the CQL Engine.
     """
 
     if _TRACE: print('Decoding BUNDLE resource...')
@@ -995,11 +990,8 @@ def _decode_bundle(name, bundle_obj, result_type_str):
     
     bundled_objs = []    
     for elt in obj:
-        if rts.endswith('stu2'):
-            result = _process_dstu2_resource(elt)
-        elif rts.endswith('stu3'):
-            # process via the DSTU2 route for now...
-            result = _process_dstu2_resource(elt)
+        if rts.endswith('stu2') or rts.endswith('stu3'):
+            result = _process_resource(elt)
         if result is not None:
             bundled_objs.append(result)
     
@@ -1009,7 +1001,8 @@ def _decode_bundle(name, bundle_obj, result_type_str):
 ###############################################################################
 def decode_top_level_obj(obj):
     """
-    Decode the outermost object type returned by the CQL Engine.
+    Decode the outermost object type returned by the CQL Engine and process
+    accordingly.
     """
 
     KEY_NAME        = 'name'
@@ -1031,17 +1024,21 @@ def decode_top_level_obj(obj):
             result_type_str = obj[KEY_RESULT_TYPE].lower()
             
             if STR_PATIENT == result_type_str:
-                result_obj = _decode_patient(result_obj)
+                result_obj = _process_patient(result_obj)
                 if _TRACE: print('decoded patient')
             else:
                 # check for DSTU2 or DSTU3 resource bundles
-                if result_type_str.endswith('stu2') or result_type_str.endswith('stu3'):    
-                    result_obj = _decode_bundle(name, result_obj, result_type_str)
+                if result_type_str.endswith('stu2') or \
+                   result_type_str.endswith('stu3'):    
+                    result_obj = _process_bundle(name,
+                                                 result_obj,
+                                                 result_type_str)
                 else:
-                    if _TRACE: print('no decode')
+                    if _TRACE: print('\n*** decode_top_level_object: ' \
+                                     'no decode ***')
                     result_obj = None
     else:
-        # don't know what else to expect here
+        # not sure what else to expect here
         assert False
 
     return result_obj
@@ -1056,7 +1053,7 @@ def _get_version():
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-        description='Decode Cerner DSTU2 FHIR resource examples')
+        description='Flatten and process FHIR resource examples')
 
     parser.add_argument('-v', '--version',
                         action='store_true',
@@ -1087,7 +1084,7 @@ if __name__ == '__main__':
         json_string = infile.read()
         json_data = json.loads(json_string)
 
-        result = _process_dstu2_resource(json_data)
+        result = _process_resource(json_data)
 
         print('RESULT: ')
         if result is not None:
