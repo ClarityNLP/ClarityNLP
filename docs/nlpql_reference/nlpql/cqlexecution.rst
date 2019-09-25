@@ -205,7 +205,7 @@ Arguments
 =================================  ===================  ========= ======================================
 documentset                        :ref:`documentset`   Yes       Documents for a SINGLE patient only.
 task_index                         int                  Yes       Each CQLExecutionTask statement must have a unique value of this index.
-fhir_version                       str                  No        Either "DSTU2" (default) or "DSTU3"
+fhir_version                       str                  No        Either "DSTU2" (default) or "STU3"
 patient_id                         str                  Yes       CQL query executed on FHIR server for this patient.
 cql_eval_url                       str                  Yes       See table above.
 fhir_data_service_uri              str                  Yes       See table above.

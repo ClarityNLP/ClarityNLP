@@ -33,7 +33,7 @@ _TRACE = True
 
 # names of custom args accessible to CQLExecutionTask
 
-_FHIR_VERSION          = 'fhir_version'            # "DSTU2" or "DSTU3"
+_FHIR_VERSION          = 'fhir_version'            # "DSTU2" or "STU3"
 _FHIR_CQL_EVAL_URL     = 'cql_eval_url'            # https://gt-apps.hdap.gatech.edu/cql/evaluate
 _FHIR_PATIENT_ID       = 'patient_id'              # 
 _FHIR_DATA_SERVICE_URI = 'fhir_data_service_uri'   # https://apps.hdap.gatech.edu/gt-fhir/fhir/
@@ -416,7 +416,8 @@ class CQLExecutionTask(BaseTask):
                 print('\n*** CQLExecutionTask: using fhir_version == DSTU2 ***')
                 fhir_version = "DSTU2"
 
-            if fhir_version != "DSTU2" and fhir_version != "DSTU3":
+            fhir_version = fhir_version.lower()
+            if not fhir_version.endswith('stu2') and not fhir_version.endswith('stu3'):
                 print('\n*** CQLExecutionTask: fhir_version "{0}" is invalid ***'.
                       format(fhir_version))
                 return
