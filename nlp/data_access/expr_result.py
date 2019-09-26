@@ -206,6 +206,13 @@ def get_default_result_display(ret):
         if k.startswith('end_'):
             ends.append(v)
 
+    # flatten any nested lists
+    dates     = flatten(dates)
+    sentences = flatten(sentences)
+    starts    = flatten(starts)
+    ends      = flatten(ends)
+    hl        = flatten(hl)
+    
     if len(dates) > 0:
         if all(x == dates[0] for x in dates):
             rd['date'] = dates[0]
