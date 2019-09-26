@@ -837,9 +837,8 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
 
 
 def validate_phenotype(p_cfg: PhenotypeModel):
-    # TODO a lot more checks need to be done
     error = None
-
+    
     try:
         if not error:
             if not p_cfg:
@@ -853,6 +852,26 @@ def validate_phenotype(p_cfg: PhenotypeModel):
         print(ex)
         error = ''.join(traceback.format_stack())
 
+    # Run validity and syntax checks on all expressions, ensure that only
+    # defined names are used as variables, etc.
+
+    name_list = get_all_names(p_cfg)
+
+    # get raw text of all expressions
+    KEY_RAW  = 'raw_text'    
+    expression_list = []    
+    for op in p_cfg.operations:
+        if KEY_RAW in op:
+            expression_list.append(op[KEY_RAW])
+    
+    for expr in expression_list:
+        # The 'parse_result' is a string of whitespace-separated expression
+        # tokens. Invalid expressions cause an empty string to be returned.
+        parse_result = expr_eval.parse_expression(expr, name_list)
+        if 0 == len(parse_result):
+            error = 'Invalid expression: {0}'.format(expr)
+            break
+    
     if not error:
         return {"success": True}
     else:
