@@ -81,8 +81,10 @@ class PhenotypeEntity(dict):
 
 class PhenotypeOperations(dict):
 
-    def __init__(self, name: str, action: str, data_entities: list, final: bool = False, raw_text: str = ''):
-        dict.__init__(self, name=name, action=action, data_entities=data_entities, final=final, raw_text=raw_text)
+    def __init__(self, name: str, action: str, data_entities: list, final: bool = False,
+                 raw_text: str = '', normalized_expr: str = ''):
+        dict.__init__(self, name=name, action=action, data_entities=data_entities, final=final,
+                      raw_text=raw_text, normalized_expr=normalized_expr)
 
 
 class PhenotypeModel(BaseModel):
