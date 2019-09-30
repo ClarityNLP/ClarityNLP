@@ -1,18 +1,20 @@
 .. _cqlexecutiontask:
 
 Clarity.CQLExecutionTask
-========================
+************************
 
 Description
 -----------
 
 This is a custom task that allows ClarityNLP to execute
 `CQL <https://cql.hl7.org/>`_ (Clinical Quality Language) queries embedded in
-NLPQL files. ClarityNLP directs CQL code to a FHIR
+NLPQL files. ClarityNLP directs CQL code to a running instance of the
+`CQL Engine <https://github.com/gt-health/cql_execution_service>`_, which
+processes the CQL and translates it into requests for a FHIR 
 `(Fast Healthcare Interoperability Resources) <https://www.hl7.org/fhir/overview.html>`_
-server, which runs the query and retrieves structured data for a **single**
-patient. The data returned from the CQL query appears in the job results for
-the NLPQL file.
+server. The FHIR server runs the query and retrieves structured data for
+a **single** patient. The data returned from the CQL query appears in the
+results for the job associated with the NLPQL file.
 
 The CQL query requires several FHIR-related parameters, such as the patient
 ID, the URL of the FHIR server, and several others to be described below.
@@ -45,26 +47,20 @@ the CQL query specifies the structured data for the patient.
 Relevant FHIR Parameters
 ------------------------
 
-These parameters are needed to connect to the FHIR server, evaluate the CQL
-statements, and retrieve the results. They can be provided directly as
-parameters in the ``CQLExecutionTask`` statement (see below), or indirectly
-via `ClarityNLPaaS <https://github.com/ClarityNLP/ClarityNLPaaS>`_:
+These parameters are needed to connect to the CQL Engine and the FHIR server,
+evaluate the CQL statements, and retrieve the results. They can be provided
+directly as parameters in the ``CQLExecutionTask`` statement (see below), or
+indirectly via `ClarityNLPaaS <https://github.com/ClarityNLP/ClarityNLPaaS>`_:
 
-=================================  ==================
+=================================  =================================================
 Parameter                          Meaning
-=================================  ==================
+=================================  =================================================
+fhir_version                       Either DSTU2 or DSTU3
 cql_eval_url                       URL of the FHIR server's CQL Execution Service
 patient_id                         Unique ID of patient whose data will be accessed
-fhir_data_service_uri              FHIR service base URL
-fhir_terminology_service_endpoint  Set to ``Terminology Service Endpoint``
-fhir_terminology_service_uri       URI for a service that conforms to the FHIR Terminology Service Capability Statement
-fhir_terminology_user_name         Username for terminology service authentication
-fhir_terminology_user_password     Password for terminology service authentication
-=================================  ==================
-
-The terminology user name and password parameters may not be required,
-depending on whether or not the terminology server enforces password
-authentication.
+fhir_data_service_uri              FHIR server base URL
+cql                                CQL code surrounded by """ (triple quotes)
+=================================  =================================================
 
 Time Filtering
 --------------
@@ -137,16 +133,19 @@ invocations of ``Clarity.CQLExecutionTask``. Each of these should have
 a ``task_index`` parameter, and they should be numbered sequentially starting
 with 0.  In other words, each ``define`` statement containing an invocation
 of ``Clarity.CQLExecutionTask`` should have a unique value for the zero-based
-``task_index``.
+``task_index``. If you limit your CQL use to a single query per NLPQL file,
+the value of ``task_index`` should always be set to 0.
 
 The ``patient_id`` parameter identifies the patient whose data will be accessed
 by the CQL query. This ID should match that specified in the documentset
 creation statement.
 
 The remaining parameters from the table above are set to values appropriate for
-GA Tech's FHIR infrastructure.
+GA Tech's FHIR infrastructure. You should change them to match your FHIR
+installation.
 
-The ``cql`` parameter is a triple-quoted string containing the CQL query.
+The ``cql`` parameter is a triple-quoted string containing the CQL query. the
+triple quotes can be comprised of either single or double quotes.
 This CQL code is assumed to be syntactically correct and is passed to the FHIR
 server's CQL evaluation service unaltered. All CQL code should be checked for
 syntax errors and other problems prior to its use in an NLPQL file.
@@ -164,13 +163,10 @@ This example omits the optional time window parameters.
         Clarity.CQLExecutionTask({
             documentset: [PatientDocs],
             "task_index": 0,
+            "fhir_version":"DSTU2",
             "patient_id":"99999",
             "cql_eval_url":"https://gt-apps.hdap.gatech.edu/cql/evaluate",
             "fhir_data_service_uri":"https://apps.hdap.gatech.edu/gt-fhir/fhir/",
-            "fhir_terminology_service_uri":"https://cts.nlm.nih.gov/fhir/",
-            "fhir_terminology_service_endpoint":"Terminology Service Endpoint",
-            "fhir_terminology_user_name":"username",
-            "fhir_terminology_user_password":"password",
             cql: """
                  library Retrieve2 version '1.0'
 
@@ -209,14 +205,11 @@ Arguments
 =================================  ===================  ========= ======================================
 documentset                        :ref:`documentset`   Yes       Documents for a SINGLE patient only.
 task_index                         int                  Yes       Each CQLExecutionTask statement must have a unique value of this index.
+fhir_version                       str                  No        Either "DSTU2" (default) or "STU3"
 patient_id                         str                  Yes       CQL query executed on FHIR server for this patient.
 cql_eval_url                       str                  Yes       See table above.
 fhir_data_service_uri              str                  Yes       See table above.
-fhir_terminology_service_uri       str                  Yes       See table above.
-fhir_terminology_service_endpoint  str                  Yes       See table above.
 cql                                triple-quoted str    Yes       Properly-formatted CQL query, sent verbatim to FHIR server.
-fhir_terminology_user_name         str                  No        Optional, depends on configuration of terminology server
-fhir_terminology_user_password     str                  No        Optional, depends on configuration of terminology server
 time_start                         str                  No        Optional, discard results with timestamp < time_start
 time_end                           str                  No        Optional, discard results with timestamp > time_end
 =================================  ===================  ========= ======================================
@@ -225,92 +218,184 @@ Results
 -------
 
 The specific fields returned by the CQL query are dependent on the type of FHIR
-resource that contains the data. ClarityNLP can decode these FHIR resource types:
-``Patient``, ``Procedure``, ``Condition``, and ``Observation``. It can also decode
-bundles of these resource types.
+resource that contains the data. ClarityNLP can process the FHIR resources in
+the next table:
 
-Fields in the MongoDB result documents are prefixed with the type of FHIR resource
-from which they were taken except for the ``datetime`` field, which omits the
-prefix to enable date-based sorting. The prefixes for each are:
++--------------------------+
+| FHIR Resource Type       |
++==========================+
+| Patient                  |
++--------------------------+
+| Procedure                |
++--------------------------+
+| Condition                |
++--------------------------+
+| Observation              |
++--------------------------+
+| MedicationOrder          |
++--------------------------+
+| MedicationRequest        |
++--------------------------+
+| MedicationStatement      |
++--------------------------+
+| MedicationAdministration |
++--------------------------+
 
-=================== =========
-FHIR Resource Type   Prefix
-=================== =========
-Patient             patient
-Procedure           procedure
-Condition           condition
-Observation         obs
-=================== =========
+ClarityNLP returns a *flattened* version of the JSON representation of each
+resource, the meaning of which is explained
+`here <https://github.com/amirziai/flatten>`_. Essentially, the key for a
+flattened JSON object contains underscores for each nested object boundary
+(delimited by the ``{`` character), and a numeric index for each array
+boundary (delimited by the ``[`` character).
 
-The fields returned for the ``Patient`` resource are:
+To illustrate, consider this JSON object:
+::
+   {
+       "field1":"value1",
+       "field2":{"field3":"value3"},
+       "field4":[{"field5":"value5", "field6":"value6"}],
+       "field7":[{"field8":[{"field9":"value9", "field10":"value10"}]}]
+   }
 
-====================== =============================================================================
-Field Name             Meaning
-====================== =============================================================================
-patient_subject        patient id
-patient_fname_1        patient first name (could have multiple first names, numbered sequentially)
-patient_lname_1        patient last name (could have multiple last names, numbered sequentially)
-patient_gender         gender of the patient
-patient_date_of_birth  date of birth in YYYY-MM-DD format
-====================== =============================================================================
+The flattened version is:
+::
+   {
+       "field1":"value1",
+       "field2_field3":"value3",
+       "field4_0_field5":"value5",
+       "field4_1_field6":"value6",
+       "field7_0_field8_0_field9":"value9",
+       "field7_0_field8_1_field10":"value10"
+   }
 
-The fields returned for the ``Procedure`` resource are:
+The FHIR resource data structures can be represented as nested JSON objects.
+The DSTU2 resources can be found `here <http://hl7.org/fhir/DSTU2/resourcelist.html>`_
+and the DSTU3 resources can be found `here <http://hl7.org/fhir/STU3/resourcelist.html>`_.
 
-============================== =============================================================================
-Field Name                     Meaning
-============================== =============================================================================
-procedure_id_value             ID of the procedure
-procedure_status               status indicator for the procedure
-procedure_codesys_code_1       code for the procedure; multiple codes are numbered sequentially
-procedure_codesys_system_1     code system; multiple code systems are numbered sequentially
-procedure_codesys_display_1    code system procedure name; multiple names are numbered sequentially
-procedure_subject_ref          typically the string 'Patient/' followed by a patient ID, i.e. Patient/99999
-procedure_subject_display      patient full name string
-procedure_context_ref          typically the string 'Encounter/' followed by a number, i.e. Encounter/31491
-procedure_performed_date_time  timestamp of the procedure in YYYY-MM-DDTHH:mm:ss+hhmm format
-datetime                       identical to procedure_performed_date_time
-============================== =============================================================================
+For a specific FHIR example, consider the DSTU2
+`general condition example <http://hl7.org/fhir/DSTU2/condition-example.json.html>`_:
+::
+   {
+       "resourceType": "Condition",
+       "id": "example",
+       "text":
+       {
+           "status": "generated",
+           "div": "<div>Severe burn of left ear (Date: 24-May 2012)</div>"
+       },
+       "patient":
+       {
+           "reference": "Patient/example"
+       },
+       "code":
+       {
+           "coding":
+           [
+               {
+                   "system": "http://snomed.info/sct",
+                   "code": "39065001",
+                   "display": "Burn of ear"
+               }
+           ],
+           "text": "Burnt Ear"
+       },
+       "category":
+       {
+           "coding":
+           [
+               {
+                   "system": "http://hl7.org/fhir/condition-category",
+                   "code": "diagnosis",
+                   "display": "Diagnosis"
+               },
+               {
+                   "fhir_comments":
+                   [
+                       "  and also a SNOMED CT coding  "
+                   ],
+                   "system": "http://snomed.info/sct",
+                   "code": "439401001",
+                   "display": "Diagnosis"
+               }
+           ]
+       },
+       "verificationStatus": "confirmed",
+       "severity":
+       {
+           "coding":
+           [
+               {
+                   "system": "http://snomed.info/sct",
+                   "code": "24484000",
+                   "display": "Severe"
+               }
+           ]
+       },
+       "onsetDateTime": "2012-05-24",
+       "bodySite":
+       [
+           {
+               "coding":
+               [
+                   {
+                       "system": "http://snomed.info/sct",
+                       "code": "49521004",
+                       "display": "Left external ear structure"
+                   }
+               ],
+               "text": "Left Ear"
+           }
+       ]
+    }
 
-The fields returned for the ``Condition`` resource are:
+The flattened version of this example, with quotes removed for clarity, is:
+::
+   	resourceType: Condition
+	id: example
+	text_status: generated
+	text_div: <div xmlns="http://www.w3.org/1999/xhtml">Severe burn of left ear (Date: 24-May 2012)</div>
+	clinicalStatus: active
+	verificationStatus: confirmed
+	category_0_coding_0_system: http://hl7.org/fhir/condition-category
+	category_0_coding_0_code: encounter-diagnosis
+	category_0_coding_0_display: Encounter Diagnosis
+	category_0_coding_1_system: http://snomed.info/sct
+	category_0_coding_1_code: 439401001
+	category_0_coding_1_display: Diagnosis
+	severity_coding_0_system: http://snomed.info/sct
+	severity_coding_0_code: 24484000
+	severity_coding_0_display: Severe
+	code_coding_0_system: http://snomed.info/sct
+	code_coding_0_code: 39065001
+	code_coding_0_display: Burn of ear
+	code_text: Burnt Ear
+	bodySite_0_coding_0_system: http://snomed.info/sct
+	bodySite_0_coding_0_code: 49521004
+	bodySite_0_coding_0_display: Left external ear structure
+	bodySite_0_text: Left Ear
+	subject_reference: Patient/example
+	onsetDateTime: 2012-05-24 00:00:00
+	date_time: 2012-05-24 00:00:00
+	len_code_coding: 1
+	len_severity_coding: 1
+	len_bodySite: 1
+	len_bodySite_0_coding: 1
+	len_category: 1
+	len_category_0_coding: 2
+	value_name: Burn of ear
 
-============================== =============================================================================
-Field Name                     Meaning
-============================== =============================================================================
-condition_id_value             ID of the condition
-condition_category_code_1      category code value; multiple codes are numbered sequentially
-condition_category_system_1    category code system; multiple code systems are numbered sequentially
-condition_category_display_1   category name; multiple names are numbered sequentially
-condition_codesys_code_1       code for the condition; multiple codes are numbered sequentially
-condition_codesys_system_1     code system; multiple code systems are numbered sequentially
-condition_codesys_display_1    code system condition name; multiple names are numbered sequentially
-condition_subject_ref          typically the string 'Patient/' followed by a patient ID, i.e. Patient/99999
-condition_subject_display      patient full name string
-condition_context_ref          typically the string 'Encounter/' followed by a number, i.e. Encounter/31491
-condition_onset_date_time      timestamp of condition onset in YYYY-MM-DDTHH:mm:ss+hhmm format
-datetime                       identical to condition_onset_date_time
-condition_abatement_date_time  timestamp of condition abatement in YYYY-MM-DDTHH:mm:ss+hhmm format
-end_datetime                   identical to condition_abatement_date_time
-============================== =============================================================================
+Note the additional fields at the end, such as ``date_time`` and the fields
+prefixed with ``len_``. ClarityNLP adds the ``date_time`` field to enable
+time sorting on the results (see above). The ``len_`` prefixed fields
+provide the lengths of all lists in the flattened data. These are convenience
+fields, inserted so that consumers of the data will not have to separately
+determine the presence and size of the embedded lists.
 
-The fields returned for the ``Observation`` resource are:
-
-============================== =============================================================================
-Field Name                     Meaning
-============================== =============================================================================
-obs_codesys_code_1             code for the observation; multiple codes are numbered sequentially
-obs_codesys_system_1           code system; multiple code systems are numbered sequentially
-obs_codesys_display_1          code system observation name; multiple names are numbered sequentially
-obs_subject_ref                typically the string 'Patient/' followed by a patient ID, i.e. Patient/99999
-obs_subject_display            patient full name string
-obs_context_ref                typically the string 'Encounter/' followed by a number, i.e. Encounter/31491
-obs_value                      numberic value of what was observed or measured
-obs_unit                       string identifying the units for the value observed
-obs_unit_system                typically a URL with information on the units used
-obs_unit_code                  unit string with customary abbreviations
-obs_effective_date_time        timestamp in YYYY-MM-DDTHH:mm:ss+hhmm format
-datetime                       identical to obs_effective_date_time
-============================== =============================================================================
-
+The exact set of fields returned for the different FHIR resources depends
+on the nature and complexity of the FHIR server's data. The documentation
+for the `DSTU2 <http://hl7.org/fhir/DSTU2/resourcelist.htm>`_ and
+`DSTU3 <http://hl7.org/fhir/STU3/resourcelist.html>`_ resources can be used
+to interpret the results.
 
 Collector
 ---------

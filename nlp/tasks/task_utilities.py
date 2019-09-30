@@ -161,12 +161,25 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             if df not in data_fields:
                 data_fields[df] = ''
 
-    if not "result_display" in data_fields:
+    if "result_display" not in data_fields:
+        s = data_fields.get('start')
+        e = data_fields.get('end')
+        if not s:
+            s = 0
+        if not e:
+            e = 0
+
+        highlights = []
+        txt = data_fields.get('text')
+        if txt:
+            highlights = [txt]
         data_fields["result_display"] = {
-            "date": '',
-            "result_content": '',
-            "highlights": [''],
-            "sentence": ''
+            "date": data_fields.get('report_date'),
+            "result_content": data_fields.get('sentence'),
+            "highlights": highlights,
+            "sentence": data_fields.get('sentence'),
+            'start': [s],
+            'end': [e]
         }
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
@@ -214,6 +227,7 @@ class BaseTask(luigi.Task):
     start = luigi.IntParameter()
     solr_query = luigi.Parameter()
     batch = luigi.IntParameter()
+    parallel_task = True
     task_name = "ClarityNLPLuigiTask"
     docs = list()
     pipeline_config = config.PipelineConfig('', '')

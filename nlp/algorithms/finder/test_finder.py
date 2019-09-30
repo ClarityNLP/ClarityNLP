@@ -26,7 +26,7 @@ except:
     from algorithms.finder import size_measurement_finder as smf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -390,12 +390,56 @@ def test_time_finder():
 
     # UTC datetime YYYY-MM-DDTHH:MM:SS.ffffff
     test_data = {
-        'The datetimes are 2016-05-20T11:12:13.12345, and 2016-05-20T11:12:13':[
+        'The datetimes are 2016-05-20T11:12:13.12345, and 2017-06-30T12:34:56':[
             _TimeResult(text='11:12:13.12345',
                         hours=11, minutes=12, seconds=13,
                         fractional_seconds='12345'),
-            _TimeResult(text='11:12:13',
-                        hours=11, minutes=12, seconds=13)
+            _TimeResult(text='12:34:56',
+                        hours=12, minutes=34, seconds=56)
+        ]
+    }
+
+    if not _run_tests(_MODULE_TIME, test_data):
+        return False
+
+    # FHIR-relevant datetime formats
+    test_data = {
+        'The FHIR datetimes are : ' \
+        # fractional seconds with UTC offset
+        '2019-06-24T01:23:45.678+0123, '   \
+        '2019-06-24T01:23:45.67898-0234, ' \
+        # integer seconds with UTC offset
+        '2020-07-25T23:45:01-2345, '       \
+        '2020-07-25T23:45:02+0213, '       \
+        # fractional seconds with UTC timezone
+        '2019-06-24T01:23:45.678Z, '       \
+        '2019-06-24T01:23:45.667788Z, '    \
+        # ingteger seconds with UTC timezone
+        '2020-07-25T23:45:59Z, ':[
+            _TimeResult(text='01:23:45.678+0123',
+                        hours=1, minutes=23, seconds=45,
+                        fractional_seconds='678', gmt_delta_sign='+',
+                        gmt_delta_hours=1, gmt_delta_minutes=23),
+            _TimeResult(text='01:23:45.67898-0234',
+                        hours=1, minutes=23, seconds=45,
+                        fractional_seconds='67898', gmt_delta_sign='-',
+                        gmt_delta_hours=2, gmt_delta_minutes=34),
+            _TimeResult(text='23:45:01-2345',
+                        hours=23, minutes=45, seconds=1,
+                        gmt_delta_sign='-',
+                        gmt_delta_hours=23, gmt_delta_minutes=45),
+            _TimeResult(text='23:45:02+0213',
+                        hours=23, minutes=45, seconds=2,
+                        gmt_delta_sign='+',
+                        gmt_delta_hours=2, gmt_delta_minutes=13),
+            _TimeResult(text='01:23:45.678Z',
+                        hours=1, minutes=23, seconds=45,
+                        fractional_seconds='678', timezone='UTC'),
+            _TimeResult(text='01:23:45.667788Z',
+                        hours=1, minutes=23, seconds=45,
+                        fractional_seconds='667788', timezone='UTC'),
+            _TimeResult(text='23:45:59Z',
+                        hours=23, minutes=45, seconds=59, timezone='UTC'),
         ]
     }
 
@@ -679,6 +723,33 @@ def test_date_finder():
     if not _run_tests(_MODULE_DATE, test_data):
         return False
 
+    # FHIR-relevant datetime formats
+    test_data = {
+        'The FHIR datetimes are : ' \
+        # fractional seconds with UTC offset
+        '2019-06-24T01:23:45.678+0123, '   \
+        '2019-06-24T01:23:45.67898-0234, ' \
+        # integer seconds with UTC offset
+        '2020-07-25T23:45:01-2345, '       \
+        '2020-07-25T23:45:02+0213, '       \
+        # fractional seconds with UTC timezone
+        '2019-06-24T01:23:45.678Z, '       \
+        '2019-06-24T01:23:45.667788Z, '    \
+        # ingteger seconds with UTC timezone
+        '2020-07-25T23:45:59Z, ':[
+            _DateResult(text='2019-06-24', year=2019, month=6, day=24),
+            _DateResult(text='2019-06-24', year=2019, month=6, day=24),
+            _DateResult(text='2020-07-25', year=2020, month=7, day=25),
+            _DateResult(text='2020-07-25', year=2020, month=7, day=25),
+            _DateResult(text='2019-06-24', year=2019, month=6, day=24),
+            _DateResult(text='2019-06-24', year=2019, month=6, day=24),
+            _DateResult(text='2020-07-25', year=2020, month=7, day=25)           
+        ]
+    }
+
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
+    
     return True
 
 

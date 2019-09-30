@@ -69,10 +69,12 @@ def remove_overlap(candidates, debug=False):
             start_j = candidates[index_j].start
             end_j   = candidates[index_j].end
             len_j   = end_j - start_j
+            
 
             # does candidate[j] overlap candidate[i] at all
             if _has_overlap(start_i, end_i, start_j, end_j):
                 if debug:
+                    print('\t\t({0}, {1}), ({2}, {3})'.format(start_i, end_i, start_j, end_j))
                     print('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
                           format(candidates[index_i].match_text,
                                  candidates[index_j].match_text,
