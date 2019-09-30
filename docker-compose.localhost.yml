@@ -58,8 +58,6 @@ services:
     image: claritynlp/nlp-api
     expose:
       - ${NLP_API_CONTAINER_PORT}
-    volumes:
-      - ./nlp:/api
     entrypoint:
       - /api/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
