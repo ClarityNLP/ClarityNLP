@@ -7,7 +7,7 @@ from pymongo.errors import BulkWriteError
 import data_access
 from data_access import pipeline_config as config
 from data_access import solr_data, phenotype_stats
-from data_access import update_pipeline_config, update_phenotype_model
+from data_access import update_phenotype_model
 from luigi_tools import phenotype_helper
 from tasks import *
 
@@ -38,15 +38,11 @@ class PhenotypeTask(luigi.Task):
                 pipeline_config['pipeline_id'] = pipeline_id
                 configs[pipeline_config['name']] = pipeline_config
 
-            n = 0
-            first_de = None
-            secondary_des = list()
-
             update_phenotype_model(phenotype_config, util.conn_string)
             for pipeline_config in configs.values():
                 pipeline_id = pipeline_config['pipeline_id']
                 tasks.append(PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
-                                              pipelinetype=pipeline_config.config_type))
+                                          pipelinetype=pipeline_config.config_type))
         print(tasks)
 
         return tasks
@@ -159,7 +155,6 @@ def run_pipeline(pipeline, pipelinetype, job, owner):
     jobs.update_job_status(str(job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % pipelinetype)
 
 
-
 class PipelineTask(luigi.Task):
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
@@ -174,8 +169,11 @@ class PipelineTask(luigi.Task):
                                                                                                .owner)
 
             task = registered_pipelines[str(self.pipelinetype)]
-            matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
-                       for n in ranges]
+            if task.parallel_task:
+                matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
+                           for n in ranges]
+            else:
+                matches = [task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)]
 
             return matches
         except Exception as ex:
@@ -195,7 +193,7 @@ class PipelineTask(luigi.Task):
 
 if __name__ == "__main__":
     owner = "tester"
-    p_id = "2035"
+    p_id = "11469"
     the_job_id = data_access.create_new_job(
         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
                            owner=owner, status=data_access.STARTED, date_ended=None,

@@ -1,18 +1,40 @@
 from subprocess import call
 
 import luigi
+import requests
+import time
 
 from data_access import *
 from luigi_tools.phenotype_helper import *
 
 
+def get_active_workers():
+    url = util.luigi_scheduler + "/api/task_list?data={%22status%22:%22RUNNING%22}"
+    print(url)
+    req = requests.get(url)
+    if req.status_code == 200:
+        json_res = req.json()
+        keys = (json_res['response'].keys())
+        return len(keys)
+
+    return 0
+
+
 def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
+    active = get_active_workers()
+    total = int(util.luigi_workers)
+    while active >= total:
+        active = get_active_workers()
+        time.sleep(2)
+
     luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
 
     scheduler = util.luigi_scheduler
     print("running job %s on pipeline %s; logging here %s" % (str(job_id), str(pipeline_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s  --pipeline %s --job %s --owner %s --pipelinetype %s --scheduler-url %s > %s 2>&1 &" % (
-        str(util.luigi_workers), "PipelineTask", pipeline_id, str(job_id), owner, pipeline_type, scheduler, luigi_log)
+    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s  --pipeline %s --job %s --owner %s " \
+           "--pipelinetype %s --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PipelineTask", pipeline_id,
+                                                                 str(job_id), owner, pipeline_type, scheduler,
+                                                                 luigi_log)
     try:
         call(func, shell=True)
     except Exception as ex:
@@ -21,12 +43,19 @@ def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
 
 
 def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
+    active = get_active_workers()
+    total = int(util.luigi_workers)
+    while active >= total:
+        active = get_active_workers()
+        time.sleep(2)
+
     luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
 
     scheduler = util.luigi_scheduler
     print("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s --scheduler-url %s > %s 2>&1 &" % (
-        str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id), owner, scheduler, luigi_log)
+    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s" \
+           " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
+                                                owner, scheduler, luigi_log)
     try:
         call(func, shell=True)
     except Exception as ex:

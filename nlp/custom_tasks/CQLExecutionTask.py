@@ -16,7 +16,7 @@ if __name__ == '__main__':
     nlp_dir, tail = os.path.split(cur_dir)
     sys.path.append(nlp_dir)
     sys.path.append(os.path.join(nlp_dir, 'tasks'))
-    sys.path.append(os.path.join(nlp_dir, 'data_acess'))
+    sys.path.append(os.path.join(nlp_dir, 'data_access'))
 
 # ClarityNLP imports
 import util
@@ -26,10 +26,14 @@ from tasks.task_utilities import BaseTask
 import data_access.cql_result_parser as crp
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 9
+_VERSION_MINOR = 10
+
+# set to True to enable debug output
+_TRACE = True
 
 # names of custom args accessible to CQLExecutionTask
 
+_FHIR_VERSION          = 'fhir_version'            # "DSTU2" or "STU3"
 _FHIR_CQL_EVAL_URL     = 'cql_eval_url'            # https://gt-apps.hdap.gatech.edu/cql/evaluate
 _FHIR_PATIENT_ID       = 'patient_id'              # 
 _FHIR_DATA_SERVICE_URI = 'fhir_data_service_uri'   # https://apps.hdap.gatech.edu/gt-fhir/fhir/
@@ -51,6 +55,17 @@ _shared_array = multiprocessing.Array('i', [-1]*_MAX_TASK_INDEX)
 # time command custom args
 _ARG_TIME_START = 'time_start'
 _ARG_TIME_END   = 'time_end'
+
+_KEY_RT       = 'resourceType'
+_KEY_RES_DISP = 'result_display'
+
+_RT_PATIENT     = 'Patient'
+_RT_OBSERVATION = 'Observation'
+_RT_PROCEDURE   = 'Procedure'
+_RT_CONDITION   = 'Condition'
+_RT_MED_STMT    = 'MedicationStatement'
+_RT_MED_ORDER   = 'MedicationOrder'
+_RT_MED_ADMIN   = 'MedicationAdministration'
 
 
 ###############################################################################
@@ -90,15 +105,17 @@ def _sort_by_datetime_desc(result_list):
     datetime_list    = []
     no_datetime_list = []
     for i, obj in enumerate(result_list):
-        if isinstance(obj, crp.PatientResource):
-            # patient has no date_time
-            patient_list.append(i)
-        else:
-            dt = getattr(obj, 'date_time', None)
-            if dt is not None:
-                datetime_list.append( (dt, i) )
+        if _KEY_RT in obj:
+            resource_type = obj[_KEY_RT]
+            if _RT_PATIENT == resource_type:
+                # patient has no date_time field
+                patient_list.append(i)
             else:
-                no_datetime_list.append(i)
+                dt = getattr(obj, crp.KEY_DATE_TIME, None)
+                if dt is not None:
+                    datetime_list.append( (dt, i) )
+                else:
+                    no_datetime_list.append(i)
 
     datetime_list = sorted(datetime_list, key=lambda x: x[0], reverse=True)
 
@@ -130,15 +147,24 @@ def _sort_by_datetime_desc(result_list):
 ###############################################################################
 def _json_to_objs(json_obj):
     """
-    Convert the JSON returned by the FHIR server to namedtuples.
+    Decode the data returned by the CQLEngine and sort it by timestamp from
+    most recent to least recent.
     """
 
+    if _TRACE:
+        print('CQLExecutionTask: Calling _json_to_objs...')
+    
     results = []
 
     # assumes we either have a list of objects or a single obj
     obj_type = type(json_obj)
+    
     if list == obj_type:
+        if _TRACE:
+            print('\tfound list of length {0}'.format(len(json_obj)))
         for e in json_obj:
+            if _TRACE:
+                print('\t\tdecoding resource type {0}'.format(e['resultType']))
             result_obj = crp.decode_top_level_obj(e)
             if result_obj is None:
                 continue
@@ -147,6 +173,8 @@ def _json_to_objs(json_obj):
             else:
                 results.extend(result_obj)
     elif dict == obj_type:
+        if _TRACE:
+            print('\tfound dict of size {0}'.format(len(json_obj)))
         result_obj = crp.decode_top_level_obj(json_obj)
         if result_obj is not None:
             if list is not type(result_obj):
@@ -154,16 +182,22 @@ def _json_to_objs(json_obj):
             else:
                 results.extend(result_obj)
 
-    if 0 == len(results):
-        return (None, None, None)
+    if _TRACE:
+        print('\tThere are {0} results after top-level decode'.
+              format(len(results)))
                 
-    # check for presence of the 'error' key in the patient resource
+    if 0 == len(results):
+        return (results, None, None)
+                
+    # check for presence of the 'error' key in the Patient resource
     # if present, FHIR server returned no useful data
-    for r in results:
-        if isinstance(r, crp.PatientResource):
-            if _KEY_ERROR in r:
-                print('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
-                return (None, None, None)
+    for obj in results:
+        if _KEY_RT in obj:
+            resource_type = obj[_KEY_RT]
+            if _RT_PATIENT == resource_type:
+                if _KEY_ERROR in obj:
+                    print('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
+                    return (None, None, None)
                 
     # sort by datetime from most to least recent
     # element[0] is the patient resource
@@ -173,378 +207,90 @@ def _json_to_objs(json_obj):
 
 
 ###############################################################################
-def _extract_coding_systems_list(obj, mongo_obj, prefix):
+def _to_result_obj(obj):
     """
-    Extract the list of (code, system, display) tuples.
+    Insert the 'result_display' information and build the object to be written
+    to MongoDB.
     """
+
+    if _TRACE:
+        print('Calling _to_result_obj...')
+        print('obj: ')
+        print(obj)
+        print()
+
+    KEY_RC = 'result_content'
     
-    coding_systems_list = getattr(obj, 'coding_systems_list', None)
-    if coding_systems_list is None:
-        return
-    
-    counter = 1
-    for coding_obj in coding_systems_list:
-        mongo_obj['{0}_codesys_code_{1}'.format(prefix, counter)] = coding_obj.code
-        mongo_obj['{0}_codesys_system_{1}'.format(prefix, counter)] = coding_obj.system
-        mongo_obj['{0}_codesys_display_{1}'.format(prefix, counter)] = coding_obj.display
-        if 1 == counter:
-            # set the 'source' field to match coding_obj.display
-            mongo_obj['source'] = coding_obj.display
-        counter += 1
+    # insert the display/formatting info
+    assert _KEY_RT in obj
+    resource_type = obj[_KEY_RT]
 
+    value_name = ''
+    if crp.KEY_VALUE_NAME in obj:
+        value_name = obj[crp.KEY_VALUE_NAME]
+    date = 'UNKNOWN'
+    if crp.KEY_DATE_TIME in obj:
+        date = obj[crp.KEY_DATE_TIME]
 
-###############################################################################
-def _extract_subject_reference(obj, mongo_obj, prefix):
-    """
-    Extract and convert the subject reference data.
-    """
-
-    subject_ref = getattr(obj, 'subject_reference', None)
-
-    # The subject_ref has the form Patient/9940, where the number after the
-    # fwd slash is the patient ID. Extract this ID and store in the 'subject'
-    # field.
-    if subject_ref is not None:
-        assert '/' in subject_ref
-        text, num = subject_ref.split('/')
-        mongo_obj['subject'] = num
-    mongo_obj['{0}_subject_ref'.format(prefix)] = subject_ref
-    
+    result_display_obj = {
+        'date':date,
+        'result_content':'{0}: {1}'.format(resource_type, value_name),
+        'sentence':'',
+        'highlights':[value_name]
+    }
         
-###############################################################################
-def _extract_patient_resource(obj, mongo_obj):
-    """
-    Extract data from the FHIR patient resource and load into mongo dict.
-    """
-
-    assert isinstance(obj, crp.PatientResource)
-
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
-
-    # patient id is in the 'subject' field
-    patient_id = getattr(obj, 'subject', None)
-    mongo_obj['patient_subject'] = patient_id
-
-    # get the list of (first_name, last_name) tuples and create numbered fields
-    name_list = getattr(obj, 'name_list', None)
-    if name_list is not None:
-        counter = 1
-        for first, last in name_list:
-            key_fname = 'patient_fname_{0}'.format(counter)
-            key_lname = 'patient_lname_{0}'.format(counter)
-            mongo_obj[key_fname] = first
-            mongo_obj[key_lname] = last
-            counter += 1
-
-    gender = getattr(obj, 'gender', None)
-    mongo_obj['patient_gender'] = gender
-
-    dob = getattr(obj, 'date_of_birth', None)
-    dob_str = None
-    if dob is not None:
-        dob_str = dob.isoformat()
-    mongo_obj['patient_date_of_birth'] = dob_str
-
-
-###############################################################################
-def _extract_procedure_resource(obj, mongo_obj):
-    """
-    Extract data from the FHIR procedure resource and load into mongo dict.
-    """
-
-    assert isinstance(obj, crp.ProcedureResource)
-
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
-
-    id_value = getattr(obj, 'id_value', None)
-    mongo_obj['procedure_id_value'] = id_value
-
-    status = getattr(obj, 'status', None)
-    mongo_obj['procedure_status'] = status
-
-    _extract_coding_systems_list(obj, mongo_obj, 'procedure')
-
-    _extract_subject_reference(obj, mongo_obj, 'procedure')
-
-    subject_display = getattr(obj, 'subject_display', None)
-    mongo_obj['procedure_subject_display'] = subject_display
-
-    context_ref = getattr(obj, 'context_reference', None)
-    mongo_obj['procedure_context_ref'] = context_ref
-
-    dt = getattr(obj, 'date_time', None)
-    dt_string = None
-    if dt is not None:
-        dt_string = dt.isoformat()
-    mongo_obj['datetime'] = dt_string
-
-    # add display/formatting info
-    procedure_name = mongo_obj['procedure_codesys_display_1']
-    result_display_obj = {
-        'date': mongo_obj['datetime'],
-        'result_content':'Procedure: {0}'.format(procedure_name),
-        'sentence':'',
-        'highlights': [procedure_name]
-    }
-    mongo_obj['result_display'] = result_display_obj
-
-
-###############################################################################
-def _extract_condition_resource(obj, mongo_obj):
-    """
-    Extract dta from the FHIR condition resource and load into mongo dict.
-    """
-
-    assert isinstance(obj, crp.ConditionResource)
-
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
-
-    id_value = getattr(obj, 'id_value', None)
-    mongo_obj['condition_id_value'] = id_value
-
-    category_list = getattr(obj, 'category_list', None)
-    if category_list is not None:
-        counter = 1
-        for elt in category_list:
-            if isinstance(elt, crp.CodingObj):
-                mongo_obj['condition_category_code_{0}'.format(counter)] = elt.code
-                mongo_obj['condition_category_system_{0}'.format(counter)] = elt.system
-                mongo_obj['condition_category_display_{0}'.format(counter)] = elt.display
-                counter += 1
-
-    _extract_coding_systems_list(obj, mongo_obj, 'condition')
+    if _RT_PATIENT == resource_type:
+        if 'birthDate' in obj:
+            date = obj['birthDate']
+        result_display_obj['date'] = date
+        result_display_obj[KEY_RC] = 'Patient: {0}, DOB: {1}'.format(value_name, date)
         
-    _extract_subject_reference(obj, mongo_obj, 'condition')
-
-    subject_display = getattr(obj, 'subject_display', None)
-    mongo_obj['condition_subject_display'] = subject_display
-
-    context_ref = getattr(obj, 'context_reference', None)
-    mongo_obj['condition_context_ref'] = context_ref
-
-    date_time = getattr(obj, 'date_time', None)
-    dt_string = None
-    if date_time is not None:
-        dt_string = date_time.isoformat()
-    mongo_obj['datetime'] = dt_string
-    
-    end_date_time = getattr(obj, 'end_date_time', None)
-    dt_string = None
-    if end_date_time is not None:
-        dt_string = end_date_time.isoformat()
-    mongo_obj['end_datetime'] = dt_string
-
-    # add display/formatting info
-    condition_name = mongo_obj['condition_codesys_display_1']
-    result_display_obj = {
-        'date': mongo_obj['datetime'],
-        'result_content':'Condition: {0}, onset: {1}, abatement: {2}'.format(
-            condition_name, mongo_obj['datetime'], mongo_obj['end_datetime']),
-        'sentence':'',
-        'highlights':[condition_name]
-    }
-    mongo_obj['result_display'] = result_display_obj
-    
-
-###############################################################################
-def _extract_observation_resource(obj, mongo_obj):
-    """
-    Extract data from the FHIR observation resource and load into mongo dict.
-    """
-
-    assert isinstance(obj, crp.ObservationResource)
-
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
-
-    _extract_subject_reference(obj, mongo_obj, 'obs')
-    
-    subject_display = getattr(obj, 'subject_display', None)
-    mongo_obj['obs_subject_display'] = subject_display
-
-    context_ref = getattr(obj, 'context_reference', None)
-    mongo_obj['obs_context_ref'] = context_ref
-
-    date_time = getattr(obj, 'date_time', None)
-    dt_string = None
-    if date_time is not None:
-        dt_string = date_time.isoformat()
-    mongo_obj['datetime'] = dt_string
-    
-    value = getattr(obj, 'value', None)
-    if value is not None:
-        # store this in the 'value' field also
-        mongo_obj['value'] = value
-    mongo_obj['obs_value'] = value
-
-    unit = getattr(obj, 'unit', None)
-    mongo_obj['obs_unit'] = unit
-
-    unit_system = getattr(obj, 'unit_system', None)
-    mongo_obj['obs_unit_system'] = unit_system
-
-    unit_code = getattr(obj, 'unit_code', None)
-    mongo_obj['obs_unit_code'] = unit_code
-
-    _extract_coding_systems_list(obj, mongo_obj, 'obs')
-
-    # add display/formatting info
-    value_name = mongo_obj['obs_codesys_display_1']
-    units = mongo_obj['obs_unit_code']
-    result_display_obj = {
-        'date': mongo_obj['datetime'],
-        'result_content':'{0}: {1} {2}'.format(value_name, value, units),
-        'sentence':'',
-        'highlights':[value_name, value, units]
-    }
-    mongo_obj['result_display'] = result_display_obj
-    
-
-###############################################################################
-def _extract_medication_statement_resource(obj, mongo_obj):
-    """
-    Extract data from the FHIR MedicationStatement resource and load into
-    mongo dict.
-    """
-
-    assert isinstance(obj, crp.MedicationStatementResource)
-
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
-
-    id_value = getattr(obj, 'id_value', None)
-    mongo_obj['med_stmt_id_value'] = id_value
-    
-    context_ref = getattr(obj, 'context_reference', None)
-    mongo_obj['med_stmt_context_ref'] = context_ref
-    
-    _extract_coding_systems_list(obj, mongo_obj, 'med_stmt')
-
-    _extract_subject_reference(obj, mongo_obj, 'med_stmt')
-    
-    subject_display = getattr(obj, 'subject_display', None)
-    mongo_obj['med_stmt_subject_display'] = subject_display
-
-    taken = getattr(obj, 'taken', None)
-    mongo_obj['med_stmt_taken'] = taken
-
-    # list of DoseQuantity objects
-    dosage_list = getattr(obj, 'dosage_list', None)
-    if dosage_list is not None:
-        counter = 1
-        for dq_obj in dosage_list:
-            key = 'med_stmt_dosage_value_{0}'.format(counter)
-            mongo_obj[key] = dq_obj.value
-            key = 'med_stmt_dosage_unit_{0}'.format(counter)
-            mongo_obj[key] = dq_obj.unit
-            key = 'med_stmt_dosage_system_{0}'.format(counter)
-            mongo_obj[key] = dq_obj.system
-            key = 'med_stmt_dosage_code_{0}'.format(counter)
-            mongo_obj[key] = dq_obj.code
-            counter += 1
-
-    date_time = getattr(obj, 'date_time', None)
-    dt_string = None
-    if date_time is not None:
-        dt_string = date_time.isoformat()
-    mongo_obj['datetime'] = dt_string
-    
-    end_date_time = getattr(obj, 'end_date_time', None)
-    dt_string = None
-    if end_date_time is not None:
-        dt_string = end_date_time.isoformat()
-    mongo_obj['end_datetime'] = dt_string
-    
-    # add display/formatting info
-    value_name = mongo_obj['med_stmt_codesys_display_1']
-    value = mongo_obj['med_stmt_dosage_value_1']
-    if value is None:
+    elif _RT_OBSERVATION == resource_type:
         value = ''
-    units = mongo_obj['med_stmt_dosage_unit_1']
-    if units is None:
         units = ''
-    result_display_obj = {
-        'date': mongo_obj['datetime'],
-        'result_content':'{0}: {1} {2}'.format(value_name, value, units),
-        'sentence':'',
-        'highlights':[value_name, value, units]
-    }
-    mongo_obj['result_display'] = result_display_obj
+        if crp.KEY_VALUE in obj:
+            # sometimes a value is not present in an observation
+            value = obj[crp.KEY_VALUE]
+        if crp.KEY_UNITS in obj:
+            units = obj[crp.KEY_UNITS]
+        result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
+        result_display_obj['highlights']:[value_name, value, units]
+        
+    elif _RT_MED_STMT == resource_type:
+        if 'effectiveDateTime' in obj:
+            date = obj['effectiveDateTime']
+        elif 'effectivePeriod_start' in obj:
+            start = obj['effectivePeriod_start']
+            date = '{0}'.format(start)
+            if 'effectivePeriod_end' in obj:
+                end = obj['effectivePeriod_end']
+                date += ' to {0}'.format(end)
+        result_display_obj['date'] = date
+        
+    elif _RT_MED_ORDER == resource_type:       
+        if 'dateWritten' in obj:
+            date = obj['dateWritten']
+        if 'dateEnded' in obj:
+            end = obj['dateEnded']
+            date += ' to {0}'.format(end)
+        result_display_obj['date'] = date
+        
+    elif _RT_MED_ADMIN == resource_type:
+        if 'effectiveDateTime' in obj:
+            date = obj['effectiveDateTime']
+        elif 'effectivePeriod_start' in obj:
+            start = obj['effectivePeriod_start']
+            date = '{0}'.format(start)
+            if 'effectivePeriod_end' in obj:
+                end = obj['effectivePeriod_end']
+                date += ' to {0}'.format(end)
+        result_display_obj['date'] = date
+
+    obj[_KEY_RES_DISP] = result_display_obj
+
+    return obj
 
 
-###############################################################################
-def _extract_medication_request_resource(obj, mongo_obj):
-    """
-    Extract data from the MedicationRequest resource and load into
-    mongo dict.
-    """
-
-    assert isinstance(obj, crp.MedicationRequestResource)
-
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
-
-    id_value = getattr(obj, 'id_value', None)
-    mongo_obj['med_req_id_value'] = id_value
-    
-    _extract_coding_systems_list(obj, mongo_obj, 'med_req')
-
-    _extract_subject_reference(obj, mongo_obj, 'med_req')
-    
-    subject_display = getattr(obj, 'subject_display', None)
-    mongo_obj['med_req_subject_display'] = subject_display
-
-    date_time = getattr(obj, 'date_time', None)
-    dt_string = None
-    if date_time is not None:
-        dt_string = date_time.isoformat()
-    mongo_obj['datetime'] = dt_string
-    
-    # add display/formatting info
-    value_name = mongo_obj['med_req_codesys_display_1']
-    value = ''
-    units = ''
-    result_display_obj = {
-        'date': mongo_obj['datetime'],
-        'result_content':'{0}: {1} {2}'.format(value_name, value, units),
-        'sentence':'',
-        'highlights':[value_name, value, units]
-    }
-    mongo_obj['result_display'] = result_display_obj
-    
-
-###############################################################################
-def _extract_medication_administration_resource(obj, mongo_obj):
-    """
-    Extract data from the FHIR MedicationAdministration resource and load into
-    mongo dict.
-    """
-
-    assert isinstance(obj, crp.MedicationAdministrationResource)
-
-    if _KEY_ERROR in obj:
-        # no data returned
-        return
-
-    id_value = getattr(obj, 'id_value', None)
-    mongo_obj['med_admin_id_value'] = id_value
-
-    _extract_coding_systems_list(obj, mongo_obj, 'med_admin')
-
-    _extract_subject_reference(obj, mongo_obj, 'med_admin')
-
-    # others TBD
-    
-    
 ###############################################################################
 def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     """
@@ -556,10 +302,14 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     if str_key in custom_arg_dict:
         value = custom_arg_dict[str_key]
 
-    if not value:
+    if value is None:
         if str_key in util.properties:
             value = util.properties[str_key]
 
+    # treat empty strings as None
+    if str == type(value) and 0 == len(value):
+        value = None
+            
     # echo in job status and in log file
     msg = 'CQLExecutionTask: {0} == {1}'.format(str_variable_name, value)
     data_access.update_job_status(job_id,
@@ -595,8 +345,9 @@ def _get_datetime_window(custom_args, data_earliest, data_latest):
                                              data_earliest,
                                              data_latest)
 
-    print('\n*** DATETIME START: {0}'.format(datetime_start))
-    print('***   DATETIME END: {0}'.format(datetime_end))
+    if _TRACE:
+        print('\n*** datetime_start: {0}'.format(datetime_start))
+        print('***   datetime_end: {0}'.format(datetime_end))
         
     return (datetime_start, datetime_end)
 
@@ -609,6 +360,11 @@ def _apply_datetime_filter(samples, t0, t1):
     parser module.
     """
 
+    if _TRACE:
+        print('CQLExecutionTask: calling _apply_datetime_filter...')
+        print('\tt0: {0}, t1: {0}'.format(t0, t1))
+        print('\tlength of samples list: {0}'.format(len(samples)))
+
     if 0 == len(samples):
         return []
     
@@ -617,10 +373,11 @@ def _apply_datetime_filter(samples, t0, t1):
 
         # Timestamps from the relevant FHIR resources have been mapped to
         # the 'date_time' field by the cql_result_parser.
-        t = getattr(s, 'date_time', None)
+        t = getattr(s, crp.KEY_DATE_TIME, None)
         if t is None:
+            # no timestamp in this sample
+            results.append(s)
             continue
-
         if t0 is not None and t <= t0:
             continue
         if t1 is not None and t >= t1:
@@ -635,6 +392,7 @@ def _apply_datetime_filter(samples, t0, t1):
 class CQLExecutionTask(BaseTask):
     
     task_name = "CQLExecutionTask"
+    parallel_task = False
         
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         
@@ -648,14 +406,29 @@ class CQLExecutionTask(BaseTask):
         if check_val == task_index:
 
             job_id = str(self.job)
-            
-            # URL of the FHIR server's CQL evaluation endpoint
-            cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
-                                           'cql_eval_url',
+
+            # get the FHIR Version
+            fhir_version = _get_custom_arg(_FHIR_VERSION,
+                                           'fhir_version',
                                            job_id,
                                            self.pipeline_config.custom_arguments)
-            if cql_eval_url is None:
+            if fhir_version is None:
+                print('\n*** CQLExecutionTask: using fhir_version == DSTU2 ***')
+                fhir_version = "DSTU2"
+
+            fhir_version = fhir_version.lower()
+            if not fhir_version.endswith('stu2') and not fhir_version.endswith('stu3'):
+                print('\n*** CQLExecutionTask: fhir_version "{0}" is invalid ***'.
+                      format(fhir_version))
                 return
+            
+            # # URL of the FHIR server's CQL evaluation endpoint
+            # cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
+            #                                'cql_eval_url',
+            #                                job_id,
+            #                                self.pipeline_config.custom_arguments)
+            # if cql_eval_url is None:
+            #     return
             
             patient_id = _get_custom_arg(_FHIR_PATIENT_ID,
                                          'patient_id',
@@ -676,19 +449,21 @@ class CQLExecutionTask(BaseTask):
                 print('\n*** CQLExecutionTask: no CQL code was found ***\n')
                 return
             
-            fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
-                                                                'fhir_terminology_service_endpoint',
-                                                                job_id,
-                                                                self.pipeline_config.custom_arguments)
+            # fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
+            #                                                     'fhir_terminology_service_endpoint',
+            #                                                     job_id,
+            #                                                     self.pipeline_config.custom_arguments)
              
+            # if fhir_terminology_service_endpoint is None:
+            #     return
+            
             fhir_data_service_uri = _get_custom_arg(_FHIR_DATA_SERVICE_URI,
                                                     'fhir_data_service_uri',
                                                     job_id,
                                                     self.pipeline_config.custom_arguments)
-            if fhir_terminology_service_endpoint is None:
-                return
             
             if fhir_data_service_uri is None:
+                print('\n*** CQLExecutionTask: fhir_data_service is None ***')
                 return
 
             # ensure '/' termination
@@ -698,8 +473,9 @@ class CQLExecutionTask(BaseTask):
             # initialize payload
             payload = {
                 # the requests lib will properly escape the raw string
+                "fhirVersion":fhir_version,
                 "code":cql_code,
-                "fhirServiceUri":fhir_terminology_service_endpoint,
+                #"fhirServiceUri":fhir_terminology_service_endpoint,
                 "dataServiceUri":fhir_data_service_uri,
                 "patientId":patient_id,
             }
@@ -714,10 +490,14 @@ class CQLExecutionTask(BaseTask):
                                               job_id,
                                               self.pipeline_config.custom_arguments)
 
+            # setup the request header; add authentication if credentials provided
             headers = {
-                'Content-Type':'application/json',
-                'Authorization':'{0} {1}'.format(fhir_auth_type, fhir_auth_token)
+                'Content-Type':'application/json'
             }
+
+            if fhir_auth_type is not None and fhir_auth_token is not None:
+                if len(fhir_auth_type) > 0 and len(fhir_auth_token) > 0:
+                    headers['Authorization'] = '{0} {1}'.format(fhir_auth_type, fhir_auth_token)
             
             # params for UMLS OID code lookup
             fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
@@ -739,18 +519,31 @@ class CQLExecutionTask(BaseTask):
                                                              job_id,
                                                              self.pipeline_config.custom_arguments)
             
-            # setup terminology server capability
-            if fhir_terminology_service_uri is not None and \
-               fhir_terminology_user_name is not None and fhir_terminology_user_name != 'username' and \
-               fhir_terminology_user_password is not None and fhir_terminology_user_password != 'password':
-                payload['terminologyServiceUri'] = fhir_terminology_service_uri
-                payload['terminologyUser'] = fhir_terminology_user_name
-                payload['terminologyPass'] = fhir_terminology_user_password
+            # # setup terminology server capability
+            # if fhir_terminology_service_uri is not None and \
+            #    fhir_terminology_user_name is not None and fhir_terminology_user_name != 'username' and \
+            #    fhir_terminology_user_password is not None and fhir_terminology_user_password != 'password':
+            #     payload['terminologyServiceUri'] = fhir_terminology_service_uri
+            #     payload['terminologyUser'] = fhir_terminology_user_name
+            #     payload['terminologyPass'] = fhir_terminology_user_password
                 
             # perform the request here, catch lots of different exceptions
+
+            print('\n*** CQLExecutionTask: Request ***')
+            print('Headers: ')
+            for k,v in headers.items():
+                print('\t{0} => {1}'.format(k,v))
+            print('Payload: ')
+            for k,v in payload.items():
+                print('\t{0} => {1}'.format(k,v))
+            print()
+            
             has_error = False
             try:
-                r = requests.post(cql_eval_url, headers=headers, json=payload)
+                r = requests.post(#'https://gt-apps.hdap.gatech.edu/cql/evaluate', #cql_eval_url,
+                                  #'https://apps.hdap.gatech.edu/cql/evaluate',
+                                  'http://cql-execution:8080/cql/evaluate',
+                                  headers=headers, json=payload)
             except requests.exceptions.HTTPError as e:
                 print('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
                 has_error = True
@@ -766,25 +559,30 @@ class CQLExecutionTask(BaseTask):
 
             if has_error:
                 print('HTTP error, terminating CQLExecutionTask...')
+                print('RESPONSE CONTENT')
+                print(r.content)
+                print('RESPONSE HEADERS')
+                print(r.headers)
                 return
                 
             print('Response status code: {0}'.format(r.status_code))
 
             results = None
             if 200 == r.status_code:
-                print('\n*** CQL JSON RESULTS ***\n')
-                print(r.json())
-                print()
+                if _TRACE:
+                    print('\n*** CQL JSON RESULTS ***\n')
+                    print(r.json())
+                    print()
 
                 # data_earliest == earliest datetime in the data
                 # data_latest   == latest datetime in the data
                 results, data_earliest, data_latest = _json_to_objs(r.json())
-                print('\tfound {0} results'.format(len(results)))
+                print('\tCQLExecutionTask: found {0} results'.format(len(results)))
             else:
                 print('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
                 return
 
-            if results is None:
+            if results is None or (0 == len(results)):
                 return
 
             # parse datetime_start, datetime_end time commands, if any, and
@@ -797,46 +595,22 @@ class CQLExecutionTask(BaseTask):
 
             # remove results outside of the desired time window
             results = _apply_datetime_filter(results, datetime_start, datetime_end)
-
-            patient_obj = {}
+            print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
+                  format(len(results)))
+            
             for obj in results:
 
-                mongo_obj = {}
-
-                # get patient info once
-                # all others duplicate the patient info in new records
-                # move the mongo write to after each observation
-                if isinstance(obj, crp.PatientResource):
-                    print('\tFOUND PATIENT RESOURCE')
-                    # don't write the patient resource yet; instead, include
-                    # the patient data with every additional write
-                    _extract_patient_resource(obj, patient_obj)
-                    continue
-                elif isinstance(obj, crp.ProcedureResource):
-                    print('\tFOUND PROCEDURE RESOURCE')
-                    _extract_procedure_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ConditionResource):
-                    print('\tFOUND CONDITION RESOURCE')
-                    _extract_condition_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ObservationResource):
-                    print('\tFOUND OBSERVATION RESOURCE')
-                    _extract_observation_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationStatementResource):
-                    print('\tFOUND MEDICATION STATEMENT RESOURCE')
-                    _extract_medication_statement_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationRequestResource):
-                    print('\tFOUND MEDICATION REQUEST RESOURCE')
-                    _extract_medication_request_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationAdministrationResource):
-                    print('\tFOUND MEDICATION ADMINISTRATION RESOURCE')
-                    _extract_medication_administration_resource(obj, mongo_obj)
-                else:
-                    print('\tFOUND UNKNOWN RESOURCE')
+                if obj is None:
                     continue
 
-                # copy patient data
-                for k,v in patient_obj.items():
-                    mongo_obj[k] = v
+                if _TRACE:
+                    print('obj before _to_result_obj: ')
+                    print(obj)
+                    print()
+
+                assert _KEY_RT in obj
+                resource_type = obj[_KEY_RT]
+                mongo_obj = _to_result_obj(obj)
 
                 self.write_result_data(temp_file, mongo_client, None, mongo_obj)
 
@@ -850,6 +624,10 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--filepath',
                         help='path to JSON file containing CQL Engine results')
 
+    parser.add_argument('--debug',
+                        action='store_true',
+                        help='print debugging information')
+
     args = parser.parse_args()
 
     filpath = None
@@ -859,6 +637,9 @@ if __name__ == '__main__':
             print('Unknown file specified: "{0}"'.format(filepath))
             sys.exit(-1)
 
+    if 'debug' in args and args.debug:
+        crp.enable_debug()
+        
     with open(filepath, 'rt') as infile:
         json_string = infile.read()
         json_data = json.loads(json_string)
@@ -867,48 +648,16 @@ if __name__ == '__main__':
         print('\tfound {0} results'.format(len(results)))
         if results is not None:
 
-            counter = 0
-            patient_obj = {}
-            for obj in results:
-
-                mongo_obj = {}
+            for counter, obj in enumerate(results):
                 
-                # get patient info once
-                # all others duplicate the patient info in new records
-                # move the mongo write to after each observation
-                if isinstance(obj, crp.PatientResource):
-                    print('\tFOUND PATIENT RESOURCE')
-                    # don't write the patient resource yet; instead, include
-                    # the patient data with every additional write
-                    _extract_patient_resource(obj, patient_obj)
-                    continue
-                elif isinstance(obj, crp.ProcedureResource):
-                    print('\tFOUND PROCEDURE RESOURCE')
-                    _extract_procedure_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ConditionResource):
-                    print('\tFOUND CONDITION RESOURCE')
-                    _extract_condition_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.ObservationResource):
-                    print('\tFOUND OBSERVATION RESOURCE')
-                    _extract_observation_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationStatementResource):
-                    print('\tFOUND MEDICATION STATEMENT RESOURCE')
-                    _extract_medication_statement_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationRequestResource):
-                    print('\tFOUND MEDICATION REQUEST RESOURCE')
-                    _extract_medication_request_resource(obj, mongo_obj)
-                elif isinstance(obj, crp.MedicationAdministrationResource):
-                    print('\tFOUND MEDICATION ADMINISTRATION RESOURCE')
-                    _extract_medication_administration_resource(obj, mongo_obj)
-                else:
-                    print('\tFOUND UNKNOWN RESOURCE')
+                if obj is None:
                     continue
 
-                # copy patient data
-                for k,v in patient_obj.items():
-                    mongo_obj[k] = v
+                assert _KEY_RT in obj
+                resource_type = obj[_KEY_RT]
+                mongo_obj = _to_result_obj(obj)
 
-                # print out
+                # print to stdout
                 print('RESULT {0}'.format(counter))
                 for k,v in mongo_obj.items():
                     if dict == type(v):
@@ -917,4 +666,3 @@ if __name__ == '__main__':
                             print('\t\t{0} => {1}'.format(k2, v2))
                     else:
                         print('\t{0} => {1}'.format(k,v))
-                counter += 1

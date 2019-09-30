@@ -27,7 +27,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
-      - PROTOCOL=${PROTOCOL}
+      - PROTOCOL=http
       - HOST=${HOST}
       - IDP_URL=${HOST}/${IDP_PREFIX}
       - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
@@ -67,8 +67,7 @@ services:
       - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
       - --timeout=420
       - --
-      - python3
-    command: api.py
+    command: gunicorn api --config config.py --timeout 500 -b :5000
     environment:
       - NLP_API_TMP_DIR=${NLP_API_TMP_DIR}
       - NLP_API_LOG_DIR=${NLP_API_LOG_DIR}
@@ -231,7 +230,7 @@ services:
       - INGEST_API_LOG_LEVEL=${INGEST_API_LOG_LEVEL}
       - REDIS_HOSTNAME=${REDIS_HOSTNAME}
       - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
-      - PROTOCOL=${PROTOCOL}
+      - PROTOCOL=http
       - DOMAIN=${DOMAIN}
       - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
       - INGEST_URL=${INGEST_PREFIX}.${HOST}
@@ -291,7 +290,6 @@ services:
       - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
       - INGEST_URL=${INGEST_PREFIX}.${HOST}
       - SOCKET_URL=${HOST}
-      - PUBLIC_URL=/ingest
     labels:
       - "traefik.enable=true"
       - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
@@ -316,7 +314,6 @@ services:
       - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
       - SOLR_URL=${HOST}/${SOLR_PREFIX}
       - LUIGI_URL=${HOST}/${SCHEDULER_PREFIX}
-      - PUBLIC_URL=/
     labels:
       - "traefik.enable=true"
       - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
@@ -341,7 +338,6 @@ services:
       - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
       - SOCKET_URL=${HOST}
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
-      - PUBLIC_URL=/
     labels:
       - "traefik.enable=true"
       - "traefik.port=${DASHBOARD_CLIENT_CONTAINER_PORT}"

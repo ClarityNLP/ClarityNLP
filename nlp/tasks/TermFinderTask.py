@@ -132,7 +132,7 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
         else:
             if not term_matcher:
                 term_matcher = TermFinder(pipeline_config.terms, pipeline_config.include_synonyms, pipeline_config
-                                          .include_descendants, pipeline_config.ancestors, pipeline_config
+                                          .include_descendants, pipeline_config.include_ancestors, pipeline_config
                                           .vocabulary, filters=filters, excluded_terms=pipeline_config.excluded_terms)
             section_headers, section_texts = document_sections(doc)
             terms_found = term_matcher.get_term_full_text_matches(document_text(doc), section_headers, section_texts)
@@ -143,6 +143,7 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     "sentence": term.sentence,
                     "section": term.section,
                     "term": term.term,
+                    "text": term.term,
                     "start": term.start,
                     "end": term.end,
                     "negation": term.negex,
@@ -152,8 +153,10 @@ def run_term_finder(name, filters, pipeline_config, temp_file, mongo_client, doc
                     "result_display": {
                         "date": doc[util.solr_report_date_field],
                         "result_content": term.sentence,
-                        "sentence": '',
-                        "highlights": [term.term]
+                        "sentence": term.sentence,
+                        "highlights": [term.term],
+                        "start": [term.start],
+                        "end": [term.end],
                     }
                 }
 

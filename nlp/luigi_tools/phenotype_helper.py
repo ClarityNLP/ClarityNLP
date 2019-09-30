@@ -516,16 +516,26 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
     if 'mongo' == evaluator:
         print('Using mongo evaluator for expression "{0}"'.format(expression))
 
-        # get the names of the phenotype's data_entities and operations
-        names = get_all_names(phenotype)
+        # The validate_phenotype function parses the expression and checks it
+        # for various errors. A normalized version of the expression is then
+        # stored in the operations dict for that expression. If validation has
+        # not been performed for some reason, the normalized expression will
+        # contain the empty string.
+        parse_result = c['normalized_expr']
+        if 0 == len(parse_result):
+        
+            # get the names of the phenotype's data_entities and operations
+            names = get_all_names(phenotype)
 
-        # Parse the expression and return a fully-parenthesized version
-        # that uses mnemonics for the operators. The evaluator will attempt
-        # to resolve any unknown tokens into concatenated names and logic
-        # operators. If it finds a token that it cannot resolve into known
-        # names it returns an empty list. An empty list is also returned
-        # if the expression cannot be evaluated for some other reason.
-        parse_result = expr_eval.parse_expression(expression, names)
+            # Parse the expression and return a fully-parenthesized version
+            # that uses mnemonics for the operators. The evaluator will attempt
+            # to resolve any unknown tokens into concatenated names and logic
+            # operators. If it finds a token that it cannot resolve into known
+            # names it returns an empty string. An empty string is also
+            # returned if the expression cannot be evaluated for some other
+            # reason.
+            parse_result = expr_eval.parse_expression(expression, names)
+            
         if 0 == len(parse_result):
             print('\n\t*** Expression cannot be evaluated. ***\n')
             mongo_failed = True
@@ -837,9 +847,8 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
 
 
 def validate_phenotype(p_cfg: PhenotypeModel):
-    # TODO a lot more checks need to be done
     error = None
-
+    
     try:
         if not error:
             if not p_cfg:
@@ -853,6 +862,30 @@ def validate_phenotype(p_cfg: PhenotypeModel):
         print(ex)
         error = ''.join(traceback.format_stack())
 
+    # Run validity and syntax checks on all expressions, ensure that only
+    # defined names are used as variables, etc.
+
+    name_list = get_all_names(p_cfg)
+
+    # get raw text of all expressions
+    KEY_RAW  = 'raw_text'    
+    expression_list = []    
+    for i, op in enumerate(p_cfg.operations):
+        if KEY_RAW in op:
+            # save expression index and raw text
+            expression_list.append( (i, op[KEY_RAW]) )
+    
+    for i, expr in expression_list:
+        # The 'parse_result' is a string of whitespace-separated expression
+        # tokens. Invalid expressions cause an empty string to be returned.
+        parse_result = expr_eval.parse_expression(expr, name_list)
+        if 0 == len(parse_result):
+            error = 'Invalid expression: {0}'.format(expr)
+            break
+        else:
+            # saved the parse result for later use
+            p_cfg.operations[i]['normalized_expr'] = parse_result
+    
     if not error:
         return {"success": True}
     else:

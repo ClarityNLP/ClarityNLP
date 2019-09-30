@@ -87,8 +87,6 @@ services:
     image: claritynlp/nlp-api
     expose:
       - ${NLP_API_CONTAINER_PORT}
-    volumes:
-      - ./nlp:/api
     entrypoint:
       - /api/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
@@ -98,8 +96,7 @@ services:
       - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
       - --timeout=420
       - --
-      - python3
-    command: api.py
+    command: gunicorn api --config config.py --timeout 500 -b :5000
     environment:
       - NLP_API_TMP_DIR=${NLP_API_TMP_DIR}
       - NLP_API_LOG_DIR=${NLP_API_LOG_DIR}
