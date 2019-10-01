@@ -18,6 +18,9 @@ pipeline{
       ingestClientImage = ''
       viewerClientImage = ''
       dashboardClientImage = ''
+      ingestClientImageVhost = ''
+      viewerClientImageVhost = ''
+      dashboardClientImageVhost = ''
     }
 
     //Define stages for the build process
