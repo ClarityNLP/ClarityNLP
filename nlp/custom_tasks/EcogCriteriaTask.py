@@ -49,38 +49,43 @@ _VERSION_MINOR = 2
 # set to True to enable debug output
 _TRACE = False
 
-# inclusion criteria (everything up to the exclusion statement)
-_str_inclusion_criteria_1 = r'\bInclusion Criteria:.+(?=Exclusion Criteria:)'
-_str_inclusion_criteria_2 = r'\bInclusion Criteria:.+(?=Exclusion:)'
-_str_inclusion_criteria = r'(' + _str_inclusion_criteria_1 + r'|' +\
-    _str_inclusion_criteria_2 + r')'
-_regex_inclusion_criteria = re.compile(_str_inclusion_criteria, re.IGNORECASE)
+_str_ecog1 = r'\b(Eastern Cooperative Oncology( Group)?[-\s]+Performance Status (ECOG)?|' +\
+    r'Eastern Cooperative Oncology Group[-\s]+(ECOG)?|' +\
+    r'ECOG)([a-z\s=:.]+)'
 
-# exclusion criteria
-_str_exclusion_criteria = r'\bExclusion Criteria:.*\Z'
-_regex_exclusion_criteria = re.compile(_str_exclusion_criteria, re.IGNORECASE)
+_str_num1 = r'(?P<lo>\d)'
+_str_num2 = r'(?P<lo>\d)\s*(,\s*)?(or|to|[-/~&])\s*(?P<hi>\d)'
+_str_num3 = r'(?P<lo>\d)\s(?P<mid>\d)\s*(or\s*)?(?P<hi>\d)'
+_str_num4 = r'(?P<lo>\d)\s(?P<mid>\d)\s(?P<mid1>\d)\s*(or\s*)?(?P<hi>\d)'
 
-# eligibility criteria
-_str_eligibility_criteria = r'\bEligibility Criteria:.*\Z'
-_regex_eligibility_criteria = re.compile(_str_eligibility_criteria, re.IGNORECASE)
-
-# inclusion / exclusion criteria
-_str_inc_ex_criteria = r'\bInclusion / Exclusion Criteria:.*\Z'
-_regex_inc_ex_criteria = re.compile(_str_inc_ex_criteria, re.IGNORECASE)
-
-_str_ecog = r'\b(Eastern Cooperative Oncology Group|ECOG)\s*([a-z\s=:.]+){0,4}'
-
-_str1 = _str_ecog + r'(?P<lo>\d)'
+# these regexes assume the ECOG score(s) follow the ECOG statement
+_str1 = _str_ecog1 + _str_num1
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
-_str2 = _str_ecog + r'(?P<lo>\d)\s*(,\s*)?(or|to|[-/~&])\s*(?P<hi>\d)'
+_str2 = _str_ecog1 + _str_num2
 _regex2 = re.compile(_str2, re.IGNORECASE)
 
-_str3 = _str_ecog + r'(?P<lo>\d)\s(?P<mid>\d)\s*(or\s*)?(?P<hi>\d)'
+_str3 = _str_ecog1 + _str_num3
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
-_str4 = _str_ecog + r'(?P<lo>\d)\s(?P<mid>\d)\s(?P<mid1>\d)\s*(or\s*)?(?P<hi>\d)'
+_str4 = _str_ecog1 + _str_num4
 _regex4 = re.compile(_str4, re.IGNORECASE)
+
+# ECOG score(s) appears between _str_ps and _str_ecog2
+_str_ps = r'\bperformance status( of)?\s'
+_str_ecog2 = r'\b\s((on the )?Eastern Cooperative Oncology Group( ECOG)?|ECOG)( score)?'
+
+_str5 = _str_ps + _str_num1 + _str_ecog2
+_regex5 = re.compile(_str5, re.IGNORECASE)
+
+_str6 = _str_ps + _str_num2 + _str_ecog2
+_regex6 = re.compile(_str6, re.IGNORECASE)
+
+_str7 = _str_ps + _str_num3 + _str_ecog2
+_regex7 = re.compile(_str7, re.IGNORECASE)
+
+_str8 = _str_ps + _str_num4 + _str_ecog2
+_regex8 = re.compile(_str8, re.IGNORECASE)
 
 _str_or        = r'(/| or )'
 _str_equal     = r'\b(equal|eq.?)( to )'
@@ -95,15 +100,30 @@ _str_gte       = r'(>=|' + _str_gt + _str_or + _str_eq + r')'
 _str_egt       = r'(=>|' + _str_eq + _str_or + _str_gt + r')'
 
 _op_list    = [_str_lte, _str_gte, _str_elt, _str_egt, _str_lt, _str_gt, _str_eq]
-_op_strings = [_str_ecog + r'(?P<op>' + op + r')' + r'\s*(?P<lo>\d)'
+_op_strings = [_str_ecog1 + r'(?P<op>' + op + r')' + r'\s*(?P<lo>\d)'
               for op in _op_list]
 _op_regexes = [re.compile(s, re.IGNORECASE) for s in _op_strings]
 _op_map     = dict(zip(_op_regexes, _op_list))
 
 _op_regex_list = [k for k in _op_map.keys()]
 
-_regexes = [_regex4, _regex3, _regex2, _regex1]
+_regexes = [
+    _regex4,
+    _regex3,
+    _regex2,
+    _regex1,
+]
+
+# add operator regexes for scores following ECOG statement
 _regexes.extend(_op_regex_list)
+
+# add in-between regexes
+_regexes.extend([
+    _regex8,
+    _regex7,
+    _regex6,
+    _regex5
+])
 
 ECOG_RESULT_FIELDS = [
     'sentence', 'start', 'end', 'inc_or_ex', 'score_min', 'score_max'
@@ -130,9 +150,9 @@ def _cleanup_document(document):
     can be used.
     """
 
-    # replace parens, brackets, and commas with spaces
+    # replace some chars with spaces
     document = re.sub(r'[\(\)\[\],]', ' ', document)
-    
+
     # collapse repeated whitespace (including newlines) into a single space
     document = re.sub(r'\s+', ' ', document)
 
@@ -271,7 +291,10 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
     candidate_list = sorted(candidate_list,
                             key=lambda x: x.end - x.start, reverse=True)
 
-    pruned_candidates = overlap.remove_overlap(candidate_list, _TRACE)
+    if len(candidate_list) > 0:
+        pruned_candidates = overlap.remove_overlap(candidate_list, _TRACE)
+    else:
+        pruned_candidates = []
 
     if _TRACE:
         print('\tcandidates count after overlap removal: {0}'.
@@ -311,37 +334,42 @@ def _find_ecog_scores(doc):
 
     result_list = []    
 
-    # list in order from longest to shortest criteria header
-    inclusion_operations = [
-        (_regex_inc_ex_criteria,      'INC_EX_CRITERIA',      _ID_INC),
-        (_regex_eligibility_criteria, 'ELIGIBILITY CRITERIA', _ID_INC),
-        (_regex_inclusion_criteria,   'INCLUSION CRITERIA',   _ID_INC),
+    exclusion_header = [
+        'exclusion criteria',
+        'exclusion'
     ]
 
-    exclusion_operations = [
-        (_regex_exclusion_criteria,   'EXCLUSION CRITERIA',   _ID_EX),
-    ]
+    doc_lc = doc.lower()
 
-    # find the inclusion criteria first, then the exclusion criteria
-    operations = [inclusion_operations, exclusion_operations]
-    for op in operations:
-        for regex, criteria, identifier in op:
-            match = regex.search(doc)
-            if match:
-                sentence = match.group()
-                sentence = _cleanup_sentence(sentence)
+    # find the exclusion criteria header, if any
+    inclusion_str = None
+    exclusion_str = None
+    pos = -1
+    for header in exclusion_header:
+        pos = doc_lc.find(header)
+        if -1 != pos:
+            inclusion_str = doc[:pos]
+            exclusion_str = doc[pos:]
+        else:
+            # all inclusion
+            inclusion_str = doc
 
-                if _TRACE:
-                    print('{0} MATCH:\n\tmatching text: "{1}...{2}"'.
-                          format(criteria, match.group()[:24], match.group()[-24:]))
+    if inclusion_str is not None and len(inclusion_str) > 0:
+        inclusion_str = _cleanup_sentence(inclusion_str)
+        if _TRACE:
+            print('CLEANED INCLUSION CRITERIA: "{0}...{1}"'.
+                  format(inclusion_str[:24], inclusion_str[-24:]))
+        results = _process_sentence(inclusion_str, _ID_INC)
+        result_list.extend(results)
 
-                results = _process_sentence(sentence, identifier)
-                result_list.extend(results)
-
-                # search for exclusion criteria in remaining portion of doc
-                doc = doc[match.end():]
-                break
-
+    if exclusion_str is not None and len(exclusion_str) > 0:
+        exclusion_str = _cleanup_sentence(exclusion_str)
+        if _TRACE:
+            print('CLEANED EXCLUSION CRITERIA: "{0}...{1}"'.
+                  format(exclusion_str[:24], exclusion_str[-24:]))
+        results = _process_sentence(exclusion_str, _ID_EX)
+        result_list.extend(results)
+    
     return result_list
 
 
