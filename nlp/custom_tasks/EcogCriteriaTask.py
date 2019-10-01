@@ -49,20 +49,24 @@ _VERSION_MINOR = 2
 # set to True to enable debug output
 _TRACE = False
 
-# find inclusion criteria text (everything up to the exclusion criteria)
+# inclusion criteria (everything up to the exclusion statement)
 _str_inclusion_criteria_1 = r'\bInclusion Criteria:.+(?=Exclusion Criteria:)'
 _str_inclusion_criteria_2 = r'\bInclusion Criteria:.+(?=Exclusion:)'
 _str_inclusion_criteria = r'(' + _str_inclusion_criteria_1 + r'|' +\
     _str_inclusion_criteria_2 + r')'
-_regex_inclusion_criteria = re.compile(_str_inclusion_criteria)
+_regex_inclusion_criteria = re.compile(_str_inclusion_criteria, re.IGNORECASE)
 
-# find exclusion criteria text
+# exclusion criteria
 _str_exclusion_criteria = r'\bExclusion Criteria:.*\Z'
-_regex_exclusion_criteria = re.compile(_str_exclusion_criteria)
+_regex_exclusion_criteria = re.compile(_str_exclusion_criteria, re.IGNORECASE)
 
-# find eligibility criteria text
+# eligibility criteria
 _str_eligibility_criteria = r'\bEligibility Criteria:.*\Z'
-_regex_eligibility_criteria = re.compile(_str_eligibility_criteria)
+_regex_eligibility_criteria = re.compile(_str_eligibility_criteria, re.IGNORECASE)
+
+# inclusion / exclusion criteria
+_str_inc_ex_criteria = r'\bInclusion / Exclusion Criteria:.*\Z'
+_regex_inc_ex_criteria = re.compile(_str_inc_ex_criteria, re.IGNORECASE)
 
 _str_ecog = r'\b(Eastern Cooperative Oncology Group|ECOG)\s*([a-z\s=:.]+){0,4}'
 
@@ -294,54 +298,49 @@ def _find_ecog_scores(doc):
     """
     Scan a document and run ecog score-finding regexes on it.
     Returns a list of EcogScoreResult namedtuples.
+
+    Assumes a SINGLE set of inclusion criteria and a SINGLE set of exclusion
+    criteria in the document text. Also assumes that the inclusion criteria
+    come before the exclusion criteria. These assumptions are consistent with
+    the AACT 'Clinical Trial Criteria' announcements. 
+
+    The inclusion criteria may appear as 'Inclusion Criteria:',
+    'Eligibility Criteria:', 'Inclusion / Exclusion Criteria:', or possibly
+    other forms. See the regexes below for all supported forms.
     """
 
     result_list = []    
-    
-    operations_list = [
+
+    # list in order from longest to shortest criteria header
+    inclusion_operations = [
+        (_regex_inc_ex_criteria,      'INC_EX_CRITERIA',      _ID_INC),
+        (_regex_eligibility_criteria, 'ELIGIBILITY CRITERIA', _ID_INC),
         (_regex_inclusion_criteria,   'INCLUSION CRITERIA',   _ID_INC),
-        (_regex_exclusion_criteria,   'EXCLUSION CRITERIA',   _ID_EX),
-        (_regex_eligibility_criteria, 'ELIGIBILITY CRITERIA', _ID_INC)
     ]
 
-    for regex, criteria, identifier in operations_list:
-        match = regex.search(doc)
-        if match:
-            sentence = match.group()
-            sentence = _cleanup_sentence(sentence)
+    exclusion_operations = [
+        (_regex_exclusion_criteria,   'EXCLUSION CRITERIA',   _ID_EX),
+    ]
 
-            if _TRACE:
-                print('{0} MATCH:\n\t"{1}..."'.
-                      format(criteria, match.group()[:32]))
+    # find the inclusion criteria first, then the exclusion criteria
+    operations = [inclusion_operations, exclusion_operations]
+    for op in operations:
+        for regex, criteria, identifier in op:
+            match = regex.search(doc)
+            if match:
+                sentence = match.group()
+                sentence = _cleanup_sentence(sentence)
 
-            results = _process_sentence(sentence, identifier)
-            result_list.extend(results)
+                if _TRACE:
+                    print('{0} MATCH:\n\tmatching text: "{1}...{2}"'.
+                          format(criteria, match.group()[:24], match.group()[-24:]))
 
-    # # inclusion criteria
-    # match = _regex_inclusion_criteria.search(doc)
-    # if match:
-    #     sentence = match.group()
-    #     sentence = _cleanup_sentence(sentence)
+                results = _process_sentence(sentence, identifier)
+                result_list.extend(results)
 
-    #     if _TRACE:
-    #         print('INCLUSION CRITERIA MATCH:\n\t"{0}..."'.
-    #               format(match.group()[:32]))
-        
-    #     results = _process_sentence(sentence, _ID_INC)
-    #     result_list.extend(results)
-            
-    # # exclusion criteria
-    # match = _regex_exclusion_criteria.search(doc)
-    # if match:
-    #     sentence = match.group()
-    #     sentence = _cleanup_sentence(sentence)
-
-    #     if _TRACE:
-    #         print('EXCLUSION CRITERIA MATCH:\n\t"{0}..."'.
-    #               format(match.group()[:32]))
-
-    #     results = _process_sentence(sentence, _ID_EX)
-    #     result_list.extend(results)
+                # search for exclusion criteria in remaining portion of doc
+                doc = doc[match.end():]
+                break
 
     return result_list
 
@@ -414,37 +413,6 @@ class EcogCriteriaTask(BaseTask):
                 for result in result_list:
 
                     mongo_obj = _to_mongo_object(result)
-                    # scores = [0,0,0,0,0,0]
-
-                    # lo = result.score_min
-                    # hi = result.score_max
-
-                    # if hi is None:
-                    #     scores[lo] = 1
-                    # else:
-                    #     for i in range(lo, hi+1):
-                    #         scores[i] = 1
-
-                    # if 1 == result.inc_or_ex:
-                    #     criteria = 'Inclusion'
-                    # else:
-                    #     criteria = 'Exclusion'
-
-                    # obj = {
-                    #     'sentence':result.sentence,
-                    #     'start':result.start,
-                    #     'end':result.end,
-                    #     'criteria_type':criteria,
-                    #     'score_0':scores[0],
-                    #     'score_1':scores[1],
-                    #     'score_2':scores[2],
-                    #     'score_3':scores[3],
-                    #     'score_4':scores[4],
-                    #     'score_5':scores[5],
-                    #     'score_lo':result.score_min,
-                    #     'score_hi':result.score_max
-                    # }
-
                     self.write_result_data(temp_file,
                                            mongo_client, doc, mongo_obj)
                     
@@ -536,17 +504,24 @@ if __name__ == '__main__':
                 print('\t*** No results found ***')
                 continue
 
+            print('RESULTS: ')
+            max_key_len = 0
             for result in result_list:
-                # text = result.sentence[result.start:result.end]
-                # if _ID_INC == result.inc_or_ex:
-                #     inc_or_ex = 'INCLUSION'
-                # else:
-                #     inc_or_ex = 'EXCLUSION'
-                # print('\t[{0}]: {1}'.format(inc_or_ex, text))
                 mongo_obj = _to_mongo_object(result)
+
+                if 0 == max_key_len:
+                    for k in mongo_obj.keys():
+                        if len(k) > max_key_len:
+                            max_key_len = len(k)
+                
                 for k,v in mongo_obj.items():
                     if 'sentence' == k:
+                        # display only the ECOG match
+                        sentence = mongo_obj[k]
+                        start = mongo_obj['start']
+                        end   = mongo_obj['end']
                         k = 'matching_text'
-                        v = mongo_obj['sentence'][start:end]
-                    print('{0} => {1}'.format(k, v))
-                    
+                        v = sentence[start:end]
+                    indent = ' ' * (max_key_len - len(k))
+                    print('\t{0}{1} => {2}'.format(indent, k, v))
+                print()
