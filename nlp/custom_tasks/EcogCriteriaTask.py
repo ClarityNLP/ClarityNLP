@@ -439,10 +439,10 @@ class EcogCriteriaTask(BaseTask):
             # write results to MongoDB
             if len(result_list) > 0:
                 for result in result_list:
-
                     mongo_obj = _to_mongo_object(result)
                     self.write_result_data(temp_file,
                                            mongo_client, doc, mongo_obj)
+
                     
 ###############################################################################
 if __name__ == '__main__':
