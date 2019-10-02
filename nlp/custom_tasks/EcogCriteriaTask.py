@@ -24,35 +24,68 @@ Sample NLPQL:
 
 """
 
+import os
 import re
+import sys
+import json
+import argparse
 from pymongo import MongoClient
 from collections import namedtuple
+
+# modify path for local testing
+if __name__ == '__main__':
+    cur_dir = sys.path[0]
+    nlp_dir, tail = os.path.split(cur_dir)
+    sys.path.append(nlp_dir)
+    sys.path.append(os.path.join(nlp_dir, 'tasks'))
+
+# ClarityNLP imports
 from tasks.task_utilities import BaseTask
+from algorithms.finder import finder_overlap as overlap
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 
-# find inclusion criteria text (everything up to the exclusion criteria)
-_str_inclusion_criteria = r'\bInclusion Criteria:.+(?=Exclusion Criteria:)'
-_regex_inclusion_criteria = re.compile(_str_inclusion_criteria)
+# set to True to enable debug output
+_TRACE = False
 
-# find exclusion criteria text
-_str_exclusion_criteria = r'\bExclusion Criteria:.*\Z'
-_regex_exclusion_criteria = re.compile(_str_exclusion_criteria)
+_str_ecog1 = r'\b(Eastern Cooperative Oncology( Group)?[-\s]+Performance Status (ECOG)?|' +\
+    r'Eastern Cooperative Oncology Group[-\s]+(ECOG)?|' +\
+    r'ECOG)([a-z\s=:.]+)'
 
-_str_ecog = r'\b(Eastern Cooperative Oncology Group|ECOG) ([a-z\s=:]+){0,4}'
+_str_num1 = r'(?P<lo>\d)'
+_str_num2 = r'(?P<lo>\d)\s*(,\s*)?(or|to|[-/~&])\s*(?P<hi>\d)'
+_str_num3 = r'(?P<lo>\d)\s(?P<mid>\d)\s*(or\s*)?(?P<hi>\d)'
+_str_num4 = r'(?P<lo>\d)\s(?P<mid>\d)\s(?P<mid1>\d)\s*(or\s*)?(?P<hi>\d)'
 
-_str1 = _str_ecog + r'(?P<lo>\d)'
+# these regexes assume the ECOG score(s) follow the ECOG statement
+_str1 = _str_ecog1 + _str_num1
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
-_str2 = _str_ecog + r'(?P<lo>\d)\s*(,\s*)?(or|to|[-/~&])\s*(?P<hi>\d)'
+_str2 = _str_ecog1 + _str_num2
 _regex2 = re.compile(_str2, re.IGNORECASE)
 
-_str3 = _str_ecog + r'(?P<lo>\d)\s(?P<mid>\d)\s*(or\s*)?(?P<hi>\d)'
+_str3 = _str_ecog1 + _str_num3
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
-_str4 = _str_ecog + r'(?P<lo>\d)\s(?P<mid>\d)\s(?P<mid1>\d)\s*(or\s*)?(?P<hi>\d)'
+_str4 = _str_ecog1 + _str_num4
 _regex4 = re.compile(_str4, re.IGNORECASE)
+
+# ECOG score(s) appears between _str_ps and _str_ecog2
+_str_ps = r'\bperformance status( of)?\s'
+_str_ecog2 = r'\b\s((on the )?Eastern Cooperative Oncology Group( ECOG)?|ECOG)( score)?'
+
+_str5 = _str_ps + _str_num1 + _str_ecog2
+_regex5 = re.compile(_str5, re.IGNORECASE)
+
+_str6 = _str_ps + _str_num2 + _str_ecog2
+_regex6 = re.compile(_str6, re.IGNORECASE)
+
+_str7 = _str_ps + _str_num3 + _str_ecog2
+_regex7 = re.compile(_str7, re.IGNORECASE)
+
+_str8 = _str_ps + _str_num4 + _str_ecog2
+_regex8 = re.compile(_str8, re.IGNORECASE)
 
 _str_or        = r'(/| or )'
 _str_equal     = r'\b(equal|eq.?)( to )'
@@ -67,15 +100,30 @@ _str_gte       = r'(>=|' + _str_gt + _str_or + _str_eq + r')'
 _str_egt       = r'(=>|' + _str_eq + _str_or + _str_gt + r')'
 
 _op_list    = [_str_lte, _str_gte, _str_elt, _str_egt, _str_lt, _str_gt, _str_eq]
-_op_strings = [_str_ecog + r'(?P<op>' + op + r')' + r'\s*(?P<lo>\d)'
+_op_strings = [_str_ecog1 + r'(?P<op>' + op + r')' + r'\s*(?P<lo>\d)'
               for op in _op_list]
 _op_regexes = [re.compile(s, re.IGNORECASE) for s in _op_strings]
 _op_map     = dict(zip(_op_regexes, _op_list))
 
 _op_regex_list = [k for k in _op_map.keys()]
 
-_regexes = [_regex4, _regex3, _regex2, _regex1]
+_regexes = [
+    _regex4,
+    _regex3,
+    _regex2,
+    _regex1,
+]
+
+# add operator regexes for scores following ECOG statement
 _regexes.extend(_op_regex_list)
+
+# add in-between regexes
+_regexes.extend([
+    _regex8,
+    _regex7,
+    _regex6,
+    _regex5
+])
 
 ECOG_RESULT_FIELDS = [
     'sentence', 'start', 'end', 'inc_or_ex', 'score_min', 'score_max'
@@ -89,15 +137,22 @@ _SCORE_MAX = 5
 
 
 ###############################################################################
+def _enable_debug():
+
+    global _TRACE
+    _TRACE = True
+
+
+###############################################################################
 def _cleanup_document(document):
     """
     Remove extraneous chars, collapse whitespace, etc., so simpler regexes
     can be used.
     """
 
-    # replace parens, brackets, and commas with spaces
+    # replace some chars with spaces
     document = re.sub(r'[\(\)\[\],]', ' ', document)
-    
+
     # collapse repeated whitespace (including newlines) into a single space
     document = re.sub(r'\s+', ' ', document)
 
@@ -137,12 +192,18 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
     the inclusion or exclusion criteria.
     """
 
-    result_list = []
+    result_list    = []
+    candidate_list = []
     
-    for regex in _regexes:
-        match = regex.search(sentence)
-        if match:
+    for regex_index, regex in enumerate(_regexes):
 
+        iterator = regex.finditer(sentence)
+        for match in iterator:
+
+            if _TRACE:
+                print('\tECOG MATCH[{0}]:\n\t\t"{1}"'.
+                      format(regex_index, match.group()))
+            
             # character offsets
             start = match.start()
             end = match.end()
@@ -211,12 +272,46 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
                 else:
                     print('*** Unrecognized operator: {0}'.format(op_string))
 
-            # save result namedtuple
-            result = EcogResult(sentence, start, end, inc_or_ex, lo, hi)
-            result_list.append(result)
-                
-            # keep the first match, since more complex matches attempted first
-            break
+            # this is a new candidate
+            candidate = overlap.Candidate(start      = start,
+                                          end        = end,
+                                          match_text = match.group(),
+                                          regex      = regex,
+                                          other =
+                                          {
+                                              'sentence':sentence,
+                                              'inc_or_ex':inc_or_ex,
+                                              'lo':lo,
+                                              'hi':hi
+                                          })
+            
+            candidate_list.append(candidate)
+            
+    # sort candidates in descending order of length overlap resolution
+    candidate_list = sorted(candidate_list,
+                            key=lambda x: x.end - x.start, reverse=True)
+
+    if len(candidate_list) > 0:
+        pruned_candidates = overlap.remove_overlap(candidate_list, _TRACE)
+    else:
+        pruned_candidates = []
+
+    if _TRACE:
+        print('\tcandidates count after overlap removal: {0}'.
+              format(len(pruned_candidates)))
+        print('\tPruned candidates: ')
+        for c in pruned_candidates:
+            print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+        print()
+
+    for pc in pruned_candidates:
+        result = EcogResult(sentence  = pc.other['sentence'],
+                            start     = pc.start,
+                            end       = pc.end,
+                            inc_or_ex = pc.other['inc_or_ex'],
+                            score_min = pc.other['lo'],
+                            score_max = pc.other['hi'])
+        result_list.append(result)
 
     return result_list
 
@@ -226,27 +321,96 @@ def _find_ecog_scores(doc):
     """
     Scan a document and run ecog score-finding regexes on it.
     Returns a list of EcogScoreResult namedtuples.
+
+    Assumes a SINGLE set of inclusion criteria and a SINGLE set of exclusion
+    criteria in the document text. Also assumes that the inclusion criteria
+    come before the exclusion criteria. These assumptions are consistent with
+    the AACT 'Clinical Trial Criteria' announcements. 
+
+    The inclusion criteria may appear as 'Inclusion Criteria:',
+    'Eligibility Criteria:', 'Inclusion / Exclusion Criteria:', or possibly
+    other forms. See the regexes below for all supported forms.
     """
 
-    result_list = []
+    result_list = []    
 
-    # inclusion criteria
-    match = _regex_inclusion_criteria.search(doc)
-    if match:
-        sentence = match.group()
-        sentence = _cleanup_sentence(sentence)
-        results = _process_sentence(sentence, _ID_INC)
-        result_list.extend(results)
-            
-    # exclusion criteria
-    match = _regex_exclusion_criteria.search(doc)
-    if match:
-        sentence = match.group()
-        sentence = _cleanup_sentence(sentence)
-        results = _process_sentence(sentence, _ID_EX)
+    exclusion_header = [
+        'exclusion criteria',
+        'exclusion'
+    ]
+
+    doc_lc = doc.lower()
+
+    # find the exclusion criteria header, if any
+    inclusion_str = None
+    exclusion_str = None
+    pos = -1
+    for header in exclusion_header:
+        pos = doc_lc.find(header)
+        if -1 != pos:
+            inclusion_str = doc[:pos]
+            exclusion_str = doc[pos:]
+        else:
+            # all inclusion
+            inclusion_str = doc
+
+    if inclusion_str is not None and len(inclusion_str) > 0:
+        inclusion_str = _cleanup_sentence(inclusion_str)
+        if _TRACE:
+            print('CLEANED INCLUSION CRITERIA: "{0}...{1}"'.
+                  format(inclusion_str[:24], inclusion_str[-24:]))
+        results = _process_sentence(inclusion_str, _ID_INC)
         result_list.extend(results)
 
+    if exclusion_str is not None and len(exclusion_str) > 0:
+        exclusion_str = _cleanup_sentence(exclusion_str)
+        if _TRACE:
+            print('CLEANED EXCLUSION CRITERIA: "{0}...{1}"'.
+                  format(exclusion_str[:24], exclusion_str[-24:]))
+        results = _process_sentence(exclusion_str, _ID_EX)
+        result_list.extend(results)
+    
     return result_list
+
+
+###############################################################################
+def _to_mongo_object(result):
+    """
+    Generate the MongoDB result object from an EcogResult namedtuple.
+    """
+
+    scores = [0,0,0,0,0,0]
+
+    lo = result.score_min
+    hi = result.score_max
+
+    if hi is None:
+        scores[lo] = 1
+    else:
+        for i in range(lo, hi+1):
+            scores[i] = 1
+
+    if 1 == result.inc_or_ex:
+        criteria = 'Inclusion'
+    else:
+        criteria = 'Exclusion'
+
+    mongo_obj = {
+        'sentence':result.sentence,
+        'start':result.start,
+        'end':result.end,
+        'criteria_type':criteria,
+        'score_0':scores[0],
+        'score_1':scores[1],
+        'score_2':scores[2],
+        'score_3':scores[3],
+        'score_4':scores[4],
+        'score_5':scores[5],
+        'score_lo':result.score_min,
+        'score_hi':result.score_max
+    }
+
+    return mongo_obj
 
 
 ###############################################################################
@@ -275,37 +439,117 @@ class EcogCriteriaTask(BaseTask):
             # write results to MongoDB
             if len(result_list) > 0:
                 for result in result_list:
+                    mongo_obj = _to_mongo_object(result)
+                    self.write_result_data(temp_file,
+                                           mongo_client, doc, mongo_obj)
 
-                    scores = [0,0,0,0,0,0]
+                    
+###############################################################################
+if __name__ == '__main__':
 
-                    lo = result.score_min
-                    hi = result.score_max
+    parser = argparse.ArgumentParser(
+        description='test EcogCriteriaTask independently of full pipeline')
+    parser.add_argument('-f', '--filepath',
+                        help='path to JSON file containing ECOG scores in '
+                        'the report_text field')
+    parser.add_argument('-s', '--start',
+                        help='0-based index of first record to process')
+    parser.add_argument('-e', '--end',
+                        help='0-based index of final record to process + 1')
+    parser.add_argument('--debug',
+                        action='store_true',
+                        help='print debugging information')
 
-                    if hi is None:
-                        scores[lo] = 1
-                    else:
-                        for i in range(lo, hi+1):
-                            scores[i] = 1
+    args = parser.parse_args()
 
-                    if 1 == result.inc_or_ex:
-                        criteria = 'Inclusion'
-                    else:
-                        criteria = 'Exclusion'
+    filepath = None
+    if 'filepath' in args and args.filepath:
+        filepath = args.filepath
+        if not os.path.isfile(filepath):
+            print('Unknown file specified: "{0}"'.format(filepath))
+            sys.exit(-1)
+    else:
+        print('nInput file not specified.')
+        sys.exit(0)
 
-                    obj = {
-                        'sentence':result.sentence,
-                        'start':result.start,
-                        'end':result.end,
-                        'criteria_type':criteria,
-                        'score_0':scores[0],
-                        'score_1':scores[1],
-                        'score_2':scores[2],
-                        'score_3':scores[3],
-                        'score_4':scores[4],
-                        'score_5':scores[5],
-                        'score_lo':result.score_min,
-                        'score_hi':result.score_max
-                    }
+    if 'debug' in args and args.debug:
+        _enable_debug()
 
-                    self.write_result_data(temp_file, mongo_client, doc, obj)
+    start = 0
+    if 'start' in args and args.start:
+        start = int(args.start)
+        if start < 0:
+            start = 0
 
+    # -1 == process all documents
+    end = -1
+    if 'end' in args and args.end:
+        end = int(args.end)
+        if end < 0:
+            end = -1
+
+    with open(filepath, 'rt') as infile:
+        json_string = infile.read()
+        json_data = json.loads(json_string)
+
+        doc_list = None
+        if 'response' in json_data and 'docs' in json_data['response']:
+            doc_list = json_data['response']['docs']
+        elif list == type(json_data):
+            doc_list = json_data
+
+        if doc_list is None:
+            print('\nNo documents found')
+            sys.exit(-1)
+            
+        doc_count = len(doc_list)
+        print('Found {0} docs'.format(doc_count))
+
+        if -1 == end:
+            end = doc_count
+
+        if start >= doc_count:
+            print('\nStart index exceeds doc count')
+            sys.exit(-1)
+        if end == start:
+            print('\nEmpty index interval: [{0}, {1})'.format(start, end))
+            sys.exit(-1)
+
+        assert end > start
+        assert end <= doc_count
+        assert start >= 0
+        assert start < end
+        
+        for i in range(start, end):
+            doc = doc_list[i]['report_text']
+            print('\n[{0}]\n{1}'.format(i, doc))
+            text = _cleanup_document(doc)
+
+            # search for ECOG scores
+            result_list = _find_ecog_scores(text)
+
+            if 0 == len(result_list):
+                print('\t*** No results found ***')
+                continue
+
+            print('RESULTS: ')
+            max_key_len = 0
+            for result in result_list:
+                mongo_obj = _to_mongo_object(result)
+
+                if 0 == max_key_len:
+                    for k in mongo_obj.keys():
+                        if len(k) > max_key_len:
+                            max_key_len = len(k)
+                
+                for k,v in mongo_obj.items():
+                    if 'sentence' == k:
+                        # display only the ECOG match
+                        sentence = mongo_obj[k]
+                        start = mongo_obj['start']
+                        end   = mongo_obj['end']
+                        k = 'matching_text'
+                        v = sentence[start:end]
+                    indent = ' ' * (max_key_len - len(k))
+                    print('\t{0}{1} => {2}'.format(indent, k, v))
+                print()

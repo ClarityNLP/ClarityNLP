@@ -4,8 +4,11 @@ Resolve overlap among finder candidates.
 
 from collections import namedtuple
 
-CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex']
+CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex', 'other']
 Candidate = namedtuple('_Candidate', CANDIDATE_FIELDS)
+
+# initialize all fields to None
+Candidate.__new__.__defaults__ = (None,) * len(Candidate._fields)
 
 
 ###############################################################################

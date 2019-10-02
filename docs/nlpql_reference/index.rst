@@ -44,6 +44,7 @@ Custom Tasks
 
    nlpql/cqlexecution
    nlpql/gleason
+   nlpql/ecog
    nlpql/pftfinder
    nlpql/race
    nlpql/textstats

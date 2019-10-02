@@ -402,7 +402,7 @@ services:
       - clarity
 
   traefik:
-    image: "traefik:v2.0.0-rc1"
+    image: "traefik:v2.0.1"
     container_name: "traefik"
     command:
       - "--log.level=INFO"
