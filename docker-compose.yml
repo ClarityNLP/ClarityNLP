@@ -170,7 +170,7 @@ services:
       - "traefik.http.routers.appsecure.entrypoints=websecure"
       - "traefik.http.routers.appsecure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.appsecure.tls=true"
-      - "traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=2000000"
+      - "traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=10000000000"
       - "traefik.http.routers.appsecure.middlewares=limit"
       - "traefik.http.routers.app.rule=Host(`${HOST}`) && PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.app.entrypoints=web"
