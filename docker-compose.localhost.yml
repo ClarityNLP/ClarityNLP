@@ -139,6 +139,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
       - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=10000000000"
+      - "traefik.http.routers.app.middlewares=limit"
     networks:
       - clarity
 
@@ -346,7 +348,7 @@ services:
       - clarity
 
   traefik:
-    image: "traefik:v2.0.0-rc1"
+    image: "traefik:v2.0.1"
     container_name: "traefik"
     command:
       - "--log.level=INFO"
