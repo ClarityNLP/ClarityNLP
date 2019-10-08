@@ -71,49 +71,38 @@ K/uL
 """
 
 # separator between header and value
-#_str_sep = r'([-:=\s/]\s*)?'
-#_str_sep = r'([-:=\s/]+)?'
 _str_sep = r'[-:=\s/]*'
 
+# numeric value, either floating point or integer
 _str_num = r'(\d+\.\d+|\.\d+|\d+)'
 
 # one or more numeric values, possibly parenthesized, optional dashes/slashes
 # ex. 70 (70-72), 42, 33.44 - 22.9, etc
-#_str_values = r'[-\s\d\(\)./]+'
-
 _str_range = r'\(?\s?' + _str_num + r'\s?-\s?' + _str_num + r'\s?\)?'
-_str_slashnum = _str_num + r'(' + _str_sep + r'/' + _str_sep + _str_num + _str_sep + r')+'
-
+_str_slashnum = _str_num +\
+    r'(' + _str_sep + r'/' + _str_sep + _str_num + _str_sep + r')+'
 _str_value = r'(' + _str_slashnum + r'|' + _str_range + r'|' + _str_num + r')'
 _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
 
-
 # word, possibly hyphenated, possibly parenthesized
-#_str_word = r'\(?[-a-z]+\)?'
 _str_word = r'\(?[-a-z]+\)?'
 
 # temperature
-_str_temp_units = r'\(?(C|F|deg\s?C|deg\s?F|degrees\s?C|degrees\s?F|degrees)\)?'
-_str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Temp\.?|Tmp|Tm|T\.?)'# +\
-#    _str_sep + r'(' + _str_temp_units + r')?' + _str_sep
-#_str_temp_values_and_units = r'(' + _str_values + r'(' + _str_sep + _str_temp_units + r')?' + r')+'
-#_str_temp = _str_temp_header + _str_temp_values_and_units
+_str_temp_units = r'\(?(C|F|deg\s?C|deg\s?F|degrees\s?C|' +\
+    r'degrees\s?F|degrees)\)?'
+_str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Temp\.?|Tmp|Tm|T\.?)'
 
 # heart rate
 _str_hr_units  = r'\(?(bpm|beats/m|beats per min\.?(ute)?)\)?'
-_str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'# + _str_sep +\
-#    r'(' + _str_hr_units + r')?' + _str_sep
-#_str_hr_values_and_units = r'(' + _str_values + r'(' + _str_sep + _str_hr_units + r')?' + r')+'
-#_str_hr = _str_hr_header + _str_hr_values_and_units
+_str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
-_str_height_header = r'\b(Height|Hgt|Ht\.?)' #+ _str_sep + r'(' + _str_height_units + r')?' + _str_sep
-#_str_height_values_and_units = r'(' + _str_values + r'(' + _str_sep + _str_height_units + r')?' + r')+'
-#_str_height = _str_height_header + _str_height_values_and_units
+_str_height_header = r'\b(Height|Hgt|Ht\.?)'
 
 # weight
-_str_weight_units = r'\(?(grams|ounces|pounds|kilograms|gms?|oz|lbs?|kg|g)\.?\)?'
+_str_weight_units = r'\(?(grams|ounces|pounds|kilograms|gms?|' +\
+    r'oz|lbs?|kg|g)\.?\)?'
 _str_weight_header = r'\b(Weight|Wgt|Wt\.?)'
 
 # regexes are constructed at init()
@@ -136,12 +125,10 @@ def _make_regexes(header_in, units_in):
     
     # # header string with optional units
     header = r'(?P<header>' + header_in + _str_sep +\
-        r'(' + units_in + _str_sep + r')?' + r')'# +\
-        #r'(' + r'(?P<word>' + _str_word + r')' + _str_sep + r')?'
-        #r'(' + _str_word + r')?' + _str_sep
+        r'(' + units_in + _str_sep + r')?' + r')'
 
     # one or more values with optional units
-    elt = _str_values + r'(' + _str_sep + units_in + r')?'
+    elt = _str_values + r'(' + _str_sep + units_in + _str_sep + r')?'
     value_list = elt + r'(' + elt + r')*'
     str_regex = header + value_list
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
