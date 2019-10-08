@@ -89,14 +89,18 @@ _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
 # word, possibly hyphenated, possibly parenthesized
 _str_word = r'\(?[-a-z]+\)?'
 
-# temperature
-_str_temp_units = r'\(?(C|F|deg\s?C|deg\s?F|degrees\s?C|' +\
-    r'degrees\s?F|degrees)\)?'
-_str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Temp\.?|Tmp|Tm|T\.?)'
+# temperature (ignores the exceedingly unlikely units of Kelvin or Rankine);
+# also, the abbreviation 'K' for Kelvin could be confused with potassium
+_str_temp_units = r'\(?(C|F|deg\.?(rees)?\s?(C|F)|degrees)\)?'
+_str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Te?mp|Tm|T)\.?'
 
 # heart rate
 _str_hr_units  = r'\(?(bpm|beats/m|beats per min\.?(ute)?)\)?'
 _str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
+
+# respiration rate
+_str_rr_units = r'\(?((insp\.?|breaths?)\s?min)\)?'
+_str_rr_header = r'\b(respiration\s?rate|resp\.?|RR?)'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
@@ -114,6 +118,12 @@ _str_bsa_header = r'\bBSA'
 # blood pressure
 _str_bp_units = r'\(?(mm\s?hg)\)?'
 _str_bp_header = r'\b(blood\s?pressure|b\.?\s?p)\.?'
+
+# Oxygen saturation
+_str_o2_units = r'\(?(percent|pct\.?|%)\)?'
+_str_o2_header = r'\b(SpO2|SaO2|O2Sats|O2\s?sat|O2\s?flow|Sats?|POx|PO|O2)'
+_str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|' +\
+    r'cannula|NRB|RA|FM|NC)\)?'
 
 # regexes are constructed at init()
 _regexes = []
@@ -165,6 +175,23 @@ def init():
     _regexes.extend(_make_regexes(_str_weight_header, _str_weight_units))
     _regexes.extend(_make_regexes(_str_bsa_header,    _str_bsa_units))
     _regexes.extend(_make_regexes(_str_bp_header,     _str_bp_units))
+    _regexes.extend(_make_regexes(_str_rr_header,     _str_rr_units))
+    #_regexes.extend(_make_regexes(_str_o2_header,     _str_o2_units))
+
+    # additional O2 saturation regexs
+    o2_header = r'(?P<header>' + _str_o2_header + _str_sep +\
+        r'(' + _str_o2_units + _str_sep + r')?' + r')'
+
+    # capture constructs such as O2 sat: 98 2LNC
+    str_o2_1 = o2_header + _str_values + _str_sep +\
+        r'\d+L\s?' + _str_o2_device + _str_sep
+    _regexes.append(re.compile(str_o2_1, re.IGNORECASE))
+    
+    # capture one or two 'words' following an 'on', such as 'on NRB, on 6L NC'
+    str_o2_2 = o2_header + _str_values + _str_sep +\
+        r'(' + _str_o2_units + _str_sep + r')?' +\
+        r'(on\s)?(\d+L)?' + r'(' + _str_sep + _str_o2_device + _str_sep + r')?'
+    _regexes.append(re.compile(str_o2_2, re.IGNORECASE))
 
 
 ###############################################################################
@@ -219,11 +246,11 @@ if __name__ == '__main__':
     TEST_SENTENCES = [
         # heart rate
         'Vitals: HR 70 (70 - 72) bpm, HR:    70(70   -72)  bpm',
-        'Vitals: HR(bpm) 70 (70-72), HR (bpm): 70 (70-72)',
+        'Vitals: HR(bpm) 70 (70-72), HR (bpm): 70 (70-72), HR (bpm): 53',
         'Vitals: HR 70, HR:70, HR:70-72, HR:70 70/72',
 
         # temperature
-        'Vitals: T 95.6, T97.3, T: 99, T 95.5, T=98, T-100.6, Temp. 98.5F',
+        'Vitals: T 95.6, T97.3, T: 99, Tmp. 95.5, T=98, T-100.6, Temp. 98.5F',
         'Tmax: 35.8 C (96.4 Tcurrent: 35.7 C (96.2',
         'Tmax: 35.8/96.4, Tcurrent: 35.7/96.2',
         'T: 35.8C/96.4F, Tmax35.7C / 96.2 F',
@@ -243,6 +270,18 @@ if __name__ == '__main__':
         'Vitals: BP= 122/58, BP-93/46, BP115/65, BP: 84/43',
         'Vitals: BP: 93/67(73) {72/21(39) - 119/85(91)}',
         'Vitals: BP= 90-109/49-82',
+
+        # respiration rate
+        'Vitals: RR 17, R:21, RR= 20, RR-16, R18, RR=24',
+        'Vitals: RR 12 (10-23)',
+
+        # O2 saturation
+        'Vitals: O2: 97, SpO2 98%/3L, O2 sat= 100% 2L/NC, Sats-98% 3L/NC',
+        'Vitals: sats 96% on RA, O2SAts100%, SpO2% 99/bipap, O2 sat 95%RA',
+        'Vitals: O2 Sat 85% 3L, POx=100%, POx=93% on 8L FM, SaO2 96% 6L NC',
+        'Vitals: O2 sat 97%, SpO2 97% on NRB',
+        'Vitals: O2 Flow: 100 (Non-Rebreather), SpO2 92%/RA',
+        'Vitals: O2Sat98 2LNC',
     ]
 
     init()
