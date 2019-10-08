@@ -71,16 +71,18 @@ K/uL
 """
 
 # separator between header and value
-_str_sep = r'[-:=\s/]*'
+_str_sep = r'[-:=\s/{}]*'
 
 # numeric value, either floating point or integer
 _str_num = r'(\d+\.\d+|\.\d+|\d+)'
 
-# one or more numeric values, possibly parenthesized, optional dashes/slashes
+# Recognize ne or more numeric values, possibly parenthesized or bracketed,
+# with optional dashes/slashes. Assumes prior collapse of repeated whitespace.
 # ex. 70 (70-72), 42, 33.44 - 22.9, etc
-_str_range = r'\(?\s?' + _str_num + r'\s?-\s?' + _str_num + r'\s?\)?'
-_str_slashnum = _str_num +\
-    r'(' + _str_sep + r'/' + _str_sep + _str_num + _str_sep + r')+'
+_str_range = r'[\(\[{]?' + _str_sep + _str_num + r'\s?-\s?' +\
+    _str_num + _str_sep + r'[\)\]}]?'
+_str_slashnum = _str_num + r'(' + _str_sep +\
+    r'[/\(]' + _str_sep + _str_num + _str_sep + r'[/\)]' + r')+'
 _str_value = r'(' + _str_slashnum + r'|' + _str_range + r'|' + _str_num + r')'
 _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
 
@@ -98,12 +100,20 @@ _str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
-_str_height_header = r'\b(Height|Hgt|Ht\.?)'
+_str_height_header = r'\b(Height|Hgt\.?|Ht\.?)'
 
 # weight
 _str_weight_units = r'\(?(grams|ounces|pounds|kilograms|gms?|' +\
     r'oz|lbs?|kg|g)\.?\)?'
-_str_weight_header = r'\b(Weight|Wgt|Wt\.?)'
+_str_weight_header = r'\b(Weight|Wgt\.?|Wt\.?)'
+
+# body surface area
+_str_bsa_units = r'\(?(meters\s?squared|meters\s?sq|msq|m2)\.?\)?'
+_str_bsa_header = r'\bBSA'
+
+# blood pressure
+_str_bp_units = r'\(?(mm\s?hg)\)?'
+_str_bp_header = r'\b(blood\s?pressure|b\.?\s?p)\.?'
 
 # regexes are constructed at init()
 _regexes = []
@@ -153,6 +163,8 @@ def init():
     _regexes.extend(_make_regexes(_str_hr_header,     _str_hr_units))
     _regexes.extend(_make_regexes(_str_height_header, _str_height_units))
     _regexes.extend(_make_regexes(_str_weight_header, _str_weight_units))
+    _regexes.extend(_make_regexes(_str_bsa_header,    _str_bsa_units))
+    _regexes.extend(_make_regexes(_str_bp_header,     _str_bp_units))
 
 
 ###############################################################################
@@ -222,6 +234,15 @@ if __name__ == '__main__':
         # weight
         'Weight: (lbs) 199, Weight (lb): 199, Wgt (current): 119.8 kg (admission): 121 kg',
         'Wt: 199 kg, Wt 198 lb., Weight: 197',
+
+        # body surface area
+        'Vitals: BSA (m2): 2.17 m2, BSA: 2.20 msq.',
+
+        # blood pressure
+        'Vitals: BP 75/30, BP120/60, BP (mm Hg): 140/91, BP:115/68',
+        'Vitals: BP= 122/58, BP-93/46, BP115/65, BP: 84/43',
+        'Vitals: BP: 93/67(73) {72/21(39) - 119/85(91)}',
+        'Vitals: BP= 90-109/49-82',
     ]
 
     init()
