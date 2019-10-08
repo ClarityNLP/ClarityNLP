@@ -28,7 +28,7 @@ except:
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
-_MODULE_NAME = 'lab_value_finder.py'
+_MODULE_NAME = 'lab_value_recognizer.py'
 
 # set to True to see debug output
 _TRACE = False
@@ -71,7 +71,9 @@ K/uL
 """
 
 # separator between header and value
-_str_sep = r'([-:=\s]\s*)?'
+#_str_sep = r'([-:=\s/]\s*)?'
+#_str_sep = r'([-:=\s/]+)?'
+_str_sep = r'[-:=\s/]*'
 
 _str_num = r'(\d+\.\d+|\.\d+|\d+)'
 
@@ -80,18 +82,19 @@ _str_num = r'(\d+\.\d+|\.\d+|\d+)'
 #_str_values = r'[-\s\d\(\)./]+'
 
 _str_range = r'\(?\s?' + _str_num + r'\s?-\s?' + _str_num + r'\s?\)?'
-#_str_slashnum = _str_num + r'(/' + _str_num + r')+'
+_str_slashnum = _str_num + r'(' + _str_sep + r'/' + _str_sep + _str_num + _str_sep + r')+'
 
-_str_value = r'(' + _str_range + r'|' + _str_num + r')'
-_str_values = _str_value + r'(' + _str_sep + _str_value + r')+'
+_str_value = r'(' + _str_slashnum + r'|' + _str_range + r'|' + _str_num + r')'
+_str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
 
 
 # word, possibly hyphenated, possibly parenthesized
+#_str_word = r'\(?[-a-z]+\)?'
 _str_word = r'\(?[-a-z]+\)?'
 
 # temperature
 _str_temp_units = r'\(?(C|F|deg\s?C|deg\s?F|degrees\s?C|degrees\s?F|degrees)\)?'
-_str_temp_header = r'\b(T\.?|Temperature|Tmax|Tcurrent|Tcur|Temp\.?|Tmp|Tm)'# +\
+_str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Temp\.?|Tmp|Tm|T\.?)'# +\
 #    _str_sep + r'(' + _str_temp_units + r')?' + _str_sep
 #_str_temp_values_and_units = r'(' + _str_values + r'(' + _str_sep + _str_temp_units + r')?' + r')+'
 #_str_temp = _str_temp_header + _str_temp_values_and_units
@@ -110,7 +113,7 @@ _str_height_header = r'\b(Height|Hgt|Ht\.?)' #+ _str_sep + r'(' + _str_height_un
 #_str_height = _str_height_header + _str_height_values_and_units
 
 # weight
-_str_weight_units = r'\(?(grams|ounces|pounds|kilograms|gm|oz|lbs?|kg|g)\.?\)?'
+_str_weight_units = r'\(?(grams|ounces|pounds|kilograms|gms?|oz|lbs?|kg|g)\.?\)?'
 _str_weight_header = r'\b(Weight|Wgt|Wt\.?)'
 
 # regexes are constructed at init()
@@ -125,26 +128,27 @@ def enable_debug():
 
 
 ###############################################################################
-def _make_regexes(str_header, str_units):
+def _make_regexes(header_in, units_in):
     """
     """
 
     regex_list = []
     
     # # header string with optional units
-    header = str_header + _str_sep + r'(' + str_units + r')?' +\
-        r'(' + _str_word + r')?' + _str_sep
-    
+    header = r'(?P<header>' + header_in + _str_sep +\
+        r'(' + units_in + _str_sep + r')?' + r')'# +\
+        #r'(' + r'(?P<word>' + _str_word + r')' + _str_sep + r')?'
+        #r'(' + _str_word + r')?' + _str_sep
+
     # one or more values with optional units
-    values_and_units = r'(' + _str_values +\
-        r'(' + _str_sep + str_units + r')?' + r')+'
-    
-    str_regex = header + values_and_units
+    elt = _str_values + r'(' + _str_sep + units_in + r')?'
+    value_list = elt + r'(' + elt + r')*'
+    str_regex = header + value_list
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
 
-    # find lists such as "Wgt (current): 119.8 kg (admission): 121 kg"
-    value_list = _str_word + _str_sep + _str_values + _str_sep + _str_units + _str_sep +\
-        r'(' + _str_word + _str_sep + _str_values + _str_sep + str_units + _str_sep + r')+'
+    # lists such as "Wgt (current): 119.8 kg (admission): 121 kg"
+    elt = _str_word + _str_sep + _str_values + _str_sep + units_in + _str_sep
+    value_list = elt + r'(' + elt + r')*'
     str_regex = header + value_list
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
 
@@ -185,11 +189,21 @@ def run(sentence):
             start = match.start()
             end   = match.end()
             match_text = match.group()
+
+            if _TRACE:
+                if 'header' in match.groupdict().keys():
+                    header = match.group('header')
+                    if header is not None:
+                        print('\tMATCH: "{0}"'.format(match_text))
+                        print('\t\tHEADER: "{0}"'.format(header))
+
             candidates.append(overlap.Candidate(start, end, match_text, regex))
 
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
-    pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+    pruned_candidates = overlap.remove_overlap(candidates, False)
 
+    # sort by order of occurrence in sentence
+    pruned_candidates = sorted(pruned_candidates, key=lambda x: x.start)
     for c in pruned_candidates:
         print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
     print()
@@ -212,6 +226,7 @@ if __name__ == '__main__':
         # temperature
         'Vitals: T 95.6, T97.3, T: 99, T 95.5, T=98, T-100.6, Temp. 98.5F',
         'Tmax: 35.8 C (96.4 Tcurrent: 35.7 C (96.2',
+        'Tmax: 35.8/96.4, Tcurrent: 35.7/96.2',
         'T: 35.8C/96.4F, Tmax35.7C / 96.2 F',
 
         # height
@@ -219,11 +234,11 @@ if __name__ == '__main__':
 
         # weight
         'Weight: (lbs) 199, Weight (lb): 199, Wgt (current): 119.8 kg (admission): 121 kg',
-        'Wt: 199, Wt 198, Weight: 197',
+        'Wt: 199 kg, Wt 198 lb., Weight: 197',
     ]
 
     init()
-    
+
     for sentence in TEST_SENTENCES:
         sentence = _cleanup_sentence(sentence)
         print('SENTENCE: {0}'.format(sentence))
