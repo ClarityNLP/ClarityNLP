@@ -136,11 +136,13 @@ _str_o2_header = r'(SpO2|SaO2|O2[-\s]sat\.?s?|O2Sats?|O2\s?flow|' +\
 _str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'  +\
     r'cannula|NRB|RA|FM|NC)\)?'
 
-# recognizes values and units that follow the header
-_regexes_r_to_l = []
+# # recognizes values and units that follow the header
+# _regexes_r_to_l = []
 
-# recognizes values and units that precede the header, if any
-_regexes_l_to_r = []
+# # recognizes values and units that precede the header, if any
+# _regexes_l_to_r = []
+
+_all_regex_lists = []
 
 
 ###############################################################################
@@ -179,22 +181,64 @@ def _make_regexes(header_in, units_in):
 ###############################################################################
 def init():
 
-    global _regexes_r_to_l
-    global _regexes_l_to_r
+    # global _regexes_r_to_l
+    # global _regexes_l_to_r
 
-    _regexes_r_to_l = []
-    _regexes_l_to_r = []
+    # _regexes_r_to_l = []
+    # _regexes_l_to_r = []
     
-    _regexes_r_to_l.extend(_make_regexes(_str_temp_header,   _str_temp_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_hr_header,     _str_hr_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_height_header, _str_height_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_weight_header, _str_weight_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_length_header, _str_length_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_hc_header,     _str_hc_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_bsa_header,    _str_bsa_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_bp_header,     _str_bp_units))
-    _regexes_r_to_l.extend(_make_regexes(_str_rr_header,     _str_rr_units))
-    # O2 regexes constructed specially below
+    # _regexes_r_to_l.extend(_make_regexes(_str_temp_header,   _str_temp_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_hr_header,     _str_hr_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_height_header, _str_height_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_weight_header, _str_weight_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_length_header, _str_length_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_hc_header,     _str_hc_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_bsa_header,    _str_bsa_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_bp_header,     _str_bp_units))
+    # _regexes_r_to_l.extend(_make_regexes(_str_rr_header,     _str_rr_units))
+    # # O2 regexes constructed specially below
+    
+    # # additional O2 saturation regexs
+    # o2_header = r'(?P<header>\b' + _str_o2_header + _str_sep +\
+    #     r'(' + _str_o2_units + _str_sep + r')?' + r')'
+
+    # # capture constructs such as O2 sat: 98 2LNC
+    # str_o2_1 = r'\b' + o2_header + _str_values + _str_sep +\
+    #     r'\d+L\s?' + _str_o2_device + _str_sep
+    # _regexes_r_to_l.append(re.compile(str_o2_1, re.IGNORECASE))
+    
+    # # capture one or two 'words' following an 'on', such as 'on NRB, on 6L NC'
+    # str_o2_2 = r'\b' + o2_header + _str_values + _str_sep +\
+    #     r'(' + _str_o2_units + _str_sep + r')?' +\
+    #     r'(on\s)?(\d+L)?' + r'(' + _str_sep + _str_o2_device + _str_sep + r')?'
+    # _regexes_r_to_l.append(re.compile(str_o2_2, re.IGNORECASE))
+
+    # # capture constructs such as '98% RA, sats 91% on NRB, 96O2-sat on RA' [L to R]
+    # str_o2_3 = r'(' + _str_o2_header + _str_sep + r')?'  +\
+    #     r'(' + _str_o2_units  + _str_sep + r')?'         +\
+    #     r'(?<!O)\d+' + _str_sep                          +\
+    #     r'(' + _str_o2_units  + _str_sep + r')?'         +\
+    #     r'(' + _str_o2_header + _str_sep + r')?'         +\
+    #     r'(' + _str_o2_units  + _str_sep + r')?'         +\
+    #     r'(' + r'on'          + _str_sep + r')?'         +\
+    #     _str_o2_device + _str_sep
+    # _regexes_l_to_r.append(re.compile(str_o2_3, re.IGNORECASE))
+
+    global _all_regex_lists
+    _all_regex_lists = []
+
+    
+    _all_regex_lists.append(_make_regexes(_str_temp_header,   _str_temp_units))
+    _all_regex_lists.append(_make_regexes(_str_hr_header,     _str_hr_units))
+    _all_regex_lists.append(_make_regexes(_str_height_header, _str_height_units))
+    _all_regex_lists.append(_make_regexes(_str_weight_header, _str_weight_units))
+    _all_regex_lists.append(_make_regexes(_str_length_header, _str_length_units))
+    _all_regex_lists.append(_make_regexes(_str_hc_header,     _str_hc_units))
+    _all_regex_lists.append(_make_regexes(_str_bsa_header,    _str_bsa_units))
+    _all_regex_lists.append(_make_regexes(_str_bp_header,     _str_bp_units))
+    _all_regex_lists.append(_make_regexes(_str_rr_header,     _str_rr_units))
+    
+    o2_regexes = []
     
     # additional O2 saturation regexs
     o2_header = r'(?P<header>\b' + _str_o2_header + _str_sep +\
@@ -203,13 +247,13 @@ def init():
     # capture constructs such as O2 sat: 98 2LNC
     str_o2_1 = r'\b' + o2_header + _str_values + _str_sep +\
         r'\d+L\s?' + _str_o2_device + _str_sep
-    _regexes_r_to_l.append(re.compile(str_o2_1, re.IGNORECASE))
+    o2_regexes.append(re.compile(str_o2_1, re.IGNORECASE))
     
     # capture one or two 'words' following an 'on', such as 'on NRB, on 6L NC'
     str_o2_2 = r'\b' + o2_header + _str_values + _str_sep +\
         r'(' + _str_o2_units + _str_sep + r')?' +\
         r'(on\s)?(\d+L)?' + r'(' + _str_sep + _str_o2_device + _str_sep + r')?'
-    _regexes_r_to_l.append(re.compile(str_o2_2, re.IGNORECASE))
+    o2_regexes.append(re.compile(str_o2_2, re.IGNORECASE))
 
     # capture constructs such as '98% RA, sats 91% on NRB, 96O2-sat on RA' [L to R]
     str_o2_3 = r'(' + _str_o2_header + _str_sep + r')?'  +\
@@ -220,9 +264,11 @@ def init():
         r'(' + _str_o2_units  + _str_sep + r')?'         +\
         r'(' + r'on'          + _str_sep + r')?'         +\
         _str_o2_device + _str_sep
-    _regexes_l_to_r.append(re.compile(str_o2_3, re.IGNORECASE))
-    
+    o2_regexes.append(re.compile(str_o2_3, re.IGNORECASE))
 
+    _all_regex_lists.append(o2_regexes)
+    
+    
 ###############################################################################
 def _cleanup_sentence(sentence):
 
@@ -236,7 +282,8 @@ def _cleanup_sentence(sentence):
 def _resolve_overlap(result_list):
     """
     Remove any remaining overlap among the items in the list. The items are
-    of type finder_overlap.Candidate.
+    of type finder_overlap.Candidate. Assumes the list items are sorted in
+    order of occurrence in the sentence.
     """
 
     if 0 == len(result_list):
@@ -250,49 +297,147 @@ def _resolve_overlap(result_list):
         print()
     
     final_results = [ result_list[0] ]
-    
-    for i, r in enumerate(result_list):
-        keep_it = True
-        for j, f in enumerate(final_results):
-            if not overlap.has_overlap(r.start, r.end, f.start, f.end):
-                continue
-            else:
-                # overlap
-                if r.start == f.start and r.end == f.end:
-                    # ignore duplicate
-                    keep_it = False
-                    break
-                else:
-                    # partial overlap
-                    first = r
-                    second = f
-                    if f.start < r.start:
-                        first = f
-                        second = r
 
-                    # compute character overlap at the end
-                    assert first.end >= second.start
-                    diff = first.end - second.start
-
-                    # subtract 'diff' chars from the end of first
-                    # keep second intact
-                    new_first = overlap.Candidate(
-                        start      = first.start,
-                        end        = first.end-diff,
-                        match_text = first.match_text[:-diff],
-                        regex      = first.regex,
-                        other      = first.other)
-
-                    if r == first:
-                        result_list[i] = new_first
-                    else:
-                        final_results[j] = new_first
-                    break
-                
-        if keep_it:
+    for i in range(1, len(result_list)):
+        r = result_list[i]
+        f = final_results[-1]
+        # check for overlap with previous final result
+        if not overlap.has_overlap(r.start, r.end, f.start, f.end):
             final_results.append(r)
+            continue
+        else:
+            # has overlap with prevous result
+
+            if _TRACE:
+                print('\tOverlap: ')
+                print('\t\tf:[{0:3},{1:3}): {2}'.
+                      format(f.start, f.end, f.match_text))
+                print('\t\tr:[{0:3},{1:3}): {2}'.
+                      format(r.start, r.end, r.match_text))
+                
+            # check if duplicate
+            if r.start == f.start and r.end == f.end:
+                # ignore duplicate
+                if _TRACE: print('\t\tduplicate')
+                continue
+
+            # partial overlap:
+            #     |f.start---f.end|
+            #              |r.start---r.end|
+            #
+            #     |f.start---f.end|
+            #     |r.start--------------r.end|
+            assert r.start <= f.end
+            diff = f.end - r.start
+            if _TRACE:
+                print('\t\tdiff: {0}'.format(diff))
+            assert diff >= 0
+            if 0 == diff:
+                continue
+
+            # subtract 'diff' chars from the end of f
+            # keep r intact
+            new_f = overlap.Candidate(
+                start      = f.start,
+                end        = f.end-diff,
+                match_text = f.match_text[:-diff],
+                regex      = f.regex,
+                other      = f.other)
+
+            if new_f.start == new_f.end:
+                if _TRACE:
+                    print('\t\tzero span')
+                continue
             
+            # if identical to prior elt, ignore
+            if len(final_results) >= 2:
+                f2 = final_results[-2]
+                if new_f.start == f2.start and \
+                   new_f.end   == f2.end   and \
+                   new_f.match_text == f2.match_text:
+                    if _TRACE:
+                        print('\t\tidentical to prior elt, ignoring...')
+                    continue
+
+            if _TRACE:
+                print('\t\tOverwriting f with new_f: ')
+                print('\t\tnew_f:[{0:3},{1:3}): {2}'.
+                      format(new_f.start, new_f.end, new_f.match_text))
+                
+            final_results[-1] = new_f
+            final_results.append(r)
+    
     return final_results
+
+
+# ###############################################################################
+# def run(sentence_in):
+#     """
+#     """
+
+#     results = []
+    
+#     # find l_to_r constructs first
+#     all_regex_lists = [_regexes_l_to_r, _regexes_r_to_l]
+
+#     sentence = _cleanup_sentence(sentence_in)
+#     for regex_list_index, regex_list in enumerate(all_regex_lists):
+
+#         if _TRACE:
+#             print('SENTENCE: "{0}"'.format(sentence))
+        
+#         candidates = []
+#         for regex_index, regex in enumerate(regex_list):
+#             iterator = regex.finditer(sentence)
+#             for match in iterator:
+#                 start = match.start()
+#                 end   = match.end()
+#                 match_text = match.group()
+
+#                 if _TRACE:
+#                     if 'header' in match.groupdict().keys():
+#                         header = match.group('header')
+#                         if header is not None:
+#                             print('\tMATCH: "{0}"'.format(match_text))
+#                             print('\t\tHEADER: "{0}"'.format(header))
+
+#                 candidates.append(overlap.Candidate(start, end, match_text, regex))
+
+#         # indent this block by one level
+#         # make candidates PER-SIMILAR-REGEX
+#         # no need to distinguish r_to_l or l_to_r
+#         # regex groups: [temp regexes], [length regexes], etc.
+#         # finder_overlap resolves overlap within a group
+#         # this module's overlap resolution resolves between groups
+                
+#         candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
+
+#         if _TRACE:
+#             print('\tCandidate matches: ')
+#             for index, c in enumerate(candidates):
+#                 print('\t[{0:2}]\t[{1},{2}): {3}'.
+#                       format(index, c.start, c.end, c.match_text, c.regex))
+#             print()
+
+#         pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+
+#         if _TRACE:
+#             print('\tcandidates count after overlap removal: {0}'.
+#                   format(len(pruned_candidates)))
+#             print('\tPruned candidates: ')
+#             for c in pruned_candidates:
+#                 print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+#             print()
+
+#         results.extend(pruned_candidates)
+
+#     # sort results by order of occurrence in sentence
+#     results = sorted(results, key=lambda x: x.start)
+
+#     # resolve any overlap in these final results
+#     results = _resolve_overlap(results)
+    
+#     return results
 
 
 ###############################################################################
@@ -302,15 +447,12 @@ def run(sentence_in):
 
     results = []
     
-    # find l_to_r constructs first
-    all_regex_lists = [_regexes_l_to_r, _regexes_r_to_l]
-
     sentence = _cleanup_sentence(sentence_in)
-    for regex_list_index, regex_list in enumerate(all_regex_lists):
+    for regex_list_index, regex_list in enumerate(_all_regex_lists):
 
         if _TRACE:
             print('SENTENCE: "{0}"'.format(sentence))
-        
+
         candidates = []
         for regex_index, regex in enumerate(regex_list):
             iterator = regex.finditer(sentence)
@@ -327,7 +469,7 @@ def run(sentence_in):
                             print('\t\tHEADER: "{0}"'.format(header))
 
                 candidates.append(overlap.Candidate(start, end, match_text, regex))
-            
+
         candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
 
         if _TRACE:
@@ -356,7 +498,7 @@ def run(sentence_in):
     results = _resolve_overlap(results)
     
     return results
-        
+
 
 ###############################################################################
 def get_version():
@@ -422,13 +564,12 @@ if __name__ == '__main__':
         # 'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
         # 'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
         # 'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
-        # 'Initial vitals were HR 106, BP 88/56, RR 20, O2 Sat 85% 3L.',
-        # 'Initial vs were: T=99.3, P=120, BP=111/57, RR=24, POx=100%.',
-        # 'At transfer vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM.',
+        # 'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
+        # 'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',
+        # 'At transfer vitals were HR=120 BP=109/44 RR=29 POx=93% on 8L FM.',
         # "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
         # 'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
-        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams '       +\
-        'Lt 18.5 inches HC 35 cm',
+        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams Lt 18.5 inches HC 35 cm',
 
     ]
 
@@ -437,7 +578,8 @@ if __name__ == '__main__':
     for sentence in TEST_SENTENCES:
         print('SENTENCE: "{0}"'.format(sentence))
         results = run(sentence)
-        
+
+        print('RESULTS: ')
         for r in results:
             print('\t\t[{0:3},{1:3}): {2}'.format(r.start, r.end, r.match_text))
         print()
