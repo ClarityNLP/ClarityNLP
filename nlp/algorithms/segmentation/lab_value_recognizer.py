@@ -73,8 +73,9 @@ K/uL
 # separator between header and value
 _str_sep = r'[-:=\s/{}]*'
 
-# numeric value, either floating point or integer
-_str_num = r'(\d+\.\d+|\.\d+|\d+)'
+# numeric value, either floating point or integer, possibly suffixed with
+# an 's' or an apostrophe-s (the 's' is for constructs such as 70s, 80s, etc.)
+_str_num = r'(\d+\.\d+|\.\d+|\d+)\'?s?'
 
 # Recognize ne or more numeric values, possibly parenthesized or bracketed,
 # with optional dashes/slashes. Assumes prior collapse of repeated whitespace.
@@ -108,7 +109,16 @@ _str_height_header = r'\b(Height|Hgt\.?|Ht\.?)'
 # weight
 _str_weight_units = r'\(?(grams|ounces|pounds|kilograms|gms?|' +\
     r'oz|lbs?|kg|g)\.?\)?'
-_str_weight_header = r'\b(Weight|Wgt\.?|Wt\.?)'
+_str_weight_header = r'\b(Weight|Wgt\.?|Wt\.?|w\.?)'
+
+# length
+_str_length_units = r'\(?(centimeters?|decimeters?|millimeters?|meters?|' +\
+    r'inch(es)?|feet|foot|cm|dm|mm|in|ft|m)\.?\)?'
+_str_length_header = r'\b(Length|Len|Lt|L\.?)'
+
+# head circumference (infants)
+_str_hc_units = _str_length_units
+_str_hc_header = r'\b(HC)'
 
 # body surface area
 _str_bsa_units = r'\(?(meters\s?squared|meters\s?sq|msq|m2)\.?\)?'
@@ -179,6 +189,8 @@ def init():
     _regexes_r_to_l.extend(_make_regexes(_str_hr_header,     _str_hr_units))
     _regexes_r_to_l.extend(_make_regexes(_str_height_header, _str_height_units))
     _regexes_r_to_l.extend(_make_regexes(_str_weight_header, _str_weight_units))
+    _regexes_r_to_l.extend(_make_regexes(_str_length_header, _str_length_units))
+    _regexes_r_to_l.extend(_make_regexes(_str_hc_header,     _str_hc_units))
     _regexes_r_to_l.extend(_make_regexes(_str_bsa_header,    _str_bsa_units))
     _regexes_r_to_l.extend(_make_regexes(_str_bp_header,     _str_bp_units))
     _regexes_r_to_l.extend(_make_regexes(_str_rr_header,     _str_rr_units))
@@ -199,12 +211,14 @@ def init():
         r'(on\s)?(\d+L)?' + r'(' + _str_sep + _str_o2_device + _str_sep + r')?'
     _regexes_r_to_l.append(re.compile(str_o2_2, re.IGNORECASE))
 
-    # capture constructs such as '98% RA, 91% on NRB, 96O2-sat on RA' [L to R]
-    str_o2_3 = r'(?<!O)\d+' + _str_sep            +\
-        r'(' + _str_o2_units  + _str_sep + r')?'  +\
-        r'(' + _str_o2_header + _str_sep + r')?'  +\
-        r'(' + _str_o2_units  + _str_sep + r')?'  +\
-        r'(' + r'on'          + _str_sep + r')?'  +\
+    # capture constructs such as '98% RA, sats 91% on NRB, 96O2-sat on RA' [L to R]
+    str_o2_3 = r'(' + _str_o2_header + _str_sep + r')?'  +\
+        r'(' + _str_o2_units  + _str_sep + r')?'         +\
+        r'(?<!O)\d+' + _str_sep                          +\
+        r'(' + _str_o2_units  + _str_sep + r')?'         +\
+        r'(' + _str_o2_header + _str_sep + r')?'         +\
+        r'(' + _str_o2_units  + _str_sep + r')?'         +\
+        r'(' + r'on'          + _str_sep + r')?'         +\
         _str_o2_device + _str_sep
     _regexes_l_to_r.append(re.compile(str_o2_3, re.IGNORECASE))
     
@@ -219,15 +233,66 @@ def _cleanup_sentence(sentence):
 
 
 ###############################################################################
-def _erase(start, end, sentence):
+def _resolve_overlap(result_list):
     """
-    Replace sentence[start:end] with whitespace.
+    Remove any remaining overlap among the items in the list. The items are
+    of type finder_overlap.Candidate.
     """
 
-    chunk1 = sentence[:start]
-    chunk2 = ' '*(end - start)
-    chunk3 = sentence[end:]
-    return chunk1 + chunk2 + chunk3
+    if 0 == len(result_list):
+        return []
+
+    if _TRACE:
+        print('Called _resolve_overlap...')
+        print('Candidates: ')
+        for r in result_list:
+            print('[{0:3}, {1:3}): {2}'.format(r.start, r.end, r.match_text))
+        print()
+    
+    final_results = [ result_list[0] ]
+    
+    for i, r in enumerate(result_list):
+        keep_it = True
+        for j, f in enumerate(final_results):
+            if not overlap.has_overlap(r.start, r.end, f.start, f.end):
+                continue
+            else:
+                # overlap
+                if r.start == f.start and r.end == f.end:
+                    # ignore duplicate
+                    keep_it = False
+                    break
+                else:
+                    # partial overlap
+                    first = r
+                    second = f
+                    if f.start < r.start:
+                        first = f
+                        second = r
+
+                    # compute character overlap at the end
+                    assert first.end >= second.start
+                    diff = first.end - second.start
+
+                    # subtract 'diff' chars from the end of first
+                    # keep second intact
+                    new_first = overlap.Candidate(
+                        start      = first.start,
+                        end        = first.end-diff,
+                        match_text = first.match_text[:-diff],
+                        regex      = first.regex,
+                        other      = first.other)
+
+                    if r == first:
+                        result_list[i] = new_first
+                    else:
+                        final_results[j] = new_first
+                    break
+                
+        if keep_it:
+            final_results.append(r)
+            
+    return final_results
 
 
 ###############################################################################
@@ -284,13 +349,11 @@ def run(sentence_in):
 
         results.extend(pruned_candidates)
 
-        # erase matches from sentence if more to go
-        if regex_list_index < len(all_regex_lists)-1:
-            for c in pruned_candidates:
-                sentence = _erase(c.start, c.end, sentence)
-
     # sort results by order of occurrence in sentence
     results = sorted(results, key=lambda x: x.start)
+
+    # resolve any overlap in these final results
+    results = _resolve_overlap(results)
     
     return results
         
@@ -342,18 +405,31 @@ if __name__ == '__main__':
         # 'Vitals: O2 sat 97%, SpO2 97% on NRB',
         # 'Vitals: O2 Flow: 100 (Non-Rebreather), SpO2 92%/RA',
         # 'Vitals: O2Sat98 2LNC',
-        # 'Vitals: 98% RA, 91% on NRB, 96O2-sat on RA',
+        # 'Vitals: 98% RA, 91% on NRB, 96O2-sat on RA, 96O2-sat % RA',
+        # 'Vitals: sats 96% on RA',
 
         # combined
-        'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
-        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 ' +\
-        'BP (mm Hg): 140/91 HR (bpm): 53',
-        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
-        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
-        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
-        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
-        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',        
+        # 'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
+        # 'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
+        # 'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 ',
+        # 'BP (mm Hg): 140/91 HR (bpm): 53',
+        # 'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
+        # 'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
+        # 'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
+        # 'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
+        # 'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
+        # 'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
+        # 'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
+        # 'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
+        # 'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
+        # 'Initial vitals were HR 106, BP 88/56, RR 20, O2 Sat 85% 3L.',
+        # 'Initial vs were: T=99.3, P=120, BP=111/57, RR=24, POx=100%.',
+        # 'At transfer vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM.',
+        # "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
+        # 'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
+        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams '       +\
+        'Lt 18.5 inches HC 35 cm',
+
     ]
 
     init()
