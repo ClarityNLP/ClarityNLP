@@ -13,12 +13,6 @@ import sys
 import json
 import argparse
 
-if __name__ == '__main__':
-    # put the algorithms/finder folder on the path
-    algorithms_path, other = os.path.split(sys.path[0])
-    finder_path = os.path.join(algorithms_path, 'finder')
-    sys.path.append(finder_path)
-
 try:
     import finder_overlap as overlap
 except:
@@ -394,7 +388,7 @@ def run(sentence_in):
                             print('\tMATCH: "{0}"'.format(match_text))
                             print('\t\tHEADER: "{0}"'.format(header))
 
-                candidates.append(overlap.Candidate(start, end, match_text, regex))
+                candidates.append(overlap.Candidate(start, end, match_text, None))
 
         candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
 
@@ -524,7 +518,7 @@ if __name__ == '__main__':
         # 'SpO2 97% on NRB.',
         # 'Vitals were Temperature 100.8 Pulse: 103 RR: 28 BP: 84/43 ' +\
         # 'O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
-        'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
+        # 'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
     ]
 
     init()
