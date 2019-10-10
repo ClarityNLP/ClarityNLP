@@ -11,6 +11,7 @@ import re
 import os
 import sys
 import json
+import argparse
 
 if __name__ == '__main__':
     # put the algorithms/finder folder on the path
@@ -73,21 +74,21 @@ K/uL
 # separator between header and value
 _str_sep = r'[-:=\s/{}]*'
 
+# word, possibly hyphenated, parenthesized, or abbreviated
+_str_word = r'\(?[-a-z.]+\)?'
+
 # numeric value, either floating point or integer, possibly suffixed with
 # an 's' or an apostrophe-s (the 's' is for constructs such as 70s, 80s, etc.)
 _str_num = r'(\d+\.\d+|\.\d+|\d+)\'?s?'
 
-# Recognize ne or more numeric values, possibly parenthesized or bracketed,
+# Recognize one or more numeric values, possibly parenthesized or bracketed,
 # with optional dashes/slashes. Assumes prior collapse of repeated whitespace.
 _str_range = r'[\(\[{]?' + _str_sep + _str_num + r'\s?-\s?' +\
     _str_num + _str_sep + r'[\)\]}]?'
-_str_slashnum = _str_num + r'(' + _str_sep +\
+_str_slashnum = _str_num + _str_sep + r'(' +\
     r'[/\(]' + _str_sep + _str_num + _str_sep + r'[/\)]' + r')+'
 _str_value = r'(' + _str_slashnum + r'|' + _str_range + r'|' + _str_num + r')'
 _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
-
-# word, possibly hyphenated, possibly parenthesized
-_str_word = r'\(?[-a-z]+\)?'
 
 # temperature (ignores the exceedingly unlikely units of Kelvin or Rankine);
 # also, the abbreviation 'K' for Kelvin could be confused with potassium
@@ -136,11 +137,6 @@ _str_o2_header = r'(SpO2|SaO2|O2[-\s]sat\.?s?|O2Sats?|O2\s?flow|' +\
 _str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'  +\
     r'cannula|NRB|RA|FM|NC)\)?'
 
-# # recognizes values and units that follow the header
-# _regexes_r_to_l = []
-
-# # recognizes values and units that precede the header, if any
-# _regexes_l_to_r = []
 
 _all_regex_lists = []
 
@@ -148,7 +144,7 @@ _all_regex_lists = []
 ###############################################################################
 def enable_debug():
 
-    global TRACE
+    global _TRACE
     _TRACE = True
 
 
@@ -370,89 +366,19 @@ def _resolve_overlap(result_list):
     return final_results
 
 
-# ###############################################################################
-# def run(sentence_in):
-#     """
-#     """
-
-#     results = []
-    
-#     # find l_to_r constructs first
-#     all_regex_lists = [_regexes_l_to_r, _regexes_r_to_l]
-
-#     sentence = _cleanup_sentence(sentence_in)
-#     for regex_list_index, regex_list in enumerate(all_regex_lists):
-
-#         if _TRACE:
-#             print('SENTENCE: "{0}"'.format(sentence))
-        
-#         candidates = []
-#         for regex_index, regex in enumerate(regex_list):
-#             iterator = regex.finditer(sentence)
-#             for match in iterator:
-#                 start = match.start()
-#                 end   = match.end()
-#                 match_text = match.group()
-
-#                 if _TRACE:
-#                     if 'header' in match.groupdict().keys():
-#                         header = match.group('header')
-#                         if header is not None:
-#                             print('\tMATCH: "{0}"'.format(match_text))
-#                             print('\t\tHEADER: "{0}"'.format(header))
-
-#                 candidates.append(overlap.Candidate(start, end, match_text, regex))
-
-#         # indent this block by one level
-#         # make candidates PER-SIMILAR-REGEX
-#         # no need to distinguish r_to_l or l_to_r
-#         # regex groups: [temp regexes], [length regexes], etc.
-#         # finder_overlap resolves overlap within a group
-#         # this module's overlap resolution resolves between groups
-                
-#         candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
-
-#         if _TRACE:
-#             print('\tCandidate matches: ')
-#             for index, c in enumerate(candidates):
-#                 print('\t[{0:2}]\t[{1},{2}): {3}'.
-#                       format(index, c.start, c.end, c.match_text, c.regex))
-#             print()
-
-#         pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
-
-#         if _TRACE:
-#             print('\tcandidates count after overlap removal: {0}'.
-#                   format(len(pruned_candidates)))
-#             print('\tPruned candidates: ')
-#             for c in pruned_candidates:
-#                 print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-#             print()
-
-#         results.extend(pruned_candidates)
-
-#     # sort results by order of occurrence in sentence
-#     results = sorted(results, key=lambda x: x.start)
-
-#     # resolve any overlap in these final results
-#     results = _resolve_overlap(results)
-    
-#     return results
-
-
 ###############################################################################
 def run(sentence_in):
     """
     """
 
     results = []
-    
+
     sentence = _cleanup_sentence(sentence_in)
+
+    if _TRACE:
+        print(' SENTENCE: "{0}"'.format(sentence))
+    
     for regex_list_index, regex_list in enumerate(_all_regex_lists):
-
-        if _TRACE:
-            print('SENTENCE: "{0}"'.format(sentence))
-
         candidates = []
         for regex_index, regex in enumerate(regex_list):
             iterator = regex.finditer(sentence)
@@ -472,24 +398,26 @@ def run(sentence_in):
 
         candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
 
-        if _TRACE:
-            print('\tCandidate matches: ')
-            for index, c in enumerate(candidates):
-                print('\t[{0:2}]\t[{1},{2}): {3}'.
-                      format(index, c.start, c.end, c.match_text, c.regex))
-            print()
+        if len(candidates) > 0:
+            
+            if _TRACE:
+                print('\tCandidate matches: ')
+                for index, c in enumerate(candidates):
+                    print('\t[{0:2}]\t[{1},{2}): {3}'.
+                          format(index, c.start, c.end, c.match_text, c.regex))
+                print()
 
-        pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+            pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
-        if _TRACE:
-            print('\tcandidates count after overlap removal: {0}'.
-                  format(len(pruned_candidates)))
-            print('\tPruned candidates: ')
-            for c in pruned_candidates:
-                print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-            print()
+            if _TRACE:
+                print('\tcandidates count after overlap removal: {0}'.
+                      format(len(pruned_candidates)))
+                print('\tPruned candidates: ')
+                for c in pruned_candidates:
+                    print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+                print()
 
-        results.extend(pruned_candidates)
+            results.extend(pruned_candidates)
 
     # sort results by order of occurrence in sentence
     results = sorted(results, key=lambda x: x.start)
@@ -508,6 +436,25 @@ def get_version():
 ###############################################################################
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(
+        description='Find individual components in lists of vitals.')
+
+    parser.add_argument('-v', '--version',
+                        help='show version and exit',
+                        action='store_true')
+    parser.add_argument('-d', '--debug',
+                        help='print debug information to stdout',
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    if 'version' in args and args.version:
+        print(get_version())
+        sys.exit(0)
+
+    if 'debug' in args and args.debug:
+        enable_debug()
+    
     TEST_SENTENCES = [
         # # heart rate
         # 'Vitals: HR 70 (70 - 72) bpm, HR:    70(70   -72)  beats/min.',
@@ -535,6 +482,7 @@ if __name__ == '__main__':
         # 'Vitals: BP= 122/58, BP-93/46, BP115/65, BP: 84/43',
         # 'Vitals: BP: 93/67(73) {72/21(39) - 119/85(91)}',
         # 'Vitals: BP= 90-109/49-82',
+        # 'Vitals: BP 119/53 (105/43 sleeping)',
 
         # # respiration rate
         # 'Vitals: RR 17, R:21, RR= 20, RR-16, R18, RR=24',
@@ -569,8 +517,14 @@ if __name__ == '__main__':
         # 'At transfer vitals were HR=120 BP=109/44 RR=29 POx=93% on 8L FM.',
         # "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
         # 'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
-        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams Lt 18.5 inches HC 35 cm',
-
+        # 'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ' +\
+        # 'Lt 18.5 inches HC 35 cm',
+        # 'Vital signs were T 97.0 BP 85/44 HR 107 RR 28 and SpO2 91% on NRB.',
+        # 'Vitals were BP 119/53 (105/43 sleeping) HR 103 RR 15 and ' +\
+        # 'SpO2 97% on NRB.',
+        # 'Vitals were Temperature 100.8 Pulse: 103 RR: 28 BP: 84/43 ' +\
+        # 'O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
+        'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
     ]
 
     init()
