@@ -68,8 +68,8 @@ K/uL
 # separator between header and value
 _str_sep = r'[-:=\s/{}]*'
 
-# word, possibly hyphenated, parenthesized, or abbreviated
-_str_word = r'\(?[-a-z.]+\)?'
+# word, possibly hyphenated or parenthesized
+_str_word = r'(\(\s?[-a-z]+\s?\)|[-a-z]+)(?=[^a-z])'
 
 # numeric value, either floating point or integer, possibly suffixed with
 # an 's' or an apostrophe-s (the 's' is for constructs such as 70s, 80s, etc.)
@@ -86,7 +86,7 @@ _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
 
 # temperature (ignores the exceedingly unlikely units of Kelvin or Rankine);
 # also, the abbreviation 'K' for Kelvin could be confused with potassium
-_str_temp_units = r'\(?(C|F|deg\.?(rees)?\s?(C|F)|degrees)\)?'
+_str_temp_units = r'\(?(C|F|deg\.?(rees)?\s?(C|F)|deg\.?(rees)?)\)?'
 _str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Te?mp|Tm|T)\.?'
 
 # heart rate
@@ -125,7 +125,7 @@ _str_bp_header = r'\b(blood\s?pressure|b\.?\s?p)\.?'
 
 # Oxygen saturation
 _str_o2_units = r'\(?(percent|pct\.?|%)\)?'
-# no leading r'\b', on purpose, for O2 l_to_r regexes below
+# no leading r'\b', on purpose
 _str_o2_header = r'(SpO2|SaO2|O2[-\s]sat\.?s?|O2Sats?|O2\s?flow|' +\
     r'Sat\.?s?|POx|PO|O2)'
 _str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'  +\
@@ -133,6 +133,8 @@ _str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'  +\
 
 
 _all_regex_lists = []
+
+_regex_has_digit = re.compile(r'\d')
 
 
 ###############################################################################
@@ -151,7 +153,7 @@ def _make_regexes(header_in, units_in):
     
     # # header string with optional units
     header = r'(?P<header>' + header_in + _str_sep +\
-        r'(' + units_in + _str_sep + r')?' + r')'
+        r'(' + units_in + _str_sep + r')?' + r'(?=[^a-z]))'
 
     # one or more values with optional units
     elt = _str_values + r'(' + _str_sep + units_in + _str_sep + r')?'
@@ -165,58 +167,18 @@ def _make_regexes(header_in, units_in):
     str_regex = header + value_list
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
 
+    # header + optional words + single value
+    str_regex = header + r'(\s?' + _str_word + _str_sep + r')*' +\
+        _str_values + _str_sep
+    regex_list.append(re.compile(str_regex, re.IGNORECASE))
+    
     return regex_list
 
 
 ###############################################################################
 def init():
 
-    # global _regexes_r_to_l
-    # global _regexes_l_to_r
-
-    # _regexes_r_to_l = []
-    # _regexes_l_to_r = []
-    
-    # _regexes_r_to_l.extend(_make_regexes(_str_temp_header,   _str_temp_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_hr_header,     _str_hr_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_height_header, _str_height_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_weight_header, _str_weight_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_length_header, _str_length_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_hc_header,     _str_hc_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_bsa_header,    _str_bsa_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_bp_header,     _str_bp_units))
-    # _regexes_r_to_l.extend(_make_regexes(_str_rr_header,     _str_rr_units))
-    # # O2 regexes constructed specially below
-    
-    # # additional O2 saturation regexs
-    # o2_header = r'(?P<header>\b' + _str_o2_header + _str_sep +\
-    #     r'(' + _str_o2_units + _str_sep + r')?' + r')'
-
-    # # capture constructs such as O2 sat: 98 2LNC
-    # str_o2_1 = r'\b' + o2_header + _str_values + _str_sep +\
-    #     r'\d+L\s?' + _str_o2_device + _str_sep
-    # _regexes_r_to_l.append(re.compile(str_o2_1, re.IGNORECASE))
-    
-    # # capture one or two 'words' following an 'on', such as 'on NRB, on 6L NC'
-    # str_o2_2 = r'\b' + o2_header + _str_values + _str_sep +\
-    #     r'(' + _str_o2_units + _str_sep + r')?' +\
-    #     r'(on\s)?(\d+L)?' + r'(' + _str_sep + _str_o2_device + _str_sep + r')?'
-    # _regexes_r_to_l.append(re.compile(str_o2_2, re.IGNORECASE))
-
-    # # capture constructs such as '98% RA, sats 91% on NRB, 96O2-sat on RA' [L to R]
-    # str_o2_3 = r'(' + _str_o2_header + _str_sep + r')?'  +\
-    #     r'(' + _str_o2_units  + _str_sep + r')?'         +\
-    #     r'(?<!O)\d+' + _str_sep                          +\
-    #     r'(' + _str_o2_units  + _str_sep + r')?'         +\
-    #     r'(' + _str_o2_header + _str_sep + r')?'         +\
-    #     r'(' + _str_o2_units  + _str_sep + r')?'         +\
-    #     r'(' + r'on'          + _str_sep + r')?'         +\
-    #     _str_o2_device + _str_sep
-    # _regexes_l_to_r.append(re.compile(str_o2_3, re.IGNORECASE))
-
-    global _all_regex_lists
-    _all_regex_lists = []
-
+    _all_regex_lists.clear()
     
     _all_regex_lists.append(_make_regexes(_str_temp_header,   _str_temp_units))
     _all_regex_lists.append(_make_regexes(_str_hr_header,     _str_hr_units))
@@ -293,6 +255,7 @@ def _resolve_overlap(result_list):
         f = final_results[-1]
         # check for overlap with previous final result
         if not overlap.has_overlap(r.start, r.end, f.start, f.end):
+            if _TRACE: print('\tkeeping result {0}'.format(r.match_text))
             final_results.append(r)
             continue
         else:
@@ -327,6 +290,17 @@ def _resolve_overlap(result_list):
 
             # subtract 'diff' chars from the end of f
             # keep r intact
+            match_text = f.match_text[:-diff]
+            match = _regex_has_digit.search(match_text)
+            if not match:
+                # remove final_result[-1] (only text, no value remains)
+                # replace with r
+                if _TRACE:
+                    print('\t\tignoring f, text only: "{0}"'.format(match_text))
+                    
+                final_results[-1] = r
+                continue
+            
             new_f = overlap.Candidate(
                 start      = f.start,
                 end        = f.end-diff,
@@ -370,7 +344,7 @@ def run(sentence_in):
     sentence = _cleanup_sentence(sentence_in)
 
     if _TRACE:
-        print(' SENTENCE: "{0}"'.format(sentence))
+        print('SENTENCE: "{0}"'.format(sentence))
     
     for regex_list_index, regex_list in enumerate(_all_regex_lists):
         candidates = []
@@ -454,6 +428,7 @@ if __name__ == '__main__':
         # 'Vitals: HR 70 (70 - 72) bpm, HR:    70(70   -72)  beats/min.',
         # 'Vitals: HR(bpm) 70 (70-72), HR (bpm): 70 (70-72), HR (bpm): 53',
         # 'Vitals: HR 70, HR:70, HR:70-72, HR:70 70/72',
+        'Vitals: HR= paced at 70'
 
         # # temperature
         # 'Vitals: T 95.6, T97.3, T: 99, Tmp. 95.5, T=98, T-100.6, Temp. 98.5F',
@@ -519,6 +494,8 @@ if __name__ == '__main__':
         # 'Vitals were Temperature 100.8 Pulse: 103 RR: 28 BP: 84/43 ' +\
         # 'O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
         # 'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
+        # 'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, ' +\
+        # 'O2 sat= 96% on 4L',
     ]
 
     init()

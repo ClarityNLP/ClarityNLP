@@ -257,6 +257,14 @@ def test_lab_value_recognizer():
             _Result(match_text='BP 148/80'),
             _Result(match_text='RR 25'),
             _Result(match_text='SpO2 92%/RA'),
+        ],
+        'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, ' +\
+        'O2 sat= 96% on 4L':[
+            _Result(match_text='Tm 96.4'),
+            _Result(match_text='BP= 90-109/49-82'),
+            _Result(match_text='HR= paced at 70'),
+            _Result(match_text='RR= 24'),
+            _Result(match_text='O2 sat= 96% on 4L'),
         ]
     }
 
