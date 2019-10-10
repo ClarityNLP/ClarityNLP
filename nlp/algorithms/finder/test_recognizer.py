@@ -265,7 +265,39 @@ def test_lab_value_recognizer():
             _Result(match_text='HR= paced at 70'),
             _Result(match_text='RR= 24'),
             _Result(match_text='O2 sat= 96% on 4L'),
-        ]
+        ],
+
+        # lists of numbers, each with units
+        'Radiology 117 K/uL 12.6 g/dL 151 mg/dL 3.9 mg/dL 24 mEq/L':[
+            _Result(match_text='Radiology 117 K/uL 12.6 g/dL 151 mg/dL ' +\
+                    '3.9 mg/dL 24 mEq/L'),
+        ],
+        'Radiology 4.4 mEq/L 103 mg/dL 97 mEq/L 133 mEq/L 39.3 % 11.7 K/uL':[
+            _Result(match_text='Radiology 4.4 mEq/L 103 mg/dL 97 mEq/L ' +\
+                    '133 mEq/L 39.3 % 11.7 K/uL')
+        ],
+
+        # lists of numbers and no units
+        'WBC 10.3 10.7 11.7 Hct 46.3 41.0 39.3 Plt 111 113 117':[
+            _Result(match_text='WBC 10.3 10.7 11.7'),
+            _Result(match_text='Hct 46.3 41.0 39.3'),
+            _Result(match_text='Plt 111 113 117')
+        ],
+
+        # more lab values, ion concentrations
+        'Albumin:4.2 g/dL, LDH: 332 IU/L, Ca++:8.0 mg/dL, Mg++:2.1 mg/dL':[
+            _Result(match_text='Albumin:4.2 g/dL'),
+            _Result(match_text='LDH: 332 IU/L'),
+            _Result(match_text='Ca++:8.0 mg/dL'),
+            _Result(match_text='Mg++:2.1 mg/dL')
+        ],
+        'WBC 12.4 Hct 41.8 Plt 97 Cr 1.8 1.7 2.0 1.7 Glucose 117 134 141':[
+            _Result(match_text='WBC 12.4'),
+            _Result(match_text='Hct 41.8'),
+            _Result(match_text='Plt 97'),
+            _Result(match_text='Cr 1.8 1.7 2.0 1.7'),
+            _Result(match_text='Glucose 117 134 141')
+        ],
     }
 
     if not _run_tests(test_data):

@@ -51,20 +51,6 @@ _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
              r'grams/cm2|grams/sqcm|grams|'                                   +\
              r'insp/min)'
 
-# Heart rhythm: AV Paced
-#     premature ventricular contractions (PVCs)
-#     paroxysmal supraventricular tachycardia (PSVT)
-#     ventricular tachycardia (V-tach)
-#     others
-
-"""
-grams/hour
-mcg/Kg/min
-insp/min
-inch
-K/uL
-"""
-
 # separator between header and value
 _str_sep = r'[-:=\s/{}]*'
 
@@ -74,6 +60,7 @@ _str_word = r'(\(\s?[-a-z]+\s?\)|[-a-z]+)(?=[^a-z])'
 # numeric value, either floating point or integer, possibly suffixed with
 # an 's' or an apostrophe-s (the 's' is for constructs such as 70s, 80s, etc.)
 _str_num = r'(\d+\.\d+|\.\d+|\d+)\'?s?'
+_regex_num = re.compile(_str_num)
 
 # Recognize one or more numeric values, possibly parenthesized or bracketed,
 # with optional dashes/slashes. Assumes prior collapse of repeated whitespace.
@@ -134,7 +121,23 @@ _str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'  +\
 
 _all_regex_lists = []
 
-_regex_has_digit = re.compile(r'\d')
+# need '-' and '+' to capture ion concentrations such as 'Ca++ : 8.0 mg/dL'
+_str_simple_header = r'\b[-+a-z]+'
+
+# header followed by list of numbers, each with units
+_str_header_value_units = _str_simple_header + _str_sep +\
+    r'((?<=[^a-z])' +_str_values + _str_sep +_str_units + _str_sep + r')+'
+_regex_header_value_units = re.compile(_str_header_value_units, re.IGNORECASE)
+
+# header followed by list of numbers with no units
+_str_header_values = _str_simple_header + _str_sep +\
+    r'((?<=[^a-z])' +_str_values + _str_sep + r')+'
+_regex_header_values = re.compile(_str_header_values, re.IGNORECASE)
+
+_last_chance_regexes = [
+    _regex_header_value_units,
+    _regex_header_values
+]
 
 
 ###############################################################################
@@ -152,7 +155,7 @@ def _make_regexes(header_in, units_in):
     regex_list = []
     
     # # header string with optional units
-    header = r'(?P<header>' + header_in + _str_sep +\
+    header = r'(?<!/)(?P<header>' + header_in + _str_sep +\
         r'(' + units_in + _str_sep + r')?' + r'(?=[^a-z]))'
 
     # one or more values with optional units
@@ -291,9 +294,9 @@ def _resolve_overlap(result_list):
             # subtract 'diff' chars from the end of f
             # keep r intact
             match_text = f.match_text[:-diff]
-            match = _regex_has_digit.search(match_text)
+            match = _regex_num.search(match_text)
             if not match:
-                # remove final_result[-1] (only text, no value remains)
+                # remove final_result[-1] (only text, no numeric value remains)
                 # replace with r
                 if _TRACE:
                     print('\t\tignoring f, text only: "{0}"'.format(match_text))
@@ -356,13 +359,14 @@ def run(sentence_in):
                 match_text = match.group()
 
                 if _TRACE:
+                    print('\tMATCH: "{0}"'.format(match_text))
                     if 'header' in match.groupdict().keys():
                         header = match.group('header')
                         if header is not None:
-                            print('\tMATCH: "{0}"'.format(match_text))
                             print('\t\tHEADER: "{0}"'.format(header))
 
-                candidates.append(overlap.Candidate(start, end, match_text, None))
+                c = overlap.Candidate(start, end, match_text, None)
+                candidates.append(c)
 
         candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
 
@@ -387,6 +391,23 @@ def run(sentence_in):
 
             results.extend(pruned_candidates)
 
+    if 0 == len(candidates):
+        if _TRACE:
+            print('Trying last chance regexes...')
+        for regex in _last_chance_regexes:
+            iterator = regex.finditer(sentence)
+            for match in iterator:
+                start = match.start()
+                end   = match.end()
+                match_text = match.group()
+                if _TRACE:
+                    print('\tMATCH: "{0}"'.format(match_text))
+                candidates.append(overlap.Candidate(start, end, match_text, None))
+                candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
+                if len(candidates) > 0:
+                    pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+                    results.extend(pruned_candidates)
+            
     # sort results by order of occurrence in sentence
     results = sorted(results, key=lambda x: x.start)
 
