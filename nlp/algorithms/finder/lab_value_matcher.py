@@ -51,6 +51,29 @@ _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
              r'grams/cm2|grams/sqcm|grams|'                                   +\
              r'insp/min)(?=([^a-z]|\Z))'
 
+# English stopword set from nltk, with modifications
+_stopwords = {
+    "about", "above", "after", "again", "against", "all", "am", "an", "and",
+    "any", "are", "aren", "aren't", "as", "at", "be", "because", "been",
+    "before", "being", "below", "between", "both", "but", "by", "can",
+    "couldn't", "did", "didn't", "do", "does", "doesn", "doesn't", "doing",
+    "don't", "down", "during", "each", "few", "for", "from", "further", "had",
+    "hadn't", "has", "hasn", "hasn't", "have", "haven", "haven't", "having",
+    "he", "her", "here", "hers", "herself", "him", "himself", "his", "how",
+    "if", "in", "into", "is", "isn't", "it", "it's", "its", "itself", "just",
+    "me", "mightn", "mightn't", "more", "most", "mustn't", "my", "myself",
+    "needn't", "no", "nor", "not", "now", "of", "off", "on", "once", "only",
+    "or", "other", "our", "ours", "ourselves", "out", "over", "own", "same",
+    "shan't", "she", "she's", "should", "should've", "shouldn", "shouldn't",
+    "so", "some", "such", "than", "that", "that'll", "the", "their", "theirs",
+    "them", "themselves", "then", "there", "these", "they", "this", "those",
+    "through", "to", "too", "under", "until", "up", "very", "was", "wasn't",
+    "we", "were", "weren't", "what", "when", "where", "which", "while", "who",
+    "whom", "why", "will", "with", "won", "won't", "wouldn", "wouldn't",
+    "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself",
+    "yourselves"
+}
+
 # separator between header and value
 _str_sep = r'[-:=\s/{}]*'
 
@@ -337,6 +360,13 @@ def _resolve_overlap(result_list):
                     
                 final_results[-1] = r
                 continue
+
+            if match_text.endswith('/'):
+                # discard r, f would be left as a fragment
+                if _TRACE:
+                    print('\t\tavoiding fragment, discarding "{0}"'.
+                          format(r.match_text))
+                continue
             
             new_f = overlap.Candidate(
                 start      = f.start,
@@ -392,6 +422,13 @@ def run(sentence_in):
                 end   = match.end()
                 match_text = match.group()
 
+                # discard if match_text begins with a stopword
+                pos = match_text.find(' ')
+                if -1 != pos and match_text[:pos] in _stopwords:
+                    if _TRACE:
+                        print('\tDiscarding "{0}"'.format(match_text))
+                    continue
+                
                 if _TRACE:
                     print('\tMATCH: "{0}"'.format(match_text))
                     if 'header' in match.groupdict().keys():
@@ -564,4 +601,4 @@ if __name__ == '__main__':
         for r in results:
             print('\t\t[{0:3},{1:3}): {2}'.format(r.start, r.end, r.match_text))
         print()
-        
+

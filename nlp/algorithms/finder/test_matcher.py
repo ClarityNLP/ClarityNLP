@@ -176,11 +176,11 @@ def test_lab_value_matcher():
             _Result(match_text='R 16'),
             _Result(match_text='O2Sats100%')
         ],
-        # 'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.':[
-        #     _Result(match_text='BP 99/34'),
-        #     _Result(match_text='RR 20'),
-        #     _Result(match_text='SpO2% 99/bipap')
-        # ],
+        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.':[
+            _Result(match_text='BP 99/34'),
+            _Result(match_text='RR 20'),
+            _Result(match_text='SpO2% 99/bipap')
+        ],
         'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.':[
             _Result(match_text='T 98'),
             _Result(match_text='P 91'),
