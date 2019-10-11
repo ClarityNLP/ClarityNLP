@@ -34,7 +34,7 @@ services:
 
   identity-provider:
     container_name: IDENTITY_PROVIDER
-    hostname: identity-provider
+    hostname: ${IDENTITY_PROVIDER_HOSTNAME}
     image: claritynlp/identity-provider
     expose:
       - ${IDENTITY_PROVIDER_CONTAINER_PORT}
@@ -78,6 +78,9 @@ services:
       - ${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
     entrypoint: pm2-runtime
     command: proxy.js
+    environment:
+      - IDENTITY_PROVIDER_HOSTNAME=${IDENTITY_PROVIDER_HOSTNAME}
+      - IDENTITY_PROVIDER_CONTAINER_PORT=${IDENTITY_PROVIDER_CONTAINER_PORT}
     networks:
       - clarity
 
