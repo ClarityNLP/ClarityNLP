@@ -103,6 +103,23 @@ def _run_tests(test_data):
 def test_lab_value_matcher():
 
     test_data = {
+        'Vitals were SBP 116, HR 75':[
+            _Result(match_text='SBP 116'),
+            _Result(match_text='HR 75'),
+        ],
+        'Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB':[
+            _Result(match_text='T 98.9 F'),
+            _Result(match_text='BP 138/56'),
+            _Result(match_text='P 89'),
+            _Result(match_text='RR 28'),
+            _Result(match_text='SaO2 100% on NRB')
+        ],
+        'Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask':[
+            _Result(match_text='T 98'),
+            _Result(match_text='BP 163/64'),
+            _Result(match_text='HR 73'),
+            _Result(match_text='O2 95% on 55% venti mask')
+        ],
         'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.':[
             _Result(match_text='T 95.6'),
             _Result(match_text='HR 45'),
@@ -235,6 +252,15 @@ def test_lab_value_matcher():
             _Result(match_text='RR 28'),
             _Result(match_text='SpO2 91% on NRB'),
         ],
+        'Vitals were T 95.6 HR 67 BP 143/79 RR 16 and ' +\
+        'O2 sat 92% on room air and 100% on 3 L/min nc':[
+            _Result(match_text='T 95.6'),
+            _Result(match_text='HR 67'),
+            _Result(match_text='BP 143/79'),
+            _Result(match_text='RR 16'),
+            # need to capture 'and 100% on 3L nc'
+            _Result(match_text='O2 sat 92% on room air')
+        ],
         'Vitals were BP 119/53 (105/43 sleeping) HR 103 RR 15 and ' +\
         'SpO2 97% on NRB.':[
             _Result(match_text='BP 119/53 (105/43'),
@@ -266,7 +292,77 @@ def test_lab_value_matcher():
             _Result(match_text='RR= 24'),
             _Result(match_text='O2 sat= 96% on 4L'),
         ],
+        'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask':[
+            _Result(match_text='T 97.1'),
+            _Result(match_text='BP 80/70'),
+            _Result(match_text='AR 80'),
+            _Result(match_text='RR 24'),
+            _Result(match_text='O2 sat 70% on 50% flowmask'),
+        ],
+        'Vitals: T: 98.9 degrees Farenheit BP: 120/49 mmHg supine ' +\
+        'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%':[
+            _Result(match_text='T: 98.9 degrees Farenheit'),
+            _Result(match_text='BP: 120/49 mmHg'),
+            _Result(match_text='HR 84 bpm'),
+            _Result(match_text='RR 13 bpm'),
+            _Result(match_text='O2: 100%'),
+            _Result(match_text='PS 18/10'),
+            _Result(match_text='FiO2 40%')
+        ],
+        'Vitals T 99.2 (baseline ~96-97), BP 91/50, HR 63, RR 12, ' +\
+        'satting 95% on trach mask':[
+            _Result(match_text='T 99.2'),
+            _Result(match_text='BP 91/50'),
+            _Result(match_text='HR 63'),
+            _Result(match_text='RR 12'),
+            _Result(match_text='satting 95% on trach mask')
+        ],
+        'Vital signs: Tmax: 38 C (100.4   Tcurrent: 37 C (98.6   '   +\
+        'HR: 82 (78 - 103) bpm '                                     +\
+        'BP: 121/68(76) {113/57(72) - 137/88(94)} mmHg   RR: 24 '    +\
+        '(19 - 29) insp/min   SpO2: 92%   Heart rhythm: SR '         +\
+        '(Sinus Rhythm)   Wgt (current): 107 kg (admission): 98 kg ' +\
+        'Height: 68 Inch    CVP: 16 (6 - 17)mmHg':[
+            _Result(match_text='Tmax: 38 C'),
+            _Result(match_text='Tcurrent: 37 C'),
+            _Result(match_text='HR: 82 (78 - 103) bpm'),
+            _Result(match_text='BP: 121/68(76) {113/57(72) - 137/88(94)} mmHg'),
+            _Result(match_text='RR: 24 (19 - 29) insp/min'),
+            _Result(match_text='SpO2: 92%'),
+            #_Result(match_text='Heart rhythm: SR (Sinus Rhythm)'),
+            _Result(match_text='Wgt (current): 107 kg (admission): 98 kg'),
+            _Result(match_text='Height: 68 Inch'),
+            _Result(match_text='CVP: 16 (6 - 17)mmHg')
+        ],
+        'Vital signs: Tcurrent: 36.8 C (98.2   HR: 75 (75 - 107) bpm ' +\
+        'BP: 122/78(89) {122/78(29) - 149/86(100)} mmHg '              +\
+        'RR: 21 (20 - 38) insp/min   SpO2: 96% '                       +\
+        'Heart rhythm: ST (Sinus Tachycardia)   Height: 72 Inch':[
+            _Result(match_text='Tcurrent: 36.8 C'),
+            _Result(match_text='HR: 75 (75 - 107) bpm'),
+            _Result(match_text='BP: 122/78(89) {122/78(29) - 149/86(100)} mmHg'),
+            _Result(match_text='RR: 21 (20 - 38) insp/min'),
+            _Result(match_text='SpO2: 96%'),
+            #_Result(match_text='Heart rhythm: ST (Sinus Tachycardia)'),
+            _Result(match_text='Height: 72 Inch'),
+        ],
+        'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
+        'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
+        'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 ' +\
+        'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min':[
+            _Result(match_text='Vt (Set): 550 (550 - 550) mL'),
+            _Result(match_text='Vt (Spontaneous): 234 (234 - 234) mL'),
+            _Result(match_text='RR (Set): 16'),
+            _Result(match_text='RR (Spontaneous): 0'),
+            _Result(match_text='PEEP: 5 cmH2O'),
+            _Result(match_text='FiO2: 70%'),
+            _Result(match_text='RSBI: 140'),
+            _Result(match_text='PIP: 25 cmH2O'),
+            _Result(match_text='SpO2: 98%'),
+            _Result(match_text='Ve: 14.6 L/min')
+        ],
 
+        
         # lists of numbers, each with units
         'Radiology 117 K/uL 12.6 g/dL 151 mg/dL 3.9 mg/dL 24 mEq/L':[
             _Result(match_text='Radiology 117 K/uL 12.6 g/dL 151 mg/dL ' +\

@@ -31,7 +31,7 @@ _TRACE = False
 # Most of these are from http://ebmcalc.com/Basic.htm, an online medical unit
 # conversion tool. Additional unit strings have been added.
 _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
-             r'breaths/min|centimeters|cm|cents|cmH20|cmHg|cm^2|cm2|days|'    +\
+             r'breaths/min|centimeters|cmH2O|cmHg|cm^2|cm2|cm|cents|days|'    +\
              r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
              r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
              r'gm/sqcm|gm|hrs|hr|inches|inch|index|inH2O|inHg|in|IU/L|'       +\
@@ -99,16 +99,17 @@ _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
 
 # temperature (ignores the exceedingly unlikely units of Kelvin or Rankine);
 # also, the abbreviation 'K' for Kelvin could be confused with potassium
-_str_temp_units = r'\(?(C|F|deg\.?(rees)?\s?(C|F)|deg\.?(rees)?)\)?'
+_str_temp_units = r'\(?(C|F|deg\.?(rees)?\s?(C(elsius)?|F(arenheit)?)|' +\
+    r'deg\.?(rees)?)\)?'
 _str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Te?mp|Tm|T)\.?'
 
 # heart rate
 _str_hr_units  = r'\(?(bpm|beats/m(in\.?)?|beats per min\.?(ute)?)\)?'
 _str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
 
-# respiration rate
-_str_rr_units = r'\(?((insp\.?|breaths?)[\s/]*min)\.?\)?'
-_str_rr_header = r'\b(respiration\s?rate|resp\.?|RR?)'
+# respiration rate (and other respiratory quantities)
+_str_rr_units = r'\(?((insp\.?|breaths?)[\s/]*min|mL|L/min)\.?\)?'
+_str_rr_header = r'\b(respiration\s?rate|resp\.?|RR?|PEEP|RSBI|Vt|Ve)'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
@@ -134,15 +135,15 @@ _str_bsa_header = r'\bBSA'
 
 # blood pressure
 _str_bp_units = r'\(?(mm\s?hg)\)?'
-_str_bp_header = r'\b(blood\s?pressure|b\.?\s?p)\.?'
+_str_bp_header = r'\b(blood\s?pressure|b\.?\s?p|SBP|DBP)\.?'
 
 # Oxygen saturation
 _str_o2_units = r'\(?(percent|pct\.?|%)\)?'
 # no leading r'\b', on purpose
-_str_o2_header = r'(SpO2|SaO2|O2[-\s]sat\.?s?|O2Sats?|O2\s?flow|' +\
-    r'Sat\.?s?|POx|PO|O2)'
+_str_o2_header = r'(SpO2|SaO2|O2[-\s]sat\.?s?|satting|O2Sats?|O2\s?flow|' +\
+    r'Sat\.?s?|POx|PO|O2|FiO2)'
 _str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'  +\
-    r'cannula|NRB|RA|FM|NC)\)?'
+    r'room air|([a-z]+)?\s?mask|cannula|NRB|RA|FM|NC|air)\)?'
 
 
 _all_regex_lists = []
@@ -236,7 +237,7 @@ def init():
     # capture one or two 'words' following an 'on', such as 'on NRB, on 6L NC'
     str_o2_2 = r'\b' + o2_header + _str_values + _str_sep +\
         r'(' + _str_o2_units + _str_sep + r')?' +\
-        r'(on\s)?(\d+L)?' + r'(' + _str_sep + _str_o2_device + _str_sep + r')?'
+        r'(on\s)?(\d+L)?' + r'((\d+%)?' + _str_sep + _str_o2_device + _str_sep + r')?'
     o2_regexes.append(re.compile(str_o2_2, re.IGNORECASE))
 
     # capture constructs such as '98% RA, sats 91% on NRB, 96O2-sat on RA' [L to R]
@@ -421,14 +422,21 @@ def run(sentence_in):
                 start = match.start()
                 end   = match.end()
                 match_text = match.group()
-
+                if 0 == len(match_text):
+                    continue
+                
+                # valid matches must begin with an alphanumeric char
+                first_char = match_text[0]
+                if not first_char.isalnum():
+                    continue
+                
                 # discard if match_text begins with a stopword
                 pos = match_text.find(' ')
                 if -1 != pos and match_text[:pos] in _stopwords:
                     if _TRACE:
                         print('\tDiscarding "{0}"'.format(match_text))
                     continue
-                
+
                 if _TRACE:
                     print('\tMATCH: "{0}"'.format(match_text))
                     if 'header' in match.groupdict().keys():
