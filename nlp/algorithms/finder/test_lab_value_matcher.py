@@ -113,15 +113,6 @@ def test_lab_value_matcher():
             _Result(match_text='RR=29'),
             _Result(match_text='POx=93% on 8L FM')
         ],
-        'Vitals: Temperature 100.8, Pulse: 103, RR:28, BP: 84/43, O2Sat: 88 ' \
-        ' O2 Flow: 100 (Non-Rebreather)':[
-            _Result(match_text='Temperature 100.8'),
-            _Result(match_text='Pulse: 103'),
-            _Result(match_text='RR:28'),
-            _Result(match_text='BP: 84/43'),
-            _Result(match_text='O2Sat: 88'),
-            _Result(match_text='O2 Flow: 100 (Non-Rebreather)')
-        ],
         'Vitals: T: 96.0  BP: 90/54 P: 88 R: 16 18 O2:88/NRB':[
             _Result(match_text='T: 96.0'),
             _Result(match_text='BP: 90/54'),
@@ -339,12 +330,12 @@ def test_lab_value_matcher():
             _Result(match_text='RR 12'),
             _Result(match_text='satting 95% on trach mask')
         ],
-        # 'Vitals: T 99.2F BP 220/109 HR 69 SR sO2 100% on 100% O2 on vent':[
-        #     _Result(match_text='T 99.2F'),
-        #     _Result(match_text='BP 220/109'),
-        #     _Result(match_text='HR 69'),
-        #     _Result(match_text='sO2 100% on 100% O2 on vent')
-        # ],
+        'Vitals: T 99.2F BP 220/109 HR 69 SR sO2 100% on 100% O2 on vent':[
+            _Result(match_text='T 99.2F'),
+            _Result(match_text='BP 220/109'),
+            _Result(match_text='HR 69'),
+            _Result(match_text='sO2 100% on 100% O2 on vent')
+        ],
         'Vital signs: Tmax: 38 C (100.4   Tcurrent: 37 C (98.6   '   +\
         'HR: 82 (78 - 103) bpm '                                     +\
         'BP: 121/68(76) {113/57(72) - 137/88(94)} mmHg   RR: 24 '    +\

@@ -182,7 +182,7 @@ def enable_debug():
 def _make_regexes(header_in, units_in):
     """
     """
-
+    
     regex_list = []
     
     # # header string with optional units
@@ -213,7 +213,7 @@ def _make_regexes(header_in, units_in):
 def init():
 
     _all_regex_lists.clear()
-    
+
     _all_regex_lists.append(_make_regexes(_str_temp_header,   _str_temp_units))
     _all_regex_lists.append(_make_regexes(_str_hr_header,     _str_hr_units))
     _all_regex_lists.append(_make_regexes(_str_height_header, _str_height_units))
@@ -225,7 +225,7 @@ def init():
     _all_regex_lists.append(_make_regexes(_str_rr_header,     _str_rr_units))
     
     o2_regexes = []
-
+ 
     o2_header = r'(?P<header>\b' + _str_o2_header + _str_sep          +\
         r'(' + _str_o2_units + _str_sep + r')?' + r'(of\s)?' + r')'
 
@@ -252,6 +252,10 @@ def init():
         _str_o2_device + _str_sep
     o2_regexes.append(re.compile(str_o2_3, re.IGNORECASE))
 
+    str_o2_4 = r'\b' + o2_header + r'\d+% on \d+% O2' + _str_sep +\
+        _str_o2_device + _str_sep
+    o2_regexes.append(re.compile(str_o2_4, re.IGNORECASE))
+    
     _all_regex_lists.append(o2_regexes)
 
     _all_regex_lists.append( [_regex_header_value_units] )
@@ -268,13 +272,50 @@ def _cleanup_sentence(sentence):
     return sentence
 
 
-###############################################################################
-def _merge_results(result_list):
-    """
-    Merge any adjacent results of the same type.
-    """
+# ###############################################################################
+# def _merge_results(result_list):
+#     """
+#     Merge any adjacent results of the same type.
+#     """
 
-    return result_list
+#     if _TRACE:
+#         print('called _merge_results...')
+#         print('\tresult_list: ')
+#         for r in result_list:
+#             print('\t\t{0}'.format(r.match_text))
+    
+#     if len(result_list) <= 1:
+#         return result_list
+
+#     i = 0
+#     merged_result_list = []
+#     while i < len(result_list)-1:
+#         a = result_list[i]
+#         b = result_list[i+1]
+#         if a.end == b.start:
+#             # append b to a, ignore b
+
+#             if _TRACE:
+#                 print('\tMerging a and b: ')
+#                 print('\t\tf:[{0:3},{1:3}): {2}'.
+#                       format(a.start, a.end, a.match_text))
+#                 print('\t\tr:[{0:3},{1:3}): {2}'.
+#                       format(b.start, b.end, b.match_text))
+            
+#             match_text = a.match_text + b.match_text
+#             new_a = overlap.Candidate(
+#                 start      = a.start,
+#                 end        = a.start + len(match_text),
+#                 match_text = match_text,
+#                 regex      = a.regex,
+#                 other      = a.other)
+#             merged_result_list.append(new_a)
+#             i += 2
+#         else:
+#             merged_result_list.append(a)
+#             i += 1
+    
+#     return merged_result_list
 
 
 ###############################################################################
@@ -476,8 +517,11 @@ def run(sentence_in):
 
             pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
+            # merge any adjacent results of identical type
+            #pruned_candidates = _merge_results(pruned_candidates)
+            
             if _TRACE:
-                print('\tcandidates count after overlap removal: {0}'.
+                print('\tCandidate count after overlap removal: {0}'.
                       format(len(pruned_candidates)))
                 print('\tPruned candidates: ')
                 for c in pruned_candidates:
@@ -488,9 +532,6 @@ def run(sentence_in):
 
     # sort results by order of occurrence in sentence
     results = sorted(results, key=lambda x: x.start)
-
-    # merge any adjacent results of identical type
-    results = _merge_results(results)
 
     # resolve any overlap in these final results
     results = _resolve_overlap(results)
