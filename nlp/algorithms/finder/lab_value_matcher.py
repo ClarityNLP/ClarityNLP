@@ -109,7 +109,8 @@ _str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
 
 # respiration rate (and other respiratory quantities)
 _str_rr_units = r'\(?((insp\.?|breaths?)[\s/]*min|mL|L/min)\.?\)?'
-_str_rr_header = r'\b(respiration\s?rate|resp\.?|RR?|PEEP|RSBI|Vt|Ve)'
+_str_rr_header = r'\b(respiration\s?rate|respiratory\s?rate|' +\
+    r'resp\.?|RR?|PEEP|RSBI|Vt|Ve)'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
@@ -140,13 +141,17 @@ _str_bp_header = r'\b(blood\s?pressure|b\.?\s?p|SBP|DBP)\.?'
 # Oxygen saturation
 _str_o2_units = r'\(?(percent|pct\.?|%)\)?'
 # no leading r'\b', on purpose
-_str_o2_header = r'(SpO2|SaO2|O2[-\s]sat\.?s?|satting|O2Sats?|O2\s?flow|' +\
-    r'Sat\.?s?|POx|PO|O2|FiO2)'
-_str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'  +\
-    r'room air|([a-z]+)?\s?mask|cannula|NRB|RA|FM|NC|air)\)?'
+_str_o2_header = r'(SpO2|SaO2|sO2|O2[-\s]sat\.?s?|oxygen\s?saturation|' +\
+    r'satting|O2Sats?|O2\s?flow|Sat\.?s?|PaO2\s?/\s?FiO2|'              +\
+    r'PaO2|FiO2|POx|PO|O2)'
+_str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'      +\
+    r'room air|([a-z]+)?\s?mask|cannula|PSV|NRB|RA|FM|NC|air|'          +\
+    r'on\svent(ilator)?)\)?'
 
 
 _all_regex_lists = []
+
+# "last chance" regexes, try to match where all others fail
 
 # need '-' and '+' to capture ion concentrations such as 'Ca++ : 8.0 mg/dL'
 _str_simple_header = r'\b[-+a-z]+'
@@ -161,10 +166,6 @@ _str_header_values = _str_simple_header + _str_sep +\
     r'((?<=[^a-z])' + _str_values + _str_sep + r')+'
 _regex_header_values = re.compile(_str_header_values, re.IGNORECASE)
 
-_last_chance_regexes = [
-    _regex_header_value_units,
-    _regex_header_values
-]
 
 _str_avg = r'\b(average|mean|avg\.?|median|mode)\b'
 _regex_avg = re.compile(_str_avg, re.IGNORECASE)
@@ -224,10 +225,9 @@ def init():
     _all_regex_lists.append(_make_regexes(_str_rr_header,     _str_rr_units))
     
     o2_regexes = []
-    
-    # additional O2 saturation regexs
-    o2_header = r'(?P<header>\b' + _str_o2_header + _str_sep +\
-        r'(' + _str_o2_units + _str_sep + r')?' + r')'
+
+    o2_header = r'(?P<header>\b' + _str_o2_header + _str_sep          +\
+        r'(' + _str_o2_units + _str_sep + r')?' + r'(of\s)?' + r')'
 
     # capture constructs such as O2 sat: 98 2LNC
     str_o2_1 = r'\b' + o2_header + _str_values + _str_sep +\
@@ -235,9 +235,10 @@ def init():
     o2_regexes.append(re.compile(str_o2_1, re.IGNORECASE))
     
     # capture one or two 'words' following an 'on', such as 'on NRB, on 6L NC'
-    str_o2_2 = r'\b' + o2_header + _str_values + _str_sep +\
-        r'(' + _str_o2_units + _str_sep + r')?' +\
-        r'(on\s)?(\d+L)?' + r'((\d+%)?' + _str_sep + _str_o2_device + _str_sep + r')?'
+    str_o2_2 = r'\b' + o2_header + _str_values + _str_sep              +\
+        r'(' + _str_o2_units + _str_sep + r')?'                        +\
+        r'(on\s)?(\d+\s?(liters|L))?'                                  +\
+        r'((\d+%)?' + _str_sep + _str_o2_device + _str_sep + r')?'
     o2_regexes.append(re.compile(str_o2_2, re.IGNORECASE))
 
     # capture constructs such as '98% RA, sats 91% on NRB, 96O2-sat on RA' [L to R]
@@ -253,7 +254,9 @@ def init():
 
     _all_regex_lists.append(o2_regexes)
 
-    _all_regex_lists.append(_last_chance_regexes)
+    _all_regex_lists.append( [_regex_header_value_units] )
+    _all_regex_lists.append( [_regex_header_values] )
+
     
     
 ###############################################################################
@@ -263,6 +266,15 @@ def _cleanup_sentence(sentence):
     sentence = re.sub(r'\s+', ' ', sentence)
 
     return sentence
+
+
+###############################################################################
+def _merge_results(result_list):
+    """
+    Merge any adjacent results of the same type.
+    """
+
+    return result_list
 
 
 ###############################################################################
@@ -428,13 +440,17 @@ def run(sentence_in):
                 # valid matches must begin with an alphanumeric char
                 first_char = match_text[0]
                 if not first_char.isalnum():
+                    if _TRACE:
+                        print('\tDiscarding (not isalnum): "{0}"'.
+                              format(match_text))
                     continue
                 
                 # discard if match_text begins with a stopword
                 pos = match_text.find(' ')
                 if -1 != pos and match_text[:pos] in _stopwords:
                     if _TRACE:
-                        print('\tDiscarding "{0}"'.format(match_text))
+                        print('\tDiscarding (stopword) "{0}"'.
+                              format(match_text))
                     continue
 
                 if _TRACE:
@@ -470,25 +486,11 @@ def run(sentence_in):
 
             results.extend(pruned_candidates)
 
-    # #if 0 == len(candidates):
-    # if _TRACE:
-    #     print('Trying last chance regexes...')
-    # for regex in _last_chance_regexes:
-    #     iterator = regex.finditer(sentence)
-    #     for match in iterator:
-    #         start = match.start()
-    #         end   = match.end()
-    #         match_text = match.group()
-    #         if _TRACE:
-    #             print('\tMATCH: "{0}"'.format(match_text))
-    #         candidates.append(overlap.Candidate(start, end, match_text, None))
-    #         candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
-    #         if len(candidates) > 0:
-    #             pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
-    #             results.extend(pruned_candidates)
-            
     # sort results by order of occurrence in sentence
     results = sorted(results, key=lambda x: x.start)
+
+    # merge any adjacent results of identical type
+    results = _merge_results(results)
 
     # resolve any overlap in these final results
     results = _resolve_overlap(results)

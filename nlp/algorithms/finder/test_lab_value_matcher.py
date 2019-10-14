@@ -107,6 +107,28 @@ def test_lab_value_matcher():
             _Result(match_text='SBP 116'),
             _Result(match_text='HR 75'),
         ],
+        'Vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM':[
+            _Result(match_text='HR=120'),
+            _Result(match_text='BP=109/44'),
+            _Result(match_text='RR=29'),
+            _Result(match_text='POx=93% on 8L FM')
+        ],
+        'Vitals: Temperature 100.8, Pulse: 103, RR:28, BP: 84/43, O2Sat: 88 ' \
+        ' O2 Flow: 100 (Non-Rebreather)':[
+            _Result(match_text='Temperature 100.8'),
+            _Result(match_text='Pulse: 103'),
+            _Result(match_text='RR:28'),
+            _Result(match_text='BP: 84/43'),
+            _Result(match_text='O2Sat: 88'),
+            _Result(match_text='O2 Flow: 100 (Non-Rebreather)')
+        ],
+        'Vitals: T: 96.0  BP: 90/54 P: 88 R: 16 18 O2:88/NRB':[
+            _Result(match_text='T: 96.0'),
+            _Result(match_text='BP: 90/54'),
+            _Result(match_text='P: 88'),
+            _Result(match_text='R: 16 18'),
+            _Result(match_text='O2:88/NRB')
+        ],
         'Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB':[
             _Result(match_text='T 98.9 F'),
             _Result(match_text='BP 138/56'),
@@ -317,6 +339,12 @@ def test_lab_value_matcher():
             _Result(match_text='RR 12'),
             _Result(match_text='satting 95% on trach mask')
         ],
+        # 'Vitals: T 99.2F BP 220/109 HR 69 SR sO2 100% on 100% O2 on vent':[
+        #     _Result(match_text='T 99.2F'),
+        #     _Result(match_text='BP 220/109'),
+        #     _Result(match_text='HR 69'),
+        #     _Result(match_text='sO2 100% on 100% O2 on vent')
+        # ],
         'Vital signs: Tmax: 38 C (100.4   Tcurrent: 37 C (98.6   '   +\
         'HR: 82 (78 - 103) bpm '                                     +\
         'BP: 121/68(76) {113/57(72) - 137/88(94)} mmHg   RR: 24 '    +\
@@ -361,7 +389,50 @@ def test_lab_value_matcher():
             _Result(match_text='SpO2: 98%'),
             _Result(match_text='Ve: 14.6 L/min')
         ],
-
+        'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   ' +\
+        'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   ' +\
+        'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   ' +\
+        'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164':[
+            _Result(match_text='Vt (Spontaneous): 608 (565 - 793) mL'),
+            _Result(match_text='PS : 15 cmH2O'),
+            _Result(match_text='RR (Spontaneous): 27'),
+            _Result(match_text='PEEP: 10 cmH2O'),
+            _Result(match_text='FiO2: 50%'),
+            _Result(match_text='PIP: 26 cmH2O'),
+            _Result(match_text='SpO2: 99%'),
+            _Result(match_text='ABG: 7.41/39/81/21/0'),
+            _Result(match_text='Ve: 17.4 L/min'),
+            _Result(match_text='PaO2 / FiO2: 164')
+        ],
+        'Respiratory: Vt (Set): 600 (600 - 600) mL   Vt (Spontaneous): 743 ' +\
+        '(464 - 816) mL  PS : 5 cmH2O   RR (Set): 14   RR (Spontaneous): 19' +\
+        ' PEEP: 5 cmH2O   FiO2: 50%   RSBI: 49   PIP: 11 cmH2O   '           +\
+        'Plateau: 20 cmH2O   SPO2: 99%   ABG: 7.34/51/109/25/0   '           +\
+        'Ve: 10.3 L/min   PaO2 / FiO2: 218':[
+            _Result(match_text='Vt (Set): 600 (600 - 600) mL'),
+            _Result(match_text='Vt (Spontaneous): 743 (464 - 816) mL'),
+            _Result(match_text='PS : 5 cmH2O'),
+            _Result(match_text='RR (Set): 14'),
+            _Result(match_text='RR (Spontaneous): 19'),
+            _Result(match_text='PEEP: 5 cmH2O'),
+            _Result(match_text='FiO2: 50%'),
+            _Result(match_text='RSBI: 49'),
+            _Result(match_text='PIP: 11 cmH2O'),
+            _Result(match_text='Plateau: 20 cmH2O'),
+            _Result(match_text='SPO2: 99%'),
+            _Result(match_text='ABG: 7.34/51/109/25/0'),
+            _Result(match_text='Ve: 10.3 L/min'),
+            _Result(match_text='PaO2 / FiO2: 218')            
+        ],
+        'Vital signs were a temperature of 97.5, a heart rate of 70, ' +\
+        'a blood pressure of 193/100, a respiratory rate of 20, and '  +\
+        'an oxygen saturation of 96% on 2 liters':[
+            _Result(match_text='temperature of 97.5'),
+            _Result(match_text='heart rate of 70'),
+            _Result(match_text='blood pressure of 193/100'),
+            _Result(match_text='respiratory rate of 20'),
+            _Result(match_text='oxygen saturation of 96% on 2 liters')
+        ],
         
         # lists of numbers, each with units
         'Radiology 117 K/uL 12.6 g/dL 151 mg/dL 3.9 mg/dL 24 mEq/L':[
