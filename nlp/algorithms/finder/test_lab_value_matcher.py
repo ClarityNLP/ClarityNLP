@@ -176,6 +176,13 @@ def test_lab_value_matcher():
             _Result(match_text='RR= 20'),
             _Result(match_text='O2 sat= 100% 2L NC')
         ],
+        'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra':[
+            _Result(match_text='T: 97.7'),
+            _Result(match_text='P:100'),
+            _Result(match_text='R:16'),
+            _Result(match_text='BP:126/95'),
+            _Result(match_text='SaO2:100 Ra')
+        ],
         'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC':[
             _Result(match_text='T-100.6'),
             _Result(match_text='HR-105'),
@@ -424,7 +431,38 @@ def test_lab_value_matcher():
             _Result(match_text='respiratory rate of 20'),
             _Result(match_text='oxygen saturation of 96% on 2 liters')
         ],
-        
+        'His vitals were a temperature of 98.1.  Heart rate of 76.  Blood ' +\
+        'pressure 160/80 with intermittent rise to systolic blood pressure ' +\
+        'of 230 and a respiratory rate of 14. His initial weight was ' +\
+        'approximately 73 kg':[
+            _Result(match_text='temperature of 98.1'),
+            _Result(match_text='Heart rate of 76'),
+            _Result(match_text='Blood pressure 160/80'),
+            _Result(match_text='systolic blood pressure of 230'),
+            _Result(match_text='respiratory rate of 14'),
+            _Result(match_text='weight was approximately 73 kg')
+        ],
+        'Physical examination on admission revealed temperature was 96.3, ' +\
+        'heart rate was 76, blood pressure was 190/80, the respiratory '    +\
+        'rate was 21,\nand the oxygen saturation was 80% to 92% on a 100% ' +\
+        'nonrebreather mask':[
+            _Result(match_text='temperature was 96.3'),
+            _Result(match_text='heart rate was 76'),
+            _Result(match_text='blood pressure was 190/80'),
+            _Result(match_text='respiratory rate was 21'),
+            _Result(match_text='oxygen saturation was 80% to 92% on a ' \
+                    '100% nonrebreather mask')
+        ],
+        'Vital signs are heart rate of 107, blood pressure 104/58; '   +\
+        'breathing at 16; temperature 100 F., orally.  O2 saturation ' +\
+        '98% on room air; weight 115 pounds':[
+            _Result(match_text='heart rate of 107'),
+            _Result(match_text='blood pressure 104/58'),
+            _Result(match_text='breathing at 16'),
+            _Result(match_text='temperature 100 F'),
+            _Result(match_text='O2 saturation 98% on room air'),
+            _Result(match_text='weight 115 pounds')
+        ],
         # lists of numbers, each with units
         'Radiology 117 K/uL 12.6 g/dL 151 mg/dL 3.9 mg/dL 24 mEq/L':[
             _Result(match_text='Radiology 117 K/uL 12.6 g/dL 151 mg/dL ' +\

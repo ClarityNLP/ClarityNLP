@@ -110,7 +110,7 @@ _str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
 # respiration rate (and other respiratory quantities)
 _str_rr_units = r'\(?((insp\.?|breaths?)[\s/]*min|mL|L/min)\.?\)?'
 _str_rr_header = r'\b(respiration\s?rate|respiratory\s?rate|' +\
-    r'resp\.?|RR?|PEEP|RSBI|Vt|Ve)'
+    r'breathing|resp\.?|RR?|PEEP|RSBI|Vt|Ve)'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
@@ -136,16 +136,17 @@ _str_bsa_header = r'\bBSA'
 
 # blood pressure
 _str_bp_units = r'\(?(mm\s?hg)\)?'
-_str_bp_header = r'\b(blood\s?pressure|b\.?\s?p|SBP|DBP)\.?'
+_str_bp_header = r'\b(systolic blood pressure|diastolic blood pressure|' +\
+    'blood\s?pressure|b\.?\s?p|SBP|DBP)\.?'
 
 # Oxygen saturation
 _str_o2_units = r'\(?(percent|pct\.?|%)\)?'
 # no leading r'\b', on purpose
-_str_o2_header = r'(SpO2|SaO2|sO2|O2[-\s]sat\.?s?|oxygen\s?saturation|' +\
-    r'satting|O2Sats?|O2\s?flow|Sat\.?s?|PaO2\s?/\s?FiO2|'              +\
-    r'PaO2|FiO2|POx|PO|O2)'
-_str_o2_device = r'\(?(bipap|non[-\s]?rebreather|nasal\s?cannula|'      +\
-    r'room air|([a-z]+)?\s?mask|cannula|PSV|NRB|RA|FM|NC|air|'          +\
+_str_o2_header = r'(SpO2|SaO2|sO2|O2[-\s]?saturation|O2[-\s]sat\.?s?|'  +\
+    r'oxygen\s?saturation|satting|O2Sats?|O2\s?flow|Sat\.?s?|'          +\
+    r'PaO2\s?/\s?FiO2|PaO2|FiO2|POx|PSV|PO|O2)'
+_str_o2_device = r'\(?(bipap|non[-\s]?rebreather(\smask)?|nasal\s?cannula|'  +\
+    r'room air|([a-z]+)?\s?mask|cannula|PSV|NRB|RA|FM|NC|air|'               +\
     r'on\svent(ilator)?)\)?'
 
 
@@ -201,9 +202,9 @@ def _make_regexes(header_in, units_in):
     str_regex = header + value_list
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
 
-    # header + optional words + single value
+    # header + optional words + single value + optional units
     str_regex = header + r'(\s?' + _str_word + _str_sep + r')*' +\
-        _str_values + _str_sep
+        _str_values + _str_sep + r'(' + units_in + _str_sep + r')?'
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
     
     return regex_list
@@ -255,6 +256,14 @@ def init():
     str_o2_4 = r'\b' + o2_header + r'\d+% on \d+% O2' + _str_sep +\
         _str_o2_device + _str_sep
     o2_regexes.append(re.compile(str_o2_4, re.IGNORECASE))
+
+    # range of O2 saturation
+    str_o2_5 = r'\b' + o2_header +\
+        r'(' + _str_word + _str_sep + r')*' +\
+        r'\d+% to \d+%' + _str_sep +\
+        r'(' + _str_word + _str_sep + r')+' +\
+        r'\d+%' + _str_sep + _str_o2_device + _str_sep
+    o2_regexes.append(re.compile(str_o2_5, re.IGNORECASE))
     
     _all_regex_lists.append(o2_regexes)
 
