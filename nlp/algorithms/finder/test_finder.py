@@ -26,7 +26,7 @@ except:
     from algorithms.finder import size_measurement_finder as smf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -744,6 +744,23 @@ def test_date_finder():
             _DateResult(text='2019-06-24', year=2019, month=6, day=24),
             _DateResult(text='2019-06-24', year=2019, month=6, day=24),
             _DateResult(text='2020-07-25', year=2020, month=7, day=25)           
+        ]
+    }
+
+    if not _run_tests(_MODULE_DATE, test_data):
+        return False
+
+    # anonymized dates as used in MIMIC data
+    test_data = {
+        'The moon landing occurred on [**1969-7-20**], in '             \
+        'the year [**1969**], on [**7-20**]. Some other strings are: '  \
+        '[**2984-12-15**], [**12-15**], [**2984**].':[
+            _DateResult(text='[**1969-7-20**]',  year=1969, month=7,  day=20),
+            _DateResult(text='[**1969**]',       year=1969                  ),
+            _DateResult(text='[**7-20**]',                  month=7,  day=20),
+            _DateResult(text='[**2984-12-15**]', year=2984, month=12, day=15),
+            _DateResult(text='[**12-15**]',                 month=12, day=15),
+            _DateResult(text='[**2984**]',       year=2984                  )
         ]
     }
 
