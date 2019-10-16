@@ -11,7 +11,9 @@ const {
   DOMAIN,
   DASHBOARD_CLIENT_SUBDOMAIN,
   INGEST_CLIENT_SUBDOMAIN,
-  RESULTS_CLIENT_SUBDOMAIN
+  RESULTS_CLIENT_SUBDOMAIN,
+  IDENTITY_PROVIDER_HOSTNAME,
+  IDENTITY_PROVIDER_CONTAINER_PORT
 } = process.env;
 
 const allowedOrigins = [
@@ -157,7 +159,7 @@ const proxyServer = http.createServer(function(req, res) {
 
   var client = jwksClient({
     jwksUri:
-      'http://identity-provider:5000/.well-known/openid-configuration/jwks'
+      `http://${IDENTITY_PROVIDER_HOSTNAME}:${IDENTITY_PROVIDER_CONTAINER_PORT}/.well-known/openid-configuration/jwks`
   });
   function getKey(header, callback) {
     client.getSigningKey(header.kid, function(err, key) {

@@ -33,7 +33,7 @@ services:
 
   identity-provider:
     container_name: IDENTITY_PROVIDER
-    hostname: identity-provider
+    hostname: ${IDENTITY_PROVIDER_HOSTNAME}
     image: claritynlp/identity-provider
     expose:
       - ${IDENTITY_PROVIDER_CONTAINER_PORT}
@@ -97,6 +97,9 @@ services:
       - "traefik.http.routers.iaap.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
       - "traefik.http.routers.iaap.middlewares=https-only"
+    environment:
+      - IDENTITY_PROVIDER_HOSTNAME=${IDENTITY_PROVIDER_HOSTNAME}
+      - IDENTITY_PROVIDER_CONTAINER_PORT=${IDENTITY_PROVIDER_CONTAINER_PORT}
     networks:
       - clarity
 

@@ -20,7 +20,7 @@ except:
     from algorithms.value_extraction import value_extractor as ve
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
@@ -839,6 +839,27 @@ def test_value_extractor_full():
     if not _compare_results(term_string, test_data, minval, maxval, enumlist):
         return False
 
+    # from ClarityNLP github issue #55
+    #     source:MIMIC
+    #     report_type:Physician
+    #     description_attr:"Physician Resident Progress Note"
+    term_string = 'NYHA'
+    enumlist = '1,2,3,4,i,ii,iii,iv'
+    test_data = {
+        'TITLE:'                                       \
+        'Chief Complaint: NYHA class IV CHF '          \
+        '24 Hour Events:'                              \
+        '- started CVVH at 2200 hrs last night':[
+            _Result('nyha', 'iv', None, ve.STR_EQUAL)
+        ],
+        'Chief Complaint: NYHA class IV CHF 24 Hour Events:':[
+            _Result('nyha', 'iv', None, ve.STR_EQUAL)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval, maxval, enumlist):
+        return False
+    
     # previous problems
     term_string = 'fvc'
     enumlist = None
@@ -923,7 +944,7 @@ def test_value_extractor_full():
 
     if not _compare_results(term_string, test_data, minval, maxval):
         return False
-    
+
     return True
 
 

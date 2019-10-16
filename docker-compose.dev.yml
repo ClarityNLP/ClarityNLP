@@ -20,7 +20,7 @@ volumes:
 services:
   identity-provider:
     container_name: IDENTITY_PROVIDER
-    hostname: identity-provider
+    hostname: ${IDENTITY_PROVIDER_HOSTNAME}
     build: ./identity-provider
     expose:
       - ${IDENTITY_PROVIDER_CONTAINER_PORT}
@@ -47,6 +47,9 @@ services:
     build: ./identity-and-access-proxy
     expose:
       - ${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
+    environment:
+      - IDENTITY_PROVIDER_HOSTNAME=${IDENTITY_PROVIDER_HOSTNAME}
+      - IDENTITY_PROVIDER_CONTAINER_PORT=${IDENTITY_PROVIDER_CONTAINER_PORT}
     networks:
       - clarity
 
