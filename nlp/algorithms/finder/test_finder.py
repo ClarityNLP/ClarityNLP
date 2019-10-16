@@ -766,7 +766,7 @@ def test_date_finder():
 
     if not _run_tests(_MODULE_DATE, test_data):
         return False
-    
+
     return True
 
 

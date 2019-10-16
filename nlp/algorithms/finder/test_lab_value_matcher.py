@@ -100,8 +100,10 @@ def _run_tests(test_data):
 
 
 ###############################################################################
-def test_lab_value_matcher():
+def run():
 
+    lvm.init()
+    
     test_data = {
         'Vitals were SBP 116, HR 75':[
             _Result(match_text='SBP 116'),
@@ -539,6 +541,5 @@ if __name__ == '__main__':
     if 'debug' in args and args.debug:
         lvm.enable_debug()
 
-    lvm.init()
-    assert test_lab_value_matcher()
+    assert run()
 

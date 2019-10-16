@@ -267,6 +267,7 @@ def init():
     
     _all_regex_lists.append(o2_regexes)
 
+    # this is too slow - tbd
     _all_regex_lists.append( [_regex_header_value_units] )
     _all_regex_lists.append( [_regex_header_values] )
 

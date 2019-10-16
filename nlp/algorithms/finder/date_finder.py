@@ -148,9 +148,9 @@ _str_dd = r'([0-2]?[0-9]|3[01])\s*(st|nd|rd|th)?'
 _str_DD = r'(0[0-9]|[1-2][0-9]|3[01])'
 
 # months
-_str_m = r'(january|february|march|april|may|june|july|august|september|'    +\
-         r'october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sept|'  +\
-         r'sep|oct|nov|dec)'
+_str_m = r'(january|february|march|april|may|june|july|august|september|'  +\
+    r'october|november|december|jan|feb|mar|apr|jun|jul|aug|sept|sep|'     +\
+    r'oct|nov|dec)'
 
 # convert textual months to int
 month_dict = {
