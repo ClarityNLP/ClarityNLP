@@ -155,7 +155,7 @@ _all_regex_lists = []
 # "last chance" regexes, try to match where all others fail
 
 # need '-' and '+' to capture ion concentrations such as 'Ca++ : 8.0 mg/dL'
-_str_simple_header = r'\b[-+a-z]+'
+_str_simple_header = r'\b(?<!/)[-+a-z]+'
 
 # header followed by list of numbers, each with units
 _str_header_value_units = _str_simple_header + _str_sep +\
@@ -227,7 +227,7 @@ def init():
     
     o2_regexes = []
  
-    o2_header = r'(?P<header>\b' + _str_o2_header + _str_sep          +\
+    o2_header = r'(?<!/)(?P<header>\b' + _str_o2_header + _str_sep          +\
         r'(' + _str_o2_units + _str_sep + r')?' + r'(of\s)?' + r')'
 
     # capture constructs such as O2 sat: 98 2LNC
