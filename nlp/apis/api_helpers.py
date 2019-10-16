@@ -11,6 +11,7 @@ def init():
             section_tagger_init()
             segmentation_init()
             context_init()
+            lab_value_matcher_init()
             init_status = "done"
         except Exception as ex:
             print(ex)
