@@ -34,7 +34,7 @@ _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
              r'breaths/min|centimeters|cmH2O|cmHg|cm^2|cm2|cm|cents|days|'    +\
              r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
              r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
-             r'gm/sqcm|gm|hrs|hr|inches|inch|index|inH2O|inHg|in|IU/L|'       +\
+             r'gm/sqcm|gm|inches|inch|index|inH2O|inHg|in|IU/L|'              +\
              r'kcal/day|K/uL|'                                                +\
              r'kg/m2|kg/m^2|kg/sqm|kg|kilograms|km/hr|km/sec|km/s|knots|kPa|' +\
              r'L/24H|L/day|L/min|L/sec|lb|Liter|litresO2|logit|L|m/sec|mbar|' +\
@@ -88,6 +88,10 @@ _str_comma_int = r'(\d\d\d|\d\d|\d)(,\d\d\d)+'
 _str_num = r'(' + _str_comma_int + r'|' + _str_float_or_int + r')'
 _regex_num = re.compile(_str_num)
 
+# list of numbers with units
+_str_num_and_unit_list = r'(' + _str_num + r'\s?' + _str_units + r'\s?' + r')+'
+_regex_num_and_unit_list = re.compile(_str_num_and_unit_list, re.IGNORECASE)
+
 # Recognize one or more numeric values, possibly parenthesized or bracketed,
 # with optional dashes/slashes. Assumes prior collapse of repeated whitespace.
 _str_range = r'[\(\[{]?' + _str_sep + _str_num + r'\s?-\s?' +\
@@ -108,9 +112,9 @@ _str_hr_units  = r'\(?(bpm|beats/m(in\.?)?|beats per min\.?(ute)?)\)?'
 _str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
 
 # respiration rate (and other respiratory quantities)
-_str_rr_units = r'\(?((insp\.?|breaths?)[\s/]*min|mL|L/min)\.?\)?'
+_str_rr_units = r'\(?((insp\.?|breaths?)[\s/]*min|bpm|mL|L/min)\.?\)?'
 _str_rr_header = r'\b(respiration\s?rate|respiratory\s?rate|' +\
-    r'breathing|resp\.?|RR?|PEEP|RSBI|Vt|Ve)'
+    r'breathing|resp\.?|RR?|RSBI|ABG|Vt|Ve)'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
@@ -137,14 +141,14 @@ _str_bsa_header = r'\bBSA'
 # blood pressure
 _str_bp_units = r'\(?(mm\s?hg)\)?'
 _str_bp_header = r'\b(systolic blood pressure|diastolic blood pressure|' +\
-    'blood\s?pressure|b\.?\s?p|SBP|DBP)\.?'
+    'blood\s?pressure|b\.?\s?p|CVP|RAP|SBP|DBP)\.?'
 
 # Oxygen saturation
-_str_o2_units = r'\(?(percent|pct\.?|%)\)?'
+_str_o2_units = r'\(?(percent|pct\.?|%|cmH2O|mmHg)\)?'
 # no leading r'\b', on purpose
-_str_o2_header = r'(SpO2|SaO2|sO2|O2[-\s]?saturation|O2[-\s]sat\.?s?|'  +\
-    r'oxygen\s?saturation|satting|O2Sats?|O2\s?flow|Sat\.?s?|'          +\
-    r'PaO2\s?/\s?FiO2|PaO2|FiO2|POx|PSV|PO|O2)'
+_str_o2_header = r'(SpO2|SaO2|sO2|O2[-\s]?saturation|O2[-\s]sat\.?s?|'       +\
+    r'oxygen\s?saturation|satting|O2Sats?|O2\s?flow|Sat\.?s?|plateau|'       +\
+    r'PaO2\s?/\s?FiO2|PaO2|FiO2|POx|PaCO2|PEEP|PIP|CPAP|PAW|PSV|PO|PS|O2)'
 _str_o2_device = r'\(?(bipap|non[-\s]?rebreather(\smask)?|nasal\s?cannula|'  +\
     r'room air|([a-z]+)?\s?mask|cannula|PSV|NRB|RA|FM|NC|air|'               +\
     r'on\svent(ilator)?)\)?'
@@ -152,20 +156,35 @@ _str_o2_device = r'\(?(bipap|non[-\s]?rebreather(\smask)?|nasal\s?cannula|'  +\
 
 _all_regex_lists = []
 
-# "last chance" regexes, try to match where all others fail
 
 # need '-' and '+' to capture ion concentrations such as 'Ca++ : 8.0 mg/dL'
 _str_simple_header = r'\b(?<!/)[-+a-z]+'
 
-# header followed by list of numbers, each with units
-_str_header_value_units = _str_simple_header + _str_sep +\
-    r'((?<=[^a-z])' + _str_values + _str_sep + _str_units + _str_sep + r')+'
-_regex_header_value_units = re.compile(_str_header_value_units, re.IGNORECASE)
+# header-value pair
+_str_simple_pair = _str_simple_header + r':\s?' + _str_num + r'\s?' +\
+    _str_units + r'\s?'
+_regex_simple_pair = re.compile(_str_simple_pair, re.IGNORECASE)
 
-# header followed by list of numbers with no units
-_str_header_values = _str_simple_header + _str_sep +\
-    r'((?<=[^a-z])' + _str_values + _str_sep + r')+'
-_regex_header_values = re.compile(_str_header_values, re.IGNORECASE)
+# _str_range = r'[\(\[{]?' + _str_sep + _str_num + r'\s?-\s?' +\
+#     _str_num + _str_sep + r'[\)\]}]?'
+# _str_slashnum = _str_num + _str_sep + r'(' +\
+#     r'[/\(]' + _str_sep + _str_num + _str_sep + r'[/\)]' + r')+'
+# _str_value = r'(' + _str_slashnum + r'|' + _str_range + r'|' + _str_num + r')'
+# _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
+
+
+# Need custom regexes to detect lists of floats followed by units of [a-z][a-z]?/[a-z][gL]
+# need just lists of floats, no units
+# The regexes below are too slow
+
+# header followed by list of numbers, each with units
+# _str_header_value_units = _str_simple_header + _str_sep + r'((?<=[^a-z])' + _str_values + _str_sep + _str_units + _str_sep + r')+'
+# _regex_header_value_units = re.compile(_str_header_value_units, re.IGNORECASE)
+
+# # header followed by list of numbers with no units
+# _str_header_values = _str_simple_header + _str_sep +\
+#     r'((?<=[^a-z])' + _str_values + _str_sep + r')+'
+# _regex_header_values = re.compile(_str_header_values, re.IGNORECASE)
 
 
 _str_avg = r'\b(average|mean|avg\.?|median|mode)\b'
@@ -267,10 +286,8 @@ def init():
     
     _all_regex_lists.append(o2_regexes)
 
-    # this is too slow - tbd
-    _all_regex_lists.append( [_regex_header_value_units] )
-    _all_regex_lists.append( [_regex_header_values] )
-
+    _all_regex_lists.append( [_regex_num_and_unit_list] )
+    _all_regex_lists.append( [_regex_simple_pair] )
     
     
 ###############################################################################
@@ -278,6 +295,9 @@ def _cleanup_sentence(sentence):
 
     # collapse multiple whitespace, to simplify regexes above
     sentence = re.sub(r'\s+', ' ', sentence)
+
+    # collapse multiple '/' into a single '/'
+    sentence = re.sub(r'/+', '/', sentence)
 
     return sentence
 
@@ -372,6 +392,14 @@ def _resolve_overlap(result_list):
                     print('\t\tr:[{0:3},{1:3}): {2}'.
                           format(r.start, r.end, r.match_text))
                 continue
+
+            match2 = re.match(r'\A[\d.%]+\s?\Z', r.match_text)
+            if match2:
+                # discard, value only
+                if _TRACE:
+                    print('\t\tvalue only, discarding "{0}"'.
+                          format(r.match_text))
+                continue
             
             if _TRACE: print('\tkeeping result {0}'.format(r.match_text))
             final_results.append(r)
@@ -431,6 +459,14 @@ def _resolve_overlap(result_list):
                     print('\t\tavoiding fragment, discarding "{0}"'.
                           format(r.match_text))
                 continue
+
+            match = re.match(r'[\d.%]+\s?', match_text)
+            if match:
+                # discard, value only
+                if _TRACE:
+                    print('\t\tvalue only, discarding "{0}"'.
+                          format(match_text))
+                continue
             
             new_f = overlap.Candidate(
                 start      = f.start,
@@ -487,7 +523,7 @@ def run(sentence_in):
                 match_text = match.group()
                 if 0 == len(match_text):
                     continue
-                
+
                 # valid matches must begin with an alphanumeric char
                 first_char = match_text[0]
                 if not first_char.isalnum():
@@ -527,9 +563,6 @@ def run(sentence_in):
 
             pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
-            # merge any adjacent results of identical type
-            #pruned_candidates = _merge_results(pruned_candidates)
-            
             if _TRACE:
                 print('\tCandidate count after overlap removal: {0}'.
                       format(len(pruned_candidates)))

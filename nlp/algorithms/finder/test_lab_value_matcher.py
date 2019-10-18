@@ -261,7 +261,7 @@ def run():
             _Result(match_text='T 99.4'),
             _Result(match_text='P 160'),
             _Result(match_text='R 56'),
-            _Result(match_text='BP 60/36 mean 44'),
+            _Result(match_text='BP 60/36'),
             _Result(match_text='O2 sat 97%'),
             _Result(match_text='Wt 3025 grams'),
             _Result(match_text='Lt 18.5 inches'),
@@ -280,8 +280,8 @@ def run():
             _Result(match_text='HR 67'),
             _Result(match_text='BP 143/79'),
             _Result(match_text='RR 16'),
-            # need to capture 'and 100% on 3L nc'
-            _Result(match_text='O2 sat 92% on room air')
+            _Result(match_text='O2 sat 92% on room air'),
+            _Result(match_text='3 L/min')
         ],
         'Vitals were BP 119/53 (105/43 sleeping) HR 103 RR 15 and ' +\
         'SpO2 97% on NRB.':[
@@ -317,7 +317,6 @@ def run():
         'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask':[
             _Result(match_text='T 97.1'),
             _Result(match_text='BP 80/70'),
-            _Result(match_text='AR 80'),
             _Result(match_text='RR 24'),
             _Result(match_text='O2 sat 70% on 50% flowmask'),
         ],
@@ -357,7 +356,6 @@ def run():
             _Result(match_text='BP: 121/68(76) {113/57(72) - 137/88(94)} mmHg'),
             _Result(match_text='RR: 24 (19 - 29) insp/min'),
             _Result(match_text='SpO2: 92%'),
-            #_Result(match_text='Heart rhythm: SR (Sinus Rhythm)'),
             _Result(match_text='Wgt (current): 107 kg (admission): 98 kg'),
             _Result(match_text='Height: 68 Inch'),
             _Result(match_text='CVP: 16 (6 - 17)mmHg')
@@ -371,7 +369,6 @@ def run():
             _Result(match_text='BP: 122/78(89) {122/78(29) - 149/86(100)} mmHg'),
             _Result(match_text='RR: 21 (20 - 38) insp/min'),
             _Result(match_text='SpO2: 96%'),
-            #_Result(match_text='Heart rhythm: ST (Sinus Tachycardia)'),
             _Result(match_text='Height: 72 Inch'),
         ],
         'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
@@ -467,19 +464,12 @@ def run():
         ],
         # lists of numbers, each with units
         'Radiology 117 K/uL 12.6 g/dL 151 mg/dL 3.9 mg/dL 24 mEq/L':[
-            _Result(match_text='Radiology 117 K/uL 12.6 g/dL 151 mg/dL ' +\
+            _Result(match_text='117 K/uL 12.6 g/dL 151 mg/dL ' +\
                     '3.9 mg/dL 24 mEq/L'),
         ],
         'Radiology 4.4 mEq/L 103 mg/dL 97 mEq/L 133 mEq/L 39.3 % 11.7 K/uL':[
-            _Result(match_text='Radiology 4.4 mEq/L 103 mg/dL 97 mEq/L ' +\
+            _Result(match_text='4.4 mEq/L 103 mg/dL 97 mEq/L ' +\
                     '133 mEq/L 39.3 % 11.7 K/uL')
-        ],
-
-        # lists of numbers and no units
-        'WBC 10.3 10.7 11.7 Hct 46.3 41.0 39.3 Plt 111 113 117':[
-            _Result(match_text='WBC 10.3 10.7 11.7'),
-            _Result(match_text='Hct 46.3 41.0 39.3'),
-            _Result(match_text='Plt 111 113 117')
         ],
 
         # more lab values, ion concentrations
@@ -489,21 +479,14 @@ def run():
             _Result(match_text='Ca++:8.0 mg/dL'),
             _Result(match_text='Mg++:2.1 mg/dL')
         ],
-        'WBC 12.4 Hct 41.8 Plt 97 Cr 1.8 1.7 2.0 1.7 Glucose 117 134 141':[
-            _Result(match_text='WBC 12.4'),
-            _Result(match_text='Hct 41.8'),
-            _Result(match_text='Plt 97'),
-            _Result(match_text='Cr 1.8 1.7 2.0 1.7'),
-            _Result(match_text='Glucose 117 134 141')
-        ],
         # values with embedded commas
         'Total out: 1,621 mL 2,715 mL':[
-            _Result(match_text='out: 1,621 mL 2,715 mL')
+            _Result(match_text='1,621 mL 2,715 mL')
         ],
         'In: 2,405 mL 2,588 mL PO: 840 mL 100 mL TF: IVF: 1,565 mL 2,488 mL':[
-            _Result(match_text='In: 2,405 mL 2,588 mL'),
-            _Result(match_text='PO: 840 mL 100 mL'),
-            _Result(match_text='IVF: 1,565 mL 2,488 mL')
+            _Result(match_text='2,405 mL 2,588 mL'),
+            _Result(match_text='840 mL 100 mL'),
+            _Result(match_text='1,565 mL 2,488 mL')
         ]
     }
 
