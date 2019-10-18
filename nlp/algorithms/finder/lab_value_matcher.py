@@ -93,7 +93,7 @@ _str_num = r'(' + _str_comma_int + r'|' + _str_float_or_int + r')'
 _regex_num = re.compile(_str_num)
 
 # list of numbers with units
-_str_num_and_unit_list = r'(' + _str_num + r'\s?' + _str_units + r'\s?' + r')+'
+_str_num_and_unit_list = r'(' + _str_num + r'\s?' + _str_units + r'\s?' + r'){2,}'
 _regex_num_and_unit_list = re.compile(_str_num_and_unit_list, re.IGNORECASE)
 
 # Recognize one or more numeric values, possibly parenthesized or bracketed,

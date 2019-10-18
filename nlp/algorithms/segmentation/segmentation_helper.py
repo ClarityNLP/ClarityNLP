@@ -76,6 +76,14 @@ _regex_caps_header = re.compile(_str_caps_header)
 _str_ending_dashword = r'\-[a-z]+\Z'
 _regex_ending_dashword = re.compile(_str_ending_dashword, re.IGNORECASE)
 
+# find sentences that begin with a number list
+_str_startswith_number_list = r'\A[\d.,]+\s[\d.,]+'
+_regex_startswith_number_list = re.compile(_str_startswith_number_list)
+
+# find sentences that consist of a single word
+_str_single_word = r'\A[-a-z]+\Z'
+_regex_single_word = re.compile(_str_single_word, re.IGNORECASE)
+
 # find concatenated sentences with no space after the period
 
 # need at least two chars before '.', to avoid matching C.Diff, M.Smith, etc.
@@ -115,6 +123,12 @@ _regex_abbrev = re.compile(_str_abbrev, re.IGNORECASE)
 _str_gender   = r'\b(sex|gender)\s*:\s*(male|female|m\.?|f\.?)'
 _regex_gender = re.compile(_str_gender, re.IGNORECASE)
 
+# operators except for '-' that might appear in the text
+_operator_set = {
+    '+', '*', '/', '%', '^', '>=', '>', '<=', '<', '=', '!='
+}
+
+# lists to keep track of token substitutions
 _fov_subs          = []
 _anon_subs         = []
 _contrast_subs     = []
@@ -526,8 +540,34 @@ def fixup_sentences(sentence_list):
         else:
             merged_sentences.append(s)
             i += 1
+
+    # check for opportunities to merge a sentence with the previous one
+    num = len(merged_sentences)
+    results = [merged_sentences[0]]
+    for i in range(1, len(merged_sentences)): 
+        s = merged_sentences[i]
         
-    return merged_sentences
+        # Is the first char of the sentence an operator?
+        c = s[0]
+        starts_with_op = c in _operator_set
+
+        # Does the sentence starts with a list of numbers (and hence
+        # no header to identify what the numbers are)?
+        match1 = _regex_startswith_number_list.match(s)
+
+        # Does the sentence consist of a single word?
+        match2 = _regex_single_word.match(s)
+        
+        if match1 or match2 or starts_with_op:
+            
+            if _TRACE:
+                print('Appending sentence: "{0}"'.format(s))
+            
+            results[-1] = results[-1] + ' ' + s
+        else:
+            results.append(s)
+            
+    return results
 
 
 ###############################################################################

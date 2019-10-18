@@ -280,8 +280,7 @@ def run():
             _Result(match_text='HR 67'),
             _Result(match_text='BP 143/79'),
             _Result(match_text='RR 16'),
-            _Result(match_text='O2 sat 92% on room air'),
-            _Result(match_text='3 L/min')
+            _Result(match_text='O2 sat 92% on room air')
         ],
         'Vitals were BP 119/53 (105/43 sleeping) HR 103 RR 15 and ' +\
         'SpO2 97% on NRB.':[

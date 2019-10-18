@@ -345,6 +345,7 @@ if __name__ == '__main__':
 
         # print all sentences for this report
         count = 0
+        print('\nSENTENCES: ')
         for s in sentences:
             print('[{0:3}]\t{1}'.format(count, s))
             count = count + 1
