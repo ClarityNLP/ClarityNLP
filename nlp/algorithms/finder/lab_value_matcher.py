@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
 
-Need finder for lab values including vitals
+This is an import-only module for improving sentence segmentation results. It
+tries to find expressions that could be improperly split by sentence tokenizers
+trained on standard written English. The idea is to replace the expressions
+that this module finds by a single token that the sentence tokenizers will NOT
+split. See segmentation/segmentation_helper for more.
 
-Need finder for prescriptions and dispensing info
+For examples of "lab values" and how this module is to be used, see the
+associated test file "test_lab_value_matcher.py".
 
 """
 
@@ -11,7 +16,6 @@ import re
 import os
 import sys
 import json
-import argparse
 
 try:
     import finder_overlap as overlap
@@ -153,10 +157,6 @@ _str_o2_device = r'\(?(bipap|non[-\s]?rebreather(\smask)?|nasal\s?cannula|'  +\
     r'room air|([a-z]+)?\s?mask|cannula|PSV|NRB|RA|FM|NC|air|'               +\
     r'on\svent(ilator)?)\)?'
 
-
-_all_regex_lists = []
-
-
 # need '-' and '+' to capture ion concentrations such as 'Ca++ : 8.0 mg/dL'
 _str_simple_header = r'\b(?<!/)[-+a-z]+'
 
@@ -165,30 +165,22 @@ _str_simple_pair = _str_simple_header + r':\s?' + _str_num + r'\s?' +\
     _str_units + r'\s?'
 _regex_simple_pair = re.compile(_str_simple_pair, re.IGNORECASE)
 
-# _str_range = r'[\(\[{]?' + _str_sep + _str_num + r'\s?-\s?' +\
-#     _str_num + _str_sep + r'[\)\]}]?'
-# _str_slashnum = _str_num + _str_sep + r'(' +\
-#     r'[/\(]' + _str_sep + _str_num + _str_sep + r'[/\)]' + r')+'
-# _str_value = r'(' + _str_slashnum + r'|' + _str_range + r'|' + _str_num + r')'
-# _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
-
-
-# Need custom regexes to detect lists of floats followed by units of [a-z][a-z]?/[a-z][gL]
-# need just lists of floats, no units
-# The regexes below are too slow
-
-# header followed by list of numbers, each with units
-# _str_header_value_units = _str_simple_header + _str_sep + r'((?<=[^a-z])' + _str_values + _str_sep + _str_units + _str_sep + r')+'
-# _regex_header_value_units = re.compile(_str_header_value_units, re.IGNORECASE)
+# too slow; not needed if only capturing lists of number-unit pairs
+# # header followed by list of numbers, each with units
+# _str_header_value_units = _str_simple_header + _str_sep +\
+#     r'((?<=[^a-z])' + _str_values + _str_sep + _str_units + _str_sep + r')+'
+# _regex_header_value_units = re.compile(_str_header_value_units,
+#                                        re.IGNORECASE)
 
 # # header followed by list of numbers with no units
 # _str_header_values = _str_simple_header + _str_sep +\
 #     r'((?<=[^a-z])' + _str_values + _str_sep + r')+'
 # _regex_header_values = re.compile(_str_header_values, re.IGNORECASE)
 
-
 _str_avg = r'\b(average|mean|avg\.?|median|mode)\b'
 _regex_avg = re.compile(_str_avg, re.IGNORECASE)
+
+_all_regex_lists = []
 
 
 ###############################################################################
@@ -201,6 +193,8 @@ def enable_debug():
 ###############################################################################
 def _make_regexes(header_in, units_in):
     """
+    Generate desired regex forms from the header and unit strings passed
+    as arguments. Returns a list of the generated regexes.
     """
     
     regex_list = []
@@ -231,6 +225,9 @@ def _make_regexes(header_in, units_in):
 
 ###############################################################################
 def init():
+    """
+    Construct all required regexes from predefined header and unit strings.
+    """
 
     _all_regex_lists.clear()
 
@@ -291,61 +288,15 @@ def init():
     
     
 ###############################################################################
-def _cleanup_sentence(sentence):
+def _cleanup_text(text):
 
     # collapse multiple whitespace, to simplify regexes above
-    sentence = re.sub(r'\s+', ' ', sentence)
+    text = re.sub(r'\s+', ' ', text)
 
     # collapse multiple '/' into a single '/'
-    sentence = re.sub(r'/+', '/', sentence)
+    text = re.sub(r'/+', '/', text)
 
-    return sentence
-
-
-# ###############################################################################
-# def _merge_results(result_list):
-#     """
-#     Merge any adjacent results of the same type.
-#     """
-
-#     if _TRACE:
-#         print('called _merge_results...')
-#         print('\tresult_list: ')
-#         for r in result_list:
-#             print('\t\t{0}'.format(r.match_text))
-    
-#     if len(result_list) <= 1:
-#         return result_list
-
-#     i = 0
-#     merged_result_list = []
-#     while i < len(result_list)-1:
-#         a = result_list[i]
-#         b = result_list[i+1]
-#         if a.end == b.start:
-#             # append b to a, ignore b
-
-#             if _TRACE:
-#                 print('\tMerging a and b: ')
-#                 print('\t\tf:[{0:3},{1:3}): {2}'.
-#                       format(a.start, a.end, a.match_text))
-#                 print('\t\tr:[{0:3},{1:3}): {2}'.
-#                       format(b.start, b.end, b.match_text))
-            
-#             match_text = a.match_text + b.match_text
-#             new_a = overlap.Candidate(
-#                 start      = a.start,
-#                 end        = a.start + len(match_text),
-#                 match_text = match_text,
-#                 regex      = a.regex,
-#                 other      = a.other)
-#             merged_result_list.append(new_a)
-#             i += 2
-#         else:
-#             merged_result_list.append(a)
-#             i += 1
-    
-#     return merged_result_list
+    return text
 
 
 ###############################################################################
@@ -502,21 +453,23 @@ def _resolve_overlap(result_list):
 
 
 ###############################################################################
-def run(sentence_in):
+def run(text_in):
     """
+    Find lab values in the input text and return a list of
+    finder_overlap.Candidate results.
     """
 
     results = []
 
-    sentence = _cleanup_sentence(sentence_in)
+    text = _cleanup_text(text_in)
 
     if _TRACE:
-        print('\n*****\n SENTENCE: "{0}"\n*****\n'.format(sentence))
+        print('\n*****\n TEXT: "{0}"\n*****\n'.format(text))
     
     for regex_list_index, regex_list in enumerate(_all_regex_lists):
         candidates = []
         for regex_index, regex in enumerate(regex_list):
-            iterator = regex.finditer(sentence)
+            iterator = regex.finditer(text)
             for match in iterator:
                 start = match.start()
                 end   = match.end()
@@ -573,7 +526,7 @@ def run(sentence_in):
 
             results.extend(pruned_candidates)
 
-    # sort results by order of occurrence in sentence
+    # sort results by order of occurrence in text
     results = sorted(results, key=lambda x: x.start)
 
     # resolve any overlap in these final results
@@ -585,114 +538,4 @@ def run(sentence_in):
 ###############################################################################
 def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
-
-
-###############################################################################
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(
-        description='Find individual components in lists of vitals.')
-
-    parser.add_argument('-v', '--version',
-                        help='show version and exit',
-                        action='store_true')
-    parser.add_argument('-d', '--debug',
-                        help='print debug information to stdout',
-                        action='store_true')
-
-    args = parser.parse_args()
-
-    if 'version' in args and args.version:
-        print(get_version())
-        sys.exit(0)
-
-    if 'debug' in args and args.debug:
-        enable_debug()
-    
-    TEST_SENTENCES = [
-        # # heart rate
-        # 'Vitals: HR 70 (70 - 72) bpm, HR:    70(70   -72)  beats/min.',
-        # 'Vitals: HR(bpm) 70 (70-72), HR (bpm): 70 (70-72), HR (bpm): 53',
-        # 'Vitals: HR 70, HR:70, HR:70-72, HR:70 70/72',
-        # 'Vitals: HR= paced at 70'
-
-        # # temperature
-        # 'Vitals: T 95.6, T97.3, T: 99, Tmp. 95.5, T=98, T-100.6, Temp. 98.5F',
-        # 'Tmax: 35.8 C (96.4 Tcurrent: 35.7 C (96.2',
-        # 'Tmax: 35.8/96.4, Tcurrent: 35.7/96.2',
-        # 'T: 35.8C/96.4F, Tmax35.7C / 96.2 F',
-
-        # # height
-        # 'Height: (in) 74, Height (in): 74, Height 74 (in.), Ht: 74 in.',
-
-        # # weight
-        # 'Weight: (lbs) 199, Weight (lb): 199, Wgt (current): 119.8 kg (admission): 121 kg',
-        # 'Wt: 199 kg, Wt 198 lb., Weight: 197',
-
-        # # body surface area
-        # 'Vitals: BSA (m2): 2.17 m2, BSA: 2.20 msq.',
-
-        # # blood pressure
-        # 'Vitals: BP 75/30, BP120/60, BP (mm Hg): 140/91, BP:115/68',
-        # 'Vitals: BP= 122/58, BP-93/46, BP115/65, BP: 84/43',
-        # 'Vitals: BP: 93/67(73) {72/21(39) - 119/85(91)}',
-        # 'Vitals: BP= 90-109/49-82',
-        # 'Vitals: BP 119/53 (105/43 sleeping)',
-        'Vitals: BP 60/36 mean 44',
-
-        # # respiration rate
-        # 'Vitals: RR 17, R:21, RR= 20, RR-16, R18, RR=24',
-        # 'Vitals: RR 12 (10-23) insp/min',
-
-        # # O2 saturation
-        # 'Vitals: O2: 97, SpO2 98%/3L, O2 sat= 100% 2L/NC, Sats-98% 3L/NC',
-        # 'Vitals: sats 96% on RA, O2SAts100%, SpO2% 99/bipap, O2 sat 95%RA',
-        # 'Vitals: O2 Sat 85% 3L, POx=100%, POx=93% on 8L FM, SaO2 96% 6L NC',
-        # 'Vitals: O2 sat 97%, SpO2 97% on NRB',
-        # 'Vitals: O2 Flow: 100 (Non-Rebreather), SpO2 92%/RA',
-        # 'Vitals: O2Sat98 2LNC',
-        # 'Vitals: 98% RA, 91% on NRB, 96O2-sat on RA, 96O2-sat % RA',
-        # 'Vitals: sats 96% on RA',
-
-        # combined
-        # 'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
-        # 'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        # 'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 ',
-        # 'BP (mm Hg): 140/91 HR (bpm): 53',
-        # 'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
-        # 'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
-        # 'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
-        # 'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
-        # 'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
-        # 'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
-        # 'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
-        # 'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
-        # 'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
-        # 'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
-        # 'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',
-        # 'At transfer vitals were HR=120 BP=109/44 RR=29 POx=93% on 8L FM.',
-        # "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
-        # 'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
-        # 'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ' +\
-        # 'Lt 18.5 inches HC 35 cm',
-        # 'Vital signs were T 97.0 BP 85/44 HR 107 RR 28 and SpO2 91% on NRB.',
-        # 'Vitals were BP 119/53 (105/43 sleeping) HR 103 RR 15 and ' +\
-        # 'SpO2 97% on NRB.',
-        # 'Vitals were Temperature 100.8 Pulse: 103 RR: 28 BP: 84/43 ' +\
-        # 'O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
-        # 'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
-        # 'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, ' +\
-        # 'O2 sat= 96% on 4L',
-    ]
-
-    init()
-
-    for sentence in TEST_SENTENCES:
-        print('SENTENCE: "{0}"'.format(sentence))
-        results = run(sentence)
-
-        print('RESULTS: ')
-        for r in results:
-            print('\t\t[{0:3},{1:3}): {2}'.format(r.start, r.end, r.match_text))
-        print()
 
