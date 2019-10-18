@@ -82,6 +82,7 @@ MODULE_NAME = 'segmentation.py'
 data = {}
 loading_status = 'none'
 
+
 ###############################################################################
 def segmentation_init(tries=0):
     if tries > 0:
@@ -127,9 +128,12 @@ def parse_sentences_spacy(text, spacy=None):
 
     # fix various problems and undo the substitutions
     sentences = seg_helper.split_concatenated_sentences(sentences)
+
+    # do this, if at all, BEFORE undoing the substitutions
+    #sentences = seg_helper.split_section_headers(sentences)
+    
     sentences = seg_helper.undo_substitutions(sentences)
     sentences = seg_helper.fixup_sentences(sentences)
-    sentences = seg_helper.split_section_headers(sentences)
     sentences = seg_helper.delete_junk(sentences)
 
     return sentences
@@ -210,8 +214,6 @@ def run_tests():
         sentences = seg_obj.parse_sentences(s)
         print('\t[{0:3}]\t{1}\n'.format(count, s))
         count += 1
-
-    seg_helper.disable_debug()
 
 
 ###############################################################################
@@ -317,6 +319,9 @@ if __name__ == '__main__':
     if opts.debug:
         seg_helper.enable_debug()
 
+    # explicitly initialize for interactive testing
+    seg_helper.init()
+        
     ok = True
     index = 0
     while (ok):
@@ -340,6 +345,7 @@ if __name__ == '__main__':
 
         # print all sentences for this report
         count = 0
+        print('\nSENTENCES: ')
         for s in sentences:
             print('[{0:3}]\t{1}'.format(count, s))
             count = count + 1

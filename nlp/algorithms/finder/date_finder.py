@@ -49,6 +49,12 @@ reference below):
     YYYY                                1969
     m                                   July
 
+3. Anonymized formats (MIMIC)
+
+    [**YYYY-mm-dd**]                    [**1969-7-20**]
+    [**YYYY**]                          [**1969**]
+    [**mm-dd**]                         [**7-20**]
+
 OUTPUT:
 
 
@@ -129,7 +135,7 @@ DateValue.__new__.__defaults__ = (EMPTY_FIELD,) * len(DateValue._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME   = 'date_finder.py'
 
 # set to True to enable debug output
@@ -142,9 +148,9 @@ _str_dd = r'([0-2]?[0-9]|3[01])\s*(st|nd|rd|th)?'
 _str_DD = r'(0[0-9]|[1-2][0-9]|3[01])'
 
 # months
-_str_m = r'(january|february|march|april|may|june|july|august|september|'    +\
-         r'october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sept|'  +\
-         r'sep|oct|nov|dec)'
+_str_m = r'(january|february|march|april|may|june|july|august|september|'  +\
+    r'october|november|december|jan|feb|mar|apr|jun|jul|aug|sept|sep|'     +\
+    r'oct|nov|dec)'
 
 # convert textual months to int
 month_dict = {
@@ -298,6 +304,17 @@ _regex_iso_4 = re.compile(_str_iso_2y2m2d)
 _str_iso_datetime = _str_iso_s4y2m2d + r'T\d\d:\d\d:\d\d(\.\d+)?'
 _regex_iso_datetime = re.compile(_str_iso_datetime)
 
+###### Anonymized formats such as [**2984-12-15**] ######
+
+_str_anon_1 = r'\[\*\*(?P<year>\d\d\d\d)\-(?P<month>\d\d?)\-(?P<day>\d\d?)\*\*\]'
+_regex_anon_1 = re.compile(_str_anon_1)
+
+_str_anon_2 = r'\[\*\*(?P<year>\d\d\d\d)\*\*\]'
+_regex_anon_2 = re.compile(_str_anon_2)
+
+_str_anon_3 = r'\[\*\*(?P<month>\d\d?)\-(?P<day>\d\d?)\*\*\]'
+_regex_anon_3 = re.compile(_str_anon_3)
+
 # all date regexes
 _regexes = [
     _regex_iso_datetime, # 0
@@ -321,14 +338,17 @@ _regexes = [
     _regex_14,           # 18
     _regex_15,           # 19
     _regex_16,           # 20
-    _regex_17            # 21
+    _regex_17,           # 21
+    _regex_anon_1,       # 22
+    _regex_anon_2,       # 23
+    _regex_anon_3        # 24
 ]
 
 # index of the ISO datetime regex in the _regexes array
 _ISO_DATETIME_REGEX_INDEX = 0
 
-# match (), {}, and []
-_str_brackets = r'[(){}\[\]]'
+# match () and {} (not [] since those are used in anonymized dates)
+_str_brackets = r'[(){}]'
 _regex_brackets = re.compile(_str_brackets)
 
 

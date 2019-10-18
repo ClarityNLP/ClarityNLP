@@ -14,12 +14,12 @@ Candidate.__new__.__defaults__ = (None,) * len(Candidate._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME   = 'finder_overlap.py'
 
 
 ###############################################################################
-def _has_overlap(a1, b1, a2, b2):
+def has_overlap(a1, b1, a2, b2):
     """
     Determine if intervals [a1, b1) and [a2, b2) overlap at all.
     """
@@ -75,7 +75,7 @@ def remove_overlap(candidates, debug=False):
             
 
             # does candidate[j] overlap candidate[i] at all
-            if _has_overlap(start_i, end_i, start_j, end_j):
+            if has_overlap(start_i, end_i, start_j, end_j):
                 if debug:
                     print('\t\t({0}, {1}), ({2}, {3})'.format(start_i, end_i, start_j, end_j))
                     print('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
