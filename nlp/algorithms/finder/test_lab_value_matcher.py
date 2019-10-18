@@ -470,7 +470,6 @@ def run():
             _Result(match_text='4.4 mEq/L 103 mg/dL 97 mEq/L ' +\
                     '133 mEq/L 39.3 % 11.7 K/uL')
         ],
-
         # more lab values, ion concentrations
         'Albumin:4.2 g/dL, LDH: 332 IU/L, Ca++:8.0 mg/dL, Mg++:2.1 mg/dL':[
             _Result(match_text='Albumin:4.2 g/dL'),
@@ -486,6 +485,9 @@ def run():
             _Result(match_text='2,405 mL 2,588 mL'),
             _Result(match_text='840 mL 100 mL'),
             _Result(match_text='1,565 mL 2,488 mL')
+        ],
+        'Balance: -911 mL -76 mL -32 mL':[
+            _Result(match_text='-911 mL -76 mL -32 mL')
         ]
     }
 

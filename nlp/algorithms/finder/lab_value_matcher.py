@@ -89,11 +89,12 @@ _str_word = r'(\(\s?[-a-z]+\s?\)|[-a-z]+)(?=[^a-z])'
 _str_float_or_int = r'(\d+\.\d+|\.\d+|\d+)\'?s?'
 # integers with embedded commas
 _str_comma_int = r'(\d\d\d|\d\d|\d)(,\d\d\d)+'
-_str_num = r'(' + _str_comma_int + r'|' + _str_float_or_int + r')'
+_str_num = r'\-?(' + _str_comma_int + r'|' + _str_float_or_int + r')'
 _regex_num = re.compile(_str_num)
 
 # list of numbers with units
-_str_num_and_unit_list = r'(' + _str_num + r'\s?' + _str_units + r'\s?' + r'){2,}'
+_str_num_and_unit_list = r'(' + _str_num + r'\s?' + _str_units +\
+    r'\s?' + r'){2,}'
 _regex_num_and_unit_list = re.compile(_str_num_and_unit_list, re.IGNORECASE)
 
 # Recognize one or more numeric values, possibly parenthesized or bracketed,
@@ -477,9 +478,9 @@ def run(text_in):
                 if 0 == len(match_text):
                     continue
 
-                # valid matches must begin with an alphanumeric char
+                # valid matches must begin with an alphanumeric char or a dash
                 first_char = match_text[0]
-                if not first_char.isalnum():
+                if '-' != first_char and not first_char.isalnum():
                     if _TRACE:
                         print('\tDiscarding (not isalnum): "{0}"'.
                               format(match_text))
