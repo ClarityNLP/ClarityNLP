@@ -56,6 +56,7 @@ services:
       - clarity
 
   nlp-api:
+    restart: always
     container_name: NLP_API
     hostname: ${NLP_API_HOSTNAME}
     image: claritynlp/nlp-api
@@ -120,6 +121,7 @@ services:
       - luigid
 
   luigid:
+    restart: always
     container_name: scheduler
     hostname: scheduler
     image: axiom/docker-luigi:2.7.1
@@ -148,6 +150,7 @@ services:
       - clarity
 
   nlp-solr:
+    restart: always
     container_name: NLP_SOLR
     hostname: ${NLP_SOLR_HOSTNAME}
     image: claritynlp/nlp-solr
