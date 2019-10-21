@@ -16,6 +16,7 @@ volumes:
   dhparam:
   htpasswd:
   luigi-frontend:
+  nlp-api-data:
 
 services:
   identity-provider:
@@ -61,6 +62,7 @@ services:
       - ${NLP_API_CONTAINER_PORT}
     volumes:
       - ./nlp:/api
+      - nlp-api-data:/tmp
     entrypoint:
       - /api/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}

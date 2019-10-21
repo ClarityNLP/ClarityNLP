@@ -15,6 +15,7 @@ volumes:
   ingest-mongodata:
   luigi-frontend:
   letsencrypt:
+  nlp-api-data:
 
 services:
   mssql:
@@ -88,6 +89,9 @@ services:
     container_name: NLP_API
     hostname: ${NLP_API_HOSTNAME}
     image: claritynlp/nlp-api
+    volumes:
+      - ./nlp:/api
+      - nlp-api-data:/tmp
     expose:
       - ${NLP_API_CONTAINER_PORT}
     entrypoint:

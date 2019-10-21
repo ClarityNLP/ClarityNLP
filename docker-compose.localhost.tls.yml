@@ -14,6 +14,7 @@ volumes:
   ingest-files:
   ingest-mongodata:
   luigi-frontend:
+  nlp-api-data:
 
 services:
   mssql:
@@ -84,6 +85,10 @@ services:
       - clarity
 
   nlp-api:
+    restart: always
+    volumes:
+      - ./nlp:/api
+      - nlp-api-data:/tmp
     container_name: NLP_API
     hostname: ${NLP_API_HOSTNAME}
     image: claritynlp/nlp-api
