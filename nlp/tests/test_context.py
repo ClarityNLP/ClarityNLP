@@ -1,4 +1,7 @@
-from algorithms import Context, Temporality, Experiencer, Negation
+try:
+    from .algorithms import *
+except Exception:
+    from algorithms import *
 
 ctxt = Context()
 

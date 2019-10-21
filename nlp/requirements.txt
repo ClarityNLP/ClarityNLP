@@ -17,6 +17,7 @@ recommonmark==0.4.0
 redis==3.0.1                    # behind by three releases, conda pkg seems broken
 requests==2.22.0                # upgraded (conda solution), was >=2.20.0
 requests-oauthlib==0.8.0
+selenium==3.141.0
 simplejson==3.13.2
 sly==0.3                        # no conda pkg
 spacy==2.0.12                   # upgraded (conda solution), was 2.0.9
