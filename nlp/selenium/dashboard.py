@@ -18,7 +18,7 @@ def press_button(element):
         element.click()
 
 
-def test_open_url():
+def login():
     driver = webdriver.Chrome()
     open_url(driver, "https://localhost/dashboard")
 
@@ -34,4 +34,4 @@ def test_open_url():
 
 
 if __name__ == "__main__":
-    test_open_url()
+    login()

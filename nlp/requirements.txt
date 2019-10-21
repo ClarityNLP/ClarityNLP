@@ -7,7 +7,7 @@ gunicorn==19.9.0
 inflect==2.1.0                  # upgraded from ancient 0.3.1
 luigi==2.8.6                    # upgraded, was >=2.8.0, dangerous since several broken releases after 2.8.0
 msgpack==0.5.6                  # upgraded (conda solution), was >=0.3.0,<0.6
-nltk==3.2.5
+nltk==3.4.5
 numpy==1.15.4                   # upgraded (conda solution), was 1.14.0
 pandas==0.21.1
 psycopg2==2.7.3.2
