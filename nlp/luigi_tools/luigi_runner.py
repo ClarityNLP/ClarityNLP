@@ -25,16 +25,17 @@ def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
     total = int(util.luigi_workers)
     while active >= total:
         active = get_active_workers()
-        time.sleep(2)
+        time.sleep(15)
 
     luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
 
     scheduler = util.luigi_scheduler
     print("running job %s on pipeline %s; logging here %s" % (str(job_id), str(pipeline_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s  --pipeline %s --job %s --owner %s " \
-           "--pipelinetype %s --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PipelineTask", pipeline_id,
-                                                                 str(job_id), owner, pipeline_type, scheduler,
-                                                                 luigi_log)
+    func = "PYTHONPATH='.' luigi --num_workers %s --max_num_workers 20 --module luigi_module %s  --pipeline %s --job " \
+           "%s --owner %s --pipelinetype %s --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers),
+                                                                               "PipelineTask", pipeline_id, str(job_id),
+                                                                               owner, pipeline_type, scheduler,
+                                                                               luigi_log)
     try:
         call(func, shell=True)
     except Exception as ex:
@@ -53,9 +54,10 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
 
     scheduler = util.luigi_scheduler
     print("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s" \
-           " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
-                                                owner, scheduler, luigi_log)
+    func = "PYTHONPATH='.' luigi --num_workers %s --max_num_workers 20 --module luigi_module %s --phenotype %s " \
+           "--job %s --owner %s --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask",
+                                                                   phenotype_id, str(job_id),
+                                                                   owner, scheduler, luigi_log)
     try:
         call(func, shell=True)
     except Exception as ex:
