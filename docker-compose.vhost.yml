@@ -14,6 +14,8 @@ volumes:
   ingest-files:
   ingest-mongodata:
   letsencrypt:
+  luigi-state:
+  luigi-logs:
   nlp-api-data:
 
 services:
@@ -187,6 +189,9 @@ services:
       - "traefik.http.routers.luigi.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
       - "traefik.http.routers.luigi.middlewares=https-only"
+    volumes:
+      - luigi-state:/luigi/state
+      - luigi-logs:/luigi/logs
     networks:
       - clarity
 

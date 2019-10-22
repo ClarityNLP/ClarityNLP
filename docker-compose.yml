@@ -14,6 +14,8 @@ volumes:
   ingest-files:
   ingest-mongodata:
   luigi-frontend:
+  luigi-state:
+  luigi-logs:
   letsencrypt:
   nlp-api-data:
 
@@ -160,6 +162,8 @@ services:
       - ${SCHEDULER_CONTAINER_PORT}
     volumes:
       - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+      - luigi-state:/luigi/state
+      - luigi-logs:/luigi/logs
     networks:
       - clarity
 

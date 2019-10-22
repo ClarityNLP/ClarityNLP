@@ -14,6 +14,8 @@ volumes:
   ingest-files:
   ingest-mongodata:
   luigi-frontend:
+  luigi-logs:
+  luigi-state:
   nlp-api-data:
 
 services:
@@ -168,6 +170,8 @@ services:
     image: claritynlp/front-ctrl
     volumes:
       - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+      - luigi-state:/luigi/state
+      - luigi-logs:/luigi/logs
     links:
       - luigid:luigid
       - identity-provider:identity-provider

@@ -16,6 +16,8 @@ volumes:
   dhparam:
   htpasswd:
   luigi-frontend:
+  luigi-logs:
+  luigi-state:
   nlp-api-data:
 
 services:
@@ -129,6 +131,8 @@ services:
       - ${SCHEDULER_CONTAINER_PORT}
     volumes:
       - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+      - luigi-state:/luigi/state
+      - luigi-logs:/luigi/logs
     networks:
       - clarity
 
