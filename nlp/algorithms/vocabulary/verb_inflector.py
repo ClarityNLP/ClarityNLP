@@ -109,7 +109,7 @@ removed between the two sets):
 
     python3 ./verb_inflector.py -f inflection_truth_data.txt
 
-Both tests should run to completion without any printout to the screen.
+Both tests should run to completion without any logout to the screen.
 
 """
 
@@ -119,11 +119,12 @@ import sys
 import optparse
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
+from claritynlp_logging import log, ERROR, DEBUG
 
 try:
     from .irregular_verbs import VERBS as IRREGULAR_VERBS
 except Exception as e:
-    print(e)
+    log(e)
     from irregular_verbs import VERBS as IRREGULAR_VERBS
 
 VERSION_MAJOR = 0
@@ -181,11 +182,11 @@ def is_final_consonant_doubled(base):
     """
 
     if TRACE:
-        print('calling is_final_consonant_doubled...')
+        log('calling is_final_consonant_doubled...')
     
     # if the base form ends in 'c', double by adding 'k'
     if base.endswith('c'):
-        if TRACE: print("\tends with 'c'")
+        if TRACE: log("\tends with 'c'")
         # exceptions to the append 'k' rule
         if base == 'mic':
             return ['']
@@ -199,11 +200,11 @@ def is_final_consonant_doubled(base):
     match = regex_vvc_ending.search(base)
     if match:
         if len(base) >= 4 and 'q' == base[-4] and 'u' == base[-3]:
-            if TRACE: print('\tvvc ending with qu')
+            if TRACE: log('\tvvc ending with qu')
             # the qu acts like a qw, so really a q-consonant-vowel-consonant
             return base[-1]
         else:
-            if TRACE: print('\tvvc ending, not qu-vowel-consonant')
+            if TRACE: log('\tvvc ending, not qu-vowel-consonant')
             return []
 
     try:
@@ -238,11 +239,11 @@ def is_final_consonant_doubled(base):
         match = regex_vc_ending.search(base)
         if match and not silent_t:
             if 1 == syllable_count:
-                if TRACE: print('\tvc ending, single syllable, ' \
+                if TRACE: log('\tvc ending, single syllable, ' \
                                 'double final consonant')
                 result = base[-1]
             elif is_final_syllable_stressed:
-                if TRACE: print('\tvc ending, multi-syllable, ' \
+                if TRACE: log('\tvc ending, multi-syllable, ' \
                                 'stress on final, doubling final consonant')
                 result = base[-1]
 
@@ -262,7 +263,7 @@ def regular_simple_past(base):
     """
 
     if TRACE:
-        print("calling regular_simple_past for verb '{0}'".format(base))
+        log("calling regular_simple_past for verb '{0}'".format(base))
 
     if 0 == len(base):
         return []
@@ -284,7 +285,7 @@ def regular_simple_past(base):
     }
 
     if base in EXCEPTIONS_PAST_TENSE:
-        if TRACE: print('\tfound exception')
+        if TRACE: log('\tfound exception')
         return EXCEPTIONS_PAST_TENSE[base]
     
     if 0 == len(base):
@@ -292,13 +293,13 @@ def regular_simple_past(base):
 
     # if the base form ends in 'e' then add a 'd'
     if 'e' == base[-1]:
-        if TRACE: print("\tends in 'e' so add 'd'")
+        if TRACE: log("\tends in 'e' so add 'd'")
         return [base + 'd']
 
     # if the base form ends in <consonant>y, change y to i and add 'ed'
     match = regex_consonant_y_ending.search(base)
     if match:
-        if TRACE: print('\tends in <consonant>y')
+        if TRACE: log('\tends in <consonant>y')
         return [base[:-1] + 'ied']
 
     # If word ends in vowel-l, double the l prior to a suffix that begins
@@ -309,7 +310,7 @@ def regular_simple_past(base):
     #     https://english.stackexchange.com/questions/338/when-is-l-doubled
     match = regex_vowel_l_ending.search(base)
     if match:
-        if TRACE: print('\tfound vowel-l ending')
+        if TRACE: log('\tfound vowel-l ending')
         american = base + 'ed'
         british = base + 'led'
         return [american, british]
@@ -322,7 +323,7 @@ def regular_simple_past(base):
             results.append(base + c + 'ed')
         return results
         
-    if TRACE: print("\tadding default 'ed' ending")
+    if TRACE: log("\tadding default 'ed' ending")
     return [base + 'ed']
 
 
@@ -434,7 +435,7 @@ def present_participle(base):
     EXCEPTIONS_PP_SILENT_E = ['cue', 'saute', 'singe', 'vogue']
 
     if TRACE:
-        print("calling present_participle for verb '{0}'".format(base))
+        log("calling present_participle for verb '{0}'".format(base))
 
     if 0 == len(base):
         return []
@@ -447,13 +448,13 @@ def present_participle(base):
     
     # change '-ie' to '-ying'
     if len(base) >= 2 and base.endswith('ie'):
-        if TRACE: print('\treplacing -ie with -ying')
+        if TRACE: log('\treplacing -ie with -ying')
         return [base[:-2] + 'ying']
 
     # keep final 'e' if base form ends in 'ee', 'oe', or 'ye'
     match = regex_ee_oe_ye_ending.search(base)
     if match:
-        if TRACE: print('\tends in ee, or, or ye')
+        if TRACE: log('\tends in ee, or, or ye')
         return [base + 'ing']
 
     # If word ends in vowel-l, double the l prior to a suffix that begins
@@ -464,7 +465,7 @@ def present_participle(base):
     #     https://english.stackexchange.com/questions/338/when-is-l-doubled
     match = regex_vowel_l_ending.search(base)
     if match:
-        if TRACE: print('\tfound vowel-l ending')
+        if TRACE: log('\tfound vowel-l ending')
         # if the vowel before the l is an 'i', the rule does not seem to apply
         # (sail -> sailing, tail -> tailing, etc.)
         if len(base) >= 2 and 'i' != base[-2]:
@@ -479,7 +480,7 @@ def present_participle(base):
         phoneme_lists = cmu_dict[base]
     except KeyError:
         in_cmu_dict = False
-        if TRACE: print('\tnot in CMU dict')
+        if TRACE: log('\tnot in CMU dict')
 
     # check for silent-e ending
     if base.endswith('e'):
@@ -489,16 +490,16 @@ def present_participle(base):
                 silent_e = PHONEME_EE != phoneme_list[-1]
                 if silent_e and base in EXCEPTIONS_PP_SILENT_E:
                     # retain the final e
-                    if TRACE: print('\tsilent-e exception')
+                    if TRACE: log('\tsilent-e exception')
                     results.add(base + 'ing')
                 else:
                     # drop the final e
-                    if TRACE: print('\tdropping final e')
+                    if TRACE: log('\tdropping final e')
                     results.add(base[:-1] + 'ing')
             return list(results)
         else:
             # drop final e
-            if TRACE: print('\tdropping final e')
+            if TRACE: log('\tdropping final e')
             return [base[:-1] + 'ing']
 
     # check for pronounciation-dependent spellings via consonant doublings
@@ -509,7 +510,7 @@ def present_participle(base):
             results.add(base + c + 'ing')
         return list(results)
 
-    if TRACE: print('\tdefault -ing ending')
+    if TRACE: log('\tdefault -ing ending')
     return [base + 'ing']
 
 
@@ -536,7 +537,7 @@ def third_person_singular_present(base):
     }
     
     if TRACE:
-        print('calling third_person_singular_present...')
+        log('calling third_person_singular_present...')
 
     if 0 == len(base):
         return []
@@ -547,13 +548,13 @@ def third_person_singular_present(base):
     # <consonant>y ending changes 'y' to 'i' and adds 'es'
     match = regex_consonant_y_ending.search(base)
     if match:
-        if TRACE: print('\tends in <consonant>y')
+        if TRACE: log('\tends in <consonant>y')
         return [base[:-1] + 'ies']
 
     # <consonant>o ending addes 'es'
     match = regex_consonant_o_ending.search(base)
     if match:
-        if TRACE: print('\tends in <consonant>o')
+        if TRACE: log('\tends in <consonant>o')
         return [base + 'es']
 
     # check for base form ending in a sibilant sound:
@@ -578,12 +579,12 @@ def third_person_singular_present(base):
             if phoneme_list[-1] in SIBILANT_PHONEMES:
                 # ends in a sibilant sound, check for silent-e ending
                 if not base.endswith('e'):
-                    if TRACE: print('\tends with sibilant sound, no silent-e')
+                    if TRACE: log('\tends with sibilant sound, no silent-e')
                     ending = 'es'
             results.add(base + ending)
         return list(results)
 
-    if TRACE: print("\tusing default 's' ending")
+    if TRACE: log("\tusing default 's' ending")
     return [base + 's']
                     
 
@@ -661,11 +662,11 @@ def check_for_errors(base, truth_third, truth_pres_part,
             break
 
     if has_error:
-        print('base: {0}'.format(base))
-        print('\t    truth_third: {0}, computed: {1}'.format(truth_third, third))
-        print('\ttruth_pres_part: {0}, computed: {1}'.format(truth_pres_part, pres_part))
-        print('\t     truth_past: {0}, computed: {1}'.format(truth_past, past))
-        print('\ttruth_past_part: {0}, computed: {1}'.format(truth_past_part, past_part))
+        log('base: {0}'.format(base))
+        log('\t    truth_third: {0}, computed: {1}'.format(truth_third, third))
+        log('\ttruth_pres_part: {0}, computed: {1}'.format(truth_pres_part, pres_part))
+        log('\t     truth_past: {0}, computed: {1}'.format(truth_past, past))
+        log('\ttruth_past_part: {0}, computed: {1}'.format(truth_past_part, past_part))
 
 
 ###############################################################################
@@ -851,8 +852,8 @@ def get_version():
         
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} -f <filename>  [-hvs]
 
     OPTIONS:
@@ -861,8 +862,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
         -s, --selftest       Run self-tests and exit
 
     """.format(MODULE_NAME))
@@ -888,7 +889,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     if opts.selftest:
@@ -898,7 +899,7 @@ if __name__ == '__main__':
     try:
         infile = open(opts.filepath, 'r')
     except Exception as e:
-        print(e)
+        log(e)
         sys.exit(-1)
 
     with infile:

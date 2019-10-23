@@ -17,6 +17,7 @@ import nltk
 import requests
 from nltk.tokenize import RegexpTokenizer
 from nltk.util import ngrams
+from claritynlp_logging import log, ERROR, DEBUG
 
 
 def extract_ngrams(cohort_id, keyword='NIL', n=5, frequency=3):
@@ -54,5 +55,5 @@ def extract_ngrams(cohort_id, keyword='NIL', n=5, frequency=3):
                 formatted = "'%s',%s" % (gram, freq)
                 result.append(formatted)
 
-    print("\n".join(result))
+    log("\n".join(result))
     return result

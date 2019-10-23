@@ -26,6 +26,7 @@ import re
 import sys
 from dateutil.tz import tzutc
 from datetime import datetime, timedelta
+from claritynlp_logging import log, ERROR, DEBUG
 
 # set to True to enable debug output
 _TRACE = False
@@ -113,22 +114,22 @@ def parse_time_command(time_string, data_earliest, data_latest):
         match = _regex_datetime.search(s)
         if match:
             dt = _to_datetime(match)
-            if _TRACE: print('\tDATETIME: {0}'.format(dt))
+            if _TRACE: log('\tDATETIME: {0}'.format(dt))
             s = s[match.end():]
         match = _regex_date.search(s)
         if match:
             dt = _to_date(match)
-            if _TRACE: print('\tDATE: {0}'.format(dt))
+            if _TRACE: log('\tDATE: {0}'.format(dt))
             s = s[match.end():]
         match = _regex_earliest.search(s)
         if match:
             dt = data_earliest
-            if _TRACE: print('\tEARLIEST: {0}'.format(data_earliest))
+            if _TRACE: log('\tEARLIEST: {0}'.format(data_earliest))
             s = s[match.end():]
         match = _regex_latest.search(s)
         if match:
             dt = data_latest
-            if _TRACE: print('\tLATEST: {0}'.format(data_latest))
+            if _TRACE: log('\tLATEST: {0}'.format(data_latest))
             s = s[match.end():]
         match = _regex_operator.search(s)
         if match:
@@ -136,7 +137,7 @@ def parse_time_command(time_string, data_earliest, data_latest):
                 op_string = _STR_MINUS                
             else:
                 op_string = _STR_PLUS
-            if _TRACE: print('\tOPERATOR: {0}'.format(op_string))
+            if _TRACE: log('\tOPERATOR: {0}'.format(op_string))
             s = s[match.end():]
             continue
         match = _regex_offset.search(s)
@@ -149,7 +150,7 @@ def parse_time_command(time_string, data_earliest, data_latest):
                 dt_result = dt - timedelta(days=num)
             else:
                 dt_result = dt + timedelta(days=num)
-            if _TRACE: print('\tOFFSET: num: {0}, units: {1}, op_string: {2}, result: {3}'.
+            if _TRACE: log('\tOFFSET: num: {0}, units: {1}, op_string: {2}, result: {3}'.
                   format(num, units, op_string, dt_result))
             s = s[match.end():]
             continue
@@ -211,7 +212,7 @@ if __name__ == '__main__':
         "DATETIME(2019, 05, 06, 1, 2, 3) - 40m",
     ]
     
-    print('\ntesting DATETIME...')
+    log('\ntesting DATETIME...')
     for s in DATETIME_STRINGS:
         match = _regex_datetime.search(s)
         if match:
@@ -221,26 +222,26 @@ if __name__ == '__main__':
             hour = int(match.group('hour'))
             minutes = int(match.group('minute'))
             seconds = int(match.group('second'))
-            print('\t{0}/{1}/{2}:{3}:{4}:{5}'.format(year, month, day, hour, minutes, seconds))
+            log('\t{0}/{1}/{2}:{3}:{4}:{5}'.format(year, month, day, hour, minutes, seconds))
 
-    print('\ntesting DATE...')
+    log('\ntesting DATE...')
     for s in DATE_STRINGS:
         match = _regex_date.search(s)
         if match:
             year = int(match.group('year'))
             month = int(match.group('month'))
             day = int(match.group('day'))
-            print('\t{0}/{1}/{2}'.format(year, month, day))
+            log('\t{0}/{1}/{2}'.format(year, month, day))
 
-    print('\ntesting command strings...')
+    log('\ntesting command strings...')
     # to mimic earliest/latest from data
     data_earliest = datetime(2019, 5, 1)
     data_latest   = datetime(2019, 8, 1)
     for s in COMMAND_STRINGS:
-        print('->{0}<-'.format(s))
+        log('->{0}<-'.format(s))
         dt_result = parse_time_command(s, data_earliest, data_latest)
         if dt_result is None:
-            print('\tSyntax error')
+            log('\tSyntax error')
         else:
-            print('\t{0}'.format(dt_result))
+            log('\t{0}'.format(dt_result))
 

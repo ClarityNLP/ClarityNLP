@@ -2,11 +2,12 @@ from algorithms.segmentation import *
 from data_access import Measurement
 from algorithms import run_subject_finder, subject_finder_init
 import json
+from claritynlp_logging import log, ERROR, DEBUG
 
-print('Initializing models for measurement finder...')
+log('Initializing models for measurement finder...')
 segmentor = Segmentation()
 subject_finder_init()
-print('Done initializing models for measurement finder..')
+log('Done initializing models for measurement finder..')
 
 
 def run_measurement_finder_full(text, term_list, is_case_sensitive_text=False):
@@ -53,7 +54,8 @@ def run_measurement_finder_full(text, term_list, is_case_sensitive_text=False):
                     results.append(m)
                     
                 except Exception as ex:
-                    print('measurement_finder_wrapper exception: {0}'.format(ex))
+                    log('measurement_finder_wrapper exception: {0}'.format(ex), ERROR)
+                    log(ERROR, ex)
 
     return results
 
@@ -63,4 +65,4 @@ if __name__ == '__main__':
         'A necrotic periportal lymph node  measures 2.0 cm compared to 1.7 cm previously.',
         ["node"])
 
-    [print(str(t.to_json())) for t in res]
+    [log(str(t.to_json())) for t in res]

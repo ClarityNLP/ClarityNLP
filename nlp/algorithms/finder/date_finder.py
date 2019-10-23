@@ -94,11 +94,11 @@ To unpack the JSON results:
         date_results = [df.DateValue(**m) for m in json_data]
 
         for d in date_results:
-            print(d.text)
-            print(d.start)
-            print(d.end)
+            log(d.text)
+            log(d.start)
+            log(d.end)
             if df.EMPTY_FIELD != d.day:
-                print(d.day)
+                log(d.day)
             etc.
 
 Reference: PHP Date Formats, http://php.net/manual/en/datetime.formats.date.php
@@ -109,6 +109,8 @@ import re
 import sys
 import json
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     import finder_overlap as overlap
@@ -388,8 +390,8 @@ def run(sentence):
     sentence = _clean_sentence(sentence)
 
     if _TRACE:
-        print('(DF) original: {0}'.format(original_sentence))
-        print('(DF)  cleaned: {0}'.format(sentence))
+        log('(DF) original: {0}'.format(original_sentence))
+        log('(DF)  cleaned: {0}'.format(sentence))
     
     for regex_index, regex in enumerate(_regexes):
         iterator = regex.finditer(sentence)
@@ -405,7 +407,7 @@ def run(sentence):
             candidates.append(overlap.Candidate(start, end, match_text, regex))
 
             if _TRACE:
-                print('\t[{0:2}]: MATCH TEXT: ->{1}<-'.
+                log('\t[{0:2}]: MATCH TEXT: ->{1}<-'.
                       format(regex_index, match_text))
 
     # sort the candidates in descending order of length, which is needed for
@@ -413,26 +415,26 @@ def run(sentence):
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
 
     if _TRACE:
-        print('\tCandidate matches: ')
+        log('\tCandidate matches: ')
         index = 0
         for c in candidates:
-            print('\t[{0:2}]\t[{1},{2}): {3}'.
+            log('\t[{0:2}]\t[{1},{2}): {3}'.
                   format(index, c.start, c.end, c.match_text, c.regex))
             index += 1
-        print()
+        log()
 
     pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
     if _TRACE:
-        print('\tcandidates count after overlap removal: {0}'.
+        log('\tcandidates count after overlap removal: {0}'.
               format(len(pruned_candidates)))
-        print('\tPruned candidates: ')
+        log('\tPruned candidates: ')
         for c in pruned_candidates:
-            print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-        print()
+            log('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+        log()
 
     if _TRACE:
-        print('Extracting data from pruned candidates...')
+        log('Extracting data from pruned candidates...')
         
     for pc in pruned_candidates:
                 
@@ -449,9 +451,9 @@ def run(sentence):
         int_day   = EMPTY_FIELD
 
         if _TRACE:
-            print('\t     matched: "{0}"'.format(match.group()))
-            print('\t\t groupdict: {0}'.format(match.groupdict()))
-            print('\t\tmatch_text: "{0}"'.format(pc.match_text))
+            log('\t     matched: "{0}"'.format(match.group()))
+            log('\t\t groupdict: {0}'.format(match.groupdict()))
+            log('\t\tmatch_text: "{0}"'.format(pc.match_text))
             
         for k,v in match.groupdict().items():
             if v is None:

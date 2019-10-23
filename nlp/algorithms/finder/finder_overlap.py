@@ -3,6 +3,7 @@ Resolve overlap among finder candidates.
 """
 
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
 
 CANDIDATE_FIELDS = ['start', 'end', 'match_text', 'regex', 'other']
 Candidate = namedtuple('_Candidate', CANDIDATE_FIELDS)
@@ -46,7 +47,7 @@ def remove_overlap(candidates, debug=False):
     """
 
     if debug:
-        print('called _remove_overlap...')
+        log('called _remove_overlap...')
     
     results = []
     overlaps = []
@@ -56,7 +57,7 @@ def remove_overlap(candidates, debug=False):
     while i < len(indices):
 
         if debug:
-            print('\tstarting indices: {0}'.format(indices))
+            log('\tstarting indices: {0}'.format(indices))
 
         index_i = indices[i]
         start_i = candidates[index_i].start
@@ -77,8 +78,8 @@ def remove_overlap(candidates, debug=False):
             # does candidate[j] overlap candidate[i] at all
             if has_overlap(start_i, end_i, start_j, end_j):
                 if debug:
-                    print('\t\t({0}, {1}), ({2}, {3})'.format(start_i, end_i, start_j, end_j))
-                    print('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
+                    log('\t\t({0}, {1}), ({2}, {3})'.format(start_i, end_i, start_j, end_j))
+                    log('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
                           format(candidates[index_i].match_text,
                                  candidates[index_j].match_text,
                                  len_i, len_j))
@@ -92,15 +93,15 @@ def remove_overlap(candidates, debug=False):
             j += 1
 
         if debug:
-            print('\t\t\twinner: {0}'.
+            log('\t\t\twinner: {0}'.
                   format(candidates[candidate_index].match_text))
-            print('\t\t\tappending {0} to results'.
+            log('\t\t\tappending {0} to results'.
                   format(candidates[candidate_index].match_text))
             
         results.append(candidates[candidate_index])
 
         if debug:
-            print('\t\toverlaps: {0}'.format(overlaps))
+            log('\t\toverlaps: {0}'.format(overlaps))
         
         # remove all overlaps
         new_indices = []
@@ -110,7 +111,7 @@ def remove_overlap(candidates, debug=False):
         indices = new_indices
 
         if debug:
-            print('\t\tindices after removing overlaps: {0}'.format(indices))
+            log('\t\tindices after removing overlaps: {0}'.format(indices))
         
         if 0 == len(indices):
             break

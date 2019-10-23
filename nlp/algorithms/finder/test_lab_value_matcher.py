@@ -9,6 +9,8 @@ import sys
 import json
 import argparse
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     import lab_value_matcher as lvm
@@ -33,18 +35,18 @@ def _compare_results(
 
     # check that len(computed) == len(expected)
     if len(computed_values) != len(expected_values):
-        print('\tMismatch in computed vs. expected results: ')
-        print('\tSentence: {0}'.format(sentence))
-        print('\tComputed: ')
+        log('\tMismatch in computed vs. expected results: ')
+        log('\tSentence: {0}'.format(sentence))
+        log('\tComputed: ')
         for v in computed_values:
-            print('\t\t{0}'.format(v))
-        print('\tExpected: ')
+            log('\t\t{0}'.format(v))
+        log('\tExpected: ')
         for v in expected_values:
-            print('\t\t{0}'.format(v))
+            log('\t\t{0}'.format(v))
 
-        print('NAMEDTUPLE: ')
+        log('NAMEDTUPLE: ')
         for k,v in v._asdict().items():
-            print('\t{0} => {1}'.format(k,v))
+            log('\t{0} => {1}'.format(k,v))
 
         return False
 
@@ -64,14 +66,14 @@ def _compare_results(
                     failures.append( (t, expected_values[i]) )
 
     if len(failures) > 0:
-        print(sentence)
+        log(sentence)
         for f in failures:
             # extract fields with values not equal to None
             c = [ (k,v) for k,v in f[0]._asdict().items()
                   if v is not None and k in field_list]
             e = [ (k,v) for k,v in f[1]._asdict().items() if v is not None]
-            print('\tComputed: {0}'.format(c))
-            print('\tExpected: {0}'.format(e))
+            log('\tComputed: {0}'.format(c))
+            log('\tExpected: {0}'.format(e))
             
         return False
 
@@ -513,13 +515,13 @@ if __name__ == '__main__':
                         help='show version and exit',
                         action='store_true')
     parser.add_argument('-d', '--debug',
-                        help='print debug information to stdout',
+                        help='log debug information to stdout',
                         action='store_true')
 
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        print(_get_version())
+        log(_get_version())
         sys.exit(0)
 
     if 'debug' in args and args.debug:

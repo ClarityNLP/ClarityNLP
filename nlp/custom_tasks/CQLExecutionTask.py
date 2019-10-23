@@ -24,6 +24,8 @@ import data_access
 import data_access.time_command as tc
 from tasks.task_utilities import BaseTask
 import data_access.cql_result_parser as crp
+from claritynlp_logging import log, ERROR, DEBUG
+
     
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 10
@@ -152,7 +154,7 @@ def _json_to_objs(json_obj):
     """
 
     if _TRACE:
-        print('CQLExecutionTask: Calling _json_to_objs...')
+        log('CQLExecutionTask: Calling _json_to_objs...')
     
     results = []
 
@@ -161,10 +163,10 @@ def _json_to_objs(json_obj):
     
     if list == obj_type:
         if _TRACE:
-            print('\tfound list of length {0}'.format(len(json_obj)))
+            log('\tfound list of length {0}'.format(len(json_obj)))
         for e in json_obj:
             if _TRACE:
-                print('\t\tdecoding resource type {0}'.format(e['resultType']))
+                log('\t\tdecoding resource type {0}'.format(e['resultType']))
             result_obj = crp.decode_top_level_obj(e)
             if result_obj is None:
                 continue
@@ -174,7 +176,7 @@ def _json_to_objs(json_obj):
                 results.extend(result_obj)
     elif dict == obj_type:
         if _TRACE:
-            print('\tfound dict of size {0}'.format(len(json_obj)))
+            log('\tfound dict of size {0}'.format(len(json_obj)))
         result_obj = crp.decode_top_level_obj(json_obj)
         if result_obj is not None:
             if list is not type(result_obj):
@@ -183,7 +185,7 @@ def _json_to_objs(json_obj):
                 results.extend(result_obj)
 
     if _TRACE:
-        print('\tThere are {0} results after top-level decode'.
+        log('\tThere are {0} results after top-level decode'.
               format(len(results)))
                 
     if 0 == len(results):
@@ -196,7 +198,7 @@ def _json_to_objs(json_obj):
             resource_type = obj[_KEY_RT]
             if _RT_PATIENT == resource_type:
                 if _KEY_ERROR in obj:
-                    print('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
+                    log('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
                     return (None, None, None)
                 
     # sort by datetime from most to least recent
@@ -214,10 +216,10 @@ def _to_result_obj(obj):
     """
 
     if _TRACE:
-        print('Calling _to_result_obj...')
-        print('obj: ')
-        print(obj)
-        print()
+        log('Calling _to_result_obj...')
+        log('obj: ')
+        log(obj)
+        log()
 
     KEY_RC = 'result_content'
     
@@ -317,7 +319,7 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
                                   data_access.IN_PROGRESS,
                                   msg)
     # write msg to log file
-    print(msg)
+    log(msg)
     
     return value
 
@@ -346,8 +348,8 @@ def _get_datetime_window(custom_args, data_earliest, data_latest):
                                              data_latest)
 
     if _TRACE:
-        print('\n*** datetime_start: {0}'.format(datetime_start))
-        print('***   datetime_end: {0}'.format(datetime_end))
+        log('\n*** datetime_start: {0}'.format(datetime_start))
+        log('***   datetime_end: {0}'.format(datetime_end))
         
     return (datetime_start, datetime_end)
 
@@ -361,9 +363,9 @@ def _apply_datetime_filter(samples, t0, t1):
     """
 
     if _TRACE:
-        print('CQLExecutionTask: calling _apply_datetime_filter...')
-        print('\tt0: {0}, t1: {0}'.format(t0, t1))
-        print('\tlength of samples list: {0}'.format(len(samples)))
+        log('CQLExecutionTask: calling _apply_datetime_filter...')
+        log('\tt0: {0}, t1: {0}'.format(t0, t1))
+        log('\tlength of samples list: {0}'.format(len(samples)))
 
     if 0 == len(samples):
         return []
@@ -413,12 +415,12 @@ class CQLExecutionTask(BaseTask):
                                            job_id,
                                            self.pipeline_config.custom_arguments)
             if fhir_version is None:
-                print('\n*** CQLExecutionTask: using fhir_version == DSTU2 ***')
+                log('\n*** CQLExecutionTask: using fhir_version == DSTU2 ***')
                 fhir_version = "DSTU2"
 
             fhir_version = fhir_version.lower()
             if not fhir_version.endswith('stu2') and not fhir_version.endswith('stu3'):
-                print('\n*** CQLExecutionTask: fhir_version "{0}" is invalid ***'.
+                log('\n*** CQLExecutionTask: fhir_version "{0}" is invalid ***'.
                       format(fhir_version))
                 return
             
@@ -442,11 +444,11 @@ class CQLExecutionTask(BaseTask):
             
             # CQL code string verbatim from CQL file
             cql_code = self.pipeline_config.cql
-            print('\n*** CQL CODE: ***\n')
-            print(cql_code)
-            print()
+            log('\n*** CQL CODE: ***\n')
+            log(cql_code)
+            log()
             if cql_code is None or 0 == len(cql_code):
-                print('\n*** CQLExecutionTask: no CQL code was found ***\n')
+                log('\n*** CQLExecutionTask: no CQL code was found ***\n')
                 return
             
             # fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
@@ -463,7 +465,7 @@ class CQLExecutionTask(BaseTask):
                                                     self.pipeline_config.custom_arguments)
             
             if fhir_data_service_uri is None:
-                print('\n*** CQLExecutionTask: fhir_data_service is None ***')
+                log('\n*** CQLExecutionTask: fhir_data_service is None ***')
                 return
 
             # ensure '/' termination
@@ -529,14 +531,14 @@ class CQLExecutionTask(BaseTask):
                 
             # perform the request here, catch lots of different exceptions
 
-            print('\n*** CQLExecutionTask: Request ***')
-            print('Headers: ')
+            log('\n*** CQLExecutionTask: Request ***')
+            log('Headers: ')
             for k,v in headers.items():
-                print('\t{0} => {1}'.format(k,v))
-            print('Payload: ')
+                log('\t{0} => {1}'.format(k,v))
+            log('Payload: ')
             for k,v in payload.items():
-                print('\t{0} => {1}'.format(k,v))
-            print()
+                log('\t{0} => {1}'.format(k,v))
+            log()
             
             has_error = False
             try:
@@ -545,41 +547,41 @@ class CQLExecutionTask(BaseTask):
                                   'http://cql-execution:8080/cql/evaluate',
                                   headers=headers, json=payload)
             except requests.exceptions.HTTPError as e:
-                print('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
+                log('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
                 has_error = True
             except requests.exceptions.ConnectionError as e:
-                print('\n*** CQLExecutionTask ConnectionError: "{0}" ***\n'.format(e))
+                log('\n*** CQLExecutionTask ConnectionError: "{0}" ***\n'.format(e))
                 has_error = True
             except requests.exceptions.Timeout as e:
-                print('\n*** CQLExecutionTask Timeout: "{0}" ***\n'.format(e))
+                log('\n*** CQLExecutionTask Timeout: "{0}" ***\n'.format(e))
                 has_error = True
             except requests.exceptions.RequestException as e:
-                print('\n*** CQLEXecutionTask RequestException: "{0}" ***\n'.format(e))
+                log('\n*** CQLEXecutionTask RequestException: "{0}" ***\n'.format(e))
                 has_error = True
 
             if has_error:
-                print('HTTP error, terminating CQLExecutionTask...')
-                print('RESPONSE CONTENT')
-                print(r.content)
-                print('RESPONSE HEADERS')
-                print(r.headers)
+                log('HTTP error, terminating CQLExecutionTask...')
+                log('RESPONSE CONTENT')
+                log(r.content)
+                log('RESPONSE HEADERS')
+                log(r.headers)
                 return
                 
-            print('Response status code: {0}'.format(r.status_code))
+            log('Response status code: {0}'.format(r.status_code))
 
             results = None
             if 200 == r.status_code:
                 if _TRACE:
-                    print('\n*** CQL JSON RESULTS ***\n')
-                    print(r.json())
-                    print()
+                    log('\n*** CQL JSON RESULTS ***\n')
+                    log(r.json())
+                    log()
 
                 # data_earliest == earliest datetime in the data
                 # data_latest   == latest datetime in the data
                 results, data_earliest, data_latest = _json_to_objs(r.json())
-                print('\tCQLExecutionTask: found {0} results'.format(len(results)))
+                log('\tCQLExecutionTask: found {0} results'.format(len(results)))
             else:
-                print('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
+                log('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
                 return
 
             if results is None or (0 == len(results)):
@@ -595,7 +597,7 @@ class CQLExecutionTask(BaseTask):
 
             # remove results outside of the desired time window
             results = _apply_datetime_filter(results, datetime_start, datetime_end)
-            print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
+            log('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
                   format(len(results)))
             
             for obj in results:
@@ -604,9 +606,9 @@ class CQLExecutionTask(BaseTask):
                     continue
 
                 if _TRACE:
-                    print('obj before _to_result_obj: ')
-                    print(obj)
-                    print()
+                    log('obj before _to_result_obj: ')
+                    log(obj)
+                    log()
 
                 assert _KEY_RT in obj
                 resource_type = obj[_KEY_RT]
@@ -634,7 +636,7 @@ if __name__ == '__main__':
     if 'filepath' in args and args.filepath:
         filepath = args.filepath
         if not os.path.isfile(filepath):
-            print('Unknown file specified: "{0}"'.format(filepath))
+            log('Unknown file specified: "{0}"'.format(filepath))
             sys.exit(-1)
 
     if 'debug' in args and args.debug:
@@ -645,7 +647,7 @@ if __name__ == '__main__':
         json_data = json.loads(json_string)
 
         results, data_earliest, data_latest = _json_to_objs(json_data)
-        print('\tfound {0} results'.format(len(results)))
+        log('\tfound {0} results'.format(len(results)))
         if results is not None:
 
             for counter, obj in enumerate(results):
@@ -658,11 +660,11 @@ if __name__ == '__main__':
                 mongo_obj = _to_result_obj(obj)
 
                 # print to stdout
-                print('RESULT {0}'.format(counter))
+                log('RESULT {0}'.format(counter))
                 for k,v in mongo_obj.items():
                     if dict == type(v):
-                        print('\t{0}'.format(k))
+                        log('\t{0}'.format(k))
                         for k2,v2 in v.items():
-                            print('\t\t{0} => {1}'.format(k2, v2))
+                            log('\t\t{0} => {1}'.format(k2, v2))
                     else:
-                        print('\t{0} => {1}'.format(k,v))
+                        log('\t{0} => {1}'.format(k,v))

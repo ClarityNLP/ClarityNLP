@@ -76,7 +76,7 @@ To unpack the JSON result into a list of TransfusionNote namedtuples:
         json_data = json.loads(json_string)
         note_list = [TransfusionNote(**record) for record in json_data]
 
-To print the valid fields in each note:
+To log the valid fields in each note:
 
         for note in note_list:
 
@@ -89,14 +89,14 @@ To print the valid fields in each note:
                 # if the field is valid
                 if EMPTY_FIELD != val:
                     if 'vitals' != field:
-                        print('{0}: {1}'.format(field, val))
+                        log('{0}: {1}'.format(field, val))
                     else:
                         # extract vitals into a VitalsRecord namedtuple
                         v_record = VitalsRecord(**val)
                         for v_field in VITALS_FIELDS:
                             v_val = getattr(v_record, v_field)
                             if EMPTY_FIELD != v_val:
-                                print('{0}: {1}'.format(v_field, v_val))
+                                log('{0}: {1}'.format(v_field, v_val))
 
 Each group of vitals for a given transfusion is returned as a separate
 JSON record. All vitals records for a given transfusion share the fields
@@ -116,6 +116,7 @@ import errno
 import optparse
 from datetime import datetime, timedelta
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 4
@@ -490,7 +491,7 @@ def extract_date_time(matchobj, regex_name, transfusion_note):
     except IndexError:
         pass
 
-    #print('found date time: {0}'.format(found_date_time))
+    #log('found date time: {0}'.format(found_date_time))
     return found_date_time               
 
 ###############################################################################
@@ -701,8 +702,8 @@ def get_version():
         
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} -f <filename>  [-hv]
 
     OPTIONS:
@@ -711,8 +712,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
 
     """.format(MODULE_NAME))
                     
@@ -735,13 +736,13 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     # process the file
     json_string = run(opts.filepath)
 
-    # print formatted output
+    # log formatted output
     
     # parse the JSON result
     json_data = json.loads(json_string)
@@ -757,14 +758,14 @@ if __name__ == '__main__':
 
     maxlen = max(maxlen_t, maxlen_v)
     
-    # print all valid fields in each note
+    # log all valid fields in each note
     for note in note_list:
         for field in TRANSFUSION_NOTE_FIELDS:
             val = getattr(note, field)
             if EMPTY_FIELD != val:
                 if 'vitals' != field:
                     indent = ' '*(maxlen - len(field))
-                    print('{0}{1}: {2}'.format(indent, field, val))
+                    log('{0}{1}: {2}'.format(indent, field, val))
                 else:
                     # extract vitals into a VitalsRecord namedtuple
                     v_record = VitalsRecord(**val)
@@ -772,5 +773,5 @@ if __name__ == '__main__':
                         v_val = getattr(v_record, v_field)
                         if EMPTY_FIELD != v_val:
                             indent = ' '*(maxlen - len(v_field))
-                            print('{0}{1}: {2}'.format(indent, v_field, v_val))
-        print()
+                            log('{0}{1}: {2}'.format(indent, v_field, v_val))
+        log()

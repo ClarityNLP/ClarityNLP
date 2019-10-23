@@ -103,7 +103,7 @@ components of a code:
 
             # use the field if valid
             if tnm.EMPTY_FIELD != attr:
-                print(attr)
+                log(attr)
 
 
 
@@ -128,6 +128,7 @@ import sys
 import json
 import optparse
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 3
@@ -621,8 +622,8 @@ def get_version():
         
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./tnm_stager.py -s <sentence>  [-hvz]
 
     OPTIONS:
@@ -631,8 +632,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
         -z, --test           Disable -s option and use internal test sentences.
 
     """)
@@ -688,11 +689,11 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
     
     if not sentence and not use_test_sentences:
-        print('Error: sentence not specified...')
+        log('Error: sentence not specified...')
         sys.exit(-1)
 
     sentences = []
@@ -706,9 +707,9 @@ if __name__ == '__main__':
     for sentence in sentences:
         
         if use_test_sentences:
-            print('Sentence: ' + sentence)
+            log('Sentence: ' + sentence)
 
-        # decode results and print only valid fields
+        # decode results and log only valid fields
         json_string = run(sentence)
         json_data = json.loads(json_string)
         tnm_codes = [TnmCode(**c) for c in json_data]
@@ -721,8 +722,8 @@ if __name__ == '__main__':
                 # get the value of this field for code c
                 val = getattr(c, f)
 
-                # if not empty, print it
+                # if not empty, log it
                 if EMPTY_FIELD != val:
                     INDENT = ' '*(max_len - len(f))
-                    print('{0}{1}: {2}'.format(INDENT, f, val))
-            print()
+                    log('{0}{1}: {2}'.format(INDENT, f, val))
+            log()

@@ -43,6 +43,7 @@ import os
 import sys
 import inflect
 import optparse
+from claritynlp_logging import log, ERROR, DEBUG
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
@@ -303,8 +304,8 @@ def get_version():
         
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} -f <filename> [-t termset_names] [-hv]
 
     OPTIONS:
@@ -314,8 +315,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
 
     """.format(MODULE_NAME))
                     
@@ -342,7 +343,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     termset_name_list = []
@@ -352,4 +353,4 @@ if __name__ == '__main__':
     pluralized_nlpql = run(opts.filepath, termset_name_list)
 
     # write results to stdout
-    print(pluralized_nlpql)
+    log(pluralized_nlpql)

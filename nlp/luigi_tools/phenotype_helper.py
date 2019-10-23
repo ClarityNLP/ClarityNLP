@@ -10,6 +10,7 @@ import util
 from data_access import PhenotypeModel, PipelineConfig, PhenotypeEntity, PhenotypeOperations
 from data_access import expr_eval, expr_result
 from ohdsi import getCohort
+from claritynlp_logging import log, ERROR, DEBUG
 
 # import json
 # from bson import json_util, ObjectId
@@ -63,7 +64,7 @@ def get_document_set_attributes(model):
     # query: "query"
     if model.document_sets:
         for d in model.document_sets:
-            print(d)
+            log(d)
             if d['library'] == "Clarity" or d["library"] == "ClarityNLP":
                 args = d['arguments']
                 named_args = d['named_arguments']
@@ -137,7 +138,7 @@ def map_arguments(pipeline: PipelineConfig, e, all_terms):
                     pipeline[k] = e[k]
                 except Exception as ex:
                     traceback.print_exc(file=sys.stdout)
-                    print(ex)
+                    log(ex)
             else:
                 try:
                     term_mappings = get_terms_by_keys(all_terms, e[k], list())
@@ -148,7 +149,7 @@ def map_arguments(pipeline: PipelineConfig, e, all_terms):
                     pipeline.custom_arguments[k] = val
                 except Exception as ex:
                     traceback.print_exc(file=sys.stdout)
-                    print(ex)
+                    log(ex)
 
 
 def get_cohort_items(cohort_name, cohort_source, job_results):
@@ -309,7 +310,7 @@ def get_cohorts(model: PhenotypeModel):
                     cohorts[c_name] = c['arguments'][0]
 
             except Exception as ex:
-                print(ex)
+                log(ex)
                 traceback.print_exc(file=sys.stderr)
     return cohorts
 
@@ -325,7 +326,7 @@ def get_job_results(model: PhenotypeModel):
                     job_results[c_name] = c['named_arguments']
 
             except Exception as ex:
-                print(ex)
+                log(ex)
                 traceback.print_exc(file=sys.stderr)
     return job_results
 
@@ -514,7 +515,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
 
     mongo_failed = False
     if 'mongo' == evaluator:
-        print('Using mongo evaluator for expression "{0}"'.format(expression))
+        log('Using mongo evaluator for expression "{0}"'.format(expression))
 
         # The validate_phenotype function parses the expression and checks it
         # for various errors. A normalized version of the expression is then
@@ -537,20 +538,20 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
             parse_result = expr_eval.parse_expression(expression, names)
             
         if 0 == len(parse_result):
-            print('\n\t*** Expression cannot be evaluated. ***\n')
+            log('\n\t*** Expression cannot be evaluated. ***\n')
             mongo_failed = True
         else:
             # generate a list of expr_eval.ExpressionObject items
             expr_list = expr_eval.generate_expressions(nlpql_feature, parse_result)
             if 0 == len(expr_list):
-                print('\t\n*** No subexpressions found! ***\n')
+                log('\t\n*** No subexpressions found! ***\n')
                 mongo_failed = True
             else:
                 mongo_process_operations(expr_list, db, job, phenotype,
                                          phenotype_id, phenotype_owner, c, final)
 
     if 'pandas' == evaluator or mongo_failed:
-        print('Using pandas evaluator for expression "{0}"'.format(expression))
+        log('Using pandas evaluator for expression "{0}"'.format(expression))
         pandas_process_operations(db, job, phenotype, phenotype_id, phenotype_owner, c, final)
 
 
@@ -603,7 +604,7 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
         df = pd.DataFrame(list(cursor))
 
         if len(df) == 0:
-            print('Empty dataframe!')
+            log('Empty dataframe!')
             return
 
         dfs = []
@@ -687,7 +688,7 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
                 output = ret.to_dict('records')
                 del ret
         elif action in numeric_comp_operators:
-            print(action)
+            log(action)
             value_comp = ''
             ent = ''
             attr = ''
@@ -734,9 +735,9 @@ def mongo_process_operations(expr_obj_list,
     Use MongoDB aggregation to evaluate NLPQL expressions.
     """
 
-    print('mongo_process_operations expr_object_list: ')
+    log('mongo_process_operations expr_object_list: ')
     for expr_obj in expr_obj_list:
-        print(expr_obj)
+        log(expr_obj)
 
     context_var = phenotype.context.lower()
     if 'document' == context_var:
@@ -800,7 +801,7 @@ def mongo_process_operations(expr_obj_list,
         if len(output_docs) > 0:
             mongo_collection_obj.insert_many(output_docs)
         else:
-            print('mongo_process_operations ({0}): ' \
+            log('mongo_process_operations ({0}): ' \
                   'no phenotype matches on "{1}".'.format(eval_result.expr_type,
                                                           eval_result.expr_text))
 
@@ -859,7 +860,7 @@ def validate_phenotype(p_cfg: PhenotypeModel):
         if not error and len(p_cfg.operations) > 0 and len(p_cfg.data_entities) == 0:
             error = "Operations (define) require at least one data entity (define)"
     except Exception as ex:
-        print(ex)
+        log(ex)
         error = ''.join(traceback.format_stack())
 
     # Run validity and syntax checks on all expressions, ensure that only

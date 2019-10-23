@@ -42,6 +42,8 @@ if __name__ == '__main__':
 # ClarityNLP imports
 from tasks.task_utilities import BaseTask
 from algorithms.finder import finder_overlap as overlap
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
@@ -201,7 +203,7 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
         for match in iterator:
 
             if _TRACE:
-                print('\tECOG MATCH[{0}]:\n\t\t"{1}"'.
+                log('\tECOG MATCH[{0}]:\n\t\t"{1}"'.
                       format(regex_index, match.group()))
             
             # character offsets
@@ -270,7 +272,7 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
                     # lo remains the same, no hi
                     pass
                 else:
-                    print('*** Unrecognized operator: {0}'.format(op_string))
+                    log('*** Unrecognized operator: {0}'.format(op_string))
 
             # this is a new candidate
             candidate = overlap.Candidate(start      = start,
@@ -297,12 +299,12 @@ def _process_sentence(sentence, inc_or_ex = _ID_INC):
         pruned_candidates = []
 
     if _TRACE:
-        print('\tcandidates count after overlap removal: {0}'.
+        log('\tcandidates count after overlap removal: {0}'.
               format(len(pruned_candidates)))
-        print('\tPruned candidates: ')
+        log('\tPruned candidates: ')
         for c in pruned_candidates:
-            print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-        print()
+            log('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+        log()
 
     for pc in pruned_candidates:
         result = EcogResult(sentence  = pc.other['sentence'],
@@ -357,7 +359,7 @@ def _find_ecog_scores(doc):
     if inclusion_str is not None and len(inclusion_str) > 0:
         inclusion_str = _cleanup_sentence(inclusion_str)
         if _TRACE:
-            print('CLEANED INCLUSION CRITERIA: "{0}...{1}"'.
+            log('CLEANED INCLUSION CRITERIA: "{0}...{1}"'.
                   format(inclusion_str[:24], inclusion_str[-24:]))
         results = _process_sentence(inclusion_str, _ID_INC)
         result_list.extend(results)
@@ -365,7 +367,7 @@ def _find_ecog_scores(doc):
     if exclusion_str is not None and len(exclusion_str) > 0:
         exclusion_str = _cleanup_sentence(exclusion_str)
         if _TRACE:
-            print('CLEANED EXCLUSION CRITERIA: "{0}...{1}"'.
+            log('CLEANED EXCLUSION CRITERIA: "{0}...{1}"'.
                   format(exclusion_str[:24], exclusion_str[-24:]))
         results = _process_sentence(exclusion_str, _ID_EX)
         result_list.extend(results)
@@ -466,10 +468,10 @@ if __name__ == '__main__':
     if 'filepath' in args and args.filepath:
         filepath = args.filepath
         if not os.path.isfile(filepath):
-            print('Unknown file specified: "{0}"'.format(filepath))
+            log('Unknown file specified: "{0}"'.format(filepath))
             sys.exit(-1)
     else:
-        print('nInput file not specified.')
+        log('nInput file not specified.')
         sys.exit(0)
 
     if 'debug' in args and args.debug:
@@ -499,20 +501,20 @@ if __name__ == '__main__':
             doc_list = json_data
 
         if doc_list is None:
-            print('\nNo documents found')
+            log('\nNo documents found')
             sys.exit(-1)
             
         doc_count = len(doc_list)
-        print('Found {0} docs'.format(doc_count))
+        log('Found {0} docs'.format(doc_count))
 
         if -1 == end:
             end = doc_count
 
         if start >= doc_count:
-            print('\nStart index exceeds doc count')
+            log('\nStart index exceeds doc count')
             sys.exit(-1)
         if end == start:
-            print('\nEmpty index interval: [{0}, {1})'.format(start, end))
+            log('\nEmpty index interval: [{0}, {1})'.format(start, end))
             sys.exit(-1)
 
         assert end > start
@@ -522,17 +524,17 @@ if __name__ == '__main__':
         
         for i in range(start, end):
             doc = doc_list[i]['report_text']
-            print('\n[{0}]\n{1}'.format(i, doc))
+            log('\n[{0}]\n{1}'.format(i, doc))
             text = _cleanup_document(doc)
 
             # search for ECOG scores
             result_list = _find_ecog_scores(text)
 
             if 0 == len(result_list):
-                print('\t*** No results found ***')
+                log('\t*** No results found ***')
                 continue
 
-            print('RESULTS: ')
+            log('RESULTS: ')
             max_key_len = 0
             for result in result_list:
                 mongo_obj = _to_mongo_object(result)
@@ -551,5 +553,5 @@ if __name__ == '__main__':
                         k = 'matching_text'
                         v = sentence[start:end]
                     indent = ' ' * (max_key_len - len(k))
-                    print('\t{0}{1} => {2}'.format(indent, k, v))
-                print()
+                    log('\t{0}{1} => {2}'.format(indent, k, v))
+                log()

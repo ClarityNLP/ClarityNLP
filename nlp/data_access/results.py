@@ -4,6 +4,8 @@ import os
 import sys
 import traceback
 from datetime import datetime
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 from bson.objectid import ObjectId
 
@@ -72,7 +74,7 @@ def display_mapping(x):
             "end": [end]
         }
     except Exception as ex:
-        print(ex)
+        log(ex)
         x['result_display'] = {
             'date': ''
         }
@@ -135,7 +137,7 @@ def phenotype_performance_results(jobs: list):
 
             metrics[job] = performance
     except Exception as e:
-        print(e)
+        log(e)
 
     return metrics
 
@@ -176,7 +178,7 @@ def phenotype_feedback_results(job: str):
                 csv_writer.writerow(output)
 
     except Exception as e:
-        print(e)
+        log(e)
 
     return filename
 
@@ -219,7 +221,7 @@ def pipeline_results(job: str):
                     i += 1
                 csv_writer.writerow(output)
     except Exception as e:
-        print(e)
+        log(e)
 
     return filename
 
@@ -286,7 +288,7 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
                 csv_writer.writerow(output)
 
     except Exception as e:
-        print(e)
+        log(e)
 
     return filename
 
@@ -488,4 +490,4 @@ def remove_tmp_file(filename):
 if __name__ == "__main__":
     # job_results("pipeline", "97")
     results = phenotype_performance_results(["2152"])
-    print(results)
+    log(results)

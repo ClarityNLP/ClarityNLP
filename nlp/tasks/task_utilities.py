@@ -15,6 +15,7 @@ from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
+from claritynlp_logging import log, ERROR, DEBUG
 
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
@@ -63,7 +64,7 @@ def document_sections(doc):
         try:
             section_headers, section_texts = sec_tag_process(txt)
         except Exception as e:
-            print(e)
+            log(e)
         names = [x.concept for x in section_headers]
         return names, section_texts
 
@@ -130,11 +131,11 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     db = client[util.mongo_db]
 
     if not data_fields:
-        print('must have additional data fields')
+        log('must have additional data fields')
         return None
 
     if not p_config:
-        print('must have pipeline config')
+        log('must have pipeline config')
         return None
 
     data_fields["pipeline_type"] = pipeline_type
@@ -200,13 +201,13 @@ class BaseCollector(base_model.BaseModel):
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
+            log(ex)
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
-        print('please implement run_custom_task')
+        log('please implement run_custom_task')
 
     def custom_cleanup(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
-        print('custom cleanup')
+        log('custom cleanup')
 
     def cleanup(self, pipeline_id, job, owner, pipeline_type, p_config):
         client = util.mongo_client()
@@ -218,7 +219,7 @@ class BaseCollector(base_model.BaseModel):
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
+            log(ex)
 
 
 class BaseTask(luigi.Task):
@@ -273,7 +274,7 @@ class BaseTask(luigi.Task):
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
+            log(ex)
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,
@@ -306,7 +307,7 @@ class BaseTask(luigi.Task):
         jobs.update_job_status(str(self.job), util.conn_string, job_status, status_message)
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
-        print("Implement your custom functionality here ")
+        log("Implement your custom functionality here ")
 
     def get_document_text(self, doc, clean=True):
         if doc and util.solr_text_field in doc:

@@ -2,12 +2,15 @@
 from flask import Flask
 from flask_cors import CORS
 import util
+from claritynlp_logging import log, setup_log, ERROR, DEBUG
 
 
 def create_app(config_filename=None):
 
     clarity_app = Flask(__name__)
     clarity_app.debug = True
+
+    setup_log(clarity_app)
 
     if config_filename:
         clarity_app.config.from_pyfile(config_filename)
@@ -26,5 +29,5 @@ application = create_app()
 CORS(application)
 
 if __name__ == '__main__':
-    print('starting claritynlp api...')
+    log('starting claritynlp api...')
     application.run(host='0.0.0.0', port=5000, threaded=True, debug=util.debug_mode)

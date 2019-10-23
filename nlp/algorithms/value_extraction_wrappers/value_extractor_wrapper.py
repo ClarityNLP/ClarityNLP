@@ -5,10 +5,11 @@ import json
 from data_access import Measurement
 from algorithms.segmentation import *
 from algorithms.value_extraction import run_value_extractor
+from claritynlp_logging import log, ERROR, DEBUG
 
-print('Initializing models for value extractor...')
+log('Initializing models for value extractor...')
 segmentor = Segmentation()
-print('Done initializing models for value extractor...')
+log('Done initializing models for value extractor...')
 
 
 def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enumlist=None, is_case_sensitive_text=False, denom_only=False):
@@ -51,4 +52,4 @@ if __name__ == '__main__':
                                    'HR 103, RR 15, and SpO2 97% on NRB.',
                                    10, 500, is_case_sensitive_text=False)
 
-    [print(str(t.to_json())) for t in res]
+    [log(str(t.to_json())) for t in res]

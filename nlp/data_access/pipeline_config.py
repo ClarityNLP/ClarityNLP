@@ -4,11 +4,13 @@ import psycopg2
 import psycopg2.extras
 
 import util
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     from .base_model import BaseModel
 except Exception as ex:
-    print(ex)
+    log(ex)
     from base_model import BaseModel
 
 
@@ -131,8 +133,8 @@ def insert_pipeline_config(pipeline: PipelineConfig, connection_string: str):
             conn.commit()
 
     except Exception as ex:
-        print('failed to insert pipeline')
-        print(ex)
+        log('failed to insert pipeline')
+        log(ex)
     finally:
         conn.close()
 
@@ -153,8 +155,8 @@ def update_pipeline_config(pipeline: PipelineConfig, connection_string: str):
             conn.commit()
             success = True
     except Exception as ex:
-        print('failed to insert pipeline')
-        print(ex)
+        log('failed to insert pipeline')
+        log(ex)
         success = True
     finally:
         conn.close()
@@ -181,9 +183,9 @@ def get_pipeline_config(pipeline_id, connection_string):
             else:
                 return get_default_config()
         else:
-            print("no rows returned")
+            log("no rows returned")
     except Exception as ex:
-        print(ex)
+        log(ex)
     finally:
         conn.close()
 
@@ -231,8 +233,8 @@ if __name__ == '__main__':
         q = sys.argv[1]
         conn_string = util.conn_string
         config = (get_pipeline_config(q, conn_string))
-        print(config)
+        log(config)
         sys.exit(1)
     else:
-        print("Enter pipeline id")
+        log("Enter pipeline id")
         sys.exit(-1)

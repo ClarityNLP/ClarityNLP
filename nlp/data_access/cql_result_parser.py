@@ -14,6 +14,7 @@ import base64
 import argparse
 from collections import namedtuple
 from datetime import datetime, timezone, timedelta, time
+from claritynlp_logging import log, ERROR, DEBUG
 
 if __name__ == '__main__':
     # modify path for local testing
@@ -74,12 +75,12 @@ def _dump_dict(dict_obj, msg=None):
     assert dict == type(dict_obj)
 
     if msg is not None:
-        print(msg)
+        log(msg)
     for k,v in dict_obj.items():
         if k.endswith('div'):
-            print('\t{0} => {1}...'.format(k, v[:16]))
+            log('\t{0} => {1}...'.format(k, v[:16]))
         else:
-            print('\t{0} => {1}'.format(k, v))
+            log('\t{0} => {1}'.format(k, v))
 
     
 ###############################################################################
@@ -844,7 +845,7 @@ def _process_patient(obj):
         try:
             obj = json.loads(obj)
         except json.decoder.JSONDecoderError as e:
-            print('\t{0}: String conversion (patient) failed with error: "{1}"'.
+            log('\t{0}: String conversion (patient) failed with error: "{1}"'.
                   format(_MODULE_NAME, e))
             return result
 
@@ -969,7 +970,7 @@ def _process_bundle(name, bundle_obj, result_type_str):
     Process a DSTU2 or DSTU3 resource bundle returned from the CQL Engine.
     """
 
-    if _TRACE: print('Decoding BUNDLE resource...')
+    if _TRACE: log('Decoding BUNDLE resource...')
 
     # this bundle should be a string representation of a list of dicts
     obj_type = type(bundle_obj)
@@ -978,7 +979,7 @@ def _process_bundle(name, bundle_obj, result_type_str):
     try:
         obj = json.loads(bundle_obj)
     except json.decoder.JSONDecodeError as e:
-        print('\t{0}: String conversion (bundle) failed with error: "{1}"'.
+        log('\t{0}: String conversion (bundle) failed with error: "{1}"'.
               format(_MODULE_NAME, e))
         return []
 
@@ -1014,7 +1015,7 @@ def decode_top_level_obj(obj):
     
     obj_type = type(obj)
     if dict == obj_type:
-        if _TRACE: print('top_level_obj dict keys: {0}'.format(obj.keys()))
+        if _TRACE: log('top_level_obj dict keys: {0}'.format(obj.keys()))
 
         name = None
         if KEY_NAME in obj:
@@ -1025,7 +1026,7 @@ def decode_top_level_obj(obj):
             
             if STR_PATIENT == result_type_str:
                 result_obj = _process_patient(result_obj)
-                if _TRACE: print('decoded patient')
+                if _TRACE: log('decoded patient')
             else:
                 # check for DSTU2 or DSTU3 resource bundles
                 if result_type_str.endswith('stu2') or \
@@ -1034,7 +1035,7 @@ def decode_top_level_obj(obj):
                                                  result_obj,
                                                  result_type_str)
                 else:
-                    if _TRACE: print('\n*** decode_top_level_object: ' \
+                    if _TRACE: log('\n*** decode_top_level_object: ' \
                                      'no decode ***')
                     result_obj = None
     else:
@@ -1067,7 +1068,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        print(_get_version())
+        log(_get_version())
         sys.exit(0)
 
     if 'debug' in args and args.debug:
@@ -1077,7 +1078,7 @@ if __name__ == '__main__':
     if 'filepath' in args and args.filepath:
         filepath = args.filepath
         if not os.path.isfile(filepath):
-            print('Unknown file specified: "{0}"'.format(filepath))
+            log('Unknown file specified: "{0}"'.format(filepath))
             sys.exit(-1)
     
     with open(filepath, 'rt') as infile:
@@ -1086,16 +1087,16 @@ if __name__ == '__main__':
 
         result = _process_resource(json_data)
 
-        print('RESULT: ')
+        log('RESULT: ')
         if result is not None:
             for k,v in result.items():
                 if dict == type(v):
-                    print('\t{0}'.format(k))
+                    log('\t{0}'.format(k))
                     for k2,v2 in v.items():
-                        print('\t\t{0} => {1}'.format(k2, v2))
+                        log('\t\t{0} => {1}'.format(k2, v2))
                 elif list == type(v):
-                    print('\t{0}'.format(k))
+                    log('\t{0}'.format(k))
                     for index, v2 in enumerate(v):
-                        print('\t\t[{0}]:\t{1}'.format(index, v2))
+                        log('\t\t[{0}]:\t{1}'.format(index, v2))
                 else:
-                    print('\t{0} => {1}'.format(k,v))
+                    log('\t{0} => {1}'.format(k,v))

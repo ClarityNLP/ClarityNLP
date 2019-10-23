@@ -6,6 +6,7 @@ except Exception as e:
 from collections import namedtuple
 import json
 from algorithms import value_extraction as ve
+from claritynlp_logging import log, ERROR, DEBUG
 
 
 
@@ -27,11 +28,11 @@ for sentence in test_sentences:
     result = ValueResult(**json_data)
 
 
-    print('sentence: {0}'.format(result.sentence))
-    print()
-    print('fev1_count: {0}'.format(result.fev1_count))
-    print('fev1_fvc_ratio_count: {0}'.format(result.fev1_fvc_ratio_count))
-    print('fvc_count: {0}'.format(result.fvc_count))
+    log('sentence: {0}'.format(result.sentence))
+    log()
+    log('fev1_count: {0}'.format(result.fev1_count))
+    log('fev1_fvc_ratio_count: {0}'.format(result.fev1_fvc_ratio_count))
+    log('fvc_count: {0}'.format(result.fvc_count))
 
     pft_object = 1
     for x in result.results:
@@ -39,17 +40,17 @@ for sentence in test_sentences:
         if x != []:
             for v in x:
 
-                print('         type[{0}.{1}]: {2}'.format(pft_object, index, v['type']))
-                print('         text[{0}.{1}]: {2}'.format(pft_object,index , v['text']))
-                print('    condition[{0}.{1}]: {2}'.format(pft_object,index , v['condition']))
-                print('            x[{0}.{1}]: {2}'.format(pft_object,index , v['x']))
+                log('         type[{0}.{1}]: {2}'.format(pft_object, index, v['type']))
+                log('         text[{0}.{1}]: {2}'.format(pft_object,index , v['text']))
+                log('    condition[{0}.{1}]: {2}'.format(pft_object,index , v['condition']))
+                log('            x[{0}.{1}]: {2}'.format(pft_object,index , v['x']))
                 if ve.EMPTY_FIELD != v['y']:
-                    print('            y[{0}.{1}]: {2}'.format(pft_object,index , v['y']))
+                    log('            y[{0}.{1}]: {2}'.format(pft_object,index , v['y']))
                 if ve.EMPTY_FIELD != v['units']:
-                    print('        units[{0}.{1}]: {2}'.format(pft_object,index , v['units']))
+                    log('        units[{0}.{1}]: {2}'.format(pft_object,index , v['units']))
                 else:
-                    print('        units[{0}.{1}]: ABSENT'.format(pft_object,index))
+                    log('        units[{0}.{1}]: ABSENT'.format(pft_object,index))
                 index = index + 1
-                print()
+                log()
         pft_object +=1
-        print()
+        log()

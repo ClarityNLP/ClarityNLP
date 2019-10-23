@@ -4,6 +4,7 @@ A basic lexer for NLPQL expressions.
 """
 
 from sly import Lexer
+from claritynlp_logging import log, ERROR, DEBUG
 
 
 ###############################################################################
@@ -61,7 +62,7 @@ class NlpqlExpressionLexer(Lexer):
         self.lineno += t.value.count('\n')
 
     def error(self, t):
-        print('Line %d: Bad character %r' % (self.lineno, t.value[0]))
+        log('Line %d: Bad character %r' % (self.lineno, t.value[0]))
         self.index += 1
 
 
@@ -89,8 +90,8 @@ if __name__ == '__main__':
     counter = 1
     lexer = NlpqlExpressionLexer()
     for e in EXPRESSIONS:
-        print('[{0:3}]: {1}'.format(counter, e))
+        log('[{0:3}]: {1}'.format(counter, e))
         for tok in lexer.tokenize(e):
-            print(tok)
-        print()
+            log(tok)
+        log()
         counter += 1

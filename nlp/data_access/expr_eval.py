@@ -158,6 +158,7 @@ import optparse
 from pymongo import MongoClient
 from collections import namedtuple
 from bson.objectid import ObjectId
+from claritynlp_logging import log, ERROR, DEBUG
 
 try:
     from data_access.expr_lexer  import NlpqlExpressionLexer
@@ -406,15 +407,15 @@ def _is_math_expr(infix_tokens):
     """
 
     if _TRACE:
-        print('Called _is_math_expr...')
-        print('\tinfix_tokens: {0}'.format(infix_tokens))
+        log('Called _is_math_expr...')
+        log('\tinfix_tokens: {0}'.format(infix_tokens))
 
     tmp_feature_count = 0
     nlpql_feature_set = set()
     value_set = set()
 
     for token in infix_tokens:
-        #print('\t[_is_math_expr] token "{0}"'.format(token))
+        #log('\t[_is_math_expr] token "{0}"'.format(token))
         if _LEFT_PARENS == token or _RIGHT_PARENS == token:
             continue
         match = _regex_variable.match(token)
@@ -431,7 +432,7 @@ def _is_math_expr(infix_tokens):
             continue
 
         # if here, not a pure math expression
-        if _TRACE: print('\tNot a math expression')
+        if _TRACE: log('\tNot a math expression')
         return False
 
     nlpql_feature_count = len(nlpql_feature_set)
@@ -441,7 +442,7 @@ def _is_math_expr(infix_tokens):
         is_math_expr = True
     
     if _TRACE:
-        print('\tIs a math expression: {0}'.format(is_math_expr))
+        log('\tIs a math expression: {0}'.format(is_math_expr))
     return is_math_expr
 
 
@@ -721,38 +722,38 @@ def _make_nary(postfix_tokens):
     All tokens are assumed to be lowercase.
     """
 
-    if _TRACE: print('calling _make_nary')
+    if _TRACE: log('calling _make_nary')
     
     postfix_string = ' '.join(postfix_tokens)
-    if _TRACE: print('\tStarting postfix: {0}'.format(postfix_tokens))
+    if _TRACE: log('\tStarting postfix: {0}'.format(postfix_tokens))
 
     matches = []
     iterator = _regex_nary_or.finditer(postfix_string)
     for match in iterator:
         matching_text = match.group()
         if _TRACE:
-            print('\tNARY MATCH (or): ->{0}<-'.format(matching_text))
+            log('\tNARY MATCH (or): ->{0}<-'.format(matching_text))
         matching_text = re.sub(r'\bor', '', matching_text)
         matching_text = re.sub(r'\s+', ' ', matching_text)
         matching_text += 'or'
         n_value = _count_spaces(matching_text)
         matching_text = matching_text + '{0}'.format(n_value)
         if _TRACE:
-            print('\tAFTER SUB: ->{0}<-'.format(matching_text))
+            log('\tAFTER SUB: ->{0}<-'.format(matching_text))
         matches.append( (match.start(), match.end(), matching_text))
 
     iterator = _regex_nary_and.finditer(postfix_string)
     for match in iterator:
         matching_text = match.group()
         if _TRACE:
-            print('\tNARY MATCH (and): ->{0}<-'.format(matching_text))
+            log('\tNARY MATCH (and): ->{0}<-'.format(matching_text))
         matching_text = re.sub(r'\band', '', matching_text)
         matching_text = re.sub(r'\s+', ' ', matching_text)
         matching_text += 'and'
         n_value = _count_spaces(matching_text)
         matching_text = matching_text + '{0}'.format(n_value)
         if _TRACE:
-            print('\tAFTER SUB: ->{0}<-'.format(matching_text))
+            log('\tAFTER SUB: ->{0}<-'.format(matching_text))
         matches.append( (match.start(), match.end(), matching_text))
 
     # sort in order of occurrence
@@ -781,21 +782,21 @@ def _remove_unnecessary_parens(infix_expression):
     was nonessential and can be removed.
     """
 
-    if _TRACE: print('Called _remove_unnecessary_parens')
+    if _TRACE: log('Called _remove_unnecessary_parens')
     
     # return if no parens
     pos = infix_expression.find(_LEFT_PARENS)
     if -1 == pos:
         return infix_expression
 
-    if _TRACE: print('\t  Infix baseline: "{0}"'.format(infix_expression))
+    if _TRACE: log('\t  Infix baseline: "{0}"'.format(infix_expression))
     
     infix_tokens = infix_expression.split()
     
     # get baseline postfix expression
     postfix_tokens = _infix_to_postfix(infix_tokens)
     postfix_baseline = ' '.join(postfix_tokens)
-    if _TRACE: print('\tPostfix baseline: "{0}"'.format(postfix_baseline))
+    if _TRACE: log('\tPostfix baseline: "{0}"'.format(postfix_baseline))
 
     # locate matching pairs of parens
     pairs = []
@@ -813,7 +814,7 @@ def _remove_unnecessary_parens(infix_expression):
     # sort by decreasing order of nesting depth
     pairs = sorted(pairs, key=lambda x: x[2], reverse=True)
     if _TRACE:
-        print('\t    Parens pairs: {0}'.format(pairs))
+        log('\t    Parens pairs: {0}'.format(pairs))
             
     for i in range(len(pairs)):
 
@@ -825,24 +826,24 @@ def _remove_unnecessary_parens(infix_expression):
         del infix_tokens[left]
         trial_infix_expr = ' '.join(infix_tokens)
         if _TRACE:
-            print('\t Removing parens: left={0}, right={1}'.format(left, right))
-            print('\tTrial infix expr: {0}'.format(trial_infix_expr))
+            log('\t Removing parens: left={0}, right={1}'.format(left, right))
+            log('\tTrial infix expr: {0}'.format(trial_infix_expr))
 
         postfix = _infix_to_postfix(infix_tokens)
         postfix = ' '.join(postfix)
         if _TRACE:
-            print('\t   Trial postfix: "{0}"'.format(postfix))
+            log('\t   Trial postfix: "{0}"'.format(postfix))
 
         if postfix != postfix_baseline:
             # removal changed postfix result, so restore these parens
-            if _TRACE: print('\t   Postfix CHANGED, restoring parens.')
+            if _TRACE: log('\t   Postfix CHANGED, restoring parens.')
             infix_tokens = infix_tokens_save            
         else:
             # removed nonessential parens
             infix_expression = trial_infix_expr
             if _TRACE:
-                print('\t   Postfix MATCHED, removing parens.')
-                print('\t  NEW INFIX EXPR: {0}'.format(infix_expression))
+                log('\t   Postfix MATCHED, removing parens.')
+                log('\t  NEW INFIX EXPR: {0}'.format(infix_expression))
             
             # update remaining pair indices to account for token removal
             for j in range(i+1, len(pairs)):
@@ -863,11 +864,11 @@ def _remove_unnecessary_parens(infix_expression):
             if _TRACE:
                 remaining_pairs = pairs[i+1:]
                 if len(remaining_pairs) > 0:
-                    print('\tRemaining parens pairs: {0}'.format(remaining_pairs))
+                    log('\tRemaining parens pairs: {0}'.format(remaining_pairs))
             
     if _TRACE:
-        print('\tDONE')
-        print('\tEssential parens: "{0}"'.format(infix_expression))
+        log('\tDONE')
+        log('\tEssential parens: "{0}"'.format(infix_expression))
     return infix_expression
 
 
@@ -941,7 +942,7 @@ def _decode_operator(token):
             n = 2
             
     if _TRACE:
-        print('\t[_decode_operator] Found operator "{0}", n == {1}'.
+        log('\t[_decode_operator] Found operator "{0}", n == {1}'.
               format(operator, n))
 
     return (operator, n)
@@ -973,9 +974,9 @@ def _make_temp_feature(counter,
     """
     
     if _TRACE:
-        print('Called _make_temp_feature')
-        #print('\t    tokens: {0}'.format(token_list))
-        print('\texpr_index: {0}, counter: {1}'.format(expr_index, counter))
+        log('Called _make_temp_feature')
+        #log('\t    tokens: {0}'.format(token_list))
+        log('\texpr_index: {0}, counter: {1}'.format(expr_index, counter))
 
     if _TMP_FEATURE_MATH == math_or_logic:
         label = 'math_{0}_{1}'.format(expr_index, counter)
@@ -983,7 +984,7 @@ def _make_temp_feature(counter,
         label = 'logic_{0}_{1}'.format(expr_index, counter)
     
     if _TRACE:
-        print('\t New label: {0}'.format(label))
+        log('\t New label: {0}'.format(label))
 
     assert _is_nlpql_feature(label)
     assert _is_temp_feature(label)
@@ -1023,11 +1024,11 @@ def _merge_math_tokens(
     """
 
     if _TRACE:
-        print('Called _merge_math_tokens...')
-        print('\tTokens: {0}'.format(tokens))
-        print('\tMath_expressions: ')
+        log('Called _merge_math_tokens...')
+        log('\tTokens: {0}'.format(tokens))
+        log('\tMath_expressions: ')
         for k,v in math_expressions.items():
-            print('\t\t{0} => {1}'.format(k,v))
+            log('\t\t{0} => {1}'.format(k,v))
 
     stack = []
     for t in tokens:
@@ -1046,14 +1047,14 @@ def _merge_math_tokens(
             expr_tokens.reverse()
 
             if _TRACE:
-                print('\tCandidate tokens: {0}'.format(expr_tokens))
-                print('\t\tAll math: {0}'.format(all_math_tokens))
+                log('\tCandidate tokens: {0}'.format(expr_tokens))
+                log('\t\tAll math: {0}'.format(all_math_tokens))
             
             if all_math_tokens:                
                 # can merge into single expression if single nlpql_feature
                 # and multiple tokens
                 if _TRACE:
-                    print('\tMerging these tokens: {0}'.format(expr_tokens))
+                    log('\tMerging these tokens: {0}'.format(expr_tokens))
                 feature_set = set() 
                 for m in expr_tokens:
                     if m in math_expressions:
@@ -1074,7 +1075,7 @@ def _merge_math_tokens(
 
                     # check if preceded by NOT; if so, include in the expr
                     if len(stack) > 0 and 'NOT' == stack[-1]:
-                        if _TRACE: print('\tExpr is preceded by NOT')
+                        if _TRACE: log('\tExpr is preceded by NOT')
                         nlpql_expression = 'NOT ( ' + nlpql_expression + ' )'
                         # pop the NOT operator from the stack
                         stack.pop()
@@ -1100,16 +1101,16 @@ def _merge_math_tokens(
                 stack.append(_RIGHT_PARENS)
 
             if _TRACE:
-                print('\tCurent stack: ')
-                print('\t\t{0}'.format(stack))
+                log('\tCurent stack: ')
+                log('\t\t{0}'.format(stack))
                 
     new_infix_expr = ' '.join(stack)
     
     if _TRACE:
-        print('\tMerge result: {0}'.format(new_infix_expr))
-        print('\tMath_expressions: ')
+        log('\tMerge result: {0}'.format(new_infix_expr))
+        log('\tMath_expressions: ')
         for k,v in math_expressions.items():
-            print('\t\t{0} => {1}'.format(k,v))
+            log('\t\t{0} => {1}'.format(k,v))
 
     return new_infix_expr, counter
 
@@ -1132,8 +1133,8 @@ def _resolve_mixed(infix_expression, expr_index):
     """
 
     if _TRACE:
-        print('Called _resolve_mixed')
-        print('\tinfix expression: {0}'.format(infix_expression))
+        log('Called _resolve_mixed')
+        log('\tinfix expression: {0}'.format(infix_expression))
 
     tokens = infix_expression.split()
     
@@ -1168,10 +1169,10 @@ def _resolve_mixed(infix_expression, expr_index):
                     stack.pop()
 
                     if _TRACE:
-                        print('\tFound math expr preceded by NOT')                        
-                        print('\t\tis_math: {0}'.format(is_math))
-                        print('\t\tNew expression: "{0}"'.format(nlpql_expression))
-                        print('\t\tNew expr_tokens: {0}'.format(expr_tokens))
+                        log('\tFound math expr preceded by NOT')                        
+                        log('\t\tis_math: {0}'.format(is_math))
+                        log('\t\tNew expression: "{0}"'.format(nlpql_expression))
+                        log('\t\tNew expr_tokens: {0}'.format(expr_tokens))
                     
                 # if single parenthesized token, push with no parens
                 if 1 == len(expr_tokens):
@@ -1184,7 +1185,7 @@ def _resolve_mixed(infix_expression, expr_index):
                     math_expressions[nlpql_feature] = (nlpql_expression, feature)
                     counter += 1
                     if _TRACE:
-                        print('\tReplacing "{0}" with feature "{1}"'.
+                        log('\tReplacing "{0}" with feature "{1}"'.
                               format(nlpql_expression, nlpql_feature))
             else:
                 # push logic operands with parens
@@ -1194,7 +1195,7 @@ def _resolve_mixed(infix_expression, expr_index):
                 stack.append(_RIGHT_PARENS)
                 
     new_infix_expr = ' '.join(stack)
-    if _TRACE: print('\tEXPR AFTER RESOLUTION: {0}'.format(new_infix_expr))
+    if _TRACE: log('\tEXPR AFTER RESOLUTION: {0}'.format(new_infix_expr))
 
     # combine math expressions where possible
     prev = new_infix_expr
@@ -1238,10 +1239,10 @@ def _print_math_results(doc_ids, mongo_collection_obj, nlpql_feature):
     # query for the desired documents
     cursor = mongo_collection_obj.find({'_id': {'$in': doc_ids}})
 
-    print('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
+    log('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
     count = 0
     for doc in cursor:
-        print('\t{0}: value: {1}\tsubject: {2}\treport_id: {3}'.
+        log('\t{0}: value: {1}\tsubject: {2}\treport_id: {3}'.
               format(doc['_id'],
                      doc['value'],
                      doc['subject'],
@@ -1277,17 +1278,17 @@ def _print_logic_results(group_list,
         all_doc_groups.append(doc_group)
 
     # print info for the groups
-    print('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
+    log('RESULTS for NLPQL feature "{0}": '.format(nlpql_feature))
     count = 0
     for group in all_doc_groups:
         for doc in group:
-            print('\t{0}: {1:16}\tsubject: {2}\treport_id: {3}'.
+            log('\t{0}: {1:16}\tsubject: {2}\treport_id: {3}'.
                   format(doc['_id'],
                          doc['nlpql_feature'],
                          doc['subject'],
                          doc['report_id']))
             count += 1
-        print()
+        log()
     
 
 ###############################################################################
@@ -1339,10 +1340,10 @@ def _convert_variables(infix_expr):
     evaluated via MongoDB aggregation.
     """
 
-    if _TRACE: print('Called _convert_variables')
+    if _TRACE: log('Called _convert_variables')
     
     variables, nlpql_feature_set, field_set = _extract_variables(infix_expr)
-    if _TRACE: print('\tVARIABLES: {0}'.format(variables))
+    if _TRACE: log('\tVARIABLES: {0}'.format(variables))
 
     # pure math expressions only have a single nlpql feature
     assert 1 == len(nlpql_feature_set)
@@ -1368,7 +1369,7 @@ def _convert_variables(infix_expr):
     new_infix_tokens.append(')')
 
     new_expr = ' '.join(new_infix_tokens)
-    if _TRACE: print('\tConverted expression: "{0}"'.format(new_expr))
+    if _TRACE: log('\tConverted expression: "{0}"'.format(new_expr))
 
     return (new_expr, nlpql_feature, list(field_set))
 
@@ -1402,7 +1403,7 @@ def _mongo_math_format(operator, op1, op2=None):
     """
 
     if _TRACE:
-        print('Called _mongo_math_format with operator ' +\
+        log('Called _mongo_math_format with operator ' +\
               '"{0}", op1: "{1}", op2: "{2}"'.format(operator, op1, op2))
     
     if 'not' == operator:
@@ -1429,8 +1430,8 @@ def _eval_math_expr(job_id,
     """
 
     if _TRACE:
-        print('Called _eval_math_expr')
-        print('\tExpression: "{0}"'.format(expr_obj.expr_text))
+        log('Called _eval_math_expr')
+        log('\tExpression: "{0}"'.format(expr_obj.expr_text))
 
     final_nlpql_feature = expr_obj.nlpql_feature
     infix_expr = expr_obj.expr_text
@@ -1444,14 +1445,14 @@ def _eval_math_expr(job_id,
     # convert to postfix
     infix_tokens = new_expr.split()
     postfix_tokens = _infix_to_postfix(infix_tokens)
-    if _TRACE: print('\tpostfix: {0}'.format(postfix_tokens))
+    if _TRACE: log('\tpostfix: {0}'.format(postfix_tokens))
 
     # 'evaluate' to generate MongoDB aggregation commands
     stack = []
     for token in postfix_tokens:
         if not _is_operator(token):
             stack.append(token)
-            if _TRACE: print('\t(M) Pushed postfix token "{0}"'.format(token))
+            if _TRACE: log('\t(M) Pushed postfix token "{0}"'.format(token))
         else:
             if token in _UNARY_OPS:
                 operand = stack.pop()
@@ -1475,9 +1476,9 @@ def _eval_math_expr(job_id,
     }
 
     if _TRACE:
-        print('MATH_OP PIPELINE STAGE: ')
-        print(op_stage)
-        print()
+        log('MATH_OP PIPELINE STAGE: ')
+        log(op_stage)
+        log()
 
     # initial filter, match on job_id and check nlpql_feature field
     initial_filter = {
@@ -1497,9 +1498,9 @@ def _eval_math_expr(job_id,
     ]
 
     if _TRACE:
-        print('FULL AGGREGATION PIPELINE: ')
-        print(pipeline)
-        print()
+        log('FULL AGGREGATION PIPELINE: ')
+        log(pipeline)
+        log()
 
     doc_ids = _run_math_pipeline(pipeline, mongo_collection_obj)
 
@@ -1566,8 +1567,8 @@ def _eval_logic_expr(job_id,
     """
 
     if _TRACE:
-        print('Called _eval_logic_expr')
-        print('\tExpression: "{0}"'.format(expr_obj.expr_text))
+        log('Called _eval_logic_expr')
+        log('\tExpression: "{0}"'.format(expr_obj.expr_text))
 
     final_nlpql_feature = expr_obj.nlpql_feature
     infix_expr = expr_obj.expr_text
@@ -1589,7 +1590,7 @@ def _eval_logic_expr(job_id,
     # convert to n-ary and, or, if possible
     postfix_tokens = _make_nary(postfix_tokens)
     
-    if _TRACE: print('\tpostfix: {0}'.format(postfix_tokens))
+    if _TRACE: log('\tpostfix: {0}'.format(postfix_tokens))
 
     # single-word expression, an nlpql_feature
     if 1 == len(postfix_tokens):
@@ -1605,7 +1606,7 @@ def _eval_logic_expr(job_id,
             if not match:
                 stack.append(token)
                 nlpql_features.append(token)
-                if _TRACE: print('\t(L) Pushed postfix token "{0}"'.format(token))
+                if _TRACE: log('\t(L) Pushed postfix token "{0}"'.format(token))
             else:
                 # only binary not is supported by the parser
                 # the parser converted "A NOT B" to "A AND NOT B"
@@ -1632,9 +1633,9 @@ def _eval_logic_expr(job_id,
     op_stage = {"$match": {"$expr": stack[0]}}
 
     if _TRACE:
-        print('LOGIC_OP PIPELINE STAGE: ')
-        print(op_stage)
-        print()
+        log('LOGIC_OP PIPELINE STAGE: ')
+        log(op_stage)
+        log()
 
     pipeline = [
         
@@ -1698,9 +1699,9 @@ def _eval_logic_expr(job_id,
     ]
 
     if _TRACE:
-        print('FULL AGGREGATION PIPELINE: ')
-        print(pipeline)
-        print()
+        log('FULL AGGREGATION PIPELINE: ')
+        log(pipeline)
+        log()
 
     group_list, doc_ids = _run_logic_pipeline(pipeline, mongo_collection_obj)
 
@@ -1805,8 +1806,8 @@ def _remove_negated_subexpressions(postfix_tokens):
     TOKEN_NOTAND = 'notand'
 
     if _TRACE:
-        print('Calling _remove_negated_subexpressions...')
-        print('\tinitial postfix tokens: {0}'.format(postfix_tokens))
+        log('Calling _remove_negated_subexpressions...')
+        log('\tinitial postfix tokens: {0}'.format(postfix_tokens))
     
     new_tokens = []
 
@@ -1853,7 +1854,7 @@ def _remove_negated_subexpressions(postfix_tokens):
     new_tokens = stack[0].split(',')
 
     if _TRACE:
-        print('\t  final postfix tokens: {0}'.format(new_tokens))
+        log('\t  final postfix tokens: {0}'.format(new_tokens))
 
     return new_tokens
 
@@ -1884,11 +1885,11 @@ def _generate_logical_result(
     """
 
     if _TRACE:
-        print('Called generate_logical_result')
-        print('\tPostfix tokens: {0}'.format(postfix_tokens))
-        print('\tFeature map: ')
+        log('Called generate_logical_result')
+        log('\tPostfix tokens: {0}'.format(postfix_tokens))
+        log('\tFeature map: ')
         for k,v in feature_map.items():
-            print('\t\t{0} => {1}'.format(k,v))
+            log('\t\t{0} => {1}'.format(k,v))
 
     # scan the postfix tokens and verify that 'not' has been removed
     for token in postfix_tokens:
@@ -1962,9 +1963,9 @@ def _generate_logical_result(
                 meta = sorted(meta, key=lambda x: x[0], reverse=True)
 
                 # if _TRACE:
-                #     print('\tMETA: ')
+                #     log('\tMETA: ')
                 #     for m in meta:
-                #         print('\t{0}'.format(m))
+                #         log('\t{0}'.format(m))
                 
                 new_lists = []
                 inner_length = len(operands)
@@ -1983,10 +1984,10 @@ def _generate_logical_result(
                 stack.append(new_lists)
 
     # if _TRACE:
-    #     print('STACK TOP (end): ')
+    #     log('STACK TOP (end): ')
     #     for i, l in enumerate(stack[-1]):
-    #         print('\t[{0}]:\t{1}'.format(i, l))
-    #     print()
+    #         log('\t[{0}]:\t{1}'.format(i, l))
+    #     log()
 
     assert 1 == len(stack)
     return stack[-1]
@@ -2000,7 +2001,7 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
     explanation in its docstring and in its code.
     """
 
-    if _TRACE: print('Called flatten_logical_result')
+    if _TRACE: log('Called flatten_logical_result')
     
     assert EXPR_TYPE_LOGIC == eval_result.expr_type
 
@@ -2008,11 +2009,11 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
     group_list  = eval_result.group_list
 
     if _TRACE:
-        print('\tFinal NLPQL feature: {0}'.format(eval_result.nlpql_feature))
-        print('\tExpression text: {0}'.format(eval_result.expr_text))
-        print('\tPostfix tokens: {0}'.format(eval_result.postfix_tokens))
-        print('\tDocument count: {0}'.format(len(doc_ids)))
-        print('\tGroup count:    {0}'.format(len(group_list)))
+        log('\tFinal NLPQL feature: {0}'.format(eval_result.nlpql_feature))
+        log('\tExpression text: {0}'.format(eval_result.expr_text))
+        log('\tPostfix tokens: {0}'.format(eval_result.postfix_tokens))
+        log('\tDocument count: {0}'.format(len(doc_ids)))
+        log('\tGroup count:    {0}'.format(len(group_list)))
 
     # query for these documents
     cursor = mongo_collection_obj.find({'_id': {'$in': doc_ids}})
@@ -2031,7 +2032,7 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
             features.add(feature)
 
     if _TRACE:
-        print('\tFEATURE SET: {0}'.format(features))
+        log('\tFEATURE SET: {0}'.format(features))
 
     # Remove negated subexpressions to simplify output generation, which needs
     # the postfix version of the expression. The MongoDB aggregation stage has
@@ -2052,30 +2053,30 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
         feature_list, feature_map = build_feature_map(group, doc_map)
 
         if _TRACE:
-            print('\n\n<<Group index: {0}>>'.format(group_index))
-            print('Expression: "{0}"'.format(eval_result.expr_text))
-            print('   Postfix: {0}'.format(eval_result.postfix_tokens))
+            log('\n\n<<Group index: {0}>>'.format(group_index))
+            log('Expression: "{0}"'.format(eval_result.expr_text))
+            log('   Postfix: {0}'.format(eval_result.postfix_tokens))
             for oid in group:
                 doc = doc_map[oid]
                 feature = doc['nlpql_feature']
                 subj = doc['subject']
                 rid = doc['report_id']
-                print('\t{0}: {1:16}\tsubject: {2}\treport_id: {3}'.
+                log('\t{0}: {1:16}\tsubject: {2}\treport_id: {3}'.
                       format(oid, feature, subj, rid))
             for feature, feature_count in feature_list:
                 doc_count, current_index, index_list = feature_map[feature]
                 assert doc_count == len(index_list)
-                print("\tIndices of feature '{0}': {1}".format(feature, index_list))
-            print()
+                log("\tIndices of feature '{0}': {1}".format(feature, index_list))
+            log()
 
         # 'evaluate' the postfix expression and generate the result set
 
         if 1 == len(postfix_tokens):
             # take all the docs in the group with this feature
             feature = postfix_tokens[0]
-            if _TRACE: print('SINGLE FEATURE: {0}'.format(feature))
+            if _TRACE: log('SINGLE FEATURE: {0}'.format(feature))
             oid_list = _get_docs_with_feature(feature, feature_map, group)
-            if _TRACE: print('OID LIST: {0}'.format(oid_list))
+            if _TRACE: log('OID LIST: {0}'.format(oid_list))
             # a single NLPQL feature means single-document groups
             oid_list = [[oid] for oid in oid_list]
         else:
@@ -2089,7 +2090,7 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
         oid_lists.append(oid_list)
         
         if _TRACE:
-            print('RESULTS: ')
+            log('RESULTS: ')
             for l in oid_list:
                 assert isinstance(l, list)
                 suffixes = []
@@ -2101,7 +2102,7 @@ def flatten_logical_result(eval_result, mongo_collection_obj):
                     suffixes.append(oid_suffix)
                     features.append(doc_feature)
                 zipped = list(zip(suffixes, features))
-                print('\t{0}'.format(zipped))
+                log('\t{0}'.format(zipped))
         
         group_index += 1
         
@@ -2139,7 +2140,7 @@ def is_valid(parse_result, name_list=None):
     Otherwise it returns an infix string for further processing.
     """
 
-    if _TRACE: print('Called is_valid')
+    if _TRACE: log('Called is_valid')
     
     infix_tokens = parse_result.split()
 
@@ -2155,7 +2156,7 @@ def is_valid(parse_result, name_list=None):
             continue
         if token in NLPQL_EXPR_OPSTRINGS:
             if token in EXPR_UNSUPPORTED_OPSTRINGS:
-                print('\n*** Unsupported operator: "{0}" ***\n'.format(token))
+                log('\n*** Unsupported operator: "{0}" ***\n'.format(token))
                 return _EMPTY_STRING
             new_tokens.append(token)
             continue
@@ -2165,7 +2166,7 @@ def is_valid(parse_result, name_list=None):
             continue
         match = _regex_nlpql_feature.match(token)
         if not match:
-            print('\tTOKEN OF UNKNOWN TYPE: {0}'.format(token))
+            log('\tTOKEN OF UNKNOWN TYPE: {0}'.format(token))
             return _EMPTY_STRING
 
         # if here, the token matched the format for an NLPQL feature
@@ -2182,27 +2183,27 @@ def is_valid(parse_result, name_list=None):
             # the token was not found in the list of known names
             # try to resolve into known_name + logic_op + remainder
             if _TRACE:
-                print('\tUnrecognized token: "{0}", resolving...'.format(token))
+                log('\tUnrecognized token: "{0}", resolving...'.format(token))
             # parenthesize its replacement, if any
             new_tokens.append(_LEFT_PARENS)
             while True:
                 found_it = False
                 start_token = token
                 for name in name_list:
-                    if _TRACE: print('\tSearching for {0} in {1}'.format(name, token))
+                    if _TRACE: log('\tSearching for {0} in {1}'.format(name, token))
                     if token.startswith(name):
-                        if _TRACE: print('\t\tFound: {0}'.format(name))
+                        if _TRACE: log('\t\tFound: {0}'.format(name))
                         new_tokens.append(name)
                         token = token[len(name):]
-                        if _TRACE: print('\t\tRemaining token: ->{0}<-'.format(token))
+                        if _TRACE: log('\t\tRemaining token: ->{0}<-'.format(token))
                         if len(token) > 0:
                             # need logic op
                             for lop in NLPQL_EXPR_LOGIC_OPERATORS:
                                 if token.startswith(lop):
-                                    if _TRACE: print('\t\tFound logic op: {0}'.format(lop))
+                                    if _TRACE: log('\t\tFound logic op: {0}'.format(lop))
                                     new_tokens.append(lop)
                                     token = token[len(lop):]
-                                    if _TRACE: print('\t\tRemaining token: ->{0}<-'.format(token))
+                                    if _TRACE: log('\t\tRemaining token: ->{0}<-'.format(token))
                                     found_it = True
                         else:
                             # no more text to match
@@ -2211,7 +2212,7 @@ def is_valid(parse_result, name_list=None):
                         break
                     
                 if not found_it or start_token == token:
-                    print('\tResolution failed for token "{0}"'.format(token))
+                    log('\tResolution failed for token "{0}"'.format(token))
                     return _EMPTY_STRING
 
                 if 0 == len(token):
@@ -2221,7 +2222,7 @@ def is_valid(parse_result, name_list=None):
 
     # if here, resolved all the tokens
     new_infix_expression = ' '.join(new_tokens)
-    if _TRACE: print('\tNEW INFIX EXPRESSION: {0}'.format(new_infix_expression))
+    if _TRACE: log('\tNEW INFIX EXPRESSION: {0}'.format(new_infix_expression))
     return new_infix_expression
 
 
@@ -2234,7 +2235,7 @@ def parse_expression(nlpql_infix_expression, name_list=None):
     if not.
     """
 
-    if _TRACE: print('Called parse_expression')
+    if _TRACE: log('Called parse_expression')
 
     lexer = NlpqlExpressionLexer()
     parser = NlpqlExpressionParser()    
@@ -2243,15 +2244,15 @@ def parse_expression(nlpql_infix_expression, name_list=None):
     try:
         infix_result = parser.parse(lexer.tokenize(nlpql_infix_expression))
     except SyntaxError as e:
-        print('\tSyntaxError exception in parse')
-        print('\tmsg: {0}'.format(e.msg))
+        log('\tSyntaxError exception in parse')
+        log('\tmsg: {0}'.format(e.msg))
         return _EMPTY_STRING
         
-    if _TRACE: print('\tParse result: "{0}"'.format(infix_result))
+    if _TRACE: log('\tParse result: "{0}"'.format(infix_result))
 
     # evaluate any subexpressions consisting only of numeric literals
     infix_result = _evaluate_literals(infix_result)
-    if _TRACE: print('  Evaluated literals: "{0}"'.format(infix_result))
+    if _TRACE: log('  Evaluated literals: "{0}"'.format(infix_result))
 
     # check for validity and try to correct if invalid
     infix_result = is_valid(infix_result, name_list)
@@ -2273,14 +2274,14 @@ def generate_expressions(final_nlpql_feature, parse_result):
     global _EXPR_INDEX
     
     if _TRACE:
-        print('Called generate_expressions')
-        print('\tExpression index: {0}'.format(_EXPR_INDEX))    
+        log('Called generate_expressions')
+        log('\tExpression index: {0}'.format(_EXPR_INDEX))    
 
     # determine the expression type, need math, logic, or mixed
     expr_type = _expr_type(parse_result)
     
     if EXPR_TYPE_UNKNOWN == expr_type:
-        print('\tExpression has unknown type: "{0}"'.
+        log('\tExpression has unknown type: "{0}"'.
               format(nlpql_infix_expression))
         return []
 
@@ -2330,8 +2331,8 @@ def generate_expressions(final_nlpql_feature, parse_result):
                 expression_object_list.append(expr_obj)
             else:
                 # subexpression did not resolve to primitive type
-                print('Subexpression resolution failure: '.format(sub_expr))
-                print('\t"{0}"'.format(sub_expr))
+                log('Subexpression resolution failure: '.format(sub_expr))
+                log('\t"{0}"'.format(sub_expr))
                 return []
 
         # append the final logic expression
@@ -2344,9 +2345,9 @@ def generate_expressions(final_nlpql_feature, parse_result):
         expression_object_list.append(expr_obj)
         
         if _TRACE:
-            print('SUBEXPRESSION TABLE: ')
+            log('SUBEXPRESSION TABLE: ')
             for expr_obj in expression_object_list:
-                print("\t\tnlpql_feature: {0}, expr_type: {1}, expr_index: {2}, expression: '{3}'".
+                log("\t\tnlpql_feature: {0}, expr_type: {1}, expr_index: {2}, expression: '{3}'".
                       format(expr_obj.nlpql_feature,
                              expr_obj.expr_type,
                              expr_obj.expr_index,
@@ -2365,7 +2366,7 @@ def evaluate_expression(expr_obj,
     Evaluate a single ExpressionObject namedtuple.
     """
 
-    if _TRACE: print('Called evaluate_expression')
+    if _TRACE: log('Called evaluate_expression')
 
     assert EXPR_TYPE_MATH == expr_obj.expr_type or \
         EXPR_TYPE_LOGIC == expr_obj.expr_type

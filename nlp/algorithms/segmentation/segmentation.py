@@ -65,6 +65,7 @@ import time
 import optparse
 import en_core_web_sm as english_model
 from nltk.tokenize import sent_tokenize
+from claritynlp_logging import log, ERROR, DEBUG
 
 if __name__ == '__main__':
     import segmentation_helper as seg_helper
@@ -86,17 +87,17 @@ loading_status = 'none'
 ###############################################################################
 def segmentation_init(tries=0):
     if tries > 0:
-        print('Retrying, try%d' % tries)
+        log('Retrying, try%d' % tries)
 
     global loading_status
     if loading_status == 'none' and 'nlp' not in data:
         try:
-            print('Segmentation init...')
+            log('Segmentation init...')
             loading_status = 'loading'
             data['nlp'] = english_model.load()
             loading_status = 'done'
         except Exception as exc:
-            print(exc)
+            log(exc, ERROR)
             loading_status = 'none'
     elif loading_status == 'loading' and tries < 30:
         time.sleep(10)
@@ -210,9 +211,9 @@ def run_tests():
 
     count = 0
     for s in SENTENCES:
-        print(s)
+        log(s)
         sentences = seg_obj.parse_sentences(s)
-        print('\t[{0:3}]\t{1}\n'.format(count, s))
+        log('\t[{0:3}]\t{1}\n'.format(count, s))
         count += 1
 
 
@@ -226,8 +227,8 @@ def get_version():
 
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} -f <filename> [-s <start_indx> -e <end_indx>] [-dhvz]
 
     OPTIONS:
@@ -275,7 +276,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     if opts.selftest:
@@ -287,7 +288,7 @@ if __name__ == '__main__':
         start_index = int(opts.start_index)
 
     if start_index is not None and start_index < 0:
-        print('Start index must be a nonnegative integer.')
+        log('Start index must be a nonnegative integer.')
         sys.exit(-1)
 
     end_index = None
@@ -296,22 +297,22 @@ if __name__ == '__main__':
 
     if end_index is not None:
         if start_index is not None and end_index < start_index:
-            print('End index must be >= start_index.')
+            log('End index must be >= start_index.')
             sys.exit(-1)
         elif end_index < 0:
-            print('End index must be a nonnegative integer.')
+            log('End index must be a nonnegative integer.')
             sys.exit(-1)
 
     json_file = opts.filepath
     if not os.path.isfile(json_file):
-        print("File not found: '{0}'".format(json_file))
+        log("File not found: '{0}'".format(json_file))
         sys.exit(-1)
 
     try:
         infile = open(json_file, 'rt')
         file_data = json.load(infile)
     except:
-        print("Could not open file {0}.".format(json_file))
+        log("Could not open file {0}.".format(json_file))
         sys.exit(-1)
 
     infile.close()
@@ -345,16 +346,16 @@ if __name__ == '__main__':
 
         # print all sentences for this report
         count = 0
-        print('\nSENTENCES: ')
+        log('\nSENTENCES: ')
         for s in sentences:
-            print('[{0:3}]\t{1}'.format(count, s))
+            log('[{0:3}]\t{1}'.format(count, s))
             count = count + 1
 
-        print("\n\n*** END OF REPORT {0} ***\n\n".format(index))
+        log("\n\n*** END OF REPORT {0} ***\n\n".format(index))
 
         index += 1
 
         if end_index is not None and index > end_index:
             break
 
-    print("Processed {0} reports.".format(index))
+    log("Processed {0} reports.".format(index))

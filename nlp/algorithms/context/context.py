@@ -2,6 +2,7 @@ import re
 import os
 import traceback
 from enum import Enum
+from claritynlp_logging import log, ERROR, DEBUG
 
 SCRIPT_DIR = os.path.dirname(__file__)
 
@@ -12,22 +13,24 @@ negative_window = 4
 all_terms = dict()
 inited = False
 
+
 def load_terms(key):
     try:
         path = os.path.join(SCRIPT_DIR, "data/%s_triggers.txt" % key)
-        # print(path)
+        # log(path)
         with open(path) as f:
             triggers = f.read().splitlines()
             return triggers
     except Exception as e:
-        print("cannot open %s_triggers.txt" % key)
-        print(e)
+        log(e, ERROR)
+        log("cannot open %s_triggers.txt" % key, ERROR)
+
 
     return []
 
 
 def context_init():
-    print("Context init...")
+    log("Context init...")
     global inited
     global all_terms
     if not inited:
@@ -191,10 +194,10 @@ def run_individual_context(sentence: str, target_phrase: str, key: str, rules, p
                             j -= 1
 
     except Exception as e:
-        print(e)
-        traceback.print_exc()
+        log(e, ERROR)
 
     return found
+
 
 def replace_all_matches(regex, expected_term, sentence):
     prev_end = 0
@@ -260,7 +263,7 @@ def replace_future_occurrence_as_current_negation(expected_term, sentence):
 class Context(object):
 
     def __init__(self):
-        print("Context init...")
+        log("Context init...")
         self.terms = context_init()
 
     def run_context(self, expected_term, sentence):
@@ -321,25 +324,25 @@ if __name__ == '__main__':
     m21 = ctxt.run_context("problems", "In case of problems with the patient's breathing do as instructed.")
     m22 = ctxt.run_context("shortness of breath", "If the patient develops shortness of breath, do as instructed.")
 
-    print(m1)
-    print(m2)
-    print(m3)
-    print(m4)
-    print(m5)
-    print(m6)
-    print(m7)
-    print(m8)
-    print(m9)
-    print(m10)
-    print(m11)
-    print(m12)
-    print(m13)
-    print(m14)
-    print(m15)
-    print(m16)
-    print(m17)
-    print(m18)
-    print(m19)
-    print(m20)
-    print(m21)
-    print(m22)
+    log(m1)
+    log(m2)
+    log(m3)
+    log(m4)
+    log(m5)
+    log(m6)
+    log(m7)
+    log(m8)
+    log(m9)
+    log(m10)
+    log(m11)
+    log(m12)
+    log(m13)
+    log(m14)
+    log(m15)
+    log(m16)
+    log(m17)
+    log(m18)
+    log(m19)
+    log(m20)
+    log(m21)
+    log(m22)

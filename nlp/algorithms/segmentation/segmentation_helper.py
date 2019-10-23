@@ -11,6 +11,7 @@ import re
 import os
 import sys
 import json
+from claritynlp_logging import log, ERROR, DEBUG
 
 try:
     # for normal operation via NLP pipeline
@@ -19,6 +20,7 @@ try:
     from algorithms.finder import size_measurement_finder as smf
     from algorithms.finder import lab_value_matcher as lvm
 except Exception as e:
+    log(e, ERROR)
     # If here, this module was executed directly from the segmentation
     # folder for testing. Construct path to nlp/algorithms/finder and
     # perform the imports above. This is a hack to allow an import from
@@ -214,10 +216,10 @@ def _find_size_meas_subs(report, sub_list, token_text):
     tuple_list = [(m.start, m.end, m.text) for m in measurements]
 
     if _TRACE:
-        print('*** SIZE MEASUREMENTS ***')
+        log('*** SIZE MEASUREMENTS ***')
         for t in tuple_list:
-            print('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        print()
+            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
+        log()
 
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
@@ -244,10 +246,10 @@ def _find_date_subs(report, sub_list, token_text):
                   if not d.text.isdigit()]
 
     if _TRACE:
-        print('*** DATES ***')
+        log('*** DATES ***')
         for t in tuple_list:
-            print('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        print()
+            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
+        log()
 
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)            
     return new_report
@@ -275,10 +277,10 @@ def _find_time_subs(report, sub_list, token_text):
                   if not t.text.isdigit()]
 
     if _TRACE:
-        print('*** TIMES ***')
+        log('*** TIMES ***')
         for t in tuple_list:
-            print('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        print()
+            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
+        log()
 
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
@@ -295,10 +297,10 @@ def _find_vitals_subs(report, sub_list, token_text):
     tuple_list = [(v.start, v.end, v.match_text) for v in vitals]
     
     if _TRACE:
-        print('*** VITALS ***')
+        log('*** VITALS ***')
         for t in tuple_list:
-            print('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        print()
+            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
+        log()
         
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
@@ -324,10 +326,10 @@ def _find_substitutions(report, regex_or_subs, sub_list, token_text):
         return report
 
     if _TRACE:
-        print('*** {0} ***'.format(token_text))
+        log('*** {0} ***'.format(token_text))
         for t in tuple_list:
-            print('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        print()
+            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
+        log()
     
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
@@ -370,7 +372,7 @@ def do_substitutions(report):
     report = _find_substitutions(report, _regex_gender, _gender_subs, 'GENDER')
 
     if _TRACE:
-        print('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
+        log('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
 
     return report
 
@@ -561,7 +563,7 @@ def fixup_sentences(sentence_list):
         if match1 or match2 or starts_with_op:
             
             if _TRACE:
-                print('Appending sentence: "{0}"'.format(s))
+                log('Appending sentence: "{0}"'.format(s))
             
             results[-1] = results[-1] + ' ' + s
         else:

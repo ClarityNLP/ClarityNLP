@@ -5,10 +5,12 @@ from algorithms import *
 from nlpql import *
 from apis.api_helpers import init
 from tasks import register_tasks, registered_pipelines, registered_collectors
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 register_tasks()
-print(registered_pipelines)
-print(registered_collectors)
+log(registered_pipelines)
+log(registered_collectors)
 
 
 phenotype_app = Blueprint('phenotype_app', __name__)
@@ -79,7 +81,7 @@ def phenotype():
         p_cfg = PhenotypeModel.from_dict(request.get_json())
         return json.dumps(post_phenotype(p_cfg, background=background), indent=4)
     except Exception as ex:
-        print(ex)
+        log(ex)
         return 'Failed to load and insert phenotype. ' + str(ex), 400
 
 

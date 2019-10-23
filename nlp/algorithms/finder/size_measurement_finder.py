@@ -107,6 +107,8 @@ import regex as re
 from copy import deepcopy
 from enum import Enum, unique
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 
 # namedtuple used for serialization
@@ -428,8 +430,8 @@ def _to_json(measurement_list):
 
             # something wrong if empty dict
             if 0 == len(data):
-                print('size_measurement::_to_json: DATA LIST IS EMPTY')
-                print(m_dict)
+                log('size_measurement::_to_json: DATA LIST IS EMPTY')
+                log(m_dict)
                 assert len(data) > 0
 
             minValue = min(data)
@@ -446,16 +448,16 @@ def _to_json(measurement_list):
 
 
 ###############################################################################
-def _print_tokens(token_list):
+def _log_tokens(token_list):
     """
-    Print token data for debugging.
+    log token data for debugging.
     """
 
     index = 0
 
-    print('TOKENS: ')
+    log('TOKENS: ')
     for token in token_list:
-        print('\t[{0:2}]: {1:16} {2:6.2f} {3}'.format(index,
+        log('\t[{0:2}]: {1:16} {2:6.2f} {3}'.format(index,
                                                       token.label,
                                                       token.value,
                                                       token.text))
@@ -531,8 +533,8 @@ def _convert_units(value, units, is_area_measurement, is_vol_measurement):
     is_volume  = is_vol_measurement or _is_vol_unit(units)
 
     if _TRACE:
-        print('_convert_units::is_area: {0}'.format(is_area))
-        print('_convert_units::is_volume: {0}'.format(is_volume))
+        log('_convert_units::is_area: {0}'.format(is_area))
+        log('_convert_units::is_volume: {0}'.format(is_volume))
     
     if convert_cm:
         # convert from cm to mm
@@ -574,7 +576,7 @@ def _tokenize_complete_list(sentence, list_text, list_start):
         return []
 
     if _TRACE:
-        print('\tLIST TEXT NO UNITS: ->{0}<-'.format(list_text_no_units))
+        log('\tLIST TEXT NO UNITS: ->{0}<-'.format(list_text_no_units))
 
     # split list into list items at the commas
     items = list_text_no_units.split(',')
@@ -584,7 +586,7 @@ def _tokenize_complete_list(sentence, list_text, list_start):
     prev_index = list_start
     for item in items:
         if _TRACE:
-            print('\tNEXT LIST ITEM: ->{0}<-'.format(item))
+            log('\tNEXT LIST ITEM: ->{0}<-'.format(item))
 
         match = _regex_number.search(item.strip())
         if match:
@@ -606,12 +608,12 @@ def _tokenize_complete_list(sentence, list_text, list_start):
             prev_index = offset + 1
             
             if _TRACE:
-                print('\tFound list numeric token: ->{0}<-'.format(number_text))
+                log('\tFound list numeric token: ->{0}<-'.format(number_text))
 
     # tokenize the units string
     units_text = units_match.group().strip()
     if _TRACE:
-        print('\tList units_text: ->{0}<-'.format(units_text))
+        log('\tList units_text: ->{0}<-'.format(units_text))
 
     is_area = _is_area_unit(units_text)
     is_vol  = _is_vol_unit(units_text)
@@ -1213,7 +1215,7 @@ def run(sentence):
                     match_end = end
 
         if _TRACE:
-            print('best regex index: {0}'.format(best_regex_index)) 
+            log('best regex index: {0}'.format(best_regex_index)) 
                     
         if -1 != best_regex_index:
             # attempt to match a 'previous' form
@@ -1228,8 +1230,8 @@ def run(sentence):
                     break
 
             if _TRACE:
-                print(' MATCHING TEXT: ->{0}<-'.format(best_matcher.group()))
-                print('    PREV MATCH: ->{0}<-'.format(prev_match_text))
+                log(' MATCHING TEXT: ->{0}<-'.format(best_matcher.group()))
+                log('    PREV MATCH: ->{0}<-'.format(prev_match_text))
 
             # assume current temporality unless proven otherwise
             str_temporal = STR_CURRENT
@@ -1248,7 +1250,7 @@ def run(sentence):
                 tokens = tokenizer_function(best_matcher)
 
             if _TRACE:
-                _print_tokens(tokens)
+                _log_tokens(tokens)
 
             measurement = _Measurement(text = best_match_text,
                                        start = prev_end + match_start,
@@ -1260,7 +1262,7 @@ def run(sentence):
             measurements.append(measurement)
 
             if _TRACE:
-                print(measurement)
+                log(measurement)
 
             prev_end += match_end
             tokens = []

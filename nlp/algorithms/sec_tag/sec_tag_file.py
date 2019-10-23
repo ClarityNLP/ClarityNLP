@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Process a JSON file with the section tagger and print results to stdout.
+Process a JSON file with the section tagger and log results to stdout.
 """
 
 import re
@@ -10,6 +10,7 @@ import json
 import nltk
 from nltk.tokenize import sent_tokenize
 import util
+from claritynlp_logging import log, ERROR, DEBUG
 
 from section_tagger import section_tagger_init
 from section_tagger import process_report
@@ -23,14 +24,14 @@ regex_multi_newline = re.compile(r'\n+')
 
 ###############################################################################
 def show_help():
-    print ("""\nUsage: python3 ./sec_tag_file.py <report_file.json> [report_count] """)
-    print()
-    print("\tThe 'report_file' argument is required, must be JSON format.")
-    print("\tUse 'report_count' to limit the number of reports processed, must be an integer.")
-    print()
-    print("\tFor example, to process 15 reports:")
-    print("\n\t\tpython3 ./sec_tag_file reports.json 15")
-    print()
+    log ("""\nUsage: python3 ./sec_tag_file.py <report_file.json> [report_count] """)
+    log()
+    log("\tThe 'report_file' argument is required, must be JSON format.")
+    log("\tUse 'report_count' to limit the number of reports processed, must be an integer.")
+    log()
+    log("\tFor example, to process 15 reports:")
+    log("\n\t\tpython3 ./sec_tag_file reports.json 15")
+    log()
 
 ###############################################################################
 if __name__ == '__main__':
@@ -51,7 +52,7 @@ if __name__ == '__main__':
         infile = open(json_file, 'rt')
         data = json.load(infile)
     except:
-        print("Could not open file {0}.".format(json_file))
+        log("Could not open file {0}.".format(json_file), ERROR)
         sys.exit(-1)
 
     infile.close()
@@ -80,12 +81,12 @@ if __name__ == '__main__':
 
         section_headers, section_texts = process_report(clean_report)
         for i in range(len(section_headers)):
-            print("<{0}>\n\t{1}".format(section_headers[i].to_output_string(), section_texts[i]))
+            log("<{0}>\n\t{1}".format(section_headers[i].to_output_string(), section_texts[i]))
 
-        print("\n\n*** END OF REPORT {0} ***\n\n".format(index))
+        log("\n\n*** END OF REPORT {0} ***\n\n".format(index))
         
         index += 1
         if max_reports > 0 and index >= max_reports:
             break
 
-    print("Processed {0} reports.".format(index))
+    log("Processed {0} reports.".format(index))

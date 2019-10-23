@@ -91,6 +91,8 @@ import spacy
 import optparse
 from collections import namedtuple
 from nltk.stem.porter import PorterStemmer
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 2
@@ -216,8 +218,8 @@ def init():
             if not match:
                 reject_set.add(test_word)
                 
-    #print('accept set contains {0} entries'.format(len(accept_set)))
-    #print('reject set contains {0} entries'.format(len(reject_set)))
+    #log('accept set contains {0} entries'.format(len(accept_set)))
+    #log('reject set contains {0} entries'.format(len(reject_set)))
 
 
 ###############################################################################
@@ -312,10 +314,10 @@ def run(original_sentence, json_output=True):
     sent_results   = sentential_negations(doc)
     double_results = double_negations(morph_results, sent_results)
 
-    # print(original_sentence)
-    # print('\tmorphological negations: {0}'.format(morph_results))
-    # print('\t   sentential negations: {0}'.format(sent_results))
-    # print('\t       double negations: {0}'.format(double_results))
+    # log(original_sentence)
+    # log('\tmorphological negations: {0}'.format(morph_results))
+    # log('\t   sentential negations: {0}'.format(sent_results))
+    # log('\t       double negations: {0}'.format(double_results))
 
     if json_output:
         return to_json(original_sentence,
@@ -329,9 +331,9 @@ def report_error(msg, computed, expected):
     """
     """
 
-    print(msg)
-    print('\tcomputed: {0}'.format(computed))
-    print('\texpected: {0}'.format(expected))
+    log(msg)
+    log('\tcomputed: {0}'.format(computed))
+    log('\texpected: {0}'.format(expected))
 
 
 ###############################################################################
@@ -444,8 +446,8 @@ def get_version():
 
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} -s <sentence>  [-hvz]
 
     OPTIONS:
@@ -454,8 +456,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
         -z, --selftest       Run self-tests and exit
 
     """.format(MODULE_NAME))
@@ -482,7 +484,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     if opts.selftest:
@@ -491,12 +493,12 @@ if __name__ == '__main__':
 
     sentence = opts.sentence
     if not sentence and not selftest:
-        print('A sentence must be specified on the command line.')
+        log('A sentence must be specified on the command line.')
         sys.exit(-1)
 
     init()
 
-    # run and prettyprint results to stdout
+    # run and prettylog results to stdout
     json_string = run(sentence)
     json_data = json.loads(json_string)
     negait_result = NegaitResult(**json_data)
@@ -506,14 +508,14 @@ if __name__ == '__main__':
     # unpack to a list of Negait namedtuples
     negations = [Negait(**n) for n in negation_list]
 
-    # get max length of longest field name, for prettyprinting
+    # get max length of longest field name, for prettyloging
     max_len = max([len(f) for f in NEGAIT_FIELDS])
 
-    print('\n' + sentence)
+    log('\n' + sentence)
     for n in negations:
         for f in NEGAIT_FIELDS:
             val = getattr(n, f)
             if EMPTY_FIELD != val:
                 INDENT = ' '*(max_len - len(f))
-                print('{0}{1}: {2}'.format(INDENT, f, val))
-        print()
+                log('{0}{1}: {2}'.format(INDENT, f, val))
+        log()

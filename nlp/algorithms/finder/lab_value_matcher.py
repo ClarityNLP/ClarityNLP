@@ -16,6 +16,8 @@ import re
 import os
 import sys
 import json
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     import finder_overlap as overlap
@@ -312,11 +314,11 @@ def _resolve_overlap(result_list):
         return []
 
     if _TRACE:
-        print('Called _resolve_overlap...')
-        print('Candidates: ')
+        log('Called _resolve_overlap...')
+        log('Candidates: ')
         for r in result_list:
-            print('[{0:3}, {1:3}): {2}'.format(r.start, r.end, r.match_text))
-        print()
+            log('[{0:3}, {1:3}): {2}'.format(r.start, r.end, r.match_text))
+        log()
     
     final_results = [ result_list[0] ]
 
@@ -338,10 +340,10 @@ def _resolve_overlap(result_list):
                     other = f.other)
                 final_results[-1] = new_f
                 if _TRACE:
-                    print('\tAppending r to f: ')
-                    print('\t\tf:[{0:3},{1:3}): {2}'.
+                    log('\tAppending r to f: ')
+                    log('\t\tf:[{0:3},{1:3}): {2}'.
                           format(f.start, f.end, f.match_text))
-                    print('\t\tr:[{0:3},{1:3}): {2}'.
+                    log('\t\tr:[{0:3},{1:3}): {2}'.
                           format(r.start, r.end, r.match_text))
                 continue
 
@@ -349,11 +351,11 @@ def _resolve_overlap(result_list):
             if match2:
                 # discard, value only
                 if _TRACE:
-                    print('\t\tvalue only, discarding "{0}"'.
+                    log('\t\tvalue only, discarding "{0}"'.
                           format(r.match_text))
                 continue
             
-            if _TRACE: print('\tkeeping result {0}'.format(r.match_text))
+            if _TRACE: log('\tkeeping result {0}'.format(r.match_text))
             final_results.append(r)
             continue
         
@@ -361,21 +363,21 @@ def _resolve_overlap(result_list):
             # has overlap with prevous result
 
             if _TRACE:
-                print('\tOverlap: ')
-                print('\t\tf:[{0:3},{1:3}): {2}'.
+                log('\tOverlap: ')
+                log('\t\tf:[{0:3},{1:3}): {2}'.
                       format(f.start, f.end, f.match_text))
-                print('\t\tr:[{0:3},{1:3}): {2}'.
+                log('\t\tr:[{0:3},{1:3}): {2}'.
                       format(r.start, r.end, r.match_text))
                 
             # check if duplicate
             if r.start == f.start and r.end == f.end:
                 # ignore duplicate
-                if _TRACE: print('\t\tduplicate')
+                if _TRACE: log('\t\tduplicate')
                 continue
 
             # if r is a subset of f, ignore r
             if -1 != f.match_text.find(r.match_text):
-                if _TRACE: print('\t\tr is a subset of f, ignoring r...')
+                if _TRACE: log('\t\tr is a subset of f, ignoring r...')
                 continue
             
             # partial overlap:
@@ -387,7 +389,7 @@ def _resolve_overlap(result_list):
             assert r.start <= f.end
             diff = f.end - r.start
             if _TRACE:
-                print('\t\tdiff: {0}'.format(diff))
+                log('\t\tdiff: {0}'.format(diff))
             assert diff >= 0
             if 0 == diff:
                 continue
@@ -400,7 +402,7 @@ def _resolve_overlap(result_list):
                 # remove final_result[-1] (only text, no numeric value remains)
                 # replace with r
                 if _TRACE:
-                    print('\t\tignoring f, text only: "{0}"'.format(match_text))
+                    log('\t\tignoring f, text only: "{0}"'.format(match_text))
                     
                 final_results[-1] = r
                 continue
@@ -408,7 +410,7 @@ def _resolve_overlap(result_list):
             if match_text.endswith('/'):
                 # discard r, f would be left as a fragment
                 if _TRACE:
-                    print('\t\tavoiding fragment, discarding "{0}"'.
+                    log('\t\tavoiding fragment, discarding "{0}"'.
                           format(r.match_text))
                 continue
 
@@ -416,7 +418,7 @@ def _resolve_overlap(result_list):
             if match:
                 # discard, value only
                 if _TRACE:
-                    print('\t\tvalue only, discarding "{0}"'.
+                    log('\t\tvalue only, discarding "{0}"'.
                           format(match_text))
                 continue
             
@@ -429,7 +431,7 @@ def _resolve_overlap(result_list):
 
             if new_f.start == new_f.end:
                 if _TRACE:
-                    print('\t\tzero span')
+                    log('\t\tzero span')
                 continue
             
             # if identical to prior elt, ignore
@@ -439,12 +441,12 @@ def _resolve_overlap(result_list):
                    new_f.end   == f2.end   and \
                    new_f.match_text == f2.match_text:
                     if _TRACE:
-                        print('\t\tidentical to prior elt, ignoring...')
+                        log('\t\tidentical to prior elt, ignoring...')
                     continue
 
             if _TRACE:
-                print('\t\tOverwriting f with new_f: ')
-                print('\t\tnew_f:[{0:3},{1:3}): {2}'.
+                log('\t\tOverwriting f with new_f: ')
+                log('\t\tnew_f:[{0:3},{1:3}): {2}'.
                       format(new_f.start, new_f.end, new_f.match_text))
                 
             final_results[-1] = new_f
@@ -465,7 +467,7 @@ def run(text_in):
     text = _cleanup_text(text_in)
 
     if _TRACE:
-        print('\n*****\n TEXT: "{0}"\n*****\n'.format(text))
+        log('\n*****\n TEXT: "{0}"\n*****\n'.format(text))
     
     for regex_list_index, regex_list in enumerate(_all_regex_lists):
         candidates = []
@@ -482,7 +484,7 @@ def run(text_in):
                 first_char = match_text[0]
                 if '-' != first_char and not first_char.isalnum():
                     if _TRACE:
-                        print('\tDiscarding (not isalnum): "{0}"'.
+                        log('\tDiscarding (not isalnum): "{0}"'.
                               format(match_text))
                     continue
                 
@@ -490,16 +492,16 @@ def run(text_in):
                 pos = match_text.find(' ')
                 if -1 != pos and match_text[:pos] in _stopwords:
                     if _TRACE:
-                        print('\tDiscarding (stopword) "{0}"'.
+                        log('\tDiscarding (stopword) "{0}"'.
                               format(match_text))
                     continue
 
                 if _TRACE:
-                    print('\tMATCH: "{0}"'.format(match_text))
+                    log('\tMATCH: "{0}"'.format(match_text))
                     if 'header' in match.groupdict().keys():
                         header = match.group('header')
                         if header is not None:
-                            print('\t\tHEADER: "{0}"'.format(header))
+                            log('\t\tHEADER: "{0}"'.format(header))
 
                 c = overlap.Candidate(start, end, match_text, None)
                 candidates.append(c)
@@ -509,21 +511,21 @@ def run(text_in):
         if len(candidates) > 0:
             
             if _TRACE:
-                print('\tCandidate matches: ')
+                log('\tCandidate matches: ')
                 for index, c in enumerate(candidates):
-                    print('\t[{0:2}]\t[{1},{2}): {3}'.
+                    log('\t[{0:2}]\t[{1},{2}): {3}'.
                           format(index, c.start, c.end, c.match_text, c.regex))
-                print()
+                log()
 
             pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
             if _TRACE:
-                print('\tCandidate count after overlap removal: {0}'.
+                log('\tCandidate count after overlap removal: {0}'.
                       format(len(pruned_candidates)))
-                print('\tPruned candidates: ')
+                log('\tPruned candidates: ')
                 for c in pruned_candidates:
-                    print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-                print()
+                    log('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+                log()
 
             results.extend(pruned_candidates)
 

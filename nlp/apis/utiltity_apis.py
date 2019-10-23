@@ -2,6 +2,8 @@ import simplejson
 from flask import send_file, Blueprint, Response, request
 from os import listdir
 from os.path import isfile, join
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 from data_access import *
 from algorithms import *
@@ -20,7 +22,7 @@ def home():
 
 @utility_app.route('/kill_job/<int:job_id>', methods=['GET'])
 def kill_job(job_id: int):
-    print('killing job now ' + str(job_id))
+    log('killing job now ' + str(job_id))
     cmd = "ps -ef | grep luigi | grep -v luigid | grep \"job %d\" | awk '{print $2}'" % job_id
     pid = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE, shell=True)
@@ -43,7 +45,7 @@ def kill_job(job_id: int):
 
 @utility_app.route('/delete_job/<int:job_id>', methods=['GET'])
 def delete_job_by_id(job_id: int):
-    print('deleting job now ' + str(job_id))
+    log('deleting job now ' + str(job_id))
     flag = delete_job(str(job_id), util.conn_string)
     if flag == 1:
         return "Successfully deleted Job!"
@@ -68,7 +70,7 @@ def get_section_source():
         file_path = get_sec_tag_source_tags()
         return send_file(file_path)
     except Exception as ex:
-        print(ex)
+        log(ex)
         return "Failed to retrieve sections source file"
 
 

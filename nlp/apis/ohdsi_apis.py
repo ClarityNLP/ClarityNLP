@@ -3,6 +3,8 @@ from flask import request, Blueprint
 from algorithms import *
 from data_access import *
 from ohdsi import *
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 ohdsi_app = Blueprint('ohdsi_app', __name__)
 
@@ -70,7 +72,7 @@ def vocabulary_expansion():
         k = request.args.get('type')
         concept = request.args.get('concept')
         vocab = request.args.get('vocab')
-        print(vocab)
+        log(vocab)
 
         result = {"vocab": []}
 

@@ -1,4 +1,5 @@
 import configparser
+from claritynlp_logging import log, ERROR
 from os import getenv, environ, path
 
 import pymongo
@@ -29,7 +30,7 @@ def read_property(env_name, config_tuple, default='', key_name=None):
         if len(key_name) > 0 and 'PASSWORD' not in key_name and 'KEY' not in key_name and 'USERNAME' not in key_name:
             properties[key_name] = property_name
     except Exception as ex:
-        print(ex)
+        log(repr(ex), ERROR)
         properties[key_name] = default
     return property_name
 
@@ -230,7 +231,7 @@ def mongo_client(host=None, port=None, username=None, password=None):
     if not password:
         password = mongo_password
 
-    print('Mongo port: {}; host: {}'.format(port, host))
+    log('Mongo port: {}; host: {}'.format(port, host))
     if username and len(username) > 0 and password and len(password) > 0:
         # print('authenticated mongo')
         _mongo_client = MongoClient(host=host, port=port, username=username,

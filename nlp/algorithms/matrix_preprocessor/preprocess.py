@@ -109,6 +109,8 @@ import os
 import sys
 import optparse
 import subprocess
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
@@ -134,8 +136,8 @@ def get_version():
 
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} 
 
     OPTIONS:
@@ -156,8 +158,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
         -z, --selftest       Run self-tests and exit.
         -b, --boolean        Replace nonzero entries in input matrix with 1
                              (i.e. use 1 if value present, 0 if not)
@@ -196,7 +198,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     if opts.selftest:
@@ -204,11 +206,11 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.infile is None:
-        print('Error: an input file must be specified.')
+        log('Error: an input file must be specified.')
         sys.exit(-1)
         
     if not os.path.exists(opts.infile):
-        print('Error: file not found: {0}'.format(opts.infile))
+        log('Error: file not found: {0}'.format(opts.infile))
         sys.exit(-1)
 
     infile = opts.infile
@@ -219,7 +221,7 @@ if __name__ == '__main__':
         min_docs_per_term = int(opts.min_d)
 
     if min_docs_per_term <= 0:
-        print('Error: invalid value for min docs per term: {0}'.
+        log('Error: invalid value for min docs per term: {0}'.
               format(min_docs_per_term))
         sys.exit(-1)
 
@@ -229,7 +231,7 @@ if __name__ == '__main__':
         min_terms_per_doc = int(opts.min_t)
 
     if min_terms_per_doc <= 0:
-        print('Error: invalid value for min terms per doc: {0}'.
+        log('Error: invalid value for min terms per doc: {0}'.
               format(min_terms_per_doc))
         sys.exit(-1)
 
@@ -239,16 +241,16 @@ if __name__ == '__main__':
         precision = int(opts.precision)
 
     if precision <= 0:
-        print('Error: invalid value for precision: {0}'.format(precision))
+        log('Error: invalid value for precision: {0}'.format(precision))
         sys.exit(-1)
 
-    print('options: ')
-    print('\t           infile: {0}'.format(infile))
-    print('\tmin_docs_per_term: {0}'.format(min_docs_per_term))
-    print('\tmin_terms_per_doc: {0}'.format(min_terms_per_doc))
-    print('\t        precision: {0}'.format(precision))
-    print('\t     boolean_mode: {0}'.format(opts.boolean_mode))
-    print('\t          weights: {0}'.format(opts.weights))
+    log('options: ')
+    log('\t           infile: {0}'.format(infile))
+    log('\tmin_docs_per_term: {0}'.format(min_docs_per_term))
+    log('\tmin_terms_per_doc: {0}'.format(min_terms_per_doc))
+    log('\t        precision: {0}'.format(precision))
+    log('\t     boolean_mode: {0}'.format(opts.boolean_mode))
+    log('\t          weights: {0}'.format(opts.weights))
 
     command = []
     exe = os.path.join(os.getcwd(), 'build', 'bin', 'preprocessor')
@@ -270,4 +272,4 @@ if __name__ == '__main__':
                         stdout=subprocess.PIPE,
                         universal_newlines=True)
 
-    print(cp.stdout)
+    log(cp.stdout)

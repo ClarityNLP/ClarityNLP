@@ -134,11 +134,11 @@ To unpack the JSON results:
         time_results = [df.TimeValue(**m) for m in json_data]
 
         for t in time_results:
-            print(t.text)
-            print(t.start)
-            print(t.end)
+            log(t.text)
+            log(t.start)
+            log(t.end)
             if tf.EMPTY_FIELD != t.hours:
-                print(t.hours)
+                log(t.hours)
             etc.
 
 References: 
@@ -159,6 +159,8 @@ import os
 import sys
 import json
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     import finder_overlap as overlap
@@ -471,8 +473,8 @@ def run(sentence):
     sentence = _clean_sentence(sentence)
 
     if _TRACE:
-        print('original: {0}'.format(original_sentence))
-        print(' cleaned: {0}'.format(sentence))
+        log('original: {0}'.format(original_sentence))
+        log(' cleaned: {0}'.format(sentence))
         
     for regex_index, regex in enumerate(_regexes):
         iterator = regex.finditer(sentence)
@@ -489,7 +491,7 @@ def run(sentence):
             end = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex))
             if _TRACE:
-                print('[{0:2}]: [{1:3}, {2:3})\tMATCH TEXT: ->{3}<-'.
+                log('[{0:2}]: [{1:3}, {2:3})\tMATCH TEXT: ->{3}<-'.
                       format(regex_index, start, end, match_text))
 
             
@@ -498,26 +500,26 @@ def run(sentence):
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
 
     if _TRACE:
-        print('\tCandidate matches: ')
+        log('\tCandidate matches: ')
         index = 0
         for c in candidates:
-            print('\t[{0:2}]\t[{1},{2}): {3}'.
+            log('\t[{0:2}]\t[{1},{2}): {3}'.
                   format(index, c.start, c.end, c.match_text, c.regex))
             index += 1
-        print()
+        log()
 
     pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
     if _TRACE:
-        print('\tcandidates count after overlap removal: {0}'.
+        log('\tcandidates count after overlap removal: {0}'.
               format(len(pruned_candidates)))
-        print('\tPruned candidates: ')
+        log('\tPruned candidates: ')
         for c in pruned_candidates:
-            print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-        print()
+            log('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+        log()
 
     if _TRACE:
-        print('Extracting data from pruned candidates...')
+        log('Extracting data from pruned candidates...')
         
     for pc in pruned_candidates:
 

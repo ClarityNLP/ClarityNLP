@@ -2,6 +2,8 @@ import ast
 from tasks.task_utilities import BaseTask
 from pymongo import MongoClient
 import util
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     from .pft_algo import pft_extractor as pftex

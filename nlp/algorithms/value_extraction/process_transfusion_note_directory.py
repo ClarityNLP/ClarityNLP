@@ -5,7 +5,7 @@ Example showing how to intgrate the Columbia transfusion note reader module
 into a larger Python program.
 
 This code recursively traverses a directory tree of transfusion note files
-and prints the extracted data to stdout.
+and logs the extracted data to stdout.
 
 """
 
@@ -15,6 +15,8 @@ import json
 import optparse
 from collections import namedtuple
 import columbia_transfusion_note_reader as ctnr
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 2
@@ -27,8 +29,8 @@ def get_version():
 
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} -d <dirname>  [-hv]
 
     OPTIONS:
@@ -37,8 +39,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
 
     """.format(MODULE_NAME))
 
@@ -61,16 +63,16 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     directory = opts.directory
     if directory is None:
-        print('error: a directory must be specified on the command line')
+        log('error: a directory must be specified on the command line')
         sys.exit(-1)
 
     if not os.path.isdir(directory):
-        print('error: directory {0} does not exist'.format(directory))
+        log('error: directory {0} does not exist'.format(directory))
         sys.exit(-1)
 
     # find the max length of all the data fields, to align output
@@ -84,13 +86,13 @@ if __name__ == '__main__':
         for filename in files:
             filepath = os.path.join(root, filename)
             
-            print('*** FILE: {0} ***'.format(filepath))
+            log('*** FILE: {0} ***'.format(filepath))
 
             # process the next file
             json_string = ctnr.run(filepath)
             file_count += 1
             
-            # prettyprint the result to stdout
+            # prettylog the result to stdout
 
             # parse the JSON result
             json_data = json.loads(json_string)
@@ -98,30 +100,30 @@ if __name__ == '__main__':
             # unpack to a list of TransfusionNote namedtuples
             note_list = [ctnr.TransfusionNote(**record) for record in json_data]
     
-            # print all valid fields in each note
+            # log all valid fields in each note
             for note in note_list:
                 # get non-vitals field names and values
                 for field in ctnr.TRANSFUSION_NOTE_FIELDS:
                     val = getattr(note, field)
-                    # if a valid field, print it
+                    # if a valid field, log it
                     if ctnr.EMPTY_FIELD != val:
                         if 'vitals' != field:
                             indent = ' '*(maxlen - len(field))
-                            print('{0}{1}: {2}'.format(indent, field, val))
+                            log('{0}{1}: {2}'.format(indent, field, val))
                         else:
                             # extract vitals into a VitalsRecord namedtuple
                             v_record = ctnr.VitalsRecord(**val)
                             # extract field names and values for vitals
                             for v_field in ctnr.VITALS_FIELDS:
                                 v_val = getattr(v_record, v_field)
-                                # if valid field, print it
+                                # if valid field, log it
                                 if ctnr.EMPTY_FIELD != v_val:
                                     indent = ' '*(maxlen - len(v_field))
-                                    print('{0}{1}: {2}'.format(indent, v_field, v_val))
+                                    log('{0}{1}: {2}'.format(indent, v_field, v_val))
                                         
-                # print blank line after each note
-                print()
+                # log blank line after each note
+                log()
 
-    print('processed {0} files'.format(file_count))
+    log('processed {0} files'.format(file_count))
 
 

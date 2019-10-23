@@ -2,6 +2,7 @@ try:
     from .algorithms import *
 except Exception:
     from algorithms import *
+from claritynlp_logging import log, ERROR, DEBUG
 
 ctxt = Context()
 
@@ -9,7 +10,7 @@ ctxt = Context()
 def test_hypothetical():
     c = ctxt.run_context("pass out",
                           "She had definite   presyncope with lightheadedness and dizziness as if she was going to PASS OUT.")
-    print(c)
+    log(c)
     assert c is not None
     assert c.temporality == Temporality.Hypothetical
 

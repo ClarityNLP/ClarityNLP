@@ -6,16 +6,18 @@ from algorithms.context import *
 from algorithms.sec_tag import *
 from algorithms.segmentation import *
 from cachetools import cached, LRUCache
+from claritynlp_logging import log, ERROR, DEBUG
 
-print('Initializing models for term finder...')
+log('Initializing models for term finder...')
 try:
     section_tagger_init()
-except Exception:
-    print('Error initializing sed tagger')
+except Exception as ex1:
+    log('Error initializing sed tagger', ERROR)
+    log(ex1, ERROR)
 c_text = Context()
 segmentor = Segmentation()
 spacy = segmentation_init()
-print('Done initializing models for term finder...')
+log('Done initializing models for term finder...')
 regex_cache = LRUCache(maxsize=1000)
 
 
@@ -179,6 +181,6 @@ if __name__ == "__main__":
           "ago.  The cardiovascular status of the patient is\n difficult to assess."
     full_terms = stf.get_term_full_text_matches(txt)
     for ft in full_terms:
-        print()
-        print(ft)
+        log('', DEBUG)
+        log(ft, DEBUG)
 
