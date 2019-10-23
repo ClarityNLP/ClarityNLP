@@ -16,7 +16,7 @@ except:
     from algorithms.finder import lab_value_matcher as lvm
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME = 'test_lab_value_matcher.py'
 
 _RESULT_FIELDS = ['match_text']
@@ -488,6 +488,19 @@ def run():
         ],
         'Balance: -911 mL -76 mL -32 mL':[
             _Result(match_text='-911 mL -76 mL -32 mL')
+        ],
+        # values with reference ranges
+        'White Blood Cells 8.2 4.0 - 11.0 K/uL Red Blood Cells 3.95* 4.2 - '  +\
+        '5.4 m/uL PERFORMED AT WEST STAT LAB Hemoglobin 12.1 12.0 - 16.0 '    +\
+        'g/dL    PERFORMED AT WEST STAT LAB Hematocrit 38.0 36 - 48 %  '      +\
+        'PERFORMED AT WEST STAT LAB MCV 96 82 - 98 fL  PERFORMED AT WEST '    +\
+        'STAT LAB MCH 30.7 27 - 32 pg':[
+            _Result(match_text='Cells 8.2 4.0 - 11.0 K/uL'),
+            _Result(match_text='Cells 3.95* 4.2 - 5.4 m/uL'),
+            _Result(match_text='Hemoglobin 12.1 12.0 - 16.0 g/dL'),
+            _Result(match_text='Hematocrit 38.0 36 - 48 %'),
+            _Result(match_text='MCV 96 82 - 98 fL'),
+            _Result(match_text='MCH 30.7 27 - 32 pg')
         ]
     }
 

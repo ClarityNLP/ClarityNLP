@@ -84,6 +84,13 @@ loading_status = 'none'
 
 
 ###############################################################################
+def enable_debug():
+
+    global TRACE
+    TRACE = True
+    
+
+###############################################################################
 def segmentation_init(tries=0):
     if tries > 0:
         print('Retrying, try%d' % tries)
@@ -126,6 +133,12 @@ def parse_sentences_spacy(text, spacy=None):
     doc = spacy(text)
     sentences = [sent.string.strip() for sent in doc.sents]
 
+    if TRACE:
+        print('SENTENCES AFTER SPACY TOKENIZATION: ')
+        for i, s in enumerate(sentences):
+            print('[{0:3}]: {1}'.format(i, s))
+        print()
+    
     # fix various problems and undo the substitutions
     sentences = seg_helper.split_concatenated_sentences(sentences)
 
@@ -317,6 +330,7 @@ if __name__ == '__main__':
     infile.close()
 
     if opts.debug:
+        enable_debug()
         seg_helper.enable_debug()
 
     # explicitly initialize for interactive testing

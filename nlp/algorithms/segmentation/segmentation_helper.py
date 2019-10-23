@@ -77,8 +77,10 @@ _str_ending_dashword = r'\-[a-z]+\Z'
 _regex_ending_dashword = re.compile(_str_ending_dashword, re.IGNORECASE)
 
 # find sentences that begin with a number list
-_str_startswith_number_list = r'\A[\d.,]+\s[\d.,]+'
-_regex_startswith_number_list = re.compile(_str_startswith_number_list)
+#_str_startswith_number_list = r'\A[\d.,]+\s[\d.,]+'
+#_regex_startswith_number_list = re.compile(_str_startswith_number_list)
+_str_startswith_number = r'\A[\d.,]+'
+_regex_startswith_number = re.compile(_str_startswith_number)
 
 # find sentences that consist of a single word
 _str_single_word = r'\A[-a-z]+\Z'
@@ -90,18 +92,29 @@ _regex_single_word = re.compile(_str_single_word, re.IGNORECASE)
 # neg lookahead prevents capturing inside abbreviations such as Sust.Rel.
 _regex_two_sentences = re.compile(r'\b[a-zA-Z]{2,}\.[A-Z][a-z]+(?!\.)')
 
-# prescription information
-_str_word         = r'\b[-a-z]+\b'
-_str_words        = r'(' + _str_word + r'\s*)*' + _str_word
-_str_drug_name    = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
-_str_amount_num   = r'\d+(\.\d+)?'
-_str_amount       = r'(' + _str_amount_num + r'(/' + _str_amount_num + r')?)?'
-_str_units        = r'\b[a-z]+\.?'
-_str_abbrev       = r'([a-zA-Z]\.){1,3}'
-_str_abbrevs      = r'(' + _str_abbrev + r'\s+)*' + _str_abbrev
-_str_prescription = _str_drug_name + r'\s+' + _str_amount + r'\s*' + _str_units + \
-                   r'\s+' + _str_abbrevs + r'\s+' + _str_words
-_regex_prescription = re.compile(_str_prescription)
+# prescription abbreviations
+_str_prescription_abbrev = r'\b(a\.c|a\.d|ad lib|admov|agit|alt\. h|am[pt]|'+\
+    r'aq|a\.l|a\.s|a\.t\.c|a\.u|b\.i\.d|b\.m|bol|b\.s|caps?|d\.a\.w|'       +\
+    r'dieb\. alt|dil|disp|div|d\.t\.d|d\.w|elix|e\.m\.p|emuls|h\.s|inj|'    +\
+    r'l\.a\.s|liq|lot|mist|n\.m\.t|noct|non rep|n\.t\.e|o\.[dsu]|p\.[cmor]|'+\
+    r'pulv|q|q\.a\.[dm]|q\.[dhs]|q\.h\.s|q\.\s?\d+h|q\.i\.d|q\.o\.d|qqh|'   +\
+    r's\.a|sig|sol|s\.o\.s|si op\. sit|ss|stat|supp|susp|syr|tab|tal|'      +\
+    r't\.i\.[dw]|t\.d\.s|t\.p\.n|tinct?|u\.d|u\.t\. dict|ung|u\.s\.p|vag|'  +\
+    r'y\.o)[\.:]?(?![a-z])'
+
+
+# _str_word         = r'\b[-a-z]+\b'
+# _str_words        = r'(' + _str_word + r'\s*)*' + _str_word
+# _str_drug_name    = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
+# _str_amount_num   = r'\d+(\.\d+)?'
+# _str_amount       = r'(' + _str_amount_num + r'(/' + _str_amount_num + r')?)?'
+# _str_units        = r'\b[a-z]+\.?'
+# _str_abbrev       = r'([a-zA-Z]\.){1,3}'
+# _str_abbrevs      = r'(' + _str_abbrev + r'\s+)*' + _str_abbrev
+# _str_prescription = _str_drug_name + r'\s+' + _str_amount + r'\s*' + _str_units + \
+#                    r'\s+' + _str_abbrevs + r'\s+' + _str_words
+# _regex_prescription = re.compile(_str_prescription)
+_regex_prescription = re.compile(_str_prescription_abbrev)
 
 # abbreviations
 _str_weekday  = r'((Mon|Tues|Wed|Thurs|Thur|Thu|Fri|Sat|Sun)\.)'
@@ -123,10 +136,9 @@ _regex_abbrev = re.compile(_str_abbrev, re.IGNORECASE)
 _str_gender   = r'\b(sex|gender)\s*:\s*(male|female|m\.?|f\.?)'
 _regex_gender = re.compile(_str_gender, re.IGNORECASE)
 
-# operators except for '-' that might appear in the text
-_operator_set = {
-    '+', '*', '/', '%', '^', '>=', '>', '<=', '<', '=', '!='
-}
+# sentence that starts with an operator followed by a number
+_str_startswith_op_num = r'\A[-+*/%>=!^]+\s?\d+(\.\d+)?'
+_regex_startswith_op_num = re.compile(_str_startswith_op_num)
 
 # lists to keep track of token substitutions
 _fov_subs          = []
@@ -171,8 +183,8 @@ def _insert_tokens(report, token_text, tuple_list, sub_list):
     """
     The tuple_list is a list of (start, end, match_text) tuples. For each
     tuple in this list, replace report[start:end] with a token of the form
-    'TOKEN0001', TOKEN0002', etc. Store the substitutions in sub_list and
-    return the new report.
+    '|TOKEN0001|', '|TOKEN0002|', etc. Store the substitutions in sub_list
+    and return the new report.
     """
 
     if 0 == len(tuple_list):
@@ -332,7 +344,95 @@ def _find_substitutions(report, regex_or_subs, sub_list, token_text):
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
         
-        
+
+###############################################################################
+def _find_medication_list_subs(report):
+    """
+    Find lists of medications and replace with a single token.
+    """
+
+    str_medlist_header = r'\bmedications[a-z\s]*:\s?(?P<num>\d+)\.(?!\d)'
+    #str_medlist_header = r'\bmedications[a-z\s]*:\s?(?=\d\.(?!\d))'
+
+    strings = []
+    iterator = re.finditer(str_medlist_header, report, re.IGNORECASE)
+    for match in iterator:
+        print('NEW')
+        if match:
+            start = match.start()
+            end   = match.end()
+            num   = int(match.group('num'))
+            str_keep = report[start:match.start('num')]
+            strings.append(str_keep)
+            print('\tStarting num: {0}'.format(num))
+
+            while True:
+                remaining = report[end:]
+                match_str = r'\A.*?(?P<num>\d+)\.(?!\d)'.format(num)
+                match = re.match(match_str, remaining, re.IGNORECASE)
+                if match:
+                    match_text = match.group()
+                    # check the list number, see if increasing
+                    this_num = int(match.group('num'))
+                    print('\tTHIS NUM: {0}'.format(this_num))
+                    print('\t\tMATCH_TEXT: "{0}"'.format(match_text))
+                    
+                    # keep everything up to the list number
+                    #str_keep = report[end:end+match.start('num')]
+                    str_keep = match_text[:match.start('num')]
+                    print('\t\tSTR_KEEP: "{0}"'.format(str_keep))
+
+                    # check for the refill count followed by
+                    # another numbered list item
+                    refill_match = re.search(r'\brefills:?[*\s\d]+(?!\d\.)',
+                                             str_keep, re.IGNORECASE)
+                    if not refill_match:
+                        # look for just the refill count
+                        refill_match = re.search(r'\brefills:?[*\s\d]+',
+                                                 str_keep, re.IGNORECASE)
+                    if refill_match:
+                        str_keep = str_keep[:refill_match.end()]
+                        print('\t\tREFILL MATCH: {0}'.format(str_keep))
+                        strings.append(str_keep.strip())
+                    else:
+                        # look for a sentence-ending period
+                        period_match = re.search(r'\.\s?\Z', str_keep)
+                        if period_match:
+                            pos = str_keep.rfind('.')
+                            assert -1 != pos
+                            str_keep = str_keep[:pos].strip()
+                            print('\t\tPERIOD MATCH: "{0}"'.format(str_keep))
+                            strings.append(str_keep)
+                        else:
+                            print('\t\tREMAINING: ')
+                            print(str_keep)
+                            strings.append(str_keep)
+
+                    if this_num > num:
+                        end += len(match.group())
+                        remaining = report[end:]
+                        num = this_num
+                    else:
+                        end += len(str_keep)
+                        remaining = report[end:]
+                        break
+                else:
+                    break
+
+    print('STRINGS: ')
+    for s in strings:
+        print(s)
+    print()
+    print('TEXT CHUNK: ')
+    print(report[start:end])
+    print()
+    print('REMAINING: ')
+    print(report[end:])
+    print()
+
+    sys.exit(0)
+    
+
 ###############################################################################
 def do_substitutions(report):
     """
@@ -349,6 +449,8 @@ def do_substitutions(report):
     _gender_subs.clear()
     _date_subs.clear()
 
+    report = _find_medication_list_subs(report)
+    
     report = _find_substitutions(report, _regex_abbrev, _abbrev_subs, 'ABBREV')
 
     report = _find_vitals_subs(report, _vitals_subs, 'VITALS')
@@ -546,19 +648,24 @@ def fixup_sentences(sentence_list):
     results = [merged_sentences[0]]
     for i in range(1, len(merged_sentences)): 
         s = merged_sentences[i]
-        
-        # Is the first char of the sentence an operator?
-        c = s[0]
-        starts_with_op = c in _operator_set
 
+        # Check for a sentence that starts with an operator followed by
+        # a number. If any instances are found, assume this is a lab value
+        # that was improperly split.
+        startswith_op_num = False
+        match = _regex_startswith_op_num.match(s)
+        if match:
+            startswith_op_num = True
+        
         # Does the sentence starts with a list of numbers (and hence
         # no header to identify what the numbers are)?
-        match1 = _regex_startswith_number_list.match(s)
+        #match1 = _regex_startswith_number_list.match(s)
+        match1 = _regex_startswith_number.match(s)
 
         # Does the sentence consist of a single word?
         match2 = _regex_single_word.match(s)
         
-        if match1 or match2 or starts_with_op:
+        if match1 or match2 or startswith_op_num:
             
             if _TRACE:
                 print('Appending sentence: "{0}"'.format(s))
