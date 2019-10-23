@@ -52,8 +52,8 @@ def setup_log(app):
     global the_app
     the_app = app
 
-    use_gunicorn_logger = environ.get('USE_GUNICORN', False)
-    if use_gunicorn_logger:
+    use_gunicorn_logger = environ.get('USE_GUNICORN', "false")
+    if use_gunicorn_logger == "true":
         gunicorn_logger = logging.getLogger("gunicorn.error")
         the_app.logger.handlers = gunicorn_logger.handlers
         the_app.logger.setLevel(gunicorn_logger.level)
