@@ -200,7 +200,7 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str, background=Tru
         print("unable to execute %s" % str(phenotype_id), file=sys.stderr)
 
 
-def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: int):
+def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: int, background=True):
     pipelines = get_pipelines_from_phenotype(phenotype_model)
     pipeline_ids = []
     if pipelines and len(pipelines) > 0:
@@ -209,7 +209,7 @@ def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: in
             insert_phenotype_mapping(phenotype_id, pipeline_id, util.conn_string)
             pipeline_ids.append(pipeline_id)
 
-        run_phenotype_job(phenotype_id, str(job_id), phenotype_model.owner)
+        run_phenotype_job(phenotype_id, str(job_id), phenotype_model.owner, background=background)
     return pipeline_ids
 
 
