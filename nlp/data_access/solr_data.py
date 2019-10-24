@@ -182,9 +182,9 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     data = make_post_body(qry,  fq, sort, start, rows)
     post_data = json.dumps(data, indent=4)
 
-    if util.debug_mode == "true":
-        log("Querying " + url)
-        log(post_data)
+    # if util.debug_mode == "true":
+    #     log("Querying " + url)
+    #     log(post_data)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
