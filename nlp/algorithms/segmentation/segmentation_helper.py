@@ -536,7 +536,7 @@ def fixup_sentences(sentence_list):
     while i < num:
         s = sentence_list[i]
         match = _regex_ending_dashword.search(s)
-        if match:
+        if match and i < num-1:
             merged_sentences.append(s + ' ' + sentence_list[i+1])
             i += 2
         else:
