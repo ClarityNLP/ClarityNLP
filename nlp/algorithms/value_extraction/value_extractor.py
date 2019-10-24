@@ -895,7 +895,7 @@ def _remove_simple_overlap(results):
                     elif results[i].text.endswith(term2):
                         match1 = re.search(r'\d+\Z', results[i].text)
                         match2 = re.search(r'\d+\Z', term2)
-                        if match1.group() == match2.group():
+                        if match1 and match2 and match1.group() == match2.group():
                             # the value portion of result i is identical to
                             # the digits at the end of term2
                             # this is a false result, so delete result i
