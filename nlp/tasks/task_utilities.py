@@ -140,7 +140,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
 
     # log('writing results...', DEBUG)
     data_fields["pipeline_type"] = pipeline_type
-    data_fields["pipeline_id"] = pipeline_id
+    data_fields["pipeline_id"] = int(pipeline_id)
     data_fields["job_id"] = int(job)
     data_fields["batch"] = batch
     data_fields["owner"] = p_config.owner
@@ -185,7 +185,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
         }
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
-    # log('inserted {}'.format(inserted), DEBUG)
+    log('(job={}; pipeline={}) inserted into mongodb {}'.format(job, pipeline_id, repr(inserted.inserted_id)), DEBUG)
 
     return inserted
 

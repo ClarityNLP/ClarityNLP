@@ -72,5 +72,5 @@ def get_documents(q):
 
 if __name__ == "__main__":
     log('get_solr_docs')
-    qry = "*:*"
-    get_documents(qry)
+    # qry = "*:*"
+    # get_documents(qry)

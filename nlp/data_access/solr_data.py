@@ -224,16 +224,18 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
     data = make_post_body(qry, fq, sort, start, rows)
     post_data = json.dumps(data)
 
-    # if util.debug_mode == "true":
-    #     log("Querying to get counts " + url, DEBUG)
-    #     log(post_data, DEBUG)
+    if util.debug_mode == "true":
+        log("Querying to get counts " + url, DEBUG)
+        log(post_data, DEBUG)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
     if response.status_code != 200:
         return 0
 
-    return int(response.json()['response']['numFound'])
+    num_found = int(response.json()['response']['numFound'])
+    log("found {} solr docs".format(num_found))
+    return num_found
 
 
 def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):

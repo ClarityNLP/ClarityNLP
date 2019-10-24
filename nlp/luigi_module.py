@@ -56,7 +56,7 @@ class PhenotypeTask(luigi.Task):
                                           "Finished Pipelines")
 
             phenotype = data_access.query_phenotype(int(self.phenotype), util.conn_string)
-            log(phenotype)
+            # log(phenotype)
 
             db = client[util.mongo_db]
 
@@ -73,12 +73,14 @@ class PhenotypeTask(luigi.Task):
                                           str(stats["results"]))
             data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_FINAL_SUBJECTS",
                                           str(stats["subjects"]))
-            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_QUERY_COUNTS",
-                                          str(util.get_cache_query_count()))
-            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_COMPUTE_COUNTS",
-                                          str(util.get_cache_compute_count()))
-            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_HIT_RATIO",
-                                          str(util.get_cache_hit_ratio()))
+            log("writing job stats....")
+            log(json.dumps(stats, indent=4))
+            # data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_QUERY_COUNTS",
+            #                               str(util.get_cache_query_count()))
+            # data_access.update_job_status(str(self.job), util.conn_string,data_access.STATS + "_CACHE_COMPUTE_COUNTS",
+            #                               str(util.get_cache_compute_count()))
+            # data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_HIT_RATIO",
+            #                               str(util.get_cache_hit_ratio()))
 
             for k in util.properties.keys():
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.PROPERTIES + "_" + k,
