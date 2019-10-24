@@ -20,7 +20,6 @@ class PhenotypeTask(luigi.Task):
     phenotype = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
-    client = util.mongo_client()
 
     def requires(self):
         register_tasks()
@@ -99,6 +98,8 @@ class PhenotypeTask(luigi.Task):
             traceback.print_exc(file=sys.stdout)
             data_access.update_job_status(str(self.job), util.conn_string, data_access.FAILURE, str(ex))
             log(ex)
+        finally:
+            client.close()
 
     def output(self):
         return luigi.LocalTarget("%s/phenotype_job%s_output.txt" % (util.tmp_dir, str(self.job)))

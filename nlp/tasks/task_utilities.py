@@ -201,9 +201,10 @@ class BaseCollector(base_model.BaseModel):
             jobs.update_job_status(job, util.conn_string, jobs.IN_PROGRESS, "Running Collector")
             self.run_custom_task(pipeline_id, job, owner, pipeline_type, p_config, client, db)
         except Exception as ex:
-            traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            log(ex)
+            log(ex, ERROR)
+        finally:
+            client.close()
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
         log('please implement run_custom_task')
@@ -219,9 +220,10 @@ class BaseCollector(base_model.BaseModel):
             jobs.update_job_status(job, util.conn_string, jobs.IN_PROGRESS, "Running Collector Cleanup")
             self.custom_cleanup(pipeline_id, job, owner, pipeline_type, p_config, client, db)
         except Exception as ex:
-            traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            log(ex)
+            log(ex, ERROR)
+        finally:
+            client.close()
 
 
 class BaseTask(luigi.Task):
@@ -274,9 +276,10 @@ class BaseTask(luigi.Task):
 
             self.docs = list()
         except Exception as ex:
-            traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            log(ex)
+            log(ex, ERROR)
+        finally:
+            client.close()
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,

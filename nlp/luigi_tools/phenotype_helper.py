@@ -752,58 +752,63 @@ def mongo_process_operations(expr_obj_list,
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 
-    is_final_save = c['final']
+    try:
+        is_final_save = c['final']
 
-    for expr_obj in expr_obj_list:
+        for expr_obj in expr_obj_list:
 
-        # the 'is_final' flag only applies to the last subexpression
-        if expr_obj != expr_obj_list[-1]:
-            is_final = False
-        else:
-            is_final = is_final_save
+            # the 'is_final' flag only applies to the last subexpression
+            if expr_obj != expr_obj_list[-1]:
+                is_final = False
+            else:
+                is_final = is_final_save
 
-        # evaluate the (sub)expression in expr_obj
-        eval_result = expr_eval.evaluate_expression(expr_obj,
-                                                    job_id,
-                                                    context_field,
-                                                    mongo_collection_obj)
+            # evaluate the (sub)expression in expr_obj
+            eval_result = expr_eval.evaluate_expression(expr_obj,
+                                                        job_id,
+                                                        context_field,
+                                                        mongo_collection_obj)
 
-        # query MongoDB to get result docs
-        cursor = mongo_collection_obj.find({'_id': {'$in': eval_result.doc_ids}})
+            # query MongoDB to get result docs
+            cursor = mongo_collection_obj.find({'_id': {'$in': eval_result.doc_ids}})
 
-        # initialize for MongoDB result document generation
-        phenotype_info = expr_result.PhenotypeInfo(
-            job_id=job_id,
-            phenotype_id=phenotype_id,
-            owner=phenotype_owner,
-            context_field=context_field,
-            is_final=is_final
-        )
+            # initialize for MongoDB result document generation
+            phenotype_info = expr_result.PhenotypeInfo(
+                job_id=job_id,
+                phenotype_id=phenotype_id,
+                owner=phenotype_owner,
+                context_field=context_field,
+                is_final=is_final
+            )
 
-        # generate result documents
-        if expr_eval.EXPR_TYPE_MATH == eval_result.expr_type:
+            # generate result documents
+            if expr_eval.EXPR_TYPE_MATH == eval_result.expr_type:
 
-            output_docs = expr_result.to_math_result_docs(eval_result,
-                                                          phenotype_info,
-                                                          cursor)
-        else:
-            assert expr_eval.EXPR_TYPE_LOGIC == eval_result.expr_type
+                output_docs = expr_result.to_math_result_docs(eval_result,
+                                                              phenotype_info,
+                                                              cursor)
+            else:
+                assert expr_eval.EXPR_TYPE_LOGIC == eval_result.expr_type
 
-            # flatten the result set into a set of Mongo documents
-            doc_map, oid_list_of_lists = expr_eval.flatten_logical_result(eval_result,
-                                                                          mongo_collection_obj)
+                # flatten the result set into a set of Mongo documents
+                doc_map, oid_list_of_lists = expr_eval.flatten_logical_result(eval_result,
+                                                                              mongo_collection_obj)
 
-            output_docs = expr_result.to_logic_result_docs(eval_result,
-                                                           phenotype_info,
-                                                           doc_map,
-                                                           oid_list_of_lists)
+                output_docs = expr_result.to_logic_result_docs(eval_result,
+                                                               phenotype_info,
+                                                               doc_map,
+                                                               oid_list_of_lists)
 
-        if len(output_docs) > 0:
-            mongo_collection_obj.insert_many(output_docs)
-        else:
-            log('mongo_process_operations ({0}): ' \
-                  'no phenotype matches on "{1}".'.format(eval_result.expr_type,
-                                                          eval_result.expr_text))
+            if len(output_docs) > 0:
+                mongo_collection_obj.insert_many(output_docs)
+            else:
+                log('mongo_process_operations ({0}): ' \
+                      'no phenotype matches on "{1}".'.format(eval_result.expr_type,
+                                                              eval_result.expr_text))
+    except Exception as exc:
+        log(exc, ERROR)
+    finally:
+        client.close()
 
 
 def get_dependencies(po, deps: list):

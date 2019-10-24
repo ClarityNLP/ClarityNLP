@@ -137,7 +137,9 @@ def phenotype_performance_results(jobs: list):
 
             metrics[job] = performance
     except Exception as e:
-        log(e)
+        log(e, ERROR)
+    finally:
+        client.close()
 
     return metrics
 
@@ -179,6 +181,8 @@ def phenotype_feedback_results(job: str):
 
     except Exception as e:
         log(e)
+    finally:
+        client.close()
 
     return filename
 
@@ -221,7 +225,9 @@ def pipeline_results(job: str):
                     i += 1
                 csv_writer.writerow(output)
     except Exception as e:
-        log(e)
+        log(e, ERROR)
+    finally:
+        client.close()
 
     return filename
 
@@ -289,6 +295,8 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
 
     except Exception as e:
         log(e)
+    finally:
+        client.close()
 
     return filename
 
@@ -304,6 +312,8 @@ def lookup_phenotype_result_by_id(id: str):
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         obj['success'] = False
+    finally:
+        client.close()
 
     return obj
 
@@ -334,8 +344,11 @@ def lookup_phenotype_results_by_id(id_list: list):
             n = n + 1
 
     except Exception as e:
+        log(e, ERROR)
         traceback.print_exc(file=sys.stdout)
         obj['success'] = False
+    finally:
+        client.close()
 
     return obj
 
@@ -375,6 +388,8 @@ def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         obj['success'] = False
+    finally:
+        client.close()
 
     return obj
 
@@ -408,7 +423,9 @@ def phenotype_subjects(job_id: str, phenotype_final: bool):
         res = list(db.phenotype_results.aggregate(q))
         res = sorted(res, key=lambda r: r['count'], reverse=True)
     except Exception as e:
-        traceback.print_exc(file=sys.stdout)
+        log(e, ERROR)
+    finally:
+        client.close()
 
     return res
 
@@ -446,7 +463,9 @@ def phenotype_subject_results(job_id: str, phenotype_final: bool, subject: str):
             res.append(obj)
 
     except Exception as e:
-        traceback.print_exc(file=sys.stdout)
+        log(e, ERROR)
+    finally:
+        client.close()
 
     return res
 
@@ -461,6 +480,8 @@ def phenotype_feature_results(job_id: str, feature: str, subject: str):
         res = list(db["phenotype_results"].find(query))
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
 
     return res
 
@@ -477,7 +498,10 @@ def phenotype_results_by_context(context: str, query_filters: dict):
         res = list(db["phenotype_results"].find(query_filters, {project: 1}))
 
     except Exception as e:
+        log(e, ERROR)
         traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
 
     return res
 
