@@ -91,6 +91,7 @@ class PhenotypeTask(luigi.Task):
                                               "Job completed successfully")
                 outfile.write("DONE!")
                 outfile.write('\n')
+            log("job {} done!".format(self.job))
         except BulkWriteError as bwe:
             log(bwe.details)
             data_access.update_job_status(str(self.job), util.conn_string, data_access.WARNING, str(bwe.details))
