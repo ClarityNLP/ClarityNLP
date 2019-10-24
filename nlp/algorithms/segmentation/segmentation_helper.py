@@ -550,6 +550,8 @@ def fixup_sentences(sentence_list):
         s = merged_sentences[i]
         
         # Is the first char of the sentence an operator?
+        if len(s) < 1:
+            continue
         c = s[0]
         starts_with_op = c in _operator_set
 
