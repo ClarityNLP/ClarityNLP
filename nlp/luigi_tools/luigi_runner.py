@@ -91,7 +91,7 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
     # log("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
     # func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s" \
     #        " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
-    #                                             owner, scheduler, luigi_log)
+    #                                                owner, scheduler, luigi_log)
     try:
         # if environ.get("USE_GUNICORN", "false") == "true":
         #     # call(func, shell=True)

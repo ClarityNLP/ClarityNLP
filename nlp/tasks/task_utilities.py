@@ -131,16 +131,17 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     db = client[util.mongo_db]
 
     if not data_fields:
-        log('must have additional data fields')
+        log('must have additional data fields', ERROR)
         return None
 
     if not p_config:
-        log('must have pipeline config')
+        log('must have pipeline config', ERROR)
         return None
 
+    # log('writing results...', DEBUG)
     data_fields["pipeline_type"] = pipeline_type
     data_fields["pipeline_id"] = pipeline_id
-    data_fields["job_id"] = job
+    data_fields["job_id"] = int(job)
     data_fields["batch"] = batch
     data_fields["owner"] = p_config.owner
     data_fields["nlpql_feature"] = (prefix + p_config.name)
@@ -184,6 +185,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
         }
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
+    # log('inserted {}'.format(inserted), DEBUG)
 
     return inserted
 
