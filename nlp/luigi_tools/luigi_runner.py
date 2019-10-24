@@ -60,7 +60,12 @@ def run_task(task):
 
 
 def threaded_func(arg0, arg1, arg2):
-    time.sleep(15)
+    task = PhenotypeTask(job=arg0, owner=arg1, phenotype=arg2)
+    run_task(task)
+
+
+def threaded_phenotype_task(job_id, owner, phenotype_id):
+    time.sleep(5)
     active = get_active_workers()
     log("{}=MAX LUIGI WORKERS".format(util.luigi_workers))
     num_workers = int(util.luigi_workers)
@@ -69,12 +74,7 @@ def threaded_func(arg0, arg1, arg2):
             log("{}=ACTIVE LUIGI WORKERS; SLEEPING..".format(active))
             time.sleep(15)
             active = get_active_workers()
-    else:
-        task = PhenotypeTask(job=arg0, owner=arg1, phenotype=arg2)
-        run_task(task)
 
-
-def threaded_phenotype_task(job_id, owner, phenotype_id):
     thread = threading.Thread(target=threaded_func, args=(job_id, owner, phenotype_id))
     thread.start()
 
