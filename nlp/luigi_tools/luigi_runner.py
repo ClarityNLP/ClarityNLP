@@ -1,6 +1,6 @@
 from subprocess import call
 
-import luigi
+from luigi import worker, rpc
 import requests
 import time
 
@@ -8,6 +8,7 @@ from data_access import *
 from luigi_tools.phenotype_helper import *
 from claritynlp_logging import log, ERROR
 from luigi_module import PhenotypeTask
+import luigi
 from os import environ
 
 
@@ -45,6 +46,15 @@ def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
         log("unable to execute %s" % func, file=sys.stderr)
 
 
+def run_task(task, scheduler_url):
+    worker_num = int(util.luigi_workers)
+    multiprocess = worker_num > 1
+    scheduler = rpc.RemoteScheduler(url=scheduler_url)
+    w = worker.Worker(scheduler=scheduler, no_install_shutdown_handler=True)
+    w.add(task, multiprocess=multiprocess, processes=worker_num)
+    w.run()
+
+
 def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
     active = get_active_workers()
     total = int(util.luigi_workers)
@@ -52,20 +62,23 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
         active = get_active_workers()
         time.sleep(2)
 
-    luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
+    # luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
 
     scheduler = util.luigi_scheduler
-    log("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
-    func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s" \
-           " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
-                                                owner, scheduler, luigi_log)
+    # log("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
+    log("running job %s on phenotype %s" % (str(job_id), str(phenotype_id)))
+    # func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s" \
+    #        " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
+    #                                             owner, scheduler, luigi_log)
     try:
-        if environ.get("USE_GUNICORN", "false") == "true":
-            # call(func, shell=True)
-            luigi.build([PhenotypeTask(job=job_id, owner=owner, phenotype=str(phenotype_id))],
-                         workers=str(util.luigi_workers), scheduler_url=scheduler)
-        else:
-            call(func, shell=True)
+        # if environ.get("USE_GUNICORN", "false") == "true":
+        #     # call(func, shell=True)
+        #     luigi.build([PhenotypeTask(job=job_id, owner=owner, phenotype=str(phenotype_id))],
+        #                  workers=str(util.luigi_workers), scheduler_url=scheduler)
+        # else:
+        #     call(func, shell=True)
+        task = PhenotypeTask(job=job_id, owner=owner, phenotype=str(phenotype_id))
+        run_task(task, scheduler)
     except Exception as ex:
         log(ex, file=sys.stderr, level=ERROR)
         log("unable to execute python task", file=sys.stderr, level=ERROR)

@@ -72,7 +72,7 @@ tmp_dir = read_property('NLP_API_TMP_DIR', ('tmp', 'dir'))
 log_dir = read_property('NLP_API_LOG_DIR', ('log', 'dir'))
 luigi_scheduler = read_property('LUIGI_SCHEDULER_URL', ('luigi', 'scheduler'))
 luigi_url = read_property('SCHEDULER_VIRTUAL_HOST', ('luigi', 'url'))
-luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'))
+luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'), default='5')
 results_viewer_url = read_property(
     'RESULTS_CLIENT_URL', ('results_client', 'url'))
 main_url = read_property(
