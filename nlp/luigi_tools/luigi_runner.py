@@ -60,33 +60,35 @@ def run_task(task):
 
 
 def threaded_func(arg0, arg1, arg2):
+    time.sleep(2)
+    active = get_active_workers()
+    log("{}=MAX LUIGI WORKERS".format(util.luigi_workers))
+    num_workers = int(util.luigi_workers)
+    n = 0
+    if active > num_workers:
+        while active > num_workers and n < 60:
+            log("{}=ACTIVE LUIGI WORKERS; SLEEPING..".format(active))
+            time.sleep(5)
+            active = get_active_workers()
+            n += 1
+
+    log("running job %s on phenotype %s" % (str(arg0), str(arg2)))
     task = PhenotypeTask(job=arg0, owner=arg1, phenotype=arg2)
     run_task(task)
 
 
 def threaded_phenotype_task(job_id, owner, phenotype_id):
-    time.sleep(5)
-    active = get_active_workers()
-    log("{}=MAX LUIGI WORKERS".format(util.luigi_workers))
-    num_workers = int(util.luigi_workers)
-    if active > num_workers:
-        while active > num_workers:
-            log("{}=ACTIVE LUIGI WORKERS; SLEEPING..".format(active))
-            time.sleep(15)
-            active = get_active_workers()
-
     thread = threading.Thread(target=threaded_func, args=(job_id, owner, phenotype_id))
     thread.start()
 
 
 def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
-    active = get_active_workers()
+    # active = get_active_workers()
 
     # luigi_log = (util.log_dir + '/luigi_%s.log') % (str(job_id))
 
-    scheduler = util.luigi_scheduler
+    # scheduler = util.luigi_scheduler
     # log("running job %s on phenotype %s; logging here %s" % (str(job_id), str(phenotype_id), luigi_log))
-    log("running job %s on phenotype %s" % (str(job_id), str(phenotype_id)))
     # func = "PYTHONPATH='.' luigi --workers %s --module luigi_module %s --phenotype %s --job %s --owner %s" \
     #        " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
     #                                             owner, scheduler, luigi_log)

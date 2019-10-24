@@ -1057,8 +1057,17 @@ def sec_tag_file_path():
     path = os.path.join(SCRIPT_DIR, CS_MAP_FILE)
     return path
 
+inited = False
+init_in_progress = False
+
 
 def section_tagger_init():
+    global init_in_progress, inited
+    if inited or init_in_progress:
+        log("section tagger init already done or in progress")
+        return
+
+    init_in_progress = True
 
     log("section_tagger_init...")
     
@@ -1122,5 +1131,7 @@ def section_tagger_init():
     graph_path = os.path.join(SCRIPT_DIR, GRAPH_FILENAME)
     graph.load_from_file(graph_path, db_extra)
 
+    inited = True
+    init_in_progress = False
     return True
 

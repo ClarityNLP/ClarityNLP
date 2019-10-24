@@ -30,7 +30,7 @@ def read_property(env_name, config_tuple, default='', key_name=None):
         if len(key_name) > 0 and 'PASSWORD' not in key_name and 'KEY' not in key_name and 'USERNAME' not in key_name:
             properties[key_name] = property_name
     except Exception as ex:
-        log(ex, ERROR)
+        log(repr(ex), ERROR)
         properties[key_name] = default
     return property_name
 
