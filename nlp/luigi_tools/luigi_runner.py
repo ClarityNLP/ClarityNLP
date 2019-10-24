@@ -7,6 +7,8 @@ import time
 from data_access import *
 from luigi_tools.phenotype_helper import *
 from claritynlp_logging import log, ERROR
+from luigi_module import PhenotypeTask
+from os import environ
 
 
 def get_active_workers():
@@ -58,10 +60,15 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
            " --scheduler-url %s > %s 2>&1 &" % (str(util.luigi_workers), "PhenotypeTask", phenotype_id, str(job_id),
                                                 owner, scheduler, luigi_log)
     try:
-        call(func, shell=True)
+        if environ.get("USE_GUNICORN", "false") == "true":
+            # call(func, shell=True)
+            luigi.build([PhenotypeTask(job=job_id, owner=owner, phenotype=str(phenotype_id))],
+                         workers=str(util.luigi_workers), scheduler_url=scheduler)
+        else:
+            call(func, shell=True)
     except Exception as ex:
         log(ex, file=sys.stderr, level=ERROR)
-        log("unable to execute %s" % func, file=sys.stderr, level=ERROR)
+        log("unable to execute python task", file=sys.stderr, level=ERROR)
 
 
 def run_phenotype(phenotype_model: PhenotypeModel, phenotype_id: str, job_id: int, background=True):
