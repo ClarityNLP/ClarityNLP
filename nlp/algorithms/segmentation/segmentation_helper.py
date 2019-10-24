@@ -353,7 +353,7 @@ def do_substitutions(report):
 
     report = _find_substitutions(report, _regex_abbrev, _abbrev_subs, 'ABBREV')
 
-    report = _find_vitals_subs(report, _vitals_subs, 'VITALS')
+    #report = _find_vitals_subs(report, _vitals_subs, 'VITALS')
     
     report = _find_substitutions(report, _regex_caps_header,
                                  _header_subs, 'HEADER')
