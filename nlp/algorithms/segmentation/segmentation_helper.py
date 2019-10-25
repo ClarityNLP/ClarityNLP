@@ -39,7 +39,7 @@ except Exception as e:
     import lab_value_matcher as lvm
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME = 'segmentation_helper.py'
 
 # set to True to enable debug output
@@ -150,7 +150,7 @@ def enable_debug():
     global _TRACE
     _TRACE = True
 
-    #lvm.enable_debug()
+    lvm.enable_debug()
 
     
 ###############################################################################
@@ -351,9 +351,13 @@ def do_substitutions(report):
     _gender_subs.clear()
     _date_subs.clear()
 
+
+    if _TRACE:
+        log('REPORT BEFORE SUBSTITUTIONS: \n' + report + '\n')
+    
     report = _find_substitutions(report, _regex_abbrev, _abbrev_subs, 'ABBREV')
 
-    #report = _find_vitals_subs(report, _vitals_subs, 'VITALS')
+    report = _find_vitals_subs(report, _vitals_subs, 'VITALS')
     
     report = _find_substitutions(report, _regex_caps_header,
                                  _header_subs, 'HEADER')
@@ -486,18 +490,8 @@ def cleanup_report(report):
     new_report += report[prev_end:]
     report = new_report
 
-    # remove numbering in lists
-    spans = []
-    iterator = _regex_list_item.finditer(report)
-    for match in iterator:
-        start = match.start('listnum')
-        end   = match.end('listnum')
-        spans.append( (start, end))
-
-    report = _erase_spans(report, spans)
-        
-    # Remove long runs of dashes, underscores, or stars
-    report = re.sub(r'[-_*]{3,}', ' ', report)
+    # Remove long runs of dashes, underscores, stars, or question marks
+    report = re.sub(r'[-_*?]{3,}', ' ', report)
     
     # collapse repeated whitespace (including newlines) into a single space
     report = re.sub(r'\s+', ' ', report)

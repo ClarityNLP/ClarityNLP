@@ -7,6 +7,13 @@ trained on standard written English. The idea is to replace the expressions
 that this module finds by a single token that the sentence tokenizers will NOT
 split. See segmentation/segmentation_helper for more.
 
+This module does NOT attempt to find all possible lab values, especially those
+that are expressed with complete words such as "temperature was 98.6". The
+Spacy sentence tokenizer does better as the text gets more "wordy" and closer
+to standard English forms of expression. This module tries to find abbreviated
+vitals, lab values, units, and related quantities to prevent those from being
+improperly separated from their associated values. 
+
 For examples of "lab values" and how this module is to be used, see the
 associated test file "test_lab_value_matcher.py".
 
@@ -18,7 +25,6 @@ import sys
 import json
 from claritynlp_logging import log, ERROR, DEBUG
 
-
 try:
     import finder_overlap as overlap
 except:
@@ -28,7 +34,7 @@ except:
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME = 'lab_value_matcher.py'
 
 # set to True to see debug output
@@ -112,30 +118,29 @@ _str_values = _str_value + _str_sep + r'(' + _str_value + _str_sep + r')*'
 # also, the abbreviation 'K' for Kelvin could be confused with potassium
 _str_temp_units = r'\(?(C|F|deg\.?(rees)?\s?(C(elsius)?|F(arenheit)?)|' +\
     r'deg\.?(rees)?)\)?'
-_str_temp_header = r'\b(Temperature|Tcurrent|Tmax|Tcur|Te?mp|Tm|T)\.?'
+_str_temp_header = r'\b(Tcurrent|Tmax|Tcur|Te?mp|Tm|T)\.?'
 
 # heart rate
 _str_hr_units  = r'\(?(bpm|beats/m(in\.?)?|beats per min\.?(ute)?)\)?'
-_str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)'
+_str_hr_header = r'\b(Pulse|P|HR|Heart\s?Rate)\.?'
 
 # respiration rate (and other respiratory quantities)
-_str_rr_units = r'\(?((insp\.?|breaths?)[\s/]*min|bpm|mL|L/min)\.?\)?'
-_str_rr_header = r'\b(respiration\s?rate|respiratory\s?rate|' +\
-    r'breathing|resp\.?|RR?|RSBI|ABG|Vt|Ve)'
+_str_rr_units = r'\(?((insp\.?|breaths?)[\s/]?min|bpm|mL|L/min)\.?\)?'
+_str_rr_header = r'\b(resp|RR|RSBI|ABG|Vt|Ve|R[- :=\d.])\.?'
 
 # height
 _str_height_units = r'\(?(inches|inch|feet|meters|in|ft|m)\.?\)?'
-_str_height_header = r'\b(Height|Hgt\.?|Ht\.?)'
+_str_height_header = r'\b(Hgt|Ht|H[- :=\d.])\.?'
 
 # weight
 _str_weight_units = r'\(?(grams|ounces|pounds|kilograms|gms?|' +\
     r'oz|lbs?|kg|g)\.?\)?'
-_str_weight_header = r'\b(Weight|Wgt\.?|Wt\.?|w\.?)'
+_str_weight_header = r'\b(Wgt|Wt|w[- :=\d.])\.?'
 
 # length
 _str_length_units = r'\(?(centimeters?|decimeters?|millimeters?|meters?|' +\
     r'inch(es)?|feet|foot|cm|dm|mm|in|ft|m)\.?\)?'
-_str_length_header = r'\b(Length|Len|Lt|L\.?)'
+_str_length_header = r'\b(Len|Lt|L[- :=\d.])\.?'
 
 # head circumference (infants)
 _str_hc_units = _str_length_units
@@ -147,14 +152,13 @@ _str_bsa_header = r'\bBSA'
 
 # blood pressure
 _str_bp_units = r'\(?(mm\s?hg)\)?'
-_str_bp_header = r'\b(systolic blood pressure|diastolic blood pressure|' +\
-    'blood\s?pressure|b\.?\s?p|CVP|RAP|SBP|DBP)\.?'
+_str_bp_header = r'\b(b\.?\s?p|CVP|RAP|SBP|DBP)\.?'
 
 # Oxygen saturation
 _str_o2_units = r'\(?(percent|pct\.?|%|cmH2O|mmHg)\)?'
 # no leading r'\b', on purpose
 _str_o2_header = r'(SpO2|SaO2|sO2|O2[-\s]?saturation|O2[-\s]sat\.?s?|'       +\
-    r'oxygen\s?saturation|satting|O2Sats?|O2\s?flow|Sat\.?s?|plateau|'       +\
+    r'satting|O2Sats?|O2\s?flow|Sat\.?s?|plateau|'       +\
     r'PaO2\s?/\s?FiO2|PaO2|FiO2|POx|PaCO2|PEEP|PIP|CPAP|PAW|PSV|PO|PS|O2)'
 _str_o2_device = r'\(?(bipap|non[-\s]?rebreather(\smask)?|nasal\s?cannula|'  +\
     r'room air|([a-z]+)?\s?mask|cannula|PSV|NRB|RA|FM|NC|air|'               +\
@@ -167,18 +171,6 @@ _str_simple_header = r'\b(?<!/)[-+a-z]+'
 _str_simple_pair = _str_simple_header + r':\s?' + _str_num + r'\s?' +\
     _str_units + r'\s?'
 _regex_simple_pair = re.compile(_str_simple_pair, re.IGNORECASE)
-
-# too slow; not needed if only capturing lists of number-unit pairs
-# # header followed by list of numbers, each with units
-# _str_header_value_units = _str_simple_header + _str_sep +\
-#     r'((?<=[^a-z])' + _str_values + _str_sep + _str_units + _str_sep + r')+'
-# _regex_header_value_units = re.compile(_str_header_value_units,
-#                                        re.IGNORECASE)
-
-# # header followed by list of numbers with no units
-# _str_header_values = _str_simple_header + _str_sep +\
-#     r'((?<=[^a-z])' + _str_values + _str_sep + r')+'
-# _regex_header_values = re.compile(_str_header_values, re.IGNORECASE)
 
 _str_avg = r'\b(average|mean|avg\.?|median|mode)\b'
 _regex_avg = re.compile(_str_avg, re.IGNORECASE)
@@ -202,25 +194,25 @@ def _make_regexes(header_in, units_in):
     
     regex_list = []
     
-    # # header string with optional units
-    header = r'(?<!/)(?P<header>' + header_in + _str_sep +\
-        r'(' + units_in + _str_sep + r')?' + r'(?=[^a-z]))'
+    # header string with optional units +\_str_sep +\
+    header = r'(?<!/)(?P<header>' + header_in + r'[-=: ]?\s?'  +\
+        r'(' + units_in + r'[: ]?\s?' + r')?' + r'(?=[^a-z]))'
 
     # one or more values with optional units
-    elt = _str_values + r'(' + _str_sep + units_in + _str_sep + r')?'
-    value_list = elt + r'(' + elt + r')*'
+    elt = _str_values + r'(' + r'\s?' + units_in + r'\s?' + r')?'
+    value_list = elt + r'(' + elt + r'){0,16}'
     str_regex = header + value_list
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
 
     # lists such as "Wgt (current): 119.8 kg (admission): 121 kg"
     elt = _str_word + _str_sep + _str_values + _str_sep + units_in + _str_sep
-    value_list = elt + r'(' + elt + r')*'
+    value_list = elt + r'(' + elt + r'){0,16}'
     str_regex = header + value_list
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
 
     # header + optional words + single value + optional units
-    str_regex = header + r'(\s?' + _str_word + _str_sep + r')*' +\
-        _str_values + _str_sep + r'(' + units_in + _str_sep + r')?'
+    str_regex = header + r'(\s?' + _str_word + r'[-=: ]?\s?' + r'){0,2}' +\
+        _str_values + r'\s?' + r'(' + units_in + r'\s?' + r')?'
     regex_list.append(re.compile(str_regex, re.IGNORECASE))
     
     return regex_list
@@ -278,7 +270,7 @@ def init():
 
     # range of O2 saturation
     str_o2_5 = r'\b' + o2_header +\
-        r'(' + _str_word + _str_sep + r')*' +\
+        r'(' + _str_word + _str_sep + r'){0,2}' +\
         r'\d+% to \d+%' + _str_sep +\
         r'(' + _str_word + _str_sep + r')+' +\
         r'\d+%' + _str_sep + _str_o2_device + _str_sep
@@ -472,6 +464,9 @@ def run(text_in):
     for regex_list_index, regex_list in enumerate(_all_regex_lists):
         candidates = []
         for regex_index, regex in enumerate(regex_list):
+            # print('\n*** REGEX ***\n')
+            # print(regex)
+            # print()
             iterator = regex.finditer(text)
             for match in iterator:
                 start = match.start()

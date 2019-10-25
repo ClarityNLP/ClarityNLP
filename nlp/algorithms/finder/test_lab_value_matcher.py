@@ -9,16 +9,27 @@ import sys
 import json
 import argparse
 from collections import namedtuple
-from claritynlp_logging import log, ERROR, DEBUG
 
+if __name__ == '__main__':
+    # interactive testing; add nlp dir to path to find logging class
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** test_lab_value_matcher.py: nlp dir not found ***\n')
+        sys.exit(0)
+
+from claritynlp_logging import log, ERROR, DEBUG
 
 try:
     import lab_value_matcher as lvm
 except:
     from algorithms.finder import lab_value_matcher as lvm
+
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME = 'test_lab_value_matcher.py'
 
 _RESULT_FIELDS = ['match_text']
@@ -107,9 +118,11 @@ def run():
     lvm.init()
     
     test_data = {
-        'Vitals were SBP 116, HR 75':[
+        'Vitals were SBP 116, HR 75 R=18 L. 80 in.':[
             _Result(match_text='SBP 116'),
             _Result(match_text='HR 75'),
+            _Result(match_text='R=18'),
+            _Result(match_text='L. 80 in.')
         ],
         'Vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM':[
             _Result(match_text='HR=120'),
@@ -151,10 +164,10 @@ def run():
             _Result(match_text='RR16'),
             _Result(match_text='O2Sat98 2LNC')
         ],
-        'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 ' +\
+        'Ht: (in) 74 Wt. (lb): 199 BSA (m2): 2.17 m2 ' +\
         'BP (mm Hg): 140/91 HR (bpm): 53':[
-            _Result(match_text='Height: (in) 74'),
-            _Result(match_text='Weight (lb): 199'),
+            _Result(match_text='Ht: (in) 74'),
+            _Result(match_text='Wt. (lb): 199'),
             _Result(match_text='BSA (m2): 2.17 m2'),
             _Result(match_text='BP (mm Hg): 140/91'),
             _Result(match_text='HR (bpm): 53')
@@ -291,9 +304,9 @@ def run():
             _Result(match_text='RR 15'),
             _Result(match_text='SpO2 97% on NRB'),
         ],
-        'Vitals were Temperature 100.8 Pulse: 103 RR: 28 BP: 84/43 ' +\
+        'Vitals were Temp. 100.8 Pulse: 103 RR: 28 BP: 84/43 ' +\
         'O2Sat: 88 O2 Flow: 100 (Non-Rebreather).':[
-            _Result(match_text='Temperature 100.8'),
+            _Result(match_text='Temp. 100.8'),
             _Result(match_text='Pulse: 103'),
             _Result(match_text='RR: 28'),
             _Result(match_text='BP: 84/43'),
@@ -422,47 +435,50 @@ def run():
             _Result(match_text='Ve: 10.3 L/min'),
             _Result(match_text='PaO2 / FiO2: 218')            
         ],
-        'Vital signs were a temperature of 97.5, a heart rate of 70, ' +\
-        'a blood pressure of 193/100, a respiratory rate of 20, and '  +\
-        'an oxygen saturation of 96% on 2 liters':[
-            _Result(match_text='temperature of 97.5'),
-            _Result(match_text='heart rate of 70'),
-            _Result(match_text='blood pressure of 193/100'),
-            _Result(match_text='respiratory rate of 20'),
-            _Result(match_text='oxygen saturation of 96% on 2 liters')
-        ],
-        'His vitals were a temperature of 98.1.  Heart rate of 76.  Blood ' +\
-        'pressure 160/80 with intermittent rise to systolic blood pressure ' +\
-        'of 230 and a respiratory rate of 14. His initial weight was ' +\
-        'approximately 73 kg':[
-            _Result(match_text='temperature of 98.1'),
-            _Result(match_text='Heart rate of 76'),
-            _Result(match_text='Blood pressure 160/80'),
-            _Result(match_text='systolic blood pressure of 230'),
-            _Result(match_text='respiratory rate of 14'),
-            _Result(match_text='weight was approximately 73 kg')
-        ],
-        'Physical examination on admission revealed temperature was 96.3, ' +\
-        'heart rate was 76, blood pressure was 190/80, the respiratory '    +\
-        'rate was 21,\nand the oxygen saturation was 80% to 92% on a 100% ' +\
-        'nonrebreather mask':[
-            _Result(match_text='temperature was 96.3'),
-            _Result(match_text='heart rate was 76'),
-            _Result(match_text='blood pressure was 190/80'),
-            _Result(match_text='respiratory rate was 21'),
-            _Result(match_text='oxygen saturation was 80% to 92% on a ' \
-                    '100% nonrebreather mask')
-        ],
-        'Vital signs are heart rate of 107, blood pressure 104/58; '   +\
-        'breathing at 16; temperature 100 F., orally.  O2 saturation ' +\
-        '98% on room air; weight 115 pounds':[
-            _Result(match_text='heart rate of 107'),
-            _Result(match_text='blood pressure 104/58'),
-            _Result(match_text='breathing at 16'),
-            _Result(match_text='temperature 100 F'),
-            _Result(match_text='O2 saturation 98% on room air'),
-            _Result(match_text='weight 115 pounds')
-        ],
+
+        # all-text regexes were removed, not a problem for Spacy sentence seg.
+        
+        # 'Vital signs were a temperature of 97.5, a heart rate of 70, ' +\
+        # 'a blood pressure of 193/100, a respiratory rate of 20, and '  +\
+        # 'an oxygen saturation of 96% on 2 liters':[
+        #     _Result(match_text='temperature of 97.5'),
+        #     _Result(match_text='heart rate of 70'),
+        #     _Result(match_text='blood pressure of 193/100'),
+        #     _Result(match_text='respiratory rate of 20'),
+        #     _Result(match_text='oxygen saturation of 96% on 2 liters')
+        # ],
+        # 'His vitals were a temperature of 98.1.  Heart rate of 76.  Blood ' +\
+        # 'pressure 160/80 with intermittent rise to systolic blood pressure ' +\
+        # 'of 230 and a respiratory rate of 14. His initial weight was ' +\
+        # 'approximately 73 kg':[
+        #     _Result(match_text='temperature of 98.1'),
+        #     _Result(match_text='Heart rate of 76'),
+        #     _Result(match_text='Blood pressure 160/80'),
+        #     _Result(match_text='systolic blood pressure of 230'),
+        #     _Result(match_text='respiratory rate of 14'),
+        #     _Result(match_text='weight was approximately 73 kg')
+        # ],
+        # 'Physical examination on admission revealed temperature was 96.3, ' +\
+        # 'heart rate was 76, blood pressure was 190/80, the respiratory '    +\
+        # 'rate was 21,\nand the oxygen saturation was 80% to 92% on a 100% ' +\
+        # 'nonrebreather mask':[
+        #     _Result(match_text='temperature was 96.3'),
+        #     _Result(match_text='heart rate was 76'),
+        #     _Result(match_text='blood pressure was 190/80'),
+        #     _Result(match_text='respiratory rate was 21'),
+        #     _Result(match_text='oxygen saturation was 80% to 92% on a ' \
+        #             '100% nonrebreather mask')
+        # ],
+        # 'Vital signs are heart rate of 107, blood pressure 104/58; '   +\
+        # 'breathing at 16; temperature 100 F., orally.  O2 saturation ' +\
+        # '98% on room air; weight 115 pounds':[
+        #     _Result(match_text='heart rate of 107'),
+        #     _Result(match_text='blood pressure 104/58'),
+        #     _Result(match_text='breathing at 16'),
+        #     _Result(match_text='temperature 100 F'),
+        #     _Result(match_text='O2 saturation 98% on room air'),
+        #     _Result(match_text='weight 115 pounds')
+        # ],
         # lists of numbers, each with units
         'Radiology 117 K/uL 12.6 g/dL 151 mg/dL 3.9 mg/dL 24 mEq/L':[
             _Result(match_text='117 K/uL 12.6 g/dL 151 mg/dL ' +\

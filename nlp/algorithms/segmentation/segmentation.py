@@ -65,15 +65,26 @@ import time
 import optparse
 import en_core_web_sm as english_model
 from nltk.tokenize import sent_tokenize
-from claritynlp_logging import log, ERROR, DEBUG
 
 if __name__ == '__main__':
+
+    # interactive testing; add nlp dir to path to find logging class
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** test_lab_value_matcher.py: nlp dir not found ***\n')
+        sys.exit(0)
+    
     import segmentation_helper as seg_helper
 else:
     from algorithms.segmentation import segmentation_helper as seg_helper
 
+from claritynlp_logging import log, ERROR, DEBUG
+    
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
+VERSION_MINOR = 2
 
 # set to True to enable debug output
 TRACE = False
