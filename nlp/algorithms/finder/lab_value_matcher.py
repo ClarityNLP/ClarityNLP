@@ -41,7 +41,7 @@ _MODULE_NAME = 'lab_value_matcher.py'
 _TRACE = False
 
 # Most of these are from http://ebmcalc.com/Basic.htm, an online medical unit
-# conversion tool. Additional unit strings have been added.
+# conversion tool. Additional unit strings have been added, some deleted.
 _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
              r'breaths/min|centimeters|cmH2O|cmHg|cm^2|cm2|cm|cents|days|'    +\
              r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
@@ -50,8 +50,8 @@ _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
              r'kcal/day|K/uL|'                                                +\
              r'kg/m2|kg/m^2|kg/sqm|kg|kilograms|km/hr|km/sec|km/s|knots|kPa|' +\
              r'L/24H|L/day|L/min|L/sec|lb|Liter|litresO2|logit|L|m/sec|mbar|' +\
-             r'mcg/dL|mcg/Kg/min/mcg/kg|mcg/mL|mcgm/mL|mEq/L/hr|meq/L|mEq/L|' +\
-             r'mEq|meters|'                                                   +\
+             r'mcg/dL|mcg/Kg/min/mcg/kg|mcg/mL|mcgm/mL|mEq/L/hr|mEq/L|'       +\
+             r'mEq|meters|m/uL|'                                              +\
              r'METs|mg%|mg/day|mg/dL|mg/g|mg/kg|mg/mL|mg|micm|miles/hr|'      +\
              r'miles/sec|miles/s|mph|mins|min|mIU/mL|mL/24H|mL/day|mL/dL|'    +\
              r'mL/hr|mL/L|mL/min|mL/sec|mL/sqm|mL|mm/Hr|mmHg|mmol/L|mm|'      +\
@@ -167,6 +167,13 @@ _str_o2_device = r'\(?(bipap|non[-\s]?rebreather(\smask)?|nasal\s?cannula|'  +\
 # need '-' and '+' to capture ion concentrations such as 'Ca++ : 8.0 mg/dL'
 _str_simple_header = r'\b(?<!/)[-+a-z]+'
 
+# header value ref1 - ref2 units; value can be starred if outside ref range
+_str_value_with_ref_range = _str_simple_header + r'[:\s]?' + _str_num +\
+    r'[*\s]+' + _str_num + r'\s?\-\s?' + _str_num + r'\s?' +\
+    r'(' + _str_units + r')?' + r'\s?'
+_regex_value_with_ref_range = re.compile(_str_value_with_ref_range,
+                                         re.IGNORECASE)
+
 # header-value pair
 _str_simple_pair = _str_simple_header + r':\s?' + _str_num + r'\s?' +\
     _str_units + r'\s?'
@@ -279,6 +286,7 @@ def init():
     _all_regex_lists.append(o2_regexes)
 
     _all_regex_lists.append( [_regex_num_and_unit_list] )
+    _all_regex_lists.append( [_regex_value_with_ref_range] )
     _all_regex_lists.append( [_regex_simple_pair] )
     
     
