@@ -500,7 +500,8 @@ class CQLExecutionTask(BaseTask):
 
             # setup the request header; add authentication if credentials provided
             headers = {
-                'Content-Type':'application/json'
+                'Content-Type':'application/json; charset=utf-8',
+                'Accept':'application/json; charset=utf-8'
             }
 
             if fhir_auth_type is not None and fhir_auth_token is not None:
@@ -547,11 +548,12 @@ class CQLExecutionTask(BaseTask):
             log()
             
             has_error = False
+            r = None
             try:
                 r = requests.post(#'https://gt-apps.hdap.gatech.edu/cql/evaluate', #cql_eval_url,
                                   #'https://apps.hdap.gatech.edu/cql/evaluate',
                                   'http://cql-execution:8080/cql/evaluate',
-                                  headers=headers, json=payload)
+                                  headers=headers, data=json.dumps(payload, indent=4))
             except requests.exceptions.HTTPError as e:
                 log('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
                 has_error = True
@@ -567,10 +569,11 @@ class CQLExecutionTask(BaseTask):
 
             if has_error:
                 log('HTTP error, terminating CQLExecutionTask...')
-                log('RESPONSE CONTENT')
-                log(r.content)
-                log('RESPONSE HEADERS')
-                log(r.headers)
+                if r:
+                    log('RESPONSE CONTENT')
+                    log(r.content)
+                    log('RESPONSE HEADERS')
+                    log(r.headers)
                 return
                 
             log('Response status code: {0}'.format(r.status_code))
