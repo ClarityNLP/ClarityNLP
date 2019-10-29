@@ -28,7 +28,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 10
+_VERSION_MINOR = 11
 
 # set to True to enable debug output
 _TRACE = True
@@ -155,7 +155,9 @@ def _json_to_objs(json_obj):
 
     if _TRACE:
         log('CQLExecutionTask: Calling _json_to_objs...')
-    
+
+    KEY_RESULT_TYPE = 'resultType'
+        
     results = []
 
     # assumes we either have a list of objects or a single obj
@@ -165,6 +167,9 @@ def _json_to_objs(json_obj):
         if _TRACE:
             log('\tfound list of length {0}'.format(len(json_obj)))
         for e in json_obj:
+            # skip if no resultType key
+            if KEY_RESULT_TYPE not in e:
+                continue
             if _TRACE:
                 log('\t\tdecoding resource type {0}'.format(e['resultType']))
             result_obj = crp.decode_top_level_obj(e)
@@ -437,6 +442,7 @@ class CQLExecutionTask(BaseTask):
                                          job_id,
                                          self.pipeline_config.custom_arguments)
             if patient_id is None:
+                log('\n*** CQLExecutionTask: no patient_id was found ***\n')
                 return
 
             # patient_id must be a string
