@@ -61,12 +61,12 @@ def run_task(task):
 
 def threaded_func(arg0, arg1, arg2):
     time.sleep(2)
-    active = get_active_workers()
+    active = get_active_workers() * 3
     log("{}=MAX LUIGI WORKERS".format(util.luigi_workers))
     num_workers = int(util.luigi_workers)
     n = 0
     if active > num_workers:
-        while active > num_workers and n < 60:
+        while active > num_workers and n < 30:
             log("{}=ACTIVE LUIGI WORKERS; SLEEPING..".format(active))
             time.sleep(5)
             active = get_active_workers()
