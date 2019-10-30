@@ -429,13 +429,14 @@ class CQLExecutionTask(BaseTask):
                       format(fhir_version))
                 return
             
-            # # URL of the FHIR server's CQL evaluation endpoint
-            # cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
-            #                                'cql_eval_url',
-            #                                job_id,
-            #                                self.pipeline_config.custom_arguments)
-            # if cql_eval_url is None:
-            #     return
+            # URL of the FHIR server's CQL evaluation endpoint
+            cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
+                                           'cql_eval_url',
+                                           job_id,
+                                           self.pipeline_config.custom_arguments)
+            if cql_eval_url is None:
+                log('\n*** CQLExecutionTask: no cql_eval_url was found ***\n')
+                return
             
             patient_id = _get_custom_arg(_FHIR_PATIENT_ID,
                                          'patient_id',
@@ -508,25 +509,25 @@ class CQLExecutionTask(BaseTask):
                 if len(fhir_auth_type) > 0 and len(fhir_auth_token) > 0:
                     headers['Authorization'] = '{0} {1}'.format(fhir_auth_type, fhir_auth_token)
             
-            # params for UMLS OID code lookup
-            fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
-                                                           'fhir_terminology_service_uri',
-                                                           job_id,
-                                                           self.pipeline_config.custom_arguments)
-            # ensure '/' termination
-            if fhir_terminology_service_uri is not None:
-                if not fhir_terminology_service_uri.endswith('/'):
-                    fhir_terminology_service_uri += '/'
+            # # params for UMLS OID code lookup
+            # fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
+            #                                                'fhir_terminology_service_uri',
+            #                                                job_id,
+            #                                                self.pipeline_config.custom_arguments)
+            # # ensure '/' termination
+            # if fhir_terminology_service_uri is not None:
+            #     if not fhir_terminology_service_uri.endswith('/'):
+            #         fhir_terminology_service_uri += '/'
 
-            fhir_terminology_user_name = _get_custom_arg(_FHIR_TERMINOLOGY_USER_NAME,
-                                                         'fhir_terminology_user_name',
-                                                         job_id,
-                                                         self.pipeline_config.custom_arguments)
+            # fhir_terminology_user_name = _get_custom_arg(_FHIR_TERMINOLOGY_USER_NAME,
+            #                                              'fhir_terminology_user_name',
+            #                                              job_id,
+            #                                              self.pipeline_config.custom_arguments)
             
-            fhir_terminology_user_password = _get_custom_arg(_FHIR_TERMINOLOGY_USER_PASSWORD,
-                                                             'fhir_terminology_user_password',
-                                                             job_id,
-                                                             self.pipeline_config.custom_arguments)
+            # fhir_terminology_user_password = _get_custom_arg(_FHIR_TERMINOLOGY_USER_PASSWORD,
+            #                                                  'fhir_terminology_user_password',
+            #                                                  job_id,
+            #                                                  self.pipeline_config.custom_arguments)
             
             # # setup terminology server capability
             # if fhir_terminology_service_uri is not None and \
@@ -552,7 +553,8 @@ class CQLExecutionTask(BaseTask):
             try:
                 r = requests.post(#'https://gt-apps.hdap.gatech.edu/cql/evaluate', #cql_eval_url,
                                   #'https://apps.hdap.gatech.edu/cql/evaluate',
-                                  'http://cql-execution:8080/cql/evaluate',
+                                  #'http://cql-execution:8080/cql/evaluate',
+                                  cql_eval_url,
                                   headers=headers, data=json.dumps(payload, indent=4))
             except requests.exceptions.HTTPError as e:
                 log('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
