@@ -752,6 +752,10 @@ def mongo_process_operations(expr_obj_list,
     mongo_db_obj = client[util.mongo_db]
     mongo_collection_obj = mongo_db_obj['phenotype_results']
 
+    # ensure integer job_id; expression evaluator needs to lookup results
+    # by job_id, but a job id of 42 is different from a job_id of '42'
+    job_id = int(job_id)
+    
     try:
         is_final_save = c['final']
 
@@ -800,7 +804,14 @@ def mongo_process_operations(expr_obj_list,
                                                                oid_list_of_lists)
 
             if len(output_docs) > 0:
-                mongo_collection_obj.insert_many(output_docs)
+                log('***** mongo_process_operations: writing {0} ' \
+                    'output_docs *****'.format(len(output_docs)))
+                try:
+                    mongo_collection_obj.insert_many(output_docs)
+                except pymongo.errors.BulkWriteError as e:
+                    log('****** mongo_process_operations: ' \
+                        'mongo insert_many failure ******')
+                    log(e)
             else:
                 log('mongo_process_operations ({0}): ' \
                       'no phenotype matches on "{1}".'.format(eval_result.expr_type,
