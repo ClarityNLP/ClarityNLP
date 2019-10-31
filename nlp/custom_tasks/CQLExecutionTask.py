@@ -551,11 +551,10 @@ class CQLExecutionTask(BaseTask):
             has_error = False
             r = None
             try:
-                r = requests.post(#'https://gt-apps.hdap.gatech.edu/cql/evaluate', #cql_eval_url,
-                                  #'https://apps.hdap.gatech.edu/cql/evaluate',
-                                  #'http://cql-execution:8080/cql/evaluate',
-                                  cql_eval_url,
-                                  headers=headers, data=json.dumps(payload, indent=4))
+                r = requests.post(cql_eval_url,
+                                  headers=headers,
+                                  data=json.dumps(payload, indent=4))
+                
             except requests.exceptions.HTTPError as e:
                 log('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
                 has_error = True
@@ -616,10 +615,10 @@ class CQLExecutionTask(BaseTask):
                 if obj is None:
                     continue
 
-                if _TRACE:
-                    log('obj before _to_result_obj: ')
-                    log(obj)
-                    log()
+                #if _TRACE:
+                #    log('obj before _to_result_obj: ')
+                #    log(obj)
+                #    log()
 
                 assert _KEY_RT in obj
                 resource_type = obj[_KEY_RT]
