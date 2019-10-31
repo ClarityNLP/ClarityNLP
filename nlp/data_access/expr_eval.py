@@ -236,7 +236,7 @@ regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -2371,6 +2371,9 @@ def evaluate_expression(expr_obj,
     assert EXPR_TYPE_MATH == expr_obj.expr_type or \
         EXPR_TYPE_LOGIC == expr_obj.expr_type
 
+    # the job_id needs to be an integer
+    job_id = int(job_id)
+    
     if EXPR_TYPE_MATH == expr_obj.expr_type:
         result = _eval_math_expr(job_id,
                                  expr_obj,
