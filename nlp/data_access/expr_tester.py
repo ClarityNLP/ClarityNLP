@@ -61,7 +61,15 @@ import subprocess
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from collections import namedtuple, OrderedDict
-from claritynlp_logging import log, ERROR, DEBUG
+
+# modify path for local testing
+# (imports need the ClarityNLP logger)
+if __name__ == '__main__':
+    cur_dir = sys.path[0]
+    nlp_dir, tail = os.path.split(cur_dir)
+    sys.path.append(nlp_dir)
+    sys.path.append(os.path.join(nlp_dir, 'tasks'))
+    sys.path.append(os.path.join(nlp_dir, 'data_access'))
 
 #from bson import ObjectId
 
@@ -71,9 +79,10 @@ try:
 except:
     from data_access import expr_eval
     from data_access import expr_result
+
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME   = 'expr_tester.py'
 
 _TRACE = False
@@ -181,7 +190,7 @@ def _evaluate_expressions(expr_obj_list,
         if len(output_docs) > 0:
             mongo_collection_obj.insert_many(output_docs)
         else:
-            log('mongo_process_operations ({0}): ' \
+            print('mongo_process_operations ({0}): ' \
                   'no phenotype matches on "{1}".'.format(eval_result.expr_type,
                                                           eval_result.expr_text))
 
@@ -202,18 +211,18 @@ def _delete_prev_results(job_id, mongo_collection_obj):
     # delete all assigned results from a previous run of this code
     result = mongo_collection_obj.delete_many(
         {"job_id":job_id, "nlpql_feature":_TEST_NLPQL_FEATURE})
-    log('Removed {0} result docs with the test feature.'.
+    print('Removed {0} result docs with the test feature.'.
           format(result.deleted_count))
 
     # delete all temp results from a previous run of this code
     result = mongo_collection_obj.delete_many(
         {"nlpql_feature":expr_eval.regex_temp_nlpql_feature})
-    log('Removed {0} docs with temp NLPQL features.'.
+    print('Removed {0} docs with temp NLPQL features.'.
           format(result.deleted_count))
     
 
 ###############################################################################
-def _banner_log(msg):
+def _banner_print(msg):
     """
     Print the message centered in a border of stars.
     """
@@ -236,11 +245,11 @@ def _banner_log(msg):
 
     star_count = 1 + ws_left + n + ws_right + 1
         
-    log('{0}'.format('*'*star_count))
-    log('{0}{1}{2}'.format('*', ' '*(star_count-2), '*'))
-    log('{0}{1}{2}{3}{4}'.format('*', ' '*ws_left, msg, ' '*ws_right, '*'))
-    log('{0}{1}{2}'.format('*', ' '*(star_count-2), '*'))
-    log('{0}'.format('*'*star_count))
+    print('{0}'.format('*'*star_count))
+    print('{0}{1}{2}'.format('*', ' '*(star_count-2), '*'))
+    print('{0}{1}{2}{3}{4}'.format('*', ' '*ws_left, msg, ' '*ws_right, '*'))
+    print('{0}{1}{2}'.format('*', ' '*(star_count-2), '*'))
+    print('{0}'.format('*'*star_count))
     
 
 ###############################################################################
@@ -317,7 +326,7 @@ def _get_feature_set(mongo_collection_obj, context_field, nlpql_feature):
 def _test_basic_expressions(job_id,     # integer job id from data file
                             cf,         # context field, 'document' or 'subject'
                             mongo_obj):
-    log('Called _test_basic_expressions...')
+    print('Called _test_basic_expressions...')
     
     # rename some precomputed sets
     temp   = _CACHE['Temperature']
@@ -371,7 +380,7 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
                                 cf,         # context field, 'document' or 'subject'
                                 mongo_obj):
 
-    log('Called _test_pure_math_expressions...')
+    print('Called _test_pure_math_expressions...')
     
     expr = 'Temperature.value >= 100.4'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
@@ -561,7 +570,7 @@ def _test_math_with_multiple_features(job_id,   # integer job id from data file
                                       cf,       # context field
                                       mongo_obj):
 
-    log('Called _test_math_with_multiple_features...')
+    print('Called _test_math_with_multiple_features...')
     
     expr = 'Lesion.dimension_X > 15 AND Lesion.dimension_X < 30 OR ' \
         '(Temperature.value >= 100.4)'
@@ -689,7 +698,7 @@ def _test_pure_logic_expressions(job_id, # integer job id
                                  cf,     # context field
                                  mongo_obj):
 
-    log('Called _test_pure_logic_expressions...')
+    print('Called _test_pure_logic_expressions...')
     
     # rename some precomputed sets
     tachy  = _CACHE['hasTachycardia']
@@ -839,7 +848,7 @@ def _test_mixed_math_and_logic_expressions(job_id, # integer job id
                                            cf,     # context field
                                            mongo_obj):
 
-    log('Called _test_mixed_math_and_logic_expressions...')
+    print('Called _test_mixed_math_and_logic_expressions...')
     
     # rename some precomputed sets
     tachy  = _CACHE['hasTachycardia']
@@ -1058,7 +1067,7 @@ def _test_not_with_positive_logic(job_id, # integer job id
                                   cf,     # context field
                                   mongo_obj):
 
-    log('Called _test_not_with_positive_logic...')
+    print('Called _test_not_with_positive_logic...')
     
     # rename some precomputed sets
     tachy  = _CACHE['hasTachycardia']
@@ -1149,7 +1158,7 @@ def _test_two_component_or(job_id, # integer job id
 
     """
 
-    log('Called _test_two_component_or...')
+    print('Called _test_two_component_or...')
     
     for i, feature1 in enumerate(_BASIC_FEATURES):
         if feature1 == _BASIC_FEATURES[-1]:
@@ -1159,7 +1168,7 @@ def _test_two_component_or(job_id, # integer job id
         computed_f1 = _run_selftest_expression(job_id, cf, feature1, mongo_obj)
         expected_f1 = _CACHE[feature1]
         if computed_f1 != expected_f1:
-            log('*** 1 ***')
+            print('*** 1 ***')
             return False
 
         # set of all context variable values for feature1
@@ -1167,13 +1176,13 @@ def _test_two_component_or(job_id, # integer job id
         
         for j in range(i+1, len(_BASIC_FEATURES)):
             feature2 = _BASIC_FEATURES[j]
-            log('\t{0} OR {1}'.format(feature1, feature2))
+            print('\t{0} OR {1}'.format(feature1, feature2))
 
             # expr == 'feature2'
             computed_f2 = _run_selftest_expression(job_id, cf, feature2, mongo_obj)
             expected_f2 = _CACHE[feature2]
             if computed_f2 != expected_f2:
-                log('*** 3 ***')
+                print('*** 3 ***')
                 return False
 
             # set of all context variable values for feature2
@@ -1184,7 +1193,7 @@ def _test_two_component_or(job_id, # integer job id
             computed_or = _run_selftest_expression(job_id, cf, expr, mongo_obj)
             expected_or = set1 | set2
             if computed_or != expected_or:
-                log('*** 2 ***')
+                print('*** 2 ***')
                 return False
 
             # expr == 'feature1 AND feature2'
@@ -1192,7 +1201,7 @@ def _test_two_component_or(job_id, # integer job id
             computed_and = _run_selftest_expression(job_id, cf, expr, mongo_obj)
             expected_and = set1 & set2
             if computed_and != expected_and:
-                log('*** 4 ***')
+                print('*** 4 ***')
                 return False
 
             # expr == '(feature1 OR feature2) NOT (feature1 AND feature2)'
@@ -1209,10 +1218,10 @@ def _test_two_component_or(job_id, # integer job id
             lhs = len(computed_or)
             rhs = len(computed_f1) + len(computed_f2) - len(computed_and)
             if lhs != rhs:
-                log('*** 6 ***')
+                print('*** 6 ***')
                 return False
             if lhs != len(expected_or):
-                log('*** 7 ***')
+                print('*** 7 ***')
                 return False
 
             # second check:
@@ -1220,10 +1229,10 @@ def _test_two_component_or(job_id, # integer job id
             lhs = len(computed_or)
             rhs = len(computed_not) + len(computed_and)
             if lhs != rhs:
-                log('*** 8 ***')
+                print('*** 8 ***')
                 return False
             if lhs != len(expected_or):
-                log('*** 9 ***')
+                print('*** 9 ***')
                 return False
     
     return True
@@ -1277,7 +1286,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
  
     """
 
-    log('Called _test_three_component_or...')
+    print('Called _test_three_component_or...')
     
     A = _CACHE[feature_A]
     B = _CACHE[feature_B]
@@ -1289,7 +1298,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     computed_or = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     expected_or = A | B | C
     if computed_or != expected_or:
-        log('*** 1 ***')
+        print('*** 1 ***')
         return False
 
     len_A = len(A)
@@ -1302,7 +1311,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     computed_AB = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     expected_AB = A & B
     if computed_AB != expected_AB:
-        log('*** 2 ***')
+        print('*** 2 ***')
         return False
 
     len_AB = len(computed_AB)
@@ -1312,7 +1321,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     computed_AC = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     expected_AC = A & C
     if computed_AC != expected_AC:
-        log('*** 3 ***')
+        print('*** 3 ***')
         return False
 
     len_AC = len(computed_AC)
@@ -1322,7 +1331,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     computed_BC = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     expected_BC = B & C
     if computed_BC != expected_BC:
-        log('*** 4 ***')
+        print('*** 4 ***')
         return False
 
     len_BC = len(computed_BC)
@@ -1332,7 +1341,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     computed_ABC = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     expected_ABC = A & B & C
     if computed_ABC != expected_ABC:
-        log('*** 5 ***')
+        print('*** 5 ***')
         return False
 
     len_ABC = len(computed_ABC)
@@ -1346,7 +1355,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     set2 = (A & B) | (A & C) | (B & C)
     expected_not = set1 - set2
     if computed_not != expected_not:
-        log('*** 6 ***')
+        print('*** 6 ***')
         return False
 
     len_not = len(computed_not)
@@ -1357,7 +1366,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     computed_extra = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     expected_extra = (A | B | C) & (A & B & C)
     if computed_extra != expected_extra:
-        log('*** 7 ***')
+        print('*** 7 ***')
         return False
 
     len_extra = len(computed_extra)
@@ -1365,7 +1374,7 @@ def _test_three_component_or(feature_A,  # feature or expr in _CACHE
     # first check
     rhs = len_A + len_B + len_C - (len_AB + len_AC + len_BC) + len_ABC
     if len_A_or_B_or_C != rhs:
-        log('*** 8 ***')
+        print('*** 8 ***')
         return False
 
     # second check
@@ -1385,7 +1394,7 @@ def _test_three_component_or_with_math(job_id,      # ClarityNLP job id
     cardinality of the result.
     """
 
-    log('Called _test_three_component_or_with_math...')
+    print('Called _test_three_component_or_with_math...')
 
     _run_selftest_expression(job_id, cf, 'hasDyspnea', mongo_obj)
     _run_selftest_expression(job_id, cf, 'hasNausea', mongo_obj)
@@ -1403,14 +1412,14 @@ def _test_three_component_or_with_math(job_id,      # ClarityNLP job id
         })
     expected = _to_context_set(cf, docs)
     if computed != expected:
-        log('*** 1 ***')
+        print('*** 1 ***')
         return False
     
     if not _test_three_component_or('hasDyspnea',
                                     'hasNausea',
                                     expr,
                                     job_id, cf, mongo_obj):
-        log('*** 2 ***')
+        print('*** 2 ***')
         return False
 
     expr = '(Lesion.dimension_X >= 5 AND Lesion.dimension_Y < 30)'
@@ -1426,14 +1435,14 @@ def _test_three_component_or_with_math(job_id,      # ClarityNLP job id
         })
     expected = _to_context_set(cf, docs)
     if computed != expected:
-        log('*** 3 ***')
+        print('*** 3 ***')
         return False
 
     if not _test_three_component_or('hasDyspnea',
                                     expr,
                                     'hasNausea',
                                     job_id, cf, mongo_obj):
-        log('*** 3 ***')
+        print('*** 3 ***')
         return False
     
     return True
@@ -1512,8 +1521,8 @@ def _run_self_tests(job_id      = 11222,
         test_data = infile.read().decode('utf-8')
 
     if test_data is None:
-        log('*** Error decompressing test data file ***')
-        log('\tFilename: {0}'.format(TEST_FILE_NAME))
+        print('*** Error decompressing test data file ***')
+        print('\tFilename: {0}'.format(TEST_FILE_NAME))
         return False
 
     # write data to temp file, then load into Mongo via mongoimport
@@ -1543,7 +1552,7 @@ def _run_self_tests(job_id      = 11222,
                             universal_newlines=True)
         if 0 != len(cp.stdout):
             # an error occurred
-            log(cp.stdout)
+            print(cp.stdout)
             return False
 
     # must either be a patient or document context
@@ -1567,8 +1576,8 @@ def _run_self_tests(job_id      = 11222,
         all_ok = _selftest(job_id, cf, mongo_obj)
         
     except ConnectionFailure as e:
-        log('*** Mongo exception: ConnectionFailure ***')
-        log(e)
+        print('*** Mongo exception: ConnectionFailure ***')
+        print(e)
         
     # drop the collection and database
     if mongo_obj is not None:
@@ -1577,9 +1586,9 @@ def _run_self_tests(job_id      = 11222,
         mongo_client_obj.drop_database(DB_NAME)
 
     if all_ok:
-        log('\nAll tests passed.')
+        print('\nAll tests passed.')
     else:
-        log('\nOne or more tests failed.')
+        print('\nOne or more tests failed.')
         
     return all_ok
 
@@ -1624,18 +1633,18 @@ def _run_tests(job_id,
     counter = 1
     for e in expressions:
 
-        log('[{0:3}]: "{1}"'.format(counter, e))
+        print('[{0:3}]: "{1}"'.format(counter, e))
 
         parse_result = expr_eval.parse_expression(e, the_name_list)
         if 0 == len(parse_result):
-            log('\n*** parse_expression failed ***\n')
+            print('\n*** parse_expression failed ***\n')
             break
         
         # generate a list of ExpressionObject primitives
         expression_object_list = expr_eval.generate_expressions(final_nlpql_feature,
                                                                 parse_result)
         if 0 == len(expression_object_list):
-            log('\n*** generate_expressions failed ***\n')
+            print('\n*** generate_expressions failed ***\n')
             break
         
         # evaluate the ExpressionObjects in the list
@@ -1645,25 +1654,26 @@ def _run_tests(job_id,
                                         context_field,
                                         is_final)
 
-        _banner_log(e)
+        _banner_print(e)
         for expr_obj, output_docs in results:
-            log()
-            log('Subexpression text: {0}'.format(expr_obj.expr_text))
-            log('Subexpression type: {0}'.format(expr_obj.expr_type))
-            log('      Result count: {0}'.format(len(output_docs)))
-            log('     NLPQL feature: {0}'.format(expr_obj.nlpql_feature))
-            log('\nResults: ')
+            print()
+            print('Subexpression text: {0}'.format(expr_obj.expr_text))
+            print('Subexpression type: {0}'.format(expr_obj.expr_type))
+            print('      Result count: {0}'.format(len(output_docs)))
+            print('     NLPQL feature: {0}'.format(expr_obj.nlpql_feature))
+            print('\nResults: ')
 
             n = len(output_docs)
             if 0 == n:
-                log('\tNone.')
+                print('\tNone.')
                 continue
 
             if expr_eval.EXPR_TYPE_MATH == expr_obj.expr_type:
                 for k in range(n):
                     if k < num or k > n-num:
                         doc = output_docs[k]
-                        log('[{0:6}]: Document ...{1}, NLPQL feature {2}:'.
+                        print(doc)
+                        print('[{0:6}]: Document ...{1}, NLPQL feature {2}:'.
                               format(k, str(doc['_id'])[-6:],
                                      expr_obj.nlpql_feature))
                         
@@ -1678,18 +1688,18 @@ def _run_tests(job_id,
                         else:
                             context_str = 'report_id: {0:8}'.format(doc['report_id'])
                             
-                        log('\t[{0:6}]: _id: {1} nlpql_feature: {2:16} ' \
+                        print('\t[{0:6}]: _id: {1} nlpql_feature: {2:16} ' \
                               '{3} data: {4}'.
                               format(k, doc['_id'], doc['nlpql_feature'],
                                      context_str, data_field))
                     elif k == num:
-                        log('\t...')
+                        print('\t...')
 
             else:
                 for k in range(n):
                     if k < num or k > n-num:
                         doc = output_docs[k]
-                        log('[{0:6}]: Document ...{1}, NLPQL feature {2}:'.
+                        print('[{0:6}]: Document ...{1}, NLPQL feature {2}:'.
                               format(k, str(doc['_id'])[-6:],
                                      expr_obj.nlpql_feature))
 
@@ -1707,17 +1717,17 @@ def _run_tests(job_id,
                             else:
                                 context_str = 'report_id: {0:8}'.format(tup.report_id)
 
-                            log('\t\t_id: ...{0} operation: {1:20} '  \
+                            print('\t\t_id: ...{0} operation: {1:20} '  \
                                   'nlpql_feature: {2:16} {3} ' \
                                   'data: {4} '.
                                   format(str(tup.oid)[-6:], tup.pipeline_type,
                                          tup.nlpql_feature, context_str,
                                          data_string))
                     elif k == num:
-                        log('\t...')
+                        print('\t...')
                 
         counter += 1
-        log()
+        print()
 
         # exit if user provided an expression on the command line
         if command_line_expression is not None:
@@ -1734,7 +1744,7 @@ def _reduce_expressions(file_data):
     # (expr_eval.is_valid)
 
     if _TRACE:
-        log('called _reduce_expressions...')
+        print('called _reduce_expressions...')
     
     task_names = set(file_data.tasks)
     defined_names = set(file_data.names)
@@ -1752,16 +1762,16 @@ def _reduce_expressions(file_data):
             for index, token in enumerate(tokens):
                 # only want NLPQL-defined names
                 if token not in defined_names:
-                    #log('not in defined_names: {0}'.format(token))
+                    #print('not in defined_names: {0}'.format(token))
                     continue
                 elif token in task_names:
                     # cannot reduce further
-                    #log('Expression "{0}": primitive name "{1}"'.
+                    #print('Expression "{0}": primitive name "{1}"'.
                     #      format(expr_name, token))
                     continue
                 elif token != expr_name and token in expr_dict:
                     is_composite = True
-                    #log('Expression "{0}": composite name "{1}"'.
+                    #print('Expression "{0}": composite name "{1}"'.
                     #      format(expr_name, token))
                     # expand and surround with space-separated parens
                     new_token = '( ' + expr_dict[token] + r' )'
@@ -1804,8 +1814,8 @@ def _parse_file(filepath):
     """
 
     # repeated whitespace replaced with single space below, so can use just \s
-    str_context_statement = r'context\s(?P<context>[^;]+);'
-    regex_context_statement = re.compile(str_context_statement)
+    str_context_statement = r'context\s(?P<context>(patient|document));'
+    regex_context_statement = re.compile(str_context_statement, re.IGNORECASE)
 
     str_expr_statement = r'\bdefine\s(final\s)?(?P<feature>[^:]+):\s'  +\
                          r'where\s(?P<expr>[^;]+);'
@@ -1832,7 +1842,7 @@ def _parse_file(filepath):
     if match:
         context = match.group('context').strip()
     else:
-        log('*** parse_file: context statement not found ***')
+        print('*** parse_file: context statement not found ***')
         sys.exit(-1)
 
     # extract expression definitions
@@ -1842,7 +1852,7 @@ def _parse_file(filepath):
         feature = match.group('feature').strip()
         expression = match.group('expr').strip()
         if feature in expression_dict:
-            log('*** parse_file: multiple definitions for "{0}" ***'.
+            print('*** parse_file: multiple definitions for "{0}" ***'.
                   format(feature))
             sys.exit(-1)
         expression_dict[feature] = expression
@@ -1853,7 +1863,7 @@ def _parse_file(filepath):
     for match in iterator:
         task = match.group('feature').strip()
         if task in task_list:
-            log('*** parse_file: multiple definitions for "{0}" ***'.
+            print('*** parse_file: multiple definitions for "{0}" ***'.
                   format(task))
             sys.exit(-1)
         task_list.append(task)
@@ -1861,7 +1871,7 @@ def _parse_file(filepath):
     # check task names to ensure not also an expression name
     for t in task_list:
         if t in expression_dict:
-            log('*** parse_file: multiple definitions for "{0}" ***'.
+            print('*** parse_file: multiple definitions for "{0}" ***'.
                   format(t))
             sys.exit(-1)
 
@@ -1886,22 +1896,22 @@ def _parse_file(filepath):
     file_data = _reduce_expressions(file_data)
 
     if _TRACE:
-        log('FILE DATA AFTER EXPRESSION REDUCTION: ')
-        log('\t    context: {0}'.format(file_data.context))
-        log('\t task_names: {0}'.format(file_data.tasks))
-        log('\t      names: {0}'.format(file_data.names))
-        log('\t primitives: {0}'.format(file_data.primitives))
+        print('FILE DATA AFTER EXPRESSION REDUCTION: ')
+        print('\t    context: {0}'.format(file_data.context))
+        print('\t task_names: {0}'.format(file_data.tasks))
+        print('\t      names: {0}'.format(file_data.names))
+        print('\t primitives: {0}'.format(file_data.primitives))
         expression_count = len(file_data.expressions)
         if 0 == expression_count:
-            log('\texpressions: None found')
+            print('\texpressions: None found')
         else:
-            log('\texpressions: ')
+            print('\texpressions: ')
             for i in range(len(file_data.expressions)):
                 expr_name, expr_def = file_data.expressions[i]
                 expr_name, expr_reduced = file_data.reduced_expressions[i]
-                log('{0}'.format(expr_name))
-                log('\toriginal: {0}'.format(expr_def))
-                log('\t reduced: {0}'.format(expr_reduced))
+                print('{0}'.format(expr_name))
+                print('\toriginal: {0}'.format(expr_def))
+                print('\t reduced: {0}'.format(expr_reduced))
 
     return file_data
         
@@ -1958,12 +1968,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        log(_get_version())
+        print(_get_version())
         sys.exit(0)
 
     debug = False
     if 'debug' in args and args.debug:
         debug = True
+        _enable_debug()
         
     job_id = int(args.jobid)
         
@@ -1982,13 +1993,13 @@ if __name__ == '__main__':
         filename = args.filename
 
     if expr is not None and filename is not None:
-        log('Options -e and -f are mutually exclusive.')
+        print('Options -e and -f are mutually exclusive.')
         sys.exit(-1)
 
     name_list = None
     if filename is not None:
         if not os.path.exists(filename):
-            log('File not found: "{0}"'.format(filename))
+            print('File not found: "{0}"'.format(filename))
             sys.exit(-1)
 
         file_data = _parse_file(filename)
@@ -2007,7 +2018,7 @@ if __name__ == '__main__':
 
             result = mongo_collection_obj.delete_many({"job_id":job_id,
                                                        "nlpql_feature":nlpql_feature})
-            log('Removed {0} docs with NLPQL feature {1}.'.
+            print('Removed {0} docs with NLPQL feature {1}.'.
                   format(result.deleted_count, nlpql_feature))
 
     if filename is not None:
