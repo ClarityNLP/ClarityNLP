@@ -163,7 +163,7 @@ _all_subs = [
 ]
 
 # This is the start and end character of the replacement token.
-# If this is changed, change _fix_broken_tokens below.
+# If this is changed, change _fix_broken_tokens and _check_for_tokens below.
 _DELIMITER = '&&'
 
 
@@ -207,6 +207,27 @@ def _print_sentence_list(caption, sentence_list):
     print()
 
 
+###############################################################################
+def _check_for_tokens(sentence_list):
+    """
+    Scan each sentence for any remaining tokens. After undoing the token
+    substitutions no tokens should remain.
+    """
+
+    token_regex = re.compile(r'&&[A-Z0-9]+&&')
+    
+    for s in sentence_list:
+        match = token_regex.search(s)
+        if match:
+            print('segmentation_helper::_check_for_tokens: ' \
+                  'FOUND SENTENCE WITH TOKEN: ')
+            print(s)
+            print()
+
+            # this is a fatal error
+            assert False
+    
+    
 ###############################################################################
 def _fix_broken_tokens(sentence_list):
     """
@@ -284,15 +305,6 @@ def _insert_tokens(report, token_text, tuple_list, sub_list):
             sub_list.append( (token, match_text) )
             counter += 1
 
-    if _TRACE:
-        print('TOKEN MAP: ')
-        for k,v in token_map.items():
-            print('{0} => {1}'.format(k,v))
-        print()
-
-    # convert to list of (token, match_text) tuples
-    #sub_list = list(token_map.items())
-        
     # do token replacements
     new_report = ''
     prev_end = 0
@@ -304,18 +316,6 @@ def _insert_tokens(report, token_text, tuple_list, sub_list):
         prev_end = end
     new_report += report[prev_end:]
         
-    # counter = 0
-    # prev_end = 0
-    # new_report = ''
-    # for start, end, match_text in tuple_list:
-    #     chunk1 = report[prev_end:start]
-    #     replacement = _make_token(token_text, counter)
-    #     new_report += chunk1 + replacement
-    #     prev_end = end
-    #     sub_list.append( (replacement, match_text) )
-    #     counter += 1
-    # new_report += report[prev_end:]
-
     return new_report
     
     
@@ -467,7 +467,8 @@ def do_substitutions(report):
 
     if _TRACE:
         log('REPORT BEFORE SUBSTITUTIONS: \n' + report + '\n')
-    
+
+    # order matters here...
     report = _find_substitutions(report, _regex_abbrev, _abbrev_subs, 'ABBREV')
 
     report = _find_vitals_subs(report, _vitals_subs, 'VITALS')
@@ -509,12 +510,8 @@ def _replace_text(sentence_list, sub_list):
     if 0 == len(sub_list):
         return sentence_list
     
-    #num_replaced   = 0
-    #num_to_replace = len(sub_list)
-
     for i in range(len(sentence_list)):
         count = 0
-        #replacements = []
         sentence = sentence_list[i]
         for entry in sub_list:
             token = entry[0]
@@ -522,29 +519,11 @@ def _replace_text(sentence_list, sub_list):
             # find all occurrences of the token and restore original text
             while -1 != sentence.find(token):
                 sentence = sentence.replace(token, orig)
-                #replacements.append(token)
                 count += 1
 
-        # remove used entries from sub_list
-        #if count > 0:
-        #    sub_list = sub_list[count:]
-            #num_replaced += count
-
-        # update the sentence in the sentence list
-        #if len(replacements) > 0:
         if count > 0:
             sentence_list[i] = sentence
 
-    # if num_replaced != num_to_replace:
-    #     log('segmentation_helper:_replace_text: replacement mismatch ' \
-    #         'for token type {0}'.format(sub_list[0][0]),
-    #         level = ERROR)
-    #     log('num_to_replace: {0}'.format(num_to_replace), level = ERROR)
-    #     log('num_replaced: {0}'.format(num_replaced), level = ERROR)
-    #     _print_sentence_list('sentence list', sentence_list)
-    #     #if _TRACE:
-    #     assert False
-            
     return sentence_list
             
 
@@ -575,7 +554,8 @@ def undo_substitutions(sentence_list):
     sentence_list = _replace_text(sentence_list, _vitals_subs)
     sentence_list = _replace_text(sentence_list, _abbrev_subs)
 
-    #Need to check that all substitutions have been made - TBD
+    # ensure that no more tokens remain
+    _check_for_tokens(sentence_list)
     
     return sentence_list
         
