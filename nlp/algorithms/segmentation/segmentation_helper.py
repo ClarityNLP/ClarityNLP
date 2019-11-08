@@ -39,7 +39,7 @@ except Exception as e:
     import lab_value_matcher as lvm
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME = 'segmentation_helper.py'
 
 # set to True to enable debug output
@@ -92,45 +92,56 @@ _regex_single_word = re.compile(_str_single_word, re.IGNORECASE)
 # neg lookahead prevents capturing inside abbreviations such as Sust.Rel.
 _regex_two_sentences = re.compile(r'\b[a-zA-Z]{2,}\.[A-Z][a-z]+(?!\.)')
 
-# prescription information
-_str_word         = r'\b[-a-z]+\b'
-_str_words        = r'(' + _str_word + r'\s*)*' + _str_word
-_str_drug_name    = r'\b[-A-Za-z]+(/[-A-Za-z]+)?\b'
-_str_amount_num   = r'\d+(\.\d+)?'
-_str_amount       = r'(' + _str_amount_num + r'(/' + _str_amount_num + r')?)?'
-_str_units        = r'\b[a-z]+\.?'
-_str_abbrev       = r'([a-zA-Z]\.){1,3}'
-_str_abbrevs      = r'(' + _str_abbrev + r'\s+)*' + _str_abbrev
-_str_prescription = _str_drug_name + r'\s+' + _str_amount + r'\s*' + _str_units + \
-                   r'\s+' + _str_abbrevs + r'\s+' + _str_words
-_regex_prescription = re.compile(_str_prescription)
+# prescription abbreviations
+_str_prescription_abbrev = r'\b(a\.c|a\.d|ad\.? lib|admov|agit|alt\. h|'    +\
+    r'am[pt]|aq|a\.l|a\.s|a\.t\.c|a\.u|b\.i\.d|b\.[ms]|bol|caps?|'          +\
+    r'd\.a\.w|dieb\. alt|di[lv]|disp|d\.t\.d|d\.w|elix|e\.m\.p|emuls|'      +\
+    r'h\.s|inj|l\.a\.s|liq|lot|mist|n\.m\.t|noct|non rep|n\.t\.e|'          +\
+    r'o\.[dsu]|p\.o\./p\.r|p\.[cmor]|pulv|q\.a\.[dm]|q\.h\.s|q\.[dhs]'      +\
+    r'q\.\s?\d+h|q\.i\.d|q\.o\.d|qqh|q\.\d+\-\d+h|q\.\d+h|q|'               +\
+    r's\.a|sig|sol|s\.o\.s|si op\. sit|ss|stat|supp|susp|syr|'              +\
+    r'tab|tal|t\.i\.[dw]|t\.d\.s|t\.p\.n|tinct?|u\.d|u\.t\. dict|'          +\
+    r'ung|u\.s\.p|vag|y\.o)[\.:](?![a-z])'
+_regex_prescription_abbrev = re.compile(_str_prescription_abbrev,
+                                        re.IGNORECASE)
+# common drug units
+_str_drug_units = r'(mg/[md]?L|mg/g|mg/patch|m[gL]|mcg/hr|mcg/min|'         +\
+    r'mEq/L|meq|g|%|units?)\s?'
+_str_drug_amt = r'\b\d+\s?' + _str_drug_units
+_regex_drug_amt = re.compile(_str_drug_amt, re.IGNORECASE)
 
 # abbreviations
 _str_weekday  = r'((Mon|Tues|Wed|Thurs|Thur|Thu|Fri|Sat|Sun)\.)'
 _str_h_o      = r'(\.?H/O)'
 _str_r_o      = r'(r/o(ut)?)'
 _str_with     = r'(w/)'
-_str_s_p      = r'(s/p)'
+_str_s_p      = r'(s/p)' # stable pending
 _str_r_l      = r'((Right|Left)\s+[A-Z]+)'
 _str_sust_rel = r'(Sust\.?\s?Rel\.?)'
-_str_sig      = r'(Sig\s?:\s?[a-z0-9]+)'
+_str_num_hrs  = r'[1-2]?[0-9]\s?h\.?'
 
 _str_abbrev = r'\b(' + _str_weekday + r'|' + _str_h_o      + r'|' +\
     _str_r_o + r'|'  + _str_s_p     + r'|' + _str_with     + r'|' +\
     _str_s_p + r'|'  + _str_r_l     + r'|' + _str_sust_rel + r'|' +\
-    _str_sig + r')'
+    _str_num_hrs + r')'
 _regex_abbrev = re.compile(_str_abbrev, re.IGNORECASE)
 
 # gender
 _str_gender   = r'\b(sex|gender)\s*:\s*(male|female|m\.?|f\.?)'
 _regex_gender = re.compile(_str_gender, re.IGNORECASE)
 
+# recognizes tokens substituted by this code; case sensitive, must match
+# the token construction in _make_token below
+_str_token = r'\|[A-Z_]+\d+\|'
+_str_multi_token = r'(' + _str_token + r'\s?' + r'){2,}'
+_regex_multi_token = re.compile(_str_multi_token)
+
 # operators except for '-' that might appear in the text
 _operator_set = {
     '+', '*', '/', '%', '^', '>=', '>', '<=', '<', '=', '!='
 }
 
-# lists to keep track of token substitutions
+# lists to keep track of token substitutions; add any new to _all_subs
 _fov_subs          = []
 _anon_subs         = []
 _contrast_subs     = []
@@ -142,6 +153,18 @@ _abbrev_subs       = []
 _gender_subs       = []
 _date_subs         = []
 _time_subs         = []
+_drug_subs         = []
+_multi_token_subs  = []
+
+_all_subs = [
+    _fov_subs, _anon_subs, _contrast_subs, _size_meas_subs, _header_subs,
+    _prescription_subs, _vitals_subs, _abbrev_subs, _gender_subs, _date_subs,
+    _time_subs, _drug_subs, _multi_token_subs
+]
+
+# This is the start and end character of the replacement token.
+# If this is changed, change _fix_broken_tokens below.
+_DELIMITER = '&&'
 
 
 ###############################################################################
@@ -150,7 +173,7 @@ def enable_debug():
     global _TRACE
     _TRACE = True
 
-    lvm.enable_debug()
+    #lvm.enable_debug()
 
     
 ###############################################################################
@@ -160,37 +183,138 @@ def init():
     
 
 ###############################################################################
+def _print_substitutions(tuple_list, banner_text):
+    """
+    Print text substitutions to stdout; for debug only.
+    Tuples are (start_offset, end_offset, match_text).
+    """
+    
+    log('*** {0} ***'.format(banner_text))
+    for i, t in enumerate(tuple_list):
+        log('[{0:3d}]: [{1:4},{2:4}): {3}'.format(i, t[0], t[1], t[2]))
+    log()
+        
+
+###############################################################################
+def _print_sentence_list(caption, sentence_list):
+    """
+    Debug only print function.
+    """
+    
+    print('\n{0}: '.format(caption))
+    for i, s in enumerate(sentence_list):
+        print('[{0:3d}]: {1}'.format(i, s))
+    print()
+
+
+###############################################################################
+def _fix_broken_tokens(sentence_list):
+    """
+    Scan the sentence list and find any substitution tokens that might have
+    been split apart by the sentence tokenizer. If a token was broken apart
+    it will very likely have been split between the '&&' symbols. So look for
+    a sentence that ends with an '&' and has the next sentence starting with
+    an '&'. If that fails, look for a sentence that starts with '&&' and ends
+    with the other piece of the token.
+    """
+
+    broken_list = []
+    n = len(sentence_list)
+    for i in range(len(sentence_list)-2):
+        s1 = sentence_list[i]
+        s2 = sentence_list[i+1]
+        if s1.endswith('&') and s2.startswith('&'):
+            broken_list.append(i)
+        else:
+            if s2.startswith(_DELIMITER):
+                match = re.search(r'&&[A-Z]+\d\d\d\d\Z', s1)
+                if match:
+                    broken_list.append(i)
+
+    if 0 == len(broken_list):
+        return sentence_list
+
+    # concatenate sentences with broken tokens
+    for i in broken_list:
+        assert i+1 < len(sentence_list)
+        sentence_list[i] += sentence_list[i+1]
+        sentence_list[i+1] = ''
+
+    new_sentences = []
+    for s in sentence_list:
+        if len(s) > 0:
+            new_sentences.append(s)
+
+    return new_sentences
+
+    
+###############################################################################
 def _make_token(token_text, counter):
     """
     Generate a token string for textual replacement.
     """
 
-    return '|{0}{1:04}|'.format(token_text, counter)
+    token = '{0}{1}{2:04}{3}'.format(_DELIMITER, token_text,
+                                     counter, _DELIMITER)
+    return token
 
     
 ###############################################################################
 def _insert_tokens(report, token_text, tuple_list, sub_list):
     """
     The tuple_list is a list of (start, end, match_text) tuples. For each
-    tuple in this list, replace report[start:end] with a token of the form
-    'TOKEN0001', TOKEN0002', etc. Store the substitutions in sub_list and
-    return the new report.
+    tuple in this list, replace report[start:end] with a token created by
+    _make_token. Store the substitutions in sub_list and return the new report.
     """
 
     if 0 == len(tuple_list):
         return report
 
+    # generate tokens for each unique text
+    sub_list.clear()
+    token_map = dict()
+
     counter = 0
-    prev_end = 0
+    for start, end, match_text in tuple_list:
+        if match_text in token_map:
+            continue
+        else:
+            token = _make_token(token_text, counter)
+            token_map[match_text] = token
+            sub_list.append( (token, match_text) )
+            counter += 1
+
+    if _TRACE:
+        print('TOKEN MAP: ')
+        for k,v in token_map.items():
+            print('{0} => {1}'.format(k,v))
+        print()
+
+    # convert to list of (token, match_text) tuples
+    #sub_list = list(token_map.items())
+        
+    # do token replacements
     new_report = ''
+    prev_end = 0
     for start, end, match_text in tuple_list:
         chunk1 = report[prev_end:start]
-        replacement = _make_token(token_text, counter)
-        new_report += chunk1 + replacement
+        assert match_text in token_map
+        token = token_map[match_text]
+        new_report += chunk1 + token
         prev_end = end
-        sub_list.append( (replacement, match_text) )
-        counter += 1
     new_report += report[prev_end:]
+        
+    # counter = 0
+    # prev_end = 0
+    # new_report = ''
+    # for start, end, match_text in tuple_list:
+    #     chunk1 = report[prev_end:start]
+    #     replacement = _make_token(token_text, counter)
+    #     new_report += chunk1 + replacement
+    #     prev_end = end
+    #     sub_list.append( (replacement, match_text) )
+    #     counter += 1
+    # new_report += report[prev_end:]
 
     return new_report
     
@@ -216,10 +340,7 @@ def _find_size_meas_subs(report, sub_list, token_text):
     tuple_list = [(m.start, m.end, m.text) for m in measurements]
 
     if _TRACE:
-        log('*** SIZE MEASUREMENTS ***')
-        for t in tuple_list:
-            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        log()
+        _print_substitutions(tuple_list, 'SIZE MEASUREMENTS')
 
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
@@ -240,16 +361,25 @@ def _find_date_subs(report, sub_list, token_text):
     # unpack JSON result into a list of DateValue namedtuples
     dates = [df.DateValue(**d) for d in json_data]
 
+    # ignore all-digit dates, or all text (such as 'may', 'june', etc.)
+    keep_dates = []
+    for d in dates:
+        if d.text.isdigit():
+            continue
+        elif re.match(r'\A[a-z]+\Z', d.text, re.IGNORECASE):
+            continue
+        else:
+            keep_dates.append(d)
+
+    dates = keep_dates
+            
     # convert to a list of (start, end, match_text) tuples
     # ignore all-digit matches, since could likely be a measured value    
     tuple_list = [(d.start, d.end, d.text) for d in dates
                   if not d.text.isdigit()]
 
     if _TRACE:
-        log('*** DATES ***')
-        for t in tuple_list:
-            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        log()
+        _print_substitutions(tuple_list, 'DATES')
 
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)            
     return new_report
@@ -277,10 +407,7 @@ def _find_time_subs(report, sub_list, token_text):
                   if not t.text.isdigit()]
 
     if _TRACE:
-        log('*** TIMES ***')
-        for t in tuple_list:
-            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        log()
+        _print_substitutions(tuple_list, 'TIMES')
 
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
@@ -297,10 +424,7 @@ def _find_vitals_subs(report, sub_list, token_text):
     tuple_list = [(v.start, v.end, v.match_text) for v in vitals]
     
     if _TRACE:
-        log('*** VITALS ***')
-        for t in tuple_list:
-            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        log()
+        _print_substitutions(tuple_list, 'VITALS')
         
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
@@ -326,11 +450,8 @@ def _find_substitutions(report, regex_or_subs, sub_list, token_text):
         return report
 
     if _TRACE:
-        log('*** {0} ***'.format(token_text))
-        for t in tuple_list:
-            log('[{0:4},{1:4}): {2}'.format(t[0], t[1], t[2]))
-        log()
-    
+        _print_substitutions(tuple_list, token_text)
+
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
         
@@ -340,17 +461,9 @@ def do_substitutions(report):
     """
     """
 
-    _anon_subs.clear()
-    _contrast_subs.clear()
-    _fov_subs.clear()
-    _size_meas_subs.clear()
-    _header_subs.clear()
-    _prescription_subs.clear()
-    _vitals_subs.clear()
-    _abbrev_subs.clear()
-    _gender_subs.clear()
-    _date_subs.clear()
-
+    # clear all substitution lists
+    for sub_list in _all_subs:
+        sub_list.clear()
 
     if _TRACE:
         log('REPORT BEFORE SUBSTITUTIONS: \n' + report + '\n')
@@ -371,9 +484,13 @@ def do_substitutions(report):
                                  _contrast_subs, 'CONTRAST')
     report = _find_substitutions(report, _regex_fov, _fov_subs, 'FOV')
     report = _find_size_meas_subs(report, _size_meas_subs, 'MEAS')
-    report = _find_substitutions(report, _regex_prescription,
-                                 _prescription_subs, 'PRESCRIPTION')
+    report = _find_substitutions(report, _regex_prescription_abbrev,
+                                 _prescription_subs, 'PRESCRIPTION_ABBREV')
     report = _find_substitutions(report, _regex_gender, _gender_subs, 'GENDER')
+    report = _find_substitutions(report, _regex_drug_amt,
+                                 _drug_subs, 'DRUG_AMOUNT')
+    report = _find_substitutions(report, _regex_multi_token,
+                                 _multi_token_subs, 'MULTITOKEN')
 
     if _TRACE:
         log('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
@@ -389,27 +506,45 @@ def _replace_text(sentence_list, sub_list):
     (substituted_token, original_text).
     """
 
-    num = len(sentence_list)
-    for i in range(num):
+    if 0 == len(sub_list):
+        return sentence_list
+    
+    #num_replaced   = 0
+    #num_to_replace = len(sub_list)
+
+    for i in range(len(sentence_list)):
         count = 0
-        replacements = []
+        #replacements = []
         sentence = sentence_list[i]
         for entry in sub_list:
-            sub = entry[0]
+            token = entry[0]
             orig = entry[1]
-            if -1 != sentence.find(sub):
-                sentence = sentence.replace(sub, orig)
-                replacements.append(sub)
+            # find all occurrences of the token and restore original text
+            while -1 != sentence.find(token):
+                sentence = sentence.replace(token, orig)
+                #replacements.append(token)
                 count += 1
 
         # remove used entries from sub_list
-        if count > 0:
-            sub_list = sub_list[count:]
+        #if count > 0:
+        #    sub_list = sub_list[count:]
+            #num_replaced += count
 
         # update the sentence in the sentence list
-        if len(replacements) > 0:
+        #if len(replacements) > 0:
+        if count > 0:
             sentence_list[i] = sentence
 
+    # if num_replaced != num_to_replace:
+    #     log('segmentation_helper:_replace_text: replacement mismatch ' \
+    #         'for token type {0}'.format(sub_list[0][0]),
+    #         level = ERROR)
+    #     log('num_to_replace: {0}'.format(num_to_replace), level = ERROR)
+    #     log('num_replaced: {0}'.format(num_replaced), level = ERROR)
+    #     _print_sentence_list('sentence list', sentence_list)
+    #     #if _TRACE:
+    #     assert False
+            
     return sentence_list
             
 
@@ -420,6 +555,14 @@ def undo_substitutions(sentence_list):
     order.
     """
 
+    # fix any broken tokens that may have been split by segmentation
+    sentence_list = _fix_broken_tokens(sentence_list)
+    
+    if _TRACE:
+        _print_sentence_list('SENTENCE LIST WITH SUBSTITUTIONS', sentence_list)
+        
+    sentence_list = _replace_text(sentence_list, _multi_token_subs)
+    sentence_list = _replace_text(sentence_list, _drug_subs)
     sentence_list = _replace_text(sentence_list, _gender_subs)
     sentence_list = _replace_text(sentence_list, _prescription_subs)
     sentence_list = _replace_text(sentence_list, _size_meas_subs)
@@ -432,6 +575,8 @@ def undo_substitutions(sentence_list):
     sentence_list = _replace_text(sentence_list, _vitals_subs)
     sentence_list = _replace_text(sentence_list, _abbrev_subs)
 
+    #Need to check that all substitutions have been made - TBD
+    
     return sentence_list
         
 
@@ -496,6 +641,9 @@ def cleanup_report(report):
     # collapse repeated whitespace (including newlines) into a single space
     report = re.sub(r'\s+', ' ', report)
 
+    # collapse multiple '/' into a single '/'
+    report = re.sub(r'/+', '/', report)
+    
     # convert unicode left and right quotation marks to ascii
     report = re.sub(r'(\u2018|\u2019)', "'", report)
     

@@ -34,7 +34,7 @@ except:
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME = 'lab_value_matcher.py'
 
 # set to True to see debug output
@@ -293,6 +293,10 @@ def init():
 ###############################################################################
 def _cleanup_text(text):
 
+    # NOTE: any cleanup operations performed here MUST also be performed by
+    # the segmentation_helper class, otherwise the token replacement after
+    # segmentation will produce a mangled report.
+    
     # collapse multiple whitespace, to simplify regexes above
     text = re.sub(r'\s+', ' ', text)
 
