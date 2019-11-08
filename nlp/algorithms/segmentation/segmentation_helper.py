@@ -585,7 +585,7 @@ def cleanup_report(report):
     """
     Do some basic cleanup operations on the report text.
     """
-
+    
     # remove (Over) ... (Cont) inserts (found in MIMIC data)
     spans = []
     iterator = re.finditer(r'\(Over\)', report)
@@ -669,7 +669,7 @@ def fixup_sentences(sentence_list):
     num = len(merged_sentences)
     results = [merged_sentences[0]]
     for i in range(1, len(merged_sentences)): 
-        s = merged_sentences[i]
+        s = merged_sentences[i].strip()
         
         # Is the first char of the sentence an operator?
         if len(s) < 1:
@@ -692,6 +692,48 @@ def fixup_sentences(sentence_list):
             results[-1] = results[-1] + ' ' + s
         else:
             results.append(s)
+
+    # The Spacy tokenizer tends to break sentences after each period in a
+    # numbered list of items. Look for a sequence of sentences with
+    # 1., 2., 3., ... at the ends and remove it.
+    #
+    # Variables i and j form a range of sentences in results[].
+    # Variables 'start' and 'end' span the range of the numeric sequence.
+    #
+    i = 0
+    while i < len(results):
+        sentence = results[i]
+        match = re.search(r' (?P<num>\d+)\.\Z', sentence)
+        if not match:
+            i += 1
+            continue
+
+        start = int(match.group('num'))
+        print('List start: {0}.'.format(start))
+        
+        end = start + 1
+        j = i+1
+        while end < len(results):
+            search_str = r' {0}\.\Z'.format(end)
+            match = re.search(search_str, results[j])
+            if not match:
+                break
+
+            print('\titem {0}'.format(end))
+            end += 1
+            j += 1
+                
+        if end - start > 1:
+            # delete sentence-ending numbers from results[i..j-1]
+            for k in range(i, j):
+                match = re.search(r' \d+\.\Z', results[k])
+                assert match
+                print('REMOVED END NUMBER: {0}'.format(results[k]))
+                results[k] = results[k][:match.start()]
+            i = j + 1
+            continue
+        else:
+            i += 1
             
     return results
 
