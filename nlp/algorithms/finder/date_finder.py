@@ -182,121 +182,120 @@ _str_yy = r'[0-9]{2}'
 _str_YY = r'[0-9]{4}'
 
 # American month, day, and year
-_str_american_mdy = r'(?<!\d)(?P<month>' + _str_mm + r')' + r'/'        +\
+_str_american_mdy = r'(?<![-\d/.])(?P<month>' + _str_mm + r')' + r'/'   +\
                     r'(?P<day>' + _str_dd + r')' + r'/'                 +\
                     r'(?P<year>' + _str_y + r')\b'
 _regex_1 = re.compile(_str_american_mdy, re.IGNORECASE)
 
 # four-digit year, month, day separated by forward slash
-_str_ymd_fwd_slash = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'/'        +\
+_str_ymd_fwd_slash = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'/'   +\
                      r'(?P<month>' + _str_mm + r')' + r'/'              +\
                      r'(?P<day>' + _str_dd + r')\b'
 _regex_2 = re.compile(_str_ymd_fwd_slash, re.IGNORECASE)
 
 # day, month, and four-digit year with other separators
-_str_dmy4 = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[-.\t]'             +\
+_str_dmy4 = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[-.\t]'        +\
             r'(?P<month>' + _str_mm + r')' + r'[-.\t]'                  +\
             r'(?P<year>' + _str_YY + r')\b'
 _regex_3 = re.compile(_str_dmy4, re.IGNORECASE)
 
 # year, month, day with dashes
-_str_ymd_dash = r'(?<!\d)(?P<year>' + _str_y + r')' + r'-'              +\
+_str_ymd_dash = r'(?<![-\d/.])(?P<year>' + _str_y + r')' + r'-'         +\
                 r'(?P<month>' + _str_mm + r')' + r'-'                   +\
                 r'(?P<day>' + _str_dd + r')\b'
 _regex_4 = re.compile(_str_ymd_dash, re.IGNORECASE)
 
 # day, month, and two-digit year with dots or tabs
-_str_dmy2 = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[.\t]'              +\
+_str_dmy2 = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[.\t]'         +\
             r'(?P<month>' + _str_mm + r')' + r'[.]'                     +\
             r'(?P<year>' + _str_yy + r')\b'
 _regex_5 = re.compile(_str_dmy2, re.IGNORECASE)
 
 # day, textual month and year (space char is a valid separator)
-_str_dtmy = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[-.\t ]*'           +\
+_str_dtmy = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[-.\t ]*'      +\
             r'(?P<month>' + _str_m + r')' + r'[-.\t ]*'                 +\
             r'(?P<year>' + _str_y + r')\b'
 _regex_6 = re.compile(_str_dtmy, re.IGNORECASE)
 
 # textual month, day, and year
-# no match if month preceded by <digit><dash> or <digit><fwdslash>
-_str_tmdy = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')' + r'[-.\t ]*' +\
+_str_tmdy = r'(?<![-\d/.])(?P<month>' + _str_m + r')' + r'[-.\t ]*'     +\
             r'(?P<day>' + _str_dd + r')' + r'(st|nd|rd|th|[-,.\t ])+'   +\
             r'(?P<year>' + _str_y + r')\b'
 _regex_7 = re.compile(_str_tmdy, re.IGNORECASE)
 
 # abbreviated month, day, and year
-_str_mdy = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_M + r')' + r'-'         +\
+_str_mdy = r'(?<![-\d/.])(?P<month>' + _str_M + r')' + r'-'             +\
            r'(?P<day>' + _str_DD + r')' + r'-'                          +\
            r'(?P<year>' + _str_y + r')\b'
 _regex_8 = re.compile(_str_mdy, re.IGNORECASE)
 
 # year, abbreviated month, day
-_str_ymd = r'(?<!\d)(?P<year>' + _str_y + r')' + r'-'                   +\
+_str_ymd = r'(?<![-\d/.])(?P<year>' + _str_y + r')' + r'-'              +\
            r'(?P<month>' + _str_M + r')' + r'-'                         +\
            r'(?P<day>' + _str_DD + r')\b'
 _regex_9 = re.compile(_str_ymd, re.IGNORECASE)
 
 # American month and day, e.g. 5/12, 10/27
-_str_american_md = r'(?<!\d)(?P<month>' + _str_mm + r')' + r'/'         +\
+_str_american_md = r'(?<![-\d/.])(?P<month>' + _str_mm + r')' + r'/'    +\
                    r'(?P<day>' + _str_dd + r')\b'
 _regex_10 = re.compile(_str_american_md, re.IGNORECASE)
 
 # textual month and day
-_str_tmd = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')' + r'[-.\t ]*'  +\
+_str_tmd = r'(?<!\[-\d/.])(?P<month>' + _str_m + r')' + r'[-.\t ]*'     +\
            r'(?P<day>' + _str_dd + r')' + r'(st|nd|rd|th|[-.\t ])*\b'
 _regex_11 = re.compile(_str_tmd, re.IGNORECASE)
 
 # day and textual month
-_str_dtm = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[-.\t ]*'            +\
+_str_dtm = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[-.\t ]*'       +\
            r'(?P<month>' + _str_m + r')\b'
 _regex_12 = re.compile(_str_dtm, re.IGNORECASE)
 
 # GNU four-digit year and month
-_str_gnu_ym = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'               +\
+_str_gnu_ym = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'-'          +\
               r'(?P<month>' + _str_mm + r')(?![-])\b'
 _regex_13 = re.compile(_str_gnu_ym, re.IGNORECASE)
 
 # textual month and four-digit year
-_str_tmy4 = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')' + r'[-.\t ]*' +\
+_str_tmy4 = r'(?<![-\d/.])(?P<month>' + _str_m + r')' + r'[-.\t ]*'     +\
             r'(?P<year>' + _str_YY + r')\b'
 _regex_14 = re.compile(_str_tmy4, re.IGNORECASE)
 
 # four-digit year and textual month
-_str_y4tm = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'[-.\t ]*'          +\
+_str_y4tm = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'[-.\t ]*'     +\
             r'(?P<month>' + _str_m + r')\b'
 _regex_15 = re.compile(_str_y4tm, re.IGNORECASE)
 
 # year only
-_str_year = r'(?<![-+\d])(?P<year>' + _str_YY + r'(?![-]))\b'
+_str_year = r'(?<![-+\d/.])(?P<year>' + _str_YY + r'(?![-]))\b'
 _regex_16 = re.compile(_str_year, re.IGNORECASE)
 
 # textual month only
-_str_month = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')\.?\b'
+_str_month = r'(?<![-\d/.])(?P<month>' + _str_m + r')\.?\b'
 _regex_17 = re.compile(_str_month, re.IGNORECASE)
 
 ######   ISO 8601 formats  #####
 
 # eight-digit year, month, day
-_str_iso_8 = r'(?<!\d)(?P<year>' + _str_YY + r')'                       +\
+_str_iso_8 = r'(?<![-\d/.])(?P<year>' + _str_YY + r')'                  +\
              r'(?P<month>' + _str_MM + r')'                             +\
              r'(?P<day>' + _str_DD + r')\b'
 _regex_iso_1 = re.compile(_str_iso_8)
 
 # optional sign, four-digit year, two-digit month, two-digit day, dashes
 _str_iso_s4y2m2d = r'(?P<sign>[-+]?)'                                   +\
-                   r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'          +\
+                   r'(?<![\d/.])(?P<year>' + _str_YY + r')' + r'-'      +\
                    r'(?P<month>' + _str_MM + r')' + r'-'                +\
                    r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_2 = re.compile(_str_iso_s4y2m2d)
 
 # four-digit year, two-digit month, two-digit day, fwd slashes
-_str_iso_4y2m2d = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'/'           +\
+_str_iso_4y2m2d = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'/'      +\
                   r'(?P<month>' + _str_MM + r')' + r'/'                 +\
                   r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_3 = re.compile(_str_iso_4y2m2d)
 
 # two-digit year, two-digit month, two-digit day, dashes
-_str_iso_2y2m2d = r'(?<!\d)(?P<year>' + _str_yy + r')' + r'-'           +\
+_str_iso_2y2m2d = r'(?<![-\d/.])(?P<year>' + _str_yy + r')' + r'-'      +\
                   r'(?P<month>' + _str_MM + r')' + r'-'                 +\
                   r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_4 = re.compile(_str_iso_2y2m2d)
