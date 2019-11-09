@@ -82,8 +82,13 @@ _regex_ending_dashword = re.compile(_str_ending_dashword, re.IGNORECASE)
 _str_startswith_number_list = r'\A[\d.,]+\s[\d.,]+'
 _regex_startswith_number_list = re.compile(_str_startswith_number_list)
 
+# find sentences that end with an operator
+'+', '*', '/', '%', '^', '>=', '>', '<=', '<', '=', '!='
+_str_endswith_operator = r'[-+*/%^><=!]\Z'
+_regex_endswith_operator = re.compile(_str_endswith_operator)
+
 # find sentences that consist of a single word
-_str_single_word = r'\A[-a-z]+\Z'
+_str_single_word = r'\A[-a-z\d.()]+\Z'
 _regex_single_word = re.compile(_str_single_word, re.IGNORECASE)
 
 # find concatenated sentences with no space after the period
@@ -118,12 +123,13 @@ _str_with     = r'(w/)'
 _str_s_p      = r'(s/p)' # stable pending
 _str_r_l      = r'((Right|Left)\s+[A-Z]+)'
 _str_sust_rel = r'(Sust\.?\s?Rel\.?)'
+_str_y_o      = r'(y[\s.]+o\.?)' # years old
 _str_num_hrs  = r'[1-2]?[0-9]\s?h\.?'
 
 _str_abbrev = r'\b(' + _str_weekday + r'|' + _str_h_o      + r'|' +\
     _str_r_o + r'|'  + _str_s_p     + r'|' + _str_with     + r'|' +\
     _str_s_p + r'|'  + _str_r_l     + r'|' + _str_sust_rel + r'|' +\
-    _str_num_hrs + r')'
+    _str_y_o + r'|'  + _str_num_hrs + r')'
 _regex_abbrev = re.compile(_str_abbrev, re.IGNORECASE)
 
 # gender
@@ -585,7 +591,7 @@ def cleanup_report(report):
     """
     Do some basic cleanup operations on the report text.
     """
-    
+
     # remove (Over) ... (Cont) inserts (found in MIMIC data)
     spans = []
     iterator = re.finditer(r'\(Over\)', report)
@@ -649,24 +655,31 @@ def fixup_sentences(sentence_list):
             sentence_list[i]   = s[1:].lstrip()
         i += 1
 
+    # need at least two sentences to continue
+    if num <= 1:
+        return sentence_list
+        
     # Dashes are often used to demarcate phrases. If a sentence ends with a
-    # single word preceded by a dash, merge with the following sentence.
+    # single word preceded by a dash, merge with the following sentence. If a
+    # sentence ends with an operator, merge as well.
 
     merged_sentences = []
 
     i = 0
-    while i < num:
+    while i < num-1:
         s = sentence_list[i]
-        match = _regex_ending_dashword.search(s)
-        if match and i < num-1:
+        match1 = _regex_ending_dashword.search(s)
+        match2 = _regex_endswith_operator.search(s)
+        if match1 or match2:
             merged_sentences.append(s + ' ' + sentence_list[i+1])
             i += 2
         else:
             merged_sentences.append(s)
             i += 1
-
+            
     # check for opportunities to merge a sentence with the previous one
     num = len(merged_sentences)
+    print('NUM: {0}'.format(num))
     results = [merged_sentences[0]]
     for i in range(1, len(merged_sentences)): 
         s = merged_sentences[i].strip()
@@ -701,7 +714,8 @@ def fixup_sentences(sentence_list):
     # Variables 'start' and 'end' span the range of the numeric sequence.
     #
     i = 0
-    while i < len(results):
+    num = len(results)
+    while i < num:
         sentence = results[i]
         match = re.search(r' (?P<num>\d+)\.\Z', sentence)
         if not match:
@@ -709,17 +723,19 @@ def fixup_sentences(sentence_list):
             continue
 
         start = int(match.group('num'))
-        print('List start: {0}.'.format(start))
+        if _TRACE:
+            log('List start: {0}.'.format(start))
         
         end = start + 1
         j = i+1
-        while end < len(results):
+        while end < num and j < num:
             search_str = r' {0}\.\Z'.format(end)
             match = re.search(search_str, results[j])
             if not match:
                 break
 
-            print('\titem {0}'.format(end))
+            if _TRACE:
+                log('list item {0}'.format(end))
             end += 1
             j += 1
                 
@@ -728,13 +744,14 @@ def fixup_sentences(sentence_list):
             for k in range(i, j):
                 match = re.search(r' \d+\.\Z', results[k])
                 assert match
-                print('REMOVED END NUMBER: {0}'.format(results[k]))
+                if _TRACE:
+                    log('REMOVED END NUMBER: {0}'.format(results[k]))
                 results[k] = results[k][:match.start()]
             i = j + 1
             continue
         else:
             i += 1
-            
+
     return results
 
 
