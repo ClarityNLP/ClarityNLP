@@ -94,6 +94,7 @@ _str_word = r'(\(\s?[-a-z]+\s?\)|[-a-z]+)(?=[^a-z])'
 
 # numeric value, either floating point or integer, possibly suffixed with
 # an 's' or an apostrophe-s (the 's' is for constructs such as 70s, 80s, etc.)
+_str_float = r'(\d+\.\d+|\.\d+)\'?s?'
 _str_float_or_int = r'(\d+\.\d+|\.\d+|\d+)\'?s?'
 # integers with embedded commas
 _str_comma_int = r'(\d\d\d|\d\d|\d)(,\d\d\d)+'
@@ -104,6 +105,10 @@ _regex_num = re.compile(_str_num)
 _str_num_and_unit_list = r'(' + _str_num + r'\s?' + _str_units +\
     r'\s?' + r'){2,}'
 _regex_num_and_unit_list = re.compile(_str_num_and_unit_list, re.IGNORECASE)
+
+# list of floats
+_str_float_list = r'(' + _str_float + r'\s?' + r'){2,}'
+_regex_float_list = re.compile(_str_float_list)
 
 # Recognize one or more numeric values, possibly parenthesized or bracketed,
 # with optional dashes/slashes. Assumes prior collapse of repeated whitespace.
@@ -286,6 +291,7 @@ def init():
     _all_regex_lists.append(o2_regexes)
 
     _all_regex_lists.append( [_regex_num_and_unit_list] )
+    _all_regex_lists.append( [_regex_float_list] )
     _all_regex_lists.append( [_regex_value_with_ref_range] )
     _all_regex_lists.append( [_regex_simple_pair] )
     

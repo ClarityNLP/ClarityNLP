@@ -524,6 +524,9 @@ def run():
             _Result(match_text='MCV 96 82 - 98 fL'),
             _Result(match_text='MCH 30.7 27 - 32 pg')
         ],
+        'Cr 0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.4 TCO2 43 47 Glucose ':[
+            _Result(match_text='0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.4')
+        ],
     }
 
     if not _run_tests(test_data):
