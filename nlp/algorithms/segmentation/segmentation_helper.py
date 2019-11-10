@@ -195,10 +195,10 @@ def _print_substitutions(tuple_list, banner_text):
     Tuples are (start_offset, end_offset, match_text).
     """
     
-    log('*** {0} ***'.format(banner_text))
+    print('*** {0} ***'.format(banner_text))
     for i, t in enumerate(tuple_list):
-        log('[{0:3d}]: [{1:4},{2:4}): {3}'.format(i, t[0], t[1], t[2]))
-    log()
+        print('[{0:3d}]: [{1:4},{2:4}): {3}'.format(i, t[0], t[1], t[2]))
+    print()
         
 
 ###############################################################################
@@ -230,7 +230,8 @@ def _check_for_tokens(sentence_list):
             print(s)
             print()
 
-            # this is a fatal error
+            # this is a fatal error; no tokens should remain after undoing
+            # the token substitutions
             assert False
     
     
@@ -679,7 +680,6 @@ def fixup_sentences(sentence_list):
             
     # check for opportunities to merge a sentence with the previous one
     num = len(merged_sentences)
-    print('NUM: {0}'.format(num))
     results = [merged_sentences[0]]
     for i in range(1, len(merged_sentences)): 
         s = merged_sentences[i].strip()
