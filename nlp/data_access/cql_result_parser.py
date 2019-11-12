@@ -771,7 +771,10 @@ def _process_encounter(obj):
 
     _base_init(obj)
     _set_list_length(obj, 'statusHistory')
-    _set_list_length(obj, 'type')
+    count = _set_list_length(obj, 'type')
+    for i in range(count):
+        key_name = 'type_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
     
     _set_list_length(obj, 'episodeOfCare')
     _set_list_length(obj, 'incomingReferral')
@@ -793,24 +796,21 @@ def _process_encounter(obj):
     _set_list_length(obj, 'hospitalization_reAdmission_coding')
     hdp_count = _set_list_length(obj, 'hospitalization_dietPreference')
     for i in range(hdp_count):
-        key_name = 'hospitalization_dietPreference_{0}_coding'
+        key_name = 'hospitalization_dietPreference_{0}_coding'.format(i)
         _set_list_length(obj, key_name)
     sc_count = _set_list_length(obj, 'hospitalization_specialCourtesy')
     for i in range(sc_count):
-        key_name = 'hospitalization_specialCourtesy_{0}_coding'
+        key_name = 'hospitalization_specialCourtesy_{0}_coding'.format(i)
         _set_list_length(obj, key_name)
     sa_count = _set_list_length(obj, 'hospitalization_specialArrangement')
     for i in range(sa_count):
-        key_name = 'hospitalization_specialArrangement_{0}_coding'
+        key_name = 'hospitalization_specialArrangement_{0}_coding'.format(i)
         _set_list_length(obj, key_name)
     _set_list_length(obj, 'hospitalization_dischargeDiagnosis')
     coding_count = _set_list_length(obj, 'hospitalization_dischargeDisposition_coding')
     _set_list_length(obj, 'location')
 
-    count = _set_list_length(obj, 'classHistory')
-    for i in range(count):
-        key_name = 'classHistory_{0}_class_coding'
-        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'classHistory')
     _set_list_length(obj, 'account')
     count = _set_list_length(obj, 'diagnosis')
     for i in range(count):
