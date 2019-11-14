@@ -37,7 +37,7 @@ KEY_DATE_TIME     = 'date_time'
 KEY_END_DATE_TIME = 'end_date_time'
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 9
+_VERSION_MINOR = 10
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -334,12 +334,16 @@ def _process_observation(obj):
     # set value and units for result display
     KEY_VQ    = 'valueQuantity_value'
     KEY_VU    = 'valueQuantity_unit'
+    KEY_VS    = 'valueString'
     KEY_DISP  = 'code_text'
     KEY_DISP2 = 'code_coding_0_display'
     if KEY_VQ in obj:
         obj[KEY_VALUE] = obj[KEY_VQ]
     if KEY_VU in obj:
         obj[KEY_UNITS] = obj[KEY_VU]
+
+    if KEY_VS in obj:
+        obj[KEY_VALUE] = obj[KEY_VS]
 
     if KEY_DISP in obj:
         obj[KEY_VALUE_NAME] = obj[KEY_DISP]
