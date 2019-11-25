@@ -381,8 +381,8 @@ class CQLExecutionTask(BaseTask):
                                        job_id,
                                        self.pipeline_config.custom_arguments)
         if fhir_version is None:
-            log('\n*** CQLExecutionTask: using fhir_version == DSTU2 ***')
-            fhir_version = "DSTU2"
+            log('\n*** CQLExecutionTask: using fhir_version == STU3 ***')
+            fhir_version = "STU3"
 
         fhir_version = fhir_version.lower()
         if not fhir_version.endswith('stu2') and not fhir_version.endswith('stu3'):
