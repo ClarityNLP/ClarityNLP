@@ -14,7 +14,6 @@ import base64
 import argparse
 from collections import namedtuple
 from datetime import datetime, timezone, timedelta, time
-from claritynlp_logging import log, ERROR, DEBUG
 
 if __name__ == '__main__':
     # modify path for local testing
@@ -28,6 +27,8 @@ else:
     from data_access.flatten import flatten
     from algorithms.finder import time_finder
 
+from claritynlp_logging import log, ERROR, DEBUG
+    
 # exported for result display
 KEY_VALUE_NAME    = 'value_name'
 KEY_VALUE         = 'value'
@@ -36,7 +37,7 @@ KEY_DATE_TIME     = 'date_time'
 KEY_END_DATE_TIME = 'end_date_time'
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 8
+_VERSION_MINOR = 10
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -54,6 +55,9 @@ _KEY_START       = 'start'
 _KEY_SUBJECT     = 'subject'
 _KEY_PATIENT_REF = 'patient_reference'
 _KEY_SUBJECT_REF = 'subject_reference'
+_KEY_EDT         = 'effectiveDateTime'
+_KEY_EP_START    = 'effectivePeriod_start'
+_KEY_EP_END      = 'effectivePeriod_end'
 
 _STR_RESOURCE_TYPE = 'resourceType'
 _CHAR_FWDSLASH = '/'
@@ -278,18 +282,15 @@ def _process_observation(obj):
         _dump_dict(obj, '[BEFORE]: Flattened Observation: ')
     
     # add 'date_time' field for time sorting
-    KEY_EDT = 'effectiveDateTime'
-    KEY_EP  = 'effectivePeriod'
-    if KEY_EDT in obj:
-        edt = obj[KEY_EDT]
+    if _KEY_EDT in obj:
+        edt = obj[_KEY_EDT]
         obj[KEY_DATE_TIME] = edt
-    if KEY_EP in obj:
-        if _KEY_START in obj[KEY_EP]:
-            start = obj[KEY_EP][_KEY_START]
-            obj[KEY_DATE_TIME] = start
-        if _KEY_END in obj[KEY_EP]:
-            end = obj[KEY_EP][_KEY_END]
-            obj[KEY_END_DATE_TIME] = end
+    if _KEY_EP_START in obj:
+        start = obj[_KEY_EP_START]
+        obj[KEY_DATE_TIME] = start
+    if _KEY_EP_END in obj:
+        end = obj[_KEY_EP_END]
+        obj[KEY_END_DATE_TIME] = end
 
     _base_init(obj)
     _set_list_length(obj, 'category_coding')
@@ -333,12 +334,16 @@ def _process_observation(obj):
     # set value and units for result display
     KEY_VQ    = 'valueQuantity_value'
     KEY_VU    = 'valueQuantity_unit'
+    KEY_VS    = 'valueString'
     KEY_DISP  = 'code_text'
     KEY_DISP2 = 'code_coding_0_display'
     if KEY_VQ in obj:
         obj[KEY_VALUE] = obj[KEY_VQ]
     if KEY_VU in obj:
         obj[KEY_UNITS] = obj[KEY_VU]
+
+    if KEY_VS in obj:
+        obj[KEY_VALUE] = obj[KEY_VS]
 
     if KEY_DISP in obj:
         obj[KEY_VALUE_NAME] = obj[KEY_DISP]
@@ -372,20 +377,31 @@ def _process_medication_administration(obj):
     if _TRACE:
         _dump_dict(obj, '[BEFORE]: Flattened MedicationAdministration: ')
     
-    # add fields for time sorting
+    # add fields for time sorting (DSTU2)
     KEY_EDT = 'effectiveTimeDateTime'
-    KEY_EP  = 'effectiveTimePeriod'
+    KEY_EP_START = 'effectiveTimePeriod_start'
+    KEY_EP_END   = 'effectiveTimePeriod_end'
     if KEY_EDT in obj:
         edt = obj[KEY_EDT]
         obj[KEY_DATE_TIME] = edt
-    if KEY_EP in obj:
-        if _KEY_START in obj[KEY_EP]:
-            start = obj[KEY_EP][_KEY_START]
-            obj[KEY_DATE_TIME] = start
-        if _KEY_END in obj[KEY_EP]:
-            end = obj[KEY_EP][_KEY_END]
-            obj[KEY_END_DATE_TIME] = end
+    if KEY_EP_START in obj:
+        start = obj[KEY_EP_START]
+        obj[KEY_DATE_TIME] = start
+    if KEY_EP_END in obj:
+        end = obj[KEY_EP_END]
+        obj[KEY_END_DATE_TIME] = end
 
+    # STU3
+    if _KEY_EDT in obj:
+        edt = obj[_KEY_EDT]
+        obj[KEY_DATE_TIME] = edt
+    if _KEY_EP_START in obj:
+        start = obj[_KEY_EP_START]
+        obj[KEY_DATE_TIME] = start
+    if _KEY_EP_END in obj:
+        end = obj[_KEY_EP_END]
+        obj[KEY_END_DATE_TIME] = end
+        
     _base_init(obj)
     _contained_med_resource_init(obj)
     
@@ -663,10 +679,10 @@ def _process_condition(obj):
     if _TRACE:
         _dump_dict(obj, '[BEFORE]: Flattened Condition: ')    
 
-    KEY_ODT = 'onsetDateTime'
-    KEY_OP  = 'onsetPeriod'
-    KEY_ADT = 'abatementDateTime'
-    KEY_AP  = 'abatementPeriod'
+    KEY_ODT      = 'onsetDateTime'
+    KEY_OP_START = 'onsetPeriod_start'
+    KEY_ADT      = 'abatementDateTime'
+    KEY_AP_END   = 'abatementPeriod_end'
 
     # add fields for time sorting
     if KEY_ODT in obj:
@@ -676,11 +692,11 @@ def _process_condition(obj):
         adt = obj[KEY_ADT]
         obj[KEY_END_DATE_TIME] = adt
 
-    if KEY_OP in obj:
-        start = obj[KEY_OP][_KEY_START]
+    if KEY_OP_START in obj:
+        start = obj[KEY_OP_START]
         obj[KEY_DATE_TIME] = start
-    if KEY_AP in obj:
-        end = obj[KEY_AP][_KEY_END]
+    if KEY_AP_END in obj:
+        end = obj[KEY_AP_END]
         obj[KEY_END_DATE_TIME] = end
     
     _base_init(obj)
@@ -736,6 +752,82 @@ def _process_condition(obj):
     
 
 ###############################################################################
+def _process_encounter(obj):
+    """
+    Process a FHIR 'Ecounter resource.
+    """
+
+    assert dict == type(obj)
+    
+    if _TRACE:
+        _dump_dict(obj, '[BEFORE]: Flattened Encounter: ')
+
+    # add fields for time sorting
+    
+    KEY_PS = 'period_start'
+    KEY_PE = 'period_end'
+    if KEY_PS in obj:
+        start = obj[KEY_PS]
+        obj[KEY_DATE_TIME] = start
+    if KEY_PE in obj:
+        end = obj[KEY_PE]
+        obj[KEY_END_DATE_TIME] = end
+
+    _base_init(obj)
+    _set_list_length(obj, 'statusHistory')
+    count = _set_list_length(obj, 'type')
+    for i in range(count):
+        key_name = 'type_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    
+    _set_list_length(obj, 'episodeOfCare')
+    _set_list_length(obj, 'incomingReferral')
+    participant_count = _set_list_length(obj, 'participant')
+    for i in range(participant_count):
+        key_name = 'participant_{0}_type'.format(i)
+        type_count = _set_list_length(obj, key_name)
+        for j in range(type_count):
+            key2_name = '{0}_{1}_{2}'.format(key_name, j, 'coding')
+            _set_list_length(obj, key2_name)
+    _set_list_length(obj, 'priority_coding')
+    reason_count = _set_list_length(obj, 'reason')
+    for i in range(reason_count):
+        key_name = 'reason_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'indication')
+    _set_list_length(obj, 'hospitalization_admitSource_coding')
+    _set_list_length(obj, 'hospitalization_admittingDiagnosis')
+    _set_list_length(obj, 'hospitalization_reAdmission_coding')
+    hdp_count = _set_list_length(obj, 'hospitalization_dietPreference')
+    for i in range(hdp_count):
+        key_name = 'hospitalization_dietPreference_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    sc_count = _set_list_length(obj, 'hospitalization_specialCourtesy')
+    for i in range(sc_count):
+        key_name = 'hospitalization_specialCourtesy_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    sa_count = _set_list_length(obj, 'hospitalization_specialArrangement')
+    for i in range(sa_count):
+        key_name = 'hospitalization_specialArrangement_{0}_coding'.format(i)
+        _set_list_length(obj, key_name)
+    _set_list_length(obj, 'hospitalization_dischargeDiagnosis')
+    coding_count = _set_list_length(obj, 'hospitalization_dischargeDisposition_coding')
+    _set_list_length(obj, 'location')
+
+    _set_list_length(obj, 'classHistory')
+    _set_list_length(obj, 'account')
+    count = _set_list_length(obj, 'diagnosis')
+    for i in range(count):
+        key_name = 'diagnosis_{0}_role_coding'.format(i)
+        _set_list_length(obj, key_name)
+    
+    if _TRACE:
+        _dump_dict(obj, '[AFTER]: Flattened Encounter: ')
+
+    return obj
+
+
+###############################################################################
 def _process_procedure(obj):
     """
     Process a flattened FHIR 'Procedure' resource.
@@ -748,19 +840,18 @@ def _process_procedure(obj):
 
     # add fields for time sorting
     KEY_PDT = 'performedDateTime'
-    KEY_PP  = 'performedPeriod'
+    KEY_PP_START = 'performedPeriod_start'
+    KEY_PP_END   = 'performedPeriod_end'
     if KEY_PDT in obj:
         # only a single timestamp
         pdt = obj[KEY_PDT]
         obj[KEY_DATE_TIME] = pdt
-    if KEY_PP in obj:
-        # period, one or both timestamps could be present
-        if _KEY_START in obj[KEY_PP]:
-            start = obj[KEY_PP][_KEY_START]
-            obj[KEY_DATE_TIME] = start
-        if _KEY_END in obj[KEY_PP]:
-            end = obj[KEY_PP][_KEY_END]
-            obj[KEY_END_DATE_TIME] = end
+    if KEY_PP_START in obj:
+        start = obj[KEY_PP_START]
+        obj[KEY_DATE_TIME] = start
+    if KEY_PP_END in obj:
+        end = obj[KEY_PP_END]
+        obj[KEY_END_DATE_TIME] = end
     
     _base_init(obj)
     _contained_med_resource_init(obj)
@@ -830,8 +921,8 @@ def _process_procedure(obj):
         _dump_dict(obj, '[AFTER]: Flattened Procedure: ')
 
     return obj
-    
-
+        
+        
 ###############################################################################
 def _process_patient(obj):
     """
@@ -946,6 +1037,8 @@ def _process_resource(obj):
         rt = obj[_STR_RESOURCE_TYPE]
         if 'Patient' == rt:
             result = _process_patient(flattened_obj)
+        elif 'Encounter' == rt:
+            result = _process_encounter(flattened_obj)
         elif 'Observation' == rt:
             result = _process_observation(flattened_obj)
         elif 'Procedure' == rt:
@@ -1068,7 +1161,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        log(_get_version())
+        print(_get_version())
         sys.exit(0)
 
     if 'debug' in args and args.debug:
@@ -1078,8 +1171,11 @@ if __name__ == '__main__':
     if 'filepath' in args and args.filepath:
         filepath = args.filepath
         if not os.path.isfile(filepath):
-            log('Unknown file specified: "{0}"'.format(filepath))
+            print('Unknown file specified: "{0}"'.format(filepath))
             sys.exit(-1)
+    else:
+        print('Required "--filepath" argument not found.')
+        sys.exit(-1)
     
     with open(filepath, 'rt') as infile:
         json_string = infile.read()
@@ -1087,16 +1183,16 @@ if __name__ == '__main__':
 
         result = _process_resource(json_data)
 
-        log('RESULT: ')
+        print('RESULT: ')
         if result is not None:
             for k,v in result.items():
                 if dict == type(v):
-                    log('\t{0}'.format(k))
+                    print('\t{0}'.format(k))
                     for k2,v2 in v.items():
-                        log('\t\t{0} => {1}'.format(k2, v2))
+                        print('\t\t{0} => {1}'.format(k2, v2))
                 elif list == type(v):
-                    log('\t{0}'.format(k))
+                    print('\t{0}'.format(k))
                     for index, v2 in enumerate(v):
-                        log('\t\t[{0}]:\t{1}'.format(index, v2))
+                        print('\t\t[{0}]:\t{1}'.format(index, v2))
                 else:
-                    log('\t{0} => {1}'.format(k,v))
+                    print('\t{0} => {1}'.format(k,v))

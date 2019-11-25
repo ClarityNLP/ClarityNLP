@@ -27,7 +27,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 12
+_VERSION_MINOR = 13
 
 # set to True to enable debug output
 _TRACE = True
@@ -55,6 +55,7 @@ _KEY_RT       = 'resourceType'
 _KEY_RES_DISP = 'result_display'
 
 _RT_PATIENT     = 'Patient'
+_RT_ENCOUNTER   = 'Encounter'
 _RT_OBSERVATION = 'Observation'
 _RT_PROCEDURE   = 'Procedure'
 _RT_CONDITION   = 'Condition'
@@ -218,6 +219,21 @@ def _to_result_obj(obj):
             date = obj['birthDate']
         result_display_obj['date'] = date
         result_display_obj[KEY_RC] = 'Patient: {0}, DOB: {1}'.format(value_name, date)
+
+    elif _RT_ENCOUNTER == resource_type:
+        identifier = ''
+        subject_ref = ''
+        name = ''
+        if 'id' in obj:
+            identifier = obj['id']
+        if 'subject_reference' in obj:
+            subject_ref = obj['subject_reference']
+        if 'subject_display' in obj:
+            name = obj['subject_display']
+        value = 'Encounter {0} for {1}'.format(identifier, subject_ref)
+        if len(name) > 0:
+            value += '\n{0}'.format(name)
+        result_display_obj['result_content'] = value
         
     elif _RT_OBSERVATION == resource_type:
         value = ''
