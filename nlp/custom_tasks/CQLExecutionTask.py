@@ -241,7 +241,7 @@ def _to_result_obj(obj):
         if KEY_CODESYS in obj:
             codesys_url = obj[KEY_CODESYS]
             if codesys_url in codesys_map:
-                codesys = codesys_map[KEY_CODESYS]
+                codesys = codesys_map[codesys_url]
             else:
                 codesys = codesys_url
         code = ''
