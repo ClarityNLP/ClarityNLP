@@ -27,7 +27,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 14
+_VERSION_MINOR = 15
 
 # set to True to enable debug output
 _TRACE = True
@@ -195,7 +195,8 @@ def _to_result_obj(obj):
         log()
 
     codesys_map = {
-        'http://snomed.info/sct ':'SNOMED',
+        'http://snomed.info/ct':'SNOMED',
+        'http://snomed.info/sct':'SNOMED',
         'http://www.nlm.nih.gov/research/umls/rxnorm':'RXNORM',
         'http://loinc.org':'LOINC',
         'http://www.ama-assn.org/go/cpt':'CPT',
