@@ -123,7 +123,10 @@ def get_full_text_matches(matchers, text: str, filters=None, section_headers=Non
 
 @cached(regex_cache)
 def get_matcher(t):
-    return re.compile(r"\b%s\b" % t, re.IGNORECASE)
+    if all(x.isalpha() or x.isspace() for x in t):
+        return re.compile(r"\b{}\b".format(t), re.IGNORECASE)
+    else:
+        return re.compile(r"{}".format(t), re.IGNORECASE)
 
 
 class TermFinder(BaseModel):
@@ -171,7 +174,7 @@ class TermFinder(BaseModel):
 
 if __name__ == "__main__":
 
-    stf = TermFinder(["heart", "cardiovascular"], excluded_terms=['chf'])
+    stf = TermFinder(["heart", "cardiovascular", "heart.+mediastinum"], excluded_terms=['chf'])
     txt = "Admitting Diagnosis: CEREBRAL BLEED\n  REASON FOR THIS EXAMINATION:\n  assess for chf\n \n FINAL REPORT\n " \
           "HX:  Trauma. SOB - assess for CHF. \n\n SUPINE AP CHEST AT 6:18 AM:  Given the supine examination performed " \
           "at the\n bedside, the cardiovascular status is difficult to assess.  The heart and\n mediastinum is " \
