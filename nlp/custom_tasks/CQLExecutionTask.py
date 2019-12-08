@@ -27,7 +27,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 13
+_VERSION_MINOR = 15
 
 # set to True to enable debug output
 _TRACE = True
@@ -194,7 +194,21 @@ def _to_result_obj(obj):
         log(obj)
         log()
 
+    codesys_map = {
+        'http://snomed.info/ct':'SNOMED',
+        'http://snomed.info/sct':'SNOMED',
+        'http://www.nlm.nih.gov/research/umls/rxnorm':'RXNORM',
+        'http://loinc.org':'LOINC',
+        'http://www.ama-assn.org/go/cpt':'CPT',
+        'http://hl7.org/fhir/sid/icd-9-cm':'ICD-9',
+        'http://hl7.org/fhir/sid/icd-10':'ICD-10',
+        'http://hl7.org/fhir/sid/icd-10-nl':'ICD-10',
+        'http://hl7.org/fhir/sid/icd-10-cm':'ICD-10'
+    }
+        
     KEY_RC = 'result_content'
+    KEY_CODE = 'code_coding_0_code'
+    KEY_CODESYS = 'code_coding_0_system'
     
     # insert the display/formatting info
     assert _KEY_RT in obj
@@ -209,7 +223,9 @@ def _to_result_obj(obj):
 
     result_display_obj = {
         'date':date,
-        'result_content':'{0}: {1}'.format(resource_type, value_name),
+        #'result_content':'{0}: {1}'.format(resource_type, value_name),
+        #'result_content':'{0}\n{1}'.format(value_name, codesys),
+        'result_content':'{0}'.format(value_name),
         'sentence':'',
         'highlights':[value_name]
     }
@@ -220,6 +236,20 @@ def _to_result_obj(obj):
         result_display_obj['date'] = date
         result_display_obj[KEY_RC] = 'Patient: {0}, DOB: {1}'.format(value_name, date)
 
+    elif _RT_CONDITION == resource_type:
+        codesys = ''
+        if KEY_CODESYS in obj:
+            codesys_url = obj[KEY_CODESYS]
+            if codesys_url in codesys_map:
+                codesys = codesys_map[codesys_url]
+            else:
+                codesys = codesys_url
+        code = ''
+        if KEY_CODE in obj:
+            code = obj[KEY_CODE]
+
+        result_display_obj[KEY_RC] = '{0}\n{1}: {2}'.format(value_name, codesys, code)
+            
     elif _RT_ENCOUNTER == resource_type:
         identifier = ''
         subject_ref = ''
@@ -233,7 +263,7 @@ def _to_result_obj(obj):
         value = 'Encounter {0} for {1}'.format(identifier, subject_ref)
         if len(name) > 0:
             value += '\n{0}'.format(name)
-        result_display_obj['result_content'] = value
+        result_display_obj[KEY_RC] = value
         
     elif _RT_OBSERVATION == resource_type:
         value = ''
@@ -241,10 +271,17 @@ def _to_result_obj(obj):
         if crp.KEY_VALUE in obj:
             # sometimes a value is not present in an observation
             value = obj[crp.KEY_VALUE]
-        if crp.KEY_UNITS in obj:
-            units = obj[crp.KEY_UNITS]
-        result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
-        result_display_obj['highlights']:[value_name, value, units]
+        #if crp.KEY_UNITS in obj:
+        #    units = obj[crp.KEY_UNITS]
+        if 'valueQuantity_code' in obj:
+            units = obj['valueQuantity_code']
+        #result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
+        #result_display_obj['highlights']:[value_name, value, units]
+        result_display_obj[KEY_RC] = '{0} {1}'.format(value, units)
+        result_display_obj['highlights']:[value, units]
+        
+        # explicitly set report_text field for Observation resources
+        mongo_obj['report_text'] = '{0}: {1} {2}'.format(value_name, value, units)
         
     elif _RT_MED_STMT == resource_type:
         if 'effectiveDateTime' in obj:
@@ -252,9 +289,9 @@ def _to_result_obj(obj):
         elif 'effectivePeriod_start' in obj:
             start = obj['effectivePeriod_start']
             date = '{0}'.format(start)
-            if 'effectivePeriod_end' in obj:
-                end = obj['effectivePeriod_end']
-                date += ' to {0}'.format(end)
+            #if 'effectivePeriod_end' in obj:
+            #    end = obj['effectivePeriod_end']
+            #    date += ' to {0}'.format(end)
         result_display_obj['date'] = date
         
     elif _RT_MED_ORDER == resource_type:       
