@@ -163,6 +163,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             if df not in data_fields:
                 data_fields[df] = ''
 
+    highlight_fields = ['term', 'text', 'value', 'units', 'word', 'highlight', 'highlights']
     if "result_display" not in data_fields:
         s = data_fields.get('start')
         e = data_fields.get('end')
@@ -172,9 +173,11 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             e = 0
 
         highlights = []
-        txt = data_fields.get('text')
-        if txt:
-            highlights = [txt]
+        for h in highlight_fields:
+            txt = data_fields.get(h, '')
+            if len(txt) > 0:
+                highlights.append(txt)
+                break
         data_fields["result_display"] = {
             "date": data_fields.get('report_date'),
             "result_content": data_fields.get('sentence'),
@@ -183,6 +186,17 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             'start': [s],
             'end': [e]
         }
+    else:
+        display = data_fields.get('result_display')
+        highlights = display.get("highlights", list())
+        if len(highlights) == 0:
+            highlights = []
+            for h in highlight_fields:
+                txt = data_fields.get(h, '')
+                if len(txt) > 0:
+                    highlights.append(txt)
+                    break
+            data_fields['result_display']['highlights'] = highlights
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
     log('(job={}; pipeline={}) inserted into mongodb {}'.format(job, pipeline_id, repr(inserted.inserted_id)), DEBUG)
