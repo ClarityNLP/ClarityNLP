@@ -7,6 +7,8 @@ from algorithms.sec_tag import *
 from algorithms.segmentation import *
 from cachetools import cached, LRUCache
 from claritynlp_logging import log, ERROR, DEBUG
+import regex
+
 
 log('Initializing models for term finder...')
 try:
@@ -122,16 +124,16 @@ def get_full_text_matches(matchers, text: str, filters=None, section_headers=Non
 
 
 @cached(regex_cache)
-def get_matcher(t):
+def get_matcher(t, max_errors=3):
     if all(x.isalpha() or x.isspace() for x in t):
-        return re.compile(r"\b{}\b".format(t), re.IGNORECASE)
+        return regex.compile("(\b%s\b){e<=%d}" % (t, max_errors), regex.IGNORECASE)
     else:
-        return re.compile(r"{}".format(t), re.IGNORECASE)
+        return regex.compile("(%s){e<=%d}" % (t, max_errors), regex.IGNORECASE)
 
 
 class TermFinder(BaseModel):
 
-    def __init__(self, match_terms,  include_synonyms=True,
+    def __init__(self, match_terms,  include_synonyms=False,
                  include_descendants=False, include_ancestors=False,
                  vocabulary='SNOMED', filters=None, excluded_terms=None):
         if filters is None:
@@ -152,7 +154,7 @@ class TermFinder(BaseModel):
         # print("all terms to find %s" % str(self.terms))
         self.matchers = [get_matcher(t) for t in self.terms]
         if excluded_terms and len(excluded_terms) > 0:
-            self.excluded_matchers = [get_matcher(t) for t in excluded_terms]
+            self.excluded_matchers = [get_matcher(t, max_errors=0) for t in excluded_terms]
         else:
             self.excluded_matchers = list()
 
@@ -177,7 +179,7 @@ if __name__ == "__main__":
     stf = TermFinder(["heart", "cardiovascular", "heart.+mediastinum"], excluded_terms=['chf'])
     txt = "Admitting Diagnosis: CEREBRAL BLEED\n  REASON FOR THIS EXAMINATION:\n  assess for chf\n \n FINAL REPORT\n " \
           "HX:  Trauma. SOB - assess for CHF. \n\n SUPINE AP CHEST AT 6:18 AM:  Given the supine examination performed " \
-          "at the\n bedside, the cardiovascular status is difficult to assess.  The heart and\n mediastinum is " \
+          "at the\n bedside, the cardiovascular status is difficult to assess.  The hart and\n mediastinum is " \
           "unchanged in appearance from the study one day ago. Bibasilar\n opacities, which may reflect atelectasis, " \
           "are unchanged.  There are diffuse\n interstitial markings as described on the prior study, also unchanged." \
           "\n\n IMPRESSION: Allowing for technical differences, there is little change since\n the study of one day " \
