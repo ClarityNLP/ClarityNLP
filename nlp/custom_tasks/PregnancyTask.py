@@ -283,7 +283,8 @@ class PregnancyTask(BaseTask):
                         'sentence': sentence,
                         'highlights': highlights,
                         'start':[start],
-                        'end':[end]
+                        'end':[end],
+                        'result_content':sentence
                     }
                 }
 
