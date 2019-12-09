@@ -124,7 +124,7 @@ def get_full_text_matches(matchers, text: str, filters=None, section_headers=Non
 
 
 @cached(regex_cache)
-def get_matcher(t, max_errors=3):
+def get_matcher(t, max_errors=1):
     if all(x.isalpha() or x.isspace() for x in t):
         return regex.compile("(\b%s\b){e<=%d}" % (t, max_errors), regex.IGNORECASE)
     else:
