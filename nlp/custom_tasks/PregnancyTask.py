@@ -266,7 +266,7 @@ class PregnancyTask(BaseTask):
                 date_conception, date_delivery = _compute_pregnancy_term(weeks, doc_date)
                 highlights = []
                 if start > -1:
-                    if len(s) > end - 1:
+                    if len(sentence) > end - 1:
                         end = end - 1
                     string = sentence[start:end]
                     highlights.append(string)
