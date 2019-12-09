@@ -265,16 +265,11 @@ class PregnancyTask(BaseTask):
                 # compute estimated dates of conception and delivery
                 date_conception, date_delivery = _compute_pregnancy_term(weeks, doc_date)
                 highlights = []
-                if weeks > 0:
-                    highlights.append(str(weeks))
-                if weeks_remaining > 0:
-                    highlights.append(str(weeks_remaining))
-                if trimester > 0:
-                    highlights.append(str(trimester))
-                if date_delivery:
-                    highlights.append(str(date_delivery))
-                if date_conception:
-                    highlights.append(str(date_conception))
+                if start > -1:
+                    if len(s) > end - 1:
+                        end = end - 1
+                    string = sentence[start:end]
+                    highlights.append(string)
                 obj = {
                     'sentence':sentence,
                     'start':start,
