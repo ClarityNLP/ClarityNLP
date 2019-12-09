@@ -264,7 +264,17 @@ class PregnancyTask(BaseTask):
 
                 # compute estimated dates of conception and delivery
                 date_conception, date_delivery = _compute_pregnancy_term(weeks, doc_date)
-
+                highlights = []
+                if weeks > 0:
+                    highlights.append(str(weeks))
+                if weeks_remaining > 0:
+                    highlights.append(str(weeks_remaining))
+                if trimester > 0:
+                    highlights.append(str(trimester))
+                if date_delivery:
+                    highlights.append(str(date_delivery))
+                if date_conception:
+                    highlights.append(str(date_conception))
                 obj = {
                     'sentence':sentence,
                     'start':start,
@@ -274,6 +284,12 @@ class PregnancyTask(BaseTask):
                     'trimester':trimester,
                     'date_conception':date_conception,
                     'date_delivery':date_delivery,
+                    'result_display': {
+                        'sentence': sentence,
+                        'highlights': highlights,
+                        'start':[start],
+                        'end':[end]
+                    }
                 }
 
                 self.write_result_data(temp_file, mongo_client, doc, obj)
