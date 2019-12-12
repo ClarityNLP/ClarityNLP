@@ -27,7 +27,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 15
+_VERSION_MINOR = 16
 
 # set to True to enable debug output
 _TRACE = True
@@ -405,9 +405,9 @@ def _apply_datetime_filter(samples, t0, t1):
             # no timestamp in this sample
             results.append(s)
             continue
-        if t0 is not None and t <= t0:
+        if t0 is not None and t < t0:
             continue
-        if t1 is not None and t >= t1:
+        if t1 is not None and t > t1:
             continue
 
         results.append(s)
