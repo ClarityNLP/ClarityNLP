@@ -26,6 +26,14 @@ import re
 import sys
 from dateutil.tz import tzutc
 from datetime import datetime, timedelta
+
+if __name__ == '__main__':
+    # modify path for local testing
+    cur_dir = sys.path[0]
+    nlp_dir, tail = os.path.split(cur_dir)
+    sys.path.append(nlp_dir)
+    sys.path.append(os.path.join(nlp_dir, 'algorithms', 'finder'))
+
 from claritynlp_logging import log, ERROR, DEBUG
 
 # set to True to enable debug output
@@ -168,6 +176,8 @@ def parse_time_command(time_string, data_earliest, data_latest):
 ###############################################################################
 if __name__ == '__main__':
 
+    # interactive testing from command line
+    
     DATETIME_STRINGS = [
         "DATETIME(2019, 5, 17, 1, 2, 3)",
         "DATETIME(2019, 05, 01, 01, 02, 03)",
@@ -212,7 +222,7 @@ if __name__ == '__main__':
         "DATETIME(2019, 05, 06, 1, 2, 3) - 40m",
     ]
     
-    log('\ntesting DATETIME...')
+    print('\ntesting DATETIME...')
     for s in DATETIME_STRINGS:
         match = _regex_datetime.search(s)
         if match:
@@ -222,26 +232,26 @@ if __name__ == '__main__':
             hour = int(match.group('hour'))
             minutes = int(match.group('minute'))
             seconds = int(match.group('second'))
-            log('\t{0}/{1}/{2}:{3}:{4}:{5}'.format(year, month, day, hour, minutes, seconds))
+            print('\t{0}/{1}/{2}:{3}:{4}:{5}'.format(year, month, day, hour, minutes, seconds))
 
-    log('\ntesting DATE...')
+    print('\ntesting DATE...')
     for s in DATE_STRINGS:
         match = _regex_date.search(s)
         if match:
             year = int(match.group('year'))
             month = int(match.group('month'))
             day = int(match.group('day'))
-            log('\t{0}/{1}/{2}'.format(year, month, day))
+            print('\t{0}/{1}/{2}'.format(year, month, day))
 
-    log('\ntesting command strings...')
+    print('\ntesting command strings...')
     # to mimic earliest/latest from data
     data_earliest = datetime(2019, 5, 1)
     data_latest   = datetime(2019, 8, 1)
     for s in COMMAND_STRINGS:
-        log('->{0}<-'.format(s))
+        print('->{0}<-'.format(s))
         dt_result = parse_time_command(s, data_earliest, data_latest)
         if dt_result is None:
-            log('\tSyntax error')
+            print('\tSyntax error')
         else:
-            log('\t{0}'.format(dt_result))
+            print('\t{0}'.format(dt_result))
 
