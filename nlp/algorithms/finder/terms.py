@@ -167,7 +167,10 @@ class TermFinder(BaseModel):
                                                include_descendants, include_ancestors))
             self.terms.extend(added)
         self.matchers = [get_matcher(t, max_errors=max_errors) for t in self.terms]
-        self.secondary_matchers = [get_matcher(t, max_errors=self.max_errors+1) for t in self.terms]
+        self.secondary_matchers = list()
+        for t in self.terms:
+            if len(t) > 5:
+                get_matcher(t, max_errors=self.max_errors+1)
         self.excluded_matchers = list()
         self.excluded_terms = list()
         if excluded_terms and len(excluded_terms) > 0:
