@@ -8,7 +8,7 @@ from algorithms.segmentation import *
 from cachetools import cached, LRUCache
 from claritynlp_logging import log, ERROR, DEBUG
 import regex
-
+import string
 
 log('Initializing models for term finder...')
 try:
@@ -67,6 +67,8 @@ def filter_match(lookup, filters):
 def get_matches(matcher, sentence: str, section='UNKNOWN', filters=None):
     matches = list()
     match = matcher.search(sentence)
+    match_ = matcher.match(sentence)
+    findall = matcher.findall(sentence)
 
     if match:
         if filters is None:
@@ -89,7 +91,7 @@ def get_matches(matcher, sentence: str, section='UNKNOWN', filters=None):
 
 
 def get_full_text_matches(matchers, text: str, filters=None, section_headers=None, section_texts=None,
-                          excluded_matchers=None):
+                          excluded_matchers=None, strip_punct=False):
     if filters is None:
         filters = {}
     if section_headers is None:
@@ -102,7 +104,13 @@ def get_full_text_matches(matchers, text: str, filters=None, section_headers=Non
 
     for idx in range(0, len(section_headers)):
         section_text = section_texts[idx]
-        sentences = segmentor.parse_sentences(section_text, spacy=spacy)
+        sentences_raw = segmentor.parse_sentences(section_text, spacy=spacy)
+        sentences = list()
+        if strip_punct:
+            for s in sentences:
+                sentences.append(s.lower().translate(str.maketrans('', '', string.punctuation)))
+        else:
+            sentences = sentences_raw
         # section_code = ".".join([str(i) for i in section_headers[idx].treecode_list])
 
         list_product = itertools.product(matchers, sentences)
@@ -124,9 +132,12 @@ def get_full_text_matches(matchers, text: str, filters=None, section_headers=Non
 
 
 @cached(regex_cache)
-def get_matcher(t, max_errors=1):
+def get_matcher(t, max_errors=0):
     if all(x.isalpha() or x.isspace() for x in t):
-        return regex.compile("(\b%s\b){e<=%d}" % (t, max_errors), regex.IGNORECASE)
+        if max_errors > 0:
+            return regex.compile(r'\b(%s)\b{e<=%d}' % (t, max_errors), flags=re.IGNORECASE)
+        else:
+            return regex.compile(r'\b({0})\b'.format(t), flags=re.IGNORECASE)
     else:
         return regex.compile("(%s){e<=%d}" % (t, max_errors), regex.IGNORECASE)
 
@@ -135,28 +146,37 @@ class TermFinder(BaseModel):
 
     def __init__(self, match_terms,  include_synonyms=False,
                  include_descendants=False, include_ancestors=False,
-                 vocabulary='SNOMED', filters=None, excluded_terms=None):
+                 vocabulary='SNOMED', filters=None, excluded_terms=None,
+                 max_errors=0):
         if filters is None:
             self.filters = {}
         else:
             self.filters = filters
 
-        self.terms = match_terms
+        self.terms = list()
+        for s in match_terms:
+            s = s.replace("\r", " ").replace("\n", " ").strip()
+            self.terms.append(s.lower())
+        self.terms = list(set(self.terms))
         self.matchers = []
         added = []
-        if include_synonyms or include_descendants or include_ancestors:
+        self.max_errors = max_errors
+        if include_synonyms or include_descendants or include_ancestors and len(util.conn_string) > 0:
             for term in self.terms:
                 added.extend(get_related_terms(util.conn_string, term, vocabulary, include_synonyms,
                                                include_descendants, include_ancestors))
-        # if len(added) > 0:
-        #     print("added the following terms through vocab expansion %s" % str(added))
             self.terms.extend(added)
-        # print("all terms to find %s" % str(self.terms))
-        self.matchers = [get_matcher(t) for t in self.terms]
+        self.matchers = [get_matcher(t, max_errors=max_errors) for t in self.terms]
+        self.secondary_matchers = [get_matcher(t, max_errors=self.max_errors+1) for t in self.terms]
+        self.excluded_matchers = list()
+        self.excluded_terms = list()
         if excluded_terms and len(excluded_terms) > 0:
-            self.excluded_matchers = [get_matcher(t, max_errors=0) for t in excluded_terms]
-        else:
-            self.excluded_matchers = list()
+            for s in excluded_terms:
+                s = s.replace("\r", " ").replace("\n", " ").trim()
+                self.excluded_terms.append(s.lower())
+                self.excluded_terms.append(s.lower().translate(str.maketrans('', '', string.punctuation)))
+        self.excluded_terms = list(set(self.excluded_terms))
+        self.excluded_matchers = [get_matcher(t) for t in self.excluded_terms]
 
     def get_term_matches(self, sentence: str, section='UNKNOWN'):
         term_matches = list()
@@ -166,24 +186,32 @@ class TermFinder(BaseModel):
         return term_matches
 
     def get_term_full_text_matches(self, full_text: str, section_headers=None, section_texts=None):
+        full_text = su.unescape(full_text)
         if section_headers is None:
             section_headers = [UNKNOWN]
         if section_texts is None:
             section_texts = [full_text]
-        return get_full_text_matches(self.matchers, full_text, self.filters, section_headers, section_texts,
-                                     excluded_matchers=self.excluded_matchers)
+        ft_matches = get_full_text_matches(self.matchers, full_text, self.filters, section_headers, section_texts,
+                                           excluded_matchers=self.excluded_matchers)
+        if ft_matches and len(ft_matches) > 0:
+            return ft_matches
+        else:
+            return get_full_text_matches(self.secondary_matchers, full_text, self.filters, section_headers,
+                                         section_texts, excluded_matchers=self.excluded_matchers, strip_punct=True)
 
 
 if __name__ == "__main__":
-
-    stf = TermFinder(["heart", "cardiovascular", "heart.+mediastinum"], excluded_terms=['chf'])
-    txt = "Admitting Diagnosis: CEREBRAL BLEED\n  REASON FOR THIS EXAMINATION:\n  assess for chf\n \n FINAL REPORT\n " \
-          "HX:  Trauma. SOB - assess for CHF. \n\n SUPINE AP CHEST AT 6:18 AM:  Given the supine examination performed " \
-          "at the\n bedside, the cardiovascular status is difficult to assess.  The hart and\n mediastinum is " \
-          "unchanged in appearance from the study one day ago. Bibasilar\n opacities, which may reflect atelectasis, " \
-          "are unchanged.  There are diffuse\n interstitial markings as described on the prior study, also unchanged." \
-          "\n\n IMPRESSION: Allowing for technical differences, there is little change since\n the study of one day " \
-          "ago.  The cardiovascular status of the patient is\n difficult to assess."
+    from xml.sax import saxutils as su
+    stf = TermFinder(["Stroke",], excluded_terms=[], max_errors=2)
+    txt = '''
+   Assessment and Plan: 55 yo RHM with a left hemiparesis (leg&gt;arm, no
+   facial weakness, and slightly slower production of speech, but no
+   aphasia), who has a probable RIGHT ACA stroke Leg&gt;arm, face not
+   involved, or a lacunar infarct. The stroke is unlikely to be a pontine
+   lesion. His source is likely to be cardioembolic, since he has known AF
+   and was subtherapeutic on Coumadin. 
+    '''
+    txt = su.unescape(txt)
     full_terms = stf.get_term_full_text_matches(txt)
     for ft in full_terms:
         log('', DEBUG)

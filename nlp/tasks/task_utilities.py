@@ -16,6 +16,7 @@ from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
 from claritynlp_logging import log, ERROR, DEBUG
+from xml.sax import saxutils as su
 
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
@@ -80,14 +81,14 @@ def document_sentences(doc):
 
 def document_text(doc, clean=False):
     if doc and util.solr_text_field in doc:
-        txt = doc[util.solr_text_field]
-        if type(txt) == str:
-            txt_val = txt
-        elif type(txt) == list:
-            txt_val = ' '.join(txt)
+        t = doc.get(util.solr_text_field)
+        if type(t) == str:
+            txt_val = t
+        elif type(t) == list:
+            txt_val = ' '.join(t)
         else:
-            txt_val = str(txt)
-
+            txt_val = str(t)
+        txt_val = su.unescape(txt_val)
         if clean:
             return txt_val.encode("ascii", errors="ignore").decode()
         else:
@@ -329,21 +330,7 @@ class BaseTask(luigi.Task):
         log("Implement your custom functionality here ")
 
     def get_document_text(self, doc, clean=True):
-        if doc and util.solr_text_field in doc:
-            txt = doc[util.solr_text_field]
-            if type(txt) == str:
-                txt_val = txt
-            elif type(txt) == list:
-                txt_val = ' '.join(txt)
-            else:
-                txt_val = str(txt)
-
-            if clean:
-                return txt_val.encode("ascii", errors="ignore").decode()
-            else:
-                return txt_val
-        else:
-            return ''
+        return document_text(doc, clean=clean)
 
     def get_boolean(self, key, default=False):
         return get_config_boolean(self.pipeline_config, key, default=default)
