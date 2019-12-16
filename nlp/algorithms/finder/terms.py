@@ -198,8 +198,7 @@ class TermFinder(BaseModel):
         if ft_matches and len(ft_matches) > 0:
             return ft_matches
         else:
-            return get_full_text_matches(self.secondary_matchers, full_text, self.filters, section_headers,
-                                         section_texts, excluded_matchers=self.excluded_matchers, strip_punct=True)
+            return list()
 
 
 if __name__ == "__main__":
