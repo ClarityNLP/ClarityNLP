@@ -27,7 +27,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 15
+_VERSION_MINOR = 17
 
 # set to True to enable debug output
 _TRACE = True
@@ -50,6 +50,9 @@ _KEY_ERROR = 'error'
 # time command custom args
 _ARG_TIME_START = 'time_start'
 _ARG_TIME_END   = 'time_end'
+
+# value filter custom arg
+_ARG_VALUE_FILTER = 'value_filter'
 
 _KEY_RT       = 'resourceType'
 _KEY_RES_DISP = 'result_display'
@@ -281,7 +284,7 @@ def _to_result_obj(obj):
         result_display_obj['highlights']:[value, units]
         
         # explicitly set report_text field for Observation resources
-        mongo_obj['report_text'] = '{0}: {1} {2}'.format(value_name, value, units)
+        obj['report_text'] = '{0}: {1} {2}'.format(value_name, value, units)
         
     elif _RT_MED_STMT == resource_type:
         if 'effectiveDateTime' in obj:
@@ -405,15 +408,50 @@ def _apply_datetime_filter(samples, t0, t1):
             # no timestamp in this sample
             results.append(s)
             continue
-        if t0 is not None and t <= t0:
+        if t0 is not None and t < t0:
             continue
-        if t1 is not None and t >= t1:
+        if t1 is not None and t > t1:
             continue
 
         results.append(s)
 
     return results
 
+
+###############################################################################
+def _apply_value_filter(str_value_filter, result_list):
+    """
+    Apply the value filter to the result list and return any survivors.
+    """
+
+    str_op = str_value_filter.lower()
+    
+    filter_value = None
+    filter_result = None
+    
+    if str_op.startswith('min'):
+        # find minimum value of all results with a 'value' field
+        for r in result_list:
+            if crp.KEY_VALUE in r:
+                val = r[crp.KEY_VALUE]
+                if filter_value is None or val < filter_value:
+                    filter_value = val
+                    filter_result = r
+    elif str_op.startswith('max'):
+        # find max value of all results with a 'value' field
+        for r in result_list:
+            if crp.KEY_VALUE in r:
+                val = r[crp.KEY_VALUE]
+                if filter_value is None or val > filter_value:
+                    filter_value = val
+                    filter_result = r
+
+    if filter_result is None:
+        # no filterable values were found, so return original list
+        return result_list
+    else:
+        return [filter_result]
+                
 
 ###############################################################################
 class CQLExecutionTask(BaseTask):
@@ -624,6 +662,15 @@ class CQLExecutionTask(BaseTask):
         log('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
               format(len(results)))
 
+        # get the value filter custom arg, if any
+        str_value_filter = _get_custom_arg(_ARG_VALUE_FILTER,
+                                           'value_filter',
+                                           job_id,
+                                           self.pipeline_config.custom_arguments)
+
+        if str_value_filter is not None:
+            results = _apply_value_filter(str_value_filter, results)
+        
         for obj in results:
 
             if obj is None:
@@ -639,6 +686,8 @@ class CQLExecutionTask(BaseTask):
 ###############################################################################
 if __name__ == '__main__':
 
+    # for command-line testing only
+    
     parser = argparse.ArgumentParser(
         description='test CQL Engine result decoding locally')
 
@@ -655,7 +704,7 @@ if __name__ == '__main__':
     if 'filepath' in args and args.filepath:
         filepath = args.filepath
         if not os.path.isfile(filepath):
-            log('Unknown file specified: "{0}"'.format(filepath))
+            print('Unknown file specified: "{0}"'.format(filepath))
             sys.exit(-1)
 
     if 'debug' in args and args.debug:
@@ -666,9 +715,16 @@ if __name__ == '__main__':
         json_data = json.loads(json_string)
 
         results, data_earliest, data_latest = _json_to_objs(json_data)
-        log('\tfound {0} results'.format(len(results)))
+        print('\tfound {0} results'.format(len(results)))
         if results is not None:
 
+
+            # str_value_filter = 'MIN()'
+            # if str_value_filter is not None:
+            #     results = _apply_value_filter(str_value_filter, results)
+            #     print('filtered to {0} results'.format(len(results)))
+
+            
             for counter, obj in enumerate(results):
                 
                 if obj is None:
@@ -679,11 +735,11 @@ if __name__ == '__main__':
                 mongo_obj = _to_result_obj(obj)
 
                 # print to stdout
-                log('RESULT {0}'.format(counter))
+                print('RESULT {0}'.format(counter))
                 for k,v in mongo_obj.items():
                     if dict == type(v):
-                        log('\t{0}'.format(k))
+                        print('\t{0}'.format(k))
                         for k2,v2 in v.items():
-                            log('\t\t{0} => {1}'.format(k2, v2))
+                            print('\t\t{0} => {1}'.format(k2, v2))
                     else:
-                        log('\t{0} => {1}'.format(k,v))
+                        print('\t{0} => {1}'.format(k,v))
