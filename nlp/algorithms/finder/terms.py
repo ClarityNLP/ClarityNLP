@@ -186,7 +186,6 @@ class TermFinder(BaseModel):
         return term_matches
 
     def get_term_full_text_matches(self, full_text: str, section_headers=None, section_texts=None):
-        full_text = su.unescape(full_text)
         if section_headers is None:
             section_headers = [UNKNOWN]
         if section_texts is None:
