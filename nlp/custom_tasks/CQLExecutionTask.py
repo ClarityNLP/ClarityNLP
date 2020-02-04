@@ -191,11 +191,11 @@ def _to_result_obj(obj):
     to MongoDB.
     """
 
-    if _TRACE:
-        log('Calling _to_result_obj...')
-        log('obj: ')
-        log(obj)
-        log()
+    # if _TRACE:
+    log('Calling _to_result_obj...')
+    log('obj: ')
+    log(obj)
+    log()
 
     codesys_map = {
         'http://snomed.info/ct':'SNOMED',
