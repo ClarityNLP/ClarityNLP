@@ -37,7 +37,7 @@ KEY_DATE_TIME     = 'date_time'
 KEY_END_DATE_TIME = 'end_date_time'
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 10
+_VERSION_MINOR = 11
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -58,6 +58,7 @@ _KEY_SUBJECT_REF = 'subject_reference'
 _KEY_EDT         = 'effectiveDateTime'
 _KEY_EP_START    = 'effectivePeriod_start'
 _KEY_EP_END      = 'effectivePeriod_end'
+_KEY_RESULT      = 'result'
 
 _STR_RESOURCE_TYPE = 'resourceType'
 _CHAR_FWDSLASH = '/'
@@ -269,6 +270,48 @@ def _set_dosage_fields(obj, dosage_field_name):
             key_name = '{0}_{1}_{2}_coding'.format(dosage_field_name, i, field)
             _set_list_length(obj, key_name)
         
+
+###############################################################################
+def _process_datetime(obj):
+    """
+    Process a FHIR datetime resource.
+    """
+
+    _KEY_RESULT = 'result'
+    
+    assert dict == type(obj)
+
+    # flatten the JSON and convert the timestring
+    flattened_dt = flatten(obj)
+    flattened_dt = _convert_datetimes(flattened_dt)
+
+    # add 'date_time' field for time sorting
+    if _KEY_RESULT in obj:
+        dt = obj[_KEY_RESULT]
+        obj[KEY_DATE_TIME] = dt
+    
+    if _TRACE:
+        _dump_dict(flattened_dt, 'Flattened dateTime resource: ')
+
+    return flattened_dt
+    
+    
+###############################################################################
+def _process_string(obj):
+    """
+    Process a FHIR string resource.
+    """
+
+    assert dict == type(obj)
+
+    # flatten the JSON
+    flattened_string = flatten(obj)
+    
+    if _TRACE:
+        _dump_dict(flattened_string, 'Flattened string resource: ')
+
+    return flattened_string
+    
             
 ###############################################################################
 def _process_observation(obj):
@@ -1103,6 +1146,8 @@ def decode_top_level_obj(obj):
     KEY_RESULT      = 'result'
     KEY_RESULT_TYPE = 'resultType'
     STR_PATIENT     = 'patient'
+    STR_STR         = 'string'
+    STR_DT          = 'datetime'
     
     result_obj = None
     
@@ -1116,10 +1161,21 @@ def decode_top_level_obj(obj):
         if KEY_RESULT_TYPE in obj and KEY_RESULT in obj:
             result_obj = obj[KEY_RESULT]
             result_type_str = obj[KEY_RESULT_TYPE].lower()
-            
-            if STR_PATIENT == result_type_str:
+
+            if STR_STR == result_type_str:
+                # process original obj if String type
+                result_obj = _process_string(obj)
+                if _TRACE:
+                    log('decoded string resource')
+            elif STR_DT == result_type_str:
+                # process original obj if dateTime type
+                result_obj = _process_datetime(obj)
+                if _TRACE:
+                    log('decoded dateTime resource')
+            elif STR_PATIENT == result_type_str:
                 result_obj = _process_patient(result_obj)
-                if _TRACE: log('decoded patient')
+                if _TRACE:
+                    log('decoded patient resource')
             else:
                 # check for DSTU2 or DSTU3 resource bundles
                 if result_type_str.endswith('stu2') or \
@@ -1128,8 +1184,8 @@ def decode_top_level_obj(obj):
                                                  result_obj,
                                                  result_type_str)
                 else:
-                    if _TRACE: log('\n*** decode_top_level_object: ' \
-                                     'no decode ***')
+                    if _TRACE:
+                        log('\n*** decode_top_level_object: no decode ***')
                     result_obj = None
     else:
         # not sure what else to expect here

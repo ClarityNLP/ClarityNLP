@@ -27,7 +27,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 17
+_VERSION_MINOR = 18
 
 # set to True to enable debug output
 _TRACE = True
@@ -54,8 +54,10 @@ _ARG_TIME_END   = 'time_end'
 # value filter custom arg
 _ARG_VALUE_FILTER = 'value_filter'
 
-_KEY_RT       = 'resourceType'
-_KEY_RES_DISP = 'result_display'
+_KEY_RT          = 'resourceType'
+_KEY_RES_DISP    = 'result_display'
+_KEY_RESULT      = 'result'
+_KEY_RESULT_TYPE = 'resultType'
 
 _RT_PATIENT     = 'Patient'
 _RT_ENCOUNTER   = 'Encounter'
@@ -65,6 +67,8 @@ _RT_CONDITION   = 'Condition'
 _RT_MED_STMT    = 'MedicationStatement'
 _RT_MED_ORDER   = 'MedicationOrder'
 _RT_MED_ADMIN   = 'MedicationAdministration'
+
+_RESULT_TYPE_DT  = 'datetime'
 
 
 ###############################################################################
@@ -89,7 +93,14 @@ def _sort_by_datetime_desc(result_list):
                     datetime_list.append( (dt, i) )
                 else:
                     no_datetime_list.append(i)
-
+        elif _KEY_RESULT_TYPE in obj:
+            result_type = obj[_KEY_RESULT_TYPE]
+            dt = getattr(obj, crp.KEY_DATE_TIME, None)
+            if dt is not None:
+                datetime_list.append( (dt, i) )
+            else:
+                no_datetime_list.append(i)
+            
     datetime_list = sorted(datetime_list, key=lambda x: x[0], reverse=True)
 
     earliest = None
@@ -112,7 +123,7 @@ def _sort_by_datetime_desc(result_list):
     # then sorted timestamped results
     for obj, index in datetime_list:
         new_results.append(result_list[index])
-
+    
     assert len(new_results) == len(result_list)
     return (new_results, earliest, latest)
 
@@ -212,6 +223,34 @@ def _to_result_obj(obj):
     KEY_RC = 'result_content'
     KEY_CODE = 'code_coding_0_code'
     KEY_CODESYS = 'code_coding_0_system'
+
+    if _KEY_RT not in obj:
+        # primitive type
+        assert _KEY_RESULT_TYPE in obj
+        result_type = obj[_KEY_RESULT_TYPE].lower()
+        result_str = ''
+        if _KEY_RESULT in obj:
+            result = obj[_KEY_RESULT]
+
+            # convert datetime objects to string
+            if datetime is type(result):
+                result_str = result.isoformat()
+            else:
+                result_str = result
+            
+        result_display_obj = {
+            'date': '',
+            'result_content':result_str,
+            'sentence': '',
+            'highlights':[result_str]
+        }
+
+        # set the date field for dateType types
+        if _RESULT_TYPE_DT == result_type:
+            result_display_obj['date'] = result_str
+
+        obj[_KEY_RES_DISP] = result_display_obj
+        return obj
     
     # insert the display/formatting info
     assert _KEY_RT in obj
@@ -730,8 +769,6 @@ if __name__ == '__main__':
                 if obj is None:
                     continue
 
-                assert _KEY_RT in obj
-                resource_type = obj[_KEY_RT]
                 mongo_obj = _to_result_obj(obj)
 
                 # print to stdout
