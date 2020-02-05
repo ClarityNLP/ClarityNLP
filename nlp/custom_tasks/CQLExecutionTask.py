@@ -27,7 +27,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 18
+_VERSION_MINOR = 19
 
 # set to True to enable debug output
 _TRACE = True
@@ -715,10 +715,8 @@ class CQLExecutionTask(BaseTask):
             if obj is None:
                 continue
 
-            assert _KEY_RT in obj
-            resource_type = obj[_KEY_RT]
+            # construct result object and write to MongoDB
             mongo_obj = _to_result_obj(obj)
-
             self.write_result_data(temp_file, mongo_client, None, mongo_obj)
 
 
