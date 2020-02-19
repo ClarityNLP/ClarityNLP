@@ -29,10 +29,10 @@ services:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - PROTOCOL=http
       - HOST=${HOST}
-      - IDP_URL=${HOST}/${IDP_PREFIX}
-      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
-      - INGEST_URL=${HOST}/${INGEST_PREFIX}
-      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
+      - IDP_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CLIENT_CLI_SECRET=${CLIENT_CLI_SECRET}
@@ -236,9 +236,9 @@ services:
       - REDIS_HOSTNAME=${REDIS_HOSTNAME}
       - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
       - PROTOCOL=http
-      - DOMAIN=${DOMAIN}
-      - DASHBOARD_URL=${HOST}
-      - INGEST_URL=${HOST}
+      - DASHBOARD_HOST=${HOST}
+      - INGEST_HOST=${HOST}
+      - ENTRYPOINT=${ENTRYPOINT_NON_SSL}
     networks:
       - clarity
     depends_on:
@@ -287,12 +287,12 @@ services:
       - /app/node_modules
     environment:
       - PORT=${INGEST_CLIENT_CONTAINER_PORT}
-      - IDENTITY_PROVIDER_URL=${HOST}/${IDP_PREFIX}
-      - API_HOST=${HOST}/${IAAP_PREFIX}
-      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
-      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
-      - INGEST_URL=${HOST}/${INGEST_PREFIX}
-      - SOCKET_URL=${HOST}
+      - IDENTITY_PROVIDER_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - API_HOST=${HOST}:${ENTRYPOINT_NON_SSL}/${IAAP_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - SOCKET_URL=${HOST}:${ENTRYPOINT_NON_SSL}
     labels:
       - "traefik.enable=true"
       - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
@@ -311,13 +311,13 @@ services:
       - /app/node_modules
     environment:
       - PORT=${RESULTS_CLIENT_CONTAINER_PORT}
-      - IDENTITY_PROVIDER_URL=${HOST}/${IDP_PREFIX}
-      - API_HOST=${HOST}/${IAAP_PREFIX}
-      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
-      - INGEST_URL=${HOST}/${INGEST_PREFIX}
-      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
-      - SOLR_URL=${HOST}/${SOLR_PREFIX}
-      - LUIGI_URL=${HOST}/${SCHEDULER_PREFIX}
+      - IDENTITY_PROVIDER_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - API_HOST=${HOST}:${ENTRYPOINT_NON_SSL}/${IAAP_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
+      - SOLR_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${SOLR_PREFIX}
+      - LUIGI_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${SCHEDULER_PREFIX}
     labels:
       - "traefik.enable=true"
       - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
@@ -336,12 +336,12 @@ services:
       - /app/node_modules
     environment:
       - PORT=${DASHBOARD_CLIENT_CONTAINER_PORT}
-      - IDENTITY_PROVIDER_URL=${HOST}/${IDP_PREFIX}
-      - API_HOST=${HOST}/${IAAP_PREFIX}
-      - INGEST_URL=${HOST}/${INGEST_PREFIX}
-      - RESULTS_URL=${HOST}/${RESULTS_PREFIX}
-      - DASHBOARD_URL=${HOST}/${DASHBOARD_PREFIX}
-      - SOCKET_URL=${HOST}
+      - IDENTITY_PROVIDER_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - API_HOST=${HOST}:${ENTRYPOINT_NON_SSL}/${IAAP_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - SOCKET_URL=${HOST}:${ENTRYPOINT_NON_SSL}
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
     labels:
       - "traefik.enable=true"
@@ -354,7 +354,7 @@ services:
       - clarity
 
   traefik:
-    image: "traefik:v2.0.1"
+    image: "traefik:v2.1.2"
     container_name: "traefik"
     command:
       - "--log.level=INFO"
@@ -363,7 +363,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
-      - "80:80"
+      - "${ENTRYPOINT_NON_SSL}:80"
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
