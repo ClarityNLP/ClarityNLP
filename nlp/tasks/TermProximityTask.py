@@ -46,6 +46,7 @@ import re
 from pymongo import MongoClient
 from collections import namedtuple
 from tasks.task_utilities import BaseTask
+from claritynlp_logging import log, ERROR, DEBUG
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
@@ -139,7 +140,7 @@ def _log_error(msg):
     Print an error message to the log file.
     """
 
-    print('TermProximityTask error: {0}'.format(msg))
+    log('TermProximityTask error: {0}'.format(msg))
     return
 
 
@@ -205,9 +206,9 @@ class TermProximityTask(BaseTask):
                 else:
                     any_order = False
 
-        print('*** PARAMS: ***')
-        print('\t distance: {0}'.format(distance))
-        print('\tany_order: {0}'.format(any_order))
+        log('*** PARAMS: ***')
+        log('\t distance: {0}'.format(distance))
+        log('\tany_order: {0}'.format(any_order))
         if type(termset1) == str:
             termset1 = termset1.strip('"').split(',')
         if type(termset2) == str:

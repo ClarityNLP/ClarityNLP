@@ -2,6 +2,8 @@ from tasks.task_utilities import BaseTask, BaseCollector, pipeline_mongo_writer,
 from pymongo import MongoClient
 import textacy
 from textacy.text_stats import TextStats
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 
 class TextStatsCollector(BaseCollector):
@@ -10,7 +12,7 @@ class TextStatsCollector(BaseCollector):
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
         group_key = get_config_string(pipeline_config, "group_by", default='report_type')
-        print('run custom task collector')
+        log('run custom task collector')
         q = [
             {
                 "$match": {

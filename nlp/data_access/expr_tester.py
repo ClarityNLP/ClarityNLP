@@ -61,6 +61,16 @@ import subprocess
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from collections import namedtuple, OrderedDict
+
+# modify path for local testing
+# (imports need the ClarityNLP logger)
+if __name__ == '__main__':
+    cur_dir = sys.path[0]
+    nlp_dir, tail = os.path.split(cur_dir)
+    sys.path.append(nlp_dir)
+    sys.path.append(os.path.join(nlp_dir, 'tasks'))
+    sys.path.append(os.path.join(nlp_dir, 'data_access'))
+
 #from bson import ObjectId
 
 try:
@@ -69,9 +79,10 @@ try:
 except:
     from data_access import expr_eval
     from data_access import expr_result
+
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME   = 'expr_tester.py'
 
 _TRACE = False
@@ -1661,6 +1672,7 @@ def _run_tests(job_id,
                 for k in range(n):
                     if k < num or k > n-num:
                         doc = output_docs[k]
+                        print(doc)
                         print('[{0:6}]: Document ...{1}, NLPQL feature {2}:'.
                               format(k, str(doc['_id'])[-6:],
                                      expr_obj.nlpql_feature))
@@ -1802,8 +1814,8 @@ def _parse_file(filepath):
     """
 
     # repeated whitespace replaced with single space below, so can use just \s
-    str_context_statement = r'context\s(?P<context>[^;]+);'
-    regex_context_statement = re.compile(str_context_statement)
+    str_context_statement = r'context\s(?P<context>(patient|document));'
+    regex_context_statement = re.compile(str_context_statement, re.IGNORECASE)
 
     str_expr_statement = r'\bdefine\s(final\s)?(?P<feature>[^:]+):\s'  +\
                          r'where\s(?P<expr>[^;]+);'
@@ -1962,6 +1974,7 @@ if __name__ == '__main__':
     debug = False
     if 'debug' in args and args.debug:
         debug = True
+        _enable_debug()
         
     job_id = int(args.jobid)
         

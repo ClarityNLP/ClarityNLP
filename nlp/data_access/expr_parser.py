@@ -12,6 +12,8 @@ the expression is 'hasFever AND hasSepsisSymptoms'.
 """
 
 from sly import Parser
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     from data_access.expr_lexer import NlpqlExpressionLexer
@@ -168,10 +170,10 @@ class NlpqlExpressionParser(Parser):
         p0_is_logic = -1 == p0.find('.')
         p2_is_logic = -1 == p2.find('.')
                     
-        # print('         p0: "{0}"'.format(p0))
-        # print('p0_is_logic: {0}'.format(p0_is_logic))
-        # print('         p2: "{0}"'.format(p2))
-        # print('p2_is_logic: {0}'.format(p2_is_logic))
+        # log('         p0: "{0}"'.format(p0))
+        # log('p0_is_logic: {0}'.format(p0_is_logic))
+        # log('         p2: "{0}"'.format(p2))
+        # log('p2_is_logic: {0}'.format(p2_is_logic))
 
         if p0_is_logic and p2_is_logic:
             operators0 = _get_logic_ops(p0)
@@ -189,7 +191,7 @@ class NlpqlExpressionParser(Parser):
             if ok:
                 op1 = p[1].lower()
                 if op1 == op:
-                    #print('*** COMBINATION POSSIBLE ***')
+                    #log('*** COMBINATION POSSIBLE ***')
                     # strip parens from p0 and p2
                     p0 = _strip_parens(p0)
                     p2 = _strip_parens(p2)

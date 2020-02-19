@@ -1,9 +1,12 @@
 import util
 from algorithms import segmentation, segmentation_init
+from claritynlp_logging import log, ERROR, DEBUG
+
 try:
     from .solr_data import query, query_doc_size
 except Exception:
     from solr_data import query, query_doc_size
+    
 
 segment = segmentation.Segmentation()
 
@@ -48,7 +51,8 @@ def do_something(q, n):
             txt = document_text(doc, clean=True)
             # do something
     except Exception as ex:
-        print('exception getting docs')
+        log('exception getting docs')
+        log(ex)
         return False
     return True
 
@@ -60,13 +64,13 @@ def get_documents(q):
 
     i = 0
     while i < doc_size:
-        print("on batch %d" % i)
+        log("on batch %d" % i)
         do_something(q, i)
 
         i += batch_size
 
 
 if __name__ == "__main__":
-    print('get_solr_docs')
-    qry = "*:*"
-    get_documents(qry)
+    log('get_solr_docs')
+    # qry = "*:*"
+    # get_documents(qry)

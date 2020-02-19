@@ -9,6 +9,7 @@ import json
 import optparse
 import cql_result_parser as crp
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
@@ -29,7 +30,7 @@ def _run(json_obj):
     # assumes we either have a list of objects or a single obj
     obj_type = type(json_obj)
     if list == obj_type:
-        #print('**** SAW A LIST ****')
+        #log('**** SAW A LIST ****')
         for e in json_obj:
             result_obj = crp.decode_top_level_obj(e)
             if result_obj is None:
@@ -39,7 +40,7 @@ def _run(json_obj):
             else:
                 results.extend(result_obj)
     elif dict == obj_type:
-        #print('**** SAW A DICT ****')
+        #log('**** SAW A DICT ****')
         result_obj = crp.decode_top_level_obj(json_obj)
         if result_obj is not None:
             if list is not type(result_obj):
@@ -47,11 +48,11 @@ def _run(json_obj):
             else:
                 results.extend(result_obj)
 
-    #print('found {0} results'.format(len(results)))
+    #log('found {0} results'.format(len(results)))
 
     counter = 0
     for obj in results:
-        print('Result {0}: {1}'.format(counter, obj))
+        log('Result {0}: {1}'.format(counter, obj))
         counter += 1
         
         
@@ -62,8 +63,8 @@ def _get_version():
 
 ###############################################################################
 def _show_help():
-    print(_get_version())
-    print("""
+    log(_get_version())
+    log("""
     USAGE: python3 ./{0} -f <json_file> [-hvd]
 
     REQUIRED:
@@ -100,7 +101,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     if opts.debug:
@@ -108,18 +109,18 @@ if __name__ == '__main__':
 
     json_file = opts.filepath
     if not os.path.isfile(json_file):
-        print("File not found: '{0}'".format(json_file))
+        log("File not found: '{0}'".format(json_file))
         sys.exit(-1)
 
     try:
         infile = open(json_file, 'rt')
         file_data = json.load(infile)
     except Exception as e:
-        print("Could not load file contents{0}.".format(json_file))
-        print(e)
+        log("Could not load file contents{0}.".format(json_file))
+        log(e)
         sys.exit(-1)
 
     infile.close()
 
-    #print(json.dumps(file_data, indent=4))
+    #log(json.dumps(file_data, indent=4))
     _run(file_data)

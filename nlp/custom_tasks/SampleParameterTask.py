@@ -1,6 +1,8 @@
 from tasks.task_utilities import BaseTask
 from pymongo import MongoClient
 import util
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 
 class SampleParameterTask(BaseTask):
@@ -30,7 +32,7 @@ class SampleParameterTask(BaseTask):
                     if len(s) > 0:
                         tokens = s.split()
                         greet = self.pipeline_config.custom_arguments['greeting']
-                        print(greet + ' world!')
+                        log(greet + ' world!')
                         obj = {
                             "greeting": greet + tokens[0],
                             "bye": self.pipeline_config.custom_arguments["bye"] + tokens[-1],

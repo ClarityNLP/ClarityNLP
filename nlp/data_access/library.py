@@ -6,11 +6,13 @@ import util
 import sys
 import traceback
 from datetime import datetime, timezone
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     from .base_model import BaseModel
 except Exception as e:
-    print(e)
+    log(e)
     from base_model import BaseModel
 
 

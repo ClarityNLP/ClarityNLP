@@ -164,8 +164,11 @@ def init_history(source_doc):
             data = [x, y, z]
 
         else:
-            # no data
-            data = None
+            # if a value field is present, use it as the data
+            if 'value' in source_doc:
+                data = extract_value(source_doc['value'])
+            else:
+                data = None
 
     history_elt = HistoryElt(
         oid           = oid,
@@ -179,6 +182,7 @@ def init_history(source_doc):
     return history_elt
 
 
+###############################################################################
 def get_default_result_display(ret):
     rd = dict()
     rd['date'] = ''

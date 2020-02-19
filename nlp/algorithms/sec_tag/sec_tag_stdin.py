@@ -7,6 +7,8 @@ import json
 
 from sec_tag import process_report
 from sec_tag import section_tagger_init
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 # XML character entities
 regex_xml_character_entity = re.compile(r'&(?:#([0-9]+)|#x([0-9a-fA-F]+)|([0-9a-zA-Z]+));');
@@ -36,7 +38,7 @@ for line in sys.stdin:
         report += line
 
     if reportComplete:
-        #print("Here is the report:\n{0}".format(report))
+        #log("Here is the report:\n{0}".format(report))
 
         reportComplete = False
 
@@ -49,8 +51,8 @@ for line in sys.stdin:
         # replace repeated spaces with a single space
         clean_report = regex_multi_space.sub(' ', single_newline_report)
 
-        # run the section tagger and print results to stdout
+        # run the section tagger and log results to stdout
         process_report(clean_report)
-        print("\n\n*** END OF REPORT {0} ***\n\n".format(report_index))
+        log("\n\n*** END OF REPORT {0} ***\n\n".format(report_index))
         report_index += 1
         

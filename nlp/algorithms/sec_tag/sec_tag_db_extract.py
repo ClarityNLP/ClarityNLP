@@ -43,6 +43,7 @@ from concept_graph import DuplicateNodeException
 from concept_graph import NodeNotFoundException
 from concept_graph import ConceptGraph
 from concept_graph import Node
+from claritynlp_logging import log, ERROR, DEBUG
 
 # name of file mapping concept names to synonyms
 CS_FILENAME = os.path.join(os.getcwd(), 'data', 'concepts_and_synonyms.txt')
@@ -75,8 +76,9 @@ def extract_synonyms(conn):
     
     try:
         cursor.execute(query)
-    except:
-        print("extract_synonyms: could not execute query...")
+    except Exception as ex:
+        log("extract_synonyms: could not execute query...", ERROR)
+        log(ex, ERROR)
         cursor.close()
         conn.close()
         sys.exit(-1)
@@ -85,7 +87,7 @@ def extract_synonyms(conn):
         
     while True:
         row = cursor.fetchone()
-        if row == None:
+        if not row:
             break
         
         # concept_id, concept_name, synonym_id, synonym_name, synonym_type
@@ -116,7 +118,7 @@ def extract_synonyms(conn):
 
         results.append(result)
             
-    print("extract_synonyms: query returned {0} rows.".format(cursor.rowcount))
+    log("extract_synonyms: query returned {0} rows.".format(cursor.rowcount))
 
     # write to output file
     outfile = open(CS_FILENAME, 'wt')
@@ -560,7 +562,7 @@ def extract_tree(conn):
         try:
             cursor.execute(query)
         except:
-            print("extract_tree: could not execute query...")
+            log("extract_tree: could not execute query...")
             cursor.close()
             conn.close()
             sys.exit(-1)
@@ -597,7 +599,7 @@ def extract_tree(conn):
             if len(tree_code) > 0:
                 maps[level][tree_code] = (cid, concept_name)
 
-        print("extract_tree: query for level {0} returned {1} rows.".format(level, cursor.rowcount))
+        log("extract_tree: query for level {0} returned {1} rows.".format(level, cursor.rowcount))
 
         # Concept 2921 'preoperative_medications' is missing a treecode, but
         # the concept 441 'postoperative_medications' has treecode 5.37.106.127
@@ -657,11 +659,11 @@ def extract_tree(conn):
         
     cursor.close()
 
-    # # print the concept hierarchies
+    # # log the concept hierarchies
     # # level in [7, 6, ..., 1, 0]
     # for level in reversed(range(0, 8)):
 
-    #     print("CURRENT LEVEL: {0}".format(level))
+    #     log("CURRENT LEVEL: {0}".format(level))
         
     #     # for each entry in the map at this level
     #     for key in maps[level].keys():
@@ -671,7 +673,7 @@ def extract_tree(conn):
     #         while l >= 0:
     #             concept_name = maps[l][tree_code]
     #             indent = '    ' * (7 - l)
-    #             print("{0}{1}".format(indent, concept_name))
+    #             log("{0}{1}".format(indent, concept_name))
 
     #             # up one level for the next iteration
     #             l -= 1
@@ -700,7 +702,7 @@ def extract_tree(conn):
             node = Node(cid, level, concept_name, treecode)
             graph.add_node(node)
 
-    print("Concept graph node count: {0}".format(graph.size()))
+    log("Concept graph node count: {0}".format(graph.size()))
 
     # stage 2: add child => parent and child <= parent links, work bottom-up
     for level in reversed(range(1, 8)): # [7, 6, 5, 4, 3, 2, 1] NOT 0
@@ -715,21 +717,21 @@ def extract_tree(conn):
     graph.validate(db_extra)
             
     # ancestor_node_indices = graph.all_ancestors(846)
-    # print("ancestor cids of node(cid == 846): ")
+    # log("ancestor cids of node(cid == 846): ")
     # for a in ancestor_node_indices:
-    #     print("{0}, ".format(graph.nodes[a].cid), end="")
-    # print()
+    #     log("{0}, ".format(graph.nodes[a].cid), end="")
+    # log()
 
     # descendant_node_indices = graph.all_descendants(63)
-    # print("descendant cids of node(cid == 63): count: {0}".format(len(descendant_node_indices)))
+    # log("descendant cids of node(cid == 63): count: {0}".format(len(descendant_node_indices)))
     # for d in descendant_node_indices:
-    #     print("{0}, ".format(graph.nodes[d].cid), end="")
-    # print()
+    #     log("{0}, ".format(graph.nodes[d].cid), end="")
+    # log()
 
     # for i in range(1, 28):
     #     cid = maps[0][str(i)][0]
     #     descendants = graph.all_descendants(cid)
-    #     print("{0}.* has {1} descendants.".format(i, len(descendants)))
+    #     log("{0}.* has {1} descendants.".format(i, len(descendants)))
     
     graph.dump_to_file(GRAPH_FILENAME)
     graph.dump_ancestor_cids_to_file(ANCESTOR_FILENAME)
@@ -746,15 +748,15 @@ try:
                            user = 'sectag',
                            passwd = 'sectag')
     
-    print("Connected to SecTag_Terminology database.")
+    log("Connected to SecTag_Terminology database.")
     
 except:
-    print("Cannot connect to MySQL server...")
+    log("Cannot connect to MySQL server...")
     sys.exit(-1)
 
 extract_synonyms(conn)
 extract_tree(conn)
 
 conn.close()
-print("Disconnected")
+log("Disconnected")
 

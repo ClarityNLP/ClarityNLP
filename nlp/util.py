@@ -1,4 +1,5 @@
 import configparser
+from claritynlp_logging import log, ERROR
 from os import getenv, environ, path
 
 import pymongo
@@ -29,7 +30,7 @@ def read_property(env_name, config_tuple, default='', key_name=None):
         if len(key_name) > 0 and 'PASSWORD' not in key_name and 'KEY' not in key_name and 'USERNAME' not in key_name:
             properties[key_name] = property_name
     except Exception as ex:
-        print(ex)
+        log(repr(ex), ERROR)
         properties[key_name] = default
     return property_name
 
@@ -71,7 +72,7 @@ tmp_dir = read_property('NLP_API_TMP_DIR', ('tmp', 'dir'))
 log_dir = read_property('NLP_API_LOG_DIR', ('log', 'dir'))
 luigi_scheduler = read_property('LUIGI_SCHEDULER_URL', ('luigi', 'scheduler'))
 luigi_url = read_property('SCHEDULER_VIRTUAL_HOST', ('luigi', 'url'))
-luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'))
+luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'), default='5')
 results_viewer_url = read_property(
     'RESULTS_CLIENT_URL', ('results_client', 'url'))
 main_url = read_property(
@@ -205,19 +206,7 @@ def cmp_2_key(mycmp):
     return K
 
 
-_mongo_client = None
-
-
 def mongo_client(host=None, port=None, username=None, password=None):
-    global _mongo_client
-    if _mongo_client:
-        try:
-            _mongo_client.server_info()
-        except pymongo.errors.ServerSelectionTimeoutError as err:
-            _mongo_client = None
-        if _mongo_client:
-            return _mongo_client
-
     if not host:
         host = mongo_host
 
@@ -230,7 +219,7 @@ def mongo_client(host=None, port=None, username=None, password=None):
     if not password:
         password = mongo_password
 
-    print('Mongo port: {}; host: {}'.format(port, host))
+    # log('Mongo port: {}; host: {}'.format(port, host))
     if username and len(username) > 0 and password and len(password) > 0:
         # print('authenticated mongo')
         _mongo_client = MongoClient(host=host, port=port, username=username,

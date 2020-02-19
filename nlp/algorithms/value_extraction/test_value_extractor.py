@@ -13,6 +13,7 @@ import sys
 import json
 import argparse
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
 
 try:
     import value_extractor as ve
@@ -86,17 +87,17 @@ def _compare_results(
 
         # check that len(computed) == len(expected)
         if is_mismatched or (value_result.measurementCount != num_expected):
-            print('\tMismatch in computed vs. expected results: ')
-            print('\tSentence: {0}'.format(sentence))
-            print('\tComputed: ')
+            log('\tMismatch in computed vs. expected results: ')
+            log('\tSentence: {0}'.format(sentence))
+            log('\tComputed: ')
             if value_result is None:
-                print('\t\tNone')
+                log('\t\tNone')
             else:
                 for m in value_result.measurementList:
-                    print('\t\t{0}'.format(m))
-            print('\tExpected: ')
+                    log('\t\t{0}'.format(m))
+            log('\tExpected: ')
             for e in expected_list:
-                print('\t\t{0}'.format(e))
+                log('\t\t{0}'.format(e))
 
             return False
         
@@ -123,9 +124,9 @@ def _compare_results(
                                        computed, expected, failures)
                 
         if len(failures) > 0:
-            print(sentence)
+            log(sentence)
             for f in failures:
-                print(f)
+                log(f)
             return False
 
     return True
@@ -959,13 +960,13 @@ if __name__ == '__main__':
                         help='show version and exit',
                         action='store_true')
     parser.add_argument('-d', '--debug',
-                        help='print debug information to stdout',
+                        help='log debug information to stdout',
                         action='store_true')
 
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        print(_get_version())
+        log(_get_version())
         sys.exit(0)
 
     if 'debug' in args and args.debug:

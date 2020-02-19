@@ -11,6 +11,7 @@ import psycopg2
 import psycopg2.extras
 import requests
 import json
+from claritynlp_logging import log, ERROR, DEBUG
 
 
 # Function to get synonyms for given concept
@@ -34,8 +35,8 @@ def get_synonyms(conn_string, concept, vocabulary):
         return result
 
     except Exception as ex:
-        print('Failed to get synonyms')
-        print(str(ex))
+        log('Failed to get synonyms')
+        log(str(ex))
 
     finally:
         conn.close()
@@ -62,8 +63,8 @@ def get_ancestors(conn_string, concept, vocabulary):
         result = cursor.fetchall()
         return result
     except Exception as ex:
-        print('Failed to get ancestors')
-        print(str(ex))
+        log('Failed to get ancestors')
+        log(str(ex))
 
     finally:
         conn.close()
@@ -91,8 +92,8 @@ def get_descendants(conn_string, concept, vocabulary):
         return result
 
     except Exception as ex:
-        print('Failed to get descendants')
-        print(str(ex))
+        log('Failed to get descendants')
+        log(str(ex))
 
     finally:
         conn.close()
@@ -124,7 +125,7 @@ def get_related_terms(conn_string, concept, vocabulary, get_synonyms_bool=True, 
                 escaped.append(re.escape(r[0]))
 
     if len(related_terms) > 0:
-        print(related_terms)
+        log(related_terms)
 
     if escape:
         return list(set(escaped))
@@ -161,4 +162,4 @@ def get_related_terms_ohdsi(ohdsi_url, concept_id, vocabulary, get_synonyms_bool
 # For testing purposes. Remove in code cleanup.
 if __name__=='__main__':
     r = get_related_terms_ohdsi('https://gt-apps.hdap.gatech.edu/ohdsi/WebAPI', 376337, 'SNOMED', False, False, True, False )
-    print (r)
+    log (r)

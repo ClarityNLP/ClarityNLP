@@ -15,6 +15,8 @@ from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
 from data_access import solr_data
+from claritynlp_logging import log, ERROR, DEBUG
+from xml.sax import saxutils as su
 
 sentences_key = "sentence_attrs"
 section_names_key = "section_name_attrs"
@@ -63,7 +65,7 @@ def document_sections(doc):
         try:
             section_headers, section_texts = sec_tag_process(txt)
         except Exception as e:
-            print(e)
+            log(e)
         names = [x.concept for x in section_headers]
         return names, section_texts
 
@@ -79,14 +81,14 @@ def document_sentences(doc):
 
 def document_text(doc, clean=False):
     if doc and util.solr_text_field in doc:
-        txt = doc[util.solr_text_field]
-        if type(txt) == str:
-            txt_val = txt
-        elif type(txt) == list:
-            txt_val = ' '.join(txt)
+        t = doc.get(util.solr_text_field)
+        if type(t) == str:
+            txt_val = t
+        elif type(t) == list:
+            txt_val = ' '.join(t)
         else:
-            txt_val = str(txt)
-
+            txt_val = str(t)
+        txt_val = su.unescape(txt_val)
         if clean:
             return txt_val.encode("ascii", errors="ignore").decode()
         else:
@@ -130,16 +132,17 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     db = client[util.mongo_db]
 
     if not data_fields:
-        print('must have additional data fields')
+        log('must have additional data fields', ERROR)
         return None
 
     if not p_config:
-        print('must have pipeline config')
+        log('must have pipeline config', ERROR)
         return None
 
+    # log('writing results...', DEBUG)
     data_fields["pipeline_type"] = pipeline_type
-    data_fields["pipeline_id"] = pipeline_id
-    data_fields["job_id"] = job
+    data_fields["pipeline_id"] = int(pipeline_id)
+    data_fields["job_id"] = int(job)
     data_fields["batch"] = batch
     data_fields["owner"] = p_config.owner
     data_fields["nlpql_feature"] = (prefix + p_config.name)
@@ -161,6 +164,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             if df not in data_fields:
                 data_fields[df] = ''
 
+    highlight_fields = ['term', 'text', 'value', 'units', 'word', 'highlight', 'highlights']
     if "result_display" not in data_fields:
         s = data_fields.get('start')
         e = data_fields.get('end')
@@ -170,9 +174,11 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             e = 0
 
         highlights = []
-        txt = data_fields.get('text')
-        if txt:
-            highlights = [txt]
+        for h in highlight_fields:
+            txt = data_fields.get(h, '')
+            if len(txt) > 0:
+                highlights.append(txt)
+                break
         data_fields["result_display"] = {
             "date": data_fields.get('report_date'),
             "result_content": data_fields.get('sentence'),
@@ -181,8 +187,20 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
             'start': [s],
             'end': [e]
         }
+    else:
+        display = data_fields.get('result_display')
+        highlights = display.get("highlights", list())
+        if len(highlights) == 0:
+            highlights = []
+            for h in highlight_fields:
+                txt = data_fields.get(h, '')
+                if len(txt) > 0:
+                    highlights.append(txt)
+                    break
+            data_fields['result_display']['highlights'] = highlights
 
     inserted = config.insert_pipeline_results(p_config, db, data_fields)
+    log('(job={}; pipeline={}) inserted into mongodb {}'.format(job, pipeline_id, repr(inserted.inserted_id)), DEBUG)
 
     return inserted
 
@@ -198,15 +216,16 @@ class BaseCollector(base_model.BaseModel):
             jobs.update_job_status(job, util.conn_string, jobs.IN_PROGRESS, "Running Collector")
             self.run_custom_task(pipeline_id, job, owner, pipeline_type, p_config, client, db)
         except Exception as ex:
-            traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
+            log(ex, ERROR)
+        finally:
+            client.close()
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
-        print('please implement run_custom_task')
+        log('please implement run_custom_task')
 
     def custom_cleanup(self, pipeline_id, job, owner, pipeline_type, p_config, client, db):
-        print('custom cleanup')
+        log('custom cleanup')
 
     def cleanup(self, pipeline_id, job, owner, pipeline_type, p_config):
         client = util.mongo_client()
@@ -216,9 +235,10 @@ class BaseCollector(base_model.BaseModel):
             jobs.update_job_status(job, util.conn_string, jobs.IN_PROGRESS, "Running Collector Cleanup")
             self.custom_cleanup(pipeline_id, job, owner, pipeline_type, p_config, client, db)
         except Exception as ex:
-            traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(job, util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
+            log(ex, ERROR)
+        finally:
+            client.close()
 
 
 class BaseTask(luigi.Task):
@@ -271,9 +291,10 @@ class BaseTask(luigi.Task):
 
             self.docs = list()
         except Exception as ex:
-            traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
+            log(ex, ERROR)
+        finally:
+            client.close()
 
     def output(self):
         return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,
@@ -306,24 +327,10 @@ class BaseTask(luigi.Task):
         jobs.update_job_status(str(self.job), util.conn_string, job_status, status_message)
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
-        print("Implement your custom functionality here ")
+        log("Implement your custom functionality here ")
 
     def get_document_text(self, doc, clean=True):
-        if doc and util.solr_text_field in doc:
-            txt = doc[util.solr_text_field]
-            if type(txt) == str:
-                txt_val = txt
-            elif type(txt) == list:
-                txt_val = ' '.join(txt)
-            else:
-                txt_val = str(txt)
-
-            if clean:
-                return txt_val.encode("ascii", errors="ignore").decode()
-            else:
-                return txt_val
-        else:
-            return ''
+        return document_text(doc, clean=clean)
 
     def get_boolean(self, key, default=False):
         return get_config_boolean(self.pipeline_config, key, default=default)

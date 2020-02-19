@@ -16,6 +16,9 @@ volumes:
   dhparam:
   htpasswd:
   luigi-frontend:
+  luigi-logs:
+  luigi-state:
+  nlp-api-data:
 
 services:
   identity-provider:
@@ -62,6 +65,7 @@ services:
       - ${NLP_API_CONTAINER_PORT}
     volumes:
       - ./nlp:/api
+      - nlp-api-data:/tmp
     entrypoint:
       - /api/wait-for-it-extra.sh
       - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
@@ -129,6 +133,8 @@ services:
       - ${SCHEDULER_CONTAINER_PORT}
     volumes:
       - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+      - luigi-state:/luigi/state
+      - luigi-logs:/luigi/logs
     networks:
       - clarity
 

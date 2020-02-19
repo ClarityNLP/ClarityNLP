@@ -8,6 +8,8 @@ from ohdsi import getCohort
 import traceback
 import sys
 import json
+from claritynlp_logging import log, ERROR, DEBUG
+
 try:
     from .results import phenotype_results_by_context
 except Exception:
@@ -44,7 +46,7 @@ def get_report_type_mappings(url, inst, key):
     except Exception as ex:
         if util.debug_mode:
             # traceback.print_exc(file=sys.stderr)
-            print(ex)
+            log(ex)
 
     return tag_lookup_dict
 
@@ -111,7 +113,7 @@ def make_fq(types, tags, fq, mapper_url, mapper_inst, mapper_key, report_type_qu
             except Exception as e:
                 if util.debug_mode:
                     traceback.print_exc(file=sys.stderr)
-                    print("Unable to map tag %s" % tag)
+                    log("Unable to map tag %s" % tag)
         if len(matched_reports) > 0:
             match_report_clause = '" OR "'.join(matched_reports)
             report_types = util.solr_report_type_field + ': ("' + match_report_clause + '")'
@@ -180,14 +182,14 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     data = make_post_body(qry,  fq, sort, start, rows)
     post_data = json.dumps(data, indent=4)
 
-    if util.debug_mode == "true":
-        print("Querying " + url)
-        print(post_data)
+    # if util.debug_mode == "true":
+    #     log("Querying " + url)
+    #     log(post_data)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
 
-    # print(response['response']['numFound'], "documents found.")
+    # log(response['response']['numFound'], "documents found.")
 
     # for document in response['response']['docs']:
     #     print ("  Report id =", document['report_id'])
@@ -223,15 +225,17 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
     post_data = json.dumps(data)
 
     if util.debug_mode == "true":
-        print("Querying to get counts " + url)
-        print(post_data)
+        log("Querying to get counts " + url, DEBUG)
+        log(post_data, DEBUG)
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
     if response.status_code != 200:
         return 0
 
-    return int(response.json()['response']['numFound'])
+    num_found = int(response.json()['response']['numFound'])
+    log("found {} solr docs".format(num_found))
+    return num_found
 
 
 def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):
@@ -240,9 +244,9 @@ def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):
     data = make_post_body("report_id:" + report_id, '', '', 0, 1)
     post_data = json.dumps(data)
 
-    if util.debug_mode == "true":
-        print("Querying to get document " + url)
-        print(post_data)
+    # if util.debug_mode == "true":
+    #     log("Querying to get document " + url, DEBUG)
+    #     log(post_data, DEBUG)
 
     response = requests.post(url, headers=get_headers(), data=post_data)
     if response.status_code != 200:
@@ -252,19 +256,20 @@ def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):
 
 
 if __name__ == '__main__':
-    solr = util.solr_url
-    if len(sys.argv) > 1:
-        q = sys.argv[1]
-    else:
-        q = "%s:*" % util.solr_text_field
-    res = query(q, solr_url=solr)
-    print(simplejson.dumps(res, indent=4*' '))
-
-    report_mapper_url = util.report_mapper_url
-    report_mapper_key = util.report_mapper_key
-    report_mapper_inst = util.report_mapper_inst
-    mappings = get_report_type_mappings(report_mapper_url, report_mapper_inst, report_mapper_key)
-
-    print(simplejson.dumps(mappings, indent=4*' '))
-
-    sys.exit(1)
+    log("solr_data", DEBUG)
+    # solr = util.solr_url
+    # if len(sys.argv) > 1:
+    #     q = sys.argv[1]
+    # else:
+    #     q = "%s:*" % util.solr_text_field
+    # res = query(q, solr_url=solr)
+    # log(simplejson.dumps(res, indent=4*' '))
+    #
+    # report_mapper_url = util.report_mapper_url
+    # report_mapper_key = util.report_mapper_key
+    # report_mapper_inst = util.report_mapper_inst
+    # mappings = get_report_type_mappings(report_mapper_url, report_mapper_inst, report_mapper_key)
+    #
+    # log(simplejson.dumps(mappings, indent=4*' '))
+    #
+    # sys.exit(1)

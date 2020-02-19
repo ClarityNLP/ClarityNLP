@@ -1,6 +1,7 @@
 import antlr4
 import traceback
 from data_access import PhenotypeModel, PhenotypeDefine, PhenotypeEntity, PhenotypeOperations
+from claritynlp_logging import log, ERROR, DEBUG
 
 if __name__ is not None and "." in __name__:
     from .nlpql_parserParser import *
@@ -142,7 +143,7 @@ def handle_limit(context, phenotype: PhenotypeModel):
 
 
 def handle_phenotype_name(context, phenotype: PhenotypeModel):
-    print('phenotype_name')
+    # log('phenotype_name')
     previous = ''
     phenotype_def = None
     name = ''
@@ -165,7 +166,7 @@ def handle_description(context, phenotype: PhenotypeModel):
 
 
 def handle_data_model(context, phenotype: PhenotypeModel):
-    print('data model')
+    # log('data model')
     previous = ''
     phenotype_def = None
     for c in context.getChildren():
@@ -184,7 +185,7 @@ def handle_data_model(context, phenotype: PhenotypeModel):
 
 
 def handle_include(context, phenotype: PhenotypeModel):
-    print('include')
+    # log('include')
 
     # ohdsi_helpers = PhenotypeDefine('OHDSIHelpers', 'include', version='1.0', alias='OHDSI')
     # include OHDSIHelpers version "1.0" called OHDSI;
@@ -211,7 +212,7 @@ def handle_include(context, phenotype: PhenotypeModel):
 
 
 def handle_code_system(context, phenotype: PhenotypeModel):
-    print('code system')
+    # log('code system')
 
     # codesystem OMOP: "http://omop.org";
     # omop = PhenotypeDefine('OMOP', 'codesystem', values=['http://omop.org'])
@@ -233,7 +234,7 @@ def handle_code_system(context, phenotype: PhenotypeModel):
 
 
 def handle_value_set(context, phenotype: PhenotypeModel):
-    print('value set')
+    # log('value set')
 
     # Sepsis = PhenotypeDefine('Sepsis', 'valueset', library='OHDSI',
     #                          funct='getConceptSet',
@@ -254,7 +255,7 @@ def handle_value_set(context, phenotype: PhenotypeModel):
 
 
 def handle_term_set(context, phenotype: PhenotypeModel):
-    print('term set')
+    # log('term set')
     # termset RigorsTerms: ["Rigors",
     # "Rigoring",
     # "Rigours",
@@ -274,7 +275,7 @@ def handle_term_set(context, phenotype: PhenotypeModel):
 
 
 def handle_document_set(context, phenotype: PhenotypeModel):
-    print('document set')
+    # log('document set')
     # documentset ProviderNotes: Clarity.createDocumentList("'Physician' OR 'Nurse' OR 'Note' OR 'Discharge Summary'");
 
     call = get_pair_method(context.getChild(1))
@@ -293,7 +294,7 @@ def handle_document_set(context, phenotype: PhenotypeModel):
 
 
 def handle_cohort(context, phenotype: PhenotypeModel):
-    print('cohort')
+    log('cohort')
     call = get_pair_method(context.getChild(1))
     name = call["name"]
     library = call["method"]["library"]
@@ -315,7 +316,7 @@ def handle_context(context, phenotype: PhenotypeModel):
 
 
 def handle_define(context, phenotype: PhenotypeModel):
-    print('define')
+    log('define')
     final = False
     define_name = ''
     children = context.getChildren()
@@ -339,7 +340,7 @@ def handle_define_subject(context, phenotype: PhenotypeModel,  define_name, fina
 
 
 def handle_data_entity(context, phenotype: PhenotypeModel, define_name, final):
-    print('data entity')
+    log('data entity')
     pe = PhenotypeEntity(define_name, 'define', final=final)
     call = get_method_call(context.getChild(0))
     # hasSepsis = PhenotypeEntity('hasSepsis', 'define',
@@ -386,8 +387,8 @@ def get_atomic_expression(context: nlpql_parserParser.ExpressionAtomContext):
             atomic = get_method_call(first)
     else:
         for c in context.getChildren():
-            print('TODO')
-            print(c)
+            log('TODO')
+            log(c)
     return {
         "atomic_value": atomic,
         "main_type": main_type
@@ -402,7 +403,7 @@ def get_predicate_context(context: nlpql_parserParser.PredicateContext):
     predicates = list()
     for c in context.getChildren():
         txt = c.getText()
-        print(txt)
+        log(txt)
 
         if type(c) == nlpql_parserParser.ExpressionAtomContext:
             expression_atom = get_atomic_expression(c)
@@ -455,7 +456,7 @@ def get_pretty_text(expression):
 
 
 def get_not_expression(expression: nlpql_parserParser.ExpressionContext, define_name, final):
-    print(expression)
+    log(expression)
     entities = list()
     operator = ""
 
@@ -464,7 +465,7 @@ def get_not_expression(expression: nlpql_parserParser.ExpressionContext, define_
 
 
 def get_logical_expression(expression: nlpql_parserParser.ExpressionContext, define_name, final):
-    print(expression)
+    log(expression)
     entities = list()
     operator = list()
 
@@ -480,7 +481,7 @@ def get_logical_expression(expression: nlpql_parserParser.ExpressionContext, def
 
 
 def get_predicate_expression(expression: nlpql_parserParser.PredicateContext, define_name, final):
-    print(expression)
+    log(expression)
     entities = list()
     operator = ""
     for c in expression.getChildren():
@@ -499,7 +500,7 @@ def get_predicate_expression(expression: nlpql_parserParser.PredicateContext, de
 
 
 def get_predicate_boolean(expression: nlpql_parserParser.PredicateBooleanContext, define_name, final):
-    print(expression)
+    log(expression)
     operator = ""
     entities = list()
 
@@ -508,7 +509,7 @@ def get_predicate_boolean(expression: nlpql_parserParser.PredicateBooleanContext
 
 
 def handle_operation(context, phenotype: PhenotypeModel, define_name, final):
-    print('operation')
+    log('operation')
 
     # SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'], final=True)
 
@@ -572,14 +573,14 @@ def handle_expression(expr):
                             handlers[stmt_type](stmt, p)
                         except Exception as ex:
                             has_errors = True
-                            print(ex)
+                            log(ex, ERROR)
                             traceback.print_exc(file=sys.stderr)
                             error = ''.join(traceback.format_stack())
                             errors.append(error)
                     else:
                         has_warnings = True
                         unknown.append(child)
-                        print('UNKNOWN child: ' + child.getText())
+                        log('UNKNOWN child: ' + child.getText())
 
     return {
         "has_warnings": has_warnings,
@@ -601,11 +602,12 @@ def run_nlpql_parser(nlpql_txt: str):
 
 
 if __name__ == '__main__':
-    with open('samples/sample2.nlpql') as f:
-        nlpql_txt = f.read()
-        results = run_nlpql_parser(nlpql_txt)
-        if results['has_errors'] or results['has_warnings']:
-            print(results)
-        else:
-            print('NLPQL parsed successfully')
-            print(results['phenotype'].to_json())
+    # with open('samples/sample2.nlpql') as f:
+    #     nlpql_txt = f.read()
+    #     results = run_nlpql_parser(nlpql_txt)
+    #     if results['has_errors'] or results['has_warnings']:
+    #         log(results)
+    #     else:
+    #         log('NLPQL parsed successfully')
+    #         log(results['phenotype'].to_json())
+    log("init nlpql parsing...", DEBUG)

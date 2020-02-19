@@ -2,10 +2,16 @@ FROM python:3.6.8
 
 MAINTAINER Health Data Analytics
 
+RUN apt-get update && apt-get install -y \
+    less \
+    vim
+
 ARG NLP_API_CONTAINER_PORT
 ENV APP_HOME /api
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
+
+VOLUME ["/tmp"]
 
 COPY requirements.txt $APP_HOME
 COPY install_models.py $APP_HOME

@@ -18,6 +18,7 @@ from algorithms.finder.size_measurement_finder import run as run_size_measuremen
     EMPTY_FIELD as EMPTY_SMF_FIELD
 from algorithms.value_extraction.tnm_stage_extractor import run as run_tnm_stager, TNM_FIELDS, TnmCode, \
     EMPTY_FIELD as EMPTY_TNM_FIELD
+from claritynlp_logging import log, ERROR, DEBUG
 
 
 ###############################################################################
@@ -34,7 +35,7 @@ sentences = [
     'The words January, Feb., Sept. and December are individual months.'
 ]
 
-print('\n\n***** DATE FINDER EXAMPLES ***** \n')
+log('\n\n***** DATE FINDER EXAMPLES ***** \n')
 
 for sentence in sentences:
 
@@ -47,20 +48,20 @@ for sentence in sentences:
     # unpack to a list of DateValue namedtuples
     date_results = [DateValue(**m) for m in json_data]
 
-    print('   sentence: ' + sentence)
+    log('   sentence: ' + sentence)
 
     index = 0
     for d in date_results:
-        print('       text[{0}]: {1}'.format(index, d.text))
-        print('      start[{0}]: {1}'.format(index, d.start))
-        print('        end[{0}]: {1}'.format(index, d.end))
+        log('       text[{0}]: {1}'.format(index, d.text))
+        log('      start[{0}]: {1}'.format(index, d.start))
+        log('        end[{0}]: {1}'.format(index, d.end))
         if EMPTY_DATE_FIELD != d.year:
-            print('       year[{0}]: {1}'.format(index, d.year))
+            log('       year[{0}]: {1}'.format(index, d.year))
         if EMPTY_DATE_FIELD != d.month:
-            print('      month[{0}]: {1}'.format(index, d.month))
+            log('      month[{0}]: {1}'.format(index, d.month))
         if EMPTY_DATE_FIELD != d.day:
-            print('        day[{0}]: {1}'.format(index, d.day))
-        print()
+            log('        day[{0}]: {1}'.format(index, d.day))
+        log()
         index += 1
 
 ###############################################################################
@@ -77,7 +78,7 @@ sentences = [
     'Today the lesion measures 1.5 x 2 cm; previously it was 1.9cm x 2.3mm.'
 ]
 
-print('\n\n***** SIZE MEASUREMENT EXAMPLES ***** \n')
+log('\n\n***** SIZE MEASUREMENT EXAMPLES ***** \n')
 
 for sentence in sentences:
 
@@ -90,31 +91,31 @@ for sentence in sentences:
     # unpack to a list of SizeMeasurement namedtuples
     measurements = [SizeMeasurement(**m) for m in json_data]
 
-    print('   sentence: ' + sentence)
+    log('   sentence: ' + sentence)
 
     index = 0
     for m in measurements:
-        print('       text[{0}]: {1}'.format(index, m.text))
-        print('      start[{0}]: {1}'.format(index, m.start))
-        print('        end[{0}]: {1}'.format(index, m.end))
-        print('temporality[{0}]: {1}'.format(index, m.temporality))
-        print('      units[{0}]: {1}'.format(index, m.units))
-        print('  condition[{0}]: {1}'.format(index, m.condition))
+        log('       text[{0}]: {1}'.format(index, m.text))
+        log('      start[{0}]: {1}'.format(index, m.start))
+        log('        end[{0}]: {1}'.format(index, m.end))
+        log('temporality[{0}]: {1}'.format(index, m.temporality))
+        log('      units[{0}]: {1}'.format(index, m.units))
+        log('  condition[{0}]: {1}'.format(index, m.condition))
         if EMPTY_SMF_FIELD != m.x:
-            print('          x[{0}]: {1}'.format(index, m.x))
+            log('          x[{0}]: {1}'.format(index, m.x))
         if EMPTY_SMF_FIELD != m.y:
-            print('          y[{0}]: {1}'.format(index, m.y))
+            log('          y[{0}]: {1}'.format(index, m.y))
         if EMPTY_SMF_FIELD != m.z:
-            print('          z[{0}]: {1}'.format(index, m.z))
+            log('          z[{0}]: {1}'.format(index, m.z))
         if EMPTY_SMF_FIELD != m.values:
-            print('     values[{0}]: {1}'.format(index, m.values))
+            log('     values[{0}]: {1}'.format(index, m.values))
         if EMPTY_SMF_FIELD != m.x_view:
-            print('     x_view[{0}]: {1}'.format(index, m.x_view))
+            log('     x_view[{0}]: {1}'.format(index, m.x_view))
         if EMPTY_SMF_FIELD != m.y_view:
-            print('     y_view[{0}]: {1}'.format(index, m.y_view))
+            log('     y_view[{0}]: {1}'.format(index, m.y_view))
         if EMPTY_SMF_FIELD != m.z_view:
-            print('     z_view[{0}]: {1}'.format(index, m.z_view))
-        print()
+            log('     z_view[{0}]: {1}'.format(index, m.z_view))
+        log()
         index += 1
 
 ###############################################################################
@@ -131,7 +132,7 @@ sentences = [
     'MCV-96 MCH-33.2* MCHC-34.7 RDW-12.9 Plt Ct-172 02:24AM BLOOD WBC-4.4 RBC-4.21*',
 ]
 
-print('\n\n***** VALUE EXTRACTION EXAMPLES *****\n')
+log('\n\n***** VALUE EXTRACTION EXAMPLES *****\n')
 
 search_terms = 'T, BP, WBC'
 
@@ -149,10 +150,10 @@ for sentence in sentences:
 
     # unpack to a ValueResult namedtuple
     result = ValueResult(**json_data)
-    print('        sentence: {0}'.format(result.sentence))
-    print('           terms: {0}'.format(result.terms))
-    print('    querySuccess: {0}'.format(result.querySuccess))
-    print('measurementCount: {0}'.format(result.measurementCount))
+    log('        sentence: {0}'.format(result.sentence))
+    log('           terms: {0}'.format(result.terms))
+    log('    querySuccess: {0}'.format(result.querySuccess))
+    log('measurementCount: {0}'.format(result.measurementCount))
 
     # get the array of measurements
     measurements = result.measurementList
@@ -162,15 +163,15 @@ for sentence in sentences:
 
     index = 0
     for v in values:
-        print('         text[{0}]: {1}'.format(index, v.text))
-        print('        start[{0}]: {1}'.format(index, v.start))
-        print('          end[{0}]: {1}'.format(index, v.end))
-        print('    condition[{0}]: {1}'.format(index, v.condition))
-        print(' matchingTerm[{0}]: {1}'.format(index, v.matchingTerm))
-        print('            x[{0}]: {1}'.format(index, v.x))
+        log('         text[{0}]: {1}'.format(index, v.text))
+        log('        start[{0}]: {1}'.format(index, v.start))
+        log('          end[{0}]: {1}'.format(index, v.end))
+        log('    condition[{0}]: {1}'.format(index, v.condition))
+        log(' matchingTerm[{0}]: {1}'.format(index, v.matchingTerm))
+        log('            x[{0}]: {1}'.format(index, v.x))
         if EMPTY_VALUE_FIELD != v.y:
-            print('            y[{0}]: {1}'.format(index, v.y))
-        print()
+            log('            y[{0}]: {1}'.format(index, v.y))
+        log()
         index += 1
 
 ###############################################################################
@@ -188,7 +189,7 @@ sentences = [
     'The tumor is classified as ypT2C4(3) N1(2/16) pM1 G1-2VX L1 Pn0; R0 (liver), R1(cy+) (lung).'
 ]
 
-print('\n\n***** TNM STAGING EXAMPLES *****\n')
+log('\n\n***** TNM STAGING EXAMPLES *****\n')
 
 for sentence in sentences:
 
@@ -204,7 +205,7 @@ for sentence in sentences:
     # find the max length of all the field names:
     maxlen = len(max(TNM_FIELDS, key=len))
 
-    print('   sentence: ' + sentence)
+    log('   sentence: ' + sentence)
 
     index = 0
     for c in tnm_codes:
@@ -215,9 +216,9 @@ for sentence in sentences:
             # get the value of this field for this code c
             attr = getattr(c, f)
 
-            # print if field value is meaningful
+            # log if field value is meaningful
             if EMPTY_TNM_FIELD != attr:
                 indent = ' ' * (maxlen - len(f))
-                print('{0}{1}: {2}'.format(indent, f, attr))
-        print()
+                log('{0}{1}: {2}'.format(indent, f, attr))
+        log()
         index += 1

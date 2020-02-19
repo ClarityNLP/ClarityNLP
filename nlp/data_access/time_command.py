@@ -27,6 +27,15 @@ import sys
 from dateutil.tz import tzutc
 from datetime import datetime, timedelta
 
+if __name__ == '__main__':
+    # modify path for local testing
+    cur_dir = sys.path[0]
+    nlp_dir, tail = os.path.split(cur_dir)
+    sys.path.append(nlp_dir)
+    sys.path.append(os.path.join(nlp_dir, 'algorithms', 'finder'))
+
+from claritynlp_logging import log, ERROR, DEBUG
+
 # set to True to enable debug output
 _TRACE = False
 
@@ -113,22 +122,22 @@ def parse_time_command(time_string, data_earliest, data_latest):
         match = _regex_datetime.search(s)
         if match:
             dt = _to_datetime(match)
-            if _TRACE: print('\tDATETIME: {0}'.format(dt))
+            if _TRACE: log('\tDATETIME: {0}'.format(dt))
             s = s[match.end():]
         match = _regex_date.search(s)
         if match:
             dt = _to_date(match)
-            if _TRACE: print('\tDATE: {0}'.format(dt))
+            if _TRACE: log('\tDATE: {0}'.format(dt))
             s = s[match.end():]
         match = _regex_earliest.search(s)
         if match:
             dt = data_earliest
-            if _TRACE: print('\tEARLIEST: {0}'.format(data_earliest))
+            if _TRACE: log('\tEARLIEST: {0}'.format(data_earliest))
             s = s[match.end():]
         match = _regex_latest.search(s)
         if match:
             dt = data_latest
-            if _TRACE: print('\tLATEST: {0}'.format(data_latest))
+            if _TRACE: log('\tLATEST: {0}'.format(data_latest))
             s = s[match.end():]
         match = _regex_operator.search(s)
         if match:
@@ -136,7 +145,7 @@ def parse_time_command(time_string, data_earliest, data_latest):
                 op_string = _STR_MINUS                
             else:
                 op_string = _STR_PLUS
-            if _TRACE: print('\tOPERATOR: {0}'.format(op_string))
+            if _TRACE: log('\tOPERATOR: {0}'.format(op_string))
             s = s[match.end():]
             continue
         match = _regex_offset.search(s)
@@ -149,7 +158,7 @@ def parse_time_command(time_string, data_earliest, data_latest):
                 dt_result = dt - timedelta(days=num)
             else:
                 dt_result = dt + timedelta(days=num)
-            if _TRACE: print('\tOFFSET: num: {0}, units: {1}, op_string: {2}, result: {3}'.
+            if _TRACE: log('\tOFFSET: num: {0}, units: {1}, op_string: {2}, result: {3}'.
                   format(num, units, op_string, dt_result))
             s = s[match.end():]
             continue
@@ -167,6 +176,8 @@ def parse_time_command(time_string, data_earliest, data_latest):
 ###############################################################################
 if __name__ == '__main__':
 
+    # interactive testing from command line
+    
     DATETIME_STRINGS = [
         "DATETIME(2019, 5, 17, 1, 2, 3)",
         "DATETIME(2019, 05, 01, 01, 02, 03)",

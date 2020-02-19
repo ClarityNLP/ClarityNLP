@@ -7,6 +7,7 @@ import sys
 import inspect
 import pkgutil
 from importlib import import_module
+from claritynlp_logging import log, ERROR, DEBUG, WARNING
 
 
 registered_pipelines = {
@@ -35,7 +36,7 @@ def register_pipeline_task(task_name, task_cls):
     # TODO checks if valid type
     if task_name and len(task_name) > 0:
         if task_name in registered_pipelines:
-            print("WARNING: Overwriting existing pipeline %s" % task_name)
+            log("WARNING: Overwriting existing pipeline %s" % task_name, WARNING)
         registered_pipelines[task_name] = task_cls
 
 

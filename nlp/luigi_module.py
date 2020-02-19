@@ -10,7 +10,7 @@ from data_access import solr_data, phenotype_stats
 from data_access import update_phenotype_model
 from luigi_tools import phenotype_helper
 from tasks import *
-
+from claritynlp_logging import log, ERROR, DEBUG
 
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
 # didn't seem like it was with initial efforts
@@ -20,7 +20,6 @@ class PhenotypeTask(luigi.Task):
     phenotype = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
-    client = util.mongo_client()
 
     def requires(self):
         register_tasks()
@@ -29,8 +28,8 @@ class PhenotypeTask(luigi.Task):
         phenotype_config = data_access.query_phenotype(int(self.phenotype), util.conn_string)
         phenotype_config['phenotype_id'] = int(self.phenotype)
 
-        print("getting ready to execute pipelines...")
-        print(pipeline_ids)
+        log("getting ready to execute pipelines...")
+        log(pipeline_ids)
         if len(pipeline_ids) > 0:
             configs = dict()
             for pipeline_id in pipeline_ids:
@@ -43,12 +42,12 @@ class PhenotypeTask(luigi.Task):
                 pipeline_id = pipeline_config['pipeline_id']
                 tasks.append(PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
                                           pipelinetype=pipeline_config.config_type))
-        print(tasks)
+        log(tasks)
 
         return tasks
 
     def run(self):
-        print('dependencies done; run phenotype reconciliation')
+        log('dependencies done; run phenotype reconciliation')
         client = util.mongo_client()
 
         try:
@@ -56,7 +55,7 @@ class PhenotypeTask(luigi.Task):
                                           "Finished Pipelines")
 
             phenotype = data_access.query_phenotype(int(self.phenotype), util.conn_string)
-            print(phenotype)
+            # log(phenotype)
 
             db = client[util.mongo_db]
 
@@ -73,12 +72,14 @@ class PhenotypeTask(luigi.Task):
                                           str(stats["results"]))
             data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_FINAL_SUBJECTS",
                                           str(stats["subjects"]))
-            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_QUERY_COUNTS",
-                                          str(util.get_cache_query_count()))
-            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_COMPUTE_COUNTS",
-                                          str(util.get_cache_compute_count()))
-            data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_HIT_RATIO",
-                                          str(util.get_cache_hit_ratio()))
+            log("writing job stats....")
+            log(json.dumps(stats, indent=4))
+            # data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_QUERY_COUNTS",
+            #                               str(util.get_cache_query_count()))
+            # data_access.update_job_status(str(self.job), util.conn_string,data_access.STATS + "_CACHE_COMPUTE_COUNTS",
+            #                               str(util.get_cache_compute_count()))
+            # data_access.update_job_status(str(self.job), util.conn_string, data_access.STATS + "_CACHE_HIT_RATIO",
+            #                               str(util.get_cache_hit_ratio()))
 
             for k in util.properties.keys():
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.PROPERTIES + "_" + k,
@@ -89,13 +90,16 @@ class PhenotypeTask(luigi.Task):
                                               "Job completed successfully")
                 outfile.write("DONE!")
                 outfile.write('\n')
+            log("job {} done!".format(self.job))
         except BulkWriteError as bwe:
-            print(bwe.details)
+            log(bwe.details)
             data_access.update_job_status(str(self.job), util.conn_string, data_access.WARNING, str(bwe.details))
         except Exception as ex:
             traceback.print_exc(file=sys.stdout)
             data_access.update_job_status(str(self.job), util.conn_string, data_access.FAILURE, str(ex))
-            print(ex)
+            log(ex)
+        finally:
+            client.close()
 
     def output(self):
         return luigi.LocalTarget("%s/phenotype_job%s_output.txt" % (util.tmp_dir, str(self.job)))
@@ -142,12 +146,12 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
 def run_pipeline(pipeline, pipelinetype, job, owner):
     pipeline_config = data_access.get_pipeline_config(pipeline, util.conn_string)
 
-    print('get collector')
+    log('get collector')
     collector_name = str(pipelinetype)
     if collector_name in registered_collectors:
         collector_class = registered_collectors[collector_name]
         if collector_class:
-            print('run collector')
+            log('run collector')
             collector = collector_class()
             collector.run(pipeline, job, owner, pipelinetype, pipeline_config)
             collector.cleanup(pipeline, job, owner, pipelinetype, pipeline_config)
@@ -179,7 +183,7 @@ class PipelineTask(luigi.Task):
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
-            print(ex)
+            log(ex)
         return list()
 
     def run(self):

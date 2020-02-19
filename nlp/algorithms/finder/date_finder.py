@@ -49,6 +49,12 @@ reference below):
     YYYY                                1969
     m                                   July
 
+3. Anonymized formats (MIMIC)
+
+    [**YYYY-mm-dd**]                    [**1969-7-20**]
+    [**YYYY**]                          [**1969**]
+    [**mm-dd**]                         [**7-20**]
+
 OUTPUT:
 
 
@@ -88,11 +94,11 @@ To unpack the JSON results:
         date_results = [df.DateValue(**m) for m in json_data]
 
         for d in date_results:
-            print(d.text)
-            print(d.start)
-            print(d.end)
+            log(d.text)
+            log(d.start)
+            log(d.end)
             if df.EMPTY_FIELD != d.day:
-                print(d.day)
+                log(d.day)
             etc.
 
 Reference: PHP Date Formats, http://php.net/manual/en/datetime.formats.date.php
@@ -103,6 +109,8 @@ import re
 import sys
 import json
 from collections import namedtuple
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     import finder_overlap as overlap
@@ -129,7 +137,7 @@ DateValue.__new__.__defaults__ = (EMPTY_FIELD,) * len(DateValue._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME   = 'date_finder.py'
 
 # set to True to enable debug output
@@ -142,9 +150,9 @@ _str_dd = r'([0-2]?[0-9]|3[01])\s*(st|nd|rd|th)?'
 _str_DD = r'(0[0-9]|[1-2][0-9]|3[01])'
 
 # months
-_str_m = r'(january|february|march|april|may|june|july|august|september|'    +\
-         r'october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sept|'  +\
-         r'sep|oct|nov|dec)'
+_str_m = r'(january|february|march|april|may|june|july|august|september|'  +\
+    r'october|november|december|jan|feb|mar|apr|jun|jul|aug|sept|sep|'     +\
+    r'oct|nov|dec)'
 
 # convert textual months to int
 month_dict = {
@@ -174,121 +182,120 @@ _str_yy = r'[0-9]{2}'
 _str_YY = r'[0-9]{4}'
 
 # American month, day, and year
-_str_american_mdy = r'(?<!\d)(?P<month>' + _str_mm + r')' + r'/'        +\
+_str_american_mdy = r'(?<![-\d/.])(?P<month>' + _str_mm + r')' + r'/'   +\
                     r'(?P<day>' + _str_dd + r')' + r'/'                 +\
                     r'(?P<year>' + _str_y + r')\b'
 _regex_1 = re.compile(_str_american_mdy, re.IGNORECASE)
 
 # four-digit year, month, day separated by forward slash
-_str_ymd_fwd_slash = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'/'        +\
+_str_ymd_fwd_slash = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'/'   +\
                      r'(?P<month>' + _str_mm + r')' + r'/'              +\
                      r'(?P<day>' + _str_dd + r')\b'
 _regex_2 = re.compile(_str_ymd_fwd_slash, re.IGNORECASE)
 
 # day, month, and four-digit year with other separators
-_str_dmy4 = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[-.\t]'             +\
+_str_dmy4 = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[-.\t]'        +\
             r'(?P<month>' + _str_mm + r')' + r'[-.\t]'                  +\
             r'(?P<year>' + _str_YY + r')\b'
 _regex_3 = re.compile(_str_dmy4, re.IGNORECASE)
 
 # year, month, day with dashes
-_str_ymd_dash = r'(?<!\d)(?P<year>' + _str_y + r')' + r'-'              +\
+_str_ymd_dash = r'(?<![-\d/.])(?P<year>' + _str_y + r')' + r'-'         +\
                 r'(?P<month>' + _str_mm + r')' + r'-'                   +\
                 r'(?P<day>' + _str_dd + r')\b'
 _regex_4 = re.compile(_str_ymd_dash, re.IGNORECASE)
 
 # day, month, and two-digit year with dots or tabs
-_str_dmy2 = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[.\t]'              +\
+_str_dmy2 = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[.\t]'         +\
             r'(?P<month>' + _str_mm + r')' + r'[.]'                     +\
             r'(?P<year>' + _str_yy + r')\b'
 _regex_5 = re.compile(_str_dmy2, re.IGNORECASE)
 
 # day, textual month and year (space char is a valid separator)
-_str_dtmy = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[-.\t ]*'           +\
+_str_dtmy = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[-.\t ]*'      +\
             r'(?P<month>' + _str_m + r')' + r'[-.\t ]*'                 +\
             r'(?P<year>' + _str_y + r')\b'
 _regex_6 = re.compile(_str_dtmy, re.IGNORECASE)
 
 # textual month, day, and year
-# no match if month preceded by <digit><dash> or <digit><fwdslash>
-_str_tmdy = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')' + r'[-.\t ]*' +\
+_str_tmdy = r'(?<![-\d/.])(?P<month>' + _str_m + r')' + r'[-.\t ]*'     +\
             r'(?P<day>' + _str_dd + r')' + r'(st|nd|rd|th|[-,.\t ])+'   +\
             r'(?P<year>' + _str_y + r')\b'
 _regex_7 = re.compile(_str_tmdy, re.IGNORECASE)
 
 # abbreviated month, day, and year
-_str_mdy = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_M + r')' + r'-'         +\
+_str_mdy = r'(?<![-\d/.])(?P<month>' + _str_M + r')' + r'-'             +\
            r'(?P<day>' + _str_DD + r')' + r'-'                          +\
            r'(?P<year>' + _str_y + r')\b'
 _regex_8 = re.compile(_str_mdy, re.IGNORECASE)
 
 # year, abbreviated month, day
-_str_ymd = r'(?<!\d)(?P<year>' + _str_y + r')' + r'-'                   +\
+_str_ymd = r'(?<![-\d/.])(?P<year>' + _str_y + r')' + r'-'              +\
            r'(?P<month>' + _str_M + r')' + r'-'                         +\
            r'(?P<day>' + _str_DD + r')\b'
 _regex_9 = re.compile(_str_ymd, re.IGNORECASE)
 
 # American month and day, e.g. 5/12, 10/27
-_str_american_md = r'(?<!\d)(?P<month>' + _str_mm + r')' + r'/'         +\
+_str_american_md = r'(?<![-\d/.])(?P<month>' + _str_mm + r')' + r'/'    +\
                    r'(?P<day>' + _str_dd + r')\b'
 _regex_10 = re.compile(_str_american_md, re.IGNORECASE)
 
 # textual month and day
-_str_tmd = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')' + r'[-.\t ]*'  +\
+_str_tmd = r'(?<!\[-\d/.])(?P<month>' + _str_m + r')' + r'[-.\t ]*'     +\
            r'(?P<day>' + _str_dd + r')' + r'(st|nd|rd|th|[-.\t ])*\b'
 _regex_11 = re.compile(_str_tmd, re.IGNORECASE)
 
 # day and textual month
-_str_dtm = r'(?<!\d)(?P<day>' + _str_dd + r')' + r'[-.\t ]*'            +\
+_str_dtm = r'(?<![-\d/.])(?P<day>' + _str_dd + r')' + r'[-.\t ]*'       +\
            r'(?P<month>' + _str_m + r')\b'
 _regex_12 = re.compile(_str_dtm, re.IGNORECASE)
 
 # GNU four-digit year and month
-_str_gnu_ym = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'               +\
+_str_gnu_ym = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'-'          +\
               r'(?P<month>' + _str_mm + r')(?![-])\b'
 _regex_13 = re.compile(_str_gnu_ym, re.IGNORECASE)
 
 # textual month and four-digit year
-_str_tmy4 = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')' + r'[-.\t ]*' +\
+_str_tmy4 = r'(?<![-\d/.])(?P<month>' + _str_m + r')' + r'[-.\t ]*'     +\
             r'(?P<year>' + _str_YY + r')\b'
 _regex_14 = re.compile(_str_tmy4, re.IGNORECASE)
 
 # four-digit year and textual month
-_str_y4tm = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'[-.\t ]*'          +\
+_str_y4tm = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'[-.\t ]*'     +\
             r'(?P<month>' + _str_m + r')\b'
 _regex_15 = re.compile(_str_y4tm, re.IGNORECASE)
 
 # year only
-_str_year = r'(?<![-+\d])(?P<year>' + _str_YY + r'(?![-]))\b'
+_str_year = r'(?<![-+\d/.])(?P<year>' + _str_YY + r'(?![-]))\b'
 _regex_16 = re.compile(_str_year, re.IGNORECASE)
 
 # textual month only
-_str_month = r'(?<!\d-)(?<!\d/)(?P<month>' + _str_m + r')\.?\b'
+_str_month = r'(?<![-\d/.])(?P<month>' + _str_m + r')\.?\b'
 _regex_17 = re.compile(_str_month, re.IGNORECASE)
 
 ######   ISO 8601 formats  #####
 
 # eight-digit year, month, day
-_str_iso_8 = r'(?<!\d)(?P<year>' + _str_YY + r')'                       +\
+_str_iso_8 = r'(?<![-\d/.])(?P<year>' + _str_YY + r')'                  +\
              r'(?P<month>' + _str_MM + r')'                             +\
              r'(?P<day>' + _str_DD + r')\b'
 _regex_iso_1 = re.compile(_str_iso_8)
 
 # optional sign, four-digit year, two-digit month, two-digit day, dashes
 _str_iso_s4y2m2d = r'(?P<sign>[-+]?)'                                   +\
-                   r'(?<!\d)(?P<year>' + _str_YY + r')' + r'-'          +\
+                   r'(?<![\d/.])(?P<year>' + _str_YY + r')' + r'-'      +\
                    r'(?P<month>' + _str_MM + r')' + r'-'                +\
                    r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_2 = re.compile(_str_iso_s4y2m2d)
 
 # four-digit year, two-digit month, two-digit day, fwd slashes
-_str_iso_4y2m2d = r'(?<!\d)(?P<year>' + _str_YY + r')' + r'/'           +\
+_str_iso_4y2m2d = r'(?<![-\d/.])(?P<year>' + _str_YY + r')' + r'/'      +\
                   r'(?P<month>' + _str_MM + r')' + r'/'                 +\
                   r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_3 = re.compile(_str_iso_4y2m2d)
 
 # two-digit year, two-digit month, two-digit day, dashes
-_str_iso_2y2m2d = r'(?<!\d)(?P<year>' + _str_yy + r')' + r'-'           +\
+_str_iso_2y2m2d = r'(?<![-\d/.])(?P<year>' + _str_yy + r')' + r'-'      +\
                   r'(?P<month>' + _str_MM + r')' + r'-'                 +\
                   r'(?P<day>' + _str_DD + r'(?!\d))'
 _regex_iso_4 = re.compile(_str_iso_2y2m2d)
@@ -297,6 +304,17 @@ _regex_iso_4 = re.compile(_str_iso_2y2m2d)
 # fractional seconds are optional
 _str_iso_datetime = _str_iso_s4y2m2d + r'T\d\d:\d\d:\d\d(\.\d+)?'
 _regex_iso_datetime = re.compile(_str_iso_datetime)
+
+###### Anonymized formats such as [**2984-12-15**] ######
+
+_str_anon_1 = r'\[\*\*(?P<year>\d\d\d\d)\-(?P<month>\d\d?)\-(?P<day>\d\d?)\*\*\]'
+_regex_anon_1 = re.compile(_str_anon_1)
+
+_str_anon_2 = r'\[\*\*(?P<year>\d\d\d\d)\*\*\]'
+_regex_anon_2 = re.compile(_str_anon_2)
+
+_str_anon_3 = r'\[\*\*(?P<month>\d\d?)\-(?P<day>\d\d?)\*\*\]'
+_regex_anon_3 = re.compile(_str_anon_3)
 
 # all date regexes
 _regexes = [
@@ -321,14 +339,17 @@ _regexes = [
     _regex_14,           # 18
     _regex_15,           # 19
     _regex_16,           # 20
-    _regex_17            # 21
+    _regex_17,           # 21
+    _regex_anon_1,       # 22
+    _regex_anon_2,       # 23
+    _regex_anon_3        # 24
 ]
 
 # index of the ISO datetime regex in the _regexes array
 _ISO_DATETIME_REGEX_INDEX = 0
 
-# match (), {}, and []
-_str_brackets = r'[(){}\[\]]'
+# match () and {} (not [] since those are used in anonymized dates)
+_str_brackets = r'[(){}]'
 _regex_brackets = re.compile(_str_brackets)
 
 
@@ -368,8 +389,8 @@ def run(sentence):
     sentence = _clean_sentence(sentence)
 
     if _TRACE:
-        print('(DF) original: {0}'.format(original_sentence))
-        print('(DF)  cleaned: {0}'.format(sentence))
+        log('(DF) original: {0}'.format(original_sentence))
+        log('(DF)  cleaned: {0}'.format(sentence))
     
     for regex_index, regex in enumerate(_regexes):
         iterator = regex.finditer(sentence)
@@ -385,7 +406,7 @@ def run(sentence):
             candidates.append(overlap.Candidate(start, end, match_text, regex))
 
             if _TRACE:
-                print('\t[{0:2}]: MATCH TEXT: ->{1}<-'.
+                log('\t[{0:2}]: MATCH TEXT: ->{1}<-'.
                       format(regex_index, match_text))
 
     # sort the candidates in descending order of length, which is needed for
@@ -393,26 +414,26 @@ def run(sentence):
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
 
     if _TRACE:
-        print('\tCandidate matches: ')
+        log('\tCandidate matches: ')
         index = 0
         for c in candidates:
-            print('\t[{0:2}]\t[{1},{2}): {3}'.
+            log('\t[{0:2}]\t[{1},{2}): {3}'.
                   format(index, c.start, c.end, c.match_text, c.regex))
             index += 1
-        print()
+        log()
 
     pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
     if _TRACE:
-        print('\tcandidates count after overlap removal: {0}'.
+        log('\tcandidates count after overlap removal: {0}'.
               format(len(pruned_candidates)))
-        print('\tPruned candidates: ')
+        log('\tPruned candidates: ')
         for c in pruned_candidates:
-            print('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
-        print()
+            log('\t\t[{0},{1}): {2}'.format(c.start, c.end, c.match_text))
+        log()
 
     if _TRACE:
-        print('Extracting data from pruned candidates...')
+        log('Extracting data from pruned candidates...')
         
     for pc in pruned_candidates:
                 
@@ -429,9 +450,9 @@ def run(sentence):
         int_day   = EMPTY_FIELD
 
         if _TRACE:
-            print('\t     matched: "{0}"'.format(match.group()))
-            print('\t\t groupdict: {0}'.format(match.groupdict()))
-            print('\t\tmatch_text: "{0}"'.format(pc.match_text))
+            log('\t     matched: "{0}"'.format(match.group()))
+            log('\t\t groupdict: {0}'.format(match.groupdict()))
+            log('\t\tmatch_text: "{0}"'.format(pc.match_text))
             
         for k,v in match.groupdict().items():
             if v is None:

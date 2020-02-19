@@ -3,15 +3,13 @@ from flask import Response
 import util
 
 def writeResultFeedback(data):
+    client = util.mongo_client()
+    db = client[util.mongo_db]
     try:
 
         # Parsing info
         job_id = data['job_id']
         result_id = data['result_id']
-
-        # connecting to the Mongo DB
-        client = util.mongo_client()
-        db = client[util.mongo_db]
 
         # checking if the results collection exists
         # if collection doesn't exist, creating
@@ -35,3 +33,5 @@ def writeResultFeedback(data):
     except Exception as e:
         # returning 400 response
         return Response(str(e), status=400, mimetype='application/json')
+    finally:
+        client.close()

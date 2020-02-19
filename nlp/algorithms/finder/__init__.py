@@ -4,3 +4,5 @@ from .time_finder import run as run_time_finder, TimeValue, EMPTY_FIELD as EMPTY
 from .terms import *
 from .named_entity_recognition import get_standard_entities, NamedEntity
 from .subject_finder import run as run_subject_finder, clean_sentence as subject_clean_sentence, init as subject_finder_init
+from .lab_value_matcher import init as lab_value_matcher_init
+

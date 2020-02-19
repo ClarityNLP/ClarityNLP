@@ -3,6 +3,7 @@ from flask import request,  Blueprint
 from apis.api_helpers import init
 from data_access import *
 from algorithms import *
+from claritynlp_logging import log, ERROR, DEBUG
 
 
 algorithm_app = Blueprint('algorithm_app', __name__)
@@ -18,10 +19,10 @@ def get_ngram():
         n = request.args.get('n')
         frequency = request.args.get('frequency')
 
-        print(cohort_id)
-        print(keyword)
-        print(n)
-        print(frequency)
+        log(cohort_id)
+        log(keyword)
+        log(n)
+        log(frequency)
 
         result = extract_ngrams(cohort_id, keyword, int(n), int(frequency))
 

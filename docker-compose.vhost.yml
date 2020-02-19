@@ -14,6 +14,9 @@ volumes:
   ingest-files:
   ingest-mongodata:
   letsencrypt:
+  luigi-state:
+  luigi-logs:
+  nlp-api-data:
 
 services:
   mssql:
@@ -52,10 +55,10 @@ services:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - PROTOCOL=${PROTOCOL}
       - HOST=${HOST}
-      - IDP_URL=${IDP_PREFIX}.${HOST}
-      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
-      - INGEST_URL=${INGEST_PREFIX}.${HOST}
-      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
+      - IDP_URL=${IDP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - INGEST_URL=${INGEST_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CLIENT_CLI_SECRET=${CLIENT_CLI_SECRET}
@@ -68,13 +71,14 @@ services:
       - mssql
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.idp-secure.rule=Host(`${IDP_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.idp-secure.rule=Host(`${IDP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}`)"
       - "traefik.http.routers.idp-secure.entrypoints=websecure"
       - "traefik.http.routers.idp-secure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.idp-secure.tls=true"
-      - "traefik.http.routers.idp.rule=Host(`${IDP_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.idp.rule=Host(`${IDP_PREFIX}.${HOST}:${ENTRYPOINT_NON_SSL}`)"
       - "traefik.http.routers.idp.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-only.redirectscheme.port=${ENTRYPOINT_SSL}"
       - "traefik.http.routers.idp.middlewares=https-only"
     networks:
       - clarity
@@ -89,13 +93,14 @@ services:
     command: proxy.js
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.iaap-secure.rule=Host(`${IAAP_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.iaap-secure.rule=Host(`${IAAP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}`)"
       - "traefik.http.routers.iaap-secure.entrypoints=websecure"
       - "traefik.http.routers.iaap-secure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.iaap-secure.tls=true"
-      - "traefik.http.routers.iaap.rule=Host(`${IAAP_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.iaap.rule=Host(`${IAAP_PREFIX}.${HOST}:${ENTRYPOINT_NON_SSL}`)"
       - "traefik.http.routers.iaap.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-only.redirectscheme.port=${ENTRYPOINT_SSL}"
       - "traefik.http.routers.iaap.middlewares=https-only"
     environment:
       - IDENTITY_PROVIDER_HOSTNAME=${IDENTITY_PROVIDER_HOSTNAME}
@@ -108,6 +113,8 @@ services:
     container_name: NLP_API
     hostname: ${NLP_API_HOSTNAME}
     image: claritynlp/nlp-api
+    volumes:
+      - nlp-api-data:/tmp
     expose:
       - ${NLP_API_CONTAINER_PORT}
     entrypoint:
@@ -177,14 +184,18 @@ services:
       - ${SCHEDULER_CONTAINER_PORT}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.luigi-secure.rule=Host(`${SCHEDULER_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.luigi-secure.rule=Host(`${SCHEDULER_PREFIX}.${HOST}:${ENTRYPOINT_SSL}`)"
       - "traefik.http.routers.luigi-secure.entrypoints=websecure"
       - "traefik.http.routers.luigi-secure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.luigi-secure.tls=true"
-      - "traefik.http.routers.luigi.rule=Host(`${SCHEDULER_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.luigi.rule=Host(`${SCHEDULER_PREFIX}.${HOST}:${ENTRYPOINT_NON_SSL}`)"
       - "traefik.http.routers.luigi.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-only.redirectscheme.port=${ENTRYPOINT_SSL}"
       - "traefik.http.routers.luigi.middlewares=https-only"
+    volumes:
+      - luigi-state:/luigi/state
+      - luigi-logs:/luigi/logs
     networks:
       - clarity
 
@@ -201,13 +212,14 @@ services:
       - SOLR_HEAP=${SOLR_HEAP}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.solr-secure.rule=Host(`${SOLR_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.solr-secure.rule=Host(`${SOLR_PREFIX}.${HOST}:${ENTRYPOINT_SSL}`)"
       - "traefik.http.routers.solr-secure.entrypoints=websecure"
       - "traefik.http.routers.solr-secure.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.solr-secure.tls=true"
-      - "traefik.http.routers.solr.rule=Host(`${SOLR_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.solr.rule=Host(`${SOLR_PREFIX}.${HOST}:${ENTRYPOINT_NON_SSL}`)"
       - "traefik.http.routers.solr.entrypoints=web"
       - "traefik.http.middlewares.https-only.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-only.redirectscheme.port=${ENTRYPOINT_SSL}"
       - "traefik.http.routers.solr.middlewares=https-only"
     networks:
       - clarity
@@ -285,9 +297,9 @@ services:
       - REDIS_HOSTNAME=${REDIS_HOSTNAME}
       - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
       - PROTOCOL=${PROTOCOL}
-      - DOMAIN=${DOMAIN}
-      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
-      - INGEST_URL=${INGEST_PREFIX}.${HOST}
+      - DASHBOARD_HOST=${DASHBOARD_PREFIX}.${HOST}
+      - INGEST_HOST=${INGEST_PREFIX}.${HOST}
+      - ENTRYPOINT=${ENTRYPOINT_SSL}
     networks:
       - clarity
     depends_on:
@@ -332,21 +344,22 @@ services:
       - /app/node_modules
     environment:
       - PORT=${INGEST_CLIENT_CONTAINER_PORT}
-      - IDENTITY_PROVIDER_URL=${IDP_PREFIX}.${HOST}
-      - API_HOST=${IAAP_PREFIX}.${HOST}
-      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
-      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
-      - INGEST_URL=${INGEST_PREFIX}.${HOST}
-      - SOCKET_URL=${IAAP_PREFIX}.${HOST}
+      - IDENTITY_PROVIDER_URL=${IDP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - API_HOST=${IAAP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - INGEST_URL=${INGEST_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - SOCKET_URL=${IAAP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
     labels:
       - "traefik.enable=true"
       - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
-      - "traefik.http.routers.ingest-secure.rule=Host(`${INGEST_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.ingest-secure.rule=Host(`${INGEST_PREFIX}.${HOST}:${ENTRYPOINT_SSL}`)"
       - "traefik.http.routers.ingest-secure.entrypoints=websecure"
       - "traefik.http.routers.ingest-secure.tls.certresolver=mytlschallenge"
-      - "traefik.http.routers.ingest.rule=Host(`${INGEST_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.ingest.rule=Host(`${INGEST_PREFIX}.${HOST}:${ENTRYPOINT_NON_SSL}`)"
       - "traefik.http.routers.ingest.entrypoints=web"
       - "traefik.http.middlewares.ingest-https-only.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.ingest-https-only.redirectscheme.port=${ENTRYPOINT_SSL}"
       - "traefik.http.routers.ingest.middlewares=ingest-https-only"
     networks:
       - clarity
@@ -359,22 +372,23 @@ services:
       - /app/node_modules
     environment:
       - PORT=${RESULTS_CLIENT_CONTAINER_PORT}
-      - IDENTITY_PROVIDER_URL=${IDP_PREFIX}.${HOST}
-      - API_HOST=${IAAP_PREFIX}.${HOST}
-      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
-      - INGEST_URL=${INGEST_PREFIX}.${HOST}
-      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
-      - SOLR_URL=${SOLR_PREFIX}.${HOST}
-      - LUIGI_URL=${SCHEDULER_PREFIX}.${HOST}
+      - IDENTITY_PROVIDER_URL=${IDP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - API_HOST=${IAAP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - INGEST_URL=${INGEST_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - SOLR_URL=${SOLR_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - LUIGI_URL=${SCHEDULER_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
     labels:
       - "traefik.enable=true"
       - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
-      - "traefik.http.routers.results-secure.rule=Host(`${RESULTS_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.results-secure.rule=Host(`${RESULTS_PREFIX}.${HOST}:${ENTRYPOINT_SSL}`)"
       - "traefik.http.routers.results-secure.entrypoints=websecure"
       - "traefik.http.routers.results-secure.tls.certresolver=mytlschallenge"
-      - "traefik.http.routers.results.rule=Host(`${RESULTS_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.results.rule=Host(`${RESULTS_PREFIX}.${HOST}:${ENTRYPOINT_NON_SSL}`)"
       - "traefik.http.routers.results.entrypoints=web"
       - "traefik.http.middlewares.results-https-only.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.results-https-only.redirectscheme.port=${ENTRYPOINT_SSL}"
       - "traefik.http.routers.results.middlewares=results-https-only"
     networks:
       - clarity
@@ -387,28 +401,29 @@ services:
       - /app/node_modules
     environment:
       - PORT=${DASHBOARD_CLIENT_CONTAINER_PORT}
-      - IDENTITY_PROVIDER_URL=${IDP_PREFIX}.${HOST}
-      - API_HOST=${IAAP_PREFIX}.${HOST}
-      - INGEST_URL=${INGEST_PREFIX}.${HOST}
-      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}
-      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}
-      - SOCKET_URL=${IAAP_PREFIX}.${HOST}
+      - IDENTITY_PROVIDER_URL=${IDP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - API_HOST=${IAAP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - INGEST_URL=${INGEST_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - RESULTS_URL=${RESULTS_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - DASHBOARD_URL=${DASHBOARD_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
+      - SOCKET_URL=${IAAP_PREFIX}.${HOST}:${ENTRYPOINT_SSL}
       - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
     labels:
       - "traefik.enable=true"
       - "traefik.port=${DASHBOARD_CLIENT_CONTAINER_PORT}"
-      - "traefik.http.routers.dashboard-secure.rule=Host(`${DASHBOARD_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.dashboard-secure.rule=Host(`${DASHBOARD_PREFIX}.${HOST}:${ENTRYPOINT_SSL}`)"
       - "traefik.http.routers.dashboard-secure.entrypoints=websecure"
       - "traefik.http.routers.dashboard-secure.tls.certresolver=mytlschallenge"
-      - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_PREFIX}.${HOST}`)"
+      - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_PREFIX}.${HOST}:${ENTRYPOINT_NON_SSL}`)"
       - "traefik.http.routers.dashboard.entrypoints=web"
       - "traefik.http.middlewares.dashboard-https-only.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.dashboard-https-only.redirectscheme.port=${ENTRYPOINT_SSL}"
       - "traefik.http.routers.dashboard.middlewares=dashboard-https-only"
     networks:
       - clarity
 
   traefik:
-    image: "traefik:v2.0.1"
+    image: "traefik:v2.1.2"
     container_name: "traefik"
     command:
       - "--log.level=INFO"
@@ -421,8 +436,8 @@ services:
       - "--certificatesresolvers.mytlschallenge.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
     ports:
-      - "80:80"
-      - "443:443"
+      - "${ENTRYPOINT_NON_SSL}:80"
+      - "${ENTRYPOINT_SSL}:443"
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"

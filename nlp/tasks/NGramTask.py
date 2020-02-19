@@ -1,10 +1,10 @@
 from pymongo import MongoClient
 from textacy import extract, make_spacy_doc, preprocess_text
-
+from claritynlp_logging import log, ERROR, DEBUG
 try:
     from .task_utilities import BaseTask, BaseCollector, pipeline_mongo_writer, get_config_integer
 except Exception as e:
-    print(e)
+    log(e)
     from task_utilities import BaseTask, BaseCollector, pipeline_mongo_writer, get_config_integer
 
 # Clarity.ngram({
@@ -23,7 +23,7 @@ class NGramCollector(BaseCollector):
     collector_name = 'ngram'
 
     def custom_cleanup(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
-        print('removing intermediate n-gram records')
+        log('removing intermediate n-gram records')
         db.phenotype_results.remove({
             "nlpql_feature": pipeline_config.name,
             "job_id": job,
@@ -31,12 +31,12 @@ class NGramCollector(BaseCollector):
         })
 
     def run_custom_task(self, pipeline_id, job, owner, pipeline_type, pipeline_config, client, db):
-        print("running ngram collector")
+        log("running ngram collector")
         # db.phenotype_results.aggregate([{ $match: {
         #    nlpql_feature: {$eq: "orthopneaNgram"}, job_id: {$eq: 10117}}},
         # { $group: {_id: "$text",
         #    cnt: { $sum: "$count"}}}])
-        print('run custom task collector')
+        log('run custom task collector')
         min_freq = get_config_integer(pipeline_config, 'min_freq', default=1)
         q = [
             {
@@ -72,7 +72,7 @@ class NGramTask(BaseTask):
     task_name = "ngram"
 
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
-        print('run custom task')
+        log('run custom task')
         n_num = self.get_integer('n', default=2)
         filter_stops = self.get_boolean('filter_stops', default=True)
         filter_punct = self.get_boolean('filter_punct', default=True)
@@ -122,4 +122,4 @@ if __name__ == "__main__":
     d = Doc(content)
     results = extract.ngrams(d, 3)
     for r in results:
-        print(r)
+        log(r)

@@ -22,6 +22,8 @@ import sys
 import optparse
 import requests
 from bs4 import BeautifulSoup
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
@@ -91,7 +93,7 @@ def extract_components(text):
     chunks.append(text[prev_end:])
 
     assert(len(chunks) >= 1)
-    #print('chunks: {0}'.format(chunks))
+    #log('chunks: {0}'.format(chunks))
 
     components = []
 
@@ -151,7 +153,7 @@ def scrape_irregular_verbs():
     
     page = requests.get(url_irregular)
     if 200 != page.status_code:
-        print('Error getting url: ' + url_irregular)
+        log('Error getting url: ' + url_irregular)
         sys.exit(-1)
 
     soup = BeautifulSoup(page.text, 'html.parser')
@@ -189,17 +191,17 @@ def scrape_irregular_verbs():
         # archaic usages are prefixed with '*'
         if IGNORE_ARCHAIC and inf_text.startswith('*'):
             pass
-            #print('ARCHAIC: ' + inf_text)
+            #log('ARCHAIC: ' + inf_text)
         elif inf_text.startswith('ache'):
             # double entries for ache are obsolete forms, according to Wictionary
             inf_components = ['ache', ['ached'], ['ached']]
             verbs.append(inf_components)
         else:
-            #print('->' + inf_text + '<-')
+            #log('->' + inf_text + '<-')
 
             # split inf_text on Unicode 'EN DASH' character (/u2013) surrounded by spaces
             inf_components = extract_components(inf_text)
-            #print('\t{0}'.format(inf_components))
+            #log('\t{0}'.format(inf_components))
 
             verbs.append(inf_components)
 
@@ -210,7 +212,7 @@ def scrape_irregular_verbs():
                 if IGNORE_ARCHAIC and elt_text.startswith('*'):
                     continue
                 components = extract_components(elt_text)
-                #print('\t{0}'.format(components))
+                #log('\t{0}'.format(components))
 
                 # correct an error with 'become'
                 if 'become' == components[0] and [] == components[1] and [] == components[2]:
@@ -221,7 +223,7 @@ def scrape_irregular_verbs():
     # sort in alphabetical order by infinitive
     verbs = sorted(verbs, key=lambda x: x[0])
 
-    # print as python code that can be cut and pasted
+    # log as python code that can be cut and pasted
     prev_base_form = ''
 
     saved_verbs = []
@@ -427,7 +429,7 @@ def scrape_common_verbs():
     
     page = requests.get(url_common)
     if 200 != page.status_code:
-        print('Error getting url: ' + url)
+        log('Error getting url: ' + url)
         sys.exit(-1)
 
     soup = BeautifulSoup(page.text, 'html.parser')

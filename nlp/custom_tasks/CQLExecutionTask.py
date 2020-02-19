@@ -6,7 +6,6 @@ import sys
 import json
 import argparse
 import requests
-import multiprocessing
 from datetime import datetime
 from pymongo import MongoClient
 
@@ -24,9 +23,11 @@ import data_access
 import data_access.time_command as tc
 from tasks.task_utilities import BaseTask
 import data_access.cql_result_parser as crp
+from claritynlp_logging import log, ERROR, DEBUG
+
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 10
+_VERSION_MINOR = 19
 
 # set to True to enable debug output
 _TRACE = True
@@ -46,20 +47,20 @@ _FHIR_TERMINOLOGY_USER_PASSWORD    = 'fhir_terminology_user_password'    # passw
 
 _KEY_ERROR = 'error'
 
-# number of unique task indices among all Luigi clones of this task
-_MAX_TASK_INDEX = 1024
-
-# Array for coordinating clones of this task, all initialized to -1.
-_shared_array = multiprocessing.Array('i', [-1]*_MAX_TASK_INDEX)
-
 # time command custom args
 _ARG_TIME_START = 'time_start'
 _ARG_TIME_END   = 'time_end'
 
-_KEY_RT       = 'resourceType'
-_KEY_RES_DISP = 'result_display'
+# value filter custom arg
+_ARG_VALUE_FILTER = 'value_filter'
+
+_KEY_RT          = 'resourceType'
+_KEY_RES_DISP    = 'result_display'
+_KEY_RESULT      = 'result'
+_KEY_RESULT_TYPE = 'resultType'
 
 _RT_PATIENT     = 'Patient'
+_RT_ENCOUNTER   = 'Encounter'
 _RT_OBSERVATION = 'Observation'
 _RT_PROCEDURE   = 'Procedure'
 _RT_CONDITION   = 'Condition'
@@ -67,31 +68,7 @@ _RT_MED_STMT    = 'MedicationStatement'
 _RT_MED_ORDER   = 'MedicationOrder'
 _RT_MED_ADMIN   = 'MedicationAdministration'
 
-
-###############################################################################
-def _atomic_check(task_index):
-    """
-    Given the task index (a user-defined param of the task), check the shared
-    array element at that index. If it is -1, this is the first time that value
-    for the task_index has been seen. In this case, write the task index into
-    the shared array and return the task index to the caller. Otherwise 
-    return -1.
-    """
-
-    global _shared_array
-
-    assert task_index >= 0
-    assert task_index < _MAX_TASK_INDEX
-
-    return_val = -1
-    with _shared_array.get_lock():
-        elt_val = _shared_array[task_index]
-        if -1 == elt_val:
-            # first time to see this value of the task index
-            _shared_array[task_index] = task_index
-            return_val = task_index
-
-    return return_val
+_RESULT_TYPE_DT  = 'datetime'
 
 
 ###############################################################################
@@ -116,7 +93,14 @@ def _sort_by_datetime_desc(result_list):
                     datetime_list.append( (dt, i) )
                 else:
                     no_datetime_list.append(i)
-
+        elif _KEY_RESULT_TYPE in obj:
+            result_type = obj[_KEY_RESULT_TYPE]
+            dt = getattr(obj, crp.KEY_DATE_TIME, None)
+            if dt is not None:
+                datetime_list.append( (dt, i) )
+            else:
+                no_datetime_list.append(i)
+            
     datetime_list = sorted(datetime_list, key=lambda x: x[0], reverse=True)
 
     earliest = None
@@ -139,7 +123,7 @@ def _sort_by_datetime_desc(result_list):
     # then sorted timestamped results
     for obj, index in datetime_list:
         new_results.append(result_list[index])
-
+    
     assert len(new_results) == len(result_list)
     return (new_results, earliest, latest)
 
@@ -152,8 +136,10 @@ def _json_to_objs(json_obj):
     """
 
     if _TRACE:
-        print('CQLExecutionTask: Calling _json_to_objs...')
-    
+        log('CQLExecutionTask: Calling _json_to_objs...')
+
+    KEY_RESULT_TYPE = 'resultType'
+        
     results = []
 
     # assumes we either have a list of objects or a single obj
@@ -161,10 +147,13 @@ def _json_to_objs(json_obj):
     
     if list == obj_type:
         if _TRACE:
-            print('\tfound list of length {0}'.format(len(json_obj)))
+            log('\tfound list of length {0}'.format(len(json_obj)))
         for e in json_obj:
+            # skip if no resultType key
+            if KEY_RESULT_TYPE not in e:
+                continue
             if _TRACE:
-                print('\t\tdecoding resource type {0}'.format(e['resultType']))
+                log('\t\tdecoding resource type {0}'.format(e['resultType']))
             result_obj = crp.decode_top_level_obj(e)
             if result_obj is None:
                 continue
@@ -174,7 +163,7 @@ def _json_to_objs(json_obj):
                 results.extend(result_obj)
     elif dict == obj_type:
         if _TRACE:
-            print('\tfound dict of size {0}'.format(len(json_obj)))
+            log('\tfound dict of size {0}'.format(len(json_obj)))
         result_obj = crp.decode_top_level_obj(json_obj)
         if result_obj is not None:
             if list is not type(result_obj):
@@ -183,7 +172,7 @@ def _json_to_objs(json_obj):
                 results.extend(result_obj)
 
     if _TRACE:
-        print('\tThere are {0} results after top-level decode'.
+        log('\tThere are {0} results after top-level decode'.
               format(len(results)))
                 
     if 0 == len(results):
@@ -196,7 +185,7 @@ def _json_to_objs(json_obj):
             resource_type = obj[_KEY_RT]
             if _RT_PATIENT == resource_type:
                 if _KEY_ERROR in obj:
-                    print('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
+                    log('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
                     return (None, None, None)
                 
     # sort by datetime from most to least recent
@@ -213,13 +202,55 @@ def _to_result_obj(obj):
     to MongoDB.
     """
 
-    if _TRACE:
-        print('Calling _to_result_obj...')
-        print('obj: ')
-        print(obj)
-        print()
+    # if _TRACE:
+    log('Calling _to_result_obj...')
+    log('obj: ')
+    log(obj)
+    log()
 
+    codesys_map = {
+        'http://snomed.info/ct':'SNOMED',
+        'http://snomed.info/sct':'SNOMED',
+        'http://www.nlm.nih.gov/research/umls/rxnorm':'RXNORM',
+        'http://loinc.org':'LOINC',
+        'http://www.ama-assn.org/go/cpt':'CPT',
+        'http://hl7.org/fhir/sid/icd-9-cm':'ICD-9',
+        'http://hl7.org/fhir/sid/icd-10':'ICD-10',
+        'http://hl7.org/fhir/sid/icd-10-nl':'ICD-10',
+        'http://hl7.org/fhir/sid/icd-10-cm':'ICD-10'
+    }
+        
     KEY_RC = 'result_content'
+    KEY_CODE = 'code_coding_0_code'
+    KEY_CODESYS = 'code_coding_0_system'
+
+    if _KEY_RT not in obj:
+        # primitive type
+        assert _KEY_RESULT_TYPE in obj
+        result_type = obj[_KEY_RESULT_TYPE].lower()
+        result_str = ''
+        if _KEY_RESULT in obj:
+            result = obj[_KEY_RESULT]
+
+            # convert datetime objects to string
+            if datetime is type(result):
+                result_str = result.isoformat()
+            else:
+                result_str = result
+            
+        result_display_obj = {
+            'date': '',
+            'result_content':result_str,
+            'sentence': '',
+            'highlights':[result_str]
+        }
+
+        # set the date field for dateType types
+        if _RESULT_TYPE_DT == result_type:
+            result_display_obj['date'] = result_str
+
+        obj[_KEY_RES_DISP] = result_display_obj
+        return obj
     
     # insert the display/formatting info
     assert _KEY_RT in obj
@@ -234,7 +265,9 @@ def _to_result_obj(obj):
 
     result_display_obj = {
         'date':date,
-        'result_content':'{0}: {1}'.format(resource_type, value_name),
+        #'result_content':'{0}: {1}'.format(resource_type, value_name),
+        #'result_content':'{0}\n{1}'.format(value_name, codesys),
+        'result_content':'{0}'.format(value_name),
         'sentence':'',
         'highlights':[value_name]
     }
@@ -244,6 +277,35 @@ def _to_result_obj(obj):
             date = obj['birthDate']
         result_display_obj['date'] = date
         result_display_obj[KEY_RC] = 'Patient: {0}, DOB: {1}'.format(value_name, date)
+
+    elif _RT_CONDITION == resource_type:
+        codesys = ''
+        if KEY_CODESYS in obj:
+            codesys_url = obj[KEY_CODESYS]
+            if codesys_url in codesys_map:
+                codesys = codesys_map[codesys_url]
+            else:
+                codesys = codesys_url
+        code = ''
+        if KEY_CODE in obj:
+            code = obj[KEY_CODE]
+
+        result_display_obj[KEY_RC] = '{0}\n{1}: {2}'.format(value_name, codesys, code)
+            
+    elif _RT_ENCOUNTER == resource_type:
+        identifier = ''
+        subject_ref = ''
+        name = ''
+        if 'id' in obj:
+            identifier = obj['id']
+        if 'subject_reference' in obj:
+            subject_ref = obj['subject_reference']
+        if 'subject_display' in obj:
+            name = obj['subject_display']
+        value = 'Encounter {0} for {1}'.format(identifier, subject_ref)
+        if len(name) > 0:
+            value += '\n{0}'.format(name)
+        result_display_obj[KEY_RC] = value
         
     elif _RT_OBSERVATION == resource_type:
         value = ''
@@ -251,10 +313,17 @@ def _to_result_obj(obj):
         if crp.KEY_VALUE in obj:
             # sometimes a value is not present in an observation
             value = obj[crp.KEY_VALUE]
-        if crp.KEY_UNITS in obj:
-            units = obj[crp.KEY_UNITS]
-        result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
-        result_display_obj['highlights']:[value_name, value, units]
+        #if crp.KEY_UNITS in obj:
+        #    units = obj[crp.KEY_UNITS]
+        if 'valueQuantity_code' in obj:
+            units = obj['valueQuantity_code']
+        #result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
+        #result_display_obj['highlights']:[value_name, value, units]
+        result_display_obj[KEY_RC] = '{0} {1}'.format(value, units)
+        result_display_obj['highlights']:[value, units]
+        
+        # explicitly set report_text field for Observation resources
+        obj['report_text'] = '{0}: {1} {2}'.format(value_name, value, units)
         
     elif _RT_MED_STMT == resource_type:
         if 'effectiveDateTime' in obj:
@@ -262,9 +331,9 @@ def _to_result_obj(obj):
         elif 'effectivePeriod_start' in obj:
             start = obj['effectivePeriod_start']
             date = '{0}'.format(start)
-            if 'effectivePeriod_end' in obj:
-                end = obj['effectivePeriod_end']
-                date += ' to {0}'.format(end)
+            #if 'effectivePeriod_end' in obj:
+            #    end = obj['effectivePeriod_end']
+            #    date += ' to {0}'.format(end)
         result_display_obj['date'] = date
         
     elif _RT_MED_ORDER == resource_type:       
@@ -317,7 +386,7 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
                                   data_access.IN_PROGRESS,
                                   msg)
     # write msg to log file
-    print(msg)
+    log(msg)
     
     return value
 
@@ -346,8 +415,8 @@ def _get_datetime_window(custom_args, data_earliest, data_latest):
                                              data_latest)
 
     if _TRACE:
-        print('\n*** datetime_start: {0}'.format(datetime_start))
-        print('***   datetime_end: {0}'.format(datetime_end))
+        log('\n*** datetime_start: {0}'.format(datetime_start))
+        log('***   datetime_end: {0}'.format(datetime_end))
         
     return (datetime_start, datetime_end)
 
@@ -361,9 +430,9 @@ def _apply_datetime_filter(samples, t0, t1):
     """
 
     if _TRACE:
-        print('CQLExecutionTask: calling _apply_datetime_filter...')
-        print('\tt0: {0}, t1: {0}'.format(t0, t1))
-        print('\tlength of samples list: {0}'.format(len(samples)))
+        log('CQLExecutionTask: calling _apply_datetime_filter...')
+        log('\tt0: {0}, t1: {0}'.format(t0, t1))
+        log('\tlength of samples list: {0}'.format(len(samples)))
 
     if 0 == len(samples):
         return []
@@ -378,9 +447,9 @@ def _apply_datetime_filter(samples, t0, t1):
             # no timestamp in this sample
             results.append(s)
             continue
-        if t0 is not None and t <= t0:
+        if t0 is not None and t < t0:
             continue
-        if t1 is not None and t >= t1:
+        if t1 is not None and t > t1:
             continue
 
         results.append(s)
@@ -389,235 +458,273 @@ def _apply_datetime_filter(samples, t0, t1):
 
 
 ###############################################################################
+def _apply_value_filter(str_value_filter, result_list):
+    """
+    Apply the value filter to the result list and return any survivors.
+    """
+
+    str_op = str_value_filter.lower()
+    
+    filter_value = None
+    filter_result = None
+    
+    if str_op.startswith('min'):
+        # find minimum value of all results with a 'value' field
+        for r in result_list:
+            if crp.KEY_VALUE in r:
+                val = r[crp.KEY_VALUE]
+                if filter_value is None or val < filter_value:
+                    filter_value = val
+                    filter_result = r
+    elif str_op.startswith('max'):
+        # find max value of all results with a 'value' field
+        for r in result_list:
+            if crp.KEY_VALUE in r:
+                val = r[crp.KEY_VALUE]
+                if filter_value is None or val > filter_value:
+                    filter_value = val
+                    filter_result = r
+
+    if filter_result is None:
+        # no filterable values were found, so return original list
+        return result_list
+    else:
+        return [filter_result]
+                
+
+###############################################################################
 class CQLExecutionTask(BaseTask):
     
     task_name = "CQLExecutionTask"
+
+    # VERY IMPORTANT to prevent parallel execution of this task, to avoid
+    # sending lots of identical HTTP POSTs to the CQL Engine
     parallel_task = False
         
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
         
-        # get the task_index custom arg for this task
-        task_index = self.pipeline_config.custom_arguments['task_index']
+        job_id = str(self.job)
 
-        # Do an atomic check on the index and proceed only if a match. There
-        # will be a match only for one instance of all task clones that share
-        # this particular value of the task_index.
-        check_val = _atomic_check(task_index)
-        if check_val == task_index:
+        # get the FHIR Version
+        fhir_version = _get_custom_arg(_FHIR_VERSION,
+                                       'fhir_version',
+                                       job_id,
+                                       self.pipeline_config.custom_arguments)
+        if fhir_version is None:
+            log('\n*** CQLExecutionTask: using fhir_version == STU3 ***')
+            fhir_version = "STU3"
 
-            job_id = str(self.job)
+        fhir_version = fhir_version.lower()
+        if not fhir_version.endswith('stu2') and not fhir_version.endswith('stu3'):
+            log('\n*** CQLExecutionTask: fhir_version "{0}" is invalid ***'.
+                  format(fhir_version))
+            return
 
-            # get the FHIR Version
-            fhir_version = _get_custom_arg(_FHIR_VERSION,
-                                           'fhir_version',
-                                           job_id,
-                                           self.pipeline_config.custom_arguments)
-            if fhir_version is None:
-                print('\n*** CQLExecutionTask: using fhir_version == DSTU2 ***')
-                fhir_version = "DSTU2"
+        # URL of the FHIR server's CQL evaluation endpoint
+        cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
+                                       'cql_eval_url',
+                                       job_id,
+                                       self.pipeline_config.custom_arguments)
+        if cql_eval_url is None:
+            log('\n*** CQLExecutionTask: no cql_eval_url was found ***\n')
+            return
 
-            fhir_version = fhir_version.lower()
-            if not fhir_version.endswith('stu2') and not fhir_version.endswith('stu3'):
-                print('\n*** CQLExecutionTask: fhir_version "{0}" is invalid ***'.
-                      format(fhir_version))
-                return
-            
-            # # URL of the FHIR server's CQL evaluation endpoint
-            # cql_eval_url = _get_custom_arg(_FHIR_CQL_EVAL_URL,
-            #                                'cql_eval_url',
-            #                                job_id,
-            #                                self.pipeline_config.custom_arguments)
-            # if cql_eval_url is None:
-            #     return
-            
-            patient_id = _get_custom_arg(_FHIR_PATIENT_ID,
-                                         'patient_id',
+        patient_id = _get_custom_arg(_FHIR_PATIENT_ID,
+                                     'patient_id',
+                                     job_id,
+                                     self.pipeline_config.custom_arguments)
+        if patient_id is None:
+            log('\n*** CQLExecutionTask: no patient_id was found ***\n')
+            return
+
+        # patient_id must be a string
+        patient_id = str(patient_id)
+
+        # CQL code string verbatim from CQL file
+        cql_code = self.pipeline_config.cql
+        log('\n*** CQL CODE: ***\n')
+        log(cql_code)
+        log()
+        if cql_code is None or 0 == len(cql_code):
+            log('\n*** CQLExecutionTask: no CQL code was found ***\n')
+            return
+
+        # fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
+        #                                                     'fhir_terminology_service_endpoint',
+        #                                                     job_id,
+        #                                                     self.pipeline_config.custom_arguments)
+
+        # if fhir_terminology_service_endpoint is None:
+        #     return
+
+        fhir_data_service_uri = _get_custom_arg(_FHIR_DATA_SERVICE_URI,
+                                                'fhir_data_service_uri',
+                                                job_id,
+                                                self.pipeline_config.custom_arguments)
+
+        if fhir_data_service_uri is None:
+            log('\n*** CQLExecutionTask: fhir_data_service is None ***')
+            return
+
+        # ensure '/' termination
+        if not fhir_data_service_uri.endswith('/'):
+                fhir_data_service_uri += '/'
+
+        # initialize payload
+        payload = {
+            # the requests lib will properly escape the raw string
+            "fhirVersion":fhir_version,
+            "code":cql_code,
+            #"fhirServiceUri":fhir_terminology_service_endpoint,
+            "dataServiceUri":fhir_data_service_uri,
+            "patientId":patient_id,
+        }
+
+        fhir_auth_type = _get_custom_arg(_FHIR_AUTH_TYPE,
+                                         'fhir_auth_type',
                                          job_id,
                                          self.pipeline_config.custom_arguments)
-            if patient_id is None:
-                return
 
-            # patient_id must be a string
-            patient_id = str(patient_id)
-            
-            # CQL code string verbatim from CQL file
-            cql_code = self.pipeline_config.cql
-            print('\n*** CQL CODE: ***\n')
-            print(cql_code)
-            print()
-            if cql_code is None or 0 == len(cql_code):
-                print('\n*** CQLExecutionTask: no CQL code was found ***\n')
-                return
-            
-            # fhir_terminology_service_endpoint = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_ENDPOINT,
-            #                                                     'fhir_terminology_service_endpoint',
-            #                                                     job_id,
-            #                                                     self.pipeline_config.custom_arguments)
-             
-            # if fhir_terminology_service_endpoint is None:
-            #     return
-            
-            fhir_data_service_uri = _get_custom_arg(_FHIR_DATA_SERVICE_URI,
-                                                    'fhir_data_service_uri',
-                                                    job_id,
-                                                    self.pipeline_config.custom_arguments)
-            
-            if fhir_data_service_uri is None:
-                print('\n*** CQLExecutionTask: fhir_data_service is None ***')
-                return
+        fhir_auth_token = _get_custom_arg(_FHIR_AUTH_TOKEN,
+                                          'fhir_auth_token',
+                                          job_id,
+                                          self.pipeline_config.custom_arguments)
 
-            # ensure '/' termination
-            if not fhir_data_service_uri.endswith('/'):
-                    fhir_data_service_uri += '/'
+        # setup the request header; add authentication if credentials provided
+        headers = {
+            'Content-Type':'application/json; charset=utf-8',
+            'Accept':'application/json; charset=utf-8'
+        }
 
-            # initialize payload
-            payload = {
-                # the requests lib will properly escape the raw string
-                "fhirVersion":fhir_version,
-                "code":cql_code,
-                #"fhirServiceUri":fhir_terminology_service_endpoint,
-                "dataServiceUri":fhir_data_service_uri,
-                "patientId":patient_id,
-            }
+        if fhir_auth_type is not None and fhir_auth_token is not None:
+            if len(fhir_auth_type) > 0 and len(fhir_auth_token) > 0:
+                headers['Authorization'] = '{0} {1}'.format(fhir_auth_type, fhir_auth_token)
 
-            fhir_auth_type = _get_custom_arg(_FHIR_AUTH_TYPE,
-                                             'fhir_auth_type',
-                                             job_id,
-                                             self.pipeline_config.custom_arguments)
+        # # params for UMLS OID code lookup
+        # fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
+        #                                                'fhir_terminology_service_uri',
+        #                                                job_id,
+        #                                                self.pipeline_config.custom_arguments)
+        # # ensure '/' termination
+        # if fhir_terminology_service_uri is not None:
+        #     if not fhir_terminology_service_uri.endswith('/'):
+        #         fhir_terminology_service_uri += '/'
 
-            fhir_auth_token = _get_custom_arg(_FHIR_AUTH_TOKEN,
-                                              'fhir_auth_token',
-                                              job_id,
-                                              self.pipeline_config.custom_arguments)
+        # fhir_terminology_user_name = _get_custom_arg(_FHIR_TERMINOLOGY_USER_NAME,
+        #                                              'fhir_terminology_user_name',
+        #                                              job_id,
+        #                                              self.pipeline_config.custom_arguments)
 
-            # setup the request header; add authentication if credentials provided
-            headers = {
-                'Content-Type':'application/json'
-            }
+        # fhir_terminology_user_password = _get_custom_arg(_FHIR_TERMINOLOGY_USER_PASSWORD,
+        #                                                  'fhir_terminology_user_password',
+        #                                                  job_id,
+        #                                                  self.pipeline_config.custom_arguments)
 
-            if fhir_auth_type is not None and fhir_auth_token is not None:
-                if len(fhir_auth_type) > 0 and len(fhir_auth_token) > 0:
-                    headers['Authorization'] = '{0} {1}'.format(fhir_auth_type, fhir_auth_token)
-            
-            # params for UMLS OID code lookup
-            fhir_terminology_service_uri = _get_custom_arg(_FHIR_TERMINOLOGY_SERVICE_URI,
-                                                           'fhir_terminology_service_uri',
-                                                           job_id,
-                                                           self.pipeline_config.custom_arguments)
-            # ensure '/' termination
-            if fhir_terminology_service_uri is not None:
-                if not fhir_terminology_service_uri.endswith('/'):
-                    fhir_terminology_service_uri += '/'
+        # # setup terminology server capability
+        # if fhir_terminology_service_uri is not None and \
+        #    fhir_terminology_user_name is not None and fhir_terminology_user_name != 'username' and \
+        #    fhir_terminology_user_password is not None and fhir_terminology_user_password != 'password':
+        #     payload['terminologyServiceUri'] = fhir_terminology_service_uri
+        #     payload['terminologyUser'] = fhir_terminology_user_name
+        #     payload['terminologyPass'] = fhir_terminology_user_password
 
-            fhir_terminology_user_name = _get_custom_arg(_FHIR_TERMINOLOGY_USER_NAME,
-                                                         'fhir_terminology_user_name',
-                                                         job_id,
-                                                         self.pipeline_config.custom_arguments)
-            
-            fhir_terminology_user_password = _get_custom_arg(_FHIR_TERMINOLOGY_USER_PASSWORD,
-                                                             'fhir_terminology_user_password',
-                                                             job_id,
-                                                             self.pipeline_config.custom_arguments)
-            
-            # # setup terminology server capability
-            # if fhir_terminology_service_uri is not None and \
-            #    fhir_terminology_user_name is not None and fhir_terminology_user_name != 'username' and \
-            #    fhir_terminology_user_password is not None and fhir_terminology_user_password != 'password':
-            #     payload['terminologyServiceUri'] = fhir_terminology_service_uri
-            #     payload['terminologyUser'] = fhir_terminology_user_name
-            #     payload['terminologyPass'] = fhir_terminology_user_password
-                
-            # perform the request here, catch lots of different exceptions
+        # perform the request here, catch lots of different exceptions
 
-            print('\n*** CQLExecutionTask: Request ***')
-            print('Headers: ')
-            for k,v in headers.items():
-                print('\t{0} => {1}'.format(k,v))
-            print('Payload: ')
-            for k,v in payload.items():
-                print('\t{0} => {1}'.format(k,v))
-            print()
-            
-            has_error = False
-            try:
-                r = requests.post(#'https://gt-apps.hdap.gatech.edu/cql/evaluate', #cql_eval_url,
-                                  #'https://apps.hdap.gatech.edu/cql/evaluate',
-                                  'http://cql-execution:8080/cql/evaluate',
-                                  headers=headers, json=payload)
-            except requests.exceptions.HTTPError as e:
-                print('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
-                has_error = True
-            except requests.exceptions.ConnectionError as e:
-                print('\n*** CQLExecutionTask ConnectionError: "{0}" ***\n'.format(e))
-                has_error = True
-            except requests.exceptions.Timeout as e:
-                print('\n*** CQLExecutionTask Timeout: "{0}" ***\n'.format(e))
-                has_error = True
-            except requests.exceptions.RequestException as e:
-                print('\n*** CQLEXecutionTask RequestException: "{0}" ***\n'.format(e))
-                has_error = True
+        log('\n*** CQLExecutionTask: Request ***')
+        log('Headers: ')
+        for k,v in headers.items():
+            log('\t{0} => {1}'.format(k,v))
+        log('Payload: ')
+        for k,v in payload.items():
+            log('\t{0} => {1}'.format(k,v))
+        log()
 
-            if has_error:
-                print('HTTP error, terminating CQLExecutionTask...')
-                print('RESPONSE CONTENT')
-                print(r.content)
-                print('RESPONSE HEADERS')
-                print(r.headers)
-                return
-                
-            print('Response status code: {0}'.format(r.status_code))
+        has_error = False
+        r = None
+        try:
+            r = requests.post(cql_eval_url,
+                              headers=headers,
+                              data=json.dumps(payload, indent=4))
 
-            results = None
-            if 200 == r.status_code:
-                if _TRACE:
-                    print('\n*** CQL JSON RESULTS ***\n')
-                    print(r.json())
-                    print()
+        except requests.exceptions.HTTPError as e:
+            log('\n*** CQLExecutionTask HTTP error: "{0}" ***\n'.format(e))
+            has_error = True
+        except requests.exceptions.ConnectionError as e:
+            log('\n*** CQLExecutionTask ConnectionError: "{0}" ***\n'.format(e))
+            has_error = True
+        except requests.exceptions.Timeout as e:
+            log('\n*** CQLExecutionTask Timeout: "{0}" ***\n'.format(e))
+            has_error = True
+        except requests.exceptions.RequestException as e:
+            log('\n*** CQLEXecutionTask RequestException: "{0}" ***\n'.format(e))
+            has_error = True
 
-                # data_earliest == earliest datetime in the data
-                # data_latest   == latest datetime in the data
-                results, data_earliest, data_latest = _json_to_objs(r.json())
-                print('\tCQLExecutionTask: found {0} results'.format(len(results)))
-            else:
-                print('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
-                return
+        if has_error:
+            log('HTTP error, terminating CQLExecutionTask...')
+            if r:
+                log('RESPONSE CONTENT')
+                log(r.content)
+                log('RESPONSE HEADERS')
+                log(r.headers)
+            return
 
-            if results is None or (0 == len(results)):
-                return
+        log('Response status code: {0}'.format(r.status_code))
 
-            # parse datetime_start, datetime_end time commands, if any, and
-            # filter data to specified time window
-            datetime_start, datetime_end = _get_datetime_window(
-                self.pipeline_config.custom_arguments,
-                data_earliest,
-                data_latest
-            )
+        results = None
+        if 200 == r.status_code:
+            if _TRACE:
+                log('\n*** CQL JSON RESULTS ***\n')
+                log(r.json())
+                log()
 
-            # remove results outside of the desired time window
-            results = _apply_datetime_filter(results, datetime_start, datetime_end)
-            print('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
-                  format(len(results)))
-            
-            for obj in results:
+            # data_earliest == earliest datetime in the data
+            # data_latest   == latest datetime in the data
+            results, data_earliest, data_latest = _json_to_objs(r.json())
+            log('\tCQLExecutionTask: found {0} results'.format(len(results)))
+        else:
+            log('\n*** CQLExecutionTask: HTTP status code {0} ***\n'.format(r.status_code))
+            return
 
-                if obj is None:
-                    continue
+        if results is None or (0 == len(results)):
+            return
 
-                if _TRACE:
-                    print('obj before _to_result_obj: ')
-                    print(obj)
-                    print()
+        # parse datetime_start, datetime_end time commands, if any, and
+        # filter data to specified time window
+        datetime_start, datetime_end = _get_datetime_window(
+            self.pipeline_config.custom_arguments,
+            data_earliest,
+            data_latest
+        )
 
-                assert _KEY_RT in obj
-                resource_type = obj[_KEY_RT]
-                mongo_obj = _to_result_obj(obj)
+        # remove results outside of the desired time window
+        results = _apply_datetime_filter(results, datetime_start, datetime_end)
+        log('\n*** CQLExecutionTask: {0} results after time filtering. ***'.
+              format(len(results)))
 
-                self.write_result_data(temp_file, mongo_client, None, mongo_obj)
+        # get the value filter custom arg, if any
+        str_value_filter = _get_custom_arg(_ARG_VALUE_FILTER,
+                                           'value_filter',
+                                           job_id,
+                                           self.pipeline_config.custom_arguments)
+
+        if str_value_filter is not None:
+            results = _apply_value_filter(str_value_filter, results)
+        
+        for obj in results:
+
+            if obj is None:
+                continue
+
+            # construct result object and write to MongoDB
+            mongo_obj = _to_result_obj(obj)
+            self.write_result_data(temp_file, mongo_client, None, mongo_obj)
 
 
 ###############################################################################
 if __name__ == '__main__':
 
+    # for command-line testing only
+    
     parser = argparse.ArgumentParser(
         description='test CQL Engine result decoding locally')
 
@@ -648,13 +755,18 @@ if __name__ == '__main__':
         print('\tfound {0} results'.format(len(results)))
         if results is not None:
 
+
+            # str_value_filter = 'MIN()'
+            # if str_value_filter is not None:
+            #     results = _apply_value_filter(str_value_filter, results)
+            #     print('filtered to {0} results'.format(len(results)))
+
+            
             for counter, obj in enumerate(results):
                 
                 if obj is None:
                     continue
 
-                assert _KEY_RT in obj
-                resource_type = obj[_KEY_RT]
                 mongo_obj = _to_result_obj(obj)
 
                 # print to stdout

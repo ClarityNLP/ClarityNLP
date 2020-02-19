@@ -163,7 +163,7 @@ folder, clone the repo, and initialize all submodules with these commands:
    cd /some/location/on/your/disk
    mkdir ClarityNLPNative
    cd ClarityNLPNative
-   git clone --recurse-submodules https://github.com/ClarityNLP/ClarityNLP.git
+   git clone https://github.com/ClarityNLP/ClarityNLP.git
    cd ClarityNLP
 
 This command sequence will give you an up-to-date checkout of the master
@@ -176,7 +176,6 @@ the caveat that it will be less mature than the code in the master branch,
 checkout the ``develop`` branch of the repo with these additional commands:
 ::
    git checkout develop
-   git submodule foreach git pull origin develop
 
 After checking out your desired branch of the repository, change to the
 ``native_setup`` folder of the repo with:

@@ -7,12 +7,14 @@ import sys
 import traceback
 from pymongo import MongoClient
 from datetime import datetime, timezone
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     from .base_model import BaseModel
     from .results import phenotype_stats
 except Exception as e:
-    print(e)
+    log(e)
     from base_model import BaseModel
     from results import phenotype_stats
 
@@ -167,6 +169,7 @@ def delete_job(job_id: str, connection_string: str):
         traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
+        client.close()
 
     return flag
 
@@ -185,7 +188,7 @@ def query_phenotype_jobs(status: str, connection_string: str, limit=100, skip=0)
                               where jb.job_type = 'PHENOTYPE'
                               order by jb.date_started DESC 
                               limit %s OFFSET %s"""
-            print(q)
+            # log(q)
             cursor.execute(q, [limit, skip])
         elif status == 'INCOMPLETE':
             q = """select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
@@ -194,7 +197,7 @@ def query_phenotype_jobs(status: str, connection_string: str, limit=100, skip=0)
                             and (jb.status <> %s and jb.status <> %s and jb.status <> %s)
                             order by jb.date_started DESC 
                             limit %s OFFSET %s"""
-            print(q)
+            # log(q)
             cursor.execute(q, [COMPLETED, FAILURE, KILLED, limit, skip])
         else:
             q = """select jb.*, pt.config, pt.nlpql, pt.name as phenotype_name from nlp.nlp_job as jb
@@ -203,7 +206,7 @@ def query_phenotype_jobs(status: str, connection_string: str, limit=100, skip=0)
                             and jb.status = %s 
                             order by jb.date_started DESC 
                             limit %s OFFSET %s"""
-            print(q)
+            # log(q)
             cursor.execute(q, [status, limit, skip])
 
         rows = cursor.fetchall()
@@ -373,9 +376,10 @@ def get_job_performance(job_ids: list, connection_string: str):
 
 
 if __name__ == "__main__":
-    conn_string = util.conn_string
-    # status = get_job_status(117, conn_string)
-    res = get_job_performance(200, conn_string)
-    print(json.dumps(res, indent=4))
+    # conn_string = util.conn_string
+    # # status = get_job_status(117, conn_string)
+    # res = get_job_performance(200, conn_string)
+    # log(json.dumps(res, indent=4))
+    log("jobs main")
 
 

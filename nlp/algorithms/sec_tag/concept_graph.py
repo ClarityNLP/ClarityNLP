@@ -5,6 +5,8 @@ Concept graph derived from the SecTag hierarchy.
 
 import os
 from copy import deepcopy
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 class DuplicateNodeException(Exception):
     pass
@@ -46,23 +48,23 @@ class Node():
         return deepcopy(self.child_indices);
 
     def dump(self):
-        print("cid: {0}, level: {1}, name: {2}".format(self.cid, self.level, self.concept_name))
-        print("\tchild indices: ")
-        print("\t\t", end="")
+        log("cid: {0}, level: {1}, name: {2}".format(self.cid, self.level, self.concept_name))
+        log("\tchild indices: ")
+        log("\t\t", end="")
         if len(self.child_indices) > 0:
             for c in self.child_indices:
-                print("{0}, ".format(c), end="")
+                log("{0}, ".format(c), end="")
         else:
-            print("None", end="")
-        print("")
-        print("\tparent indices: ")
-        print("\t\t", end="")
+            log("None", end="")
+        log("")
+        log("\tparent indices: ")
+        log("\t\t", end="")
         if len(self.parent_indices) > 0:
             for p in self.parent_indices:
-                print("{0}, ".format(p), end="")
+                log("{0}, ".format(p), end="")
         else:
-            print("None", end="")
-        print("")
+            log("None", end="")
+        log("")
         
 class ConceptGraph():
     """
@@ -85,11 +87,11 @@ class ConceptGraph():
         return len(self.nodes)
 
     def dump_node(self, node_index):
-        """Print node info for the node at the given node index."""
+        """log node info for the node at the given node index."""
         self.nodes[node_index].dump()
         
     def dump_cid(self, cid):
-        """Print node info for the node with the given cid."""
+        """log node info for the node with the given cid."""
         if not cid in self.cid_to_index_map:
             raise NodeNotFoundException
         node_index = self.cid_to_index_map[cid]
@@ -119,7 +121,7 @@ class ConceptGraph():
         parent_node_index = self.cid_to_index_map[parent_cid]
         self.link_nodes_by_index(child_node_index, parent_node_index)
         # debug
-        # print("Linked these nodes: ")
+        # log("Linked these nodes: ")
         # self.nodes[child_node_index].dump()
         # self.nodes[parent_node_index].dump()
 
@@ -375,7 +377,7 @@ class ConceptGraph():
             ancestor_cids = [self.nodes[a].cid for a in ancestor_indices]
             for a in ancestor_cids:
                 if not a in ancestor_cid_map[cid]:
-                    print("Ancestor {0} for cid {1} is missing.".format(a, cid))
+                    log("Ancestor {0} for cid {1} is missing.".format(a, cid))
 
         return ancestor_cid_map
                 
@@ -449,8 +451,8 @@ class ConceptGraph():
                 expected_num += int(db_extra[cid])
 
             if num != expected_num:
-                print("ConceptGraph::validate: cid {0}, tree {1}.* has {2} descendants, expected {3}."
+                log("ConceptGraph::validate: cid {0}, tree {1}.* has {2} descendants, expected {3}."
                       .format(cid, i+1, num, expected_num))
 
-        #print ("Graph validation checks passed.")
+        #log ("Graph validation checks passed.")
 

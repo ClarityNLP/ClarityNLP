@@ -5,16 +5,18 @@ from algorithms import *
 from nlpql import *
 from apis.api_helpers import init
 from tasks import register_tasks, registered_pipelines, registered_collectors
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 register_tasks()
-print(registered_pipelines)
-print(registered_collectors)
+log(registered_pipelines)
+log(registered_collectors)
 
 
 phenotype_app = Blueprint('phenotype_app', __name__)
 
 
-def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = ''):
+def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False):
     validated = phenotype_helper.validate_phenotype(p_cfg)
     if not validated['success']:
         return validated
@@ -33,7 +35,7 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = ''):
                                              date_started=datetime.now(),
                                              job_type='PHENOTYPE'), util.conn_string)
 
-    pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id)
+    pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id, background=background)
     pipeline_urls = ["%s/pipeline_id/%s" %
                      (util.main_url, str(pid)) for pid in pipeline_ids]
 
@@ -45,8 +47,8 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = ''):
     output['pipeline_ids'] = pipeline_ids
     output['pipeline_configs'] = pipeline_urls
     output["status_endpoint"] = "%s/status/%s" % (util.main_url, str(job_id))
-    output["results_viewer"] = "%s?job=%s" % (
-        util.results_viewer_url, str(job_id))
+    # output["results_viewer"] = "%s?job=%s" % (
+    #     util.results_viewer_url, str(job_id))
     output["luigi_task_monitoring"] = "%s/static/visualiser/index.html#search__search=job=%s" % (
         util.luigi_url, str(job_id))
     output["intermediate_results_csv"] = "%s/job_results/%s/%s" % (util.main_url, str(job_id),
@@ -71,10 +73,15 @@ def phenotype():
     if not request.data:
         return 'POST a JSON phenotype config to execute or an id to GET. Body should be phenotype JSON'
     try:
+        background_str = request.args.get('background', "true")
+        if len(background_str) > 0 and (background_str[0]).lower() == 'f':
+            background = False
+        else:
+            background = True
         p_cfg = PhenotypeModel.from_dict(request.get_json())
-        return json.dumps(post_phenotype(p_cfg), indent=4)
+        return json.dumps(post_phenotype(p_cfg, background=background), indent=4)
     except Exception as ex:
-        print(ex)
+        log(ex)
         return 'Failed to load and insert phenotype. ' + str(ex), 400
 
 
@@ -87,8 +94,13 @@ def nlpql():
         if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
             return json.dumps(nlpql_results)
         else:
+            background_str = request.args.get('background', "true")
+            if len(background_str) > 0 and (background_str[0]).lower() == 'f':
+                background = False
+            else:
+                background = True
             p_cfg = nlpql_results['phenotype']
-            phenotype_info = post_phenotype(p_cfg, raw_nlpql)
+            phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background)
             return json.dumps(phenotype_info, indent=4)
 
     return "Please POST text containing NLPQL."

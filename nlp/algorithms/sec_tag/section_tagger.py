@@ -5,6 +5,7 @@ import os
 from copy import deepcopy
 
 from nltk.tokenize import sent_tokenize
+from claritynlp_logging import log, ERROR, DEBUG
 
 try:
     from .concept_graph import DuplicateNodeException
@@ -155,11 +156,11 @@ def print_num_found(num):
     word = 'candidates'
     if 1 == num:
         word = 'candidate'
-    print("\t\tFound {0} {1}.".format(num, word))    
+    log("\t\tFound {0} {1}.".format(num, word), DEBUG)
 
 ###############################################################################
 def print_stack_elt(elt, indent='\t\t'):
-    print("{0}[{1}, {2}]".format(indent, elt.concept, elt.treecode_list))
+    log("{0}[{1}, {2}]".format(indent, elt.concept, elt.treecode_list), DEBUG)
 
 ###############################################################################
 def remove_newlines(text):
@@ -184,12 +185,12 @@ def print_stack(stack):
             longest = length
 
     longest += 2
-    print("\tSTACK: ")
+    log("\tSTACK: ", DEBUG)
     if 0 == n:
-        print("\t\t[]")
+        log("\t\t[]", DEBUG)
     else:
         for i in reversed(range(0, n)):
-            print("\t\t[{0:{width}}{1}]".format(stack[i].concept, stack[i].treecode_list, width=longest))
+            log("\t\t[{0:{width}}{1}]".format(stack[i].concept, stack[i].treecode_list, width=longest), DEBUG)
 
 ###############################################################################
 def in_named_section(name, stack):
@@ -340,7 +341,7 @@ def remove_stop_words(words, start_offsets, end_offsets):
 def try_exact_match(sentence_index, start, end, lc_text):
     """Return candidate concepts for exactly matching lowercase text."""
 
-    if TRACE: print("\tTrying exact_match...")
+    if TRACE: log("\tTrying exact_match...", DEBUG)
     
     candidates = []
     
@@ -364,14 +365,14 @@ def try_match_anchored_right(sentence_index, start, end, start_offsets, end_offs
     symbol.
     """
 
-    if TRACE: print("\tTrying match_anchored_right...")
+    if TRACE: log("\tTrying match_anchored_right...", DEBUG)
     
     candidates = []
 
     new_end = start + end_offsets[-1]
     for i in range(1, len(words)):
         test_text = ' '.join(words[i:])
-        if TRACE: print("\t\ttrial text:\t\t->{0}<-".format(test_text))
+        if TRACE: log("\t\ttrial text:\t\t->{0}<-".format(test_text), DEBUG)
         if test_text in synonym_map:
             # found exact match, so save all associated concepts
             new_start = start + start_offsets[i]
@@ -394,14 +395,14 @@ def try_match_anchored_left(sentence_index, start, end, start_offsets, end_offse
     the terminating symbol.
     """
 
-    if TRACE: print("\tTrying match_anchored_left...")
+    if TRACE: log("\tTrying match_anchored_left...", DEBUG)
     
     candidates = []
 
     new_start = start + start_offsets[0]
     for i in reversed(range(1, len(words))):
         test_text = ' '.join(words[0:i])
-        if TRACE: print("\t\ttrial text:\t\t->{0}<-".format(test_text))
+        if TRACE: log("\t\ttrial text:\t\t->{0}<-".format(test_text), DEBUG)
         if test_text in synonym_map:
             # found exact match, so save all associated concepts
             new_end = start + end_offsets[i-1]
@@ -434,7 +435,7 @@ def candidate_headers(sentence_index, start, end, text):
     # convert text to lower case
     lc_text = text.lower()
 
-    if TRACE: print("\tFinding candidate headers for: ->{0}<-\n".format(lc_text))
+    if TRACE: log("\tFinding candidate headers for: ->{0}<-\n".format(lc_text), DEBUG)
     
     # if exact match, return all associated concepts for later disambiguation
     candidates = try_exact_match(sentence_index, start, end, lc_text)
@@ -458,7 +459,7 @@ def candidate_headers(sentence_index, start, end, text):
                                                      start_offsets, end_offsets, words)
 
                 if 0 == len(candidates):
-                    if TRACE: print("\tRemoving stop words...")
+                    if TRACE: log("\tRemoving stop words...", DEBUG)
                 
                     # remove stop words and the corresponding offsets
                     words, start_offsets, end_offsets = remove_stop_words(words, start_offsets, end_offsets)
@@ -466,10 +467,10 @@ def candidate_headers(sentence_index, start, end, text):
 
                     if 0 == word_count:
                         # nothing left, unfortunately
-                        if TRACE: print("\t\tNo words left!")
+                        if TRACE: log("\t\tNo words left!", DEBUG)
                         return []
 
-                    if TRACE: print("\tNormalizing...")
+                    if TRACE: log("\tNormalizing...", DEBUG)
                 
                     # replace words with their 'normalized' forms, if any
                     for i in range(0, word_count):
@@ -479,11 +480,11 @@ def candidate_headers(sentence_index, start, end, text):
                             
                     test_text = ' '.join(words)
                     if TRACE:
-                        print("\tNormalized text: ->{0}<-".format(test_text))
+                        log("\tNormalized text: ->{0}<-".format(test_text), DEBUG)
 
                     if test_text == lc_text:
                         if TRACE:
-                            print("\t\tText identical to original.")
+                            log("\t\tText identical to original.", DEBUG)
                     else:
                         # Try again for an exact match, this time to the normalized form.
                         new_start = start + start_offsets[0]
@@ -499,13 +500,13 @@ def candidate_headers(sentence_index, start, end, text):
                                                                      start_offsets, end_offsets, words)
                 
     if TRACE:
-        print("\tCandidate concepts: ", end="")
+        log("\tCandidate concepts: ", DEBUG)
         if 0 == len(candidates):
-            print("None.")
+            log("None.", DEBUG)
         else:
             for c in candidates:
-                print("{0}:{1}, ".format(c.concept, c.treecode_list), end="")
-        print()
+                log("{0}:{1}, ".format(c.concept, c.treecode_list), DEBUG)
+        log('', DEBUG)
     
     return candidates
 
@@ -516,7 +517,7 @@ def resolve_ambiguities(candidate_headers, stack):
     n = len(candidate_headers)
 
     if TRACE:
-        print("\tAmbiguity resolution...")
+        log("\tAmbiguity resolution...", DEBUG)
         print_stack(stack)
 
     # get cids of all candidates
@@ -538,7 +539,7 @@ def resolve_ambiguities(candidate_headers, stack):
         stack_elt = stack[stack_index]
 
         if TRACE:
-            print("\tResolution with stack entry ", end="")
+            log("\tResolution with stack entry ", DEBUG)
             print_stack_elt(stack_elt, "")
         
         # cid of stack elt
@@ -552,17 +553,17 @@ def resolve_ambiguities(candidate_headers, stack):
         (longest, indices_of_longest, all_same_length) = longest_in_lists(ancestor_codes)
 
         if TRACE:
-            print("\t\tNearest ancestors: {0}".format(ancestor_codes))
-            print("\t\tMax code length: {0}".format(longest))
-            print("\t\tLongest code at index: {0}".format(indices_of_longest))
-            print("\t\tall_same_length: {0}".format(all_same_length))
+            log("\t\tNearest ancestors: {0}".format(ancestor_codes), DEBUG)
+            log("\t\tMax code length: {0}".format(longest), DEBUG)
+            log("\t\tLongest code at index: {0}".format(indices_of_longest), DEBUG)
+            log("\t\tall_same_length: {0}".format(all_same_length), DEBUG)
             
         best_candidates_map[stack_index] = (longest, deepcopy(indices_of_longest), all_same_length)
 
         # go up to the next level in the stack and try again, may find a nearer common ancestor
         stack_index -= 1
         
-    if TRACE: print("\tAt bottom of stack.")
+    if TRACE: log("\tAt bottom of stack.", DEBUG)
 
     # find the code length of the nearest common ancestor among all stack levels
     longest_code_len = -1
@@ -585,13 +586,13 @@ def resolve_ambiguities(candidate_headers, stack):
     num_best = len(best_candidates)
 
     if TRACE:
-        print("\tIndices of best candidates: {0}".format(best_candidates))
+        log("\tIndices of best candidates: {0}".format(best_candidates), DEBUG)
     
     if 1 == num_best:
         # found a single winner, the nearest common ancestor
         if TRACE:
-            print("\t\tFound single best candidate: {0}".format(candidate_headers[best_candidates[0]].concept))
-            print("\t\tNearest common ancestor code length: {0}".format(longest_code_len))
+            log("\t\tFound single best candidate: {0}".format(candidate_headers[best_candidates[0]].concept), DEBUG)
+            log("\t\tNearest common ancestor code length: {0}".format(longest_code_len), DEBUG)
         return candidate_headers[best_candidates[0]]
             
     elif num_best > 0:
@@ -605,13 +606,13 @@ def resolve_ambiguities(candidate_headers, stack):
 
         if not all_same_length and 1 == len(indices_of_shortest):
             # found the winner
-            if TRACE: print("\tHighest-level (most general) of the best candidates: {0}".
-                            format(candidate_headers[best_candidates[indices_of_shortest[0]]].concept))
+            if TRACE: log("\tHighest-level (most general) of the best candidates: {0}".
+                            format(candidate_headers[best_candidates[indices_of_shortest[0]]].concept), DEBUG)
             return candidate_headers[best_candidates[indices_of_shortest[0]]]
         else:
             # still no clear winner, take the first of the best candidates
             if TRACE:
-                print("\tNo clear winner, choosing: {0}".format(candidate_headers[best_candidates[0]].concept))
+                log("\tNo clear winner, choosing: {0}".format(candidate_headers[best_candidates[0]].concept), DEBUG)
             return candidate_headers[best_candidates[0]]
         
     else:
@@ -619,8 +620,8 @@ def resolve_ambiguities(candidate_headers, stack):
         # take the highest-level (most general) of the candidate concept, if any
         (shortest, indices_of_shortest, all_same_length) = shortest_in_lists(treecode_lists)
         if not all_same_length and 1 == len(indices_of_shortest):
-            if TRACE: print("\tHighest-level (most general) candidate: {0}".
-                  format(candidate_headers[indices_of_shortest[0]].concept))                
+            if TRACE: log("\tHighest-level (most general) candidate: {0}".
+                  format(candidate_headers[indices_of_shortest[0]].concept), DEBUG)
             return candidate_headers[indices_of_shortest[0]]
 
     # default is to not return anything
@@ -776,7 +777,7 @@ def process_report(report):
             matching_text = s[start:end]
             
             if TRACE:
-                print("\nMATCHING TEXT: ->{0}<-".format(matching_text))
+                log("\nMATCHING TEXT: ->{0}<-".format(matching_text), DEBUG)
 
             # if the match ends in a single hyphen, check to see if hyphenated word
             # or hyphenated lab result
@@ -793,7 +794,7 @@ def process_report(report):
                 if hyph_match:
                     # found a hyphenated word
                     hyphenated_word = hyph_match.group().lower()
-                    if TRACE: print("\tFound hyphenated word: ->{0}<-".format(hyphenated_word))
+                    if TRACE: log("\tFound hyphenated word: ->{0}<-".format(hyphenated_word), DEBUG)
                         
                     # Check for a termination char at the end of the hyphenated
                     # word. If present, this may be a section header.
@@ -808,11 +809,11 @@ def process_report(report):
                             prev_end = end
                         
                             if TRACE:
-                                print("\t\tFound hyphenated synonym, extending match to: ->{0}<-".
-                                      format(matching_text))
+                                log("\t\tFound hyphenated synonym, extending match to: ->{0}<-".
+                                      format(matching_text), DEBUG)
                             
                         elif not hyphenated_word in HYPHENATED_SYNONYMS:
-                            if TRACE: print("\t\tSkipping hyphenated word: ->{0}<-".format(hyphenated_word))
+                            if TRACE: log("\t\tSkipping hyphenated word: ->{0}<-".format(hyphenated_word), DEBUG)
                             continue
 
                 # Is this an ICD 9 or 10 code?
@@ -829,16 +830,16 @@ def process_report(report):
                         end = start + icd_code_match.end()
                         matching_text = s[start:end]
                     
-                    if TRACE: print("\t\tFound ICD code, extending match to: ->{0}<-".
-                                    format(matching_text))
+                    if TRACE: log("\t\tFound ICD code, extending match to: ->{0}<-".
+                                    format(matching_text), DEBUG)
                     
                 else:
                     # Is this a hyphenated lab result?
                     lab_result_match = regex_hyphenated_lab_result.search(s[ws_left:ws_right+1])
                     if lab_result_match:
 
-                        if TRACE: print("\t\tSkipping hyphenated lab result: ->{0}<-".
-                                        format(lab_result_match.group()))
+                        if TRACE: log("\t\tSkipping hyphenated lab result: ->{0}<-".
+                                        format(lab_result_match.group()), DEBUG)
                         continue
 
             prev_end = end
@@ -880,7 +881,7 @@ def process_report(report):
                     end_delta = start + pos - end
                     
             if TRACE:
-                print("\tSearch text for candidate headers: ->{0}<-".format(matching_text[start_delta:end_delta]))
+                log("\tSearch text for candidate headers: ->{0}<-".format(matching_text[start_delta:end_delta]), DEBUG)
                 
             # get all candidate headers for this matched text
             candidates = candidate_headers(sentence_index, start+start_delta, end+end_delta,
@@ -900,14 +901,14 @@ def process_report(report):
             
             # If a space both precedes and follows the matching synonym, it is probably a word
             # in a narrative section and not a section header.
-            if TRACE: print("\tSynonym matches this text: ->{0}<-".format(s[header.start_index:header.end_index]))
+            if TRACE: log("\tSynonym matches this text: ->{0}<-".format(s[header.start_index:header.end_index]), DEBUG)
             #print("header.start_index: {0}".format(header.start_index))
             #print("  header.end_index: {0}".format(header.end_index))
             #print("        sentence s: {0}".format(s))
             if header.start_index > 0:
                 if (' ' == s[header.start_index-1]) and (' ' == s[header.end_index]):
                     if TRACE:
-                        print("\t\tFound spaces on each side of matching text, assuming narrative, skipping...")
+                        log("\t\tFound spaces on each side of matching text, assuming narrative, skipping...", DEBUG)
                     continue
 
             # ignore matches to the letter 'a' (synonym for ASSESSMENT)
@@ -945,7 +946,7 @@ def process_report(report):
             # if 'unit' is the synonym, ignore if immediately followed by a forward slash,
             # which likely indicates a unit of measurement, such as unit/mL
             if 'UNIT' == header.concept and '/' == s[header.end_index]:
-                if TRACE: print("\t\tFound unit of measurement, skipping...")
+                if TRACE: log("\t\tFound unit of measurement, skipping...", DEBUG)
                 continue
                     
             # ignore if need more context to interpret; save for later
@@ -986,7 +987,7 @@ def process_report(report):
             header_count += 1
             
             if TRACE:
-                print("\tRESOLVED: {0}".format(header.concept));
+                log("\tRESOLVED: {0}".format(header.concept), DEBUG);
 
         if 0 == header_count:
             # no matches for this sentence, so concatenate to previous
@@ -1056,17 +1057,27 @@ def sec_tag_file_path():
     path = os.path.join(SCRIPT_DIR, CS_MAP_FILE)
     return path
 
+inited = False
+init_in_progress = False
+
 
 def section_tagger_init():
+    global init_in_progress, inited
+    if inited or init_in_progress:
+        log("section tagger init already done or in progress")
+        return
 
-    print("section_tagger_init...")
+    init_in_progress = True
+
+    log("section_tagger_init...")
     
     # load the mapping of concept strings to synonyms
     try:
         path = sec_tag_file_path()
         infile = open(path, 'rt')
-    except:
-        print("Could not open file {0}.".format(CS_MAP_FILE))
+    except Exception as ex1:
+        log("Could not open file {0}.".format(CS_MAP_FILE), ERROR)
+        log(ex1, ERROR)
         return False
 
     # skip the first line, which contains format information
@@ -1120,5 +1131,7 @@ def section_tagger_init():
     graph_path = os.path.join(SCRIPT_DIR, GRAPH_FILENAME)
     graph.load_from_file(graph_path, db_extra)
 
+    inited = True
+    init_in_progress = False
     return True
 

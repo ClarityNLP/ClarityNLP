@@ -26,6 +26,7 @@ import sys
 import optparse
 import requests
 from bs4 import BeautifulSoup
+from claritynlp_logging import log, ERROR, DEBUG
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
@@ -52,7 +53,7 @@ if __name__ == '__main__':
 
     verb_count = len(verbs)
     
-    print('Scraping inflection data for {0} verbs...'.format(verb_count))
+    log('Scraping inflection data for {0} verbs...'.format(verb_count))
 
     outfile = open(OUTPUT_FILE, 'w')
 
@@ -85,14 +86,14 @@ if __name__ == '__main__':
         elif 'practise' == verb:
             verb = 'practice'
 
-        #print('verb: {0}, prev_verb: {1}'.format(verb, prev_verb))
+        #log('verb: {0}, prev_verb: {1}'.format(verb, prev_verb))
             
         # construct the Wiktionary URL for this verb and get its page
         url = 'https://en.wiktionary.org/wiki/' + verb + '#Verb'
         page = requests.get(url)
         if 200 != page.status_code:
-            print('Error getting url: ' + url)
-            print('\tStatus code: {0}'.format(page.status_code))
+            log('Error getting url: ' + url)
+            log('\tStatus code: {0}'.format(page.status_code))
             failure_count += 1
             continue
 
@@ -300,7 +301,7 @@ if __name__ == '__main__':
 
             if not found_it:
                 # no verb entry for this word...
-                print("\tno inflection data for '{0}'".format(verb))
+                log("\tno inflection data for '{0}'".format(verb))
                 failure_count += 1
                 continue
             
@@ -312,11 +313,11 @@ if __name__ == '__main__':
         if prev_verb != verb:
             num_written += 1
             outfile.write('{0:4}\t{1}\n'.format(num_written, text))
-            #print('\tverb = {0}, wrote {1}'.format(verb, text[:20]))
+            #log('\tverb = {0}, wrote {1}'.format(verb, text[:20]))
             prev_verb = verb
             
         # progress indicator
         if 0 == (counter % 10):
-            print('Completed {0}/{1} requests, {2} failed'.
+            log('Completed {0}/{1} requests, {2} failed'.
                   format(counter, verb_count, failure_count), flush=True)
         

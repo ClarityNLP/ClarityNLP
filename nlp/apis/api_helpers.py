@@ -1,4 +1,5 @@
 from algorithms import *
+from claritynlp_logging import log, ERROR, DEBUG
 
 init_status = "none"
 
@@ -11,7 +12,8 @@ def init():
             section_tagger_init()
             segmentation_init()
             context_init()
+            lab_value_matcher_init()
             init_status = "done"
         except Exception as ex:
-            print(ex)
+            log(ex, ERROR)
             init_status = "error"

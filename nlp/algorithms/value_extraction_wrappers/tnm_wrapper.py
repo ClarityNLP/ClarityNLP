@@ -1,6 +1,8 @@
 from algorithms.segmentation import *
 from algorithms.value_extraction.tnm_stage_extractor import run as run_tnm_stager
 from itertools import product
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 import regex as re
 import json
@@ -45,4 +47,4 @@ if __name__ == "__main__":
     result = run_tnm_stager_full("pT3pN1M1 colon cancer with resection for cure of "
                                  "both the primary tumor and a liver metastasis; R0 (colon); R0 (liver)."
                                  " The tumor is classified as pT4bpN1bM0 (stage IIIC).")
-    print(result)
+    log(result)

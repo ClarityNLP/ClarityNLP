@@ -116,6 +116,8 @@ import optparse
 from nltk.corpus import wordnet
 from nltk.corpus import cmudict
 from spacy.symbols import ORTH, LEMMA, POS, TAG
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     from .pluralize import plural
@@ -125,7 +127,7 @@ try:
     from .vocabulary import get_ancestors as ohdsi_get_ancestors
     from .vocabulary import get_descendants as ohdsi_get_descendants
 except Exception as e:
-    print(e)
+    log(e)
     from pluralize import plural
     from verb_inflector import get_inflections
     from irregular_verbs import INFLECTION_MAP
@@ -248,12 +250,12 @@ def to_string(term_list, suffix=''):
 
 
 ###############################################################################
-def print_token(token):
+def log_token(token):
     """
-    Print useful token data to the screen for debugging.
+    log useful token data to the screen for debugging.
     """
 
-    print('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
+    log('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
                                                               token.text,
                                                               token.tag_,
                                                               token.pos_,
@@ -262,16 +264,16 @@ def print_token(token):
 
     
 ###############################################################################
-def print_tokens(doc):
+def log_tokens(doc):
     """
-    Print all tokens in a SpaCy document.
+    log all tokens in a SpaCy document.
     """
 
-    print('\nTokens: ')
-    print('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
+    log('\nTokens: ')
+    log('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
                                                           'POS', 'DEP', 'HEAD'))
     for token in doc:
-        print_token(token)
+        log_token(token)
 
 
 ###############################################################################
@@ -336,7 +338,7 @@ def expand(sentence, index_map):
     for index in indices[1:]:
         # get substitutions for this index
         substitutions = index_map[index]
-        #print('subs: {0}'.format(substitutions))
+        #log('subs: {0}'.format(substitutions))
         for w in substitutions[1:]:
             # for each result so far
             for r in results[:num_entries]:
@@ -576,9 +578,9 @@ def get_synonyms(namespace, term_list, return_type=RETURN_TYPE_STRING):
                 index_map[index] = syns
                 
             # do the expansion
-            #print('index map: {0}'.format(index_map))
+            #log('index map: {0}'.format(index_map))
             new_phrases = expand(t, index_map)
-            #print('new phrases: {0}'.format(new_phrases))
+            #log('new phrases: {0}'.format(new_phrases))
             synonyms.extend(new_phrases)
 
     # convert to lowercase, remove duplicates, and sort
@@ -836,7 +838,7 @@ def expand_macros(str_termlist):
 
             macro_op = match.group('macro_op')
             if macro_op is None:
-                print('Unsupported macro: {0}'.format(matching_text))
+                log('Unsupported macro: {0}'.format(matching_text))
                 sys.exit(-1)
             
             namespace = match.group('namespace')
@@ -1106,7 +1108,7 @@ def run_tests():
     for verb, base in test_data.items():
         trial = get_verb_base_form(verb)
         if trial != base:
-            print('get_base_form: verb: {0}, expected base form {1}, got {2}'.
+            log('get_base_form: verb: {0}, expected base form {1}, got {2}'.
                   format(verb, base, trial))
 
     # test expansion manually
@@ -1118,24 +1120,24 @@ def run_tests():
     }
 
     sentences = expand(sentence, index_map)
-    print('Original: {0}'.format(sentence))
+    log('Original: {0}'.format(sentence))
     for i in range(len(sentences)):
-        print('\t[{0}]: {1}'.format(i, sentences[i]))
+        log('\t[{0}]: {1}'.format(i, sentences[i]))
         
     # verb inflection
     sentences = get_verb_inflections(NAMESPACE_CLARITY, [sentence], RETURN_TYPE_LIST)
-    print('\nOriginal: {0}'.format(sentence))
+    log('\nOriginal: {0}'.format(sentence))
     for i in range(len(sentences)):
-        print('\t[{0}]: {1}'.format(i, sentences[i]))
+        log('\t[{0}]: {1}'.format(i, sentences[i]))
 
     # synonyms
     sentences = ['the food tastes great', 'the man owns a vehicle',
                  'the large vehicle', 'the sweetly singing bird']
     for s in sentences:
         new_phrases = get_synonyms(NAMESPACE_CLARITY, [s], RETURN_TYPE_LIST)
-        print('\nOriginal: {0}'.format(s))
+        log('\nOriginal: {0}'.format(s))
         for i in range(len(new_phrases)):
-            print('\t[{0}]: {1}'.format(i, new_phrases[i]))
+            log('\t[{0}]: {1}'.format(i, new_phrases[i]))
 
 
 ###############################################################################
@@ -1145,8 +1147,8 @@ def get_version():
 
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./{0} -f <filename> [-hvsd]
 
     OPTIONS:
@@ -1155,8 +1157,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
+        -h, --help           log this information and exit.
+        -v, --version        log version information and exit.
         -s, --selftest       Run self-tests and exit.
         -d, --debug          Run in debug mode.
 
@@ -1186,7 +1188,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     if opts.debug:
@@ -1199,4 +1201,4 @@ if __name__ == '__main__':
     expanded_nlpql = run_from_file(opts.filepath)
 
     # write results to stdout
-    print(expanded_nlpql)
+    log(expanded_nlpql)

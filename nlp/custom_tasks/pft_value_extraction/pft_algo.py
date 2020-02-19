@@ -2,6 +2,8 @@ import re
 import json
 import sys
 from algorithms import value_extractor as ve
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 fev_matcher = re.compile(r"\bfev\b", re.IGNORECASE)
 fvc_matcher = re.compile(r"\bfvc\b", re.IGNORECASE)
@@ -186,7 +188,7 @@ def pft_extractor(x):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        print(pft_extractor(sys.argv[1]))
+        log(pft_extractor(sys.argv[1]))
 
     else:
         raise SystemExit("No pft values could be found in <name>")

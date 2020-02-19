@@ -62,48 +62,58 @@ import os
 import sys
 import json
 import time
-import optparse
+import argparse
 import en_core_web_sm as english_model
 from nltk.tokenize import sent_tokenize
 
 if __name__ == '__main__':
+
+    # interactive testing; add nlp dir to path to find logging class
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** test_lab_value_matcher.py: nlp dir not found ***\n')
+        sys.exit(0)
+    
     import segmentation_helper as seg_helper
 else:
     from algorithms.segmentation import segmentation_helper as seg_helper
 
-VERSION_MAJOR = 0
-VERSION_MINOR = 1
+from claritynlp_logging import log, ERROR, DEBUG
 
-# set to True to enable debug output
-TRACE = False
 
-MODULE_NAME = 'segmentation.py'
+_VERSION_MAJOR = 0
+_VERSION_MINOR = 3
+_MODULE_NAME = 'segmentation.py'
 
-data = {}
-loading_status = 'none'
+_data = {}
+_loading_status = 'none'
+
 
 ###############################################################################
 def segmentation_init(tries=0):
     if tries > 0:
-        print('Retrying, try%d' % tries)
+        log('Retrying, try%d' % tries)
 
-    global loading_status
-    if loading_status == 'none' and 'nlp' not in data:
+    global _loading_status
+    if _loading_status == 'none' and 'nlp' not in _data:
         try:
-            print('Segmentation init...')
-            loading_status = 'loading'
-            data['nlp'] = english_model.load()
-            loading_status = 'done'
+            log('Segmentation init...')
+            _loading_status = 'loading'
+            _data['nlp'] = english_model.load()
+            _loading_status = 'done'
         except Exception as exc:
-            print(exc)
-            loading_status = 'none'
-    elif loading_status == 'loading' and tries < 30:
+            log(exc, ERROR)
+            _loading_status = 'none'
+    elif _loading_status == 'loading' and tries < 30:
         time.sleep(10)
-        if loading_status == 'loading':
+        if _loading_status == 'loading':
             new_tries = tries + 1
             return segmentation_init(tries=new_tries)
 
-    return data['nlp']
+    return _data['nlp']
 
 
 ###############################################################################
@@ -127,9 +137,12 @@ def parse_sentences_spacy(text, spacy=None):
 
     # fix various problems and undo the substitutions
     sentences = seg_helper.split_concatenated_sentences(sentences)
+
+    # do this, if at all, BEFORE undoing the substitutions
+    #sentences = seg_helper.split_section_headers(sentences)
+    
     sentences = seg_helper.undo_substitutions(sentences)
     sentences = seg_helper.fixup_sentences(sentences)
-    sentences = seg_helper.split_section_headers(sentences)
     sentences = seg_helper.delete_junk(sentences)
 
     return sentences
@@ -160,170 +173,104 @@ class Segmentation(object):
 
 
 ###############################################################################
-def run_tests():
-
-    seg_obj = Segmentation()
-
-    # sentences for testing vitals recognition
-    SENTENCES = [
-        'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
-        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        'Height: (in) 74 Weight (lb): 199 BSA (m2): 2.17 m2 '                +\
-        'BP (mm Hg): 140/91 HR (bpm): 53',
-        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
-        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
-        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
-        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
-        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
-        'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
-        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
-        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
-        'In the ED, initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
-        'In the ED initial vitals were HR 106, BP 88/56, RR 20, O2 Sat '     +\
-        '85% 3L.',
-        'In the ED, initial vs were: T=99.3, P=120, BP=111/57, RR=24, '      +\
-        'POx=100%.',
-        'Upon transfer her vitals were HR=120, BP=109/44, RR=29, POx=93% '   +\
-        'on 8L FM.',
-        'Vitals in PACU post-op as follows: BP 120/80 HR 60-80s RR  '        +\
-        'SaO2 96% 6L NC.',
-        'In the ED, initial vital signs were T 97.5, HR 62, BP 168/60, '     +\
-        'RR 18, 95% RA.',
-        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams '       +\
-        'Lt 18.5 inches HC 35 cm',
-        'In the ED, initial vital signs were T 97.0, BP 85/44, HR 107, '     +\
-        'RR 28, and SpO2 91% on NRB.',
-        'Prior to transfer, his vitals were BP 119/53 (105/43 sleeping), '   +\
-        'HR 103, RR 15, and SpO2 97% on NRB.',
-        'In the ED inital vitals were, Temperature 100.8, Pulse: 103, '      +\
-        'RR: 28, BP: 84/43, O2Sat: 88, O2 Flow: 100 (Non-Rebreather).',
-        'At clinic, he was noted to have increased peripheral edema and '    +\
-        'was sent to the ED where his vitals were T 97.1 HR 76 BP 148/80 '   +\
-        'RR 25 SpO2 92%/RA.',
-    ]
-
-    seg_helper.enable_debug()
-
-    count = 0
-    for s in SENTENCES:
-        print(s)
-        sentences = seg_obj.parse_sentences(s)
-        print('\t[{0:3}]\t{1}\n'.format(count, s))
-        count += 1
-
-    seg_helper.disable_debug()
-
-
-###############################################################################
 def get_version():
-    str1 = '{0} {1}.{2}'.format(MODULE_NAME, VERSION_MAJOR, VERSION_MINOR)
+    str1 = '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
     str2 = seg_helper.get_version()
     version = '{0}\n{1}'.format(str1, str2)
     return version
 
 
 ###############################################################################
-def show_help():
-    print(get_version())
-    print("""
-    USAGE: python3 ./{0} -f <filename> [-s <start_indx> -e <end_indx>] [-dhvz]
-
-    OPTIONS:
-
-        -f, --file     <quoted string>     Path to input JSON file.
-        -s, --start    <integer>           Index of first record to process.
-        -e, --end      <integer>           Index of final record to process.
-                                           Indexing begins at 0.
-
-    FLAGS:
-
-        -d, --debug          Enable debug output.
-        -h, --help           Print this information and exit.
-        -v, --version        Print version information and exit.
-        -z, --selftest       Run self-tests and exit.
-
-    """.format(MODULE_NAME))
-
-
-###############################################################################
 if __name__ == '__main__':
 
+    # interactive testing, output written to stdout
+    
     seg_obj = Segmentation()
 
-    optparser = optparse.OptionParser(add_help_option=False)
-    optparser.add_option('-f', '--file', action='store',
-                         dest='filepath')
-    optparser.add_option('-s', '--start', action='store',
-                         dest='start_index')
-    optparser.add_option('-e', '--end', action='store',
-                         dest='end_index')
-    optparser.add_option('-v', '--version', action='store_true',
-                         dest='get_version')
-    optparser.add_option('-d', '--debug', action='store_true',
-                         dest='debug', default=False)
-    optparser.add_option('-h', '--help', action='store_true',
-                         dest='show_help', default=False)
-    optparser.add_option('-z', '--selftest', action='store_true',
-                         dest='selftest', default=False)
+    parser = argparse.ArgumentParser(
+        description='load Solr docs (JSON format) and display sentence ' \
+        'tokenization results')
 
-    opts, other = optparser.parse_args(sys.argv)
+    parser.add_argument('-v', '--version',
+                        help='show version and exit',
+                        action='store_true')
+    parser.add_argument('-d', '--debug',
+                        help='print debug information to stdout',
+                        action='store_true')
+    parser.add_argument('-f', '--file',
+                        dest='filepath',
+                        help='JSON file of Solr docs')
+    parser.add_argument('-s', '--start',
+                        type=int,
+                        default=0,
+                        dest='start_index',
+                        help='index of first document to process')
+    parser.add_argument('-e', '--end',
+                        dest='end_index',
+                        help='index of final document to process')
 
-    if 1 == len(sys.argv) or opts.show_help:
-        show_help()
-        sys.exit(0)
+    args = parser.parse_args()
 
-    if opts.get_version:
+    if args.version:
         print(get_version())
         sys.exit(0)
 
-    if opts.selftest:
-        run_tests()
-        sys.exit(0)
-
-    start_index = None
-    if opts.start_index:
-        start_index = int(opts.start_index)
-
-    if start_index is not None and start_index < 0:
-        print('Start index must be a nonnegative integer.')
+    start_index = args.start_index
+        
+    if start_index < 0:
+        print('\n*** Start index must be a nonnegative integer. ***')
         sys.exit(-1)
 
     end_index = None
-    if opts.end_index:
-        end_index = int(opts.end_index)
+    if args.end_index:
+        end_index = int(args.end_index)
 
     if end_index is not None:
-        if start_index is not None and end_index < start_index:
-            print('End index must be >= start_index.')
+        if end_index < start_index:
+            print('\n*** End index must be >= start_index. ***')
             sys.exit(-1)
         elif end_index < 0:
-            print('End index must be a nonnegative integer.')
+            print('\n*** End index must be a nonnegative integer. ***')
             sys.exit(-1)
 
-    json_file = opts.filepath
-    if not os.path.isfile(json_file):
-        print("File not found: '{0}'".format(json_file))
+    if args.filepath is None:
+        print('\n*** Missing --file argument ***')
         sys.exit(-1)
+
+    json_file = args.filepath
+    if not os.path.isfile(json_file):
+        print('\n*** File not found: "{0}" ***'.format(json_file))
+        sys.exit(-1)
+        
 
     try:
         infile = open(json_file, 'rt')
         file_data = json.load(infile)
     except:
-        print("Could not open file {0}.".format(json_file))
+        print('\n*** Could not open file "{0}" ***.'.format(json_file))
         sys.exit(-1)
 
     infile.close()
 
-    if opts.debug:
+    if args.debug:
         seg_helper.enable_debug()
 
-    ok = True
-    index = 0
-    while (ok):
+    try:
+        infile = open(json_file, 'rt')
+        file_data = json.load(infile)
+    except:
+        log("Could not open file {0}.".format(json_file))
+        sys.exit(-1)
 
-        if start_index is not None and index < start_index:
-           index += 1
-           continue
+    infile.close()
+
+    # explicitly initialize for interactive testing
+    seg_helper.init()
+        
+    ok = True
+    report_count = 0
+    index = start_index
+    while (ok):
 
         try:
             if 'response' in file_data and 'docs' in file_data['response']:
@@ -340,6 +287,7 @@ if __name__ == '__main__':
 
         # print all sentences for this report
         count = 0
+        print('\nSENTENCES: ')
         for s in sentences:
             print('[{0:3}]\t{1}'.format(count, s))
             count = count + 1
@@ -347,8 +295,12 @@ if __name__ == '__main__':
         print("\n\n*** END OF REPORT {0} ***\n\n".format(index))
 
         index += 1
-
+        report_count += 1
+        
         if end_index is not None and index > end_index:
             break
 
-    print("Processed {0} reports.".format(index))
+    term = 'reports'
+    if 1 == report_count:
+        term = 'report'
+    print("Processed {0} {1}.".format(report_count, term))

@@ -4,12 +4,14 @@ import util
 import sys
 import traceback
 import simplejson as json
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 try:
     from .base_model import BaseModel
     from .pipeline_config import PipelineConfig
 except Exception as e:
-    print(e)
+    log(e)
     from base_model import BaseModel
     from pipeline_config import PipelineConfig
 
@@ -158,7 +160,7 @@ def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
         conn.commit()
 
     except Exception as ex:
-        print('failed to insert phenotype mapping')
+        log('failed to insert phenotype mapping')
         traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
@@ -196,7 +198,7 @@ def insert_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
         conn.commit()
 
     except Exception as ex:
-        print('failed to insert phenotype')
+        log('failed to insert phenotype')
         traceback.print_exc(file=sys.stdout)
     finally:
         conn.close()
@@ -219,7 +221,7 @@ def update_phenotype_model(phenotype: PhenotypeModel, connection_string: str):
         conn.commit()
         success = True
     except Exception as ex:
-        print('failed to insert phenotype')
+        log('failed to insert phenotype')
         traceback.print_exc(file=sys.stdout)
         success = False
     finally:
@@ -423,10 +425,10 @@ if __name__ == "__main__":
     sorted(p.operations, key=lambda o: o['final'])
     json_str = p.to_json()
 
-    print(json_str)
+    log(json_str)
 
     hier = phenotype_structure(10144, util.conn_string)
-    print(hier)
+    log(hier)
 
 # conceptset or termset as inputs for entities
 # where or as for operations

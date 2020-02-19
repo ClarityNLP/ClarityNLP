@@ -135,9 +135,9 @@ To unpack the measurement list:
 The fields of each measurement are now accessible via:
 
         for m in measurements:
-            print(m.text)
-            print(m.start)
-            print(m.end)
+            log(m.text)
+            log(m.start)
+            log(m.end)
             etc.
 
         If any field has the value EMPTY_FIELD it should be ignored.
@@ -190,6 +190,8 @@ import optparse
 from collections import deque
 from collections import namedtuple
 from spacy.symbols import ORTH, LEMMA, POS, TAG
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 if __name__ is not None and "." in __name__:
     from .size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
@@ -571,9 +573,9 @@ def init(ngram_file_path=NGRAM_FILE):
     ngram_word_counts = sorted(ngram_dict.keys())
 
     if TRACE:
-        print('ngram min chars: {0}'.format(ngram_min_chars))
+        log('ngram min chars: {0}'.format(ngram_min_chars))
         for n in range(1, len(ngram_word_counts)+1):
-            print('Number of ngrams of length {0:2}: {1:6}'.format(n, len(ngram_dict[n])))
+            log('Number of ngrams of length {0:2}: {1:6}'.format(n, len(ngram_dict[n])))
     
     # 'measures' is a 3rd person singular present verb
     special_case = [{ORTH: u'measures', LEMMA: u'measure', TAG: u'VBZ', POS: u'VERB'}]
@@ -613,7 +615,7 @@ def load_ngram_file(filepath, ngram_dict):
                     n = int(match.group('num'))
                 else:
                     if TRACE:
-                        print('Error reading {0}: length expected: {1}'.
+                        log('Error reading {0}: length expected: {1}'.
                               format(NGRAM_FILE, line))
                     sys.exit(-1)
                 ngram_dict[n] = []
@@ -669,12 +671,12 @@ def to_json(original_terms, original_sentence, measurements):
     return json.dumps(result_dict, indent=4)
 
 ###############################################################################
-def print_token(token):
+def log_token(token):
     """
-    Print useful token data to the screen for debugging.
+    log useful token data to the screen for debugging.
     """
 
-    print('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
+    log('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
                                                               token.text,
                                                               token.tag_,
                                                               token.pos_,
@@ -682,42 +684,42 @@ def print_token(token):
                                                               token.head))
 
 ###############################################################################
-def print_noun_chunks(doc):
+def log_noun_chunks(doc):
     """
-    Print noun chunk data to the screen.
+    log noun chunk data to the screen.
     """
 
-    print('\nNoun chunks: ')
-    print('{0:9}{1:32}\t{2:16}{3:12}{4:32}'.format('INDICES',
+    log('\nNoun chunks: ')
+    log('{0:9}{1:32}\t{2:16}{3:12}{4:32}'.format('INDICES',
                                                    'TEXT',
                                                    'ROOT_TEXT',
                                                    'ROOT_DEP',
                                                    'ROOT_HEAD_TEXT'))
     index = 0
     for chunk in doc.noun_chunks:
-        print('[{0:2},{1:2}): {2:32}\t{3:16}{4:12}{5:32}'.format(chunk.start,
+        log('[{0:2},{1:2}): {2:32}\t{3:16}{4:12}{5:32}'.format(chunk.start,
                                                                  chunk.end,
                                                                  chunk.text,
                                                                  chunk.root.text,
                                                                  chunk.root.dep_,
                                                                  chunk.root.head.text))
         index += 1
-    print()
+    log()
 
     
 ###############################################################################
-def print_tokens(doc):
+def log_tokens(doc):
     """
-    Print all tokens in a SpaCy document.
+    log all tokens in a SpaCy document.
     """
 
-    print('\nTokens: ')
-    print('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
+    log('\nTokens: ')
+    log('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
                                                           'POS', 'DEP', 'HEAD'))
     for token in doc:
-        print_token(token)
+        log_token(token)
 
-    print_noun_chunks(doc)
+    log_noun_chunks(doc)
         
 ###############################################################################
 def erase(sentence, start, end):
@@ -858,8 +860,8 @@ def clean_sentence(sentence):
             new_text = re.sub(segnum, decimal_num, text)
             replacements[new_text] = text
             if TRACE:
-                print('\treplaced {0} with {1}'.format(segnum, decimal_num))
-                print('\tnew match text: ->{0}<-'.format(new_text))
+                log('\treplaced {0} with {1}'.format(segnum, decimal_num))
+                log('\tnew match text: ->{0}<-'.format(new_text))
     
     # replace any problem adjectives with colors
     substitutions = []
@@ -873,7 +875,7 @@ def clean_sentence(sentence):
             if -1 != sentence.find(color):
                 sentence = re.sub(adj, color, sentence)
                 replacements[color] = adj
-                if TRACE: print("Replaced '{0}' with '{1}'".format(adj, color))
+                if TRACE: log("Replaced '{0}' with '{1}'".format(adj, color))
                 break
 
     # replace roman numerals in narrative sections with numbers
@@ -888,7 +890,7 @@ def clean_sentence(sentence):
         piece3 = ' '*(end - start - len(digit))
         piece4 = sentence[end:]
         sentence = piece1 + piece2 + piece3 + piece4
-        if TRACE: print("Replaced '{0}' with '{1}'".format(text, digit))            
+        if TRACE: log("Replaced '{0}' with '{1}'".format(text, digit))            
 
     # SpaCy sometimes gives dramatically different results depending on whether
     # semicolons are present in the sentence or not, so replace semicolons
@@ -904,12 +906,12 @@ def find_child_candidates(token):
     suitable to be a measurement subject.
     """
 
-    if TRACE: print('find_child_candidates...')
+    if TRACE: log('find_child_candidates...')
     
     candidates = []
     
     for child in token.children:
-        if TRACE: print_token(child)
+        if TRACE: log_token(child)
         # want nouns or nsubj or superlative adjectives such as 'largest'
         if 'NOUN' != child.pos_ and 'nsubj' != child.dep_ and 'JJS' != child.tag_:
             continue
@@ -925,7 +927,7 @@ def find_child_candidates(token):
             pruned_candidates.append(c)
 
     if len(pruned_candidates) > 0:
-        if TRACE: print('find_child_candidates: subject candidates were pruned')
+        if TRACE: log('find_child_candidates: subject candidates were pruned')
         return pruned_candidates
     else:
         return candidates
@@ -944,22 +946,22 @@ def resolve_superlative_adj(m_token, adj_token):
     token = m_token.head
     subject_list = None
 
-    if TRACE: print('resolve_superlative_adj: starting...')
+    if TRACE: log('resolve_superlative_adj: starting...')
     while True:
         if 'NOUN' == token.pos_ and not token.dep_ in RESOLVE_DEPS:
-            if TRACE: print('\tresolved to noun: "{0}"'.format(token.text))
+            if TRACE: log('\tresolved to noun: "{0}"'.format(token.text))
             subject_list = [token]
             break
         elif 'ROOT' == token.dep_:
-            if TRACE: print('\tresolved to root: "{0}"'.format(token.text))
+            if TRACE: log('\tresolved to root: "{0}"'.format(token.text))
             root = token
             break
         else:
-            if TRACE: print('\tskipping "{0}", continuing...'.format(token.text))
+            if TRACE: log('\tskipping "{0}", continuing...'.format(token.text))
             token = token.head
 
     if root is not None:
-        if TRACE: print('\tresolving to child candidates of root {0}'.format(root.text))
+        if TRACE: log('\tresolving to child candidates of root {0}'.format(root.text))
         subject_list = find_child_candidates(root)
 
     if 0 == len(subject_list):
@@ -988,7 +990,7 @@ def get_modifiers(start_token):
     Recursively get all 'left' modifiers of the start token.
     """
 
-    if TRACE: print('get_modifiers...')
+    if TRACE: log('get_modifiers...')
 
     results = []
 
@@ -1013,7 +1015,7 @@ def get_modifiers(start_token):
                 # first in a sentence
                 for i in reversed(range(len(lefts))):
                     tokens.append(lefts[i])
-                    if TRACE: print('\tappended {0}'.format(lefts[i]))
+                    if TRACE: log('\tappended {0}'.format(lefts[i]))
         else:
             # no more mods for the token at the stack top, so pop it
             token = tokens.pop()
@@ -1054,7 +1056,7 @@ def extract_loc(text):
     """
 
     if TRACE:
-        print("extract_loc: starting with text '{0}'".format(text))
+        log("extract_loc: starting with text '{0}'".format(text))
 
     iterator = regex_loc.finditer(text)
     for match in iterator:
@@ -1066,7 +1068,7 @@ def extract_loc(text):
         match_disq = regex_loc_disqualifier.search(loc_text)
         if match_disq:
             if TRACE:
-                print('\tDISQUALIFIED')
+                log('\tDISQUALIFIED')
             #return EMPTY_STRING
             continue
         
@@ -1082,7 +1084,7 @@ def extract_loc(text):
             loc = loc2.strip()
 
         if TRACE:
-            print("extract_loc: processing text '{0}'".format(loc))
+            log("extract_loc: processing text '{0}'".format(loc))
 
         # remove punctuation
         loc = regex_punctuation.sub(' ', loc)
@@ -1118,12 +1120,12 @@ def extract_loc(text):
             continue
             
         if TRACE:
-            print('extract_loc: matching text: ->{0}<-'.format(loc_text))
-            print('extract_loc:           loc: ->{0}<-'.format(loc))
+            log('extract_loc: matching text: ->{0}<-'.format(loc_text))
+            log('extract_loc:           loc: ->{0}<-'.format(loc))
             
         return loc
 
-    if TRACE: print('\tno location found')
+    if TRACE: log('\tno location found')
     return EMPTY_STRING
 
 ###############################################################################
@@ -1162,7 +1164,7 @@ def find_location(subj_token, doc):
     if 0 == len(texts):
 
         if TRACE:
-            print('find_location: nothing between, trying in front')
+            log('find_location: nothing between, trying in front')
             
         # collect all text from the start of the sentence to the subject token
         if subj_token.i < len(doc): # subj token might not be in fragment
@@ -1175,7 +1177,7 @@ def find_location(subj_token, doc):
     if 0 == len(texts):
 
         if TRACE:
-            print('find_location: nothing between or in front, trying at end')
+            log('find_location: nothing between or in front, trying at end')
             
         if -1 != meas_token_index or -1 != m_token_index:
             index = max(meas_token_index, m_token_index)
@@ -1187,7 +1189,7 @@ def find_location(subj_token, doc):
 
     if 0 == len(texts):
         if TRACE:
-            print('find_location: nothing found')
+            log('find_location: nothing found')
         return EMPTY_STRING
                 
     # concat to a string for location regex search
@@ -1197,7 +1199,7 @@ def find_location(subj_token, doc):
     text += ' '
 
     if TRACE:
-        print('find_location text: ->{0}<-'.format(text))
+        log('find_location text: ->{0}<-'.format(text))
     
     return extract_loc(text)
     
@@ -1236,7 +1238,7 @@ def set_meas_locations(m_count, m_sentence, measurements, doc):
         if 0 == len(location_strings) and 1 == m_count:
 
             if TRACE:
-                print('\tNo location found, trying fragment match.')
+                log('\tNo location found, trying fragment match.')
 
             # join the tokens with special handling for punctuation
             doc_strings = []
@@ -1283,9 +1285,9 @@ def get_chunks(doc):
         chunks.append( Chunk(start, len(doc), doc))
     
     if TRACE:
-        print('\nFULL CHUNKS: ')
+        log('\nFULL CHUNKS: ')
         for chunk in chunks:
-            print('[{0:2},{1:2})\t{2}'.format(chunk.start, chunk.end, chunk.text))
+            log('[{0:2},{1:2})\t{2}'.format(chunk.start, chunk.end, chunk.text))
 
     return chunks
 
@@ -1331,10 +1333,10 @@ def resolve_subject(doc, subj_list, chunks):
     """
 
     if TRACE:
-        print('resolve_subject: initial subject list: {0}'.format(subj_list))
+        log('resolve_subject: initial subject list: {0}'.format(subj_list))
     
     if chunks is None or 0 == len(chunks):
-        if TRACE: print('resolve_subject: NO CHUNKS')
+        if TRACE: log('resolve_subject: NO CHUNKS')
         return []
 
     # nothing to resolve if only a single subject candidate
@@ -1356,14 +1358,14 @@ def resolve_subject(doc, subj_list, chunks):
         subj_list = subj_list_2
         
     if TRACE:
-        print('resolve_subject: pruned subject list: {0}'.format(subj_list))
+        log('resolve_subject: pruned subject list: {0}'.format(subj_list))
 
     # find the chunk containing the meas* verb, if any, and the M
     meas_chunk_index, m_chunk_index = get_ref_chunk_indices(chunks, doc)
     
     if TRACE:
-        print('resolve_subject: meas chunk index: {0}'.format(meas_chunk_index))
-        print('resolve_subject: M    chunk index: {0}'.format(m_chunk_index))
+        log('resolve_subject: meas chunk index: {0}'.format(meas_chunk_index))
+        log('resolve_subject: M    chunk index: {0}'.format(m_chunk_index))
 
     # take the subject closest to the meas verb and the M
     subj_chunk_indices = []
@@ -1383,7 +1385,7 @@ def resolve_subject(doc, subj_list, chunks):
         for i in range(len(subj_chunk_indices)):
             subject = subj_list[i]
             chunk_index = subj_chunk_indices[i]
-            print("resolve_subject: subj '{0}' is in chunk index {1}".format(subject, chunk_index))
+            log("resolve_subject: subj '{0}' is in chunk index {1}".format(subject, chunk_index))
 
     # compute distances from subject to meas chunk, if any; keep closest subj
     min_dist = 999999
@@ -1405,7 +1407,7 @@ def resolve_subject(doc, subj_list, chunks):
                 subj_index = i
 
     if TRACE:
-        print('resolve_subject: preferred subject index: {0}'.format(subj_index))
+        log('resolve_subject: preferred subject index: {0}'.format(subj_index))
                 
     if -1 != subj_index:
         return [subj_list[subj_index]]
@@ -1422,7 +1424,7 @@ def get_meas_subj(m_token_index, doc):
     root = None
     do_child_search = False
 
-    if TRACE: print('get_meas_subj start...')
+    if TRACE: log('get_meas_subj start...')
 
     # If the current M token is not its own head, start there. If it is its
     # own head, walk backwards through the token list and find the nearest
@@ -1439,15 +1441,15 @@ def get_meas_subj(m_token_index, doc):
                 found_it = True
                 break
         if not found_it:
-            if TRACE: print('\tno verb found, trying nsubj or compound child...')
+            if TRACE: log('\tno verb found, trying nsubj or compound child...')
             for child in m_token.children:
                 if 'compound' == child.dep_ or 'nsubj' == child.dep_:
                     token = child
                     found_it = True
-                    if TRACE: print('\tfound compound or nsubj child')
+                    if TRACE: log('\tfound compound or nsubj child')
                     break
         if not found_it:
-            if TRACE: print('\treturning empty subject...')
+            if TRACE: log('\treturning empty subject...')
             return []
         
     prev_dep = m_token.dep_
@@ -1456,66 +1458,66 @@ def get_meas_subj(m_token_index, doc):
     extra_candidates = []
 
     if TRACE:
-        print('\tstarting token: {0}'.format(token.text))
+        log('\tstarting token: {0}'.format(token.text))
     
     while True:
-        if TRACE: print_token(token)
+        if TRACE: log_token(token)
         if 'ROOT' == token.dep_:
             # subject of measurement is a child of this node
-            if TRACE: print('\tat root token')
+            if TRACE: log('\tat root token')
             root = token
             break
         elif 'VERB' == token.pos_:
             if 'nsubj' == token.dep_:
-                if TRACE: print('\tverb with nsubj dep')
+                if TRACE: log('\tverb with nsubj dep')
                 break
             elif -1 != token.text.find('meas'):
                 # measurement verb
                 if token.head and 'NOUN' == token.head.pos_ and token.head.dep_ not in MEAS_VERB_DEPS:
-                    if TRACE: print('\tbreak on meas verb')
+                    if TRACE: log('\tbreak on meas verb')
                     token = token.head
                     break
                 elif token.head and token.head.text == 'with':
-                    if TRACE: print('\texit at with prior to meas verb')
+                    if TRACE: log('\texit at with prior to meas verb')
                     do_child_search = True
                     break
         elif 'NOUN' == token.pos_ and prev_dep in WITH_DEPS:
             if token.head and 'with' == token.head.text:
                 # special case - break on 'with'
-                if TRACE: print('\textra candidate at check-with: {0}'.format(token))
+                if TRACE: log('\textra candidate at check-with: {0}'.format(token))
                 extra_candidates.append(token)
                 prev_dep = token.dep_
                 token = token.head
                 continue
                 #break
             elif 'dobj' == token.dep_:
-                if TRACE: print('\tbreak on dobj at check-with')
+                if TRACE: log('\tbreak on dobj at check-with')
                 break
         elif 'NOUN' == token.pos_ and token.dep_ in IGNORE_DEPS:
             # this noun is part of an ignorable dependency
-            if TRACE: print('\tcontinue at NOUN and ignorable dep: "{0}"'.format(token.dep_))
+            if TRACE: log('\tcontinue at NOUN and ignorable dep: "{0}"'.format(token.dep_))
             prev_dep = token.dep_
             token = token.head
             continue
         elif 'NOUN' == token.pos_ and 'acl' == prev_dep:
             # prevous deps modify this noun, candidate subject of meas
-            if TRACE: print('\tbreak at NOUN and acl dep')
+            if TRACE: log('\tbreak at NOUN and acl dep')
             break
         elif token.dep_ in IGNORE_DEPS:
-            if TRACE: print('\tcontinue at ingorable dep: "{0}"'.format(token.dep_))
+            if TRACE: log('\tcontinue at ingorable dep: "{0}"'.format(token.dep_))
             prev_dep = token.dep_
             token = token.head
             continue
         elif 'NOUN' != token.pos_:
-            if TRACE: print('\tcontinue at POS == "{0}", not NOUN'.format(token.pos_))
+            if TRACE: log('\tcontinue at POS == "{0}", not NOUN'.format(token.pos_))
             prev_dep = token.dep_
             token = token.head
             continue
         else:
-            if TRACE: print('\tdefault break')
+            if TRACE: log('\tdefault break')
             break
 
-        if TRACE: print('\tcontinuing up the tree')
+        if TRACE: log('\tcontinuing up the tree')
         prev_dep = token.dep_
         token = token.head
 
@@ -1524,23 +1526,23 @@ def get_meas_subj(m_token_index, doc):
     if root is not None:
         # subject is potentially either the root or a child of the root
         if TRACE:
-            print('\tget_meas_subj: root is not None')
+            log('\tget_meas_subj: root is not None')
         if 'NOUN' == root.pos_:
-            if TRACE: print('\troot is a noun')
+            if TRACE: log('\troot is a noun')
             candidates.append(root)
         else:
-            if TRACE: print('\tcalling find_child_candidates')
+            if TRACE: log('\tcalling find_child_candidates')
             candidates = find_child_candidates(root)
     else:
 
         if token.text in GENERAL_TERMS:
             if TRACE:
-                print('\tget_meas_subj: attempt resolution of general term "{0}"'.format(token.text))
+                log('\tget_meas_subj: attempt resolution of general term "{0}"'.format(token.text))
             token = resolve_superlative_adj(m_token, token)[0]
             candidates.append(token)
         elif not do_child_search:
             if TRACE:
-                print('\tget_meas_subj: appending token')
+                log('\tget_meas_subj: appending token')
             candidates.append(token)
         elif do_child_search:
             candidates = find_child_candidates(token)
@@ -1564,7 +1566,7 @@ def tokenize_and_find_subjects(sentence):
     doc = nlp(sentence)
 
     if TRACE:
-        print_tokens(doc)
+        log_tokens(doc)
         
     if ENABLE_DISPLACY:
         displacy.serve(doc, style='dep')
@@ -1584,7 +1586,7 @@ def tokenize_and_find_subjects(sentence):
 
             # if no subject found, remove punctuation and try again
             if 0 == len(meas_subject) and first_try:
-                if TRACE: print('no subject found, retrying...')
+                if TRACE: log('no subject found, retrying...')
                 sentence2 = regex_punctuation.sub(' ', sentence)
                 doc = nlp(sentence2)
                 i = 0
@@ -1596,7 +1598,7 @@ def tokenize_and_find_subjects(sentence):
             if 1 == len(meas_subject):
                 if 'JJS' == meas_subject[0].tag_:
                     if TRACE:
-                        print('resolving superlative adj: {0}'.format(meas_subject[0]))
+                        log('resolving superlative adj: {0}'.format(meas_subject[0]))
                     meas_subject = resolve_superlative_adj(tok, meas_subject[0])
                     
             meas_subjects.append(meas_subject)
@@ -1664,9 +1666,9 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     size_measurements = [SizeMeasurement(**m) for m in json_data]
 
     if TRACE:
-        print('SizeMeasurements: ')
+        log('SizeMeasurements: ')
         for sm in size_measurements:
-            print('\t{0}'.format(sm))
+            log('\t{0}'.format(sm))
 
     # convert from immutable smf.SizeMeasurement namedtuple to mutable Meas
     measurements = [Meas(sm) for sm in size_measurements]
@@ -1694,8 +1696,8 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     m_sentence = sentence_ss
     
     if TRACE:
-        print('Sentence prior to analysis: ')
-        print('\t{0}'.format(sentence_ss))
+        log('Sentence prior to analysis: ')
+        log('\t{0}'.format(sentence_ss))
         
     meas_subjects = []        
     m_count = get_meas_count(sentence_ss)
@@ -1710,7 +1712,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
         ok, doc = process_1(m_sentence, sentence_ss, measurements)
 
     if not ok:
-        if TRACE: print('\tno subject found, using default')
+        if TRACE: log('\tno subject found, using default')
         set_default_subject(m_sentence, sentence_ss, measurements)
     
     # remove any duplicated subject tokens
@@ -1811,13 +1813,13 @@ def process_3(m_sentence, sentence, measurements):
     Find subjects of three measurements.
     """
 
-    if TRACE: print('called process_3')
+    if TRACE: log('called process_3')
 
     # check for three independent "measures M' clauses
     matcher_3 = regex_measures_m_3.search(sentence)
     if matcher_3:
 
-        if TRACE: print('process_3: MEASURES_M_3 match')
+        if TRACE: log('process_3: MEASURES_M_3 match')
         
         count = 0
         found_it = False
@@ -1827,10 +1829,10 @@ def process_3(m_sentence, sentence, measurements):
 
             match_text = match.group()
             if TRACE:
-                print('process_3: text for iteration {0}: {1}'.
+                log('process_3: text for iteration {0}: {1}'.
                       format(count, match_text))
             doc, subjects = tokenize_and_find_subjects(match_text)
-            if TRACE: print('subjects for iteration: {0}: {1}'.
+            if TRACE: log('subjects for iteration: {0}: {1}'.
                             format(count, subjects))
 
             m_index = m_index_from_context(m_sentence, match_text)
@@ -1847,7 +1849,7 @@ def process_3(m_sentence, sentence, measurements):
                     # look for location(s)
                     locations = []
                     if TRACE:
-                        print("process_3: looking for loc for meas {0} in text '{1}'".format(m_index, match_text))
+                        log("process_3: looking for loc for meas {0} in text '{1}'".format(m_index, match_text))
                     for s in subjects[0]:
                         loc = extract_loc(match_text)
                         if EMPTY_STRING != loc:
@@ -1892,16 +1894,16 @@ def process_2(m_sentence, sentence, measurements):
     Find subjects of two measurements.
     """
 
-    if TRACE: print('called process_2')
+    if TRACE: log('called process_2')
     
     # check for a now-vs-then sentence form
     matcher_nvt1 = regex_now_vs_then_1.search(sentence)
     if matcher_nvt1:
-        if TRACE: print('process_2: NVT1 match')
+        if TRACE: log('process_2: NVT1 match')
         text2 = sentence[matcher_nvt1.end():]
         matcher_nvt2 = regex_now_vs_then_2.search(text2)
         if matcher_nvt2:
-            if TRACE: print('process_2: NVT2 match')
+            if TRACE: log('process_2: NVT2 match')
 
             text1 = sentence[0:matcher_nvt1.end()]
             doc, subjects = tokenize_and_find_subjects(text1)
@@ -1929,7 +1931,7 @@ def process_2(m_sentence, sentence, measurements):
     matcher_2 = regex_measures_m_2.search(sentence)
     if matcher_2:
 
-        if TRACE: print('process_2: MEASURES_M_2 match')
+        if TRACE: log('process_2: MEASURES_M_2 match')
         
         count = 0
         found_it = False
@@ -1939,10 +1941,10 @@ def process_2(m_sentence, sentence, measurements):
 
             match_text = match.group()
             if TRACE:
-                print('process_2: text for iteration {0}: {1}'.
+                log('process_2: text for iteration {0}: {1}'.
                       format(count, match_text))
             doc, subjects = tokenize_and_find_subjects(match_text)
-            if TRACE: print('subjects for iteration: {0}: {1}'.
+            if TRACE: log('subjects for iteration: {0}: {1}'.
                             format(count, subjects))
 
             m_index = m_index_from_context(m_sentence, match_text)
@@ -1958,7 +1960,7 @@ def process_2(m_sentence, sentence, measurements):
                     # look for location(s)
                     locations = []
                     if TRACE:
-                        print("process_2: looking for loc for meas {0} in text '{1}'".
+                        log("process_2: looking for loc for meas {0} in text '{1}'".
                               format(m_index, match_text))
                     for s in subjects[0]:
                         loc = extract_loc(match_text)
@@ -1984,7 +1986,7 @@ def process_2(m_sentence, sentence, measurements):
     matcher_ba = regex_before_and_after.search(sentence)
     if matcher_ba:
 
-        if TRACE: print('process_2: BA match')
+        if TRACE: log('process_2: BA match')
 
         # find the measurement subject up to the first M
         m_pos = sentence.find('M')
@@ -2035,11 +2037,11 @@ def process_2(m_sentence, sentence, measurements):
     # check for 'M and M' forms
     matcher_m_and_m = regex_m_and_m_2.search(sentence)
     if matcher_m_and_m:
-        if TRACE: print('process_2: M AND M 2 match')
+        if TRACE: log('process_2: M AND M 2 match')
 
         text1 = matcher_m_and_m.group('text1')
         doc, subjects = tokenize_and_find_subjects(text1)
-        if TRACE: print('SUBJECTS 1: {0}'.format(subjects))
+        if TRACE: log('SUBJECTS 1: {0}'.format(subjects))
         m_index = m_index_from_context(m_sentence, text1)
         #assert m_index < len(measurements) - 1
         if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
@@ -2071,11 +2073,11 @@ def process_2(m_sentence, sentence, measurements):
     
     matcher_m_and_m = regex_m_and_m_1.search(sentence)
     if matcher_m_and_m:
-        if TRACE: print('process_2: M AND M 1 match')
+        if TRACE: log('process_2: M AND M 1 match')
 
         text1 = matcher_m_and_m.group('text1')
         doc, subjects = tokenize_and_find_subjects(text1)
-        if TRACE: print('\tSUBJECTS 1: {0}'.format(subjects))
+        if TRACE: log('\tSUBJECTS 1: {0}'.format(subjects))
         m_index = m_index_from_context(m_sentence, text1)
         #assert m_index < len(measurements) - 1
         if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
@@ -2100,7 +2102,7 @@ def process_2(m_sentence, sentence, measurements):
 
             text2 = matcher_m_and_m.group('text2')
             doc, subjects2 = tokenize_and_find_subjects(text2)
-            if TRACE: print('\tSUBJECTS 2: {0}'.format(subjects2))
+            if TRACE: log('\tSUBJECTS 2: {0}'.format(subjects2))
 
             if subjects2 and subjects2[0] and len(subjects2[0]) > 0:
                 # found next subject
@@ -2121,7 +2123,7 @@ def process_2(m_sentence, sentence, measurements):
 
             elif prev_subject: #len(prev_+subject) >= 1:
                 # no subjects found, so duplicate the previous subject and location
-                if TRACE: print('\tusing previous subject')
+                if TRACE: log('\tusing previous subject')
                 for s in prev_subject:
                     measurements[m_index + 1].subject.append(s)
                 measurements[m_index + 1].location = prev_loc
@@ -2196,11 +2198,11 @@ def process_1(m_sentence, sentence, measurements):
     single measurement.
     """
 
-    if TRACE: print('called process_1')
+    if TRACE: log('called process_1')
     
     match = regex_carina.search(sentence)
     if match:
-        if TRACE: print('\tprocess_1: carina match')
+        if TRACE: log('\tprocess_1: carina match')
 
         text = match.group()
         m_index = m_index_from_context(m_sentence, text)
@@ -2221,7 +2223,7 @@ def process_1(m_sentence, sentence, measurements):
                                -1 != s.text.find('et') or   \
                                      -1 != s.text.find('endo'):
                                 preferred_index = i
-                                if TRACE: print('process_1: found preferred tube subject')
+                                if TRACE: log('process_1: found preferred tube subject')
                                 break
 
                         if -1 != preferred_index:
@@ -2232,7 +2234,7 @@ def process_1(m_sentence, sentence, measurements):
                     return (True, doc)
 
                 # no subject found, so use endo tube group text
-                if TRACE: print('\tprocess_1: using endodube group text')
+                if TRACE: log('\tprocess_1: using endodube group text')
                 measurements[m_index].subject.append(match.group('endotube'))
                 return (True, doc)
     
@@ -2241,7 +2243,7 @@ def process_1(m_sentence, sentence, measurements):
         text = match.group()
 
         if TRACE:
-            print('process_1 matching text: {0}'.format(text))
+            log('process_1 matching text: {0}'.format(text))
 
         m_index = m_index_from_context(m_sentence, text)
         if INVALID_M_INDEX != m_index and m_index < len(measurements):
@@ -2265,7 +2267,7 @@ def process_1(m_sentence, sentence, measurements):
 
     # try to tokenize whatever is left
     if TRACE:
-        print('process_1 text: {0}'.format(sentence))
+        log('process_1 text: {0}'.format(sentence))
 
     m_index = m_index_from_context(m_sentence, sentence)
     if INVALID_M_INDEX != m_index and m_index < len(measurements):
@@ -2286,7 +2288,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
     measurement subject from it.
     """
 
-    if TRACE: print('called process_a_m_wds')
+    if TRACE: log('called process_a_m_wds')
     
     found_subject = False
 
@@ -2313,7 +2315,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
     matching_text = collapse_ws(matching_text)
 
     if TRACE:
-        print('\tA M WDS matching_text: ->{0}<-'.format(matching_text))
+        log('\tA M WDS matching_text: ->{0}<-'.format(matching_text))
 
     #found_it = process_1(m_sentence, matching_text, measurements)
     text = match.group()
@@ -2330,7 +2332,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
                     measurements[m_index].subject.append(s)
                 found_subject = True
                 if TRACE:
-                    print('\tSUBJECT: {0}'.format(subjects[0]))
+                    log('\tSUBJECT: {0}'.format(subjects[0]))
 
                 # erase matching text from sentence
                 sentence = erase(sentence, match.start(), match.end())
@@ -2351,7 +2353,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
 
             if TRACE:
                 if not found_subject:
-                    print('\tno subject found with first text, trying again...')
+                    log('\tno subject found with first text, trying again...')
 
     if found_subject:
         return (True, sentence, doc)
@@ -2366,7 +2368,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
     measurement subject from it.
     """
 
-    if TRACE: print('called process_a_wds_m')
+    if TRACE: log('called process_a_wds_m')
     
     found_subject = False
 
@@ -2375,7 +2377,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
         return (False, sentence, None)
 
     if TRACE:
-        print('\tRegex match: {0}'.format(match.group()))
+        log('\tRegex match: {0}'.format(match.group()))
 
     # either the groups 'words1' and 'words2' match
     # or the groups 'words3' and 'words4' do
@@ -2399,7 +2401,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
     matching_text = collapse_ws(matching_text)
 
     if TRACE:
-        print('\tA WDS M matching_text: ->{0}<-'.format(matching_text))
+        log('\tA WDS M matching_text: ->{0}<-'.format(matching_text))
 
     text = match.group()
     m_index = m_index_from_context(m_sentence, text)
@@ -2415,7 +2417,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
                     measurements[m_index].subject.append(s)
                 found_subject = True
                 if TRACE:
-                    print('\tSUBJECT: {0}'.format(subjects[0]))
+                    log('\tSUBJECT: {0}'.format(subjects[0]))
 
                 # erase matching text from sentence
                 sentence = erase(sentence, match.start(), match.end())
@@ -2436,7 +2438,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
 
             if TRACE:
                 if not found_subject:
-                    print('\tno subject found with first text, trying again...')
+                    log('\tno subject found with first text, trying again...')
                 
     if found_subject:
         return (True, sentence, doc)
@@ -2526,7 +2528,7 @@ def replace_ngrams(sentence):
                                 if not has_overlap:
                                     matches.append( (ngram, n_start, n_end))
                                     if TRACE:
-                                        print('\tngram match: {0}'.format(ngram))
+                                        log('\tngram match: {0}'.format(ngram))
             start = -1
 
     # replace matching words in sentence
@@ -2538,13 +2540,13 @@ def replace_ngrams(sentence):
         new_wd = ngram_replacements[index]
         sentence = re.sub(r'\b' + old_wd + r'\b', new_wd, sentence)
         replacements[new_wd] = old_wd
-        if TRACE: print('\tReplaced {0} with {1}'.format(old_wd, new_wd))
+        if TRACE: log('\tReplaced {0} with {1}'.format(old_wd, new_wd))
         index += 1
         if index >= len(ngram_replacements):
             # found a long sentence with lots of replacements
             # probably a sentence tokenization error
-            print('*** subject_finder: more matches than ngram replacements ***')
-            print('original sentence: ' + original_sentence)
+            log('*** subject_finder: more matches than ngram replacements ***')
+            log('original sentence: ' + original_sentence)
             break
 
     return sentence
@@ -2576,8 +2578,8 @@ def self_test(TEST_DICT, terms, nosub):
         measurements = [Measurement(**m) for m in measurement_list]
 
         if 0 == len(measurements):
-            print('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
-            print('\tNo measurement subjects were found.')
+            log('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
+            log('\tNo measurement subjects were found.')
         else:
             num_entries = len(subj_lists)
             assert num_entries == len(measurements)
@@ -2597,10 +2599,10 @@ def self_test(TEST_DICT, terms, nosub):
                             break
 
                     if not found_it:
-                        print('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
-                        print('\t   Measurement: {0}'.format(m.text))
-                        print('\tSubjects found: {0}'.format(m.subject))
-                        print('\t         Truth: {0}'.format(subjects))
+                        log('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
+                        log('\t   Measurement: {0}'.format(m.text))
+                        log('\tSubjects found: {0}'.format(m.subject))
+                        log('\t         Truth: {0}'.format(subjects))
         
 
 ###############################################################################
@@ -2609,8 +2611,8 @@ def get_version():
         
 ###############################################################################
 def show_help():
-    print(get_version())
-    print("""
+    log(get_version())
+    log("""
     USAGE: python3 ./subject_finder.py -t <terms> -s <sentence> [-hvznxd]
 
     OPTIONS:
@@ -2620,8 +2622,8 @@ def show_help():
 
     FLAGS:
 
-        -h, --help                      Print this information and exit.
-        -v, --version                   Print version information and exit.
+        -h, --help                      log this information and exit.
+        -v, --version                   log version information and exit.
         -z, --test                      Disable -s option and use test sentences.
         -n, --nosub                     Do not perform ngram substitution.
         -x, --selftest                  Run self-tests.
@@ -2978,7 +2980,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        print(get_version())
+        log(get_version())
         sys.exit(0)
 
     terms     = opts.terms
@@ -2989,11 +2991,11 @@ if __name__ == '__main__':
     use_test_sentences = opts.use_test_sentences
 
     if not sentence and not (selftest or use_test_sentences):
-        print('A sentence must be specified on the command line.')
+        log('A sentence must be specified on the command line.')
         sys.exit(-1)
 
     if not terms and not selftest:
-        print('One or more search terms must be provided on the command line.')
+        log('One or more search terms must be provided on the command line.')
         sys.exit(-1)
 
     # displacy option valid only for single-sentence use
@@ -3017,6 +3019,6 @@ if __name__ == '__main__':
     else:
         for sentence in sentences:
             if use_test_sentences:
-                print(sentence)
+                log(sentence)
             json_result = run(terms, sentence, nosub, use_displacy)
-            print(json_result)
+            log(json_result)

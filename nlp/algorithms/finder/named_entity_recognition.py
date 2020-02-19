@@ -2,6 +2,8 @@ import en_core_web_sm as english_model
 from data_access import BaseModel
 import time
 from algorithms.segmentation import Segmentation
+from claritynlp_logging import log, ERROR, DEBUG
+
 
 segmentation = Segmentation()
 
@@ -31,17 +33,17 @@ descriptions = {
 
 def nlp_init(tries=0):
     if tries > 0:
-        print('Retrying, try%d' % tries)
+        log('Retrying, try%d' % tries)
 
     global loading_status
     if loading_status == 'none' and 'nlp' not in data:
         try:
-            print('NER init...')
+            log('NER init...')
             loading_status = 'loading'
             data['nlp'] = english_model.load()
             loading_status = 'done'
         except Exception as exc:
-            print(exc)
+            log(exc)
             loading_status = 'none'
     elif loading_status == 'loading' and tries < 30:
         time.sleep(10)
@@ -81,5 +83,5 @@ def get_standard_entities(text):
 if __name__ == "__main__":
     res = get_standard_entities("George Burdell sold my homework in Florida for $1")
     for r in res:
-        print(r.to_json())
+        log(r.to_json())
     exit(0)
