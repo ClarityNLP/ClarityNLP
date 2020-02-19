@@ -155,7 +155,7 @@ namespace IdentityServer
                     },
                     AllowedCorsOrigins =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["INGEST_URL"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["HOST"]}"
                     },
                     AllowedScopes =
                     {
@@ -184,7 +184,7 @@ namespace IdentityServer
                     },
                     AllowedCorsOrigins =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["RESULTS_URL"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["HOST"]}"
                     },
                     AllowedScopes =
                     {
@@ -212,7 +212,7 @@ namespace IdentityServer
                     },
                     AllowedCorsOrigins =
                     {
-                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["DASHBOARD_URL"]}"
+                        $"{Startup.StaticConfig["PROTOCOL"]}://{Startup.StaticConfig["HOST"]}"
                     },
                     AllowedScopes =
                     {
