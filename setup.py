@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='ClarityNLP',
-    version='0.1.0',
+    version='0.1.12',
     packages=[''],
     url='https://github.com/ClarityNLP/ClarityNLP',
     license='MPL',
