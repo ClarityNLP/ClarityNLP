@@ -126,6 +126,8 @@ export RESULTS_PREFIX=results
 # GENERIC
 export BASE_URL=http://localhost
 export HOST=localhost
+export ENTRYPOINT_SSL=443
+export ENTRYPOINT_NON_SSL=80
 export PROTOCOL=https
 export USE_SSL=true
 export ACME_EMAIL=postmaster@mydomain.com
