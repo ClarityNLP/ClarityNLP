@@ -46,6 +46,7 @@ Custom Tasks
    nlpql/gleason
    nlpql/ecog
    nlpql/pftfinder
+   nlpql/pregnancy
    nlpql/race
    nlpql/textstats
    nlpql/tnm
