@@ -21,7 +21,7 @@ except:
     from algorithms.value_extraction import value_extractor as ve
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 _MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
@@ -946,6 +946,32 @@ def test_value_extractor_full():
     if not _compare_results(term_string, test_data, minval, maxval):
         return False
 
+    # minval and maxval with conditions other than equality
+    minval = 90
+    maxval = 95
+    term_string = 'spo2'
+    test_data = {
+        # spo2 > 95% with maxval 95
+        'pulse ox spo2 > 95% on 2L':[],
+        'pulse ox spo2 >= 95% on 2L':[
+            _Result('spo2', 95, None, ve.STR_GTE)
+        ],
+        'pulse ox spo2 >= 94% on 2L':[
+            _Result('spo2', 94, None, ve.STR_GTE)
+        ],
+        # spo2 < 90% with minval 90
+        'pulse ox spo2 < 90% on 2L':[],
+        'pulse ox spo2 <= 90% on 2L':[
+            _Result('spo2', 90, None, ve.STR_LTE)
+        ],
+        'pulse ox spo2 <= 91% on 2L':[
+            _Result('spo2', 91, None, ve.STR_LTE)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
+    
     return True
 
 

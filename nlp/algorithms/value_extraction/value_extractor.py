@@ -167,7 +167,7 @@ ValueMeasurement = namedtuple('ValueMeasurement',
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 15
+_VERSION_MINOR = 16
 _MODULE_NAME = 'value_extractor.py'
 
 # set to True to enable debug output
@@ -682,8 +682,17 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
             words = match.group('words')
             cond_words = match.group('cond').strip()
             cond = _cond_to_string(words, cond_words)
-            _update_match_results(match, spans, results, x, EMPTY_FIELD,
-                                  cond, query_term)
+
+            # discard if condition warrants
+            if x == maxval and STR_GT == cond:
+                # x > maxval
+                continue
+            elif x == minval and STR_LT == cond:
+                # x < minval
+                continue
+            else:            
+                _update_match_results(match, spans, results, x, EMPTY_FIELD,
+                                      cond, query_term)
 
     # check for units range query
     iterator = re.finditer(str_units_range_query, sentence)
@@ -773,8 +782,19 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
                     log('\t\tdiscarding, missing second value')
                 continue
             cond = _cond_to_string(words, cond_words)
-            _update_match_results(match, spans, results, val, EMPTY_FIELD,
-                                  cond, query_term)
+
+            # discard if condition warrants
+            if val == maxval and STR_GT == cond:
+                # val > maxval
+                # example: spo2 > 95% with maxval == 95
+                continue
+            elif val == minval and STR_LT == cond:
+                # val < minval
+                # example: spo2 < 90% with minval == 90
+                continue
+            else:
+                _update_match_results(match, spans, results, val, EMPTY_FIELD,
+                                      cond, query_term)
             
     # check for wds-value matches
     iterator = re.finditer(str_wds_val_query, sentence)
