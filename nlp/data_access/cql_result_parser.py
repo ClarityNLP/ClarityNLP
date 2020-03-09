@@ -1078,9 +1078,9 @@ def _process_resource(obj):
     result = None
     if _STR_RESOURCE_TYPE in flattened_obj:
         rt = obj[_STR_RESOURCE_TYPE]
-        if 'Patient' == rt:
-            result = _process_patient(flattened_obj)
-        elif 'Encounter' == rt:
+##        if 'Patient' == rt:
+##            result = _process_patient(flattened_obj)
+        if 'Encounter' == rt:
             result = _process_encounter(flattened_obj)
         elif 'Observation' == rt:
             result = _process_observation(flattened_obj)
