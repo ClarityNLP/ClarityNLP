@@ -1172,10 +1172,10 @@ def decode_top_level_obj(obj):
                 result_obj = _process_datetime(obj)
                 if _TRACE:
                     log('decoded dateTime resource')
-            elif STR_PATIENT == result_type_str:
-                result_obj = _process_patient(result_obj)
-                if _TRACE:
-                    log('decoded patient resource')
+      ##      elif STR_PATIENT == result_type_str:
+      ##          result_obj = _process_patient(result_obj)
+      ##          if _TRACE:
+      ##             log('decoded patient resource')
             else:
                 # check for DSTU2 or DSTU3 resource bundles
                 if result_type_str.endswith('stu2') or \
