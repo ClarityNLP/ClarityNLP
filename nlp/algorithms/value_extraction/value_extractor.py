@@ -527,23 +527,6 @@ def _extract_enumlist_values(query_terms, sentence, enum_terms):
     """
     Extract a word to match the query term, and accept if that word
     appears in the result filter.
-
-
-    # this is a catchall that finds words, titer expressions (1:200),
-    # '+' and '-' symbols, +/-, etc.
-    # _str_enumlist_value = r'[-a-zA-Z:\d/\+()]+'
-
-    # word_with_symbols: do NOT strip symbols in enum term or query term
-    
-    # query_term <connector>? enum_term
-    # query_term (<word_with_symbols><connector>)+ enum_term
-
-    # enum_term <connector>? query_term
-    # enum_term (<word_with_symbols><connector>)+ query_term
-
-    Need to handle <query_term_a> and <query_term_b> <enum_term>
-        ex. gram positive and negative rods
-
     """
     
     if _TRACE:
@@ -609,55 +592,6 @@ def _extract_enumlist_values(query_terms, sentence, enum_terms):
                 if _TRACE:
                     print('\t\t\tnew result: "{0}"'.format(meas))
             
-    #     iterator = re.finditer(str_enum_query, sentence)
-    #     for match in iterator:
-    #         match_text = match.group().strip()
-    #         start = match.start()
-    #         end = start + len(match_text)
-    #         candidates.append(overlap.Candidate(start, end, match_text, None, match))
-    #         print('\t[{0:3}, {1:3})\tMATCH TEXT: ->{2}<-'.
-    #               format(start, end, match_text))
-
-    # # sort the candidates in decreasing order of length for overlap resolution
-    # candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
-    # pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
-
-    # for pc in pruned_candidates:
-    #     matchobj = pc.other
-    #     text_to_search = matchobj.group('words').strip()
-    #     print('Pruned search text: ->{0}<-'.format(text_to_search))
-
-    
-        # iterator = re.finditer(str_enum_query, sentence)
-        # for match in iterator:
-        #     if _TRACE:
-        #         print("\t\tmatch '{0}' start: {1}".
-        #               format(match.group(), match.start()))
-        #     start = match.start()
-        #     end = match.end()
-
-        #     words = match.group('words')
-        #     words_start = match.start('words')
-        #     word = ''
-
-        #     found_it = False
-        #     for fw in enum_terms:
-        #         pos = words.find(fw)
-        #         if -1 != pos and words_start + pos < end:
-        #             found_it = True
-        #             if len(fw) > len(word):
-        #                 word = fw
-
-        #     if found_it:
-        #         meas = ValueMeasurement(word,
-        #                                 start, end,
-        #                                 word,
-        #                                 EMPTY_FIELD, STR_EQUAL,
-        #                                 query_term)
-        #         results.append(meas)
-        #         if _TRACE:
-        #             print('\t\tnew result: "{0}"'.format(meas))
-
     return results
 
         
