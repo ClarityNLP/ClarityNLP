@@ -531,7 +531,7 @@ def _extract_enumlist_values_left(query_terms, sentence, enum_terms):
     """
     
     if _TRACE:
-        print('\nCalling extract_enumlist_values_right...\n')
+        print('\nCalling extract_enumlist_values_left...\n')
         print('\t    sentence: {0}'.format(sentence))
         print('\t query_terms: {0}'.format(query_terms))
         print('\t  enum_terms: {0}'.format(enum_terms))
@@ -580,13 +580,13 @@ def _extract_enumlist_values_left(query_terms, sentence, enum_terms):
             candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
             pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
             for pc in pruned_candidates:
-                enum_term = pc.match_text
+                query_term = pc.match_text
                 meas = ValueMeasurement(et,
                                         pc.start,
                                         pc.end,
                                         et,
                                         EMPTY_FIELD, STR_EQUAL,
-                                        qt)
+                                        query_term)
                 results.append(meas)
                 if _TRACE:
                     print('\t\t\tnew result: "{0}"'.format(meas))

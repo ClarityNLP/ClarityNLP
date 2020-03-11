@@ -870,18 +870,28 @@ def test_value_extractor_full():
         return False
 
     # enumlist values prior to search terms
-    term_string = 'MR'
+    term_string = 'MR, mitral regurgitation'
     enumlist = '1+,2+,3+,4+'
     test_data = {
-        '(4+) MR':[
+        'MITRAL VALVE: Torn mitral chordae. Severe (4+) MR':[
             _Result('mr', '4+', None, ve.STR_EQUAL)
+        ],
+        'Severe (4+) '
+        'mitral regurgitation is seen':[
+            _Result('mitral regurgitation', '4+', None, ve.STR_EQUAL)
+        ],
+        'at least moderate (2+) posteriorly directed MR':[
+            _Result('mr', '2+', None, ve.STR_EQUAL)
+        ],
+        'Mild (1+) mitral regurgitation':[
+            _Result('mitral regurgitation', '1+', None, ve.STR_EQUAL)
         ]
     }
 
     if not _compare_results(term_string, test_data, minval, maxval,
                             enumlist, values_follow_terms=False):
         return False
-    
+
     # previous problems
     term_string = 'fvc'
     enumlist = None
