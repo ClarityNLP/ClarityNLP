@@ -12,7 +12,14 @@ segmentor = Segmentation()
 log('Done initializing models for value extractor...')
 
 
-def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enumlist=None, is_case_sensitive_text=False, denom_only=False):
+def run_value_extractor_full(term_list,
+                             text,
+                             minimum_value,
+                             maximum_value,
+                             enumlist=None,
+                             is_case_sensitive_text=False,
+                             denom_only=False,
+                             values_before_terms=False):
     if enumlist is None:
         enumlist = list()
     sentence_list = segmentor.parse_sentences(text)
@@ -32,7 +39,8 @@ def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enum
                 str_maxval=maximum_value,
                 str_enumlist=enumlist,
                 is_case_sensitive=is_case_sensitive_text,
-                is_denom_only=denom_only)
+                is_denom_only=denom_only,
+                values_before_terms = values_before_terms)
 
             if len(value_str) > 0:
                 value_results = json.loads(value_str)

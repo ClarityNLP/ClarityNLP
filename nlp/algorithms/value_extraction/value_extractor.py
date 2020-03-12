@@ -1476,18 +1476,19 @@ def run(term_string,                # comma-separated string of query terms
         str_enumlist=None,          # comma-separated string of terms
         is_case_sensitive=False,
         is_denom_only=False,        # return denominators of fractions
-        values_follow_terms=True):  # look for values after terms
+        values_before_terms=False): # look for values preceding query terms
 
     if _TRACE:
         log('\ncalled value_extractor run...')
         log('\tARGUMENTS: ')
-        log('\t      term_string: {0}'.format(term_string))
-        log('\t         sentence: {0}'.format(sentence))
-        log('\t       str_minval: {0}'.format(str_minval))
-        log('\t       str_maxval: {0}'.format(str_maxval))
-        log('\t     str_enumlist: {0}'.format(str_enumlist))
-        log('\tis_case_sensitive: {0}'.format(is_case_sensitive))
-        log('\t    is_denom_only: {0}'.format(is_denom_only))
+        log('\t        term_string: {0}'.format(term_string))
+        log('\t           sentence: {0}'.format(sentence))
+        log('\t         str_minval: {0}'.format(str_minval))
+        log('\t         str_maxval: {0}'.format(str_maxval))
+        log('\t       str_enumlist: {0}'.format(str_enumlist))
+        log('\t  is_case_sensitive: {0}'.format(is_case_sensitive))
+        log('\t      is_denom_only: {0}'.format(is_denom_only))
+        log('\tvalues_before_terms: {0}'.format(values_before_terms))
 
     assert term_string is not None
 
@@ -1573,10 +1574,10 @@ def run(term_string,                # comma-separated string of query terms
 
     results = []
     if str_enumlist is not None:
-        if values_follow_terms:
-            results = _extract_enumlist_values_right(terms, sentence, filter_terms)
-        else:
+        if values_before_terms:
             results = _extract_enumlist_values_left(terms, sentence, filter_terms)
+        else:
+            results = _extract_enumlist_values_right(terms, sentence, filter_terms)
     else:
         for term in terms:
             # extract a single numeric value

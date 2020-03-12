@@ -58,7 +58,7 @@ def _compare_results(
         enumlist=None,
         is_case_sensitive=False,
         denom_only=False,
-        values_follow_terms=True):
+        values_before_terms=False):
     """
     Run the value extractor on the test data using the supplied term string
     and check the results.
@@ -75,7 +75,7 @@ def _compare_results(
             str_enumlist=enumlist,
             is_case_sensitive=is_case_sensitive,
             is_denom_only=denom_only,
-            values_follow_terms=values_follow_terms
+            values_before_terms=values_before_terms
         )
 
         num_expected = len(expected_list)
@@ -889,7 +889,7 @@ def test_value_extractor_full():
     }
 
     if not _compare_results(term_string, test_data, minval, maxval,
-                            enumlist, values_follow_terms=False):
+                            enumlist, values_before_terms=True):
         return False
 
     # previous problems
