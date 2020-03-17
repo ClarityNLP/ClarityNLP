@@ -176,8 +176,15 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
         highlights = []
         for h in highlight_fields:
             txt = data_fields.get(h, '')
-            if len(txt) > 0:
+            # the field might not be a string, so check
+            if isinstance(txt, str) and len(txt) > 0:
                 highlights.append(txt)
+                break
+            elif isinstance(txt, int):
+                highlights.append(str(txt))
+                break
+            elif isinstance(txt, float):
+                highlights.append(str(txt))
                 break
         data_fields["result_display"] = {
             "date": data_fields.get('report_date'),
