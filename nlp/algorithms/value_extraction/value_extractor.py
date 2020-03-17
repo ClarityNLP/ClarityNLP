@@ -73,9 +73,9 @@ To unpack the array of values:
         values = [ve.Value(**m) for m in measurements]
 
         for v in values:
-            log(v.text)
-            log(v.start)
-            log(v.end)
+            print(v.text)
+            print(v.start)
+            print(v.end)
             etc.
 
 The 'run' function has the following signature:
@@ -112,6 +112,7 @@ try:
         run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
     from algorithms.finder.size_measurement_finder import run as \
         run_size_measurement, SizeMeasurement, EMPTY_FIELD as EMPTY_SMF_FIELD
+    from algorithms.finder import finder_overlap as overlap
 except Exception as e:
     # If here, this module was executed directly from the value_extraction
     # folder for testing. Construct path to nlp/algorithms/finder and perform
@@ -130,7 +131,8 @@ except Exception as e:
         from size_measurement_finder import run as \
             run_size_measurement, SizeMeasurement, EMPTY_FIELD as \
             EMPTY_SMF_FIELD
-
+        from algorithms.finder import finder_overlap as overlap
+        
 
 # returned if no results found
 EMPTY_RESULT = '{}'
@@ -167,7 +169,7 @@ ValueMeasurement = namedtuple('ValueMeasurement',
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 16
+_VERSION_MINOR = 17
 _MODULE_NAME = 'value_extractor.py'
 
 # set to True to enable debug output
@@ -521,57 +523,146 @@ def _get_query_start(query_term):
 
 
 ###############################################################################
-def _extract_enumlist_values(query_terms, sentence, filter_words):
+def _extract_enumlist_values_left(query_terms, sentence, enum_terms):
     """
     Extract a word to match the query term, and accept if that word
-    appears in the result filter.
+    appears in the result filter. Assumes the enumerated terms FOLLOW the
+    query terms.
     """
-
+    
     if _TRACE:
-        log('calling extract_enumlist_values...')
+        log('\nCalling extract_enumlist_values_left...\n')
         log('\t    sentence: {0}'.format(sentence))
         log('\t query_terms: {0}'.format(query_terms))
-        log('\tfilter_words: {0}'.format(filter_words))
+        log('\t  enum_terms: {0}'.format(enum_terms))
 
     results = []
-    for query_term in query_terms:
-        if _TRACE: log('\tsearching for query term "{0}"'.format(query_term))
-        str_word_query = re.escape(query_term)
-        str_enum_query = str_word_query                                      +\
-            r'(?P<words>'                                                    +\
-            r'\s*(' + _str_enumlist_value + r'\s*){0,8}'                     +\
+
+    # query_terms and enum_terms are sorted in decreasing order of length
+
+    for et in enum_terms:
+        if _TRACE:
+            log('searching for enum term "{0}"'.format(et))
+        escaped_enum_term = re.escape(et)
+        str_enum_query = escaped_enum_term               +\
+            r'(?P<query_text>'                           +\
+            r'\s*(' + _str_enumlist_value + r'\s*){0,8}' +\
             r')'
 
+        candidates = []
         iterator = re.finditer(str_enum_query, sentence)
         for match in iterator:
+            if _TRACE: log('\tMATCH_TEXT: ->{0}<-'.format(match.group()))
+            match_start = match.start()
+            if _TRACE: log('\t\tmatch_start: {0}'.format(match_start))
+            # get text tat contains query terms
+            query_text = match.group('query_text')
+            query_text_start = match.start('query_text')
             if _TRACE:
-                log("\t\tmatch '{0}' start: {1}".
-                      format(match.group(), match.start()))
-            start = match.start()
-            end = match.end()
+                log('\t\t      query_text: ->{0}<-'.format(query_text))
+                log('\t\tquery_text_start: {0}'.format(query_text_start))
+            
+            # now search for the longest matching query term in this text
+            for qt in query_terms:
+                escaped_query_term = re.escape(qt)
+                str_query_term = r'(?P<qt>' + escaped_query_term + r')'
+                match2 = re.search(str_query_term, query_text)
+                if match2:
+                    match_text = match2.group()
+                    start = match.start()
+                    end = query_text_start + match2.end()
+                    candidates.append(overlap.Candidate(start, end, match_text, None, match2))
+                    if _TRACE:
+                        log('\t\t[{0:3}, {1:3})\tCANDIDATE: ->{2}<-'.
+                              format(start, end, match_text))
 
-            words = match.group('words')
-            words_start = match.start('words')
-            word = ''
-
-            found_it = False
-            for fw in filter_words:
-                pos = words.find(fw)
-                if -1 != pos and words_start + pos < end:
-                    found_it = True
-                    if len(fw) > len(word):
-                        word = fw
-
-            if found_it:
-                meas = ValueMeasurement(word,
-                                        start, end,
-                                        word,
+        if len(candidates) > 0:
+            candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
+            pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+            for pc in pruned_candidates:
+                query_term = pc.match_text
+                meas = ValueMeasurement(et,
+                                        pc.start,
+                                        pc.end,
+                                        et,
                                         EMPTY_FIELD, STR_EQUAL,
                                         query_term)
                 results.append(meas)
                 if _TRACE:
-                    log('\t\tnew result: "{0}"'.format(meas))
+                    log('\t\t\tnew result: "{0}"'.format(meas))
+            
+    return results
+                
+        
+###############################################################################
+def _extract_enumlist_values_right(query_terms, sentence, enum_terms):
+    """
+    Extract a word to match the query term, and accept if that word
+    appears in the result filter. Assumes the enumerated terms FOLLOW the
+    query terms.
+    """
+    
+    if _TRACE:
+        log('\nCalling extract_enumlist_values_right...\n')
+        log('\t    sentence: {0}'.format(sentence))
+        log('\t query_terms: {0}'.format(query_terms))
+        log('\t  enum_terms: {0}'.format(enum_terms))
 
+    results = []
+
+    for query_term in query_terms:
+        if _TRACE:
+            log('searching for query term "{0}"'.format(query_term))
+        escaped_query_term = re.escape(query_term)
+        str_enum_query = escaped_query_term                                  +\
+            r'(?P<enum_text>'                                                +\
+            r'\s*(' + _str_enumlist_value + r'\s*){0,8}'                     +\
+            r')'
+
+        candidates = []
+        iterator = re.finditer(str_enum_query, sentence)
+        for match in iterator:
+            if _TRACE: log('\tMATCH TEXT: ->{0}<-'.format(match.group()))
+            match_start = match.start()
+            if _TRACE: log('\t\tmatch_start: {0}'.format(match_start))
+            # get text that contains enumerated terms
+            enum_text = match.group('enum_text')
+            enum_text_start = match.start('enum_text')
+            if _TRACE:
+                log('\t\t       enum_text: ->{0}<-'.format(enum_text))
+                log('\t\t enum_text_start: {0}'.format(enum_text_start))
+
+            # now search for the longest matching enum term in this text
+            # enum terms are sorted by length from longest to shortest
+            for et in enum_terms:
+                escaped_enum_term = re.escape(et)
+                str_enum_term = r'(?P<et>' + escaped_enum_term + r')'
+                match2 = re.search(str_enum_term, enum_text)
+                if match2:
+                    match_text = match2.group()
+                    #start = enum_text_start + match2.start()
+                    start = match_start
+                    end   = enum_text_start + match2.end()
+                    candidates.append(overlap.Candidate(start, end, match_text, None, match2))
+                    if _TRACE:
+                        log('\t\t[{0:3}, {1:3})\tCANDIDATE: ->{2}<-'.
+                              format(start, end, match_text))
+
+        if len(candidates) > 0:
+            candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
+            pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+            for pc in pruned_candidates:
+                enum_term = pc.match_text
+                meas = ValueMeasurement(enum_term,
+                                        pc.start,
+                                        pc.end,
+                                        enum_term,
+                                        EMPTY_FIELD, STR_EQUAL,
+                                        query_term)
+                results.append(meas)
+                if _TRACE:
+                    log('\t\t\tnew result: "{0}"'.format(meas))
+            
     return results
 
         
@@ -1378,24 +1469,26 @@ def _clean_sentence(sentence, is_case_sensitive):
 
 
 ###############################################################################
-def run(term_string,             # comma-separated string of query terms
+def run(term_string,                # comma-separated string of query terms
         sentence,
         str_minval=None,
         str_maxval=None,
-        str_enumlist=None,       # comma-separated string of terms
+        str_enumlist=None,          # comma-separated string of terms
         is_case_sensitive=False,
-        is_denom_only=False):    # return denominators of fractions
+        is_denom_only=False,        # return denominators of fractions
+        values_before_terms=False): # look for values preceding query terms
 
     if _TRACE:
         log('\ncalled value_extractor run...')
         log('\tARGUMENTS: ')
-        log('\t      term_string: {0}'.format(term_string))
-        log('\t         sentence: {0}'.format(sentence))
-        log('\t       str_minval: {0}'.format(str_minval))
-        log('\t       str_maxval: {0}'.format(str_maxval))
-        log('\t     str_enumlist: {0}'.format(str_enumlist))
-        log('\tis_case_sensitive: {0}'.format(is_case_sensitive))
-        log('\t    is_denom_only: {0}'.format(is_denom_only))
+        log('\t        term_string: {0}'.format(term_string))
+        log('\t           sentence: {0}'.format(sentence))
+        log('\t         str_minval: {0}'.format(str_minval))
+        log('\t         str_maxval: {0}'.format(str_maxval))
+        log('\t       str_enumlist: {0}'.format(str_enumlist))
+        log('\t  is_case_sensitive: {0}'.format(is_case_sensitive))
+        log('\t      is_denom_only: {0}'.format(is_denom_only))
+        log('\tvalues_before_terms: {0}'.format(values_before_terms))
 
     assert term_string is not None
 
@@ -1481,7 +1574,10 @@ def run(term_string,             # comma-separated string of query terms
 
     results = []
     if str_enumlist is not None:
-        results = _extract_enumlist_values(terms, sentence, filter_terms)
+        if values_before_terms:
+            results = _extract_enumlist_values_left(terms, sentence, filter_terms)
+        else:
+            results = _extract_enumlist_values_right(terms, sentence, filter_terms)
     else:
         for term in terms:
             # extract a single numeric value

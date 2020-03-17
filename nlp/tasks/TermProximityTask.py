@@ -206,9 +206,9 @@ class TermProximityTask(BaseTask):
                 else:
                     any_order = False
 
-        log('*** PARAMS: ***')
-        log('\t distance: {0}'.format(distance))
-        log('\tany_order: {0}'.format(any_order))
+        #log('*** PARAMS: ***')
+        #log('\t distance: {0}'.format(distance))
+        #log('\tany_order: {0}'.format(any_order))
         if type(termset1) == str:
             termset1 = termset1.strip('"').split(',')
         if type(termset2) == str:

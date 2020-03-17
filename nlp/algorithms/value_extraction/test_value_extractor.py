@@ -13,7 +13,13 @@ import sys
 import json
 import argparse
 from collections import namedtuple
-from claritynlp_logging import log, ERROR, DEBUG
+
+if __name__ == '__main__':
+    # for interactive command-line tests
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
 
 try:
     import value_extractor as ve
@@ -51,7 +57,8 @@ def _compare_results(
         maxval,
         enumlist=None,
         is_case_sensitive=False,
-        denom_only=False):
+        denom_only=False,
+        values_before_terms=False):
     """
     Run the value extractor on the test data using the supplied term string
     and check the results.
@@ -67,7 +74,8 @@ def _compare_results(
             maxval,
             str_enumlist=enumlist,
             is_case_sensitive=is_case_sensitive,
-            is_denom_only=denom_only
+            is_denom_only=denom_only,
+            values_before_terms=values_before_terms
         )
 
         num_expected = len(expected_list)
@@ -87,17 +95,17 @@ def _compare_results(
 
         # check that len(computed) == len(expected)
         if is_mismatched or (value_result.measurementCount != num_expected):
-            log('\tMismatch in computed vs. expected results: ')
-            log('\tSentence: {0}'.format(sentence))
-            log('\tComputed: ')
+            print('\tMismatch in computed vs. expected results: ')
+            print('\tSentence: {0}'.format(sentence))
+            print('\tComputed: ')
             if value_result is None:
-                log('\t\tNone')
+                print('\t\tNone')
             else:
                 for m in value_result.measurementList:
-                    log('\t\t{0}'.format(m))
-            log('\tExpected: ')
+                    print('\t\t{0}'.format(m))
+            print('\tExpected: ')
             for e in expected_list:
-                log('\t\t{0}'.format(e))
+                print('\t\t{0}'.format(e))
 
             return False
         
@@ -124,9 +132,9 @@ def _compare_results(
                                        computed, expected, failures)
                 
         if len(failures) > 0:
-            log(sentence)
+            print(sentence)
             for f in failures:
-                log(f)
+                print(f)
             return False
 
     return True
@@ -860,7 +868,30 @@ def test_value_extractor_full():
 
     if not _compare_results(term_string, test_data, minval, maxval, enumlist):
         return False
-    
+
+    # enumlist values prior to search terms
+    term_string = 'MR, mitral regurgitation'
+    enumlist = '1+,2+,3+,4+'
+    test_data = {
+        'MITRAL VALVE: Torn mitral chordae. Severe (4+) MR':[
+            _Result('mr', '4+', None, ve.STR_EQUAL)
+        ],
+        'Severe (4+) '
+        'mitral regurgitation is seen':[
+            _Result('mitral regurgitation', '4+', None, ve.STR_EQUAL)
+        ],
+        'at least moderate (2+) posteriorly directed MR':[
+            _Result('mr', '2+', None, ve.STR_EQUAL)
+        ],
+        'Mild (1+) mitral regurgitation':[
+            _Result('mitral regurgitation', '1+', None, ve.STR_EQUAL)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval, maxval,
+                            enumlist, values_before_terms=True):
+        return False
+
     # previous problems
     term_string = 'fvc'
     enumlist = None
@@ -992,7 +1023,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        log(_get_version())
+        print(_get_version())
         sys.exit(0)
 
     if 'debug' in args and args.debug:
