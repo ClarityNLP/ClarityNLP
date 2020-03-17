@@ -13,6 +13,7 @@ class ValueExtractorTask(BaseTask):
         if self.pipeline_config.sections and len(self.pipeline_config.sections) > 0:
             filters[SECTIONS_FILTER] = self.pipeline_config.sections
 
+        # default behavior is to extract the NUMERATOR of fractions
         denom_only = False
         if 'denom_only' in self.pipeline_config.custom_arguments:
             value = self.pipeline_config.custom_arguments['denom_only']
@@ -24,6 +25,7 @@ class ValueExtractorTask(BaseTask):
             elif isinstance(value, bool):
                 denom_only = value
 
+        # default behavior is to look for values AFTER the query terms
         values_before_terms = False
         if 'values_before_terms' in self.pipeline_config.custom_arguments:
             value = self.pipeline_config.custom_arguments['values_before_terms']
