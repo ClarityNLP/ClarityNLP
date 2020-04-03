@@ -34,7 +34,7 @@ except:
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME = 'lab_value_matcher.py'
 
 # set to True to see debug output
@@ -187,6 +187,12 @@ _regex_simple_pair = re.compile(_str_simple_pair, re.IGNORECASE)
 _str_avg = r'\b(average|mean|avg\.?|median|mode)\b'
 _regex_avg = re.compile(_str_avg, re.IGNORECASE)
 
+# all caps with parenthesized expression, such as:
+#    CO(LVOT): 3.3 l/min, EDV(MOD-sp2): 70.0 ml
+_str_caps_with_parens = r'\b[A-Z]+\([-A-Z\d]+\):\s?' + _str_float + r'\s?' +\
+    _str_units + r'\s?'
+_regex_caps_with_parens = re.compile(_str_caps_with_parens, re.IGNORECASE)
+
 _all_regex_lists = []
 
 
@@ -294,6 +300,7 @@ def init():
     _all_regex_lists.append( [_regex_float_list] )
     _all_regex_lists.append( [_regex_value_with_ref_range] )
     _all_regex_lists.append( [_regex_simple_pair] )
+    _all_regex_lists.append( [_regex_caps_with_parens] )
     
     
 ###############################################################################
