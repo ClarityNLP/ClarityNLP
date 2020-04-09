@@ -25,7 +25,7 @@ class MeasurementFinderTask(BaseTask):
                     "value": value,
                     "end": meas.end,
                     "term":meas.matching_terms,
-                    "object":meas.subject,
+                    "meas_object":meas.subject,
                     "dimension_X": meas.X,
                     "dimension_Y": meas.Y,
                     "dimension_Z": meas.Z,
