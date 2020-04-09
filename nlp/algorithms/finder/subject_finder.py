@@ -187,7 +187,7 @@ import sys
 import copy
 import json
 import spacy
-import optparse
+import argparse
 from collections import deque
 from collections import namedtuple
 from spacy.symbols import ORTH, LEMMA, POS, TAG
@@ -202,11 +202,6 @@ if __name__ == '__main__':
     else:
         print('\n*** subject_finder.py: nlp dir not found ***\n')
         sys.exit(0)
-
-#if __name__ is not None and "." in __name__:
-#    from .size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
-#else:
-#    from size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
 
 try:
     import finder_overlap as overlap 
@@ -2800,31 +2795,31 @@ def get_version():
     return 'subject_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
 
         
-###############################################################################
-def show_help():
-    print(get_version())
-    print("""
-    USAGE: python3 ./subject_finder.py -t <terms> -s <sentence> [-hvznxd]
+# ###############################################################################
+# def show_help():
+#     print(get_version())
+#     print("""
+#     USAGE: python3 ./subject_finder.py -t <terms> -s <sentence> [-hvznxd]
 
-    OPTIONS:
+#     OPTIONS:
 
-        -t, --terms     <quoted string> List of comma-separated search terms.
-        -s, --sentence  <quoted string> Sentence to be processed.
+#         -t, --terms     <quoted string> List of comma-separated search terms.
+#         -s, --sentence  <quoted string> Sentence to be processed.
 
-    FLAGS:
+#     FLAGS:
 
-        --debug                         Print debug info to stdout
-        -h, --help                      log this information and exit.
-        -v, --version                   log version information and exit.
-        -z, --test                      Disable -s option and use test sentences.
-        -n, --nosub                     Do not perform ngram substitution.
-        -x, --selftest                  Run self-tests.
-        -d, --displacy                  Show the dependency parse using SpaCy's
-                                        'displacy' tool. Not valid if -r or -z
-                                        option are used. See the visualization
-                                        by opening a web browser at the URL
-                                        localhost:5000.
-    """)
+#         --debug                         Print debug info to stdout
+#         -h, --help                      log this information and exit.
+#         -v, --version                   log version information and exit.
+#         -z, --test                      Disable -s option and use test sentences.
+#         -n, --nosub                     Do not perform ngram substitution.
+#         -x, --selftest                  Run self-tests.
+#         -d, --displacy                  Show the dependency parse using SpaCy's
+#                                         'displacy' tool. Not valid if -r or -z
+#                                         option are used. See the visualization
+#                                         by opening a web browser at the URL
+#                                         localhost:5000.
+#     """)
 
     
 ###############################################################################
@@ -3184,40 +3179,64 @@ if __name__ == '__main__':
         [['lvot diam']],
     }
 
-    optparser = optparse.OptionParser(add_help_option=False)
-    optparser.add_option('-t', '--terms',    action='store',      dest='terms')
-    optparser.add_option('-s', '--sentence', action='store',      dest='sentence')
-    optparser.add_option('-v', '--version',  action='store_true', dest='get_version')
-    optparser.add_option('-h', '--help',     action='store_true', dest='show_help', default=False)
-    optparser.add_option('-n', '--nosub',    action='store_true', dest='nosub',     default=False)
-    optparser.add_option('-x', '--selftest', action='store_true', dest='selftest', default=False)
-    optparser.add_option('-z', '--test',     action='store_true', dest='use_test_sentences', default=False)
-    optparser.add_option('-d', '--displacy', action='store_true', dest='use_displacy', default=False)
-    optparser.add_option('--debug',          action='store_true', dest='debug', default=False)
+    parser = argparse.ArgumentParser(
+        description='Run validation tests on the subject finder module.'
+    )
+
+    parser.add_argument('--debug',
+                        help='print debug information to stdout',
+                        action='store_true')
+    parser.add_argument('-v', '--version',
+                        help='show version and exit',
+                        action='store_true')
+    parser.add_argument('-t', '--terms',
+                        help='quoted string, list of comma-separated search terms',
+                        required=True)
+    parser.add_argument('-s', '--sentence',
+                        help='quoted string, the sentence to be processed')
+    parser.add_argument('-n', '--nosub',
+                        help='do not perform ngram substitution',
+                        action='store_true')
+    parser.add_argument('-x', '--selftest',
+                        help='run self-test suite (requires a term list)',
+                        action='store_true')
+    parser.add_argument('-z', '--test',
+                        help='disable -s option and use test sentences',
+                        action='store_true')
+    parser.add_argument('-d', '--displacy',
+                        help="Show dependency parse using SpaCy's 'displacy' tool (localhost:5000)",
+                        action='store_true')
     
-    if 1 == len(sys.argv):
-        show_help()
-        sys.exit(0)
+    args = parser.parse_args()
 
-    opts, other = optparser.parse_args(sys.argv)
-
-    if opts.show_help:
-        show_help()
-        sys.exit(0)
-
-    if opts.get_version:
+    if 'version' in args and args.version:
         print(get_version())
         sys.exit(0)
 
-    if opts.debug:
+    if 'debug' in args and args.debug:
         _enable_debug()
 
-    terms     = opts.terms
-    nosub     = opts.nosub
-    sentence  = opts.sentence
-    selftest = opts.selftest
-    use_displacy = opts.use_displacy
-    use_test_sentences = opts.use_test_sentences
+    terms = args.terms
+
+    nosub = False
+    if 'nosub' in args and args.nosub:
+        nosub = args.nosub
+
+    sentence = None
+    if 'sentence' in args and args.sentence:
+        sentence = args.sentence
+
+    selftest = False
+    if 'selftest' in args and args.selftest:
+        selftest = args.selftest
+
+    use_display = False
+    if 'displacy' in args and args.displacy:
+        use_displacy = args.use_displacy
+
+    use_test_sentences = False
+    if 'test' in args and args.test:
+        use_test_sentences = args.use_test_sentences
 
     if not sentence and not (selftest or use_test_sentences):
         print('A sentence must be specified on the command line.')
