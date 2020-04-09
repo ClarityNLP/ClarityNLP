@@ -52,6 +52,7 @@ start                  int               offset of the first character in the ma
 end                    int               offset of the final character in the matching text plus 1
 value                  str               numeric value of first number (same as `dimension_X`)
 term                   str               term from `termset` that matched a measurement
+meas_object            List[str]         the object being measured; if ClarityNLP cannot decide, a list of possible objects
 dimension_X            int               numeric value of first number
 dimension_Y            int               numeric value of second number
 dimension_Z            int               numeric value of third number
