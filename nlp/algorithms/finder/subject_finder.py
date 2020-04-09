@@ -190,18 +190,32 @@ import optparse
 from collections import deque
 from collections import namedtuple
 from spacy.symbols import ORTH, LEMMA, POS, TAG
-from claritynlp_logging import log, ERROR, DEBUG
+#from claritynlp_logging import log, ERROR, DEBUG
 
+if __name__ == '__main__':
+    # interactive testing; add nlp dir to path to find logging class
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** subject_finder.py: nlp dir not found ***\n')
+        sys.exit(0)
 
-if __name__ is not None and "." in __name__:
-    from .size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
-else:
+#if __name__ is not None and "." in __name__:
+#    from .size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
+#else:
+#    from size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
+
+try:
+    import finder_overlap as overlap 
     from size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
+except:
+    from algorithms.finder import finder_overlap as overlap
+    from algorithms.finder.size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
+
     
 FILE_DIR = os.path.dirname(__file__)
-
-# imports from clarity
-#import size_measurement_finder as smf
 
 # debug only
 from spacy import displacy
@@ -210,7 +224,7 @@ from spacy import displacy
 nlp = spacy.load('en_core_web_sm')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 8
+VERSION_MINOR = 9
 
 # set to True to enable debug output
 TRACE = False
@@ -513,9 +527,20 @@ ENABLE_DISPLACY = False
 # useful constants
 EMPTY_STRING = ''
 
+# nonempty string, means to not resolve a location for this measurement
+LOCATION_RESOLVED = ' '
+
 # a value greater than the max number of measurements ever expected in a
 # sentence; used in the function 'm_index_from_context'
 INVALID_M_INDEX = 9999999
+
+
+###############################################################################
+def _enable_debug():
+
+    global TRACE
+    TRACE = True
+    
 
 ###############################################################################
 class Meas():
@@ -546,6 +571,7 @@ class Meas():
         self.minValue     = sm.minValue
         self.maxValue     = sm.maxValue
 
+        
 ###############################################################################
 class Chunk():
     """
@@ -560,6 +586,7 @@ class Chunk():
         # concatenate all token strings, ignoring punctuation
         strings = [t.text for t in doc[start:end]]
         self.text = ' '.join(strings)
+
         
 ###############################################################################
 def init(ngram_file_path=NGRAM_FILE):
@@ -569,13 +596,15 @@ def init(ngram_file_path=NGRAM_FILE):
 
     global ngram_word_counts
 
+    ngram_dict.clear()
+
     load_ngram_file(ngram_file_path, ngram_dict)
     ngram_word_counts = sorted(ngram_dict.keys())
 
     if TRACE:
-        log('ngram min chars: {0}'.format(ngram_min_chars))
+        print('ngram min chars: {0}'.format(ngram_min_chars))
         for n in range(1, len(ngram_word_counts)+1):
-            log('Number of ngrams of length {0:2}: {1:6}'.format(n, len(ngram_dict[n])))
+            print('Number of ngrams of length {0:2}: {1:6}'.format(n, len(ngram_dict[n])))
     
     # 'measures' is a 3rd person singular present verb
     special_case = [{ORTH: u'measures', LEMMA: u'measure', TAG: u'VBZ', POS: u'VERB'}]
@@ -592,6 +621,7 @@ def init(ngram_file_path=NGRAM_FILE):
     # 'measuring' is a verb form, either a gerund or present participle
     special_case = [{ORTH: u'measuring', LEMMA: u'measure', TAG: u'VBG', POS: u'VERB'}]
     nlp.tokenizer.add_special_case(u'measuring', special_case)    
+
     
 ###############################################################################
 def load_ngram_file(filepath, ngram_dict):
@@ -615,7 +645,7 @@ def load_ngram_file(filepath, ngram_dict):
                     n = int(match.group('num'))
                 else:
                     if TRACE:
-                        log('Error reading {0}: length expected: {1}'.
+                        print('Error reading {0}: length expected: {1}'.
                               format(NGRAM_FILE, line))
                     sys.exit(-1)
                 ngram_dict[n] = []
@@ -629,6 +659,7 @@ def load_ngram_file(filepath, ngram_dict):
             if char_count < ngram_min_chars:
                 ngram_min_chars = char_count
 
+                
 ###############################################################################
 def to_json(original_terms, original_sentence, measurements):
     """
@@ -648,9 +679,14 @@ def to_json(original_terms, original_sentence, measurements):
     # search term 'kidney' would match a subject of 'right kidney'.
     found_it = False
     for m in measurements:
+        if len(m.matchingTerm) > 0:
+            found_it = True
+            break
         for t in terms_lc:
             # m.subject is a list of strings
             for subject_term in m.subject:
+                #print('term: {0}, type of subject_term: {1}'.
+                #      format(subject_term,type(subject_term)))
                 if -1 != subject_term.find(t):
                     m.matchingTerm.append(t)
                     found_it = True
@@ -664,11 +700,15 @@ def to_json(original_terms, original_sentence, measurements):
         for field in MEASUREMENT_FIELDS:
             m_dict[field] = getattr(m, field)
 
+        if LOCATION_RESOLVED == m_dict['location']:
+            m_dict['location'] = EMPTY_FIELD
+
         dict_list.append(m_dict)
     
     # serialize everything to JSON
     result_dict['measurementList'] = dict_list
     return json.dumps(result_dict, indent=4)
+
 
 ###############################################################################
 def log_token(token):
@@ -676,35 +716,36 @@ def log_token(token):
     log useful token data to the screen for debugging.
     """
 
-    log('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
+    print('[{0:3}]: {1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format(token.i,
                                                               token.text,
                                                               token.tag_,
                                                               token.pos_,
                                                               token.dep_,
                                                               token.head))
 
+    
 ###############################################################################
 def log_noun_chunks(doc):
     """
     log noun chunk data to the screen.
     """
 
-    log('\nNoun chunks: ')
-    log('{0:9}{1:32}\t{2:16}{3:12}{4:32}'.format('INDICES',
+    print('\nNoun chunks: ')
+    print('{0:9}{1:32}\t{2:16}{3:12}{4:32}'.format('INDICES',
                                                    'TEXT',
                                                    'ROOT_TEXT',
                                                    'ROOT_DEP',
                                                    'ROOT_HEAD_TEXT'))
     index = 0
     for chunk in doc.noun_chunks:
-        log('[{0:2},{1:2}): {2:32}\t{3:16}{4:12}{5:32}'.format(chunk.start,
+        print('[{0:2},{1:2}): {2:32}\t{3:16}{4:12}{5:32}'.format(chunk.start,
                                                                  chunk.end,
                                                                  chunk.text,
                                                                  chunk.root.text,
                                                                  chunk.root.dep_,
                                                                  chunk.root.head.text))
         index += 1
-    log()
+    print()
 
     
 ###############################################################################
@@ -713,14 +754,15 @@ def log_tokens(doc):
     log all tokens in a SpaCy document.
     """
 
-    log('\nTokens: ')
-    log('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
+    print('\nTokens: ')
+    print('{0:7}{1:30}\t{2:6}\t{3:8}\t{4:12}\t{5}'.format('INDEX', 'TOKEN', 'TAG',
                                                           'POS', 'DEP', 'HEAD'))
     for token in doc:
         log_token(token)
 
     log_noun_chunks(doc)
-        
+
+    
 ###############################################################################
 def erase(sentence, start, end):
     """
@@ -731,6 +773,7 @@ def erase(sentence, start, end):
     piece3 = sentence[end:]
     return piece1 + piece2 + piece3
 
+
 ###############################################################################
 def collapse_ws(sentence):
     """
@@ -738,6 +781,7 @@ def collapse_ws(sentence):
     """
 
     return re.sub(r'\s+', ' ', sentence)
+
 
 ###############################################################################
 def get_meas_count(sentence):
@@ -750,6 +794,7 @@ def get_meas_count(sentence):
         if 'M' == c:
             count += 1
     return count
+
 
 ###############################################################################
 def replace_verbosity(sentence):
@@ -780,6 +825,7 @@ def replace_verbosity(sentence):
 
     return sentence
 
+
 ###############################################################################
 def replace_preserving_length(regex, sentence, str_new):
     """
@@ -808,6 +854,7 @@ def replace_preserving_length(regex, sentence, str_new):
 
     return sentence
 
+
 ###############################################################################
 def clean_sentence(sentence):
     """
@@ -816,7 +863,7 @@ def clean_sentence(sentence):
     """
 
     # convert to lowercase
-    sentence = sentence.lower()
+    #sentence = sentence.lower()
 
     # erase image annotations
     iterator = regex_image.finditer(sentence)
@@ -860,8 +907,8 @@ def clean_sentence(sentence):
             new_text = re.sub(segnum, decimal_num, text)
             replacements[new_text] = text
             if TRACE:
-                log('\treplaced {0} with {1}'.format(segnum, decimal_num))
-                log('\tnew match text: ->{0}<-'.format(new_text))
+                print('\treplaced {0} with {1}'.format(segnum, decimal_num))
+                print('\tnew match text: ->{0}<-'.format(new_text))
     
     # replace any problem adjectives with colors
     substitutions = []
@@ -875,7 +922,7 @@ def clean_sentence(sentence):
             if -1 != sentence.find(color):
                 sentence = re.sub(adj, color, sentence)
                 replacements[color] = adj
-                if TRACE: log("Replaced '{0}' with '{1}'".format(adj, color))
+                if TRACE: print("Replaced '{0}' with '{1}'".format(adj, color))
                 break
 
     # replace roman numerals in narrative sections with numbers
@@ -890,7 +937,7 @@ def clean_sentence(sentence):
         piece3 = ' '*(end - start - len(digit))
         piece4 = sentence[end:]
         sentence = piece1 + piece2 + piece3 + piece4
-        if TRACE: log("Replaced '{0}' with '{1}'".format(text, digit))            
+        if TRACE: print("Replaced '{0}' with '{1}'".format(text, digit))            
 
     # SpaCy sometimes gives dramatically different results depending on whether
     # semicolons are present in the sentence or not, so replace semicolons
@@ -899,6 +946,7 @@ def clean_sentence(sentence):
     
     return sentence
 
+
 ###############################################################################
 def find_child_candidates(token):
     """
@@ -906,7 +954,7 @@ def find_child_candidates(token):
     suitable to be a measurement subject.
     """
 
-    if TRACE: log('find_child_candidates...')
+    if TRACE: print('find_child_candidates...')
     
     candidates = []
     
@@ -927,7 +975,7 @@ def find_child_candidates(token):
             pruned_candidates.append(c)
 
     if len(pruned_candidates) > 0:
-        if TRACE: log('find_child_candidates: subject candidates were pruned')
+        if TRACE: print('find_child_candidates: subject candidates were pruned')
         return pruned_candidates
     else:
         return candidates
@@ -946,28 +994,29 @@ def resolve_superlative_adj(m_token, adj_token):
     token = m_token.head
     subject_list = None
 
-    if TRACE: log('resolve_superlative_adj: starting...')
+    if TRACE: print('resolve_superlative_adj: starting...')
     while True:
         if 'NOUN' == token.pos_ and not token.dep_ in RESOLVE_DEPS:
-            if TRACE: log('\tresolved to noun: "{0}"'.format(token.text))
+            if TRACE: print('\tresolved to noun: "{0}"'.format(token.text))
             subject_list = [token]
             break
         elif 'ROOT' == token.dep_:
-            if TRACE: log('\tresolved to root: "{0}"'.format(token.text))
+            if TRACE: print('\tresolved to root: "{0}"'.format(token.text))
             root = token
             break
         else:
-            if TRACE: log('\tskipping "{0}", continuing...'.format(token.text))
+            if TRACE: print('\tskipping "{0}", continuing...'.format(token.text))
             token = token.head
 
     if root is not None:
-        if TRACE: log('\tresolving to child candidates of root {0}'.format(root.text))
+        if TRACE: print('\tresolving to child candidates of root {0}'.format(root.text))
         subject_list = find_child_candidates(root)
 
     if 0 == len(subject_list):
         subject_list = [adj_token]
         
     return subject_list
+
 
 ###############################################################################
 def get_modifiers_of_token(token):
@@ -984,13 +1033,14 @@ def get_modifiers_of_token(token):
 
     return results
 
+
 ###############################################################################
 def get_modifiers(start_token):
     """
     Recursively get all 'left' modifiers of the start token.
     """
 
-    if TRACE: log('get_modifiers...')
+    if TRACE: print('get_modifiers...')
 
     results = []
 
@@ -1008,6 +1058,7 @@ def get_modifiers(start_token):
         # if 'lefts' haven't already been pushed
         if top.i not in indices:
             lefts = get_modifiers_of_token(top)
+            if TRACE: print('\tlefts: {0}'.format(lefts))
             indices.append(top.i)
             if len(lefts) > 0:
                 # reverse the order to place the most distant modifier
@@ -1015,7 +1066,7 @@ def get_modifiers(start_token):
                 # first in a sentence
                 for i in reversed(range(len(lefts))):
                     tokens.append(lefts[i])
-                    if TRACE: log('\tappended {0}'.format(lefts[i]))
+                    if TRACE: print('\tappended {0}'.format(lefts[i]))
         else:
             # no more mods for the token at the stack top, so pop it
             token = tokens.pop()
@@ -1028,6 +1079,7 @@ def get_modifiers(start_token):
             no_dups.append(token)
 
     return no_dups
+
 
 ###############################################################################
 def undo_substitutions(text):
@@ -1048,7 +1100,8 @@ def undo_substitutions(text):
                 words[i] = old_text
     new_text= ' '.join(words)
     return new_text
-    
+
+
 ###############################################################################
 def extract_loc(text):
     """
@@ -1056,7 +1109,7 @@ def extract_loc(text):
     """
 
     if TRACE:
-        log("extract_loc: starting with text '{0}'".format(text))
+        print("extract_loc: starting with text '{0}'".format(text))
 
     iterator = regex_loc.finditer(text)
     for match in iterator:
@@ -1068,7 +1121,7 @@ def extract_loc(text):
         match_disq = regex_loc_disqualifier.search(loc_text)
         if match_disq:
             if TRACE:
-                log('\tDISQUALIFIED')
+                print('\tDISQUALIFIED')
             #return EMPTY_STRING
             continue
         
@@ -1084,7 +1137,7 @@ def extract_loc(text):
             loc = loc2.strip()
 
         if TRACE:
-            log("extract_loc: processing text '{0}'".format(loc))
+            print("extract_loc: processing text '{0}'".format(loc))
 
         # remove punctuation
         loc = regex_punctuation.sub(' ', loc)
@@ -1120,13 +1173,14 @@ def extract_loc(text):
             continue
             
         if TRACE:
-            log('extract_loc: matching text: ->{0}<-'.format(loc_text))
-            log('extract_loc:           loc: ->{0}<-'.format(loc))
+            print('extract_loc: matching text: ->{0}<-'.format(loc_text))
+            print('extract_loc:           loc: ->{0}<-'.format(loc))
             
         return loc
 
-    if TRACE: log('\tno location found')
+    if TRACE: print('\tno location found')
     return EMPTY_STRING
+
 
 ###############################################################################
 def find_location(subj_token, doc):
@@ -1164,7 +1218,7 @@ def find_location(subj_token, doc):
     if 0 == len(texts):
 
         if TRACE:
-            log('find_location: nothing between, trying in front')
+            print('find_location: nothing between, trying in front')
             
         # collect all text from the start of the sentence to the subject token
         if subj_token.i < len(doc): # subj token might not be in fragment
@@ -1177,7 +1231,7 @@ def find_location(subj_token, doc):
     if 0 == len(texts):
 
         if TRACE:
-            log('find_location: nothing between or in front, trying at end')
+            print('find_location: nothing between or in front, trying at end')
             
         if -1 != meas_token_index or -1 != m_token_index:
             index = max(meas_token_index, m_token_index)
@@ -1189,7 +1243,7 @@ def find_location(subj_token, doc):
 
     if 0 == len(texts):
         if TRACE:
-            log('find_location: nothing found')
+            print('find_location: nothing found')
         return EMPTY_STRING
                 
     # concat to a string for location regex search
@@ -1199,7 +1253,7 @@ def find_location(subj_token, doc):
     text += ' '
 
     if TRACE:
-        log('find_location text: ->{0}<-'.format(text))
+        print('find_location text: ->{0}<-'.format(text))
     
     return extract_loc(text)
     
@@ -1238,7 +1292,7 @@ def set_meas_locations(m_count, m_sentence, measurements, doc):
         if 0 == len(location_strings) and 1 == m_count:
 
             if TRACE:
-                log('\tNo location found, trying fragment match.')
+                print('\tNo location found, trying fragment match.')
 
             # join the tokens with special handling for punctuation
             doc_strings = []
@@ -1285,11 +1339,12 @@ def get_chunks(doc):
         chunks.append( Chunk(start, len(doc), doc))
     
     if TRACE:
-        log('\nFULL CHUNKS: ')
+        print('\nFULL CHUNKS: ')
         for chunk in chunks:
-            log('[{0:2},{1:2})\t{2}'.format(chunk.start, chunk.end, chunk.text))
+            print('[{0:2},{1:2})\t{2}'.format(chunk.start, chunk.end, chunk.text))
 
     return chunks
+
 
 ###############################################################################
 def get_ref_chunk_indices(chunks, doc):
@@ -1326,6 +1381,7 @@ def get_ref_chunk_indices(chunks, doc):
 
     return (meas_chunk_index, m_chunk_index)
 
+
 ###############################################################################
 def resolve_subject(doc, subj_list, chunks):
     """
@@ -1333,10 +1389,10 @@ def resolve_subject(doc, subj_list, chunks):
     """
 
     if TRACE:
-        log('resolve_subject: initial subject list: {0}'.format(subj_list))
+        print('resolve_subject: initial subject list: {0}'.format(subj_list))
     
     if chunks is None or 0 == len(chunks):
-        if TRACE: log('resolve_subject: NO CHUNKS')
+        if TRACE: print('resolve_subject: NO CHUNKS')
         return []
 
     # nothing to resolve if only a single subject candidate
@@ -1358,14 +1414,14 @@ def resolve_subject(doc, subj_list, chunks):
         subj_list = subj_list_2
         
     if TRACE:
-        log('resolve_subject: pruned subject list: {0}'.format(subj_list))
+        print('resolve_subject: pruned subject list: {0}'.format(subj_list))
 
     # find the chunk containing the meas* verb, if any, and the M
     meas_chunk_index, m_chunk_index = get_ref_chunk_indices(chunks, doc)
     
     if TRACE:
-        log('resolve_subject: meas chunk index: {0}'.format(meas_chunk_index))
-        log('resolve_subject: M    chunk index: {0}'.format(m_chunk_index))
+        print('resolve_subject: meas chunk index: {0}'.format(meas_chunk_index))
+        print('resolve_subject: M    chunk index: {0}'.format(m_chunk_index))
 
     # take the subject closest to the meas verb and the M
     subj_chunk_indices = []
@@ -1385,7 +1441,7 @@ def resolve_subject(doc, subj_list, chunks):
         for i in range(len(subj_chunk_indices)):
             subject = subj_list[i]
             chunk_index = subj_chunk_indices[i]
-            log("resolve_subject: subj '{0}' is in chunk index {1}".format(subject, chunk_index))
+            print("resolve_subject: subj '{0}' is in chunk index {1}".format(subject, chunk_index))
 
     # compute distances from subject to meas chunk, if any; keep closest subj
     min_dist = 999999
@@ -1407,7 +1463,7 @@ def resolve_subject(doc, subj_list, chunks):
                 subj_index = i
 
     if TRACE:
-        log('resolve_subject: preferred subject index: {0}'.format(subj_index))
+        print('resolve_subject: preferred subject index: {0}'.format(subj_index))
                 
     if -1 != subj_index:
         return [subj_list[subj_index]]
@@ -1424,7 +1480,7 @@ def get_meas_subj(m_token_index, doc):
     root = None
     do_child_search = False
 
-    if TRACE: log('get_meas_subj start...')
+    if TRACE: print('get_meas_subj start...')
 
     # If the current M token is not its own head, start there. If it is its
     # own head, walk backwards through the token list and find the nearest
@@ -1441,15 +1497,15 @@ def get_meas_subj(m_token_index, doc):
                 found_it = True
                 break
         if not found_it:
-            if TRACE: log('\tno verb found, trying nsubj or compound child...')
+            if TRACE: print('\tno verb found, trying nsubj or compound child...')
             for child in m_token.children:
                 if 'compound' == child.dep_ or 'nsubj' == child.dep_:
                     token = child
                     found_it = True
-                    if TRACE: log('\tfound compound or nsubj child')
+                    if TRACE: print('\tfound compound or nsubj child')
                     break
         if not found_it:
-            if TRACE: log('\treturning empty subject...')
+            if TRACE: print('\treturning empty subject...')
             return []
         
     prev_dep = m_token.dep_
@@ -1458,66 +1514,66 @@ def get_meas_subj(m_token_index, doc):
     extra_candidates = []
 
     if TRACE:
-        log('\tstarting token: {0}'.format(token.text))
+        print('\tstarting token: {0}'.format(token.text))
     
     while True:
         if TRACE: log_token(token)
         if 'ROOT' == token.dep_:
             # subject of measurement is a child of this node
-            if TRACE: log('\tat root token')
+            if TRACE: print('\tat root token')
             root = token
             break
         elif 'VERB' == token.pos_:
             if 'nsubj' == token.dep_:
-                if TRACE: log('\tverb with nsubj dep')
+                if TRACE: print('\tverb with nsubj dep')
                 break
             elif -1 != token.text.find('meas'):
                 # measurement verb
                 if token.head and 'NOUN' == token.head.pos_ and token.head.dep_ not in MEAS_VERB_DEPS:
-                    if TRACE: log('\tbreak on meas verb')
+                    if TRACE: print('\tbreak on meas verb')
                     token = token.head
                     break
                 elif token.head and token.head.text == 'with':
-                    if TRACE: log('\texit at with prior to meas verb')
+                    if TRACE: print('\texit at with prior to meas verb')
                     do_child_search = True
                     break
         elif 'NOUN' == token.pos_ and prev_dep in WITH_DEPS:
             if token.head and 'with' == token.head.text:
                 # special case - break on 'with'
-                if TRACE: log('\textra candidate at check-with: {0}'.format(token))
+                if TRACE: print('\textra candidate at check-with: {0}'.format(token))
                 extra_candidates.append(token)
                 prev_dep = token.dep_
                 token = token.head
                 continue
                 #break
             elif 'dobj' == token.dep_:
-                if TRACE: log('\tbreak on dobj at check-with')
+                if TRACE: print('\tbreak on dobj at check-with')
                 break
         elif 'NOUN' == token.pos_ and token.dep_ in IGNORE_DEPS:
             # this noun is part of an ignorable dependency
-            if TRACE: log('\tcontinue at NOUN and ignorable dep: "{0}"'.format(token.dep_))
+            if TRACE: print('\tcontinue at NOUN and ignorable dep: "{0}"'.format(token.dep_))
             prev_dep = token.dep_
             token = token.head
             continue
         elif 'NOUN' == token.pos_ and 'acl' == prev_dep:
             # prevous deps modify this noun, candidate subject of meas
-            if TRACE: log('\tbreak at NOUN and acl dep')
+            if TRACE: print('\tbreak at NOUN and acl dep')
             break
         elif token.dep_ in IGNORE_DEPS:
-            if TRACE: log('\tcontinue at ingorable dep: "{0}"'.format(token.dep_))
+            if TRACE: print('\tcontinue at ingorable dep: "{0}"'.format(token.dep_))
             prev_dep = token.dep_
             token = token.head
             continue
         elif 'NOUN' != token.pos_:
-            if TRACE: log('\tcontinue at POS == "{0}", not NOUN'.format(token.pos_))
+            if TRACE: print('\tcontinue at POS == "{0}", not NOUN'.format(token.pos_))
             prev_dep = token.dep_
             token = token.head
             continue
         else:
-            if TRACE: log('\tdefault break')
+            if TRACE: print('\tdefault break')
             break
 
-        if TRACE: log('\tcontinuing up the tree')
+        if TRACE: print('\tcontinuing up the tree')
         prev_dep = token.dep_
         token = token.head
 
@@ -1526,23 +1582,23 @@ def get_meas_subj(m_token_index, doc):
     if root is not None:
         # subject is potentially either the root or a child of the root
         if TRACE:
-            log('\tget_meas_subj: root is not None')
+            print('\tget_meas_subj: root is not None')
         if 'NOUN' == root.pos_:
-            if TRACE: log('\troot is a noun')
+            if TRACE: print('\troot is a noun')
             candidates.append(root)
         else:
-            if TRACE: log('\tcalling find_child_candidates')
+            if TRACE: print('\tcalling find_child_candidates')
             candidates = find_child_candidates(root)
     else:
 
         if token.text in GENERAL_TERMS:
             if TRACE:
-                log('\tget_meas_subj: attempt resolution of general term "{0}"'.format(token.text))
+                print('\tget_meas_subj: attempt resolution of general term "{0}"'.format(token.text))
             token = resolve_superlative_adj(m_token, token)[0]
             candidates.append(token)
         elif not do_child_search:
             if TRACE:
-                log('\tget_meas_subj: appending token')
+                print('\tget_meas_subj: appending token')
             candidates.append(token)
         elif do_child_search:
             candidates = find_child_candidates(token)
@@ -1551,6 +1607,7 @@ def get_meas_subj(m_token_index, doc):
         candidates.extend(extra_candidates)
             
     return candidates
+
 
 ###############################################################################
 def tokenize_and_find_subjects(sentence):
@@ -1586,7 +1643,7 @@ def tokenize_and_find_subjects(sentence):
 
             # if no subject found, remove punctuation and try again
             if 0 == len(meas_subject) and first_try:
-                if TRACE: log('no subject found, retrying...')
+                if TRACE: print('no subject found, retrying...')
                 sentence2 = regex_punctuation.sub(' ', sentence)
                 doc = nlp(sentence2)
                 i = 0
@@ -1598,7 +1655,7 @@ def tokenize_and_find_subjects(sentence):
             if 1 == len(meas_subject):
                 if 'JJS' == meas_subject[0].tag_:
                     if TRACE:
-                        log('resolving superlative adj: {0}'.format(meas_subject[0]))
+                        print('resolving superlative adj: {0}'.format(meas_subject[0]))
                     meas_subject = resolve_superlative_adj(tok, meas_subject[0])
                     
             meas_subjects.append(meas_subject)
@@ -1632,6 +1689,78 @@ def flatten(l):
 
 
 ###############################################################################
+def _find_simple_subjects(terms, sentence, measurements):
+    """
+    Find <term><separator><measurement> instances, where the separator is
+    either a colon or a dash, optionally surrounded by whitespace.
+    
+    Example:   "LV V1 VTI: 16.0 cm"
+    """
+
+    results = []
+    candidates = []
+    
+    if TRACE:
+        print('Called _find_simple_subjects...')
+        print('\t   terms: {0}'.format(terms))
+        print('\tsentence: {0}'.format(sentence))
+        for m in measurements:
+            print('\t    meas: {0}'.format(m.text))
+
+    resolved_meas_indices = []
+
+    # check for <term><separator><measurement>
+    for term in terms:
+        term_start = sentence.find(term)
+        if -1 != term_start:
+            # find the index of the measurement nearest to the end of the term
+            term_end = term_start + len(term)
+            index = -1
+            min_distance = len(sentence)
+            for i,m in enumerate(measurements):
+                if m.start >= term_end:
+                    distance = m.start - term_end
+                    if distance < min_distance:
+                        min_distance = distance
+                        index = i
+                        
+            # check chars between term_end and start of closest measurement
+            closest_meas_start = measurements[index].start
+            text = sentence[term_end:closest_meas_start]
+            match = re.search(r'\s*[-:]?\s*', text)
+            if match:
+                start = term_start
+                end   = measurements[index].end
+                c = overlap.Candidate(start,
+                                      end,
+                                      sentence[start:end],
+                                      # save meas index and term, needed later
+                                      other=(index,term))
+                candidates.append(c)
+
+    # remove overlapping candidates
+    candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
+    pruned_candidates = overlap.remove_overlap(candidates, TRACE)
+
+    # update the winning measurements
+    for pc in pruned_candidates:
+        meas_index, matching_term = pc.other
+        measurements[meas_index].subject      = [matching_term]
+        measurements[meas_index].matchingTerm = [matching_term]
+        measurements[meas_index].location     = LOCATION_RESOLVED
+        resolved_meas_indices.append(meas_index)
+    resolved_meas_indices = sorted(resolved_meas_indices)
+
+    if TRACE:
+        for i in resolved_meas_indices:
+            print('\tFound simple result: {0} => {1}'.
+                  format(measurements[i].matchingTerm,
+                         measurements[i].text))
+                
+    return resolved_meas_indices
+    
+
+###############################################################################
 def run(term_string, sentence, nosub=False, use_displacy=False):
     """
     Do the main work of this module.
@@ -1641,6 +1770,8 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
 
     if use_displacy:
         ENABLE_DISPLACY = True
+
+    replacements.clear()
 
     # save a copy of the original sentence, needed for JSON output
     original_sentence = sentence
@@ -1655,20 +1786,22 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     # save a copy of the original terms, needed for JSON output
     original_terms = terms.copy()
 
-    # convert terms to lowercase
+    # convert terms and sentence to lowercase
     terms = [term.lower() for term in terms]
+    sentence = sentence.lower()
     
     sentence = clean_sentence(sentence)
-    
+
     # find all size measurements
     json_string = smf_run(sentence)
     json_data = json.loads(json_string)
     size_measurements = [SizeMeasurement(**m) for m in json_data]
 
     if TRACE:
-        log('SizeMeasurements: ')
+        print('\n\nCalled subject_finder run()...')
+        print('SizeMeasurements: ')
         for sm in size_measurements:
-            log('\t{0}'.format(sm))
+            print('\t{0}'.format(sm))
 
     # convert from immutable smf.SizeMeasurement namedtuple to mutable Meas
     measurements = [Meas(sm) for sm in size_measurements]
@@ -1677,8 +1810,21 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     if 0 == len(measurements):
         return to_json(original_terms, original_sentence, [])
 
+    # attempt to resolve the simple constructs first
+    resolved_meas_indices = []
+    if len(terms) > 0:
+        resolved_meas_indices = _find_simple_subjects(terms,
+                                                      sentence,
+                                                      measurements)
+
+    # early exit if all resolved
+    if len(resolved_meas_indices) == len(measurements):
+        return to_json(original_terms, original_sentence, measurements)
+        
     # replace measurement text with <space>M<space+>, preserves sentence length
-    for m in measurements:
+    for i,m in enumerate(measurements):
+        if i in resolved_meas_indices:
+            continue
         num_chars = len(m.text)
         piece1 = sentence[:m.start]
         piece2 = ' M' + ' '*(num_chars - 2)
@@ -1696,12 +1842,18 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     m_sentence = sentence_ss
     
     if TRACE:
-        log('Sentence prior to analysis: ')
-        log('\t{0}'.format(sentence_ss))
+        print('Sentence prior to analysis: ')
+        print('\t{0}'.format(sentence_ss))
         
     meas_subjects = []        
     m_count = get_meas_count(sentence_ss)
 
+    #print('m_count: {0}'.format(m_count))
+    #for i,m in enumerate(measurements):
+    #    print('-1: [{0}]: m.subject = {1}'.format(i,m.subject))
+    #print('replacements: {0}'.format(replacements))
+
+    
     # try to find subject of each measurement
     ok = False
     if 3 == m_count:
@@ -1712,35 +1864,45 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
         ok, doc = process_1(m_sentence, sentence_ss, measurements)
 
     if not ok:
-        if TRACE: log('\tno subject found, using default')
+        if TRACE: print('\tno subject found, using default')
         set_default_subject(m_sentence, sentence_ss, measurements)
     
     # remove any duplicated subject tokens
     for m in measurements:
         m.subject = [t for t in set(m.subject)]
 
+    #for i,m in enumerate(measurements):
+    #    print('0: [{0}]: m.subject = {1}'.format(i,m.subject))
+    #print('replacements: {0}'.format(replacements))
+        
     # compute chunks and use them to find a best candidate subject
-    if ok:
+    if ok and m_count > 0:
         chunks = get_chunks(doc)
-        for m in measurements:
+        for i,m in enumerate(measurements):
+            if i in resolved_meas_indices:
+                continue
             subj_list = resolve_subject(doc, m.subject, chunks)
             m.subject = subj_list
-
+            
     # attempt to find any missing locations, one last time...
     if 1 == m_count and doc is not None:
         set_meas_locations(m_count, m_sentence, measurements, doc)
 
     # add additional modifiers to each subject, now that locations have been found
-    for m in measurements:
+    for i,m in enumerate(measurements):
+        if i in resolved_meas_indices:
+            continue
         meas_save = m.subject
         m.subject = []
         for s in meas_save:
             token_list = get_modifiers(s)
             m.subject.append(token_list)
-
+            
     # undo ngram replacements and other substitutions for subjects and locations
     if len(replacements) > 0:
-        for m in measurements:
+        for i,m in enumerate(measurements):
+            if i in resolved_meas_indices:
+                continue
             if EMPTY_FIELD == m.subject:
                 continue
             new_subj_texts = []
@@ -1757,7 +1919,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
 
     if len(replacements) > 0:
         for m in measurements:
-            if EMPTY_FIELD == m.location:
+            if EMPTY_FIELD == m.location or LOCATION_RESOLVED == m.location:
                 continue
             new_loc_texts = []
             # m.location is a list of python strings
@@ -1771,17 +1933,36 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
                 new_loc_texts.append(text)
             m.location = new_loc_texts
 
+    #for i,m in enumerate(measurements):
+    #    print('1: [{0}]: m.subject = {1}'.format(i,m.subject))
+    #print('replacements: {0}'.format(replacements))
+            
     # flatten the subject and location lists
-    for m in measurements:
+    for i,m in enumerate(measurements):
         if m.subject is not None:
+            #print('HERE2, [{0}]: m.subject: {1}'.format(i,m.subject))
             m.subject = flatten(m.subject)
+            #print('HERE3, [{0}]: m.subject: {1}'.format(i,m.subject))
             # convert subjects from spacy tokens to strings, if needed
-            if 0 == len(replacements):
-                m.subject = [s.text for s in m.subject]
-                
+            #if 0 == len(replacements):
+            #    print('HERE4')
+            #    m.subject = [s.text for s in m.subject]
+            # convert from Spacy strings, if needed
+            converted = []
+            for s in m.subject:
+                if isinstance(s, spacy.tokens.token.Token):
+                    converted.append(s.text)
+                else:
+                    converted.append(s)
+            m.subject = converted
+            
         if m.location is not None:
             m.location = flatten(m.location)
-
+            
+    #for i,m in enumerate(measurements):
+    #    print('2: [{0}]: m.subject = {1}'.format(i,m.subject))
+    #print('replacements: {0}'.format(replacements))
+            
     # convert to a JSON result
     return to_json(original_terms, original_sentence, measurements)
 
@@ -1805,21 +1986,24 @@ def set_default_subject(m_sentence, sentence_ss, measurements):
     noun_list = [n for n in set(noun_list) if re.match(r'[-.a-z]+', n.text)]
 
     for m in measurements:
+        if LOCATION_RESOLVED == m.location:
+            continue
         m.subject = noun_list.copy()
 
+        
 ###############################################################################
 def process_3(m_sentence, sentence, measurements):
     """
     Find subjects of three measurements.
     """
 
-    if TRACE: log('called process_3')
+    if TRACE: print('called process_3')
 
     # check for three independent "measures M' clauses
     matcher_3 = regex_measures_m_3.search(sentence)
     if matcher_3:
 
-        if TRACE: log('process_3: MEASURES_M_3 match')
+        if TRACE: print('process_3: MEASURES_M_3 match')
         
         count = 0
         found_it = False
@@ -1829,10 +2013,10 @@ def process_3(m_sentence, sentence, measurements):
 
             match_text = match.group()
             if TRACE:
-                log('process_3: text for iteration {0}: {1}'.
+                print('process_3: text for iteration {0}: {1}'.
                       format(count, match_text))
             doc, subjects = tokenize_and_find_subjects(match_text)
-            if TRACE: log('subjects for iteration: {0}: {1}'.
+            if TRACE: print('subjects for iteration: {0}: {1}'.
                             format(count, subjects))
 
             m_index = m_index_from_context(m_sentence, match_text)
@@ -1849,7 +2033,7 @@ def process_3(m_sentence, sentence, measurements):
                     # look for location(s)
                     locations = []
                     if TRACE:
-                        log("process_3: looking for loc for meas {0} in text '{1}'".format(m_index, match_text))
+                        print("process_3: looking for loc for meas {0} in text '{1}'".format(m_index, match_text))
                     for s in subjects[0]:
                         loc = extract_loc(match_text)
                         if EMPTY_STRING != loc:
@@ -1887,23 +2071,24 @@ def process_3(m_sentence, sentence, measurements):
         return process_1(m_sentence, sentence, measurements)
     else:
         return (False, None)
-            
+
+    
 ###############################################################################
 def process_2(m_sentence, sentence, measurements):
     """
     Find subjects of two measurements.
     """
 
-    if TRACE: log('called process_2')
+    if TRACE: print('called process_2')
     
     # check for a now-vs-then sentence form
     matcher_nvt1 = regex_now_vs_then_1.search(sentence)
     if matcher_nvt1:
-        if TRACE: log('process_2: NVT1 match')
+        if TRACE: print('process_2: NVT1 match')
         text2 = sentence[matcher_nvt1.end():]
         matcher_nvt2 = regex_now_vs_then_2.search(text2)
         if matcher_nvt2:
-            if TRACE: log('process_2: NVT2 match')
+            if TRACE: print('process_2: NVT2 match')
 
             text1 = sentence[0:matcher_nvt1.end()]
             doc, subjects = tokenize_and_find_subjects(text1)
@@ -1931,7 +2116,7 @@ def process_2(m_sentence, sentence, measurements):
     matcher_2 = regex_measures_m_2.search(sentence)
     if matcher_2:
 
-        if TRACE: log('process_2: MEASURES_M_2 match')
+        if TRACE: print('process_2: MEASURES_M_2 match')
         
         count = 0
         found_it = False
@@ -1941,10 +2126,10 @@ def process_2(m_sentence, sentence, measurements):
 
             match_text = match.group()
             if TRACE:
-                log('process_2: text for iteration {0}: {1}'.
+                print('process_2: text for iteration {0}: {1}'.
                       format(count, match_text))
             doc, subjects = tokenize_and_find_subjects(match_text)
-            if TRACE: log('subjects for iteration: {0}: {1}'.
+            if TRACE: print('subjects for iteration: {0}: {1}'.
                             format(count, subjects))
 
             m_index = m_index_from_context(m_sentence, match_text)
@@ -1960,7 +2145,7 @@ def process_2(m_sentence, sentence, measurements):
                     # look for location(s)
                     locations = []
                     if TRACE:
-                        log("process_2: looking for loc for meas {0} in text '{1}'".
+                        print("process_2: looking for loc for meas {0} in text '{1}'".
                               format(m_index, match_text))
                     for s in subjects[0]:
                         loc = extract_loc(match_text)
@@ -1986,7 +2171,7 @@ def process_2(m_sentence, sentence, measurements):
     matcher_ba = regex_before_and_after.search(sentence)
     if matcher_ba:
 
-        if TRACE: log('process_2: BA match')
+        if TRACE: print('process_2: BA match')
 
         # find the measurement subject up to the first M
         m_pos = sentence.find('M')
@@ -2037,11 +2222,11 @@ def process_2(m_sentence, sentence, measurements):
     # check for 'M and M' forms
     matcher_m_and_m = regex_m_and_m_2.search(sentence)
     if matcher_m_and_m:
-        if TRACE: log('process_2: M AND M 2 match')
+        if TRACE: print('process_2: M AND M 2 match')
 
         text1 = matcher_m_and_m.group('text1')
         doc, subjects = tokenize_and_find_subjects(text1)
-        if TRACE: log('SUBJECTS 1: {0}'.format(subjects))
+        if TRACE: print('SUBJECTS 1: {0}'.format(subjects))
         m_index = m_index_from_context(m_sentence, text1)
         #assert m_index < len(measurements) - 1
         if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
@@ -2073,11 +2258,11 @@ def process_2(m_sentence, sentence, measurements):
     
     matcher_m_and_m = regex_m_and_m_1.search(sentence)
     if matcher_m_and_m:
-        if TRACE: log('process_2: M AND M 1 match')
+        if TRACE: print('process_2: M AND M 1 match')
 
         text1 = matcher_m_and_m.group('text1')
         doc, subjects = tokenize_and_find_subjects(text1)
-        if TRACE: log('\tSUBJECTS 1: {0}'.format(subjects))
+        if TRACE: print('\tSUBJECTS 1: {0}'.format(subjects))
         m_index = m_index_from_context(m_sentence, text1)
         #assert m_index < len(measurements) - 1
         if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
@@ -2102,7 +2287,7 @@ def process_2(m_sentence, sentence, measurements):
 
             text2 = matcher_m_and_m.group('text2')
             doc, subjects2 = tokenize_and_find_subjects(text2)
-            if TRACE: log('\tSUBJECTS 2: {0}'.format(subjects2))
+            if TRACE: print('\tSUBJECTS 2: {0}'.format(subjects2))
 
             if subjects2 and subjects2[0] and len(subjects2[0]) > 0:
                 # found next subject
@@ -2123,7 +2308,7 @@ def process_2(m_sentence, sentence, measurements):
 
             elif prev_subject: #len(prev_+subject) >= 1:
                 # no subjects found, so duplicate the previous subject and location
-                if TRACE: log('\tusing previous subject')
+                if TRACE: print('\tusing previous subject')
                 for s in prev_subject:
                     measurements[m_index + 1].subject.append(s)
                 measurements[m_index + 1].location = prev_loc
@@ -2151,6 +2336,7 @@ def process_2(m_sentence, sentence, measurements):
         return (False, None)
     else:
         return process_1(m_sentence, sentence, measurements)
+
     
 ###############################################################################
 def m_index_from_context(m_sentence, match_text):
@@ -2191,6 +2377,7 @@ def m_index_from_context(m_sentence, match_text):
     # prior to use
     return index
 
+
 ###############################################################################
 def process_1(m_sentence, sentence, measurements):
     """
@@ -2198,11 +2385,11 @@ def process_1(m_sentence, sentence, measurements):
     single measurement.
     """
 
-    if TRACE: log('called process_1')
+    if TRACE: print('called process_1')
     
     match = regex_carina.search(sentence)
     if match:
-        if TRACE: log('\tprocess_1: carina match')
+        if TRACE: print('\tprocess_1: carina match')
 
         text = match.group()
         m_index = m_index_from_context(m_sentence, text)
@@ -2223,7 +2410,7 @@ def process_1(m_sentence, sentence, measurements):
                                -1 != s.text.find('et') or   \
                                      -1 != s.text.find('endo'):
                                 preferred_index = i
-                                if TRACE: log('process_1: found preferred tube subject')
+                                if TRACE: print('process_1: found preferred tube subject')
                                 break
 
                         if -1 != preferred_index:
@@ -2234,7 +2421,7 @@ def process_1(m_sentence, sentence, measurements):
                     return (True, doc)
 
                 # no subject found, so use endo tube group text
-                if TRACE: log('\tprocess_1: using endodube group text')
+                if TRACE: print('\tprocess_1: using endodube group text')
                 measurements[m_index].subject.append(match.group('endotube'))
                 return (True, doc)
     
@@ -2243,7 +2430,7 @@ def process_1(m_sentence, sentence, measurements):
         text = match.group()
 
         if TRACE:
-            log('process_1 matching text: {0}'.format(text))
+            print('process_1 matching text: {0}'.format(text))
 
         m_index = m_index_from_context(m_sentence, text)
         if INVALID_M_INDEX != m_index and m_index < len(measurements):
@@ -2267,7 +2454,7 @@ def process_1(m_sentence, sentence, measurements):
 
     # try to tokenize whatever is left
     if TRACE:
-        log('process_1 text: {0}'.format(sentence))
+        print('process_1 text: {0}'.format(sentence))
 
     m_index = m_index_from_context(m_sentence, sentence)
     if INVALID_M_INDEX != m_index and m_index < len(measurements):
@@ -2281,6 +2468,7 @@ def process_1(m_sentence, sentence, measurements):
     
     return (False, None)
 
+
 ###############################################################################
 def process_a_m_wds(m_sentence, sentence, measurements):
     """
@@ -2288,7 +2476,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
     measurement subject from it.
     """
 
-    if TRACE: log('called process_a_m_wds')
+    if TRACE: print('called process_a_m_wds')
     
     found_subject = False
 
@@ -2315,7 +2503,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
     matching_text = collapse_ws(matching_text)
 
     if TRACE:
-        log('\tA M WDS matching_text: ->{0}<-'.format(matching_text))
+        print('\tA M WDS matching_text: ->{0}<-'.format(matching_text))
 
     #found_it = process_1(m_sentence, matching_text, measurements)
     text = match.group()
@@ -2332,7 +2520,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
                     measurements[m_index].subject.append(s)
                 found_subject = True
                 if TRACE:
-                    log('\tSUBJECT: {0}'.format(subjects[0]))
+                    print('\tSUBJECT: {0}'.format(subjects[0]))
 
                 # erase matching text from sentence
                 sentence = erase(sentence, match.start(), match.end())
@@ -2353,7 +2541,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
 
             if TRACE:
                 if not found_subject:
-                    log('\tno subject found with first text, trying again...')
+                    print('\tno subject found with first text, trying again...')
 
     if found_subject:
         return (True, sentence, doc)
@@ -2368,7 +2556,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
     measurement subject from it.
     """
 
-    if TRACE: log('called process_a_wds_m')
+    if TRACE: print('called process_a_wds_m')
     
     found_subject = False
 
@@ -2377,7 +2565,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
         return (False, sentence, None)
 
     if TRACE:
-        log('\tRegex match: {0}'.format(match.group()))
+        print('\tRegex match: {0}'.format(match.group()))
 
     # either the groups 'words1' and 'words2' match
     # or the groups 'words3' and 'words4' do
@@ -2401,7 +2589,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
     matching_text = collapse_ws(matching_text)
 
     if TRACE:
-        log('\tA WDS M matching_text: ->{0}<-'.format(matching_text))
+        print('\tA WDS M matching_text: ->{0}<-'.format(matching_text))
 
     text = match.group()
     m_index = m_index_from_context(m_sentence, text)
@@ -2417,7 +2605,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
                     measurements[m_index].subject.append(s)
                 found_subject = True
                 if TRACE:
-                    log('\tSUBJECT: {0}'.format(subjects[0]))
+                    print('\tSUBJECT: {0}'.format(subjects[0]))
 
                 # erase matching text from sentence
                 sentence = erase(sentence, match.start(), match.end())
@@ -2438,7 +2626,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
 
             if TRACE:
                 if not found_subject:
-                    log('\tno subject found with first text, trying again...')
+                    print('\tno subject found with first text, trying again...')
                 
     if found_subject:
         return (True, sentence, doc)
@@ -2459,6 +2647,7 @@ def get_ngrams(words, n):
         result.append(' '.join(words[i:i+n]))
 
     return result
+
 
 ###############################################################################
 def replace_ngrams(sentence):
@@ -2528,7 +2717,7 @@ def replace_ngrams(sentence):
                                 if not has_overlap:
                                     matches.append( (ngram, n_start, n_end))
                                     if TRACE:
-                                        log('\tngram match: {0}'.format(ngram))
+                                        print('\tngram match: {0}'.format(ngram))
             start = -1
 
     # replace matching words in sentence
@@ -2540,13 +2729,13 @@ def replace_ngrams(sentence):
         new_wd = ngram_replacements[index]
         sentence = re.sub(r'\b' + old_wd + r'\b', new_wd, sentence)
         replacements[new_wd] = old_wd
-        if TRACE: log('\tReplaced {0} with {1}'.format(old_wd, new_wd))
+        if TRACE: print('\tReplaced {0} with {1}'.format(old_wd, new_wd))
         index += 1
         if index >= len(ngram_replacements):
             # found a long sentence with lots of replacements
             # probably a sentence tokenization error
-            log('*** subject_finder: more matches than ngram replacements ***')
-            log('original sentence: ' + original_sentence)
+            print('*** subject_finder: more matches than ngram replacements ***')
+            print('original sentence: ' + original_sentence)
             break
 
     return sentence
@@ -2578,8 +2767,8 @@ def self_test(TEST_DICT, terms, nosub):
         measurements = [Measurement(**m) for m in measurement_list]
 
         if 0 == len(measurements):
-            log('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
-            log('\tNo measurement subjects were found.')
+            print('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
+            print('\tNo measurement subjects were found.')
         else:
             num_entries = len(subj_lists)
             assert num_entries == len(measurements)
@@ -2599,20 +2788,21 @@ def self_test(TEST_DICT, terms, nosub):
                             break
 
                     if not found_it:
-                        log('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
-                        log('\t   Measurement: {0}'.format(m.text))
-                        log('\tSubjects found: {0}'.format(m.subject))
-                        log('\t         Truth: {0}'.format(subjects))
+                        print('\n*** SELF TEST FAILURE: ***\n{0}'.format(sentence))
+                        print('\t   Measurement: {0}'.format(m.text))
+                        print('\tSubjects found: {0}'.format(m.subject))
+                        print('\t         Truth: {0}'.format(subjects))
         
 
 ###############################################################################
 def get_version():
     return 'subject_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
+
         
 ###############################################################################
 def show_help():
-    log(get_version())
-    log("""
+    print(get_version())
+    print("""
     USAGE: python3 ./subject_finder.py -t <terms> -s <sentence> [-hvznxd]
 
     OPTIONS:
@@ -2622,6 +2812,7 @@ def show_help():
 
     FLAGS:
 
+        --debug                         Print debug info to stdout
         -h, --help                      log this information and exit.
         -v, --version                   log version information and exit.
         -z, --test                      Disable -s option and use test sentences.
@@ -2634,6 +2825,7 @@ def show_help():
                                         localhost:5000.
     """)
 
+    
 ###############################################################################
 if __name__ == '__main__':
 
@@ -2641,322 +2833,345 @@ if __name__ == '__main__':
     TEST_DICT = {
 
         # {subject} is/measure(s|ed|ing) M
-        'The spleen is 7.5 cm.' :
-        [['spleen']],
-        'The spleen was 7.5 cm.' :
-        [['spleen']],
-        'The spleen measures 7.5 cm.' :
-        [['spleen']],
-        'The lymph nodes are all 2 cm.' :
-        [['nodes']],
-        'The spleen is unremarkable measuring 8.6 cm.' :
-        [['spleen']],
-        'The spleen measures 10 cm and appears normal.' :
-        [['spleen']],
-        'Local lymphadenopathy measures up to 10 x 7 mm.' :
-        [['lymphadenopathy']],
-        'These nonobstructing calculi measure up to 6 mm.' :
-        [['calculi']],
-        'The spleen measures 8.6 cm and is normal in appearance.' :
-        [['spleen']],
-        'Lymph nodes measure up to approximately 2 cm in levels II '         +\
-        'through IV.' :
-        [['nodes']],
-        'The cyst in the lower pole of the kidney is 1.3 cm in size.' :
-        [['cyst']],
-        'There are small surrounding lymph nodes, the largest measuring '    +\
-        '10 x 7 millimeters.' :
-        [['nodes']],
-        'The spleen is top normal in size, measuring 12.3 centimeters in '   +\
-        'craniocaudal dimension.' :
-        [['spleen']],
-        'The duct tapers smoothly to the head of the pancreas, where it '    +\
-        'measures approximately 5 mm.' :
-        [['duct']],
-        'Another indistinct cluster can be seen also in the peripheral '     +\
-        'right middle lobe, measuring 12 x 11 millimeters (3: 39).' :
-        [['cluster']],
-        'Immediately inferior to the right lobe of the thyroid gland there ' +\
-        'is a hypoechoic nodule measuring 0.7 cm in greatest dimension.' :
-        [['nodule']],
-        'There is no evidence of intrahepatic or extrahepatic biliary '      +\
-        'dilatation with the common bile duct measuring 5.3 millimeters.' :
-        [['duct']],
-        'The largest right renal cyst arising from the lower pole measures ' +\
-        '5.5 x 5.4 x 5.5 cm, and demonstrates benign features with a thin '  +\
-        'wall and anechoic center.' :
-        [['cyst']],
-        'Right hilar node (5:28) is enlarged, measuring 1.4 cm, unchanged '  +\
-        'from prior, and was previously shown to be non-FDG avid.' :
-        [['node']],
-        'Again seen is a loculated low density at the pancreatic head, now ' +\
-        'measuring 6 cm x 4.5 cm (5:24) essentially unchanged compared to '  +\
-        'the prior exam.' :
-        [['density']],
-        'There is a small to moderate pericardial effusion, predominantly '  +\
-        'adjacent to the right ventricle and best seen on subcostal views, ' +\
-        'measuring up to 1.4 centimeters in greatest dimension.' :
-        [['effusion']],
-        'There is diffuse severe dilatation of the stomach and small bowel ' +\
-        'loops, with the small bowel maximally measuring 6.3 cm in '         +\
-        'dimension.' :
-        [['bowel']],
-        'Scale imaging of the artery in this region shows a diffuse '        +\
-        'symmetric wall thickening with the arterial wall measuring up to '  +\
-        '7 mm in diameter over several centimeters length.' :
-        [['wall']],
-        'Soft tissue structures demonstrate mediastinal lymphadenopathy '    +\
-        'with numerous lymph nodes throughout the mediastinum, with the '    +\
-        'largest node in the right paratracheal region measuring about 1.7 ' +\
-        'cm in greatest short axis dimension.' :
-        [['node']],        
-        'Extensive, pronounced cervical lymphadenopathy throughout levels '  +\
-        'II through IV, with lymph nodes measuring up to 2 cm.' :
-        [['nodes']],        
-        'Multiple lymph nodes are present at different mediastinal '         +\
-        'stations with largest measuring 13 mm in the right upper '          +\
-        'paratracheal region.' :
-        [['nodes']],
+        # 'The spleen is 7.5 cm.' :
+        # [['spleen']],
+        # 'The spleen was 7.5 cm.' :
+        # [['spleen']],
+        # 'The spleen measures 7.5 cm.' :
+        # [['spleen']],
+        # 'The lymph nodes are all 2 cm.' :
+        # [['nodes']],
+        # 'The spleen is unremarkable measuring 8.6 cm.' :
+        # [['spleen']],
+        # 'The spleen measures 10 cm and appears normal.' :
+        # [['spleen']],
+        # 'Local lymphadenopathy measures up to 10 x 7 mm.' :
+        # [['lymphadenopathy']],
+        # 'These nonobstructing calculi measure up to 6 mm.' :
+        # [['calculi']],
+        # 'The spleen measures 8.6 cm and is normal in appearance.' :
+        # [['spleen']],
+        # 'Lymph nodes measure up to approximately 2 cm in levels II '         +\
+        # 'through IV.' :
+        # [['nodes']],
+        # 'The cyst in the lower pole of the kidney is 1.3 cm in size.' :
+        # [['cyst']],
+        # 'There are small surrounding lymph nodes, the largest measuring '    +\
+        # '10 x 7 millimeters.' :
+        # [['nodes']],
+        # 'The spleen is top normal in size, measuring 12.3 centimeters in '   +\
+        # 'craniocaudal dimension.' :
+        # [['spleen']],
+        # 'The duct tapers smoothly to the head of the pancreas, where it '    +\
+        # 'measures approximately 5 mm.' :
+        # [['duct']],
+        # 'Another indistinct cluster can be seen also in the peripheral '     +\
+        # 'right middle lobe, measuring 12 x 11 millimeters (3: 39).' :
+        # [['cluster']],
+        # 'Immediately inferior to the right lobe of the thyroid gland there ' +\
+        # 'is a hypoechoic nodule measuring 0.7 cm in greatest dimension.' :
+        # [['nodule']],
+        # 'There is no evidence of intrahepatic or extrahepatic biliary '      +\
+        # 'dilatation with the common bile duct measuring 5.3 millimeters.' :
+        # [['duct']],
+        # 'The largest right renal cyst arising from the lower pole measures ' +\
+        # '5.5 x 5.4 x 5.5 cm, and demonstrates benign features with a thin '  +\
+        # 'wall and anechoic center.' :
+        # [['cyst']],
+        # 'Right hilar node (5:28) is enlarged, measuring 1.4 cm, unchanged '  +\
+        # 'from prior, and was previously shown to be non-FDG avid.' :
+        # [['node']],
+        # 'Again seen is a loculated low density at the pancreatic head, now ' +\
+        # 'measuring 6 cm x 4.5 cm (5:24) essentially unchanged compared to '  +\
+        # 'the prior exam.' :
+        # [['density']],
+        # 'There is a small to moderate pericardial effusion, predominantly '  +\
+        # 'adjacent to the right ventricle and best seen on subcostal views, ' +\
+        # 'measuring up to 1.4 centimeters in greatest dimension.' :
+        # [['effusion']],
+        # 'There is diffuse severe dilatation of the stomach and small bowel ' +\
+        # 'loops, with the small bowel maximally measuring 6.3 cm in '         +\
+        # 'dimension.' :
+        # [['bowel']],
+        # 'Scale imaging of the artery in this region shows a diffuse '        +\
+        # 'symmetric wall thickening with the arterial wall measuring up to '  +\
+        # '7 mm in diameter over several centimeters length.' :
+        # [['wall']],        
+        # 'Soft tissue structures demonstrate mediastinal lymphadenopathy '    +\
+        # 'with numerous lymph nodes throughout the mediastinum, with the '    +\
+        # 'largest node in the right paratracheal region measuring about 1.7 ' +\
+        # 'cm in greatest short axis dimension.' :
+        # [['node']],        
+        # 'Extensive, pronounced cervical lymphadenopathy throughout levels '  +\
+        # 'II through IV, with lymph nodes measuring up to 2 cm.' :
+        # [['nodes']],        
+        # 'Multiple lymph nodes are present at different mediastinal '         +\
+        # 'stations with largest measuring 13 mm in the right upper '          +\
+        # 'paratracheal region.' :
+        # [['nodes']],
+        
         'Ectatic abdominal aorta, with multiple regions of enlargement, '    +\
         'with a focal dilatation measuring 4.3 cm just below the renal '     +\
         'arteries.' :
         [['dilatation']],
-        'Multiple simple renal cysts are noted within the bilateral kidneys,'+\
-        ' left more so than right, with the largest cyst identified within ' +\
-        'the inferior pole of the left kidney measuring 2.4 cm.' :
-        [['cyst']],
-        'The liver is normal in architecture and echogenicity, and is '      +\
-        'seen to contain numerous small cysts ranging in size from a few '   +\
-        'millimeters to approximately 1.2 cm in diameter.' :
-        [['cysts']],        
-        'Nondistended gallbladder with small amount of intraluminal sludge, '+\
-        'and marked gallbladder wall edema measuring 7 mm.' :
-        [['edema']],
-        'Additionally, there is a small, loculated pericardial fluid '       +\
-        'collection consistent with cellular debris abutting the '           +\
-        'inferolateral wall of the left ventricle, measuring up to 0.9 '     +\
-        'centimeters in size (clips 10, 11).' :
-        [['collection']],
-        'In the left upper lobe, there is a large irregular mass abutting '  +\
-        'the anterior mediastinal and the anterior pleural space (3:29), '   +\
-        'measuring with maximum cross-sectional area of 8.1 x 6.6 cm '       +\
-        '(AP x TRV), found to likely represent non-small carcinoma per '     +\
-        'outside hospital ([**Hospital6 **]) biopsy report.' :
-        [['mass']],
+        
+        # 'Multiple simple renal cysts are noted within the bilateral kidneys,'+\
+        # ' left more so than right, with the largest cyst identified within ' +\
+        # 'the inferior pole of the left kidney measuring 2.4 cm.' :
+        # [['cyst']],        
+        # 'The liver is normal in architecture and echogenicity, and is '      +\
+        # 'seen to contain numerous small cysts ranging in size from a few '   +\
+        # 'millimeters to approximately 1.2 cm in diameter.' :
+        # [['cysts']],        
+        # 'Nondistended gallbladder with small amount of intraluminal sludge, '+\
+        # 'and marked gallbladder wall edema measuring 7 mm.' :
+        # [['edema']],
+        # 'Additionally, there is a small, loculated pericardial fluid '       +\
+        # 'collection consistent with cellular debris abutting the '           +\
+        # 'inferolateral wall of the left ventricle, measuring up to 0.9 '     +\
+        # 'centimeters in size (clips 10, 11).' :
+        # [['collection']],
+        # 'In the left upper lobe, there is a large irregular mass abutting '  +\
+        # 'the anterior mediastinal and the anterior pleural space (3:29), '   +\
+        # 'measuring with maximum cross-sectional area of 8.1 x 6.6 cm '       +\
+        # '(AP x TRV), found to likely represent non-small carcinoma per '     +\
+        # 'outside hospital ([**Hospital6 **]) biopsy report.' :
+        # [['mass']],
 
-        # ranging in size
-        'Distended gallbladder with multiple stones ranging in size from '   +\
-        'a few millimeters to 1 cm in diameter.' :
-        [['stones']],
-        'The liver is normal in architecture and echogenicity, and is '      +\
-        'seen to contain numerous small cysts ranging in size from a few '   +\
-        'millimeters to approximately 1.2 cm in diameter.' :
-        [['cysts']],
-        'Just cephalad to the solid mass is an area of multiloculated '      +\
-        'cystic change in the pancreatic head, with multiple cysts ranging ' +\
-        'in size from a few millimeters up to 1.2 cm.' :
-        [['cysts']],
+        # # ranging in size
+        # 'Distended gallbladder with multiple stones ranging in size from '   +\
+        # 'a few millimeters to 1 cm in diameter.' :
+        # [['stones']],
+        # 'The liver is normal in architecture and echogenicity, and is '      +\
+        # 'seen to contain numerous small cysts ranging in size from a few '   +\
+        # 'millimeters to approximately 1.2 cm in diameter.' :
+        # [['cysts']],
+        # 'Just cephalad to the solid mass is an area of multiloculated '      +\
+        # 'cystic change in the pancreatic head, with multiple cysts ranging ' +\
+        # 'in size from a few millimeters up to 1.2 cm.' :
+        # [['cysts']],
 
-        # two measurements
+        # # two measurements
 
-        # now vs. then
-        'A necrotic periportal lymph node  measures 2.0 cm compared to '     +\
-        '1.7 cm previously.' :
-        [['node'], ['node']],
-        'There is a fusiform infrarenal abdominal aortic aneurysm measuring '+\
-        '4.4 x 5.2 cm, which previously measured 4.3 x 5.3 cm, and has '     +\
-        'therefore not significantly changed.' :
-        [['aneurysm'], ['aneurysm']],
-        'A left deltoid mass measures 4.2 x 4.6 cm (5:22, previously '       +\
-        'measuring 3.4 x 4.4 cm).' :
-        [['mass'], ['mass']],
-        'A left adrenal nodule measures 1.2 x 1.4 cm as compared to 1.2 x '  +\
-        '1.4 cm previously (2:55).' :
-        [['nodule'], ['nodule']],
-        'A right hilar node measures 12 mm in short axis (7:24), previously '+\
-        '11 mm.' :
-        [['node'], ['node']],
-        'A segment III lesion currently measures 1.3 x 1.8 cm and '          +\
-        'previously measured 1.2 x 1.6 cm (2:45).' :
-        [['lesion'], ['lesion']],
-        'Lesion one within the hilar region measures 35 mm x 24 mm, '        +\
-        'previously measuring 31 mm x 23 mm.' :
-        [['lesion'], ['lesion']],
-        'The main pulmonary trunk measures 3.4 cm in diameter, previously '  +\
-        'measured 3.8 cm.' :
-        [['trunk'], ['trunk']],
-        'Target lesion 1 which was a supraclavicular lymph node measures '   +\
-        '5.5 x 3.3 cm today (5:17, measuring 5 x  2.7 cm on the prior).' :
-        [['lesion'], ['lesion']],
-        'The dominant lesion in the right parietal lobe near the vertex '    +\
-        'now measures 2.5 x 2.1 cm (image 1000:28), compared to the 2.4 x '  +\
-        '1.7 cm on [**2869-12-17**], appears unchanged.' :
-        [['lesion'], ['lesion']],
-        'Within the abdomen lesion five, which likely comprises a left '     +\
-        'adrenal lesion now measures 36 mm x 28 mm previously measuring '    +\
-        '38 mm x 29 mm.' :
-        [['lesion'], ['lesion']],
-        'The markedly enlarged spleen now measures 16 cm craniocaudally, '   +\
-        'compared to approximately 13 cm in the prior PET-CT one month ago, '+\
-        'concerning for lymphoma  recurrence.' :
-        [['spleen'], ['spleen']],
-        'The second largest lymph node in the left inferior axilla now '     +\
-        'measures 1.9 x 2.0 x 2.5 cm (4:27), which is increased from the '   +\
-        'prior measurement of 2.2 x 1.9 x 1.8 cm.' :
-        [['node'], ['node']],
-        'Interval decrease is seen in the fluid collections in the '         +\
-        'perirenal space specifically in the right perirenal space the '     +\
-        'fluid collection measures 2.2 cm x 2.4 cm now versus 2.6 x 2.5 cm ' +\
-        'then.' :
-        [['collection'], ['collection']],        
-        'For example a left upper lung nodule measures 8.1 mm and '          +\
-        'previously had measured 7.4 mm (3:36).' :
-        [['nodule'], ['nodule']],
-        'Again seen is aneurysmal dilatation of the left iliac artery, '     +\
-        'currently measuring 3.3 x 3.3 cm, which previously measured 3.2 x ' +\
-        '3.2 cm.' :
-        [['dilatation'], ['dilatation']],
-        'Again seen is an expansile soft tissue lytic lesion in the '        +\
-        'anterior left second rib which now measures 7.9 x 2.6 cm, '         +\
-        'previously measuring 6.7 x 2.7 cm (3:21).' :
-        [['lesion'], ['lesion']],
-        'A cavitary nodule is again seen within the right upper lobe '       +\
-        'currently measuring 1.5 x 1 cm, from the previous measurement of '  +\
-        '1.6 x 2.2 cm on [**2680-6-1**] study (4:21).' :
-        [['nodule'], ['nodule']],
+        # # now vs. then
+        # 'A necrotic periportal lymph node  measures 2.0 cm compared to '     +\
+        # '1.7 cm previously.' :
+        # [['node'], ['node']],
+        # 'There is a fusiform infrarenal abdominal aortic aneurysm measuring '+\
+        # '4.4 x 5.2 cm, which previously measured 4.3 x 5.3 cm, and has '     +\
+        # 'therefore not significantly changed.' :
+        # [['aneurysm'], ['aneurysm']],
+        # 'A left deltoid mass measures 4.2 x 4.6 cm (5:22, previously '       +\
+        # 'measuring 3.4 x 4.4 cm).' :
+        # [['mass'], ['mass']],
+        # 'A left adrenal nodule measures 1.2 x 1.4 cm as compared to 1.2 x '  +\
+        # '1.4 cm previously (2:55).' :
+        # [['nodule'], ['nodule']],
+        # 'A right hilar node measures 12 mm in short axis (7:24), previously '+\
+        # '11 mm.' :
+        # [['node'], ['node']],
+        # 'A segment III lesion currently measures 1.3 x 1.8 cm and '          +\
+        # 'previously measured 1.2 x 1.6 cm (2:45).' :
+        # [['lesion'], ['lesion']],
+        # 'Lesion one within the hilar region measures 35 mm x 24 mm, '        +\
+        # 'previously measuring 31 mm x 23 mm.' :
+        # [['lesion'], ['lesion']],
+        # 'The main pulmonary trunk measures 3.4 cm in diameter, previously '  +\
+        # 'measured 3.8 cm.' :
+        # [['trunk'], ['trunk']],
+        # 'Target lesion 1 which was a supraclavicular lymph node measures '   +\
+        # '5.5 x 3.3 cm today (5:17, measuring 5 x  2.7 cm on the prior).' :
+        # [['lesion'], ['lesion']],
+        # 'The dominant lesion in the right parietal lobe near the vertex '    +\
+        # 'now measures 2.5 x 2.1 cm (image 1000:28), compared to the 2.4 x '  +\
+        # '1.7 cm on [**2869-12-17**], appears unchanged.' :
+        # [['lesion'], ['lesion']],
+        # 'Within the abdomen lesion five, which likely comprises a left '     +\
+        # 'adrenal lesion now measures 36 mm x 28 mm previously measuring '    +\
+        # '38 mm x 29 mm.' :
+        # [['lesion'], ['lesion']],
+        # 'The markedly enlarged spleen now measures 16 cm craniocaudally, '   +\
+        # 'compared to approximately 13 cm in the prior PET-CT one month ago, '+\
+        # 'concerning for lymphoma  recurrence.' :
+        # [['spleen'], ['spleen']],
+        # 'The second largest lymph node in the left inferior axilla now '     +\
+        # 'measures 1.9 x 2.0 x 2.5 cm (4:27), which is increased from the '   +\
+        # 'prior measurement of 2.2 x 1.9 x 1.8 cm.' :
+        # [['node'], ['node']],
+        # 'Interval decrease is seen in the fluid collections in the '         +\
+        # 'perirenal space specifically in the right perirenal space the '     +\
+        # 'fluid collection measures 2.2 cm x 2.4 cm now versus 2.6 x 2.5 cm ' +\
+        # 'then.' :
+        # [['collection'], ['collection']],        
+        # 'For example a left upper lung nodule measures 8.1 mm and '          +\
+        # 'previously had measured 7.4 mm (3:36).' :
+        # [['nodule'], ['nodule']],
+        # 'Again seen is aneurysmal dilatation of the left iliac artery, '     +\
+        # 'currently measuring 3.3 x 3.3 cm, which previously measured 3.2 x ' +\
+        # '3.2 cm.' :
+        # [['dilatation'], ['dilatation']],
+        # 'Again seen is an expansile soft tissue lytic lesion in the '        +\
+        # 'anterior left second rib which now measures 7.9 x 2.6 cm, '         +\
+        # 'previously measuring 6.7 x 2.7 cm (3:21).' :
+        # [['lesion'], ['lesion']],
+        # 'A cavitary nodule is again seen within the right upper lobe '       +\
+        # 'currently measuring 1.5 x 1 cm, from the previous measurement of '  +\
+        # '1.6 x 2.2 cm on [**2680-6-1**] study (4:21).' :
+        # [['nodule'], ['nodule']],
 
-        # before and after
-        'The left kidney measures 8.5 cm and contains an 8 mm x 8 mm '       +\
-        'anechoic rounded focus along the lateral edge, which is most '      +\
-        'likely a simple renal cyst.' :
-        [['kidney'], ['focus']],
-        'The left kidney measures 11.5 cm and contains a 2.8 x 2.2 cm '      +\
-        'cyst in the upper pole which may contain a small septation, '       +\
-        'however, no increased vascularity.' :
-        [['kidney'], ['cyst']],
-        'The right kidney measures 9.2 cm, and contains a 5 mm, hyperechoic '+\
-        'calculus with posterior shadowing within the interpolar region.' :
-        [['kidney'], ['calculus']],
-        'The right kidney measures 12.1 cm in length, and in its lower '     +\
-        'pole, there is a 3.0 x 2.1 x 2.7 cm simple cyst.' :
-        [['kidney'], ['cyst']],
-        'The right kidney measures 11.9 cm and demonstrates a 7 mm '         +\
-        'hyperechoic focus without acoustic shadowing that may represent a ' +\
-        'small nonobstructing renal calculus.' :
-        [['kidney'], ['focus']],
-        'The left kidney measures 12.6 cm, with that measurement including ' +\
-        'a 4.5 cm exophytic cyst at the upper pole of the kidney, not '      +\
-        'significantly changed compared to prior CT.' :
-        [['kidney'], ['cyst']],
+        # # before and after
+        # 'The left kidney measures 8.5 cm and contains an 8 mm x 8 mm '       +\
+        # 'anechoic rounded focus along the lateral edge, which is most '      +\
+        # 'likely a simple renal cyst.' :
+        # [['kidney'], ['focus']],
+        # 'The left kidney measures 11.5 cm and contains a 2.8 x 2.2 cm '      +\
+        # 'cyst in the upper pole which may contain a small septation, '       +\
+        # 'however, no increased vascularity.' :
+        # [['kidney'], ['cyst']],
+        # 'The right kidney measures 9.2 cm, and contains a 5 mm, hyperechoic '+\
+        # 'calculus with posterior shadowing within the interpolar region.' :
+        # [['kidney'], ['calculus']],
+        # 'The right kidney measures 12.1 cm in length, and in its lower '     +\
+        # 'pole, there is a 3.0 x 2.1 x 2.7 cm simple cyst.' :
+        # [['kidney'], ['cyst']],
+        # 'The right kidney measures 11.9 cm and demonstrates a 7 mm '         +\
+        # 'hyperechoic focus without acoustic shadowing that may represent a ' +\
+        # 'small nonobstructing renal calculus.' :
+        # [['kidney'], ['focus']],
+        # 'The left kidney measures 12.6 cm, with that measurement including ' +\
+        # 'a 4.5 cm exophytic cyst at the upper pole of the kidney, not '      +\
+        # 'significantly changed compared to prior CT.' :
+        # [['kidney'], ['cyst']],
 
-        # two 'measures M'
-        'The right kidney measures 11.6 centimeters and the left kidney '    +\
-        'measures 12.8 centimeters.' :
-        [['kidney'], ['kidney']],
-        'The right kidney measures 10 cm and left kidney measures 9.4 '      +\
-        'cm, with no hydronephrosis, masses, or stones.' :
-        [['kidney'], ['kidney']],
-        'The right kidney measures 11.7 cm and the left kidney measures '    +\
-        'approximately 12 cm.' :
-        [['kidney'], ['kidney']],
-        'The cyst on the right measures approximately 3.0 millimeters and '  +\
-        'the cyst on the left measures approximately 3.6 millimeters.' :
-        [['cyst'], ['cyst']],        
+        # # two 'measures M'
+        # 'The right kidney measures 11.6 centimeters and the left kidney '    +\
+        # 'measures 12.8 centimeters.' :
+        # [['kidney'], ['kidney']],
+        # 'The right kidney measures 10 cm and left kidney measures 9.4 '      +\
+        # 'cm, with no hydronephrosis, masses, or stones.' :
+        # [['kidney'], ['kidney']],
+        # 'The right kidney measures 11.7 cm and the left kidney measures '    +\
+        # 'approximately 12 cm.' :
+        # [['kidney'], ['kidney']],
+        # 'The cyst on the right measures approximately 3.0 millimeters and '  +\
+        # 'the cyst on the left measures approximately 3.6 millimeters.' :
+        # [['cyst'], ['cyst']],
+
+
+        
         'Two additional smaller  lesions are newly identified; one within '  +\
         'segment VIII measures 0.5 x 1.1 cm (2:45) and the second in '       +\
         'segment VI measures 11 x 4 mm  (601b:31).' :
         [['lesions'], ['second']],
-        'The right kidney measures 11.5 cm and contains multiple '           +\
-        'thin-walled anechoic rounded structures consistent with simple '    +\
-        'renal cysts, the largest of which is within the mid pole and '      +\
-        'measures 4.5 x 4.8 x 3.9 cm.' :
-        [['kidney'], ['structures']],
 
-        # M and M forms
-        'The lower trachea measures 14 x 8 mm on expiratory imaging, and '   +\
-        '16 x 17 mm on inspiratory imaging.' :
-        [['trachea'], ['trachea']],
-        'The largest porta hepatis lymph node measures 1.6 cm in short axis '+\
-        'and 2.6 cm in long axis.' :
-        [['node'], ['node']],
-        'A large bulla at the left lung base measuring 4.6 x 4.2 cm and '    +\
-        '1 cm bleb in the right lung base are unchanged.' :
-        [['bulla'], ['bleb']],
-        'Right kidney measures 12.1 cm, and the left kidney 13.1 cm in its ' +\
-        'long axis.' :
-        [['kidney'], ['kidney']],
-        'The spleen is enlarged measuring 12.5 cm and has a simple 1.2 x '   +\
-        '2.9 x 2.9 cm cyst.' :
-        [['spleen'], ['cyst']],
 
-        # # broken
-        # 'The other bronchi demonstrate no evidence of malacia except to '    +\
-        # 'note moderate malacia of the bronchus intermedius, which measures ' +\
-        # '10 cm on inspiratory imaging and 4 mm in diameter on expiratory '   +\
-        # 'imaging.' :
-        # [['bronchus intermedius'], ['bronchus intermedius']],
+        
+        # 'The right kidney measures 11.5 cm and contains multiple '           +\
+        # 'thin-walled anechoic rounded structures consistent with simple '    +\
+        # 'renal cysts, the largest of which is within the mid pole and '      +\
+        # 'measures 4.5 x 4.8 x 3.9 cm.' :
+        # [['kidney'], ['structures']],
 
-        'At the level of the left main stem bronchus, the airway measures '  +\
-        '171 square millimeters at end inspiration and reduces to 67 square '+\
-        'millimeters (61% reduction in cross sectional area).' :
-        [['airway'], ['airway']],
-        'The right kidney measures 9.7 cm and again seen is an unchanged '   +\
-        'approximately 1 cm hyperechoic focus in the upper pole consistent ' +\
-        'with an angiomyolipoma.' :
-        [['kidney'], ['focus']],
-        'Two large enhancing masses are again noted arising from the lower ' +\
-        'pole of the left kidney, which measure 5.0 cm x 4.1 cm (4:87) '     +\
-        'and 7.3 cm x 5.7 cm (4:84).' :
-        [['masses'], ['masses']],
+        # # M and M forms
+        # 'The lower trachea measures 14 x 8 mm on expiratory imaging, and '   +\
+        # '16 x 17 mm on inspiratory imaging.' :
+        # [['trachea'], ['trachea']],
+        # 'The largest porta hepatis lymph node measures 1.6 cm in short axis '+\
+        # 'and 2.6 cm in long axis.' :
+        # [['node'], ['node']],
+        # 'A large bulla at the left lung base measuring 4.6 x 4.2 cm and '    +\
+        # '1 cm bleb in the right lung base are unchanged.' :
+        # [['bulla'], ['bleb']],
+        # 'Right kidney measures 12.1 cm, and the left kidney 13.1 cm in its ' +\
+        # 'long axis.' :
+        # [['kidney'], ['kidney']],
+        # 'The spleen is enlarged measuring 12.5 cm and has a simple 1.2 x '   +\
+        # '2.9 x 2.9 cm cyst.' :
+        # [['spleen'], ['cyst']],
 
-        # three measurements
-        'There is a small lesion measuring 1.3 cm, an enlarged lymph node '  +\
-        'measuring 1.5 cm, and an echogenic focus in the lower pole '        +\
-        'measuring 2.1 cm.' :
-        [['lesion'], ['node'], ['focus']],
-        'Additional lesions include a 6 mm ring-enhancing mass within the '  +\
-        'left lentiform nucleus, a 10 mm peripherally based mass within the '+\
-        'anterior left frontal lobe as well as a more confluent plaque-like '+\
-        'mass with a broad base along the tentorial surface measuring '      +\
-        'approximately 2 cm in greatest dimension.' :
-        [['mass'], ['mass'], ['mass']],
-        'Most representative are a 1.9 cm nodal mass in the right low '      +\
-        'paratracheal station (2:16), a 1.8 cm node in the right low '       +\
-        'paratracheal station (2:18), and a 1.6 cm infracarinal lymph node ' +\
-        '(2:26).' :
-        [['mass'], ['node'], ['node']],
+        # # # broken
+        # # 'The other bronchi demonstrate no evidence of malacia except to '    +\
+        # # 'note moderate malacia of the bronchus intermedius, which measures ' +\
+        # # '10 cm on inspiratory imaging and 4 mm in diameter on expiratory '   +\
+        # # 'imaging.' :
+        # # [['bronchus intermedius'], ['bronchus intermedius']],
 
-        # Carina
-        'ET tube tip is 2.2 cm above the carina.' :
-        [['tip']],
-        'Endotracheal tube is in place, roughly 4 cm above the carina.' :
-        [['tube']],
-        'Endotracheal tube is in standard position about 5 cm above the '    +\
-        'carina.' :
-        [['tube']],
-        'ET tube is in the standard position, the tip is 6.1 cm above the '  +\
-        'carina.' :
-        [['tip']],
-        'ET tube is low terminating in the lower thoracic trachea '          +\
-        'approximately 1 mm above the carina.' :
-        [['tube']],
-        'A single supine frontal view of the chest shows an endotracheal '   +\
-        'tube terminating 3 cm from the carina.' :
-        [['tube']],
-        'Tip of endotracheal tube is above the level of the clavicles, '     +\
-        'terminating about 7 cm above the carina.' :
-        [['tip']],
-        'ET tube tip is high, 8.1 cm above the carina at the level of the '  +\
-        'clavicles and should be advanced couple of centimeters for '        +\
-        'standard positioning.' :
-        [['tip']],
+        # 'At the level of the left main stem bronchus, the airway measures '  +\
+        # '171 square millimeters at end inspiration and reduces to 67 square '+\
+        # 'millimeters (61% reduction in cross sectional area).' :
+        # [['airway'], ['airway']],
+        # 'The right kidney measures 9.7 cm and again seen is an unchanged '   +\
+        # 'approximately 1 cm hyperechoic focus in the upper pole consistent ' +\
+        # 'with an angiomyolipoma.' :
+        # [['kidney'], ['focus']],
+        # 'Two large enhancing masses are again noted arising from the lower ' +\
+        # 'pole of the left kidney, which measure 5.0 cm x 4.1 cm (4:87) '     +\
+        # 'and 7.3 cm x 5.7 cm (4:84).' :
+        # [['masses'], ['masses']],
 
-        # distance
-        'The distance from the top of the graft to the aortic bifurcation '  +\
-        'measures 117 mm.' :
-        [['distance']],
+        # # three measurements
+        # 'There is a small lesion measuring 1.3 cm, an enlarged lymph node '  +\
+        # 'measuring 1.5 cm, and an echogenic focus in the lower pole '        +\
+        # 'measuring 2.1 cm.' :
+        # [['lesion'], ['node'], ['focus']],
+        # 'Additional lesions include a 6 mm ring-enhancing mass within the '  +\
+        # 'left lentiform nucleus, a 10 mm peripherally based mass within the '+\
+        # 'anterior left frontal lobe as well as a more confluent plaque-like '+\
+        # 'mass with a broad base along the tentorial surface measuring '      +\
+        # 'approximately 2 cm in greatest dimension.' :
+        # [['mass'], ['mass'], ['mass']],
+        # 'Most representative are a 1.9 cm nodal mass in the right low '      +\
+        # 'paratracheal station (2:16), a 1.8 cm node in the right low '       +\
+        # 'paratracheal station (2:18), and a 1.6 cm infracarinal lymph node ' +\
+        # '(2:26).' :
+        # [['mass'], ['node'], ['node']],
 
-        # need more distance examples - TBD
+        # # Carina
+        # 'ET tube tip is 2.2 cm above the carina.' :
+        # [['tip']],
+        # 'Endotracheal tube is in place, roughly 4 cm above the carina.' :
+        # [['tube']],
+        # 'Endotracheal tube is in standard position about 5 cm above the '    +\
+        # 'carina.' :
+        # [['tube']],
+        # 'ET tube is in the standard position, the tip is 6.1 cm above the '  +\
+        # 'carina.' :
+        # [['tip']],
+        # 'ET tube is low terminating in the lower thoracic trachea '          +\
+        # 'approximately 1 mm above the carina.' :
+        # [['tube']],
+        # 'A single supine frontal view of the chest shows an endotracheal '   +\
+        # 'tube terminating 3 cm from the carina.' :
+        # [['tube']],
+        # 'Tip of endotracheal tube is above the level of the clavicles, '     +\
+        # 'terminating about 7 cm above the carina.' :
+        # [['tip']],
+        # 'ET tube tip is high, 8.1 cm above the carina at the level of the '  +\
+        # 'clavicles and should be advanced couple of centimeters for '        +\
+        # 'standard positioning.' :
+        # [['tip']],
+
+        # # distance
+        # 'The distance from the top of the graft to the aortic bifurcation '  +\
+        # 'measures 117 mm.' :
+        # [['distance']],
+
+        # # need more distance examples - TBD
+
+        # # use --terms 'LV V1 VTI,t2'
+        # 'The LV V1 VTI: 18.0 cm, t2: 3x4 cm':
+        # [['lv v1 vti'], ['t2']],
+
+        # # use --terms 'LV V1 VTI,t2,Ao V2 VTI'
+        # 'mean: 103.7 cm/sec LV V1 VTI: 18.0 cm Ao mean PG: 5.3 mmHg Ao V2 VTI: 30.1 cm CO(LVOT): 3.3 l/min':
+        # [['lv v1 vti'], ['ao v2 vti']],
+
+        # # use --terms 'VTI,V1 VTI,V2 VTI,LV V1 VTI, Ao V2 VTI,VTI'
+        # "103.7 cm/sec lv v1 vti: 18.0 cm ao mean pg: 5.3 mmhg "             +\
+        # "ao v2 vti: 30.1 cm co(lvot): 3.3 l/min tr max vel: 212.3 cm/sec "  +\
+        # "sv(lvot): 55.2 ml tr max pg: 18.0 mmhg avg: 4.7 cmg: 4.7 cm/ sec " +\
+        # "e/e': 20.2 . . .":
+        # [['lv v1 vti'], ['ao v2 vti']],
     }
 
     optparser = optparse.OptionParser(add_help_option=False)
@@ -2968,6 +3183,7 @@ if __name__ == '__main__':
     optparser.add_option('-x', '--selftest', action='store_true', dest='selftest', default=False)
     optparser.add_option('-z', '--test',     action='store_true', dest='use_test_sentences', default=False)
     optparser.add_option('-d', '--displacy', action='store_true', dest='use_displacy', default=False)
+    optparser.add_option('--debug',          action='store_true', dest='debug', default=False)
     
     if 1 == len(sys.argv):
         show_help()
@@ -2980,8 +3196,11 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        log(get_version())
+        print(get_version())
         sys.exit(0)
+
+    if opts.debug:
+        _enable_debug()
 
     terms     = opts.terms
     nosub     = opts.nosub
@@ -2991,11 +3210,11 @@ if __name__ == '__main__':
     use_test_sentences = opts.use_test_sentences
 
     if not sentence and not (selftest or use_test_sentences):
-        log('A sentence must be specified on the command line.')
+        print('A sentence must be specified on the command line.')
         sys.exit(-1)
 
     if not terms and not selftest:
-        log('One or more search terms must be provided on the command line.')
+        print('One or more search terms must be provided on the command line.')
         sys.exit(-1)
 
     # displacy option valid only for single-sentence use
@@ -3019,6 +3238,6 @@ if __name__ == '__main__':
     else:
         for sentence in sentences:
             if use_test_sentences:
-                log(sentence)
+                print(sentence)
             json_result = run(terms, sentence, nosub, use_displacy)
-            log(json_result)
+            print(json_result)
