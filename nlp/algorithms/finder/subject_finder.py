@@ -184,6 +184,7 @@ To visualize a dependency parse of the previous sentence:
 import re
 import os
 import sys
+import copy
 import json
 import spacy
 import optparse
@@ -686,11 +687,10 @@ def to_json(original_terms, original_sentence, measurements):
         for t in terms_lc:
             # m.subject is a list of strings
             for subject_term in m.subject:
-                #print('term: {0}, type of subject_term: {1}'.
-                #      format(subject_term,type(subject_term)))
                 if -1 != subject_term.find(t):
                     m.matchingTerm.append(t)
                     found_it = True
+                    # no break, need to append all matches
 
     result_dict['querySuccess'] = found_it
 
@@ -1696,7 +1696,8 @@ def flatten(l):
 def _find_simple_subjects(terms, sentence, measurements):
     """
     Find <term><separator><measurement> instances, where the separator is
-    either a colon or a dash, optionally surrounded by whitespace.
+    either whitespace or a colon or dash character, with optional spaces on
+    either side.
     
     Example:   "LV V1 VTI: 16.0 cm"
     """
@@ -1711,12 +1712,11 @@ def _find_simple_subjects(terms, sentence, measurements):
         for m in measurements:
             print('\t    meas: {0}'.format(m.text))
 
-    resolved_meas_indices = []
-
     # check for <term><separator><measurement>
     for term in terms:
-        term_start = sentence.find(term)
-        if -1 != term_start:
+        match = re.search(r'\b{0}\b'.format(term), sentence)
+        if match:
+            term_start = match.start()
             # find the index of the measurement nearest to the end of the term
             term_end = term_start + len(term)
             index = -1
@@ -1731,7 +1731,8 @@ def _find_simple_subjects(terms, sentence, measurements):
             # check chars between term_end and start of closest measurement
             closest_meas_start = measurements[index].start
             text = sentence[term_end:closest_meas_start]
-            match = re.search(r'\s*[-:]?\s*', text)
+            # separator is at least one space, dash, or colon char
+            match = re.match(r'\A[-:\s]+\Z', text)
             if match:
                 start = term_start
                 end   = measurements[index].end
@@ -1747,21 +1748,24 @@ def _find_simple_subjects(terms, sentence, measurements):
     pruned_candidates = overlap.remove_overlap(candidates, TRACE)
 
     # update the winning measurements
+    resolved_meas_tuples = []    
     for pc in pruned_candidates:
         meas_index, matching_term = pc.other
-        measurements[meas_index].subject      = [matching_term]
-        measurements[meas_index].matchingTerm = [matching_term]
-        measurements[meas_index].location     = LOCATION_RESOLVED
-        resolved_meas_indices.append(meas_index)
-    resolved_meas_indices = sorted(resolved_meas_indices)
+        resolved_meas = copy.deepcopy(measurements[meas_index])
+        resolved_meas.subject      = [matching_term]
+        resolved_meas.matchingTerm = [matching_term]
+        resolved_meas.location     = LOCATION_RESOLVED
+        resolved_meas_tuples.append( (meas_index, resolved_meas) )
+
+    # sort in ascending order of measurement index
+    resolved_meas_tuples = sorted(resolved_meas_tuples, key=lambda x: x[0])
 
     if TRACE:
-        for i in resolved_meas_indices:
+        for i,m in resolved_meas_tuples:
             print('\tFound simple result: {0} => {1}'.
-                  format(measurements[i].matchingTerm,
-                         measurements[i].text))
-                
-    return resolved_meas_indices
+                  format(m.matchingTerm, m.text))
+
+    return resolved_meas_tuples
     
 
 ###############################################################################
@@ -1815,28 +1819,26 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
         return to_json(original_terms, original_sentence, [])
 
     # attempt to resolve the simple constructs first
-    resolved_meas_indices = []
+    resolved_meas_tuples = []
     if len(terms) > 0:
-        resolved_meas_indices = _find_simple_subjects(terms,
-                                                      sentence,
-                                                      measurements)
+        resolved_meas_tuples = _find_simple_subjects(terms,
+                                                sentence,
+                                                measurements)
 
-    # take an early exit if possible
-    if len(resolved_meas_indices) == len(measurements):
-        # all measurements satisfied simple matches to terms
-        return to_json(original_terms, original_sentence, measurements)
-    elif len(resolved_meas_indices) == len(terms):
-        # matched a measurement to each query term, ignore other measurements
-        pruned_measurements = []
-        for m in measurements:
-            if len(m.matchingTerm) > 0:
-                pruned_measurements.append(m)
-        return to_json(original_terms, original_sentence, pruned_measurements)
+    # separate resolved tuple list into separate indices and measurement lists
+    resolved_meas_indices = []
+    resolved_measurements = []
+    for meas_index, meas in resolved_meas_tuples:
+        resolved_meas_indices.append(meas_index)
+        resolved_measurements.append(meas)
         
+    # take an early exit if possible
+    num_resolved = len(resolved_meas_indices)
+    if num_resolved == len(measurements) or num_resolved == len(terms):
+        return to_json(original_terms, original_sentence, resolved_measurements)
+
     # replace measurement text with <space>M<space+>, preserves sentence length
     for i,m in enumerate(measurements):
-        if i in resolved_meas_indices:
-            continue
         num_chars = len(m.text)
         piece1 = sentence[:m.start]
         piece2 = ' M' + ' '*(num_chars - 2)
@@ -1860,12 +1862,6 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     meas_subjects = []        
     m_count = get_meas_count(sentence_ss)
 
-    #print('m_count: {0}'.format(m_count))
-    #for i,m in enumerate(measurements):
-    #    print('-1: [{0}]: m.subject = {1}'.format(i,m.subject))
-    #print('replacements: {0}'.format(replacements))
-
-    
     # try to find subject of each measurement
     ok = False
     if 3 == m_count:
@@ -1885,10 +1881,6 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
             continue
         m.subject = [t for t in set(m.subject)]
 
-    #for i,m in enumerate(measurements):
-    #    print('0: [{0}]: m.subject = {1}'.format(i,m.subject))
-    #print('replacements: {0}'.format(replacements))
-        
     # compute chunks and use them to find a best candidate subject
     if ok and m_count > 0:
         chunks = get_chunks(doc)
@@ -1947,22 +1939,12 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
                 new_loc_texts.append(text)
             m.location = new_loc_texts
 
-    #for i,m in enumerate(measurements):
-    #    print('1: [{0}]: m.subject = {1}'.format(i,m.subject))
-    #print('replacements: {0}'.format(replacements))
-            
     # flatten the subject and location lists
     for i,m in enumerate(measurements):
         if i in resolved_meas_indices:
             continue
         if m.subject is not None:
-            #print('HERE2, [{0}]: m.subject: {1}'.format(i,m.subject))
             m.subject = flatten(m.subject)
-            #print('HERE3, [{0}]: m.subject: {1}'.format(i,m.subject))
-            # convert subjects from spacy tokens to strings, if needed
-            #if 0 == len(replacements):
-            #    print('HERE4')
-            #    m.subject = [s.text for s in m.subject]
             # convert from Spacy strings, if needed
             converted = []
             for s in m.subject:
@@ -1974,10 +1956,10 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
             
         if m.location is not None:
             m.location = flatten(m.location)
-            
-    #for i,m in enumerate(measurements):
-    #    print('2: [{0}]: m.subject = {1}'.format(i,m.subject))
-    #print('replacements: {0}'.format(replacements))
+
+    # overwrite resolved measurements
+    for i,meas in resolved_meas_tuples:
+        measurements[i] = meas
             
     # convert to a JSON result
     return to_json(original_terms, original_sentence, measurements)
@@ -2797,12 +2779,12 @@ def self_test(TEST_DICT, terms, nosub):
                 m = measurements[i]
                 subjects = subj_lists[i]
                 for s in subjects:
-
                     # search for the truth string among all candidate strings
                     # (m.subject is a list of strings)
                     found_it = False
                     for candidate_str in m.subject:
-                        if -1 != candidate_str.find(s):
+                        match = re.search(r'\b{0}\b'.format(s), candidate_str)
+                        if match:
                             found_it = True
                             break
 
@@ -2929,11 +2911,10 @@ if __name__ == '__main__':
         'paratracheal region.' :
         [['nodes']],
 
-        # ### problem 1
-        # 'Ectatic abdominal aorta, with multiple regions of enlargement, '    +\
-        # 'with a focal dilatation measuring 4.3 cm just below the renal '     +\
-        # 'arteries.' :
-        # [['dilatation']],
+        'Ectatic abdominal aorta, with multiple regions of enlargement, '    +\
+        'with a focal dilatation measuring 4.3 cm just below the renal '     +\
+        'arteries.' :
+        [['dilatation']],
         
         'Multiple simple renal cysts are noted within the bilateral kidneys,'+\
         ' left more so than right, with the largest cyst identified within ' +\
@@ -2971,7 +2952,7 @@ if __name__ == '__main__':
         'in size from a few millimeters up to 1.2 cm.' :
         [['cysts']],
 
-        # # two measurements
+        # two measurements
 
         # now vs. then
         'A necrotic periportal lymph node  measures 2.0 cm compared to '     +\
@@ -3079,10 +3060,10 @@ if __name__ == '__main__':
 
 
         # ### problem 2
-        # 'Two additional smaller  lesions are newly identified; one within '  +\
-        # 'segment VIII measures 0.5 x 1.1 cm (2:45) and the second in '       +\
-        # 'segment VI measures 11 x 4 mm  (601b:31).' :
-        # [['lesions'], ['second']],
+        'Two additional smaller  lesions are newly identified; one within '  +\
+        'segment VIII measures 0.5 x 1.1 cm (2:45) and the second in '       +\
+        'segment VI measures 11 x 4 mm  (601b:31).' :
+        [['lesions'], ['second']],
 
 
         
@@ -3176,6 +3157,9 @@ if __name__ == '__main__':
         'measures 117 mm.' :
         [['distance']],
 
+        'The second lesion has a volume of 1.4 cubic centimeters.':
+        [['lesion']],
+
         # need more distance examples - TBD
 
         # use --terms 'LV V1 VTI,t2'
@@ -3194,7 +3178,10 @@ if __name__ == '__main__':
         [['lv v1 vti'], ['ao v2 vti']],
 
         'LVOT diam: 2.0 cm EDV(MOD-sp4): 91.0 ml ESV(MOD-sp4): 48.0 ml . . .':
-        [['lvot diam']]
+        [['lvot diam']],
+
+        'LVOT diam 2.0 cm EDV(MOD-sp4): 91.0 ml ESV(MOD-sp4): 48.0 ml . . .':
+        [['lvot diam']],
     }
 
     optparser = optparse.OptionParser(add_help_option=False)
