@@ -528,7 +528,7 @@ ENABLE_DISPLACY = False
 EMPTY_STRING = ''
 
 # nonempty string, means to not resolve a location for this measurement
-LOCATION_RESOLVED = ' '
+LOCATION_RESOLVED = [' ']
 
 # a value greater than the max number of measurements ever expected in a
 # sentence; used in the function 'm_index_from_context'
@@ -680,6 +680,7 @@ def to_json(original_terms, original_sentence, measurements):
     found_it = False
     for m in measurements:
         if len(m.matchingTerm) > 0:
+            # indicates success of a simple match
             found_it = True
             break
         for t in terms_lc:
@@ -700,7 +701,10 @@ def to_json(original_terms, original_sentence, measurements):
         for field in MEASUREMENT_FIELDS:
             m_dict[field] = getattr(m, field)
 
-        if LOCATION_RESOLVED == m_dict['location']:
+        loc = m_dict['location']
+        if LOCATION_RESOLVED == loc:
+            m_dict['location'] = EMPTY_FIELD
+        elif isinstance(loc, list) and 0 == len(loc):
             m_dict['location'] = EMPTY_FIELD
 
         dict_list.append(m_dict)
@@ -1817,9 +1821,17 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
                                                       sentence,
                                                       measurements)
 
-    # early exit if all resolved
+    # take an early exit if possible
     if len(resolved_meas_indices) == len(measurements):
+        # all measurements satisfied simple matches to terms
         return to_json(original_terms, original_sentence, measurements)
+    elif len(resolved_meas_indices) == len(terms):
+        # matched a measurement to each query term, ignore other measurements
+        pruned_measurements = []
+        for m in measurements:
+            if len(m.matchingTerm) > 0:
+                pruned_measurements.append(m)
+        return to_json(original_terms, original_sentence, pruned_measurements)
         
     # replace measurement text with <space>M<space+>, preserves sentence length
     for i,m in enumerate(measurements):
@@ -1857,18 +1869,20 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     # try to find subject of each measurement
     ok = False
     if 3 == m_count:
-         ok, doc = process_3(m_sentence, sentence_ss, measurements)
+         ok, doc = process_3(m_sentence, sentence_ss, measurements, resolved_meas_indices)
     elif 2 == m_count:
-         ok, doc = process_2(m_sentence, sentence_ss, measurements)
+         ok, doc = process_2(m_sentence, sentence_ss, measurements, resolved_meas_indices)
     elif 1 == m_count:
-        ok, doc = process_1(m_sentence, sentence_ss, measurements)
+        ok, doc = process_1(m_sentence, sentence_ss, measurements, resolved_meas_indices)
 
     if not ok:
         if TRACE: print('\tno subject found, using default')
         set_default_subject(m_sentence, sentence_ss, measurements)
     
     # remove any duplicated subject tokens
-    for m in measurements:
+    for i,m in enumerate(measurements):
+        if i in resolved_meas_indices:
+            continue
         m.subject = [t for t in set(m.subject)]
 
     #for i,m in enumerate(measurements):
@@ -1939,6 +1953,8 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
             
     # flatten the subject and location lists
     for i,m in enumerate(measurements):
+        if i in resolved_meas_indices:
+            continue
         if m.subject is not None:
             #print('HERE2, [{0}]: m.subject: {1}'.format(i,m.subject))
             m.subject = flatten(m.subject)
@@ -1992,7 +2008,7 @@ def set_default_subject(m_sentence, sentence_ss, measurements):
 
         
 ###############################################################################
-def process_3(m_sentence, sentence, measurements):
+def process_3(m_sentence, sentence, measurements, resolved_meas_indices):
     """
     Find subjects of three measurements.
     """
@@ -2019,7 +2035,7 @@ def process_3(m_sentence, sentence, measurements):
             if TRACE: print('subjects for iteration: {0}: {1}'.
                             format(count, subjects))
 
-            m_index = m_index_from_context(m_sentence, match_text)
+            m_index = m_index_from_context(m_sentence, match_text, resolved_meas_indices)
             #assert m_index < len(measurements)
             if INVALID_M_INDEX != m_index and m_index < len(measurements):
             
@@ -2055,26 +2071,26 @@ def process_3(m_sentence, sentence, measurements):
             return (True, doc)
 
     # try 'a M wds' and 'a wds M' forms...
-    found_it, sentence, doc = process_a_m_wds(m_sentence, sentence, measurements)
+    found_it, sentence, doc = process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices)
     m_count = get_meas_count(sentence)
     if found_it and 0 == m_count:
         return (True, doc)
 
-    found_it, sentence, doc = process_a_wds_m(m_sentence, sentence, measurements)
+    found_it, sentence, doc = process_a_wds_m(m_sentence, sentence, measurements, resolved_meas_indices)
     m_count = get_meas_count(sentence)
     if found_it and 0 == m_count:
         return (True, doc)
 
     if 2 == m_count:
-        return process_2(m_sentence, sentence, measurements)
+        return process_2(m_sentence, sentence, measurements, resolved_meas_indices)
     elif 1 == m_count:
-        return process_1(m_sentence, sentence, measurements)
+        return process_1(m_sentence, sentence, measurements, resolved_meas_indices)
     else:
         return (False, None)
 
     
 ###############################################################################
-def process_2(m_sentence, sentence, measurements):
+def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
     """
     Find subjects of two measurements.
     """
@@ -2093,7 +2109,7 @@ def process_2(m_sentence, sentence, measurements):
             text1 = sentence[0:matcher_nvt1.end()]
             doc, subjects = tokenize_and_find_subjects(text1)
 
-            m_index = m_index_from_context(m_sentence, text1)
+            m_index = m_index_from_context(m_sentence, text1, resolved_meas_indices)
             #assert m_index < len(measurements) - 1
             if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
 
@@ -2132,7 +2148,7 @@ def process_2(m_sentence, sentence, measurements):
             if TRACE: print('subjects for iteration: {0}: {1}'.
                             format(count, subjects))
 
-            m_index = m_index_from_context(m_sentence, match_text)
+            m_index = m_index_from_context(m_sentence, match_text, resolved_meas_indices)
             #assert m_index < len(measurements)
             if INVALID_M_INDEX != m_index and m_index < len(measurements):
             
@@ -2177,7 +2193,7 @@ def process_2(m_sentence, sentence, measurements):
         m_pos = sentence.find('M')
         text1 = sentence[0:m_pos+1]
         doc, subjects = tokenize_and_find_subjects(text1)
-        m_index = m_index_from_context(m_sentence, text1)
+        m_index = m_index_from_context(m_sentence, text1, resolved_meas_indices)
         #assert m_index < len(measurements)-1
         if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
             if subjects and subjects[0] and len(subjects[0]) > 0:
@@ -2227,7 +2243,7 @@ def process_2(m_sentence, sentence, measurements):
         text1 = matcher_m_and_m.group('text1')
         doc, subjects = tokenize_and_find_subjects(text1)
         if TRACE: print('SUBJECTS 1: {0}'.format(subjects))
-        m_index = m_index_from_context(m_sentence, text1)
+        m_index = m_index_from_context(m_sentence, text1, resolved_meas_indices)
         #assert m_index < len(measurements) - 1
         if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
             if subjects and subjects[0] and len(subjects[0]) > 0:
@@ -2263,7 +2279,7 @@ def process_2(m_sentence, sentence, measurements):
         text1 = matcher_m_and_m.group('text1')
         doc, subjects = tokenize_and_find_subjects(text1)
         if TRACE: print('\tSUBJECTS 1: {0}'.format(subjects))
-        m_index = m_index_from_context(m_sentence, text1)
+        m_index = m_index_from_context(m_sentence, text1, resolved_meas_indices)
         #assert m_index < len(measurements) - 1
         if INVALID_M_INDEX != m_index and m_index < len(measurements)-1:
             if subjects and subjects[0] and len(subjects[0]) > 0:
@@ -2322,12 +2338,12 @@ def process_2(m_sentence, sentence, measurements):
             return (True, doc)
 
     # try 'a M wds' and 'a wds M' forms...
-    found_it, sentence, doc = process_a_m_wds(m_sentence, sentence, measurements)
+    found_it, sentence, doc = process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices)
     m_count = get_meas_count(sentence)
     if found_it and 0 == m_count:
         return (True, doc)
 
-    found_it, sentence, doc = process_a_wds_m(m_sentence, sentence, measurements)
+    found_it, sentence, doc = process_a_wds_m(m_sentence, sentence, measurements, resolved_meas_indices)
     m_count = get_meas_count(sentence)
     if found_it and 0 == m_count:
         return (True, doc)
@@ -2335,11 +2351,11 @@ def process_2(m_sentence, sentence, measurements):
     if 2 == m_count:
         return (False, None)
     else:
-        return process_1(m_sentence, sentence, measurements)
+        return process_1(m_sentence, sentence, measurements, resolved_meas_indices)
 
     
 ###############################################################################
-def m_index_from_context(m_sentence, match_text):
+def m_index_from_context(m_sentence, match_text, resolved_meas_indices):
     """
     Given a text string 'match_text', search 'm_sentence' for it and find
     which measurement the match_text is associated with.
@@ -2373,13 +2389,16 @@ def m_index_from_context(m_sentence, match_text):
         else:
             index += 1
 
+    if index in resolved_meas_indices:
+        return INVALID_M_INDEX
+            
     # this value might be equal to len(measurements) - need to check
     # prior to use
     return index
 
 
 ###############################################################################
-def process_1(m_sentence, sentence, measurements):
+def process_1(m_sentence, sentence, measurements, resolved_meas_indices):
     """
     Find the subject of a sentence (or sentence fragment) containing a 
     single measurement.
@@ -2392,7 +2411,7 @@ def process_1(m_sentence, sentence, measurements):
         if TRACE: print('\tprocess_1: carina match')
 
         text = match.group()
-        m_index = m_index_from_context(m_sentence, text)
+        m_index = m_index_from_context(m_sentence, text, resolved_meas_indices)
         if INVALID_M_INDEX != m_index and m_index < len(measurements):
 
             texts = [sentence, text]
@@ -2432,7 +2451,7 @@ def process_1(m_sentence, sentence, measurements):
         if TRACE:
             print('process_1 matching text: {0}'.format(text))
 
-        m_index = m_index_from_context(m_sentence, text)
+        m_index = m_index_from_context(m_sentence, text, resolved_meas_indices)
         if INVALID_M_INDEX != m_index and m_index < len(measurements):
             
             # subjects is a list of lists
@@ -2444,11 +2463,11 @@ def process_1(m_sentence, sentence, measurements):
                 return (True, doc)
 
     # try 'a M wds' and 'a wds M' forms...
-    found_it, sentence, doc = process_a_m_wds(m_sentence, sentence, measurements)
+    found_it, sentence, doc = process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices)
     if found_it:
         return (True, doc)
 
-    found_it, sentence, doc = process_a_wds_m(m_sentence, sentence, measurements)
+    found_it, sentence, doc = process_a_wds_m(m_sentence, sentence, measurements, resolved_meas_indices)
     if found_it:
         return (True, doc)
 
@@ -2456,7 +2475,7 @@ def process_1(m_sentence, sentence, measurements):
     if TRACE:
         print('process_1 text: {0}'.format(sentence))
 
-    m_index = m_index_from_context(m_sentence, sentence)
+    m_index = m_index_from_context(m_sentence, sentence, resolved_meas_indices)
     if INVALID_M_INDEX != m_index and m_index < len(measurements):
         
         doc, subjects = tokenize_and_find_subjects(sentence)
@@ -2470,7 +2489,7 @@ def process_1(m_sentence, sentence, measurements):
 
 
 ###############################################################################
-def process_a_m_wds(m_sentence, sentence, measurements):
+def process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices):
     """
     Try to match regex_a_m_wds to the sentence or fragment and derive a
     measurement subject from it.
@@ -2507,7 +2526,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
 
     #found_it = process_1(m_sentence, matching_text, measurements)
     text = match.group()
-    m_index = m_index_from_context(m_sentence, text)
+    m_index = m_index_from_context(m_sentence, text, resolved_meas_indices)
     if INVALID_M_INDEX != m_index and m_index < len(measurements):    
 
         # subjects is a list of lists
@@ -2550,7 +2569,7 @@ def process_a_m_wds(m_sentence, sentence, measurements):
 
             
 ###############################################################################
-def process_a_wds_m(m_sentence, sentence, measurements):
+def process_a_wds_m(m_sentence, sentence, measurements, resolved_meas_indices):
     """
     Try to match regex_a_wds_m to the sentence or fragment and derive a
     measurement subject from it.
@@ -2592,7 +2611,7 @@ def process_a_wds_m(m_sentence, sentence, measurements):
         print('\tA WDS M matching_text: ->{0}<-'.format(matching_text))
 
     text = match.group()
-    m_index = m_index_from_context(m_sentence, text)
+    m_index = m_index_from_context(m_sentence, text, resolved_meas_indices)
     if INVALID_M_INDEX != m_index and m_index < len(measurements):
 
         # subjects is a list of lists
@@ -2833,345 +2852,349 @@ if __name__ == '__main__':
     TEST_DICT = {
 
         # {subject} is/measure(s|ed|ing) M
-        # 'The spleen is 7.5 cm.' :
-        # [['spleen']],
-        # 'The spleen was 7.5 cm.' :
-        # [['spleen']],
-        # 'The spleen measures 7.5 cm.' :
-        # [['spleen']],
-        # 'The lymph nodes are all 2 cm.' :
-        # [['nodes']],
-        # 'The spleen is unremarkable measuring 8.6 cm.' :
-        # [['spleen']],
-        # 'The spleen measures 10 cm and appears normal.' :
-        # [['spleen']],
-        # 'Local lymphadenopathy measures up to 10 x 7 mm.' :
-        # [['lymphadenopathy']],
-        # 'These nonobstructing calculi measure up to 6 mm.' :
-        # [['calculi']],
-        # 'The spleen measures 8.6 cm and is normal in appearance.' :
-        # [['spleen']],
-        # 'Lymph nodes measure up to approximately 2 cm in levels II '         +\
-        # 'through IV.' :
-        # [['nodes']],
-        # 'The cyst in the lower pole of the kidney is 1.3 cm in size.' :
-        # [['cyst']],
-        # 'There are small surrounding lymph nodes, the largest measuring '    +\
-        # '10 x 7 millimeters.' :
-        # [['nodes']],
-        # 'The spleen is top normal in size, measuring 12.3 centimeters in '   +\
-        # 'craniocaudal dimension.' :
-        # [['spleen']],
-        # 'The duct tapers smoothly to the head of the pancreas, where it '    +\
-        # 'measures approximately 5 mm.' :
-        # [['duct']],
-        # 'Another indistinct cluster can be seen also in the peripheral '     +\
-        # 'right middle lobe, measuring 12 x 11 millimeters (3: 39).' :
-        # [['cluster']],
-        # 'Immediately inferior to the right lobe of the thyroid gland there ' +\
-        # 'is a hypoechoic nodule measuring 0.7 cm in greatest dimension.' :
-        # [['nodule']],
-        # 'There is no evidence of intrahepatic or extrahepatic biliary '      +\
-        # 'dilatation with the common bile duct measuring 5.3 millimeters.' :
-        # [['duct']],
-        # 'The largest right renal cyst arising from the lower pole measures ' +\
-        # '5.5 x 5.4 x 5.5 cm, and demonstrates benign features with a thin '  +\
-        # 'wall and anechoic center.' :
-        # [['cyst']],
-        # 'Right hilar node (5:28) is enlarged, measuring 1.4 cm, unchanged '  +\
-        # 'from prior, and was previously shown to be non-FDG avid.' :
-        # [['node']],
-        # 'Again seen is a loculated low density at the pancreatic head, now ' +\
-        # 'measuring 6 cm x 4.5 cm (5:24) essentially unchanged compared to '  +\
-        # 'the prior exam.' :
-        # [['density']],
-        # 'There is a small to moderate pericardial effusion, predominantly '  +\
-        # 'adjacent to the right ventricle and best seen on subcostal views, ' +\
-        # 'measuring up to 1.4 centimeters in greatest dimension.' :
-        # [['effusion']],
-        # 'There is diffuse severe dilatation of the stomach and small bowel ' +\
-        # 'loops, with the small bowel maximally measuring 6.3 cm in '         +\
-        # 'dimension.' :
-        # [['bowel']],
-        # 'Scale imaging of the artery in this region shows a diffuse '        +\
-        # 'symmetric wall thickening with the arterial wall measuring up to '  +\
-        # '7 mm in diameter over several centimeters length.' :
-        # [['wall']],        
-        # 'Soft tissue structures demonstrate mediastinal lymphadenopathy '    +\
-        # 'with numerous lymph nodes throughout the mediastinum, with the '    +\
-        # 'largest node in the right paratracheal region measuring about 1.7 ' +\
-        # 'cm in greatest short axis dimension.' :
-        # [['node']],        
-        # 'Extensive, pronounced cervical lymphadenopathy throughout levels '  +\
-        # 'II through IV, with lymph nodes measuring up to 2 cm.' :
-        # [['nodes']],        
-        # 'Multiple lymph nodes are present at different mediastinal '         +\
-        # 'stations with largest measuring 13 mm in the right upper '          +\
-        # 'paratracheal region.' :
-        # [['nodes']],
-        
-        'Ectatic abdominal aorta, with multiple regions of enlargement, '    +\
-        'with a focal dilatation measuring 4.3 cm just below the renal '     +\
-        'arteries.' :
-        [['dilatation']],
-        
-        # 'Multiple simple renal cysts are noted within the bilateral kidneys,'+\
-        # ' left more so than right, with the largest cyst identified within ' +\
-        # 'the inferior pole of the left kidney measuring 2.4 cm.' :
-        # [['cyst']],        
-        # 'The liver is normal in architecture and echogenicity, and is '      +\
-        # 'seen to contain numerous small cysts ranging in size from a few '   +\
-        # 'millimeters to approximately 1.2 cm in diameter.' :
-        # [['cysts']],        
-        # 'Nondistended gallbladder with small amount of intraluminal sludge, '+\
-        # 'and marked gallbladder wall edema measuring 7 mm.' :
-        # [['edema']],
-        # 'Additionally, there is a small, loculated pericardial fluid '       +\
-        # 'collection consistent with cellular debris abutting the '           +\
-        # 'inferolateral wall of the left ventricle, measuring up to 0.9 '     +\
-        # 'centimeters in size (clips 10, 11).' :
-        # [['collection']],
-        # 'In the left upper lobe, there is a large irregular mass abutting '  +\
-        # 'the anterior mediastinal and the anterior pleural space (3:29), '   +\
-        # 'measuring with maximum cross-sectional area of 8.1 x 6.6 cm '       +\
-        # '(AP x TRV), found to likely represent non-small carcinoma per '     +\
-        # 'outside hospital ([**Hospital6 **]) biopsy report.' :
-        # [['mass']],
+        'The spleen is 7.5 cm.' :
+        [['spleen']],
+        'The spleen was 7.5 cm.' :
+        [['spleen']],
+        'The spleen measures 7.5 cm.' :
+        [['spleen']],
+        'The lymph nodes are all 2 cm.' :
+        [['nodes']],
+        'The spleen is unremarkable measuring 8.6 cm.' :
+        [['spleen']],
+        'The spleen measures 10 cm and appears normal.' :
+        [['spleen']],
+        'Local lymphadenopathy measures up to 10 x 7 mm.' :
+        [['lymphadenopathy']],
+        'These nonobstructing calculi measure up to 6 mm.' :
+        [['calculi']],
+        'The spleen measures 8.6 cm and is normal in appearance.' :
+        [['spleen']],
+        'Lymph nodes measure up to approximately 2 cm in levels II '         +\
+        'through IV.' :
+        [['nodes']],
+        'The cyst in the lower pole of the kidney is 1.3 cm in size.' :
+        [['cyst']],
+        'There are small surrounding lymph nodes, the largest measuring '    +\
+        '10 x 7 millimeters.' :
+        [['nodes']],
+        'The spleen is top normal in size, measuring 12.3 centimeters in '   +\
+        'craniocaudal dimension.' :
+        [['spleen']],
+        'The duct tapers smoothly to the head of the pancreas, where it '    +\
+        'measures approximately 5 mm.' :
+        [['duct']],
+        'Another indistinct cluster can be seen also in the peripheral '     +\
+        'right middle lobe, measuring 12 x 11 millimeters (3: 39).' :
+        [['cluster']],
+        'Immediately inferior to the right lobe of the thyroid gland there ' +\
+        'is a hypoechoic nodule measuring 0.7 cm in greatest dimension.' :
+        [['nodule']],
+        'There is no evidence of intrahepatic or extrahepatic biliary '      +\
+        'dilatation with the common bile duct measuring 5.3 millimeters.' :
+        [['duct']],
+        'The largest right renal cyst arising from the lower pole measures ' +\
+        '5.5 x 5.4 x 5.5 cm, and demonstrates benign features with a thin '  +\
+        'wall and anechoic center.' :
+        [['cyst']],
+        'Right hilar node (5:28) is enlarged, measuring 1.4 cm, unchanged '  +\
+        'from prior, and was previously shown to be non-FDG avid.' :
+        [['node']],
+        'Again seen is a loculated low density at the pancreatic head, now ' +\
+        'measuring 6 cm x 4.5 cm (5:24) essentially unchanged compared to '  +\
+        'the prior exam.' :
+        [['density']],
+        'There is a small to moderate pericardial effusion, predominantly '  +\
+        'adjacent to the right ventricle and best seen on subcostal views, ' +\
+        'measuring up to 1.4 centimeters in greatest dimension.' :
+        [['effusion']],
+        'There is diffuse severe dilatation of the stomach and small bowel ' +\
+        'loops, with the small bowel maximally measuring 6.3 cm in '         +\
+        'dimension.' :
+        [['bowel']],
+        'Scale imaging of the artery in this region shows a diffuse '        +\
+        'symmetric wall thickening with the arterial wall measuring up to '  +\
+        '7 mm in diameter over several centimeters length.' :
+        [['wall']],        
+        'Soft tissue structures demonstrate mediastinal lymphadenopathy '    +\
+        'with numerous lymph nodes throughout the mediastinum, with the '    +\
+        'largest node in the right paratracheal region measuring about 1.7 ' +\
+        'cm in greatest short axis dimension.' :
+        [['node']],        
+        'Extensive, pronounced cervical lymphadenopathy throughout levels '  +\
+        'II through IV, with lymph nodes measuring up to 2 cm.' :
+        [['nodes']],        
+        'Multiple lymph nodes are present at different mediastinal '         +\
+        'stations with largest measuring 13 mm in the right upper '          +\
+        'paratracheal region.' :
+        [['nodes']],
 
-        # # ranging in size
-        # 'Distended gallbladder with multiple stones ranging in size from '   +\
-        # 'a few millimeters to 1 cm in diameter.' :
-        # [['stones']],
-        # 'The liver is normal in architecture and echogenicity, and is '      +\
-        # 'seen to contain numerous small cysts ranging in size from a few '   +\
-        # 'millimeters to approximately 1.2 cm in diameter.' :
-        # [['cysts']],
-        # 'Just cephalad to the solid mass is an area of multiloculated '      +\
-        # 'cystic change in the pancreatic head, with multiple cysts ranging ' +\
-        # 'in size from a few millimeters up to 1.2 cm.' :
-        # [['cysts']],
+        # ### problem 1
+        # 'Ectatic abdominal aorta, with multiple regions of enlargement, '    +\
+        # 'with a focal dilatation measuring 4.3 cm just below the renal '     +\
+        # 'arteries.' :
+        # [['dilatation']],
+        
+        'Multiple simple renal cysts are noted within the bilateral kidneys,'+\
+        ' left more so than right, with the largest cyst identified within ' +\
+        'the inferior pole of the left kidney measuring 2.4 cm.' :
+        [['cyst']],        
+        'The liver is normal in architecture and echogenicity, and is '      +\
+        'seen to contain numerous small cysts ranging in size from a few '   +\
+        'millimeters to approximately 1.2 cm in diameter.' :
+        [['cysts']],        
+        'Nondistended gallbladder with small amount of intraluminal sludge, '+\
+        'and marked gallbladder wall edema measuring 7 mm.' :
+        [['edema']],
+        'Additionally, there is a small, loculated pericardial fluid '       +\
+        'collection consistent with cellular debris abutting the '           +\
+        'inferolateral wall of the left ventricle, measuring up to 0.9 '     +\
+        'centimeters in size (clips 10, 11).' :
+        [['collection']],
+        'In the left upper lobe, there is a large irregular mass abutting '  +\
+        'the anterior mediastinal and the anterior pleural space (3:29), '   +\
+        'measuring with maximum cross-sectional area of 8.1 x 6.6 cm '       +\
+        '(AP x TRV), found to likely represent non-small carcinoma per '     +\
+        'outside hospital ([**Hospital6 **]) biopsy report.' :
+        [['mass']],
+
+        # ranging in size
+        'Distended gallbladder with multiple stones ranging in size from '   +\
+        'a few millimeters to 1 cm in diameter.' :
+        [['stones']],
+        'The liver is normal in architecture and echogenicity, and is '      +\
+        'seen to contain numerous small cysts ranging in size from a few '   +\
+        'millimeters to approximately 1.2 cm in diameter.' :
+        [['cysts']],
+        'Just cephalad to the solid mass is an area of multiloculated '      +\
+        'cystic change in the pancreatic head, with multiple cysts ranging ' +\
+        'in size from a few millimeters up to 1.2 cm.' :
+        [['cysts']],
 
         # # two measurements
 
-        # # now vs. then
-        # 'A necrotic periportal lymph node  measures 2.0 cm compared to '     +\
-        # '1.7 cm previously.' :
-        # [['node'], ['node']],
-        # 'There is a fusiform infrarenal abdominal aortic aneurysm measuring '+\
-        # '4.4 x 5.2 cm, which previously measured 4.3 x 5.3 cm, and has '     +\
-        # 'therefore not significantly changed.' :
-        # [['aneurysm'], ['aneurysm']],
-        # 'A left deltoid mass measures 4.2 x 4.6 cm (5:22, previously '       +\
-        # 'measuring 3.4 x 4.4 cm).' :
-        # [['mass'], ['mass']],
-        # 'A left adrenal nodule measures 1.2 x 1.4 cm as compared to 1.2 x '  +\
-        # '1.4 cm previously (2:55).' :
-        # [['nodule'], ['nodule']],
-        # 'A right hilar node measures 12 mm in short axis (7:24), previously '+\
-        # '11 mm.' :
-        # [['node'], ['node']],
-        # 'A segment III lesion currently measures 1.3 x 1.8 cm and '          +\
-        # 'previously measured 1.2 x 1.6 cm (2:45).' :
-        # [['lesion'], ['lesion']],
-        # 'Lesion one within the hilar region measures 35 mm x 24 mm, '        +\
-        # 'previously measuring 31 mm x 23 mm.' :
-        # [['lesion'], ['lesion']],
-        # 'The main pulmonary trunk measures 3.4 cm in diameter, previously '  +\
-        # 'measured 3.8 cm.' :
-        # [['trunk'], ['trunk']],
-        # 'Target lesion 1 which was a supraclavicular lymph node measures '   +\
-        # '5.5 x 3.3 cm today (5:17, measuring 5 x  2.7 cm on the prior).' :
-        # [['lesion'], ['lesion']],
-        # 'The dominant lesion in the right parietal lobe near the vertex '    +\
-        # 'now measures 2.5 x 2.1 cm (image 1000:28), compared to the 2.4 x '  +\
-        # '1.7 cm on [**2869-12-17**], appears unchanged.' :
-        # [['lesion'], ['lesion']],
-        # 'Within the abdomen lesion five, which likely comprises a left '     +\
-        # 'adrenal lesion now measures 36 mm x 28 mm previously measuring '    +\
-        # '38 mm x 29 mm.' :
-        # [['lesion'], ['lesion']],
-        # 'The markedly enlarged spleen now measures 16 cm craniocaudally, '   +\
-        # 'compared to approximately 13 cm in the prior PET-CT one month ago, '+\
-        # 'concerning for lymphoma  recurrence.' :
-        # [['spleen'], ['spleen']],
-        # 'The second largest lymph node in the left inferior axilla now '     +\
-        # 'measures 1.9 x 2.0 x 2.5 cm (4:27), which is increased from the '   +\
-        # 'prior measurement of 2.2 x 1.9 x 1.8 cm.' :
-        # [['node'], ['node']],
-        # 'Interval decrease is seen in the fluid collections in the '         +\
-        # 'perirenal space specifically in the right perirenal space the '     +\
-        # 'fluid collection measures 2.2 cm x 2.4 cm now versus 2.6 x 2.5 cm ' +\
-        # 'then.' :
-        # [['collection'], ['collection']],        
-        # 'For example a left upper lung nodule measures 8.1 mm and '          +\
-        # 'previously had measured 7.4 mm (3:36).' :
-        # [['nodule'], ['nodule']],
-        # 'Again seen is aneurysmal dilatation of the left iliac artery, '     +\
-        # 'currently measuring 3.3 x 3.3 cm, which previously measured 3.2 x ' +\
-        # '3.2 cm.' :
-        # [['dilatation'], ['dilatation']],
-        # 'Again seen is an expansile soft tissue lytic lesion in the '        +\
-        # 'anterior left second rib which now measures 7.9 x 2.6 cm, '         +\
-        # 'previously measuring 6.7 x 2.7 cm (3:21).' :
-        # [['lesion'], ['lesion']],
-        # 'A cavitary nodule is again seen within the right upper lobe '       +\
-        # 'currently measuring 1.5 x 1 cm, from the previous measurement of '  +\
-        # '1.6 x 2.2 cm on [**2680-6-1**] study (4:21).' :
-        # [['nodule'], ['nodule']],
+        # now vs. then
+        'A necrotic periportal lymph node  measures 2.0 cm compared to '     +\
+        '1.7 cm previously.' :
+        [['node'], ['node']],
+        'There is a fusiform infrarenal abdominal aortic aneurysm measuring '+\
+        '4.4 x 5.2 cm, which previously measured 4.3 x 5.3 cm, and has '     +\
+        'therefore not significantly changed.' :
+        [['aneurysm'], ['aneurysm']],
+        'A left deltoid mass measures 4.2 x 4.6 cm (5:22, previously '       +\
+        'measuring 3.4 x 4.4 cm).' :
+        [['mass'], ['mass']],
+        'A left adrenal nodule measures 1.2 x 1.4 cm as compared to 1.2 x '  +\
+        '1.4 cm previously (2:55).' :
+        [['nodule'], ['nodule']],
+        'A right hilar node measures 12 mm in short axis (7:24), previously '+\
+        '11 mm.' :
+        [['node'], ['node']],
+        'A segment III lesion currently measures 1.3 x 1.8 cm and '          +\
+        'previously measured 1.2 x 1.6 cm (2:45).' :
+        [['lesion'], ['lesion']],
+        'Lesion one within the hilar region measures 35 mm x 24 mm, '        +\
+        'previously measuring 31 mm x 23 mm.' :
+        [['lesion'], ['lesion']],
+        'The main pulmonary trunk measures 3.4 cm in diameter, previously '  +\
+        'measured 3.8 cm.' :
+        [['trunk'], ['trunk']],
+        'Target lesion 1 which was a supraclavicular lymph node measures '   +\
+        '5.5 x 3.3 cm today (5:17, measuring 5 x  2.7 cm on the prior).' :
+        [['lesion'], ['lesion']],
+        'The dominant lesion in the right parietal lobe near the vertex '    +\
+        'now measures 2.5 x 2.1 cm (image 1000:28), compared to the 2.4 x '  +\
+        '1.7 cm on [**2869-12-17**], appears unchanged.' :
+        [['lesion'], ['lesion']],
+        'Within the abdomen lesion five, which likely comprises a left '     +\
+        'adrenal lesion now measures 36 mm x 28 mm previously measuring '    +\
+        '38 mm x 29 mm.' :
+        [['lesion'], ['lesion']],
+        'The markedly enlarged spleen now measures 16 cm craniocaudally, '   +\
+        'compared to approximately 13 cm in the prior PET-CT one month ago, '+\
+        'concerning for lymphoma  recurrence.' :
+        [['spleen'], ['spleen']],
+        'The second largest lymph node in the left inferior axilla now '     +\
+        'measures 1.9 x 2.0 x 2.5 cm (4:27), which is increased from the '   +\
+        'prior measurement of 2.2 x 1.9 x 1.8 cm.' :
+        [['node'], ['node']],
+        'Interval decrease is seen in the fluid collections in the '         +\
+        'perirenal space specifically in the right perirenal space the '     +\
+        'fluid collection measures 2.2 cm x 2.4 cm now versus 2.6 x 2.5 cm ' +\
+        'then.' :
+        [['collection'], ['collection']],        
+        'For example a left upper lung nodule measures 8.1 mm and '          +\
+        'previously had measured 7.4 mm (3:36).' :
+        [['nodule'], ['nodule']],
+        'Again seen is aneurysmal dilatation of the left iliac artery, '     +\
+        'currently measuring 3.3 x 3.3 cm, which previously measured 3.2 x ' +\
+        '3.2 cm.' :
+        [['dilatation'], ['dilatation']],
+        'Again seen is an expansile soft tissue lytic lesion in the '        +\
+        'anterior left second rib which now measures 7.9 x 2.6 cm, '         +\
+        'previously measuring 6.7 x 2.7 cm (3:21).' :
+        [['lesion'], ['lesion']],
+        'A cavitary nodule is again seen within the right upper lobe '       +\
+        'currently measuring 1.5 x 1 cm, from the previous measurement of '  +\
+        '1.6 x 2.2 cm on [**2680-6-1**] study (4:21).' :
+        [['nodule'], ['nodule']],
 
-        # # before and after
-        # 'The left kidney measures 8.5 cm and contains an 8 mm x 8 mm '       +\
-        # 'anechoic rounded focus along the lateral edge, which is most '      +\
-        # 'likely a simple renal cyst.' :
-        # [['kidney'], ['focus']],
-        # 'The left kidney measures 11.5 cm and contains a 2.8 x 2.2 cm '      +\
-        # 'cyst in the upper pole which may contain a small septation, '       +\
-        # 'however, no increased vascularity.' :
-        # [['kidney'], ['cyst']],
-        # 'The right kidney measures 9.2 cm, and contains a 5 mm, hyperechoic '+\
-        # 'calculus with posterior shadowing within the interpolar region.' :
-        # [['kidney'], ['calculus']],
-        # 'The right kidney measures 12.1 cm in length, and in its lower '     +\
-        # 'pole, there is a 3.0 x 2.1 x 2.7 cm simple cyst.' :
-        # [['kidney'], ['cyst']],
-        # 'The right kidney measures 11.9 cm and demonstrates a 7 mm '         +\
-        # 'hyperechoic focus without acoustic shadowing that may represent a ' +\
-        # 'small nonobstructing renal calculus.' :
-        # [['kidney'], ['focus']],
-        # 'The left kidney measures 12.6 cm, with that measurement including ' +\
-        # 'a 4.5 cm exophytic cyst at the upper pole of the kidney, not '      +\
-        # 'significantly changed compared to prior CT.' :
-        # [['kidney'], ['cyst']],
+        # before and after
+        'The left kidney measures 8.5 cm and contains an 8 mm x 8 mm '       +\
+        'anechoic rounded focus along the lateral edge, which is most '      +\
+        'likely a simple renal cyst.' :
+        [['kidney'], ['focus']],
+        'The left kidney measures 11.5 cm and contains a 2.8 x 2.2 cm '      +\
+        'cyst in the upper pole which may contain a small septation, '       +\
+        'however, no increased vascularity.' :
+        [['kidney'], ['cyst']],
+        'The right kidney measures 9.2 cm, and contains a 5 mm, hyperechoic '+\
+        'calculus with posterior shadowing within the interpolar region.' :
+        [['kidney'], ['calculus']],
+        'The right kidney measures 12.1 cm in length, and in its lower '     +\
+        'pole, there is a 3.0 x 2.1 x 2.7 cm simple cyst.' :
+        [['kidney'], ['cyst']],
+        'The right kidney measures 11.9 cm and demonstrates a 7 mm '         +\
+        'hyperechoic focus without acoustic shadowing that may represent a ' +\
+        'small nonobstructing renal calculus.' :
+        [['kidney'], ['focus']],
+        'The left kidney measures 12.6 cm, with that measurement including ' +\
+        'a 4.5 cm exophytic cyst at the upper pole of the kidney, not '      +\
+        'significantly changed compared to prior CT.' :
+        [['kidney'], ['cyst']],
 
-        # # two 'measures M'
-        # 'The right kidney measures 11.6 centimeters and the left kidney '    +\
-        # 'measures 12.8 centimeters.' :
-        # [['kidney'], ['kidney']],
-        # 'The right kidney measures 10 cm and left kidney measures 9.4 '      +\
-        # 'cm, with no hydronephrosis, masses, or stones.' :
-        # [['kidney'], ['kidney']],
-        # 'The right kidney measures 11.7 cm and the left kidney measures '    +\
-        # 'approximately 12 cm.' :
-        # [['kidney'], ['kidney']],
-        # 'The cyst on the right measures approximately 3.0 millimeters and '  +\
-        # 'the cyst on the left measures approximately 3.6 millimeters.' :
-        # [['cyst'], ['cyst']],
+        # two 'measures M'
+        'The right kidney measures 11.6 centimeters and the left kidney '    +\
+        'measures 12.8 centimeters.' :
+        [['kidney'], ['kidney']],
+        'The right kidney measures 10 cm and left kidney measures 9.4 '      +\
+        'cm, with no hydronephrosis, masses, or stones.' :
+        [['kidney'], ['kidney']],
+        'The right kidney measures 11.7 cm and the left kidney measures '    +\
+        'approximately 12 cm.' :
+        [['kidney'], ['kidney']],
+        'The cyst on the right measures approximately 3.0 millimeters and '  +\
+        'the cyst on the left measures approximately 3.6 millimeters.' :
+        [['cyst'], ['cyst']],
+
+
+        # ### problem 2
+        # 'Two additional smaller  lesions are newly identified; one within '  +\
+        # 'segment VIII measures 0.5 x 1.1 cm (2:45) and the second in '       +\
+        # 'segment VI measures 11 x 4 mm  (601b:31).' :
+        # [['lesions'], ['second']],
 
 
         
-        'Two additional smaller  lesions are newly identified; one within '  +\
-        'segment VIII measures 0.5 x 1.1 cm (2:45) and the second in '       +\
-        'segment VI measures 11 x 4 mm  (601b:31).' :
-        [['lesions'], ['second']],
+        'The right kidney measures 11.5 cm and contains multiple '           +\
+        'thin-walled anechoic rounded structures consistent with simple '    +\
+        'renal cysts, the largest of which is within the mid pole and '      +\
+        'measures 4.5 x 4.8 x 3.9 cm.' :
+        [['kidney'], ['structures']],
 
+        # M and M forms
+        'The lower trachea measures 14 x 8 mm on expiratory imaging, and '   +\
+        '16 x 17 mm on inspiratory imaging.' :
+        [['trachea'], ['trachea']],
+        'The largest porta hepatis lymph node measures 1.6 cm in short axis '+\
+        'and 2.6 cm in long axis.' :
+        [['node'], ['node']],
+        'A large bulla at the left lung base measuring 4.6 x 4.2 cm and '    +\
+        '1 cm bleb in the right lung base are unchanged.' :
+        [['bulla'], ['bleb']],
+        'Right kidney measures 12.1 cm, and the left kidney 13.1 cm in its ' +\
+        'long axis.' :
+        [['kidney'], ['kidney']],
+        'The spleen is enlarged measuring 12.5 cm and has a simple 1.2 x '   +\
+        '2.9 x 2.9 cm cyst.' :
+        [['spleen'], ['cyst']],
 
-        
-        # 'The right kidney measures 11.5 cm and contains multiple '           +\
-        # 'thin-walled anechoic rounded structures consistent with simple '    +\
-        # 'renal cysts, the largest of which is within the mid pole and '      +\
-        # 'measures 4.5 x 4.8 x 3.9 cm.' :
-        # [['kidney'], ['structures']],
+        # # broken
+        # 'The other bronchi demonstrate no evidence of malacia except to '    +\
+        # 'note moderate malacia of the bronchus intermedius, which measures ' +\
+        # '10 cm on inspiratory imaging and 4 mm in diameter on expiratory '   +\
+        # 'imaging.' :
+        # [['bronchus intermedius'], ['bronchus intermedius']],
 
-        # # M and M forms
-        # 'The lower trachea measures 14 x 8 mm on expiratory imaging, and '   +\
-        # '16 x 17 mm on inspiratory imaging.' :
-        # [['trachea'], ['trachea']],
-        # 'The largest porta hepatis lymph node measures 1.6 cm in short axis '+\
-        # 'and 2.6 cm in long axis.' :
-        # [['node'], ['node']],
-        # 'A large bulla at the left lung base measuring 4.6 x 4.2 cm and '    +\
-        # '1 cm bleb in the right lung base are unchanged.' :
-        # [['bulla'], ['bleb']],
-        # 'Right kidney measures 12.1 cm, and the left kidney 13.1 cm in its ' +\
-        # 'long axis.' :
-        # [['kidney'], ['kidney']],
-        # 'The spleen is enlarged measuring 12.5 cm and has a simple 1.2 x '   +\
-        # '2.9 x 2.9 cm cyst.' :
-        # [['spleen'], ['cyst']],
+        'At the level of the left main stem bronchus, the airway measures '  +\
+        '171 square millimeters at end inspiration and reduces to 67 square '+\
+        'millimeters (61% reduction in cross sectional area).' :
+        [['airway'], ['airway']],
+        'The right kidney measures 9.7 cm and again seen is an unchanged '   +\
+        'approximately 1 cm hyperechoic focus in the upper pole consistent ' +\
+        'with an angiomyolipoma.' :
+        [['kidney'], ['focus']],
+        'Two large enhancing masses are again noted arising from the lower ' +\
+        'pole of the left kidney, which measure 5.0 cm x 4.1 cm (4:87) '     +\
+        'and 7.3 cm x 5.7 cm (4:84).' :
+        [['masses'], ['masses']],
 
-        # # # broken
-        # # 'The other bronchi demonstrate no evidence of malacia except to '    +\
-        # # 'note moderate malacia of the bronchus intermedius, which measures ' +\
-        # # '10 cm on inspiratory imaging and 4 mm in diameter on expiratory '   +\
-        # # 'imaging.' :
-        # # [['bronchus intermedius'], ['bronchus intermedius']],
+        # three measurements
+        'There is a small lesion measuring 1.3 cm, an enlarged lymph node '  +\
+        'measuring 1.5 cm, and an echogenic focus in the lower pole '        +\
+        'measuring 2.1 cm.' :
+        [['lesion'], ['node'], ['focus']],
+        'Additional lesions include a 6 mm ring-enhancing mass within the '  +\
+        'left lentiform nucleus, a 10 mm peripherally based mass within the '+\
+        'anterior left frontal lobe as well as a more confluent plaque-like '+\
+        'mass with a broad base along the tentorial surface measuring '      +\
+        'approximately 2 cm in greatest dimension.' :
+        [['mass'], ['mass'], ['mass']],
+        'Most representative are a 1.9 cm nodal mass in the right low '      +\
+        'paratracheal station (2:16), a 1.8 cm node in the right low '       +\
+        'paratracheal station (2:18), and a 1.6 cm infracarinal lymph node ' +\
+        '(2:26).' :
+        [['mass'], ['node'], ['node']],
 
-        # 'At the level of the left main stem bronchus, the airway measures '  +\
-        # '171 square millimeters at end inspiration and reduces to 67 square '+\
-        # 'millimeters (61% reduction in cross sectional area).' :
-        # [['airway'], ['airway']],
-        # 'The right kidney measures 9.7 cm and again seen is an unchanged '   +\
-        # 'approximately 1 cm hyperechoic focus in the upper pole consistent ' +\
-        # 'with an angiomyolipoma.' :
-        # [['kidney'], ['focus']],
-        # 'Two large enhancing masses are again noted arising from the lower ' +\
-        # 'pole of the left kidney, which measure 5.0 cm x 4.1 cm (4:87) '     +\
-        # 'and 7.3 cm x 5.7 cm (4:84).' :
-        # [['masses'], ['masses']],
+        # Carina
+        'ET tube tip is 2.2 cm above the carina.' :
+        [['tip']],
+        'Endotracheal tube is in place, roughly 4 cm above the carina.' :
+        [['tube']],
+        'Endotracheal tube is in standard position about 5 cm above the '    +\
+        'carina.' :
+        [['tube']],
+        'ET tube is in the standard position, the tip is 6.1 cm above the '  +\
+        'carina.' :
+        [['tip']],
+        'ET tube is low terminating in the lower thoracic trachea '          +\
+        'approximately 1 mm above the carina.' :
+        [['tube']],
+        'A single supine frontal view of the chest shows an endotracheal '   +\
+        'tube terminating 3 cm from the carina.' :
+        [['tube']],
+        'Tip of endotracheal tube is above the level of the clavicles, '     +\
+        'terminating about 7 cm above the carina.' :
+        [['tip']],
+        'ET tube tip is high, 8.1 cm above the carina at the level of the '  +\
+        'clavicles and should be advanced couple of centimeters for '        +\
+        'standard positioning.' :
+        [['tip']],
 
-        # # three measurements
-        # 'There is a small lesion measuring 1.3 cm, an enlarged lymph node '  +\
-        # 'measuring 1.5 cm, and an echogenic focus in the lower pole '        +\
-        # 'measuring 2.1 cm.' :
-        # [['lesion'], ['node'], ['focus']],
-        # 'Additional lesions include a 6 mm ring-enhancing mass within the '  +\
-        # 'left lentiform nucleus, a 10 mm peripherally based mass within the '+\
-        # 'anterior left frontal lobe as well as a more confluent plaque-like '+\
-        # 'mass with a broad base along the tentorial surface measuring '      +\
-        # 'approximately 2 cm in greatest dimension.' :
-        # [['mass'], ['mass'], ['mass']],
-        # 'Most representative are a 1.9 cm nodal mass in the right low '      +\
-        # 'paratracheal station (2:16), a 1.8 cm node in the right low '       +\
-        # 'paratracheal station (2:18), and a 1.6 cm infracarinal lymph node ' +\
-        # '(2:26).' :
-        # [['mass'], ['node'], ['node']],
+        # distance
+        'The distance from the top of the graft to the aortic bifurcation '  +\
+        'measures 117 mm.' :
+        [['distance']],
 
-        # # Carina
-        # 'ET tube tip is 2.2 cm above the carina.' :
-        # [['tip']],
-        # 'Endotracheal tube is in place, roughly 4 cm above the carina.' :
-        # [['tube']],
-        # 'Endotracheal tube is in standard position about 5 cm above the '    +\
-        # 'carina.' :
-        # [['tube']],
-        # 'ET tube is in the standard position, the tip is 6.1 cm above the '  +\
-        # 'carina.' :
-        # [['tip']],
-        # 'ET tube is low terminating in the lower thoracic trachea '          +\
-        # 'approximately 1 mm above the carina.' :
-        # [['tube']],
-        # 'A single supine frontal view of the chest shows an endotracheal '   +\
-        # 'tube terminating 3 cm from the carina.' :
-        # [['tube']],
-        # 'Tip of endotracheal tube is above the level of the clavicles, '     +\
-        # 'terminating about 7 cm above the carina.' :
-        # [['tip']],
-        # 'ET tube tip is high, 8.1 cm above the carina at the level of the '  +\
-        # 'clavicles and should be advanced couple of centimeters for '        +\
-        # 'standard positioning.' :
-        # [['tip']],
+        # need more distance examples - TBD
 
-        # # distance
-        # 'The distance from the top of the graft to the aortic bifurcation '  +\
-        # 'measures 117 mm.' :
-        # [['distance']],
+        # use --terms 'LV V1 VTI,t2'
+        'The LV V1 VTI: 18.0 cm, t2: 3x4 cm':
+        [['lv v1 vti'], ['t2']],
 
-        # # need more distance examples - TBD
+        # use --terms 'LV V1 VTI,t2,Ao V2 VTI'
+        'mean: 103.7 cm/sec LV V1 VTI: 18.0 cm Ao mean PG: 5.3 mmHg Ao V2 VTI: 30.1 cm CO(LVOT): 3.3 l/min':
+        [['lv v1 vti'], ['ao v2 vti']],
 
-        # # use --terms 'LV V1 VTI,t2'
-        # 'The LV V1 VTI: 18.0 cm, t2: 3x4 cm':
-        # [['lv v1 vti'], ['t2']],
+        # use --terms 'VTI,V1 VTI,V2 VTI,LV V1 VTI, Ao V2 VTI,VTI'
+        "103.7 cm/sec lv v1 vti: 18.0 cm ao mean pg: 5.3 mmhg "             +\
+        "ao v2 vti: 30.1 cm co(lvot): 3.3 l/min tr max vel: 212.3 cm/sec "  +\
+        "sv(lvot): 55.2 ml tr max pg: 18.0 mmhg avg: 4.7 cmg: 4.7 cm/ sec " +\
+        "e/e': 20.2 . . .":
+        [['lv v1 vti'], ['ao v2 vti']],
 
-        # # use --terms 'LV V1 VTI,t2,Ao V2 VTI'
-        # 'mean: 103.7 cm/sec LV V1 VTI: 18.0 cm Ao mean PG: 5.3 mmHg Ao V2 VTI: 30.1 cm CO(LVOT): 3.3 l/min':
-        # [['lv v1 vti'], ['ao v2 vti']],
-
-        # # use --terms 'VTI,V1 VTI,V2 VTI,LV V1 VTI, Ao V2 VTI,VTI'
-        # "103.7 cm/sec lv v1 vti: 18.0 cm ao mean pg: 5.3 mmhg "             +\
-        # "ao v2 vti: 30.1 cm co(lvot): 3.3 l/min tr max vel: 212.3 cm/sec "  +\
-        # "sv(lvot): 55.2 ml tr max pg: 18.0 mmhg avg: 4.7 cmg: 4.7 cm/ sec " +\
-        # "e/e': 20.2 . . .":
-        # [['lv v1 vti'], ['ao v2 vti']],
+        'LVOT diam: 2.0 cm EDV(MOD-sp4): 91.0 ml ESV(MOD-sp4): 48.0 ml . . .':
+        [['lvot diam']]
     }
 
     optparser = optparse.OptionParser(add_help_option=False)
