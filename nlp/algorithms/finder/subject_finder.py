@@ -220,7 +220,7 @@ from spacy import displacy
 nlp = spacy.load('en_core_web_sm')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 9
+VERSION_MINOR = 10
 
 # set to True to enable debug output
 TRACE = False
@@ -1726,8 +1726,8 @@ def _find_simple_subjects(terms, sentence, measurements):
             # check chars between term_end and start of closest measurement
             closest_meas_start = measurements[index].start
             text = sentence[term_end:closest_meas_start]
-            # separator is at least one space, dash, or colon char
-            match = re.match(r'\A[-:\s]+\Z', text)
+            # separator is at least one space, dash, colon, or equal sign
+            match = re.match(r'\A[-:=\s]+\Z', text)
             if match:
                 start = term_start
                 end   = measurements[index].end
