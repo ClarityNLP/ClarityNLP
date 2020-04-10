@@ -27,7 +27,7 @@ except:
     from algorithms.value_extraction import value_extractor as ve
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
@@ -43,7 +43,7 @@ def _compare_fields(field_name, computed, expected, failure_list):
         expected = expected.lower()
     
     if computed != expected:
-        failure_list.append('\texpected {0}: "{1}", got: "{2}"'.
+        failure_list.append('\texpected {0}: "{1}", found: "{2}"'.
                             format(field_name, expected, computed))
 
     return failure_list
@@ -283,7 +283,7 @@ def test_value_extractor_full():
 
     if not _compare_results(term_string, test_data, minval, maxval):
         return False
-    
+
     # vital signs
     term_string = "t, temp, temperature, p, pulse, hr, bp, r, rr, o2, o2sat, " \
         "spo2, o2 sat, sats, o2sats, pox, sao2"
@@ -1001,6 +1001,40 @@ def test_value_extractor_full():
     }
 
     if not _compare_results(term_string, test_data, minval, maxval):
+        return False
+
+    # terms with embedded parentheses
+    term_string = 'CO(LVOT), sv(lvot), CO, sv, (LVOT), SV(MOD-sp4)'
+    test_data = {
+        'Ao V2 VTI: 30.1 cm CO(LVOT): 3.3 l/min TR max vel: 212.3 cm/sec ' \
+        'SV(LVOT): 55.2 ml TR max PG: 18.0 mmHg':[
+            _Result('CO(LVOT)', 3.3,  None, ve.STR_EQUAL),
+            _Result('SV(LVOT)', 55.2, None, ve.STR_EQUAL)
+        ],
+        "Ao V2 max: 167.0 cm/sec LV V1 max: 98.7 cm/sec Ao max PG: 11.2 mmHg "\
+        "mean: 57.4 cmmean: 103.7 cmV2 mean: 103.7 cm/sec LV V1 VTI: 18.0 cm "\
+        "Ao mean PG: 5.3 mmHg Ao V2 VTI: 30.1 cm CO(LVOT): 3.3 l/min "        \
+        "TR max vel: 212.3 cm/sec SV(LVOT): 55.2 ml TR max PG: 18.0 mmHg "    \
+        "avg: 4.7 cmg:":[
+            _Result('CO(LVOT)', 3.3,  None, ve.STR_EQUAL),
+            _Result('SV(LVOT)', 55.2, None, ve.STR_EQUAL)
+        ],
+        # avoid grabbing the 'co' in 'Complete' and returning a value of 2
+        '_ CPT/Quality/Location Complete 2D TTE with spectral and color ' \
+        'Doppler (93306).':[
+        ],
+        'the (LVOT) = 42 in the recent measurement':[
+            _Result('(LVOT)', 42, None, ve.STR_EQUAL)
+        ],
+        '(LVOT) = 42 in the recent measurement':[
+            _Result('(LVOT)', 42, None, ve.STR_EQUAL)
+        ],
+        'EDV(MOD-sp2): 70.0 ml SV(MOD-sp4): 43.0 ml ESV(MOD-sp2): 36.0 ml':[
+            _Result('SV(MOD-sp4)', 43.0, None, ve.STR_EQUAL)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval=0, maxval=9999):
         return False
     
     return True

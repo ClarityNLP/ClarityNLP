@@ -85,7 +85,7 @@ The 'run' function has the following signature:
 
         Parmeters:
 
-            term_string:       [string]  comma-separated search terms
+            term_string:       [string]  comma-separated search terms, or list of strings
             sentence:          [string]  the sentence to be processed
             str_minval:        [string]  minimum acceptable value for numeric queries
             str_maxval:        [string]  maximum acceptable value for numeric queries
@@ -169,7 +169,7 @@ ValueMeasurement = namedtuple('ValueMeasurement',
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 17
+_VERSION_MINOR = 18
 _MODULE_NAME = 'value_extractor.py'
 
 # set to True to enable debug output
@@ -341,6 +341,9 @@ def _to_json(original_terms, original_sentence, results, filter_terms):
 
     if _TRACE:
         log('calling _to_json...')
+        print('\tTERM DICT: ')
+        for k,v in _term_dict.items():
+            print('\t\t{0} => {1}'.format(k,v))
 
     total = len(results)
     has_enumlist = len(filter_terms) > 0
@@ -388,6 +391,9 @@ def _to_json(original_terms, original_sentence, results, filter_terms):
 
         m_dict['minValue'] = minval
         m_dict['maxValue'] = maxval
+
+        if _TRACE:
+            log('\t\tresult: {0}'.format(m_dict))
 
         dict_list.append(m_dict)
 
@@ -504,12 +510,18 @@ def _get_query_start(query_term):
     """
     Construct the starting string for a value extraction query.
     """
-
+    
     # Form a query string from either a standalone query term or a
     # query term followed by optional words plus a separator symbol.
     if len(query_term) > 1:
-        str_query = r'\b(' + query_term + r'\s*' + r'|'                      +\
-            query_term + r'\s+([a-zA-Z]+\s*)' + r')' + _str_separator
+        # first try to match starting on a word boundary
+        str1 = r'\b(' + query_term + r'(?![a-z])\s*' + r'|'           +\
+            query_term + r'\s+([a-zA-Z]+\s*)' + r')'
+        # if that fails, try without (needed for query terms surrounded by
+        # parentheses, which get converted to whitespace before querying)
+        str2 = r'(?<![a-z])(' + query_term + r'(?![a-z])\s*' + r'|'   +\
+            query_term + r'\s+([a-zA-Z]+\s*)' + r')'
+        str_query = r'(' + str1 + r'|' + str2 + r')' + _str_separator
         str_start = str_query + r'(?P<words>' + _str_words + r')'
     else:
         # If the query term is a single letter, it cannot be followed by
@@ -686,7 +698,7 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
         return []
 
     str_start = _get_query_start(query_term)
-    
+
     # find two ints separated by '/', such as blood pressure values
     str_fraction_query = str_start + _str_cond                               +\
         r'(?P<frac>' + _str_fraction + r')'
@@ -697,7 +709,7 @@ def _extract_value(query_term, sentence, minval, maxval, denom_only):
     
     # <query> <operator> <value>
     str_op_val_query = str_start + _str_cond + _str_val
-    
+
     # two numbers with a range separator inbetween
     str_range_query = str_start + _str_cond + _str_range
     str_bf_range_query = str_start + _str_cond + _str_bf_range
@@ -1469,7 +1481,8 @@ def _clean_sentence(sentence, is_case_sensitive):
 
 
 ###############################################################################
-def run(term_string,                # comma-separated string of query terms
+def run(term_string_or_list,       # comma-separated string of query terms, or
+                                   # list of strings
         sentence,
         str_minval=None,
         str_maxval=None,
@@ -1481,7 +1494,7 @@ def run(term_string,                # comma-separated string of query terms
     if _TRACE:
         log('\ncalled value_extractor run...')
         log('\tARGUMENTS: ')
-        log('\t        term_string: {0}'.format(term_string))
+        log('\tterm_string_or_list: {0}'.format(term_string_or_list))
         log('\t           sentence: {0}'.format(sentence))
         log('\t         str_minval: {0}'.format(str_minval))
         log('\t         str_maxval: {0}'.format(str_maxval))
@@ -1490,7 +1503,7 @@ def run(term_string,                # comma-separated string of query terms
         log('\t      is_denom_only: {0}'.format(is_denom_only))
         log('\tvalues_before_terms: {0}'.format(values_before_terms))
 
-    assert term_string is not None
+    assert term_string_or_list is not None
 
     # treat empty enumlist as None
     if str_enumlist is not None and isinstance(str_enumlist, list) and \
@@ -1506,10 +1519,14 @@ def run(term_string,                # comma-separated string of query terms
     # save a copy of the original sentence (needed for results)
     original_sentence = sentence
 
-    terms = term_string.split(',') # produces a list
-    terms = [term.strip() for term in terms]
+    # convert terms to list of strings, strip extraneous whitespace
+    if isinstance(term_string_or_list, str):
+        terms = term_string_or_list.split(',')
+        terms = [term.strip() for term in terms]
+    else:
+        terms = [term.strip() for term in term_string_or_list]
     
-    # sort terms from longest to shortest
+    # sort terms from longest to shortest, helps with overlap resolution
     terms = sorted(terms, key=lambda x: len(x), reverse=True)
 
     # save a copy of the original terms
