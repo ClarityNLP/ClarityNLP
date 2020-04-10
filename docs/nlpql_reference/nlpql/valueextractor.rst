@@ -60,21 +60,17 @@ Results
 =====================  ================  ==========================================
          Name                 Type                             Notes
 =====================  ================  ==========================================
-sentence               str               Sentence where measurement is found
-text                   str               text of the complete measurement
+sentence               str               sentence where term and value are found
+text                   str               substring of sentence containing term and value
 start                  int               offset of the first character in the matching text
 end                    int               offset of the final character in the matching text plus 1
-value                  str               numeric value of first number (same as `dimension_X`)
-term                   str               term from `termset` that matched a measurement
-dimension_X            int               numeric value of first number
-dimension_Y            int               numeric value of second number
-dimension_Z            int               numeric value of third number
-units                  str               either mm, mm2, or mm3
-location               List[str]         location of measurement, if detected
+term                   str               term from `termset` that was found to have an associated value
 condition              str               either ‘RANGE’ for numeric ranges, or ‘EQUAL’ for all others
-temporality            str               CURRENT or PREVIOUS, indicating when the measurement occurred
-min_value              int               either `min([x, y, z])` or `min(values)`
-max_value              int               either `max([x, y, z])` or `max(values)`
+value                  str               the numeric value that was extracted
+value1                 str               either identical to `value` or the first number of a range
+value2                 str               either the empty string or the second number of a range
+min_value              int               either identical to `value` or `min(value1, value2)` if both exist
+max_value              int               either identical to `value` or `max(value1, value2)` if both exist
 =====================  ================  ==========================================
 
 
