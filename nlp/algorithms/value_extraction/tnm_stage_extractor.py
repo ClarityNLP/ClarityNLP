@@ -128,10 +128,9 @@ import sys
 import json
 import optparse
 from collections import namedtuple
-from claritynlp_logging import log, ERROR, DEBUG
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 3
+VERSION_MINOR = 4
 
 # The 'TnmCode' namedtuple is the JSON-serializable object emitted by this
 # module. The fields in the JSON output are in the TNM_FIELDS list. Any
@@ -567,7 +566,7 @@ def run(sentence):
     """
 
     results = []
-    
+
     iterator = regex_tnm_code.finditer(sentence)
     for match in iterator:
 
@@ -622,8 +621,8 @@ def get_version():
         
 ###############################################################################
 def show_help():
-    log(get_version())
-    log("""
+    print(get_version())
+    print("""
     USAGE: python3 ./tnm_stager.py -s <sentence>  [-hvz]
 
     OPTIONS:
@@ -649,6 +648,7 @@ if __name__ == '__main__':
         'This code ypT0pN0M0, R0 indicated no residual metastasis.',
         'Here is another code: pT2cN1cM0.',
         'This code indicates staging: pT4bpN1bM0 (stage IIIC).',
+        'The tumor code pT4bpN1bM0 (stage IIIC) also has a stage indication.',
         'pT2bpN1M0 (stage IIIC)',
         'pT3pN2M1, stage IV',
         'T0NXM1, stage IV',
@@ -689,11 +689,11 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if opts.get_version:
-        log(get_version())
+        print(get_version())
         sys.exit(0)
     
     if not sentence and not use_test_sentences:
-        log('Error: sentence not specified...')
+        print('Error: sentence not specified...')
         sys.exit(-1)
 
     sentences = []
@@ -707,7 +707,7 @@ if __name__ == '__main__':
     for sentence in sentences:
         
         if use_test_sentences:
-            log('Sentence: ' + sentence)
+            print('Sentence: ' + sentence)
 
         # decode results and log only valid fields
         json_string = run(sentence)
@@ -725,5 +725,5 @@ if __name__ == '__main__':
                 # if not empty, log it
                 if EMPTY_FIELD != val:
                     INDENT = ' '*(max_len - len(f))
-                    log('{0}{1}: {2}'.format(INDENT, f, val))
-            log()
+                    print('{0}{1}: {2}'.format(INDENT, f, val))
+            print()
