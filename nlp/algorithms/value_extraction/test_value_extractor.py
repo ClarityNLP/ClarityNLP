@@ -27,7 +27,7 @@ except:
     from algorithms.value_extraction import value_extractor as ve
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
@@ -893,7 +893,7 @@ def test_value_extractor_full():
         return False
 
     # previous problems
-    term_string = 'fvc'
+    term_string = 'fvc, age'
     enumlist = None
     test_data = {
         'FVC is 1500ml':[_Result('fvc', 1500, None, ve.STR_EQUAL)],
@@ -907,7 +907,11 @@ def test_value_extractor_full():
         'with history of treated MAC, obstructive lung disease' +\
         '(FEV1/FVC 55 in [**10-21**]), and':[
             _Result('fvc', 55, None, ve.STR_EQUAL)
-        ]
+        ],
+        'NA, NA Study Date: Deeb Salem, M.D. MRN: 1111111 Performed DOB: ' \
+        'Gender: Male By: Age: 91 yrs Ethnicity: Caucasian Reason For Study:':[
+            _Result('age', 91, None, ve.STR_EQUAL)
+        ],
     }
 
     if not _compare_results(term_string, test_data, minval, maxval):

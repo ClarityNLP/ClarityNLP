@@ -169,7 +169,7 @@ ValueMeasurement = namedtuple('ValueMeasurement',
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 18
+_VERSION_MINOR = 19
 _MODULE_NAME = 'value_extractor.py'
 
 # set to True to enable debug output
@@ -1311,6 +1311,8 @@ def _erase_durations(sentence):
 
         before: 'platelets 2 hrs after transfusion 156'
          after: 'platelets       after transfusion 156'
+
+    Do not erase patient ages, such as "age: 42 years".
     """
     
     # find time durations in the sentence
@@ -1320,16 +1322,32 @@ def _erase_durations(sentence):
             log('\tDURATION: {0}'.format(match.group()))
 
         duration = None
+        duration_start = None
+        duration_end = None
         for group_name in _DURATION_GROUP_NAMES:
             try:
                 if match.group(group_name) is not None:
                     duration = match.group(group_name)
+                    duration_text = match.group()
+                    duration_start = match.start()
+                    duration_end   = match.end()
+                    break
             except IndexError:
                 pass
             
         if _TRACE:
             log('\t     amt: {0}'.format(duration))
 
+        if duration is not None:
+            # check for age expression
+            age_str = r'\bage[-:\s]+{0}\Z'.format(duration_text)
+            age_match = re.search(age_str,
+                                  sentence[:duration_end],
+                                  re.IGNORECASE)
+            if age_match:
+                # do not erase
+                continue
+            
         erase_it = True
         if duration is not None and 'hr' == duration:
             # check sentence for other vitals (excluding hr)
