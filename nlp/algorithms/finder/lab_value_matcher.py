@@ -34,7 +34,7 @@ except:
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME = 'lab_value_matcher.py'
 
 # set to True to see debug output
@@ -43,7 +43,8 @@ _TRACE = False
 # Most of these are from http://ebmcalc.com/Basic.htm, an online medical unit
 # conversion tool. Additional unit strings have been added, some deleted.
 _str_units = r'(#|$|%O2|%|10^12/L|10^3/microL|10^9/L|atm|bar|beats/min|bpm|'  +\
-             r'breaths/min|centimeters|cmH2O|cmHg|cm^2|cm2|cm|cents|days|'    +\
+             r'breaths/min|centimeters|cmH2O|cmHg|cm^2|cm2|cm/s(ec)?|cm|'     +\
+             r'cents|days|'    +\
              r'degC|degF|dyn-sec-cm-5|eq|feet|fL|fractionO2|fraction|ftH20|'  +\
              r'ft|g/dL|g/L/|gallon|gm/day|gm/dL|gm/kg/day|gm/kg|gm/L|gm/cm2|' +\
              r'gm/sqcm|gm|inches|inch|index|inH2O|inHg|in|IU/L|'              +\
@@ -193,6 +194,12 @@ _str_caps_with_parens = r'\b[A-Z]+\([-A-Z\d]+\):\s?' + _str_float + r'\s?' +\
     _str_units + r'\s?'
 _regex_caps_with_parens = re.compile(_str_caps_with_parens, re.IGNORECASE)
 
+# various echocardiogram quantities, including tissue doppler E/E', ...
+_str_echo1 = r'\bE/E\'(\s?(lat|med))?:\s?' + _str_num
+_str_echo2 = r'\bcmg:\s?' + _str_num + r'\s?' + _str_units + r'\s?'
+_str_echo = r'(' + _str_echo1 + r'|' + _str_echo2 + r')'
+_regex_echo = re.compile(_str_echo, re.IGNORECASE)
+
 _all_regex_lists = []
 
 
@@ -301,6 +308,7 @@ def init():
     _all_regex_lists.append( [_regex_value_with_ref_range] )
     _all_regex_lists.append( [_regex_simple_pair] )
     _all_regex_lists.append( [_regex_caps_with_parens] )
+    _all_regex_lists.append( [_regex_echo] )
     
     
 ###############################################################################

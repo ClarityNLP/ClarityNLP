@@ -29,7 +29,7 @@ except:
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME = 'test_lab_value_matcher.py'
 
 _RESULT_FIELDS = ['match_text']
@@ -531,6 +531,11 @@ def run():
             _Result(match_text='CO(LVOT): 3.3 l/min'),
             _Result(match_text='SV(LVOT): 55.2 ml'),
             _Result(match_text='SV(MOD-sp4): 43.0 ml'),
+        ],
+        "E/E': 20.2, E/E' lat: 27.4 E/E' med: 12.9 and ...":[
+            _Result(match_text="E/E': 20.2"),
+            _Result(match_text="E/E' lat: 27.4"),
+            _Result(match_text="E/E' med: 12.9"),
         ],
     }
 
