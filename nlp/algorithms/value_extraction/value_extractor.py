@@ -1340,7 +1340,7 @@ def _erase_durations(sentence):
 
         if duration is not None:
             # check for age expression
-            age_str = r'\bage[-:\s]+{0}\Z'.format(duration_text)
+            age_str = r'\bage[-:=\s]+{0}\Z'.format(duration_text)
             age_match = re.search(age_str,
                                   sentence[:duration_end],
                                   re.IGNORECASE)
