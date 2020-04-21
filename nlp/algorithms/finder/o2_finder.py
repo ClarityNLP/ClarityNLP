@@ -168,21 +168,22 @@ _TRACE = False
 
 
 #_str_connector = r'\s?([-/:=\s]|of|on)\s?'
-_str_connector = r'([-/:=\s]|of|on a|on|to|with)+'
+#_str_connector = r'([-/:=\s]|now|of|on a|on|with|was|were|is|to)+'
+_str_connector = r'[-/:=~\sa-z]+'
 
 # O2 saturation header
 _str_o2_sat_hdr = r'\b(spo2|sao2|pox|so2|(o2|oxygen)[-\s]?saturation|'       +\
-    r'o2[-\s]sat\.?s?|satting|o2sats?|sat\.?s?|pulse ox|o2|'                 +\
+    r'o2[-\s]sat\.?s?|satting|o2sats?|sat\.?s?|pulse ox|o2(?!\s?flow)|'      +\
     r'desatt?ing|desat\.?)%?'
 
 _str_units = r'\(?(percent|pct\.?|%|mmHg)\)?'
 
 # o2 saturation value
-_str_o2_val_range = r'\b(was|from)?\s?(?P<val1>\d+)(\s?' + _str_units + r')?' +\
-    r'(\s?(\-|to)\s?)(?P<val2>\d+)(\s?' + _str_units + r')?'
+_str_o2_val_range = r'\b(was|from)?\s?(?P<val1>\d\d?)(\s?' + _str_units + r')?' +\
+    r'(\s?(\-|to)\s?)(?P<val2>(100|\d\d?))(\s?' + _str_units + r')?'
 _regex_o2_val_range = re.compile(_str_o2_val_range, re.IGNORECASE)
 
-_str_o2_value = r'(?P<val>\d+)(\s?' + _str_units + r')?'
+_str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?!L))(\s?' + _str_units + r')?'
 _str_o2_val = r'(' + _str_o2_val_range + r'|' + _str_o2_value + r')'
 
 # O2 flow rate in L/min
@@ -192,16 +193,19 @@ _str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?)?'
 #         RA : right atrial, usually via fiberoptic oximetry
 #         FM : face mask
 #        BVM : bag valve mask
+#        RBM : rebreather mask
 #  venti mask: Venturi mask
 #       bipap: bilevel positive airway pressure
-_str_device_nc  = r'(?P<nc>(nc|nasal[-\s]?cannula|cannula))'
+
+# sometimes see NC called "O2 NC"
+_str_device_nc  = r'(?P<nc>(O2\s)?(nc|nasal[-\s]?cannula|cannula))'
 _str_device_nrb = r'(?P<nrb>(nrb|(\d+%\s)?non[-\s]?rebreather(\smask)?))'
 _str_device_ra  = r'(?P<ra>(ra|radial[-\s]?artery))'
 _str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask)|' +\
     r'\d+\s?%\s?(venturi|venti)[-\s]?mask)'
 _str_device_bvm = r'(?P<bvm>(bvm|bag[-\s]valve\smask))'
 _str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|bipap(\s\d+/\d+)?))'
-_str_device_mask = r'(?P<mask>(fm|[a-z\s]+[-\s]?mask|' +\
+_str_device_mask = r'(?P<mask>(fm|rbm|[a-z\s]+[-\s]?mask|' +\
     r'vent(ilator)?|\d+%\s?[a-z]+[-\s]?mask|\d+%\s?[a-z]+[-\s]?tent|mask))'
 #_str_device_mask = r'(?P<mask>(fm))'
 _str_device_air = r'(?P<air>(ra|room[-\s]air|air))'
@@ -322,11 +326,24 @@ _regex_o2_3 = re.compile(_str_o2_3, re.IGNORECASE)
 _str_o2_4 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val
 _regex_o2_4 = re.compile(_str_o2_4, re.IGNORECASE)
 
-# finds 98% RA" and similar (value to the left)
+# finds "98% RA" and similar (value to the left)
 _str_o2_5 = r'(?<![-:=/])(?<=\s)' + _str_o2_val + r'(' + _str_connector + r')?' +\
     r'(' + _str_flow_rate + r')?\s?' +\
     r'(?P<device>' + _str_device +r')'
 _regex_o2_5 = re.compile(_str_o2_5, re.IGNORECASE)
+
+# like the first regex, but finds flow rate after device
+_str_o2_6 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
+    r'(' + _str_connector + r')?' + r'(?P<device>' + _str_device + r')'      +\
+    r'(' + _str_connector + r')?' + _str_flow_rate
+_regex_o2_6 = re.compile(_str_o2_6, re.IGNORECASE)
+
+# finds "using BVM with O2 sats 74%" (device prior to O2 saturation header)
+_str_o2_7 = r'(?P<device>' + _str_device + r')'         +\
+    r'(' + _str_connector + r')?' + _str_o2_sat_hdr     +\
+    r'(' + _str_connector + r')?' + _str_o2_val         +\
+    r'(' + _str_connector + _str_flow_rate + r')?'
+_regex_o2_7 = re.compile(_str_o2_7, re.IGNORECASE)
 
 _SAO2_REGEXES = [
     _regex_o2_1,
@@ -334,10 +351,12 @@ _SAO2_REGEXES = [
     _regex_o2_3,
     _regex_o2_4,
     _regex_o2_5,
+    _regex_o2_6,
+    _regex_o2_7,
 ]
 
-# o2 partial pressure
-_str_pao2 = r'\b(pao2|partial pressure of (oxygen|o2))' +\
+# o2 partial pressure (don't capture first part of PaO2 / FiO2
+_str_pao2 = r'\b(pao2|partial pressure of (oxygen|o2))(?!/)(?! /)' +\
     r'(' + _str_connector + r')?' +  _str_o2_val
 _regex_pao2 = re.compile(_str_pao2, re.IGNORECASE)
 
@@ -391,8 +410,14 @@ def _cleanup(sentence):
     cleaned sentence.
     """
 
+    # replace ' w/ ' with 'with'
+    sentence = re.sub(r'\sw/\s', ' with ', sentence)
+    
+    # replace some chars with whitespace
+    sentence = re.sub(r'[,&]', ' ', sentence)
+
     # collapse repeated whitespace
-    sentence = re.sub(r'\s+', r' ', sentence)
+    sentence = re.sub(r'\s+', ' ', sentence)
 
     return sentence
 
@@ -636,8 +661,14 @@ def run(sentence):
             else:
                 fio2_val = fio2_est
 
+        # compute estimated P/F ratio from whatever values are available
         if pao2_val != EMPTY_FIELD and fio2_val != EMPTY_FIELD:
                 p_to_f_ratio_est = pao2_val / (0.01 * fio2_val)
+
+        # room air FiO2 is ~20%
+        if fio2_val is None and pao2_val is not None and device is not None:
+            if -1 != device.find('air'):
+                p_to_f_ratio_est = pao2_val / 0.2
                 
         o2_tuple = O2Tuple(
             text = pc.match_text,
@@ -715,24 +746,24 @@ if __name__ == '__main__':
         'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
         'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L',
         # what does 50% flowmask mean? 'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask',
-        # what dies PS 18/10 mean? 'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
+        # what does PS 18/10 mean? 'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
         'BP 91/50, HR 63, RR 12, satting 95% on trach mask',
         'O2 sats 98-100%',
         'Pt. desating to 88%',
         'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
-        'using BVM w/ o2 sats 74%',
+        'using BVM w/ o2 sats 74% on 4L',
         
-        #'desat to 83 with 100% face tent and 4 l n.c.',
+        # #'desat to 83 with 100% face tent and 4 l n.c.',
 
-        'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
-        'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
-        'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 ' +\
-        'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min',
+        # 'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
+        # 'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
+        # 'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 ' +\
+        # 'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min',
 
-        'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   ' +\
-        'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   '    +\
-        'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   ' +\
-        'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164',
+        # 'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   ' +\
+        # 'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   '    +\
+        # 'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   ' +\
+        # 'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164',
         
         # 'Respiratory: Vt (Set): 600 (600 - 600) mL   Vt (Spontaneous): 743 ' +\
         # '(464 - 816) mL  PS : 5 cmH2O   RR (Set): 14   RR (Spontaneous): 19' +\
@@ -745,7 +776,12 @@ if __name__ == '__main__':
         # 'the respiratory rate was 21,\nand the oxygen saturation was 80% ' +\
         # 'to 92% on a 100% nonrebreather mask',
 
-        # 'temperature 100 F., orally.  O2 saturation 98% on room air'
+        # 'temperature 100 F., orally.  O2 saturation 98% on room air',
+
+        # 'o2 sat 93% on 5l',
+        # 'O2 sat were 90-95.',
+        # 'O2 sat then decreased again to 89 - 90% while on 50% face tent',
+        # 'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L',
     ]
 
     for i, sentence in enumerate(SENTENCES):
