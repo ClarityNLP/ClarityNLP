@@ -136,6 +136,15 @@ except:
 # default value for all fields
 EMPTY_FIELD = None
 
+# values for the 'condition' field in the result namedtuple
+STR_APPROX         = 'APPROX'
+STR_LT             = 'LESS_THAN'
+STR_LTE            = 'LESS_THAN_OR_EQUAL'
+STR_GT             = 'GREATER_THAN'
+STR_GTE            = 'GREATER_THAN_OR_EQUAL'
+STR_EQUAL          = 'EQUAL'
+STR_RANGE          = 'RANGE'
+
 O2_TUPLE_FIELDS = [
     'text',
     'start',
@@ -149,6 +158,7 @@ O2_TUPLE_FIELDS = [
     'p_to_f_ratio_est', # estimated
     'flow_rate',        # [L/min]
     'device',
+    'condition',        # STR_APPROX, STR_LT, etc.
     'value',
     'value2',
 
@@ -173,7 +183,7 @@ _TRACE = False
 
 # connectors between portions of the regexes below; either symbols or words
 #_str_connector = r'([-/:=~\s]+|\s[a-z\s]+)'
-_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s]+|\s[a-z\s]+))'
+_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s]+|\s[a-z\s]+))?'
 
 # words, possibly hyphenated or abbreviated
 _str_words = r'([-a-z\s.]+)?'
@@ -182,8 +192,8 @@ _str_words = r'([-a-z\s.]+)?'
 #    r'~=|>=|<=|[-/:<>=~\?\s])\s*)?'
 #_str_cond      = r'(?P<cond>' + _str_op + r')'
 
-_str_approx    = r'(~=|~|\b(approx\.?|approximately|near(ly)?|about))'
 _str_equal     = r'\b(equal|eq\.?)'
+_str_approx    = r'(~=|~|\b(approx\.?|approximately|near(ly)?|about))'
 _str_less_than = r'\b(less\s+than|lt\.?|up\s+to|under)'
 _str_gt_than   = r'\b(greater\s+than|gt\.?|exceed(ing|s)|above|over)'
 
@@ -192,16 +202,16 @@ _str_lte = r'(<=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
 _str_gt  = r'(>|' + _str_gt_than + r')'
 _str_gte = r'(>=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
 
-_regex_lt  = re.compile(_str_lt)
-_regex_lte = re.compile(_str_lte)
-_regex_gt  = re.compile(_str_gt)
-_regex_gte = re.compile(_str_gte)
-
+_regex_lt     = re.compile(_str_lt)
+_regex_lte    = re.compile(_str_lte)
+_regex_gt     = re.compile(_str_gt)
+_regex_gte    = re.compile(_str_gte)
+_regex_approx = re.compile(_str_approx)
 
 # O2 saturation header
 _str_o2_sat_hdr = r'\b(spo2|sao2|pox|so2|(o2|oxygen)[-\s]?saturation|'       +\
     r'o2[-\s]sat\.?s?|satting|o2sats?|sat\.?s?|pulse ox|o2(?!\s?flow)|'      +\
-    r'desatt?ing|desat\.?)%?'
+    r'desatt?ing|desat\.?)\s?%?'
 
 _str_units = r'\(?(percent|pct\.?|%|mmHg)\)?'
 
@@ -225,17 +235,25 @@ _str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?)?'
 #       bipap: bilevel positive airway pressure
 
 # sometimes see NC called "O2 NC"
-_str_device_nc  = r'(?P<nc>(O2\s)?(nc|nasal[-\s]?cannula|cannula))'
-_str_device_nrb = r'(?P<nrb>(nrb|(\d+%\s)?non[-\s]?rebreather(\smask)?))'
-_str_device_ra  = r'(?P<ra>(ra|radial[-\s]?artery))'
-_str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask)|' +\
-    r'\d+\s?%\s?(venturi|venti)[-\s]?mask)'
+_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula)(?![a-z]))'
+_str_device_nrb = r'(?P<nrb>(nrb|(\d+%\s)?non[-\s]?rebreather(\smask)?)(?![a-z]))'
+_str_device_ra  = r'(?P<ra>(ra|radial[-\s]?artery)(?![a-z]))'
+_str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|' +\
+    r'\d+\s?%\s?(venturi|venti)[-\s]?mask)(?![a-z]))'
 _str_device_bvm = r'(?P<bvm>(bvm|bag[-\s]valve\smask))'
 _str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|bipap(\s\d+/\d+)?))'
 _str_device_mask = r'(?P<mask>(fm|rbm|[a-z\s]+[-\s]?mask|' +\
-    r'vent(ilator)?|\d+%\s?[a-z]+[-\s]?mask|\d+%\s?[a-z]+[-\s]?tent|mask))'
-#_str_device_mask = r'(?P<mask>(fm))'
-_str_device_air = r'(?P<air>(ra|room[-\s]air|air))'
+    r'vent(ilator)?|\d+%\s?[a-z]+[-\s]?mask|mask))'
+_str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
+_str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+' +\
+    r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)?\s?' +\
+    r'(?P<nc2>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))'
+
+
+#_str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+4 l ' +\
+#    r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)\s?'
+ #4 l n.c.'
+_str_device_air = r'(?P<air>(room[-\s]air|air))'
 _str_device_nasocath = r'(?P<nasocath>(naso\.?(pharyngeal)?[-\s]?cath\.?(eter)?|' +\
     r'cath\.?(eter)?))'
 
@@ -318,7 +336,9 @@ _DEVICE_MAP = {
     'bipap':None,
     'mask':_to_fio2_mask,
     'air':None,
-    'nasocath':_to_fio2_nasocath
+    'nasocath':_to_fio2_nasocath,
+    'tent':None,
+    'tent2':None,
 }
 
 _str_device = r'\(?(?P<device>' +\
@@ -329,44 +349,75 @@ _str_device = r'\(?(?P<device>' +\
     r'(' + _str_device_bvm + r')'      + r'|' +\
     r'(' + _str_device_bipap + r')'    + r'|' +\
     r'(' + _str_device_mask + r')'     + r'|' +\
+    r'(' + _str_device_tent_nc + r')'  + r'|' +\
+    r'(' + _str_device_tent + r')'     + r'|' +\
     r'(' + _str_device_air + r')'      + r'|' +\
     r'(' + _str_device_nasocath + r'))'       +\
     r'\)?'
+
+# _str_device = r'\(?(?P<device>' +\
+#     r'(' + _str_device_nc + r')'       + r'|' +\
+#     r'(' + _str_device_nrb + r')'      + r'|' +\
+#     r'(' + _str_device_ra + r')'       + r'|' +\
+#     r'(' + _str_device_venturi + r')'  + r'|' +\
+#     r'(' + _str_device_bvm + r')'      + r'|' +\
+#     r'(' + _str_device_bipap + r')'    + r'|' +\
+#     r'(' + _str_device_mask + r')'     + r'|' +\
+#     r'(' + _str_device_tent + r')'     + r'|' +\
+#     r'(' + _str_device_air + r')'      + r'|' +\
+#     r'(' + _str_device_nasocath + r')' +\
+#     r'(' + _str_words +\
+#     r'(?P<nc2>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula)(?![a-z])))?)' +\
+#     r'\)?'
+
+
 
 # finds "spo2: 98% on 2L NC" and similar
 # _str_o2_1 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
 #     r'(' + _str_connector + r')?' + _str_flow_rate                           +\
 #     r'(' + _str_connector + r')?' + r'(?P<device>' + _str_device + r')'
 # _regex_o2_1 = re.compile(_str_o2_1, re.IGNORECASE)
-_str1 = _str_o2_sat_hdr + _str_cond + _str_o2_val +\
+_str0 = _str_o2_sat_hdr + _str_cond + _str_o2_val           +\
     _str_words + _str_flow_rate + _str_words + _str_device
-_regex1 = re.compile(_str1, re.IGNORECASE)
+_regex0 = re.compile(_str0, re.IGNORECASE)
 
 # # finds "spo2: 98%/NC" and similar
 # _str_o2_2 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
 #     r'(' + _str_connector + r')?' + r'(?P<device>' + _str_device + r')'
 # _regex_o2_2 = re.compile(_str_o2_2, re.IGNORECASE)
+_str1 = _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words + _str_device
+_regex1 = re.compile(_str1, re.IGNORECASE)
 
 # # finds "spo2: 98%/3L" and similar
 # _str_o2_3 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
 #     r'(' + _str_connector + r')?' + _str_flow_rate
 # _regex_o2_3 = re.compile(_str_o2_3, re.IGNORECASE)
+_str2= _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words + _str_flow_rate
+_regex2 = re.compile(_str2, re.IGNORECASE)
 
 # # finds "spo2=98%" and similar
 # _str_o2_4 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val
 # _regex_o2_4 = re.compile(_str_o2_4, re.IGNORECASE)
+_str3 = _str_o2_sat_hdr + _str_cond + _str_o2_val
+_regex3 = re.compile(_str3, re.IGNORECASE)
 
 # # finds "98% RA" and similar (value to the left)
 # _str_o2_5 = r'(?<![-:=/])(?<=\s)' + _str_o2_val + r'(' + _str_connector + r')?' +\
 #     r'(' + _str_flow_rate + r')?\s?' +\
 #     r'(?P<device>' + _str_device +r')'
 # _regex_o2_5 = re.compile(_str_o2_5, re.IGNORECASE)
+_str4 = r'(?<![-:=/])(?<=\s)' + _str_o2_val + r'(' + _str_o2_sat_hdr + r')?' +\
+    _str_words + r'(' + _str_flow_rate + _str_words + r')?' + _str_device
+_regex4 = re.compile(_str4, re.IGNORECASE)
 
 # # like the first regex, but finds flow rate after device
 # _str_o2_6 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
 #     r'(' + _str_connector + r')?' + r'(?P<device>' + _str_device + r')'      +\
 #     r'(' + _str_connector + r')?' + _str_flow_rate
 # _regex_o2_6 = re.compile(_str_o2_6, re.IGNORECASE)
+_str5 = _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words +\
+    _str_device + _str_words + _str_flow_rate
+_regex5 = re.compile(_str5, re.IGNORECASE)
 
 # # finds "using BVM with O2 sats 74%" (device prior to O2 saturation header)
 # _str_o2_7 = r'(?P<device>' + _str_device + r')'         +\
@@ -374,30 +425,33 @@ _regex1 = re.compile(_str1, re.IGNORECASE)
 #     r'(' + _str_connector + r')?' + _str_o2_val         +\
 #     r'(' + _str_connector + _str_flow_rate + r')?'
 # _regex_o2_7 = re.compile(_str_o2_7, re.IGNORECASE)
+_str6 = _str_device + _str_words + _str_o2_sat_hdr + _str_cond + _str_o2_val +\
+    r'(' + _str_words + _str_flow_rate + r')?'
+_regex6 = re.compile(_str6, re.IGNORECASE)
 
 _SAO2_REGEXES = [
+    _regex0,
     _regex1,
-    # _regex_o2_2,
-    # _regex_o2_3,
-    # _regex_o2_4,
-    # _regex_o2_5,
-    # _regex_o2_6,
-    # _regex_o2_7,
+    _regex2,
+    _regex3,
+    _regex4,
+    _regex5,
+    _regex6,
 ]
 
 # o2 partial pressure (don't capture first part of PaO2 / FiO2
 _str_pao2 = r'\b(pao2|partial pressure of (oxygen|o2))(?!/)(?! /)' +\
-    r'(' + _str_cond+ r')?' +  _str_o2_val
+    r'(' + _str_cond+ r')?' +  r'(?P<val>\d+)'
 _regex_pao2 = re.compile(_str_pao2, re.IGNORECASE)
 
 # fraction of inspired oxygen (prevent matches to pao2 / fio2)
 _str_fio2 = r'\b(?<!/)(?<!/\s)fio2' +\
-    r'(' + _str_cond + r')?' + _str_o2_val
+    r'(' + _str_cond + r')?' + r'(?P<val>\d+)' #_str_o2_val
 _regex_fio2 = re.compile(_str_fio2, re.IGNORECASE)
 
 # p/f ratio
 _str_pf_ratio = r'\b(pao2|p)\s?/\s?(fio2|f)(\s?ratio)?' +\
-    r'(' + _str_cond + r')?' + _str_o2_val
+    r'(' + _str_cond + r')?' + r'(?P<val>\d+)' #_str_o2_val
 _regex_pf_ratio = re.compile(_str_pf_ratio, re.IGNORECASE)
 
 
@@ -440,16 +494,38 @@ def _cleanup(sentence):
     cleaned sentence.
     """
 
-    # replace ' w/ ' with 'with'
+    # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
     
-    # replace some chars with whitespace
+    # replace selected chars with whitespace
     sentence = re.sub(r'[,&]', ' ', sentence)
 
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
     return sentence
+
+
+###############################################################################
+def _cond_to_string(str_cond):
+    """
+    Determine the relationship between the query term and the value.
+    """
+    
+    if _regex_approx.search(str_cond):
+        result = STR_APPROX
+    elif _regex_lte.search(str_cond):
+        result = STR_LTE
+    elif _regex_gte.search(str_cond):
+        result = STR_GTE
+    elif _regex_lt.search(str_cond):
+        result = STR_LT
+    elif _regex_gt.search(str_cond):
+        result = STR_GT
+    else:
+        result = STR_EQUAL
+    
+    return result
 
 
 ###############################################################################
@@ -553,7 +629,7 @@ def _regex_match(sentence, regex_list):
         iterator = regex.finditer(sentence)
         for match in iterator:
         #match = regex.search(sentence)
-        #if match:
+        #if match:                        
             match_text = match.group().strip()
             start = match.start()
             end   = start + len(match_text)
@@ -562,6 +638,10 @@ def _regex_match(sentence, regex_list):
             if _TRACE:
                 print('[{0:2}]: [{1:3}, {2:3})\tMATCH TEXT: ->{3}<-'.
                       format(i, start, end, match_text))
+                print('\tmatch.groupdict entries: ')
+                for k,v in match.groupdict().items():
+                    print('\t\t{0} => {1}'.format(k,v))
+                
 
     if 0 == len(candidates):
         return []
@@ -648,12 +728,9 @@ def run(sentence):
         pao2_est         = EMPTY_FIELD
         fio2_est         = EMPTY_FIELD
         p_to_f_ratio_est = EMPTY_FIELD
+        condition        = STR_EQUAL
 
-        if _TRACE:
-            print('match.groupdict entries: ')
         for k,v in match.groupdict().items():
-            if _TRACE:
-                print('\t{0} => {1}'.format(k,v))
             if v is None:
                 continue
             if 'val1' == k or 'val' == k:
@@ -666,6 +743,8 @@ def run(sentence):
             elif k in _DEVICE_MAP:
                 device_type = k
                 device = '{0}|{1}'.format(v,k)
+            elif 'cond' == k:
+                condition = _cond_to_string(v)
 
         # compute estimated PaO2 from SpO2
         if EMPTY_FIELD == pao2:
@@ -699,7 +778,7 @@ def run(sentence):
         if fio2_val is None and pao2_val is not None and device is not None:
             if -1 != device.find('air'):
                 p_to_f_ratio_est = pao2_val / 0.2
-                
+
         o2_tuple = O2Tuple(
             text = pc.match_text,
             start = pc.start,
@@ -710,6 +789,7 @@ def run(sentence):
             p_to_f_ratio = p_to_f_ratio,
             flow_rate = flow_rate,
             device = device,
+            condition = condition,
             value = value,
             value2 = value2,
             pao2_est = pao2_est,
@@ -750,40 +830,40 @@ if __name__ == '__main__':
     SENTENCES = [
         'Vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM',
         'Vitals: T: 96.0  BP: 90/54 P: 88 R: 16 18 O2:88/NRB',
-        # 'Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB',
-        # 'Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask',
-        # 'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
-        # 'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        # 'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
-        # 'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
-        # 'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
-        # 'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra',
-        # 'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
-        # #'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
-        # 'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
-        # 'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
-        # 'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
-        # 'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
-        # 'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
-        # 'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',        
-        # 'At transfer vitals were HR=120 BP=109/44 RR=29 POx=93% on 8L FM.',
-        # "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
-        # 'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
-        # 'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ',
-        # 'HR 107 RR 28 and SpO2 91% on NRB.',
-        # 'BP 143/79 RR 16 and O2 sat 92% on room air and 100% on 3 L/min nc',
-        # 'RR: 28 BP: 84/43 O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
-        # 'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
-        # 'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L',
-        # # what does 50% flowmask mean? 'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask',
-        # # what does PS 18/10 mean? 'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
-        # 'BP 91/50, HR 63, RR 12, satting 95% on trach mask',
-        # 'O2 sats 98-100%',
-        # 'Pt. desating to 88%',
-        # 'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
-        # 'using BVM w/ o2 sats 74% on 4L',
+        'Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB',
+        'Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask',
+        'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
+        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
+        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
+        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
+        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
+        'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra',
+        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
+        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
+        'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
+        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
+        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
+        'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
+        'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
+        'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',        
+        'At transfer vitals were HR=120 BP=109/44 RR=29 POx=93% on 8L FM.',
+        "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
+        'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
+        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ',
+        'HR 107 RR 28 and SpO2 91% on NRB.',
+        'BP 143/79 RR 16 and O2 sat 92% on room air and 100% on 3 L/min nc',
+        'RR: 28 BP: 84/43 O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
+        'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
+        'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L',
+        # what does 50% flowmask mean? 'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask',
+        # what does PS 18/10 mean? 'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
+        'BP 91/50, HR 63, RR 12, satting 95% on trach mask',
+        'O2 sats 98-100%',
+        'Pt. desating to 88%',
+        'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
+        'using BVM w/ o2 sats 74% on 4L',
         
-        # #'desat to 83 with 100% face tent and 4 l n.c.',
+        'desat to 83 with 100% face tent and 4 l n.c.',
 
         # 'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
         # 'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
@@ -817,7 +897,7 @@ if __name__ == '__main__':
     ]
 
     for i, sentence in enumerate(SENTENCES):
-        print('[{0:2d}]: {1}'.format(i, sentence))
+        print('\n[{0:2d}]: {1}'.format(i, sentence))
         result = run(sentence)
         #print(result)
 
