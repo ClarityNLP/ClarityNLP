@@ -245,14 +245,14 @@ _str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|bipap(\s\d+/
 _str_device_mask = r'(?P<mask>(fm|rbm|[a-z\s]+[-\s]?mask|' +\
     r'vent(ilator)?|\d+%\s?[a-z]+[-\s]?mask|mask))'
 _str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
+# face tent with a nasal cannula; flow rate prior to NC
 _str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+' +\
     r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)?\s?' +\
     r'(?P<nc2>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))'
-
-
-#_str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+4 l ' +\
-#    r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)\s?'
- #4 l n.c.'
+# face tent with a nasal cannula; flow rate after NC
+_str_device_tent_nc2 = r'(?P<tent3>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
+    r'(?P<nc3>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))[a-z\s]+'  +\
+    r'(?P<flow_rate3>\d+)\s?(Liters|L)(/min\.?)?\s?'
 _str_device_air = r'(?P<air>(room[-\s]air|air))'
 _str_device_nasocath = r'(?P<nasocath>(naso\.?(pharyngeal)?[-\s]?cath\.?(eter)?|' +\
     r'cath\.?(eter)?))'
@@ -350,27 +350,11 @@ _str_device = r'\(?(?P<device>' +\
     r'(' + _str_device_bipap + r')'    + r'|' +\
     r'(' + _str_device_mask + r')'     + r'|' +\
     r'(' + _str_device_tent_nc + r')'  + r'|' +\
+    r'(' + _str_device_tent_nc2 + r')' + r'|' +\
     r'(' + _str_device_tent + r')'     + r'|' +\
     r'(' + _str_device_air + r')'      + r'|' +\
     r'(' + _str_device_nasocath + r'))'       +\
     r'\)?'
-
-# _str_device = r'\(?(?P<device>' +\
-#     r'(' + _str_device_nc + r')'       + r'|' +\
-#     r'(' + _str_device_nrb + r')'      + r'|' +\
-#     r'(' + _str_device_ra + r')'       + r'|' +\
-#     r'(' + _str_device_venturi + r')'  + r'|' +\
-#     r'(' + _str_device_bvm + r')'      + r'|' +\
-#     r'(' + _str_device_bipap + r')'    + r'|' +\
-#     r'(' + _str_device_mask + r')'     + r'|' +\
-#     r'(' + _str_device_tent + r')'     + r'|' +\
-#     r'(' + _str_device_air + r')'      + r'|' +\
-#     r'(' + _str_device_nasocath + r')' +\
-#     r'(' + _str_words +\
-#     r'(?P<nc2>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula)(?![a-z])))?)' +\
-#     r'\)?'
-
-
 
 # finds "spo2: 98% on 2L NC" and similar
 # _str_o2_1 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
@@ -543,6 +527,8 @@ def _estimate_fio2(flow_rate, device):
 
     if _TRACE:
         print('Calling _estimate_fio2...')
+        print('\tflow_rate: {0}'.format(flow_rate))
+        print('\t   device: {0}'.format(device))
     
     device_str, device_type = device.split('|')
     
@@ -649,7 +635,7 @@ def _regex_match(sentence, regex_list):
     # sort the candidates in descending order of length, which is needed for
     # one-pass overlap resolution later on
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
-
+    
     if _TRACE:
         print('\tCandidate matches: ')
         index = 0
@@ -659,6 +645,47 @@ def _regex_match(sentence, regex_list):
             index += 1
         print()
 
+    # if two overlap exactly, keep candidate with longer device string
+    prev_start = candidates[0].start
+    prev_end = candidates[0].end
+    delete_index = None
+    for i in range(1, len(candidates)):
+        c = candidates[i]
+        if c.start == prev_start and c.end == prev_end:
+            if _TRACE:
+                print('\tCandidates at indices {0} and {1} have ' \
+                      'identical overlap'.format(i-1, i))
+            # the regex match object is stored in the 'other' field
+            matchobj = c.other
+            matchobj_prev = candidates[i-1].other
+            if 'device' in matchobj.groupdict() and 'device' in matchobj_prev.groupdict():
+                device = matchobj.group('device')
+                device_prev = matchobj_prev.group('device')
+                if device is not None and device_prev is not None:
+                    len_device = len(device)
+                    len_device_prev = len(device_prev)
+                    if _TRACE:
+                        print('\t\tdevice string for index {0}: {1}'.
+                              format(i-1, device_prev))
+                        print('\t\tdevice string for index {0}: {1}'.
+                              format(i, device))
+                    if len_device > len_device_prev:
+                        delete_index = i-1
+                    else:
+                        delete_index = i
+                    if _TRACE:
+                        print('\t\t\tdelete_index: {0}'.format(delete_index))
+                    break
+        prev_start = c.start
+        prev_end = c.end
+
+    if delete_index is not None:
+        del candidates[delete_index]
+        if _TRACE:
+            print('\tRemoved candidate at index {0} with shorter device string'.
+                  format(delete_index))
+
+    # now run the usual overlap resolution
     pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
     if _TRACE:
@@ -715,6 +742,10 @@ def run(sentence):
     if _TRACE:
         print('Extracting data from pruned candidates...')
 
+    # _str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+' +\
+    #     r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)?\s?' +\
+    #     r'(?P<nc2>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))'
+
     for pc in sao2_candidates:
         # recover the regex match object from the 'other' field
         match = pc.other
@@ -728,6 +759,12 @@ def run(sentence):
         pao2_est         = EMPTY_FIELD
         fio2_est         = EMPTY_FIELD
         p_to_f_ratio_est = EMPTY_FIELD
+        tent2            = EMPTY_FIELD
+        flow_rate2       = EMPTY_FIELD
+        nc2              = EMPTY_FIELD
+        tent3            = EMPTY_FIELD
+        flow_rate3       = EMPTY_FIELD
+        nc3              = EMPTY_FIELD
         condition        = STR_EQUAL
 
         for k,v in match.groupdict().items():
@@ -745,6 +782,14 @@ def run(sentence):
                 device = '{0}|{1}'.format(v,k)
             elif 'cond' == k:
                 condition = _cond_to_string(v)
+            elif 'flow_rate2' == k:
+                flow_rate2 = float(v)
+            elif 'flow_rate3' == k:
+                flow_rate3 = float(v)
+            elif 'nc2' == k:
+                nc2 = v
+            elif 'nc3' == k:
+                nc3 = v
 
         # compute estimated PaO2 from SpO2
         if EMPTY_FIELD == pao2:
@@ -754,6 +799,13 @@ def run(sentence):
         if EMPTY_FIELD == fio2 and device is not None:
             device, fio2_est = _estimate_fio2(flow_rate, device)
 
+        # handle face tent with nasal cannula
+        if EMPTY_FIELD == flow_rate and EMPTY_FIELD == fio2_est:
+            if EMPTY_FIELD != flow_rate2 and EMPTY_FIELD != nc2:
+                device, fio2_est = _estimate_fio2(flow_rate2, 'nc|nc')
+            elif EMPTY_FIELD != flow_rate3 and EMPTY_FIELD != nc3:
+                device, fio2_est = _estimate_fio2(flow_rate3, 'nc|nc')
+            
         # get a pao2 value, with stated taking precedence over estimated
         pao2_val = None
         if pao2 != EMPTY_FIELD or pao2_est != EMPTY_FIELD:
@@ -778,7 +830,7 @@ def run(sentence):
         if fio2_val is None and pao2_val is not None and device is not None:
             if -1 != device.find('air'):
                 p_to_f_ratio_est = pao2_val / 0.2
-
+                
         o2_tuple = O2Tuple(
             text = pc.match_text,
             start = pc.start,
@@ -864,6 +916,7 @@ if __name__ == '__main__':
         'using BVM w/ o2 sats 74% on 4L',
         
         'desat to 83 with 100% face tent and 4 l n.c.',
+        'desat to 83 with 100% face tent and nc of approximately 4l',
 
         # 'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
         # 'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
