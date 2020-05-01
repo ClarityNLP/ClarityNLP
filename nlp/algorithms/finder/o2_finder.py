@@ -177,15 +177,15 @@ _MODULE_NAME   = 'o2_finder.py'
 _TRACE = False
 
 # connectors between portions of the regexes below; either symbols or words
-_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.]+|\s[a-z\s]+)+)?'
+_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.@^]+|\s[a-z\s]+)+)?'
 
 # words, possibly hyphenated or abbreviated, nongreedy match
-_str_words = r'([-a-z\s./]+?)?'
+_str_words = r'([-a-z\s./:]+?)?'
 
 # wordy relationships
 _str_equal     = r'\b(equal|eq\.?)'
 _str_approx    = r'(~=|~|\b(approx\.?|approximately|near(ly)?|about))'
-_str_less_than = r'\b(less\s+than|lt\.?|up\s+to|under)'
+_str_less_than = r'\b(less\s+than|lt\.?|up\s+to|under|below)'
 _str_gt_than   = r'\b(greater\s+than|gt\.?|exceed(ing|s)|above|over)'
 
 _str_lt  = r'(<|' + _str_less_than + r')'
@@ -193,11 +193,11 @@ _str_lte = r'(<=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
 _str_gt  = r'(>|' + _str_gt_than + r')'
 _str_gte = r'(>=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
 
-_regex_lt     = re.compile(_str_lt)
-_regex_lte    = re.compile(_str_lte)
-_regex_gt     = re.compile(_str_gt)
-_regex_gte    = re.compile(_str_gte)
-_regex_approx = re.compile(_str_approx)
+_regex_lt     = re.compile(_str_lt,     re.IGNORECASE)
+_regex_lte    = re.compile(_str_lte,    re.IGNORECASE)
+_regex_gt     = re.compile(_str_gt,     re.IGNORECASE)
+_regex_gte    = re.compile(_str_gte,    re.IGNORECASE)
+_regex_approx = re.compile(_str_approx, re.IGNORECASE)
 
 # O2 saturation header
 _str_o2_sat_hdr = r'(?<![a-z])(spo2|sao2|pox|so2|'                    +\
@@ -215,7 +215,7 @@ _str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?!L))(\s?' + _str_units + r')?'
 _str_o2_val = r'(' + _str_o2_val_range + r'|' + _str_o2_value + r')'
 
 # O2 flow rate in L/min
-_str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?)?'
+_str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
 
 # devices and related acronyms
 #         RA : right atrial, usually via fiberoptic oximetry
@@ -226,8 +226,8 @@ _str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?)?'
 #       bipap: bilevel positive airway pressure
 
 # sometimes see NC called "O2 NC"
-_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?c\.?|nas[ae]l[-\s]?cannula|cannula)(?![a-z]))'
-_str_device_nrb = r'(?P<nrb>(n\.?r\.?b\.?|(\d+%?\s)?non[-\s]?rebreather(\smask)?)(?![a-z]))'
+_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?c\.?|nas[ae]l[-\s]?cannula|cannula|prongs?)(?![a-z]))'
+_str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|non[-\s]?rebreather(\smask)?)(?![a-z]))'
 _str_device_ra  = r'(?P<ra>(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
 _str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|' +\
     r'\d+\s?%\s?(venturi|venti)[-\s]?mask)(?![a-z]))'
@@ -423,6 +423,16 @@ _str6 = _str_device + _str_words + _str_o2_sat_hdr + _str_cond + _str_o2_val +\
     r'(' + _str_words + _str_flow_rate + r')?'
 _regex6 = re.compile(_str6, re.IGNORECASE)
 
+# finds flow rate prior to device and O2 saturation header
+_str7 = _str_flow_rate + _str_words + _str_device + _str_words +\
+    _str_o2_sat_hdr + _str_cond + _str_o2_val
+_regex7 = re.compile(_str7, re.IGNORECASE)
+
+# finds O2 header then device then sat value
+_str8 = _str_o2_sat_hdr + _str_words + r'(' + _str_flow_rate + r')?' +\
+    _str_device + _str_cond + _str_o2_val
+_regex8 = re.compile(_str8, re.IGNORECASE)
+
 _SAO2_REGEXES = [
     _regex0,
     _regex1,
@@ -431,6 +441,8 @@ _SAO2_REGEXES = [
     _regex4,
     _regex5,
     _regex6,
+    _regex7,
+    _regex8,
 ]
 
 # o2 partial pressure (don't capture first part of PaO2 / FiO2
@@ -471,6 +483,9 @@ _SPO2_TO_PAO2 = {
     98:112,
     99:145
 }
+
+# minimum acceptable value for SpO2
+_MIN_SPO2_PCT = 60
 
 
 ###############################################################################
@@ -804,6 +819,10 @@ def run(sentence):
             elif 'nc3' == k:
                 nc3 = v
 
+        # check oxygen saturation for valid range
+        if o2_sat < _MIN_SPO2_PCT:
+            continue
+                
         # compute estimated PaO2 from SpO2
         if EMPTY_FIELD == pao2:
             pao2_est = _estimate_pao2(o2_sat)
@@ -972,6 +991,19 @@ if __name__ == '__main__':
         'O2sat >93',
         'patient spo2 < 93 % all night',
         'an oxygen saturation ~=90 for prev. 5 hrs',
+
+        'This morning SpO2 values began to improve again able to wean ' +\
+        'back peep to 5 SpO2 holding at 94%',
+        'Pt initially put on nasal prongs, O2 sats low @ 89% and patient ' +\
+        'changed over to NRM.',
+        'O2 sats ^ 96%.',
+        'O2 sats improving over course of shift and O2 further weaned ' +\
+        'to 5lpm nasal prongs: O2 sats 99%.',
+        'O2 sats 93-94% on 50% face tent.',
+        
+        'O2 SATS WERE BELOW 86',
+        'O2 sats down to 88',
+        'She arrived with B/P 182/80, O2 sats on 100% NRB were 100&.',
     ]
 
     for i, sentence in enumerate(SENTENCES):
