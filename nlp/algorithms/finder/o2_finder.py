@@ -180,7 +180,7 @@ _TRACE = False
 _str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.@^]+|\s[a-z\s]+)+)?'
 
 # words, possibly hyphenated or abbreviated, nongreedy match
-_str_words = r'([-a-z\s./:]+?)?'
+_str_words = r'([-a-z\s./:~]+?)?'
 
 # wordy relationships
 _str_equal     = r'\b(equal|eq\.?)'
@@ -225,8 +225,8 @@ _str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
 #  venti mask: Venturi mask
 #       bipap: bilevel positive airway pressure
 
-# sometimes see NC called "O2 NC"
-_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?c\.?|nas[ae]l[-\s]?cannula|cannula|prongs?)(?![a-z]))'
+# sometimes see NC called "O2 NC"; also called "nasal prongs", abbrev NP
+_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z]))'
 _str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|non[-\s]?rebreather(\smask)?)(?![a-z]))'
 _str_device_ra  = r'(?P<ra>(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
 _str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|' +\
@@ -662,8 +662,8 @@ def _regex_match(sentence, regex_list):
                 
 
     if 0 == len(candidates):
-        return []
-                
+        return []        
+    
     # sort the candidates in descending order of length, which is needed for
     # one-pass overlap resolution later on
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
@@ -717,8 +717,79 @@ def _regex_match(sentence, regex_list):
             print('\tRemoved candidate at index {0} with shorter device string'.
                   format(delete_index))
 
-    # now run the usual overlap resolution
-    pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+    # remove any that are proper substrings of another, exploiting the fact
+    # that the candidate list is sorted in decreasing order of length
+    discard_set = set()
+    for i in range(1, len(candidates)):
+        start = candidates[i].start
+        end   = candidates[i].end
+        for j in range(0, i):
+            prev_start = candidates[j].start
+            prev_end   = candidates[j].end
+            if start >= prev_start and end <= prev_end:
+                discard_set.add(i)
+                if _TRACE:
+                    print('\t[{0:2}] is a substring of [{1}], discarding...'.
+                          format(i, i-1))
+                break
+
+    survivors = []
+    for i in range(len(candidates)):
+        if i not in discard_set:
+            survivors.append(candidates[i])
+
+    candidates = survivors
+        
+    # Check for any 'complete' candidates. A complete candidate has an O2
+    # saturation value, a device, and a flow rate. If one or more of these,
+    # restrict consideration to these only.
+
+    complete_candidates = []
+    for c in candidates:
+        # match object stored in the 'other' field
+        gd = c.other.groupdict()
+        count = 0
+        if 'val' in gd and gd['val'] is not None:
+            count += 1
+        if 'flow_rate' in gd and gd['flow_rate'] is not None:
+            count += 1
+        if 'flow_rate2' in gd and gd['flow_rate2'] is not None:
+            count += 1
+        if 'flow_rate3' in gd and gd['flow_rate3'] is not None:
+            count += 1
+        if 'device' in gd and gd['device'] is not None:
+            count += 1
+            # room air will not have a flow rate, but it is nontheless complete
+            device_str = gd['device']
+            if -1 != device_str.find('air'):
+                count += 1
+        if count >= 3:
+            complete_candidates.append(c)
+            if _TRACE:
+                print('\tFound complete candidate "{0}"'.format(c.match_text))
+
+    if len(complete_candidates) > 0:
+        candidates = complete_candidates
+
+        # Now find the maximum number of non-overlapping candidates. This is an
+        # instance of the equal-weight interval scheduling problem, which has an
+        # optimal greedy solution. See the book "Algorithm Design" by Kleinberg and
+        # Tardos, ch. 4.
+
+        # sort candidates in increasing order of their END points
+        candidates = sorted(candidates, key=lambda x: x.end)
+
+        pruned_candidates = [candidates[0]]
+        prev_end = pruned_candidates[0].end
+        for i in range(1, len(candidates)):
+            c = candidates[i]
+            if c.start >= prev_end:
+                pruned_candidates.append(c)
+                prev_end = c.end
+
+    else:
+        # run the usual overlap resolution
+        pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
 
     if _TRACE:
         print('\tcandidate count after overlap removal: {0}'.
@@ -937,7 +1008,6 @@ if __name__ == '__main__':
         'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
         'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
         'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',        
-        'At transfer vitals were HR=120 BP=109/44 RR=29 POx=93% on 8L FM.',
         "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
         'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
         'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ',
@@ -986,7 +1056,6 @@ if __name__ == '__main__':
         'o2 sat 93% on 5l',
         'O2 sat were 90-95.',
         'O2 sat then decreased again to 89 - 90% while on 50% face tent',
-        'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L',
 
         'O2sat >93',
         'patient spo2 < 93 % all night',
@@ -994,9 +1063,8 @@ if __name__ == '__main__':
 
         'This morning SpO2 values began to improve again able to wean ' +\
         'back peep to 5 SpO2 holding at 94%',
-        'Pt initially put on nasal prongs, O2 sats low @ 89% and patient ' +\
-        'changed over to NRM.',
         'O2 sats ^ 96%.',
+        'O2 sats ^ back to 96-98%.',
         'O2 sats improving over course of shift and O2 further weaned ' +\
         'to 5lpm nasal prongs: O2 sats 99%.',
         'O2 sats 93-94% on 50% face tent.',
@@ -1004,6 +1072,19 @@ if __name__ == '__main__':
         'O2 SATS WERE BELOW 86',
         'O2 sats down to 88',
         'She arrived with B/P 182/80, O2 sats on 100% NRB were 100&.',
+        'Plan:  Wean o2 to maintain o2 sats >85%',
+        'At start of shift, LS with rhonchi throughout and ' +\
+        'O2 sats > 94% on 5  liters.',
+        'O2 sats are 92-94% on 3L NP & 91-93% on room air.',
+        'Pt. taken off mask ventilation and put on NRM with ' +\
+        '6lpm nasal prongs. O2 sats 96%.',
+        'Oxygen again weaned in   evening to 6L n.c. while pt ' +\
+        'eating dinner O2 sats 91-92%.',
+        
+        'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L',        
+        'Pt initially put on nasal prongs, O2 sats low @ 89% and patient changed over to NRM.',
+        'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24, Lungs diminished throughout',
+        'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
     ]
 
     for i, sentence in enumerate(SENTENCES):
