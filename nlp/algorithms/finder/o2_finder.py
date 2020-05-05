@@ -484,8 +484,9 @@ _SPO2_TO_PAO2 = {
     99:145
 }
 
-# minimum acceptable value for SpO2
-_MIN_SPO2_PCT = 60
+# minimum acceptable value for SpO2 (some Covid-19 patients have had O2 sats
+# this low)
+_MIN_SPO2_PCT = 50
 
 
 ###############################################################################
@@ -814,10 +815,14 @@ def run(sentence):
     cleaned_sentence = _cleanup(sentence)
 
     # could have ovelapping SaO2 matches
+    if _TRACE:
+        print('SaO2 candidates: ')
     sao2_candidates = _regex_match(cleaned_sentence, _SAO2_REGEXES)
 
     # only a single match for pao2, fio2, p_to_f_ratio
-    
+
+    if _TRACE:
+        print('PaO2 candidates: ')
     pao2 = EMPTY_FIELD
     pao2_candidates = _regex_match(cleaned_sentence, [_regex_pao2])
     if len(pao2_candidates) > 0:
@@ -825,6 +830,8 @@ def run(sentence):
         match_obj = pao2_candidates[0].other
         pao2, pao2_2 = _extract_values(match_obj)
 
+    if _TRACE:
+        print('FiO2 candidates: ')
     fio2 = EMPTY_FIELD
     fio2_candidates = _regex_match(cleaned_sentence, [_regex_fio2])
     if len(fio2_candidates) > 0:
@@ -835,6 +842,8 @@ def run(sentence):
         if fio2 < 1.0:
             fio2 *= 100.0
 
+    if _TRACE:
+        print('PaO2/FiO2 candidates: ')
     p_to_f_ratio = EMPTY_FIELD
     pf_candidates = _regex_match(cleaned_sentence, [_regex_pf_ratio])
     if len(pf_candidates) > 0:
@@ -878,6 +887,11 @@ def run(sentence):
                 flow_rate = float(v)
             elif k in _DEVICE_MAP:
                 device_type = k
+                # strip the leading 'on ' or 'on a' from the device
+                if v.startswith('on '):
+                    v = v[3:].strip()
+                elif v.startswith('on a '):
+                    v = v[5:]
                 device = '{0}|{1}'.format(v,k)
             elif 'cond' == k:
                 condition = _cond_to_string(v)
@@ -894,10 +908,6 @@ def run(sentence):
         if o2_sat < _MIN_SPO2_PCT:
             continue
                 
-        # compute estimated PaO2 from SpO2
-        if EMPTY_FIELD == pao2:
-            pao2_est = _estimate_pao2(o2_sat)
-
         # compute estimated FiO2 from flow rate and device
         if EMPTY_FIELD == fio2 and device is not None:
             device, fio2_est = _estimate_fio2(flow_rate, device)
@@ -910,6 +920,16 @@ def run(sentence):
             elif EMPTY_FIELD != flow_rate3 and EMPTY_FIELD != nc3:
                 device, fio2_est = _estimate_fio2(flow_rate3, '{0}|{1}'.
                                                   format(_DEVICE_NC, _DEVICE_NC))
+
+        # Check for the situation of a stated p_to_f, a stated fio2, and no
+        # pao2. In this case compute the pao2 value from the p_to_f and fio2
+        # values.
+        if EMPTY_FIELD != p_to_f_ratio and EMPTY_FIELD != fio2 and EMPTY_FIELD == pao2:
+            pao2_est = p_to_f_ratio * 0.01 * fio2;
+
+        # compute estimated PaO2 from SpO2
+        if EMPTY_FIELD == pao2 and EMPTY_FIELD == pao2_est:
+            pao2_est = _estimate_pao2(o2_sat)
             
         # get a pao2 value, with stated taking precedence over estimated
         pao2_val = None
@@ -928,7 +948,7 @@ def run(sentence):
                 fio2_val = fio2_est
 
         # compute estimated P/F ratio from whatever values are available
-        if pao2_val != EMPTY_FIELD and fio2_val != EMPTY_FIELD:
+        if EMPTY_FIELD == p_to_f_ratio and pao2_val != EMPTY_FIELD and fio2_val != EMPTY_FIELD:
                 p_to_f_ratio_est = pao2_val / (0.01 * fio2_val)
 
         # dry air contains about 20.95% O2, round to 21%
@@ -937,7 +957,11 @@ def run(sentence):
                 fio2_est = 21
                 p_to_f_ratio_est = pao2_val / 0.21
 
-        # round to nearest integer, does not have to be exact
+        # round estimates to nearest integer, does not have to be exact
+        if EMPTY_FIELD != pao2_est:
+            pao2_est = int(pao2_est + 0.5)
+        if EMPTY_FIELD != fio2_est:
+            fio2_est = int(fio2_est + 0.5)
         if EMPTY_FIELD != p_to_f_ratio_est:
             p_to_f_ratio_est = int(p_to_f_ratio_est + 0.5)
 
