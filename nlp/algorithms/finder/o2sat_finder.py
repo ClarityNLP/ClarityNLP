@@ -1160,39 +1160,39 @@ if __name__ == '__main__':
 
         'temperature 100 F., orally.  O2 saturation 98% on room air',
 
-        # 'o2 sat 93% on 5l',
-        # 'O2 sat were 90-95.',
-        # 'O2 sat then decreased again to 89 - 90% while on 50% face tent',
+        'o2 sat 93% on 5l',
+        'O2 sat were 90-95.',
+        'O2 sat then decreased again to 89 - 90% while on 50% face tent',
 
-        # 'O2sat >93',
-        # 'patient spo2 < 93 % all night',
-        # 'an oxygen saturation ~=90 for prev. 5 hrs',
+        'O2sat >93',
+        'patient spo2 < 93 % all night',
+        'an oxygen saturation ~=90 for prev. 5 hrs',
 
-        # 'This morning SpO2 values began to improve again able to wean ' +\
-        # 'back peep to 5 SpO2 holding at 94%',
-        # 'O2 sats ^ 96%.',
-        # 'O2 sats ^ back to 96-98%.',
-        # 'O2 sats improving over course of shift and O2 further weaned ' +\
-        # 'to 5lpm nasal prongs: O2 sats 99%.',
-        # 'O2 sats 93-94% on 50% face tent.',
+        'This morning SpO2 values began to improve again able to wean ' +\
+        'back peep to 5 SpO2 holding at 94%',
+        'O2 sats ^ 96%.',
+        'O2 sats ^ back to 96-98%.',
+        'O2 sats improving over course of shift and O2 further weaned ' +\
+        'to 5lpm nasal prongs: O2 sats 99%.',
+        'O2 sats 93-94% on 50% face tent.',
         
-        # 'O2 SATS WERE BELOW 86',
-        # 'O2 sats down to 88',
-        # 'She arrived with B/P 182/80, O2 sats on 100% NRB were 100&.',
-        # 'Plan:  Wean o2 to maintain o2 sats >85%',
-        # 'At start of shift, LS with rhonchi throughout and ' +\
-        # 'O2 sats > 94% on 5  liters.',
-        # 'O2 sats are 92-94% on 3L NP & 91-93% on room air.',
-        # 'Pt. taken off mask ventilation and put on NRM with ' +\
-        # '6lpm nasal prongs. O2 sats 96%.',
-        # 'Oxygen again weaned in   evening to 6L n.c. while pt ' +\
-        # 'eating dinner O2 sats 91-92%.',
+        'O2 SATS WERE BELOW 86',
+        'O2 sats down to 88',
+        'She arrived with B/P 182/80, O2 sats on 100% NRB were 100&.',
+        'Plan:  Wean o2 to maintain o2 sats >85%',
+        'At start of shift, LS with rhonchi throughout and ' +\
+        'O2 sats > 94% on 5  liters.',
+        'O2 sats are 92-94% on 3L NP & 91-93% on room air.',
+        'Pt. taken off mask ventilation and put on NRM with ' +\
+        '6lpm nasal prongs. O2 sats 96%.',
+        'Oxygen again weaned in   evening to 6L n.c. while pt ' +\
+        'eating dinner O2 sats 91-92%.',
         
-        # 'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L',        
-        # 'Pt initially put on nasal prongs, O2 sats low @ 89% and patient changed over to NRM.',
-        # 'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24, Lungs diminished throughout',
-        # 'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
-        # 'Pt with trach mask 50% FiO2 and oxygen saturation 98-100%  Lungs rhonchorous.',
+        'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L',        
+        'Pt initially put on nasal prongs, O2 sats low @ 89% and patient changed over to NRM.',
+        'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24, Lungs diminished throughout',
+        'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
+        'Pt with trach mask 50% FiO2 and oxygen saturation 98-100%  Lungs rhonchorous.',
     ]
 
     for i, sentence in enumerate(SENTENCES):
