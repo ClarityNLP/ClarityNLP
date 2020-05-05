@@ -1046,6 +1046,10 @@ def run(sentence):
         if EMPTY_FIELD != p_to_f_ratio_est:
             p_to_f_ratio_est = int(p_to_f_ratio_est + 0.5)
 
+        # set the condition to RANGE if two values were found
+        if EMPTY_FIELD != value and EMPTY_FIELD != value2:
+            condition = STR_O2_RANGE
+            
         o2_tuple = O2Tuple(
             text             = pc.match_text,
             start            = pc.start,
@@ -1100,63 +1104,61 @@ if __name__ == '__main__':
         'Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB',
         'Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask',
         'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
-        #'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        # 'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
-        # 'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
-        # 'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
-        # 'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra',
-        # 'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
-        # 'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
-        # 'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
-        # 'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
-        # 'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
-        # 'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
-        # 'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
-        # 'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',        
-        # "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
-        # 'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
-        # 'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ',
-        # 'HR 107 RR 28 and SpO2 91% on NRB.',
-        # 'BP 143/79 RR 16 and O2 sat 92% on room air and 100% on 3 L/min nc',
-        # 'RR: 28 BP: 84/43 O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
-        # 'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
-        # 'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L',
-        # 'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask',
-        # 'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
-        # 'BP 91/50, HR 63, RR 12, satting 95% on trach mask',
-        # 'O2 sats 98-100%',
-        # 'Pt. desating to 88%',
-        # 'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
-        # 'using BVM w/ o2 sats 74% on 4L',
+        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
+        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
+        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
+        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
+        'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra',
+        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
+        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
+        'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
+        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
+        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
+        'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
+        'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
+        'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',        
+        "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
+        'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
+        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ',
+        'HR 107 RR 28 and SpO2 91% on NRB.',
+        'BP 143/79 RR 16 and O2 sat 92% on room air and 100% on 3 L/min nc',
+        'RR: 28 BP: 84/43 O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
+        'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
+        'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L',
+        'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask',
+        'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
+        'BP 91/50, HR 63, RR 12, satting 95% on trach mask',
+        'O2 sats 98-100%',
+        'Pt. desating to 88%',
+        'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
+        'using BVM w/ o2 sats 74% on 4L',
         
-        # 'desat to 83 with 100% face tent and 4 l n.c.',
-        # 'desat to 83 with 100% face tent and nc of approximately 4l',
+        'desat to 83 with 100% face tent and 4 l n.c.',
+        'desat to 83 with 100% face tent and nc of approximately 4l',
 
-        # 'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
-        # 'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
-        # 'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 ' +\
-        # 'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min',
+        'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
+        'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
+        'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 ' +\
+        'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min',
 
-        # # actual vs. estimated P/F ratio very different (164 vs. 290)
-        # 'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   ' +\
-        # 'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   '    +\
-        # 'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   ' +\
-        # 'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164',
+        'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   ' +\
+        'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   '    +\
+        'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   ' +\
+        'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164',
 
-        # # actual vs. estimated P/F ratio very different (218 vs. 290)
-        # 'Respiratory: Vt (Set): 600 (600 - 600) mL   Vt (Spontaneous): 743 ' +\
-        # '(464 - 816) mL  PS : 5 cmH2O   RR (Set): 14   RR (Spontaneous): 19' +\
-        # ' PEEP: 5 cmH2O   FiO2: 50%   RSBI: 49   PIP: 11 cmH2O   '           +\
-        # 'Plateau: 20 cmH2O   SPO2: 99%   ABG: 7.34/51/109/25/0   '           +\
-        # 'Ve: 10.3 L/min   PaO2 / FiO2: 218',
+        'Respiratory: Vt (Set): 600 (600 - 600) mL   Vt (Spontaneous): 743 ' +\
+        '(464 - 816) mL  PS : 5 cmH2O   RR (Set): 14   RR (Spontaneous): 19' +\
+        ' PEEP: 5 cmH2O   FiO2: 50%   RSBI: 49   PIP: 11 cmH2O   '           +\
+        'Plateau: 20 cmH2O   SPO2: 99%   ABG: 7.34/51/109/25/0   '           +\
+        'Ve: 10.3 L/min   PaO2 / FiO2: 218',
         
-        # 'an oxygen saturation of 96% on 2 liters',
-        # 'an oxygen saturation of 96% on 2 liters with a nasal cannula',
+        'an oxygen saturation of 96% on 2 liters',
+        'an oxygen saturation of 96% on 2 liters with a nasal cannula',
         
-        # 'the respiratory rate was 21,\nand the oxygen saturation was 80% ' +\
-        # 'to 92% on a 100% nonrebreather mask',
+        'the respiratory rate was 21,\nand the oxygen saturation was 80% ' +\
+        'to 92% on a 100% nonrebreather mask',
 
-        # 'temperature 100 F., orally.  O2 saturation 98% on room air',
+        'temperature 100 F., orally.  O2 saturation 98% on room air',
 
         # 'o2 sat 93% on 5l',
         # 'O2 sat were 90-95.',
