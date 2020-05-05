@@ -16,17 +16,29 @@ import json
 import argparse
 from collections import namedtuple
 
+if __name__ == '__main__':
+    # interactive testing
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** o2_finder.py: nlp dir not found ***\n')
+        sys.exit(0)
+
 try:
     import time_finder as tf
     import date_finder as df
     import size_measurement_finder as smf
+    import o2sat_finder as o2f
 except:
     from algorithms.finder import time_finder as tf
     from algorithms.finder import date_finder as df
     from algorithms.finder import size_measurement_finder as smf
+    from algorithms.finder import o2sat_finder as o2f
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -84,9 +96,32 @@ _SMResult = namedtuple('_SMResult', _SIZE_MEAS_FIELDS)
 _SMResult.__new__.__defaults__ = (None,) * len(_SMResult._fields)
 
 
+#
+# O2 sat result fields
+#
+
+_O2_RESULT_FIELDS = [
+    'text',
+    'o2_sat',           # [%]
+    'pao2',             # [mmHg]
+    'pao2_est',         # estimated from o2_sat
+    'fio2',             # [%]
+    'fio2_est',         # estimated from flow_rate
+    'p_to_f_ratio',
+    'p_to_f_ratio_est', # estimated
+    'flow_rate',        # [L/min]
+    'device',
+    'condition',        # STR_APPROX, STR_LT, etc.
+    'value',
+    'value2',    
+]
+_O2Result = namedtuple('_O2Result', _O2_RESULT_FIELDS)
+_O2Result.__new__.__defaults__ = (None,) * len(_O2Result._fields)
+
 _MODULE_TIME = 'time'
 _MODULE_DATE = 'date'
 _MODULE_SIZE_MEAS = 'size_meas'
+_MODULE_O2 = 'o2'
 
 
 ###############################################################################
@@ -153,7 +188,7 @@ def _run_tests(module_type, test_data):
             computed_values = [tf.TimeValue(**d) for d in json_data]
 
             # check computed vs. expected results
-            ok =_compare_results(
+            ok = _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
@@ -179,11 +214,24 @@ def _run_tests(module_type, test_data):
             json_data = json.loads(json_result)
             computed_values = [smf.SizeMeasurement(**d) for d in json_data]
 
-            ok =_compare_results(
+            ok = _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
                 _SIZE_MEAS_FIELDS)
+
+        elif _MODULE_O2 == module_type:
+
+            # run O2sat_finder on the next test sentence
+            json_result = o2f.run(sentence)
+            json_data = json.loads(json_result)
+            computed_values = [o2f.O2Tuple(**d) for d in json_data]
+
+            ok = _compare_results(
+                computed_values,
+                expected_values,
+                sentence,
+                _O2_RESULT_FIELDS)
 
         if not ok:
             return False
@@ -1297,6 +1345,64 @@ def test_size_measurement_finder():
 
 
 ###############################################################################
+def test_o2sat_finder():
+
+    # UTC datetime YYYY-MM-DDTHH:MM:SS.ffffff
+    test_data = {
+        'Vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM':[
+            _O2Result(text='POx=93% on 8L FM',
+		      o2_sat = 93.0,
+		      pao2_est = 69,
+		      fio2_est = 47,
+		      p_to_f_ratio_est = 147,
+		      flow_rate = 8,
+		      device = 'FM',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 93.0)
+        ],
+        'Vitals: T: 96.0  BP: 90/54 P: 88 R: 16 18 O2:88/NRB':[
+	    _O2Result(text = 'O2:88/NRB',
+		      o2_sat = 88.0,
+		      pao2_est = 55,
+		      device = 'NRB',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 88)
+        ],
+        ' Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB':[
+            _O2Result(text = 'SaO2 100% on NRB',
+		      o2_sat = 100,
+		      pao2_est = 145,
+		      device = 'NRB',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask':[
+            _O2Result(text = 'O2 95% on 55% venti mask',
+		      o2_sat = 95,
+		      pao2_est = 79,
+		      fio2_est = 55,
+		      p_to_f_ratio_est = 144,
+		      device = '55% venti mask',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+         ],
+        'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.':[
+            _O2Result(text = '98% RA.',
+		      o2_sat = 98,
+		      pao2_est = 112,
+		      device = 'RA.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+    }
+
+    if not _run_tests(_MODULE_O2, test_data):
+        return False
+
+    return True
+    
+
+###############################################################################
 def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
 
@@ -1329,4 +1435,5 @@ if __name__ == '__main__':
     assert test_time_finder()
     assert test_date_finder()
     assert test_size_measurement_finder()
+    assert test_o2sat_finder()
 

@@ -137,13 +137,13 @@ except:
 EMPTY_FIELD = None
 
 # values for the 'condition' field in the result namedtuple
-STR_APPROX         = 'APPROX'
-STR_LT             = 'LESS_THAN'
-STR_LTE            = 'LESS_THAN_OR_EQUAL'
-STR_GT             = 'GREATER_THAN'
-STR_GTE            = 'GREATER_THAN_OR_EQUAL'
-STR_EQUAL          = 'EQUAL'
-STR_RANGE          = 'RANGE'
+STR_O2_APPROX         = 'APPROX'
+STR_O2_LT             = 'LESS_THAN'
+STR_O2_LTE            = 'LESS_THAN_OR_EQUAL'
+STR_O2_GT             = 'GREATER_THAN'
+STR_O2_GTE            = 'GREATER_THAN_OR_EQUAL'
+STR_O2_EQUAL          = 'EQUAL'
+STR_O2_RANGE          = 'RANGE'
 
 O2_TUPLE_FIELDS = [
     'text',
@@ -161,8 +161,6 @@ O2_TUPLE_FIELDS = [
     'condition',        # STR_APPROX, STR_LT, etc.
     'value',
     'value2',
-
-    # computed fields - TBD
 ]
 O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 
@@ -171,7 +169,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
-_MODULE_NAME   = 'o2_finder.py'
+_MODULE_NAME   = 'o2sat_finder.py'
 
 # set to True to enable debug output
 _TRACE = False
@@ -536,17 +534,17 @@ def _cond_to_string(str_cond):
     """
     
     if _regex_approx.search(str_cond):
-        result = STR_APPROX
+        result = STR_O2_APPROX
     elif _regex_lte.search(str_cond):
-        result = STR_LTE
+        result = STR_O2_LTE
     elif _regex_gte.search(str_cond):
-        result = STR_GTE
+        result = STR_O2_GTE
     elif _regex_lt.search(str_cond):
-        result = STR_LT
+        result = STR_O2_LT
     elif _regex_gt.search(str_cond):
-        result = STR_GT
+        result = STR_O2_GT
     else:
-        result = STR_EQUAL
+        result = STR_O2_EQUAL
     
     return result
 
@@ -940,7 +938,7 @@ def run(sentence):
         tent3            = EMPTY_FIELD
         flow_rate3       = EMPTY_FIELD
         nc3              = EMPTY_FIELD
-        condition        = STR_EQUAL
+        condition        = STR_O2_EQUAL
 
         for k,v in match.groupdict().items():
             if v is None:
@@ -1102,97 +1100,97 @@ if __name__ == '__main__':
         'Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB',
         'Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask',
         'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.',
-        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
-        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
-        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
-        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
-        'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra',
-        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
-        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
-        'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
-        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
-        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
-        'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
-        'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
-        'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',        
-        "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
-        'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
-        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ',
-        'HR 107 RR 28 and SpO2 91% on NRB.',
-        'BP 143/79 RR 16 and O2 sat 92% on room air and 100% on 3 L/min nc',
-        'RR: 28 BP: 84/43 O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
-        'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
-        'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L',
-        'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask',
-        'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
-        'BP 91/50, HR 63, RR 12, satting 95% on trach mask',
-        'O2 sats 98-100%',
-        'Pt. desating to 88%',
-        'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
-        'using BVM w/ o2 sats 74% on 4L',
+        #'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC',
+        # 'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97',
+        # 'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L',
+        # 'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC',
+        # 'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra',
+        # 'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC',
+        # 'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA',
+        # 'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA',
+        # 'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%',
+        # 'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.',
+        # 'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.',
+        # 'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.',
+        # 'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.',        
+        # "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.",
+        # 'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.',
+        # 'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams ',
+        # 'HR 107 RR 28 and SpO2 91% on NRB.',
+        # 'BP 143/79 RR 16 and O2 sat 92% on room air and 100% on 3 L/min nc',
+        # 'RR: 28 BP: 84/43 O2Sat: 88 O2 Flow: 100 (Non-Rebreather).',
+        # 'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.',
+        # 'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L',
+        # 'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask',
+        # 'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%',
+        # 'BP 91/50, HR 63, RR 12, satting 95% on trach mask',
+        # 'O2 sats 98-100%',
+        # 'Pt. desating to 88%',
+        # 'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
+        # 'using BVM w/ o2 sats 74% on 4L',
         
-        'desat to 83 with 100% face tent and 4 l n.c.',
-        'desat to 83 with 100% face tent and nc of approximately 4l',
+        # 'desat to 83 with 100% face tent and 4 l n.c.',
+        # 'desat to 83 with 100% face tent and nc of approximately 4l',
 
-        'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
-        'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
-        'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 ' +\
-        'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min',
+        # 'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL ' +\
+        # 'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 ' +\
+        # 'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 ' +\
+        # 'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min',
 
-        # actual vs. estimated P/F ratio very different (164 vs. 290)
-        'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   ' +\
-        'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   '    +\
-        'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   ' +\
-        'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164',
+        # # actual vs. estimated P/F ratio very different (164 vs. 290)
+        # 'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   ' +\
+        # 'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   '    +\
+        # 'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   ' +\
+        # 'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164',
 
-        # actual vs. estimated P/F ratio very different (218 vs. 290)
-        'Respiratory: Vt (Set): 600 (600 - 600) mL   Vt (Spontaneous): 743 ' +\
-        '(464 - 816) mL  PS : 5 cmH2O   RR (Set): 14   RR (Spontaneous): 19' +\
-        ' PEEP: 5 cmH2O   FiO2: 50%   RSBI: 49   PIP: 11 cmH2O   '           +\
-        'Plateau: 20 cmH2O   SPO2: 99%   ABG: 7.34/51/109/25/0   '           +\
-        'Ve: 10.3 L/min   PaO2 / FiO2: 218',
+        # # actual vs. estimated P/F ratio very different (218 vs. 290)
+        # 'Respiratory: Vt (Set): 600 (600 - 600) mL   Vt (Spontaneous): 743 ' +\
+        # '(464 - 816) mL  PS : 5 cmH2O   RR (Set): 14   RR (Spontaneous): 19' +\
+        # ' PEEP: 5 cmH2O   FiO2: 50%   RSBI: 49   PIP: 11 cmH2O   '           +\
+        # 'Plateau: 20 cmH2O   SPO2: 99%   ABG: 7.34/51/109/25/0   '           +\
+        # 'Ve: 10.3 L/min   PaO2 / FiO2: 218',
         
-        'an oxygen saturation of 96% on 2 liters',
-        'an oxygen saturation of 96% on 2 liters with a nasal cannula',
+        # 'an oxygen saturation of 96% on 2 liters',
+        # 'an oxygen saturation of 96% on 2 liters with a nasal cannula',
         
-        'the respiratory rate was 21,\nand the oxygen saturation was 80% ' +\
-        'to 92% on a 100% nonrebreather mask',
+        # 'the respiratory rate was 21,\nand the oxygen saturation was 80% ' +\
+        # 'to 92% on a 100% nonrebreather mask',
 
-        'temperature 100 F., orally.  O2 saturation 98% on room air',
+        # 'temperature 100 F., orally.  O2 saturation 98% on room air',
 
-        'o2 sat 93% on 5l',
-        'O2 sat were 90-95.',
-        'O2 sat then decreased again to 89 - 90% while on 50% face tent',
+        # 'o2 sat 93% on 5l',
+        # 'O2 sat were 90-95.',
+        # 'O2 sat then decreased again to 89 - 90% while on 50% face tent',
 
-        'O2sat >93',
-        'patient spo2 < 93 % all night',
-        'an oxygen saturation ~=90 for prev. 5 hrs',
+        # 'O2sat >93',
+        # 'patient spo2 < 93 % all night',
+        # 'an oxygen saturation ~=90 for prev. 5 hrs',
 
-        'This morning SpO2 values began to improve again able to wean ' +\
-        'back peep to 5 SpO2 holding at 94%',
-        'O2 sats ^ 96%.',
-        'O2 sats ^ back to 96-98%.',
-        'O2 sats improving over course of shift and O2 further weaned ' +\
-        'to 5lpm nasal prongs: O2 sats 99%.',
-        'O2 sats 93-94% on 50% face tent.',
+        # 'This morning SpO2 values began to improve again able to wean ' +\
+        # 'back peep to 5 SpO2 holding at 94%',
+        # 'O2 sats ^ 96%.',
+        # 'O2 sats ^ back to 96-98%.',
+        # 'O2 sats improving over course of shift and O2 further weaned ' +\
+        # 'to 5lpm nasal prongs: O2 sats 99%.',
+        # 'O2 sats 93-94% on 50% face tent.',
         
-        'O2 SATS WERE BELOW 86',
-        'O2 sats down to 88',
-        'She arrived with B/P 182/80, O2 sats on 100% NRB were 100&.',
-        'Plan:  Wean o2 to maintain o2 sats >85%',
-        'At start of shift, LS with rhonchi throughout and ' +\
-        'O2 sats > 94% on 5  liters.',
-        'O2 sats are 92-94% on 3L NP & 91-93% on room air.',
-        'Pt. taken off mask ventilation and put on NRM with ' +\
-        '6lpm nasal prongs. O2 sats 96%.',
-        'Oxygen again weaned in   evening to 6L n.c. while pt ' +\
-        'eating dinner O2 sats 91-92%.',
+        # 'O2 SATS WERE BELOW 86',
+        # 'O2 sats down to 88',
+        # 'She arrived with B/P 182/80, O2 sats on 100% NRB were 100&.',
+        # 'Plan:  Wean o2 to maintain o2 sats >85%',
+        # 'At start of shift, LS with rhonchi throughout and ' +\
+        # 'O2 sats > 94% on 5  liters.',
+        # 'O2 sats are 92-94% on 3L NP & 91-93% on room air.',
+        # 'Pt. taken off mask ventilation and put on NRM with ' +\
+        # '6lpm nasal prongs. O2 sats 96%.',
+        # 'Oxygen again weaned in   evening to 6L n.c. while pt ' +\
+        # 'eating dinner O2 sats 91-92%.',
         
-        'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L',        
-        'Pt initially put on nasal prongs, O2 sats low @ 89% and patient changed over to NRM.',
-        'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24, Lungs diminished throughout',
-        'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
-        'Pt with trach mask 50% FiO2 and oxygen saturation 98-100%  Lungs rhonchorous.',
+        # 'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L',        
+        # 'Pt initially put on nasal prongs, O2 sats low @ 89% and patient changed over to NRM.',
+        # 'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24, Lungs diminished throughout',
+        # 'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
+        # 'Pt with trach mask 50% FiO2 and oxygen saturation 98-100%  Lungs rhonchorous.',
     ]
 
     for i, sentence in enumerate(SENTENCES):
@@ -1203,7 +1201,7 @@ if __name__ == '__main__':
         data = json.loads(result)
         for d in data:
             for k,v in d.items():
-                print('\t\t{0} => {1}'.format(k, v))
+                print('\t\t{0} = {1}'.format(k, v))
             
         
 ###############################################################################
