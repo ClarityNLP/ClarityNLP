@@ -233,7 +233,8 @@ _str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|' +\
     r'\d+\s?%\s?(venturi|venti)[-\s]?mask)(?![a-z]))'
 _str_device_bvm = r'(?P<bvm>(b\.?v\.?m\.?|bag[-\s]valve\smask))'
 _str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|bipap(\s\d+/\d+)?))'
-_str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|[a-z\s]+[-\s]?mask|' +\
+#_str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|[a-z\s]+[-\s]?mask|' +\
+_str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|[a-z]+\s?([a-z]+\s?)?[-\s]?mask|' +\
     r'vent(ilator)?|\d+%\s?[a-z]+[-\s]?mask|mask))'
 _str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
 # face tent with a nasal cannula; flow rate prior to NC
@@ -363,6 +364,10 @@ _str_device = r'\(?(?P<device>' +\
     r'(' + _str_device_air + r')'      + r'|' +\
     r'(' + _str_device_nasocath + r'))'       +\
     r'\)?'
+_regex_device = re.compile(_str_device, re.IGNORECASE)
+
+# character used to encode the device
+_DEVICE_ENC_CHAR = '|'
 
 # finds "spo2: 98% on 2L NC" and similar
 # _str_o2_1 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
@@ -450,10 +455,19 @@ _str_pao2 = r'\b(pao2|partial pressure of (oxygen|o2))(?!/)(?! /)' +\
     r'(' + _str_cond+ r')?' +  r'(?P<val>\d+)'
 _regex_pao2 = re.compile(_str_pao2, re.IGNORECASE)
 
-# fraction of inspired oxygen (prevent matches to pao2 / fio2)
-_str_fio2 = r'\b(?<!/)(?<!/\s)(fio2|o2\sflow)' +\
-    r'(' + _str_cond + r')?' + r'(?P<val>\d+)\s?%?'
-_regex_fio2 = re.compile(_str_fio2, re.IGNORECASE)
+# fraction of inspired oxygen (prevent matches to pao2 / fio2), value follows 'fio2'
+_str_fio2_1 = r'\b(?<!/)(?<!/\s)(fio2|o2\sflow)' +\
+    r'(' + _str_cond + r')?' + r'(?P<val>(100|[2-9][0-9]))\s?%?'
+_regex_fio2_1 = re.compile(_str_fio2_1, re.IGNORECASE)
+
+# value precedes 'fio2'
+_str_fio2_2 = r'(?<!\d)(?P<val>(100|[2-9][0-9]))\s?%?\s?(fio2|o2\sflow)'
+_regex_fio2_2 = re.compile(_str_fio2_2, re.IGNORECASE)
+
+_FIO2_REGEXES = [
+    _regex_fio2_1,
+    _regex_fio2_2,
+]
 
 # p/f ratio
 _str_pf_ratio = r'\b(pao2|p)\s?/\s?(fio2|f)(\s?ratio)?' +\
@@ -804,6 +818,50 @@ def _regex_match(sentence, regex_list):
     
 
 ###############################################################################
+def _encode_device(k, v):
+    """
+    Encode a device string as v|k, where the string 'k' is a key in
+    _DEVICE_MAP, and 'v' is the value for that device extracted from the text.
+    """
+
+    # strip the leading prepositions, if any
+    if v.startswith('on '):
+        v = v[3:]
+    elif v.startswith('on a '):
+        v = v[5:]
+    elif v.startswith('with '):
+        v = v[5:]
+
+    device_type = k
+    # encode as 'v|k'
+    device_str = '{0}{1}{2}'.format(v.strip(), _DEVICE_ENC_CHAR, k)
+    return device_type, device_str
+    
+
+###############################################################################
+def _erase(sentence, candidates):
+    """
+    Erase all candidate matches from the sentence. Only substitute a single
+    whitespace for the region, since this is performed on the previously
+    cleaned sentence.
+    """
+
+    new_sentence = sentence
+    for c in candidates:
+        start = c.start
+        end = c.end
+        s1 = new_sentence[:start]
+        s2 = ' '
+        s3 = new_sentence[end:]
+        new_sentence = s1 + s2 + s3
+
+    # collapse repeated whitespace, if any
+    new_sentence = re.sub(r'\s+', ' ', new_sentence)
+        
+    return new_sentence
+
+
+###############################################################################
 def run(sentence):
     """
     Find values related to oxygen saturation, flow rates, etc. Compute values
@@ -819,35 +877,44 @@ def run(sentence):
         print('SaO2 candidates: ')
     sao2_candidates = _regex_match(cleaned_sentence, _SAO2_REGEXES)
 
+    # erase these matches from the sentence
+    remaining_sentence = _erase(cleaned_sentence, sao2_candidates)
+    
     # only a single match for pao2, fio2, p_to_f_ratio
 
     if _TRACE:
         print('PaO2 candidates: ')
     pao2 = EMPTY_FIELD
-    pao2_candidates = _regex_match(cleaned_sentence, [_regex_pao2])
+    pao2_candidates = _regex_match(remaining_sentence, [_regex_pao2])
     if len(pao2_candidates) > 0:
-        assert 1 == len(pao2_candidates)
+        # take the first match
         match_obj = pao2_candidates[0].other
         pao2, pao2_2 = _extract_values(match_obj)
+
+    # erase these matches also
+    remaining_sentence = _erase(remaining_sentence, pao2_candidates)
 
     if _TRACE:
         print('FiO2 candidates: ')
     fio2 = EMPTY_FIELD
-    fio2_candidates = _regex_match(cleaned_sentence, [_regex_fio2])
+    fio2_candidates = _regex_match(remaining_sentence, _FIO2_REGEXES)
     if len(fio2_candidates) > 0:
-        assert 1 == len(fio2_candidates)
+        # take the first match
         match_obj = fio2_candidates[0].other
         fio2, fio2_2 = _extract_values(match_obj)
         # convert fio2 to a percentage
         if fio2 < 1.0:
             fio2 *= 100.0
 
+    # erase these matches
+    remaining_sentence = _erase(remaining_sentence, fio2_candidates)
+            
     if _TRACE:
         print('PaO2/FiO2 candidates: ')
     p_to_f_ratio = EMPTY_FIELD
     pf_candidates = _regex_match(cleaned_sentence, [_regex_pf_ratio])
     if len(pf_candidates) > 0:
-        assert 1 == len(pf_candidates)
+        # take the first match
         match_obj = pf_candidates[0].other
         p_to_f_ratio, p_to_f_ratio_2 = _extract_values(match_obj)
 
@@ -886,13 +953,14 @@ def run(sentence):
             elif 'flow_rate' == k:
                 flow_rate = float(v)
             elif k in _DEVICE_MAP:
-                device_type = k
-                # strip the leading 'on ' or 'on a' from the device
-                if v.startswith('on '):
-                    v = v[3:].strip()
-                elif v.startswith('on a '):
-                    v = v[5:]
-                device = '{0}|{1}'.format(v,k)
+                device_type, device = _encode_device(k, v)
+                # device_type = k
+                # # strip the leading 'on ' or 'on a' from the device
+                # if v.startswith('on '):
+                #     v = v[3:].strip()
+                # elif v.startswith('on a '):
+                #     v = v[5:]
+                # device = '{0}|{1}'.format(v,k)
             elif 'cond' == k:
                 condition = _cond_to_string(v)
             elif 'flow_rate2' == k:
@@ -907,6 +975,17 @@ def run(sentence):
         # check oxygen saturation for valid range
         if o2_sat < _MIN_SPO2_PCT:
             continue
+
+        # if no device found, check device regex independently
+        if EMPTY_FIELD == device:
+            device_candidates = _regex_match(cleaned_sentence, [_regex_device])
+            if len(device_candidates) > 0:
+                # take the first match
+                for k,v in device_candidates[0].other.groupdict().items():
+                    if v is None:
+                        continue
+                    if k in _DEVICE_MAP:
+                        device_type, device = _encode_device(k,v)
                 
         # compute estimated FiO2 from flow rate and device
         if EMPTY_FIELD == fio2 and device is not None:
@@ -921,6 +1000,10 @@ def run(sentence):
                 device, fio2_est = _estimate_fio2(flow_rate3, '{0}|{1}'.
                                                   format(_DEVICE_NC, _DEVICE_NC))
 
+        # unencode the device if no fio2 estimate could be performed
+        if EMPTY_FIELD != device:
+            device = device.split(_DEVICE_ENC_CHAR)[0]
+                
         # Check for the situation of a stated p_to_f, a stated fio2, and no
         # pao2. In this case compute the pao2 value from the p_to_f and fio2
         # values.
@@ -1109,6 +1192,7 @@ if __name__ == '__main__':
         'Pt initially put on nasal prongs, O2 sats low @ 89% and patient changed over to NRM.',
         'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24, Lungs diminished throughout',
         'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
+        'Pt with trach mask 50% FiO2 and oxygen saturation 98-100%  Lungs rhonchorous.',
     ]
 
     for i, sentence in enumerate(SENTENCES):
