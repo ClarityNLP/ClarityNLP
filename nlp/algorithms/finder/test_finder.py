@@ -1917,6 +1917,25 @@ def test_o2sat_finder():
 		      value = 98,
 		      value2 = 100)
         ],
+        'Respiratory support O2 Delivery Device: Nasal cannula SpO2: 95%':[
+            _O2Result(text = 'O2 Delivery Device: Nasal cannula SpO2: 95%',
+		      pao2_est = 79,
+		      device = 'Nasal cannula',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+        ],
+        'found with O2 sat of 65% on RA. Pt was initially satting 95% on NRB':[
+            _O2Result(text = 'O2 sat of 65% on RA.',
+		      pao2_est = 44,
+		      device = 'RA.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 65),
+	    _O2Result(text = 'satting 95% on NRB',
+		      pao2_est = 79,
+		      device = 'NRB',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+        ],
     }
 
     if not _run_tests(_MODULE_O2, test_data):

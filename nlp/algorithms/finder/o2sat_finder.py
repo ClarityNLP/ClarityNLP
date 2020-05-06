@@ -229,7 +229,7 @@ _str_device_nc  = r'(?P<nc>(O2\s)?(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?' +\
     r'(cannula|prongs?))(?![a-z]))'
 _str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|'                 +\
     r'non[-\s]?rebreather(\smask)?)(?![a-z]))'
-_str_device_ra  = r'(?P<ra>(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
+_str_device_ra  = r'(?P<ra>(?<![a-z])(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
 _str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|'      +\
     r'\d+\s?%\s?(venturi|venti)[-\s]?mask)(?![a-z]))'
 _str_device_bvm = r'(?P<bvm>(b\.?v\.?m\.?|bag[-\s]valve\smask))'
@@ -249,7 +249,7 @@ _str_device_tent_nc2 = r'(?P<tent3>\d+\s?%\s?face\s?tent)[a-z\s]+'    +\
     r'(?P<flow_rate3>\d+)\s?(Liters|L)(/min\.?)?\s?'
 _str_device_air = r'(?P<air>(room[-\s]air|air))'
 _str_device_nasocath = r'(?P<nasocath>(naso[-\.\s]?(pharyngeal)?'     +\
-    r'[-\s]?cath\.?(eter)?|cath\.?(eter)?))'
+    r'[-\s]?cath\.?(eter)?))'
 
 ##### Functions to convert an O2 flow rate into an estimated FiO2 value. #####
 
@@ -354,7 +354,7 @@ _DEVICE_MAP = {
 }
 
 # master regex for all devices
-_str_device = r'\(?(?P<device>' +\
+_str_device = r'\(?(o2\s?delivery\sdevice\s?:\s?)?(?P<device>' +\
     r'(' + _str_device_nc + r')'       + r'|' +\
     r'(' + _str_device_nrb + r')'      + r'|' +\
     r'(' + _str_device_ra + r')'       + r'|' +\
@@ -436,17 +436,25 @@ _regex_pao2 = re.compile(_str_pao2, re.IGNORECASE)
 # case 1: value follows the 'fio2' string
 # The Earth's atmosphere is ~21% O2, but sometimes the respiratory literature
 # uses 20% instead. So 20% is the min acceptable value in these regexes.
-_str_fio2_1 = r'\b(?<!/)(?<!/\s)(fio2|o2\sflow)' +\
+#
+# also: 'Fi02' has been seen in MIMIC (note the number '0', not the letter 'O')
+_str_fio2_1 = r'\b(?<!/)(?<!/\s)(fi[o0]2|o2\sflow)' +\
     r'(' + _str_cond + r')?' + r'(?P<val>(100|[2-9][0-9]))\s?%?'
 _regex_fio2_1 = re.compile(_str_fio2_1, re.IGNORECASE)
 
 # case 2: value precedes the 'fio2' string
-_str_fio2_2 = r'(?<!\d)(?P<val>(100|[2-9][0-9]))\s?%?\s?(fio2|o2\sflow)'
+_str_fio2_2 = r'(?<!\d)(?P<val>(100|[2-9][0-9]))\s?%?\s?(fi[o0]2|o2\sflow)'
 _regex_fio2_2 = re.compile(_str_fio2_2, re.IGNORECASE)
+
+# case 3: FiO2 <words> <value>
+_str_fio2_3 = r'\b(?<!/)(?<!/\s)(fi[o0]2|o2\sflow)' + _str_words +\
+    r'(?P<val>(100|[2-9][0-9]))\s?%?'
+_regex_fio2_3 = re.compile(_str_fio2_3, re.IGNORECASE)
 
 _FIO2_REGEXES = [
     _regex_fio2_1,
     _regex_fio2_2,
+    _regex_fio2_3,
 ]
 
 # p/f ratio
@@ -642,9 +650,18 @@ def _regex_match(sentence, regex_list):
     for i, regex in enumerate(regex_list):
         iterator = regex.finditer(sentence)
         for match in iterator:
-        #match = regex.search(sentence)
-        #if match:                        
             match_text = match.group().strip()
+
+            # Special case for regex index 6. Prevent a match on the bracketed
+            # portion of something like this:
+            #       "<RA. Pt was initially satting 95%> on NRB.".
+            #
+            # In other words, the sentence segmentation should have started
+            # a new sentence at "Pt", in which case the match would be correct.
+            special_match = re.search(r'\.\s[A-Z][a-z]+', match_text)
+            if special_match:
+                continue
+            
             start = match.start()
             end   = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex,
@@ -726,7 +743,7 @@ def _regex_match(sentence, regex_list):
                 discard_set.add(i)
                 if _TRACE:
                     print('\t[{0:2}] is a substring of [{1}], discarding...'.
-                          format(i, i-1))
+                          format(i, j))
                 break
 
     survivors = []
@@ -935,13 +952,6 @@ def run(sentence):
                 flow_rate = float(v)
             elif k in _DEVICE_MAP:
                 device_type, device = _encode_device(k, v)
-                # device_type = k
-                # # strip the leading 'on ' or 'on a' from the device
-                # if v.startswith('on '):
-                #     v = v[3:].strip()
-                # elif v.startswith('on a '):
-                #     v = v[5:]
-                # device = '{0}|{1}'.format(v,k)
             elif 'cond' == k:
                 condition = _cond_to_string(v)
             elif 'flow_rate2' == k:
@@ -983,8 +993,10 @@ def run(sentence):
 
         # unencode the device if no fio2 estimate could be performed
         if EMPTY_FIELD != device:
-            device = device.split(_DEVICE_ENC_CHAR)[0]
-                
+            device = device.split(_DEVICE_ENC_CHAR)[0].strip()
+            if 'none' == device.lower():
+                device = EMPTY_FIELD
+            
         # Check for the situation of a stated p_to_f, a stated fio2, and no
         # pao2. In this case compute the pao2 value from the p_to_f and fio2
         # values.
@@ -1176,6 +1188,19 @@ if __name__ == '__main__':
         'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24, Lungs diminished throughout',
         'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
         'Pt with trach mask 50% FiO2 and oxygen saturation 98-100%  Lungs rhonchorous.',
+
+        # negative example - don't capture the 'ra' at the end
+        'Upon arrival left pupil blown to 6mm mannitol 100gm given along with keppra.',
+
+        # note the zero '0' character in Fi02
+        'Fi02 also weaned to 40% as 02 sat ~100%.',
+
+        'Respiratory support O2 Delivery Device: Nasal cannula SpO2: 95%',
+
+        'found with O2 sat of 65% on RA. Pt was initially satting 95% on NRB',
+        
+        #"RESP: REMAINS ON CPAP 18/+5 40%. TV'S 400-500cc RR 19-27 " +\
+        #"AND SATS 96-98%. LS COARSE WITH BIBASILAR CRACKLES.",
     ]
 
     for i, sentence in enumerate(SENTENCES):
