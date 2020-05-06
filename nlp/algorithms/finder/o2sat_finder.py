@@ -15,6 +15,7 @@ Generally a P/F ratio less than 300 means the patient has hypoxemia.
 The P/F ratio can be estimated from pulse ox measurements and O2 flow rates.
 
 Conversion of pulse ox value (SpO2 %) to O2 partial pressure (mmHg):
+(https://www.intensive.org/epic2/Documents/Estimation%20of%20PO2%20and%20FiO2.pdf)
 
     SpO2 (%)    PaO2 (mmHg)
     --------    -----------
@@ -119,7 +120,7 @@ import argparse
 from collections import namedtuple
 
 if __name__ == '__main__':
-    # interactive testing
+    # for interactive testing only
     match = re.search(r'nlp/', sys.path[0])
     if match:
         nlp_dir = sys.path[0][:match.end()]
@@ -146,10 +147,10 @@ STR_O2_EQUAL          = 'EQUAL'
 STR_O2_RANGE          = 'RANGE'
 
 O2_TUPLE_FIELDS = [
+    'sentence',
     'text',
     'start',
     'end',
-    'o2_sat',           # [%]
     'pao2',             # [mmHg]
     'pao2_est',         # estimated from o2_sat
     'fio2',             # [%]
@@ -159,8 +160,8 @@ O2_TUPLE_FIELDS = [
     'flow_rate',        # [L/min]
     'device',
     'condition',        # STR_APPROX, STR_LT, etc.
-    'value',
-    'value2',
+    'value',            # [%] (O2 saturation value)
+    'value2',           # [%] (second O2 saturation value for ranges)
 ]
 O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 
@@ -224,28 +225,31 @@ _str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
 #       bipap: bilevel positive airway pressure
 
 # sometimes see NC called "O2 NC"; also called "nasal prongs", abbrev NP
-_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z]))'
-_str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|non[-\s]?rebreather(\smask)?)(?![a-z]))'
+_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?' +\
+    r'(cannula|prongs?))(?![a-z]))'
+_str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|'                 +\
+    r'non[-\s]?rebreather(\smask)?)(?![a-z]))'
 _str_device_ra  = r'(?P<ra>(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
-_str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|' +\
+_str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|'      +\
     r'\d+\s?%\s?(venturi|venti)[-\s]?mask)(?![a-z]))'
 _str_device_bvm = r'(?P<bvm>(b\.?v\.?m\.?|bag[-\s]valve\smask))'
-_str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|bipap(\s\d+/\d+)?))'
-#_str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|[a-z\s]+[-\s]?mask|' +\
-_str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|[a-z]+\s?([a-z]+\s?)?[-\s]?mask|' +\
+_str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|' +\
+    r'bipap(\s\d+/\d+)?))'
+_str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|'                         +\
+    r'[a-z]+\s?([a-z]+\s?)?[-\s]?mask|'                               +\
     r'vent(ilator)?|\d+%\s?[a-z]+[-\s]?mask|mask))'
 _str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
 # face tent with a nasal cannula; flow rate prior to NC
-_str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+' +\
-    r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)?\s?' +\
+_str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
+    r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)?\s?'                  +\
     r'(?P<nc2>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))'
 # face tent with a nasal cannula; flow rate after NC
-_str_device_tent_nc2 = r'(?P<tent3>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
+_str_device_tent_nc2 = r'(?P<tent3>\d+\s?%\s?face\s?tent)[a-z\s]+'    +\
     r'(?P<nc3>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))[a-z\s]+'  +\
     r'(?P<flow_rate3>\d+)\s?(Liters|L)(/min\.?)?\s?'
 _str_device_air = r'(?P<air>(room[-\s]air|air))'
-_str_device_nasocath = r'(?P<nasocath>(naso\.?(pharyngeal)?[-\s]?cath\.?(eter)?|' +\
-    r'cath\.?(eter)?))'
+_str_device_nasocath = r'(?P<nasocath>(naso[-\.\s]?(pharyngeal)?'     +\
+    r'[-\s]?cath\.?(eter)?|cath\.?(eter)?))'
 
 ##### Functions to convert an O2 flow rate into an estimated FiO2 value. #####
 
@@ -334,6 +338,7 @@ _DEVICES_WITH_FIO2_PCT = {
     _DEVICE_NRB, _DEVICE_VENTURI, _DEVICE_BIPAP, _DEVICE_MASK, _DEVICE_TENT
 }
 
+# maps a device to an FiO2 conversion/estimation function
 _DEVICE_MAP = {
     _DEVICE_NC       : _to_fio2_nc,
     _DEVICE_NRB      : _to_fio2_nrb,
@@ -348,6 +353,7 @@ _DEVICE_MAP = {
     _DEVICE_TENT2    : None,
 }
 
+# master regex for all devices
 _str_device = r'\(?(?P<device>' +\
     r'(' + _str_device_nc + r')'       + r'|' +\
     r'(' + _str_device_nrb + r')'      + r'|' +\
@@ -368,60 +374,33 @@ _regex_device = re.compile(_str_device, re.IGNORECASE)
 _DEVICE_ENC_CHAR = '|'
 
 # finds "spo2: 98% on 2L NC" and similar
-# _str_o2_1 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
-#     r'(' + _str_connector + r')?' + _str_flow_rate                           +\
-#     r'(' + _str_connector + r')?' + r'(?P<device>' + _str_device + r')'
-# _regex_o2_1 = re.compile(_str_o2_1, re.IGNORECASE)
 _str0 = _str_o2_sat_hdr + _str_cond + _str_o2_val           +\
     _str_words + _str_flow_rate + _str_words + _str_device
 _regex0 = re.compile(_str0, re.IGNORECASE)
 
-# # finds "spo2: 98%/NC" and similar
-# _str_o2_2 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
-#     r'(' + _str_connector + r')?' + r'(?P<device>' + _str_device + r')'
-# _regex_o2_2 = re.compile(_str_o2_2, re.IGNORECASE)
+# finds "spo2: 98%/NC" and similar
 _str1 = _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words + _str_device
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
-# # finds "spo2: 98%/3L" and similar
-# _str_o2_3 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
-#     r'(' + _str_connector + r')?' + _str_flow_rate
-# _regex_o2_3 = re.compile(_str_o2_3, re.IGNORECASE)
+# finds "spo2: 98%/3L" and similar
 _str2= _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words + _str_flow_rate
 _regex2 = re.compile(_str2, re.IGNORECASE)
 
-# # finds "spo2=98%" and similar
-# _str_o2_4 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val
-# _regex_o2_4 = re.compile(_str_o2_4, re.IGNORECASE)
+# finds "spo2=98%" and similar
 _str3 = _str_o2_sat_hdr + _str_cond + _str_o2_val
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
-# # finds "98% RA" and similar (value to the left)
-# _str_o2_5 = r'(?<![-:=/])(?<=\s)' + _str_o2_val + r'(' + _str_connector + r')?' +\
-#     r'(' + _str_flow_rate + r')?\s?' +\
-#     r'(?P<device>' + _str_device +r')'
-# _regex_o2_5 = re.compile(_str_o2_5, re.IGNORECASE)
-#_str4 = r'(?<![-:=/])(?<![-:=/]\s)(?<=\s)' + _str_o2_val + r'(' + _str_o2_sat_hdr + r')?'
-
+# finds "98% RA" and similar (value to the left)
 _str4 = r'(?<![-:=/\d])(?<![-:=/]\s)' + _str_o2_val + r'(' + _str_o2_sat_hdr + r')?' +\
     _str_words + r'(' + _str_flow_rate + _str_words + r')?' + _str_device
 _regex4 = re.compile(_str4, re.IGNORECASE)
 
-# # like the first regex, but finds flow rate after device
-# _str_o2_6 = _str_o2_sat_hdr + r'(' + _str_connector + r')?' + _str_o2_val    +\
-#     r'(' + _str_connector + r')?' + r'(?P<device>' + _str_device + r')'      +\
-#     r'(' + _str_connector + r')?' + _str_flow_rate
-# _regex_o2_6 = re.compile(_str_o2_6, re.IGNORECASE)
+# like the first regex, but finds flow rate after device
 _str5 = _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words +\
     _str_device + _str_words + _str_flow_rate
 _regex5 = re.compile(_str5, re.IGNORECASE)
 
-# # finds device prior to O2 saturation header
-# _str_o2_7 = r'(?P<device>' + _str_device + r')'         +\
-#     r'(' + _str_connector + r')?' + _str_o2_sat_hdr     +\
-#     r'(' + _str_connector + r')?' + _str_o2_val         +\
-#     r'(' + _str_connector + _str_flow_rate + r')?'
-# _regex_o2_7 = re.compile(_str_o2_7, re.IGNORECASE)
+# finds device prior to O2 saturation header
 _str6 = _str_device + _str_words + _str_o2_sat_hdr + _str_cond + _str_o2_val +\
     r'(' + _str_words + _str_flow_rate + r')?'
 _regex6 = re.compile(_str6, re.IGNORECASE)
@@ -448,17 +427,20 @@ _SAO2_REGEXES = [
     _regex8,
 ]
 
-# o2 partial pressure (don't capture first part of PaO2 / FiO2
+# o2 partial pressure (prevent captures of 'PaO2 / FiO2')
 _str_pao2 = r'\b(pao2|partial pressure of (oxygen|o2))(?!/)(?! /)' +\
     r'(' + _str_cond+ r')?' +  r'(?P<val>\d+)'
 _regex_pao2 = re.compile(_str_pao2, re.IGNORECASE)
 
-# fraction of inspired oxygen (prevent matches to pao2 / fio2), value follows 'fio2'
+# fraction of inspired oxygen (prevent capture of 'pao2 / fio2');
+# case 1: value follows the 'fio2' string
+# The Earth's atmosphere is ~21% O2, but sometimes the respiratory literature
+# uses 20% instead. So 20% is the min acceptable value in these regexes.
 _str_fio2_1 = r'\b(?<!/)(?<!/\s)(fio2|o2\sflow)' +\
     r'(' + _str_cond + r')?' + r'(?P<val>(100|[2-9][0-9]))\s?%?'
 _regex_fio2_1 = re.compile(_str_fio2_1, re.IGNORECASE)
 
-# value precedes 'fio2'
+# case 2: value precedes the 'fio2' string
 _str_fio2_2 = r'(?<!\d)(?P<val>(100|[2-9][0-9]))\s?%?\s?(fio2|o2\sflow)'
 _regex_fio2_2 = re.compile(_str_fio2_2, re.IGNORECASE)
 
@@ -469,10 +451,11 @@ _FIO2_REGEXES = [
 
 # p/f ratio
 _str_pf_ratio = r'\b(pao2|p)\s?/\s?(fio2|f)(\s?ratio)?' +\
-    r'(' + _str_cond + r')?' + r'(?P<val>\d+)'
+    r'(' + _str_cond + r')?' + r'(?P<val>\d+(\.\d+)?)'
 _regex_pf_ratio = re.compile(_str_pf_ratio, re.IGNORECASE)
 
 # convert SpO2 to PaO2
+# https://www.intensive.org/epic2/Documents/Estimation%20of%20PO2%20and%20FiO2.pdf
 _SPO2_TO_PAO2 = {
     80:44,
     81:45,
@@ -496,9 +479,9 @@ _SPO2_TO_PAO2 = {
     99:145
 }
 
-# minimum acceptable value for SpO2 (some Covid-19 patients have had O2 sats
-# this low)
-_MIN_SPO2_PCT = 50
+# minimum acceptable value for SpO2
+# (some Covid-19 patients have had O2 sats this low)
+_MIN_SPO2_PCT = 30
 
 
 ###############################################################################
@@ -1051,10 +1034,10 @@ def run(sentence):
             condition = STR_O2_RANGE
             
         o2_tuple = O2Tuple(
+            sentence         = cleaned_sentence,
             text             = pc.match_text,
             start            = pc.start,
             end              = pc.end,
-            o2_sat           = o2_sat,
             pao2             = pao2,
             fio2             = fio2,
             flow_rate        = flow_rate,
