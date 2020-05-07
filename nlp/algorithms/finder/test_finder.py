@@ -1635,7 +1635,6 @@ def test_o2sat_finder():
 		      pao2_est = 112,
 		      fio2 = 70,
 		      p_to_f_ratio_est = 160,
-		      device = 'Ventilator',
 		      condition = o2f.STR_O2_EQUAL,
 		      value = 98)
         ],
@@ -1964,6 +1963,14 @@ def test_o2sat_finder():
         '75yoM CAD CHF PVD s/p resp failure with trach/PEG with vent assoc ' \
         'ESBL Klebsiella and Acineotbacter pna now with ileus.':[
             # don't capture 75..vent
+        ],
+        'for MAP > 60 Pulmonary: Cont ETT (Ventilator mode: CPAP + PS) ' \
+        'liberate from vent as tolerated':[
+            # don't capture 'Ventilator' or 'vent'
+        ],
+        '- Pressors for MAP >60 - Mechanical ventilation daily SBT ' \
+        'wean vent settings as tolerat':[
+            # don't capture any 'vent' strings
         ],
     }
 

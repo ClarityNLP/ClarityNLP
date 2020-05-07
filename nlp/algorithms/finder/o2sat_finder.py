@@ -188,9 +188,9 @@ _str_less_than = r'\b(less\s+than|lt\.?|up\s+to|under|below)'
 _str_gt_than   = r'\b(greater\s+than|gt\.?|exceed(ing|s)|above|over)'
 
 _str_lt  = r'(<|' + _str_less_than + r')'
-_str_lte = r'(<=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
+_str_lte = r'(<=|</=' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
 _str_gt  = r'(>|' + _str_gt_than + r')'
-_str_gte = r'(>=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
+_str_gte = r'(>=|>/=' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
 
 _regex_lt     = re.compile(_str_lt,     re.IGNORECASE)
 _regex_lte    = re.compile(_str_lte,    re.IGNORECASE)
@@ -239,9 +239,11 @@ _str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|'      +\
 _str_device_bvm = r'(?P<bvm>(b\.?v\.?m\.?|bag[-\s]valve\smask))'
 _str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|' +\
     r'bipap(\s\d+/\d+)?))'
+# vent(?!ilation))
 _str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|'                         +\
     r'[a-z]+\s?([a-z]+\s?)?[-\s]?mask|'                               +\
-    r'vent(ilator)?(?!ilation)(?!\ssetting)|\d+%\s?[a-z]+[-\s]?mask|mask))'
+    r'(ventilator|vent(?![a-z]))(?!\s(setting|mode))|'                +\
+    r'\d+%\s?[a-z]+[-\s]?mask|mask))'
 _str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
 # face tent with a nasal cannula; flow rate prior to NC
 _str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
@@ -395,8 +397,8 @@ _str3 = _str_o2_sat_hdr + _str_cond + _str_o2_val
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
 # finds "98% RA" and similar (value to the left)
-_str4 = r'(?<![-:=/\d])(?<![-:=/]\s)' + _str_o2_val           +\
-    r'(' + _str_o2_sat_hdr + r')?' + _str_words               +\
+_str4 = r'(?<![-:=/\d])(?<![-:=/]\s)(?<!MAP [<>])' + _str_o2_val +\
+    r'(' + _str_o2_sat_hdr + r')?' + _str_words                  +\
     r'(' + _str_flow_rate + _str_words + r')?' + _str_device
 _regex4 = re.compile(_str4, re.IGNORECASE)
 
@@ -1215,9 +1217,8 @@ if __name__ == '__main__':
 
         '- Pressors for MAP >60 - Mechanical ventilation daily SBT wean vent settings as tolerat',
 
-        '75yoM CAD CHF PVD s/p resp failure with trach/PEG with vent assoc ESBL Klebsiella and Acineotbacter pna now with ileus.',
+        "LFT's nl. - IVF boluses to keep MAP >65 - Vanc Zosyn Levofloxacin",
 
-        
         #"RESP: REMAINS ON CPAP 18/+5 40%. TV'S 400-500cc RR 19-27 " +\
         #"AND SATS 96-98%. LS COARSE WITH BIBASILAR CRACKLES.",
     ]
