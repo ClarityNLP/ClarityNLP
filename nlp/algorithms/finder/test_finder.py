@@ -1936,6 +1936,35 @@ def test_o2sat_finder():
 		      condition = o2f.STR_O2_EQUAL,
 		      value = 95)
         ],
+        'Fi02 also weaned to 40% as 02 sat ~100%.':[
+            # note the zero '0' character in Fi02
+            _O2Result(text = 'sat ~100%',
+		      pao2_est = 145,
+		      fio2 = 40.0,
+		      p_to_f_ratio_est = 363,
+		      condition = o2f.STR_O2_APPROX,
+		      value = 100)
+        ],
+        'SpO2: 98% Physical Examination General: sleeping in NAD easily ' \
+        'arousable HEENT: NC':[
+            # do not capture the 'NC' in HEENT: NC
+            _O2Result(text = 'SpO2: 98%',
+		      pao2_est = 112,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'Upon arrival left pupil blown to 6mm mannitol 100gm given along ' \
+        'with keppra.':[
+            # should not capture the 'ra' in 'keppra'
+        ],
+        '78 yo F s/p laparoscopic paraesophageal hernia repair with ' \
+        'Collis gastroplasty':[
+            # should not capture the 'air' in 'repair'
+        ],
+        '75yoM CAD CHF PVD s/p resp failure with trach/PEG with vent assoc ' \
+        'ESBL Klebsiella and Acineotbacter pna now with ileus.':[
+            # don't capture 75..vent
+        ],
     }
 
     if not _run_tests(_MODULE_O2, test_data):

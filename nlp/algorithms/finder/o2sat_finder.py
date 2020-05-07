@@ -199,9 +199,10 @@ _regex_gte    = re.compile(_str_gte,    re.IGNORECASE)
 _regex_approx = re.compile(_str_approx, re.IGNORECASE)
 
 # O2 saturation header
+# do not capture 'sat up', such as 'sat up in bed'
 _str_o2_sat_hdr = r'(?<![a-z])(spo2|sao2|pox|so2|'                    +\
     r'(o2|oxygen)[-\s]?saturation|o2[-\s]sat\.?s?|satting|o2sats?|'   +\
-    r'sat\.?s?|pulse ox|o2(?!\s?flow)|desatt?ing|desat\.?)\s?%?'
+    r'sat\.?s|sat(?!\sup)|pulse ox|o2(?!\s?flow)|desatt?ing|desat\.?)\s?%?'
 
 _str_units = r'\(?(percent|pct\.?|%|mmHg)\)?'
 
@@ -210,7 +211,8 @@ _str_o2_val_range = r'\b(was|from)?\s?(?P<val1>\d\d?)(\s?' + _str_units + r')?' 
     r'(\s?(\-|to)\s?)(?P<val2>(100|\d\d?))(\s?' + _str_units + r')?'
 _regex_o2_val_range = re.compile(_str_o2_val_range, re.IGNORECASE)
 
-_str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?!L))(\s?' + _str_units + r')?'
+# prevent capture of ages, such as '\d+ years old', '\d+yo', etc.
+_str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?!L)(?!y)(?! y))(\s?' + _str_units + r')?'
 _str_o2_val = r'(' + _str_o2_val_range + r'|' + _str_o2_value + r')'
 
 # O2 flow rate in L/min
@@ -225,8 +227,10 @@ _str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
 #       bipap: bilevel positive airway pressure
 
 # sometimes see NC called "O2 NC"; also called "nasal prongs", abbrev NP
-_str_device_nc  = r'(?P<nc>(O2\s)?(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?' +\
-    r'(cannula|prongs?))(?![a-z]))'
+# do not capture 'HEENT:NC', in which case the 'NC' means 'normocephalic'
+_str_device_nc  = r'(?P<nc>(O2\s)?'                                   +\
+    r'(?<!HEENT:)(?<!HEENT :)(?<!HEENT: )(?<!HEENT : )'               +\
+    r'(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z]))'
 _str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|'                 +\
     r'non[-\s]?rebreather(\smask)?)(?![a-z]))'
 _str_device_ra  = r'(?P<ra>(?<![a-z])(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
@@ -237,7 +241,7 @@ _str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|' +\
     r'bipap(\s\d+/\d+)?))'
 _str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|'                         +\
     r'[a-z]+\s?([a-z]+\s?)?[-\s]?mask|'                               +\
-    r'vent(ilator)?|\d+%\s?[a-z]+[-\s]?mask|mask))'
+    r'vent(ilator)?(?!ilation)(?!\ssetting)|\d+%\s?[a-z]+[-\s]?mask|mask))'
 _str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
 # face tent with a nasal cannula; flow rate prior to NC
 _str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
@@ -247,7 +251,7 @@ _str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
 _str_device_tent_nc2 = r'(?P<tent3>\d+\s?%\s?face\s?tent)[a-z\s]+'    +\
     r'(?P<nc3>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))[a-z\s]+'  +\
     r'(?P<flow_rate3>\d+)\s?(Liters|L)(/min\.?)?\s?'
-_str_device_air = r'(?P<air>(room[-\s]air|air))'
+_str_device_air = r'(?P<air>(?<![a-z])(room[-\s]air|air))'
 _str_device_nasocath = r'(?P<nasocath>(naso[-\.\s]?(pharyngeal)?'     +\
     r'[-\s]?cath\.?(eter)?))'
 
@@ -391,8 +395,9 @@ _str3 = _str_o2_sat_hdr + _str_cond + _str_o2_val
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
 # finds "98% RA" and similar (value to the left)
-_str4 = r'(?<![-:=/\d])(?<![-:=/]\s)' + _str_o2_val + r'(' + _str_o2_sat_hdr + r')?' +\
-    _str_words + r'(' + _str_flow_rate + _str_words + r')?' + _str_device
+_str4 = r'(?<![-:=/\d])(?<![-:=/]\s)' + _str_o2_val           +\
+    r'(' + _str_o2_sat_hdr + r')?' + _str_words               +\
+    r'(' + _str_flow_rate + _str_words + r')?' + _str_device
 _regex4 = re.compile(_str4, re.IGNORECASE)
 
 # like the first regex, but finds flow rate after device
@@ -487,9 +492,11 @@ _SPO2_TO_PAO2 = {
     99:145
 }
 
-# minimum acceptable value for SpO2
-# (some Covid-19 patients have had O2 sats this low)
-_MIN_SPO2_PCT = 30
+# The minimum acceptable value for SpO2. Some Covid-19 patients have had O2
+# sats this low. Some hemoglobinopathies can cause SpO2 readings in the 70%
+# range. See this article, for instance:
+#     https://www.karger.com/Article/FullText/451030
+_MIN_SPO2_PCT = 50
 
 
 ###############################################################################
@@ -774,7 +781,7 @@ def _regex_match(sentence, regex_list):
             count += 1
             # room air will not have a flow rate, but it is nontheless complete
             device_str = gd['device']
-            if -1 != device_str.find('air'):
+            if -1 != device_str.find(' air'):
                 count += 1
         if count >= 3:
             complete_candidates.append(c)
@@ -1189,15 +1196,27 @@ if __name__ == '__main__':
         'Changed to 4 liters n/c O2 sats   86%,  increased to 6 liters n/c ~ O2 sats 88%',
         'Pt with trach mask 50% FiO2 and oxygen saturation 98-100%  Lungs rhonchorous.',
 
-        # negative example - don't capture the 'ra' at the end
+        # negative example - don't capture the 'ra' in 'keppra'
         'Upon arrival left pupil blown to 6mm mannitol 100gm given along with keppra.',
 
+        # negative example - don't capture the 'air' in 'repair'
+        '78 yo F s/p laparoscopic paraesophageal hernia repair with Collis gastroplasty',
+        
         # note the zero '0' character in Fi02
         'Fi02 also weaned to 40% as 02 sat ~100%.',
 
         'Respiratory support O2 Delivery Device: Nasal cannula SpO2: 95%',
-
         'found with O2 sat of 65% on RA. Pt was initially satting 95% on NRB',
+
+        # negative example - don't capture the 'NC' in 'HEENT: NC'
+        # only capture "SpO2: 98%'
+        'SpO2: 98% Physical Examination General: sleeping in NAD easily ' \
+        'arousable HEENT: NC',
+
+        '- Pressors for MAP >60 - Mechanical ventilation daily SBT wean vent settings as tolerat',
+
+        '75yoM CAD CHF PVD s/p resp failure with trach/PEG with vent assoc ESBL Klebsiella and Acineotbacter pna now with ileus.',
+
         
         #"RESP: REMAINS ON CPAP 18/+5 40%. TV'S 400-500cc RR 19-27 " +\
         #"AND SATS 96-98%. LS COARSE WITH BIBASILAR CRACKLES.",
