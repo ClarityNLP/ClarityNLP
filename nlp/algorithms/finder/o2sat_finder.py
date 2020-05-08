@@ -188,9 +188,9 @@ _str_less_than = r'\b(less\s+than|lt\.?|up\s+to|under|below)'
 _str_gt_than   = r'\b(greater\s+than|gt\.?|exceed(ing|s)|above|over)'
 
 _str_lt  = r'(<|' + _str_less_than + r')'
-_str_lte = r'(<=|</=' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
+_str_lte = r'(<=|</=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
 _str_gt  = r'(>|' + _str_gt_than + r')'
-_str_gte = r'(>=|>/=' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
+_str_gte = r'(>=|>/=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
 
 _regex_lt     = re.compile(_str_lt,     re.IGNORECASE)
 _regex_lte    = re.compile(_str_lte,    re.IGNORECASE)
@@ -212,7 +212,7 @@ _str_o2_val_range = r'\b(was|from)?\s?(?P<val1>\d\d?)(\s?' + _str_units + r')?' 
 _regex_o2_val_range = re.compile(_str_o2_val_range, re.IGNORECASE)
 
 # prevent capture of ages, such as '\d+ years old', '\d+yo', etc.
-_str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?!L)(?!y)(?! y))(\s?' + _str_units + r')?'
+_str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?![Ly])(?! y))(\s?' + _str_units + r')?'
 _str_o2_val = r'(' + _str_o2_val_range + r'|' + _str_o2_value + r')'
 
 # O2 flow rate in L/min
@@ -532,7 +532,7 @@ def _cond_to_string(str_cond):
     """
     Determine the relationship between the query term and the value.
     """
-    
+
     if _regex_approx.search(str_cond):
         result = STR_O2_APPROX
     elif _regex_lte.search(str_cond):
@@ -1059,14 +1059,14 @@ def run(sentence):
             text             = pc.match_text,
             start            = pc.start,
             end              = pc.end,
-            pao2             = pao2,
-            fio2             = fio2,
             flow_rate        = flow_rate,
             device           = device,
             condition        = condition,
             value            = value,
             value2           = value2,
+            pao2             = pao2,
             pao2_est         = pao2_est,
+            fio2             = fio2,
             fio2_est         = fio2_est,
             p_to_f_ratio     = p_to_f_ratio,            
             p_to_f_ratio_est = p_to_f_ratio_est
@@ -1219,8 +1219,8 @@ if __name__ == '__main__':
 
         "LFT's nl. - IVF boluses to keep MAP >65 - Vanc Zosyn Levofloxacin",
 
-        #"RESP: REMAINS ON CPAP 18/+5 40%. TV'S 400-500cc RR 19-27 " +\
-        #"AND SATS 96-98%. LS COARSE WITH BIBASILAR CRACKLES.",
+        # fix this - device is NC not 50% face tent
+        'Pt has weaned to nasal cannula from 50% face tent and still sats are 95-100%.',
     ]
 
     for i, sentence in enumerate(SENTENCES):
