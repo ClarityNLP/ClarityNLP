@@ -236,7 +236,7 @@ regex_temp_nlpql_feature = re.compile(r'\A(math|logic)_\d+_\d+\Z')
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME   = 'expr_eval.py'
 
 # set to True to enable debug output
@@ -1412,7 +1412,20 @@ def _mongo_math_format(operator, op1, op2=None):
         opstring = '{0}'.format(_MONGO_OPS[operator])
         operand1 = _format_math_operand(op1)
         operand2 = _format_math_operand(op2)
-        result = {opstring: [operand1, operand2]}
+
+        # The operators $gt, $gte, $lt, $lte are affected by the presence of
+        # non-existent fields. Explicit checks for None (null in Mongo-speak)
+        # need to be inserted and the comparisons rigged to return False.
+        # Mongo handles $not and $ne correctly.
+
+        if 'lt' == operator or 'lte' == operator:
+            # null fields: check to see if operand2 is < max_float, False
+            result = {opstring: [{'$ifNull': [operand1, sys.float_info.max]}, operand2]}
+        elif 'gt' == operator or 'gte' == operator:
+            # null fields: check to see if operand2 is > min_float, False
+            result = {opstring: [{'$ifNull': [operand1, sys.float_info.min]}, operand2]}
+        else:
+            result = {opstring: [operand1, operand2]}
     
     return result
 
@@ -1488,9 +1501,15 @@ def _eval_math_expr(job_id,
         }
     }
 
-    # insert field checks into initial filter
-    for f in field_list:
+    # if only a single field is used, remove any expressions in which this
+    # field does not exist
+    if 1 == len(field_list):
+        f = field_list[0]
         initial_filter['$match'][f] = {"$exists":True, "$ne":None}
+    else:
+        # this case handled explicitly by the '$isNull' checks for $lt, $lte,
+        # $gt, $gte in _mongo_math_format
+        pass
 
     pipeline = [
         initial_filter,

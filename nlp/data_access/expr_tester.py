@@ -82,7 +82,7 @@ except:
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 8
+_VERSION_MINOR = 9
 _MODULE_NAME   = 'expr_tester.py'
 
 _TRACE = False
@@ -265,6 +265,8 @@ def _run_selftest_expression(job_id,
     """
 
     global _CACHE
+
+    print('\t{0}'.format(expression_str))
     
     # first check the cache and return result if previously evaluated
     if expression_str in _CACHE:
@@ -491,6 +493,21 @@ def _test_pure_math_expressions(job_id,     # integer job id from data file
         {
             'nlpql_feature':'Temperature',
             'value':100
+        })
+    expected = _to_context_set(cf, docs)
+    if computed != expected:
+        return False
+
+    expr =' Temperature.value >= 100.4 AND Temperature.value < 102'
+    computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
+    docs = mongo_obj.find(
+        {
+            'nlpql_feature':'Temperature',
+            '$and':
+            [
+                {'value':{'$gte':100.4}},
+                {'value':{'$lt':102}}
+            ]
         })
     expected = _to_context_set(cf, docs)
     if computed != expected:
@@ -889,7 +906,7 @@ def _test_mixed_math_and_logic_expressions(job_id, # integer job id
     expected = set1 & rigors
     if computed != expected:
         return False
-
+    
     expr = 'Lesion.dimension_X < 10 OR hasRigors'
     computed = _run_selftest_expression(job_id, cf, expr, mongo_obj)
     docs = mongo_obj.find(
@@ -1007,7 +1024,7 @@ def _test_mixed_math_and_logic_expressions(job_id, # integer job id
     expected = set1 | rigors & set2
     if computed != expected:
         return False
-
+    
     # redundant math expressions
 
     expr = 'Lesion.dimension_X > 50'
