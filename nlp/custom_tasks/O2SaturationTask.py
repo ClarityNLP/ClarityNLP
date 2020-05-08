@@ -68,6 +68,7 @@ class O2SaturationTask(BaseTask):
                             'start':result.start,
                             'end':result.end,
                             'device':result.device,
+                            'flow_rate':result.flow_rate,
                             'condition':result.condition,
                             'value':result.value,
                             'value2':result.value2,
