@@ -235,14 +235,20 @@ on your system.
 
 **[MacOS]** Use Homebrew to install MongoDB with:
 ::
-   brew install mongodb
+   brew install mongodb-community@4.2
 
-After the installation finishes, run the command ``brew info mongodb``, which
-displays information about how to start the MongoDB server. You can either
-configure the server to start automatically each time your system reboots, or
-you can start the server manually. We will assume manual startup, which can be
-accomplished by opening another terminal window and running this command
-(assumes the default path to the mongo config file):
+The ``@4.2`` in the installation command specifies the version of the
+``mongodb-community`` software package, which is ``4.2`` as of this
+writing. Check the MongoDB website for the latest version and use that if
+you prefer.
+
+After the installation finishes, run the command
+``brew info mongodb-community``, which displays information about how to start
+the MongoDB server. You can either configure the server to start automatically
+each time your system reboots, or you can start the server manually. We will
+assume manual startup, which can be accomplished by opening another terminal
+window and running this command (assumes the default path to the mongo config
+file):
 ::
    mongod --config /usr/local/etc/mongod.conf
 
