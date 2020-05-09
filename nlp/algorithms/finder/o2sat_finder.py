@@ -15,7 +15,9 @@ Generally a P/F ratio less than 300 means the patient has hypoxemia.
 The P/F ratio can be estimated from pulse ox measurements and O2 flow rates.
 
 Conversion of pulse ox value (SpO2 %) to O2 partial pressure (mmHg):
-(https://www.intensive.org/epic2/Documents/Estimation%20of%20PO2%20and%20FiO2.pdf)
+(From the supplemental appendix to:
+    Vlaar A, Toy P, Fung M, et. al. "A consensus redefinition of transfusion-
+    related acute lung injury", Transfusion (59) 2465-2476, 2019.)
 
     SpO2 (%)    PaO2 (mmHg)
     --------    -----------
