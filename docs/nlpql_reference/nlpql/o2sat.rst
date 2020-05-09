@@ -6,33 +6,36 @@ Clarity.O2SaturationTask
 Description
 -----------
 
-This is a custom task for extracting oxygen saturation information from clinical text.
-This task processes each sentence of each input document, looking for information about
-oxygen saturation levels and the use of supplemental Oxygen devices. For instance,
-the sentence:
+This is a custom task for extracting
+`Oxygen <https://www.amazon.com/Oxygen-molecule-Oxford-Landmark-Science/dp/0198784937>`_
+saturation information from clinical text. The ``O2SaturationTask`` processes
+sentences and looks for information about Oxygen saturation levels and the use
+of supplemental Oxygen devices. For instance, the sentence:
 ::
    Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask
 
-contains this portion concerning Oxygen use: ``O2 95% on 55% venti mask``.
-This means that the patient has a blood Oxygen saturation level (probably
-measured by a
+contains ``O2 95% on 55% venti mask``, meaning that the patient's blood Oxygen
+saturation level (probably measured by a
 `pulse oximeter <https://en.wikipedia.org/wiki/Pulse_oximetry>`_)
-of 95%, while receiving supplemental Oxygen via a
+is 95%, while receiving supplemental Oxygen via a
 `Venturi mask <https://en.wikipedia.org/wiki/Venturi_mask>`_. The flow rate
 through the mask is sufficient to produce a 55% Oxygen concentration in the
 air that the patient breathes.
 
-This custom task captures the Oxygen saturation level and any other supplemental
-data related to Oxygen delivery devices, flow rates, partial pressures, etc. If
-sufficient clues are provided in the sentence, this task will use standard
-conversions to estimate the relevant values. The complete set of output fields
-is listed in the Results section below.
+The ``O2SaturationTask`` captures the Oxygen saturation level and other
+data relevant to Oxygen delivery, flow rates, partial pressures, etc. If
+sufficient clues are provided in the sentence, standard conversions are used
+to estimate related quantities not explicitly stated. The complete set of
+output fields and estimated quantities is listed in the Results section
+below. Estimated values have field names with the suffix ``_est``, to
+distinguish them from values extracted directly from the text.
 
 Conversions
 -----------
 
-The partial pressure of Oxygen in the blood can be estimated from a pulse
-oximeter reading. From the supplemental data to [1]_, we have:
+The partial pressure of Oxygen in arterial blood can be estimated from a
+pulse oximeter reading. From the supplemental data provided with
+reference [1]_:
 
 ============= ============
 SpO2 (%)      PaO2 (mmHg)
@@ -60,16 +63,15 @@ SpO2 (%)      PaO2 (mmHg)
 ============= ============
 
 The *fraction of inspired Oxygen* ``FiO2`` can be estimated from knowledge of
-the Oxygen delivery device and the O2 flow rate. For normal breathing
-in room air or a standard dry atmosphere below approximately 10000 meters,
-the O2 concentration is
+the Oxygen delivery device and the O2 flow rate. For normal breathing in the
+Earth's atmosphere the O2 concentration is
 `approximately 21% <https://en.wikipedia.org/wiki/Atmosphere_of_Earth>`_.
 Hence the FiO2 for these conditions is 21%, or 0.21.
 
 For a `nasal cannula <https://en.wikipedia.org/wiki/Nasal_cannula>`_, each L/min
 of O2 adds approximately 4% to the FiO2 value [1]_. (The data in [1]_ covers the
 range of 1-6 L/min, but the 4%/L rule seems to be the standard approximation in
-the respiratory therapy literature).
+the respiratory therapy literature for moderately higher flow nasal cannulas).
 
 ================================ ============
 Nasal Cannula Flow Rate (L/min)  FiO2 (%)
@@ -141,10 +143,10 @@ Venturi Mask Flow Rate (L/min)  FiO2 (%)
              15                    60
 =============================== ============
 
-This data has been converted into formulas that span the entire range of flow
-rates for each device. Any flow rates that fall between those stated in one of
-these tables are estimated by simple linear interpolation.
-       
+The ``O2SaturationTask`` uses the data in these tables to linearly interpolate
+FiO2 values for the stated devices and flow rates.
+
+
 Example
 -------
 
@@ -180,13 +182,13 @@ Results
 =====================  ================  ==========================================
          Name                 Type                             Notes
 =====================  ================  ==========================================
-sentence               str               "Cleaned" version of input sentence
+sentence               str               The input sentence after textual cleanup operations have been performed.
 text                   str               That portion of `sentence` containing an O2 saturation statement.
 start                  int               Offset into `sentence` of the first character of the O2 saturation statement.
 end                    int               One character past the end of the O2 saturation statement.
 device                 str               The Oxygen delivery device, if any.
 flow_rate              float             Device Oxygen flow rate in liters/min.
-condition              str               Relation of the O2 saturation to `value`:
+condition              str               Relation of the O2 saturation to the stated `value`:
                                          'APPROX', 'LESS_THAN', 'LESS_THAN_OR_EQUAL',
                                          'GREATER_THAN', 'GREATER_THAN_OR_EQUAL',
                                          'EQUAL', 'RANGE'
