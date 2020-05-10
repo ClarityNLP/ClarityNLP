@@ -214,3 +214,4 @@ References
 .. [1] | Vlaar A, Toy P, Fung M, et. al.
        | **A Consensus Redefinition of Transfusion-Related Acute Lung Injury**
        | *Transfusion* (59) 2465-2476, 2019.
+       | `https://www.ncbi.nlm.nih.gov/pubmed/30993745 <https://www.ncbi.nlm.nih.gov/pubmed/30993745>`_
