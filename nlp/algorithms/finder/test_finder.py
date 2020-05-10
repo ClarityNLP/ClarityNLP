@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """
-    Test program for the time_finder, date_finder, and
-    size_measurement_finder modules.
+    Test program for the time_finder, date_finder,
+    size_measurement_finder, and o2sat_finder modules.
 
     Run from the finder folder with this command:
 
