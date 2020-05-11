@@ -43,9 +43,11 @@ Custom Tasks
    :maxdepth: 1
 
    nlpql/cqlexecution
-   nlpql/gleason
    nlpql/ecog
+   nlpql/gleason
+   nlpql/o2sat
    nlpql/pftfinder
+   nlpql/pregnancy
    nlpql/race
    nlpql/textstats
    nlpql/tnm

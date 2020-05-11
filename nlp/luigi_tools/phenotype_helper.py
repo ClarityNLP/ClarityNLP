@@ -1,3 +1,4 @@
+import re
 import collections
 import datetime
 import sys
@@ -20,6 +21,15 @@ COL_LIST = ["_id", "report_date", 'report_id', 'subject', 'sentence']
 
 pipeline_keys = PipelineConfig('test', 'test').__dict__.keys()
 numeric_comp_operators = ['==', '=', '>', '<', '<=', '>=']
+
+# for time filtering of results
+_FILTER_COND_EARLIEST = 0
+_FILTER_COND_LATEST   = 1
+
+# timestamp format: YYYY-MM-DDThh:mm:ssZ
+_str_report_date = r'\A(?P<year>\d\d\d\d)\-(?P<month>\d\d)\-(?P<day>\d\d)' +\
+    r'T(?P<hour>\d\d):(?P<minute>\d\d):(?P<sec>\d\d)Z\Z'
+_regex_report_date = re.compile(_str_report_date)
 
 
 def get_terms(model: PhenotypeModel):
@@ -723,6 +733,64 @@ def pandas_process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, 
             del output
 
 
+def _apply_time_filter(output_docs, filter_condition):
+    """
+    Scan the outupt_docs list, apply time filter condition, and return
+    docs that survive the filter.
+    """
+
+    if len(output_docs) <= 1:
+        return output_docs
+    
+    assert filter_condition == _FILTER_COND_EARLIEST or \
+        filter_condition == _FILTER_COND_LATEST
+    
+    # datetime field of interest
+    KEY_RD = 'report_date'
+
+    # build list of datetimes
+    datetime_list = []
+    for doc in output_docs:
+        
+        # each document must have a report_date field
+        assert KEY_RD in doc
+        report_date = doc[KEY_RD]
+        
+        # timestamps should be in YYYY-MM-DDThh:mm:ssZ format
+        match = _regex_report_date.match(report_date)
+        assert match
+        
+        if match:
+            year = int(match.group('year'))
+            month = int(match.group('month'))
+            day = int(match.group('day'))
+            hr = int(match.group('hour'))
+            minute = int(match.group('minute'))
+            sec = int(match.group('sec'))
+            
+            dt = datetime.datetime(year, month, day, hr, minute, sec)
+            datetime_list.append(dt)
+
+    assert len(datetime_list) == len(output_docs)
+            
+    # index denotes the winner
+    index = 0
+    winner = datetime_list[0]
+
+    for i, dt in enumerate(datetime_list):
+        if _FILTER_COND_EARLIEST == filter_condition:
+            if dt < winner:
+                winner = dt
+                index = i
+        else:
+            if dt > winner:
+                winner = dt
+                index = i
+
+    results = [output_docs[i]]
+    return results
+
+
 def mongo_process_operations(expr_obj_list,
                              db,
                              job_id,
@@ -803,6 +871,9 @@ def mongo_process_operations(expr_obj_list,
                                                                doc_map,
                                                                oid_list_of_lists)
 
+            # apply time filter, if any - TBD
+            # output_docs = _apply_time_filter(output_docs, filter_condition)
+                
             if len(output_docs) > 0:
                 log('***** mongo_process_operations: writing {0} ' \
                     'output_docs *****'.format(len(output_docs)))

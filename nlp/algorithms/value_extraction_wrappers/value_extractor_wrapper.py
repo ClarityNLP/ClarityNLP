@@ -1,5 +1,3 @@
-from itertools import product
-
 import regex as re
 import json
 from data_access import Measurement
@@ -12,36 +10,55 @@ segmentor = Segmentation()
 log('Done initializing models for value extractor...')
 
 
-def run_value_extractor_full(term_list, text, minimum_value, maximum_value, enumlist=None, is_case_sensitive_text=False, denom_only=False):
+def run_value_extractor_full(term_list,
+                             text,
+                             minimum_value,
+                             maximum_value,
+                             enumlist=None,
+                             is_case_sensitive_text=False,
+                             denom_only=False,
+                             values_before_terms=False):
+
     if enumlist is None:
         enumlist = list()
     sentence_list = segmentor.parse_sentences(text)
     process_results = []
-    matchers = [re.compile(r"\b%s\b" % t, re.IGNORECASE) for t in term_list]
-    vals = product(sentence_list, matchers)
-    for v in vals:
-        sentence = v[0]
-        matcher = v[1]
-        match = matcher.search(sentence)
-        if match:
-            term = match.group(0)
-            value_str = run_value_extractor(
-                term,
-                sentence,
-                str_minval=minimum_value,
-                str_maxval=maximum_value,
-                str_enumlist=enumlist,
-                is_case_sensitive=is_case_sensitive_text,
-                is_denom_only=denom_only)
 
-            if len(value_str) > 0:
-                value_results = json.loads(value_str)
-                if 'measurementList' in value_results:
-                    measurement_results = value_results['measurementList']
-                    for x in measurement_results:
-                        process_results.append(
-                            Measurement(sentence=sentence, text=x['matchingTerm'], start=x['start'], end=x['end'],
-                                        condition=x['condition'], X=x['x'], Y=x['y']))
+    for sentence in sentence_list:
+
+        json_string = run_value_extractor(
+            term_list,
+            sentence,
+            str_minval = minimum_value,
+            str_maxval = maximum_value,
+            str_enumlist = enumlist,
+            is_case_sensitive = is_case_sensitive_text,
+            is_denom_only = denom_only,
+            values_before_terms = values_before_terms)
+
+        if json_string is not None and len(json_string) > 0:
+
+            # parse the JSON result
+            json_data = json.loads(json_string)
+
+            # the individual value extractions are in the 'measurementList'
+            if 'measurementList' in json_data:
+                measurements = json_data['measurementList']
+                for m in measurements:
+                    process_results.append(
+                        Measurement(
+                            sentence       = sentence,
+                            text           = m['text'],
+                            start          = m['start'],
+                            end            = m['end'],
+                            condition      = m['condition'],
+                            X              = m['x'],
+                            Y              = m['y'],
+                            matching_terms = m['matchingTerm'],
+                            min_value      = m['minValue'],
+                            max_value      = m['maxValue']
+                        )
+                    )
 
     return process_results
 

@@ -1078,9 +1078,9 @@ def _process_resource(obj):
     result = None
     if _STR_RESOURCE_TYPE in flattened_obj:
         rt = obj[_STR_RESOURCE_TYPE]
-        if 'Patient' == rt:
-            result = _process_patient(flattened_obj)
-        elif 'Encounter' == rt:
+##        if 'Patient' == rt:
+##            result = _process_patient(flattened_obj)
+        if 'Encounter' == rt:
             result = _process_encounter(flattened_obj)
         elif 'Observation' == rt:
             result = _process_observation(flattened_obj)
@@ -1172,10 +1172,10 @@ def decode_top_level_obj(obj):
                 result_obj = _process_datetime(obj)
                 if _TRACE:
                     log('decoded dateTime resource')
-            elif STR_PATIENT == result_type_str:
-                result_obj = _process_patient(result_obj)
-                if _TRACE:
-                    log('decoded patient resource')
+      ##      elif STR_PATIENT == result_type_str:
+      ##          result_obj = _process_patient(result_obj)
+      ##          if _TRACE:
+      ##             log('decoded patient resource')
             else:
                 # check for DSTU2 or DSTU3 resource bundles
                 if result_type_str.endswith('stu2') or \

@@ -39,7 +39,7 @@ except Exception as e:
     import lab_value_matcher as lvm
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 _MODULE_NAME = 'segmentation_helper.py'
 
 # set to True to enable debug output
@@ -659,7 +659,7 @@ def fixup_sentences(sentence_list):
     # need at least two sentences to continue
     if num <= 1:
         return sentence_list
-        
+
     # Dashes are often used to demarcate phrases. If a sentence ends with a
     # single word preceded by a dash, merge with the following sentence. If a
     # sentence ends with an operator, merge as well.
@@ -667,20 +667,25 @@ def fixup_sentences(sentence_list):
     merged_sentences = []
 
     i = 0
-    while i < num-1:
+    merge_count = 0
+    while i < num:
         s = sentence_list[i]
         match1 = _regex_ending_dashword.search(s)
         match2 = _regex_endswith_operator.search(s)
-        if match1 or match2:
+        if match1 or match2 and i < num-1:
             merged_sentences.append(s + ' ' + sentence_list[i+1])
             i += 2
+            merge_count += 1
         else:
             merged_sentences.append(s)
             i += 1
+
+    assert len(merged_sentences) + merge_count == num
             
     # check for opportunities to merge a sentence with the previous one
     num = len(merged_sentences)
     results = [merged_sentences[0]]
+    merge_count = 0
     for i in range(1, len(merged_sentences)): 
         s = merged_sentences[i].strip()
         
@@ -703,9 +708,12 @@ def fixup_sentences(sentence_list):
                 log('Appending sentence: "{0}"'.format(s))
             
             results[-1] = results[-1] + ' ' + s
+            merge_count += 1
         else:
             results.append(s)
 
+    assert len(results) + merge_count == num
+            
     # The Spacy tokenizer tends to break sentences after each period in a
     # numbered list of items. Look for a sequence of sentences with
     # 1., 2., 3., ... at the ends and remove it.

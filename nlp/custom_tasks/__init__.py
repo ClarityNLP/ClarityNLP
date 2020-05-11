@@ -9,3 +9,4 @@ from .EcogCriteriaTask import EcogCriteriaTask
 from .pft_value_extraction import *
 from .TNMStagerTask import TNMStagerTask
 from .CQLExecutionTask import CQLExecutionTask
+from .PregnancyTask import PregnancyTask

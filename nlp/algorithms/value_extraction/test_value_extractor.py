@@ -13,7 +13,13 @@ import sys
 import json
 import argparse
 from collections import namedtuple
-from claritynlp_logging import log, ERROR, DEBUG
+
+if __name__ == '__main__':
+    # for interactive command-line tests
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
 
 try:
     import value_extractor as ve
@@ -21,7 +27,7 @@ except:
     from algorithms.value_extraction import value_extractor as ve
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 8
 _MODULE_NAME = 'test_value_extractor.py'
 
 # namedtuple for expected results
@@ -37,7 +43,7 @@ def _compare_fields(field_name, computed, expected, failure_list):
         expected = expected.lower()
     
     if computed != expected:
-        failure_list.append('\texpected {0}: "{1}", got: "{2}"'.
+        failure_list.append('\texpected {0}: "{1}", found: "{2}"'.
                             format(field_name, expected, computed))
 
     return failure_list
@@ -51,7 +57,8 @@ def _compare_results(
         maxval,
         enumlist=None,
         is_case_sensitive=False,
-        denom_only=False):
+        denom_only=False,
+        values_before_terms=False):
     """
     Run the value extractor on the test data using the supplied term string
     and check the results.
@@ -67,7 +74,8 @@ def _compare_results(
             maxval,
             str_enumlist=enumlist,
             is_case_sensitive=is_case_sensitive,
-            is_denom_only=denom_only
+            is_denom_only=denom_only,
+            values_before_terms=values_before_terms
         )
 
         num_expected = len(expected_list)
@@ -87,17 +95,17 @@ def _compare_results(
 
         # check that len(computed) == len(expected)
         if is_mismatched or (value_result.measurementCount != num_expected):
-            log('\tMismatch in computed vs. expected results: ')
-            log('\tSentence: {0}'.format(sentence))
-            log('\tComputed: ')
+            print('\tMismatch in computed vs. expected results: ')
+            print('\tSentence: {0}'.format(sentence))
+            print('\tComputed: ')
             if value_result is None:
-                log('\t\tNone')
+                print('\t\tNone')
             else:
                 for m in value_result.measurementList:
-                    log('\t\t{0}'.format(m))
-            log('\tExpected: ')
+                    print('\t\t{0}'.format(m))
+            print('\tExpected: ')
             for e in expected_list:
-                log('\t\t{0}'.format(e))
+                print('\t\t{0}'.format(e))
 
             return False
         
@@ -124,9 +132,9 @@ def _compare_results(
                                        computed, expected, failures)
                 
         if len(failures) > 0:
-            log(sentence)
+            print(sentence)
             for f in failures:
-                log(f)
+                print(f)
             return False
 
     return True
@@ -275,7 +283,7 @@ def test_value_extractor_full():
 
     if not _compare_results(term_string, test_data, minval, maxval):
         return False
-    
+
     # vital signs
     term_string = "t, temp, temperature, p, pulse, hr, bp, r, rr, o2, o2sat, " \
         "spo2, o2 sat, sats, o2sats, pox, sao2"
@@ -860,9 +868,32 @@ def test_value_extractor_full():
 
     if not _compare_results(term_string, test_data, minval, maxval, enumlist):
         return False
-    
+
+    # enumlist values prior to search terms
+    term_string = 'MR, mitral regurgitation'
+    enumlist = '1+,2+,3+,4+'
+    test_data = {
+        'MITRAL VALVE: Torn mitral chordae. Severe (4+) MR':[
+            _Result('mr', '4+', None, ve.STR_EQUAL)
+        ],
+        'Severe (4+) '
+        'mitral regurgitation is seen':[
+            _Result('mitral regurgitation', '4+', None, ve.STR_EQUAL)
+        ],
+        'at least moderate (2+) posteriorly directed MR':[
+            _Result('mr', '2+', None, ve.STR_EQUAL)
+        ],
+        'Mild (1+) mitral regurgitation':[
+            _Result('mitral regurgitation', '1+', None, ve.STR_EQUAL)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval, maxval,
+                            enumlist, values_before_terms=True):
+        return False
+
     # previous problems
-    term_string = 'fvc'
+    term_string = 'fvc, age'
     enumlist = None
     test_data = {
         'FVC is 1500ml':[_Result('fvc', 1500, None, ve.STR_EQUAL)],
@@ -876,7 +907,11 @@ def test_value_extractor_full():
         'with history of treated MAC, obstructive lung disease' +\
         '(FEV1/FVC 55 in [**10-21**]), and':[
             _Result('fvc', 55, None, ve.STR_EQUAL)
-        ]
+        ],
+        'NA, NA Study Date: Deeb Salem, M.D. MRN: 1111111 Performed DOB: ' \
+        'Gender: Male By: Age: 91 yrs Ethnicity: Caucasian Reason For Study:':[
+            _Result('age', 91, None, ve.STR_EQUAL)
+        ],
     }
 
     if not _compare_results(term_string, test_data, minval, maxval):
@@ -946,6 +981,66 @@ def test_value_extractor_full():
     if not _compare_results(term_string, test_data, minval, maxval):
         return False
 
+    # minval and maxval with conditions other than equality
+    minval = 90
+    maxval = 95
+    term_string = 'spo2'
+    test_data = {
+        # spo2 > 95% with maxval 95
+        'pulse ox spo2 > 95% on 2L':[],
+        'pulse ox spo2 >= 95% on 2L':[
+            _Result('spo2', 95, None, ve.STR_GTE)
+        ],
+        'pulse ox spo2 >= 94% on 2L':[
+            _Result('spo2', 94, None, ve.STR_GTE)
+        ],
+        # spo2 < 90% with minval 90
+        'pulse ox spo2 < 90% on 2L':[],
+        'pulse ox spo2 <= 90% on 2L':[
+            _Result('spo2', 90, None, ve.STR_LTE)
+        ],
+        'pulse ox spo2 <= 91% on 2L':[
+            _Result('spo2', 91, None, ve.STR_LTE)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval, maxval):
+        return False
+
+    # terms with embedded parentheses
+    term_string = 'CO(LVOT), sv(lvot), CO, sv, (LVOT), SV(MOD-sp4)'
+    test_data = {
+        'Ao V2 VTI: 30.1 cm CO(LVOT): 3.3 l/min TR max vel: 212.3 cm/sec ' \
+        'SV(LVOT): 55.2 ml TR max PG: 18.0 mmHg':[
+            _Result('CO(LVOT)', 3.3,  None, ve.STR_EQUAL),
+            _Result('SV(LVOT)', 55.2, None, ve.STR_EQUAL)
+        ],
+        "Ao V2 max: 167.0 cm/sec LV V1 max: 98.7 cm/sec Ao max PG: 11.2 mmHg "\
+        "mean: 57.4 cmmean: 103.7 cmV2 mean: 103.7 cm/sec LV V1 VTI: 18.0 cm "\
+        "Ao mean PG: 5.3 mmHg Ao V2 VTI: 30.1 cm CO(LVOT): 3.3 l/min "        \
+        "TR max vel: 212.3 cm/sec SV(LVOT): 55.2 ml TR max PG: 18.0 mmHg "    \
+        "avg: 4.7 cmg:":[
+            _Result('CO(LVOT)', 3.3,  None, ve.STR_EQUAL),
+            _Result('SV(LVOT)', 55.2, None, ve.STR_EQUAL)
+        ],
+        # avoid grabbing the 'co' in 'Complete' and returning a value of 2
+        '_ CPT/Quality/Location Complete 2D TTE with spectral and color ' \
+        'Doppler (93306).':[
+        ],
+        'the (LVOT) = 42 in the recent measurement':[
+            _Result('(LVOT)', 42, None, ve.STR_EQUAL)
+        ],
+        '(LVOT) = 42 in the recent measurement':[
+            _Result('(LVOT)', 42, None, ve.STR_EQUAL)
+        ],
+        'EDV(MOD-sp2): 70.0 ml SV(MOD-sp4): 43.0 ml ESV(MOD-sp2): 36.0 ml':[
+            _Result('SV(MOD-sp4)', 43.0, None, ve.STR_EQUAL)
+        ]
+    }
+
+    if not _compare_results(term_string, test_data, minval=0, maxval=9999):
+        return False
+    
     return True
 
 
@@ -966,7 +1061,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        log(_get_version())
+        print(_get_version())
         sys.exit(0)
 
     if 'debug' in args and args.debug:

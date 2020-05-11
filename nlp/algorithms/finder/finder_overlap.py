@@ -15,7 +15,7 @@ Candidate.__new__.__defaults__ = (None,) * len(Candidate._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME   = 'finder_overlap.py'
 
 
@@ -79,7 +79,7 @@ def remove_overlap(candidates, debug=False):
             if has_overlap(start_i, end_i, start_j, end_j):
                 if debug:
                     log('\t\t({0}, {1}), ({2}, {3})'.format(start_i, end_i, start_j, end_j))
-                    log('\t\t{0} OVERLAPS {1}, lengths {2}, {3}'.
+                    log('\t\t"{0}" OVERLAPS "{1}", lengths {2}, {3}'.
                           format(candidates[index_i].match_text,
                                  candidates[index_j].match_text,
                                  len_i, len_j))
@@ -93,15 +93,15 @@ def remove_overlap(candidates, debug=False):
             j += 1
 
         if debug:
-            log('\t\t\twinner: {0}'.
+            log('\t\t\twinner: "{0}"'.
                   format(candidates[candidate_index].match_text))
-            log('\t\t\tappending {0} to results'.
+            log('\t\t\tappending "{0}" to results'.
                   format(candidates[candidate_index].match_text))
             
         results.append(candidates[candidate_index])
 
         if debug:
-            log('\t\toverlaps: {0}'.format(overlaps))
+            log('\t\toverlaps: "{0}"'.format(overlaps))
         
         # remove all overlaps
         new_indices = []

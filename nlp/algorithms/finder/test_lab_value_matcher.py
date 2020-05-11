@@ -20,7 +20,7 @@ if __name__ == '__main__':
         print('\n*** test_lab_value_matcher.py: nlp dir not found ***\n')
         sys.exit(0)
 
-from claritynlp_logging import log, ERROR, DEBUG
+#from claritynlp_logging import log, ERROR, DEBUG
 
 try:
     import lab_value_matcher as lvm
@@ -29,7 +29,7 @@ except:
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 4
 _MODULE_NAME = 'test_lab_value_matcher.py'
 
 _RESULT_FIELDS = ['match_text']
@@ -46,18 +46,18 @@ def _compare_results(
 
     # check that len(computed) == len(expected)
     if len(computed_values) != len(expected_values):
-        log('\tMismatch in computed vs. expected results: ')
-        log('\tSentence: {0}'.format(sentence))
-        log('\tComputed: ')
+        print('\tMismatch in computed vs. expected results: ')
+        print('\tSentence: {0}'.format(sentence))
+        print('\tComputed: ')
         for v in computed_values:
-            log('\t\t{0}'.format(v))
-        log('\tExpected: ')
+            print('\t\t{0}'.format(v))
+        print('\tExpected: ')
         for v in expected_values:
-            log('\t\t{0}'.format(v))
+            print('\t\t{0}'.format(v))
 
-        log('NAMEDTUPLE: ')
+        print('NAMEDTUPLE: ')
         for k,v in v._asdict().items():
-            log('\t{0} => {1}'.format(k,v))
+            print('\t{0} => {1}'.format(k,v))
 
         return False
 
@@ -77,14 +77,14 @@ def _compare_results(
                     failures.append( (t, expected_values[i]) )
 
     if len(failures) > 0:
-        log(sentence)
+        print(sentence)
         for f in failures:
             # extract fields with values not equal to None
             c = [ (k,v) for k,v in f[0]._asdict().items()
                   if v is not None and k in field_list]
             e = [ (k,v) for k,v in f[1]._asdict().items() if v is not None]
-            log('\tComputed: {0}'.format(c))
-            log('\tExpected: {0}'.format(e))
+            print('\tComputed: {0}'.format(c))
+            print('\tExpected: {0}'.format(e))
             
         return False
 
@@ -527,6 +527,16 @@ def run():
         'Cr 0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.4 TCO2 43 47 Glucose ':[
             _Result(match_text='0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.4')
         ],
+        'CO(LVOT): 3.3 l/min SV(LVOT): 55.2 ml SV(MOD-sp4): 43.0 ml':[
+            _Result(match_text='CO(LVOT): 3.3 l/min'),
+            _Result(match_text='SV(LVOT): 55.2 ml'),
+            _Result(match_text='SV(MOD-sp4): 43.0 ml'),
+        ],
+        "E/E': 20.2, E/E' lat: 27.4 E/E' med: 12.9 and ...":[
+            _Result(match_text="E/E': 20.2"),
+            _Result(match_text="E/E' lat: 27.4"),
+            _Result(match_text="E/E' med: 12.9"),
+        ],
     }
 
     if not _run_tests(test_data):
@@ -557,7 +567,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'version' in args and args.version:
-        log(_get_version())
+        print(_get_version())
         sys.exit(0)
 
     if 'debug' in args and args.debug:

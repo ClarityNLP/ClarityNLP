@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """
-    Test program for the time_finder, date_finder, and
-    size_measurement_finder modules.
+    Test program for the time_finder, date_finder,
+    size_measurement_finder, and o2sat_finder modules.
 
     Run from the finder folder with this command:
 
@@ -16,17 +16,29 @@ import json
 import argparse
 from collections import namedtuple
 
+if __name__ == '__main__':
+    # interactive testing
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** o2_finder.py: nlp dir not found ***\n')
+        sys.exit(0)
+
 try:
     import time_finder as tf
     import date_finder as df
     import size_measurement_finder as smf
+    import o2sat_finder as o2f
 except:
     from algorithms.finder import time_finder as tf
     from algorithms.finder import date_finder as df
     from algorithms.finder import size_measurement_finder as smf
+    from algorithms.finder import o2sat_finder as o2f
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -84,9 +96,31 @@ _SMResult = namedtuple('_SMResult', _SIZE_MEAS_FIELDS)
 _SMResult.__new__.__defaults__ = (None,) * len(_SMResult._fields)
 
 
+#
+# O2 sat result fields
+#
+
+_O2_RESULT_FIELDS = [
+    'text',
+    'pao2',             # [mmHg]
+    'pao2_est',         # estimated from o2_sat
+    'fio2',             # [%]
+    'fio2_est',         # estimated from flow_rate
+    'p_to_f_ratio',
+    'p_to_f_ratio_est', # estimated
+    'flow_rate',        # [L/min]
+    'device',
+    'condition',        # STR_APPROX, STR_LT, etc.
+    'value',            # [%] (O2 saturation value)
+    'value2',           # [%] (second O2 saturation value for ranges)
+]
+_O2Result = namedtuple('_O2Result', _O2_RESULT_FIELDS)
+_O2Result.__new__.__defaults__ = (None,) * len(_O2Result._fields)
+
 _MODULE_TIME = 'time'
 _MODULE_DATE = 'date'
 _MODULE_SIZE_MEAS = 'size_meas'
+_MODULE_O2 = 'o2'
 
 
 ###############################################################################
@@ -153,7 +187,7 @@ def _run_tests(module_type, test_data):
             computed_values = [tf.TimeValue(**d) for d in json_data]
 
             # check computed vs. expected results
-            ok =_compare_results(
+            ok = _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
@@ -179,11 +213,24 @@ def _run_tests(module_type, test_data):
             json_data = json.loads(json_result)
             computed_values = [smf.SizeMeasurement(**d) for d in json_data]
 
-            ok =_compare_results(
+            ok = _compare_results(
                 computed_values,
                 expected_values,
                 sentence,
                 _SIZE_MEAS_FIELDS)
+
+        elif _MODULE_O2 == module_type:
+
+            # run O2sat_finder on the next test sentence
+            json_result = o2f.run(sentence)
+            json_data = json.loads(json_result)
+            computed_values = [o2f.O2Tuple(**d) for d in json_data]
+
+            ok = _compare_results(
+                computed_values,
+                expected_values,
+                sentence,
+                _O2_RESULT_FIELDS)
 
         if not ok:
             return False
@@ -1297,6 +1344,643 @@ def test_size_measurement_finder():
 
 
 ###############################################################################
+def test_o2sat_finder():
+
+    test_data = {
+        'Vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM':[
+            _O2Result(text='POx=93% on 8L FM',
+		      pao2_est = 69,
+		      fio2_est = 47,
+		      p_to_f_ratio_est = 147,
+		      flow_rate = 8,
+		      device = 'FM',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 93.0)
+        ],
+        'Vitals: T: 96.0  BP: 90/54 P: 88 R: 16 18 O2:88/NRB':[
+	    _O2Result(text = 'O2:88/NRB',
+		      pao2_est = 55,
+		      device = 'NRB',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 88)
+        ],
+        ' Vitals: T 98.9 F BP 138/56 P 89 RR 28 SaO2 100% on NRB':[
+            _O2Result(text = 'SaO2 100% on NRB',
+		      pao2_est = 145,
+		      device = 'NRB',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'Vitals were T 98 BP 163/64 HR 73 O2 95% on 55% venti mask':[
+            _O2Result(text = 'O2 95% on 55% venti mask',
+		      pao2_est = 79,
+		      fio2_est = 55,
+		      p_to_f_ratio_est = 144,
+		      device = '55% venti mask',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+         ],
+        'VS: T 95.6 HR 45 BP 75/30 RR 17 98% RA.':[
+            _O2Result(text = '98% RA.',
+		      pao2_est = 112,
+		      device = 'RA.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'VS T97.3 P84 BP120/56 RR16 O2Sat98 2LNC':[
+	    _O2Result(text = 'O2Sat98 2LNC',
+		      pao2_est = 112,
+		      fio2_est = 28,
+		      p_to_f_ratio_est = 400,
+		      flow_rate = 2.0,
+		      device = 'NC',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'Vitals: T: 99 BP: 115/68 P: 79 R:21 O2: 97':[
+	    _O2Result(text = 'O2: 97',
+		      pao2_est = 96,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 97)
+        ],
+        'Vitals - T 95.5 BP 132/65 HR 78 RR 20 SpO2 98%/3L':[
+	    _O2Result(text = 'SpO2 98%/3L',
+		      pao2_est = 112,
+		      flow_rate = 3,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'VS: T=98 BP= 122/58  HR= 7 RR= 20  O2 sat= 100% 2L NC':[
+	    _O2Result(text = 'O2 sat= 100% 2L NC',
+		      pao2_est = 145,
+		      fio2_est = 28,
+		      p_to_f_ratio_est = 518,
+		      flow_rate = 2,
+		      device = 'NC',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'Vitals: T: 97.7 P:100 R:16 BP:126/95 SaO2:100 Ra':[
+	    _O2Result(text = 'SaO2:100 Ra',
+		      pao2_est = 145,
+		      device = 'Ra',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'VS:  T-100.6, HR-105, BP-93/46, RR-16, Sats-98% 3L/NC':[
+	    _O2Result(text = 'Sats-98% 3L/NC',
+		      pao2_est = 112,
+		      fio2_est = 32,
+		      p_to_f_ratio_est = 350,
+		      flow_rate = 3,
+		      device = 'NC',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'VS - Temp. 98.5F, BP115/65 , HR103 , R16 , 96O2-sat % RA':[
+	    _O2Result(text = '96O2-sat % RA',
+		      pao2_est = 86,
+		      device = 'RA',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'Vitals: Temp 100.2 HR 72 BP 184/56 RR 16 sats 96% on RA':[
+	    _O2Result(text = 'sats 96% on RA',
+		      pao2_est = 86,
+		      device = 'RA',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'PHYSICAL EXAM: O: T: 98.8 BP: 123/60   HR:97    R 16  O2Sats100%':[
+	    _O2Result(text = 'O2Sats100%',
+		      pao2_est = 145,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'VS before transfer were 85 BP 99/34 RR 20 SpO2% 99/bipap 10/5 50%.':[
+	    _O2Result(text = 'SpO2% 99/bipap 10/5 50%',
+		      pao2_est = 145,
+		      fio2_est = 50,
+		      p_to_f_ratio_est = 290,
+		      device = 'bipap 10/5 50%',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 99)
+        ],
+        'Initial vs were: T 98 P 91 BP 122/63 R 20 O2 sat 95%RA.':[
+	    _O2Result(text = 'O2 sat 95%RA.',
+		      pao2_est = 79,
+		      device = 'RA.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+        ],
+        'Initial vitals were HR 106 BP 88/56 RR 20 O2 Sat 85% 3L.':[
+	    _O2Result(text = 'O2 Sat 85% 3L',
+		      pao2_est = 50,
+		      flow_rate = 3,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 85)
+        ],
+        'Initial vs were: T=99.3 P=120 BP=111/57 RR=24 POx=100%.':[
+	    _O2Result(text = 'POx=100%',
+		      pao2_est = 145,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        "Vitals as follows: BP 120/80 HR 60-80's RR  SaO2 96% 6L NC.":[
+	    _O2Result(text = 'SaO2 96% 6L NC.',
+		      pao2_est = 86,
+		      fio2_est = 44,
+		      p_to_f_ratio_est = 195,
+		      flow_rate = 6,
+		      device = 'NC.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'Vital signs were T 97.5 HR 62 BP 168/60 RR 18 95% RA.':[
+	    _O2Result(text = '95% RA.',
+		      pao2_est = 79,
+		      device = 'RA.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+        ],
+        'T 99.4 P 160 R 56 BP 60/36 mean 44 O2 sat 97% Wt 3025 grams':[
+	    _O2Result(text = 'O2 sat 97%',
+		      pao2_est = 96,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 97)
+        ],
+        'HR 107 RR 28 and SpO2 91% on NRB.':[
+	    _O2Result(text = 'SpO2 91% on NRB.',
+		      pao2_est = 62,
+		      device = 'NRB.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 91)
+        ],
+        'BP 143/79 RR 16 and O2 sat 92% on room air and 100% on 3 L/min nc':[
+	    _O2Result(text = 'O2 sat 92% on room air',
+		      pao2_est = 65,
+		      fio2_est = 21,
+		      p_to_f_ratio_est = 310,
+		      device = 'room air',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 92),
+	    _O2Result(text = '100% on 3 L/min nc',
+		      pao2_est = 145,
+		      fio2_est = 32,
+		      p_to_f_ratio_est = 453,
+		      flow_rate = 3,
+		      device = 'nc',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'RR: 28 BP: 84/43 O2Sat: 88 O2 Flow: 100 (Non-Rebreather).':[
+	    _O2Result(text = 'O2Sat: 88',
+		      pao2_est = 55,
+		      fio2 = 100,
+		      p_to_f_ratio_est = 55,
+		      device = 'Non-Rebreather',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 88)
+        ],
+        'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.':[
+	    _O2Result(text = 'SpO2 92%/RA.',
+		      pao2_est = 65,
+		      device = 'RA.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 92)
+        ],
+        'Tm 96.4, BP= 90-109/49-82, HR= paced at 70, RR= 24, O2 sat= 96% on 4L':[
+	    _O2Result(text = 'O2 sat= 96% on 4L',
+		      pao2_est = 86,
+		      flow_rate = 4,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'Vitals were T 97.1 BP 80/70 AR 80 RR 24 O2 sat 70% on 50% flowmask':[
+	    _O2Result(text = 'O2 sat 70% on 50% flowmask',
+		      pao2_est = 44,
+		      fio2_est = 50,
+		      p_to_f_ratio_est = 88,
+		      device = '50% flowmask',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 70)
+        ],
+        'HR 84 bpm RR 13 bpm O2: 100% PS 18/10 FiO2 40%':[
+	    _O2Result(text = 'O2: 100%',
+		      pao2_est = 145,
+		      fio2 = 40,
+		      p_to_f_ratio_est = 363,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'BP 91/50, HR 63, RR 12, satting 95% on trach mask':[
+	    _O2Result(text = 'satting 95% on trach mask',
+		      pao2_est = 79,
+		      device = 'trach mask',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+        ],
+        'O2 sats 98-100%':[
+	    _O2Result(text = 'O2 sats 98-100%',
+		      pao2_est = 112,
+		      condition = o2f.STR_O2_RANGE,
+		      value = 98,
+		      value2 = 100)
+        ],
+        'Pt. desating to 88%':[
+	    _O2Result(text = 'desating to 88%',
+		      pao2_est = 55,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 88)
+        ],
+        'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5':[
+	    _O2Result(text = 'spo2 difficult to monitor but appeared to remain ~ 96-100% on bipap 8/5',
+		      pao2_est = 86,
+		      device = 'bipap 8/5',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 96,
+		      value2 = 100)
+        ],
+        'using BVM w/ o2 sats 74% on 4L':[
+	    _O2Result(text = 'BVM with o2 sats 74% on 4L',
+		      pao2_est = 44,
+		      flow_rate = 4,
+		      device = 'BVM',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 74)
+        ],
+        'desat to 83 with 100% face tent and 4 l n.c.':[
+	    _O2Result(text = 'desat to 83 with 100% face tent and 4 l n.c.',
+		      pao2_est = 47,
+		      fio2_est = 36,
+		      p_to_f_ratio_est = 131,
+		      device = 'nc',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 83)
+        ],
+        'desat to 83 with 100% face tent and nc of approximately 4l':[
+	    _O2Result(text = 'desat to 83 with 100% face tent and nc of approximately 4l',
+		      pao2_est = 47,
+		      fio2_est = 36,
+		      p_to_f_ratio_est = 131,
+		      device = 'nc',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 83)
+        ],
+        'Ventilator mode: CMV/ASSIST/AutoFlow   Vt (Set): 550 (550 - 550) mL '\
+        'Vt (Spontaneous): 234 (234 - 234) mL   RR (Set): 16 '                \
+        'RR (Spontaneous): 0   PEEP: 5 cmH2O   FiO2: 70%   RSBI: 140 '        \
+        'PIP: 25 cmH2O   SpO2: 98%   Ve: 14.6 L/min':[
+	    _O2Result(text = 'SpO2: 98%',
+		      pao2_est = 112,
+		      fio2 = 70,
+		      p_to_f_ratio_est = 160,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'Vt (Spontaneous): 608 (565 - 793) mL   PS : 15 cmH2O   '             \
+        'RR (Spontaneous): 27   PEEP: 10 cmH2O   FiO2: 50%   '                \
+        'RSBI Deferred: PEEP > 10   PIP: 26 cmH2O   SpO2: 99%   '             \
+        'ABG: 7.41/39/81/21/0   Ve: 17.4 L/min   PaO2 / FiO2: 164':[
+	    _O2Result(text = 'SpO2: 99%',
+		      pao2_est = 82,
+		      fio2 = 50,
+		      p_to_f_ratio = 164,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 99)
+        ],
+        'Respiratory: Vt (Set): 600 (600 - 600) mL   '                        \
+        'Vt (Spontaneous): 743 (464 - 816) mL  PS : 5 cmH2O   RR (Set): 14'   \
+        'RR (Spontaneous): 19 PEEP: 5 cmH2O   FiO2: 50%   RSBI: 49   '        \
+        'PIP: 11 cmH2O   Plateau: 20 cmH2O   SPO2: 99%   '                    \
+        'ABG: 7.34/51/109/25/0   Ve: 10.3 L/min   PaO2 / FiO2: 218.1':[
+	    _O2Result(text = 'SPO2: 99%',
+		      pao2_est = 109,
+		      fio2 = 50,
+		      p_to_f_ratio = 218.1,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 99)
+        ],
+        'an oxygen saturation of 96% on 2 liters':[
+	    _O2Result(text = 'oxygen saturation of 96% on 2 liters',
+		      pao2_est = 86,
+		      flow_rate = 2,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'an oxygen saturation of 96% on 2 liters with a nasal cannula':[
+	    _O2Result(text = 'oxygen saturation of 96% on 2 liters with a nasal cannula',
+		      pao2_est = 86,
+		      fio2_est = 28,
+		      p_to_f_ratio_est = 307,
+		      flow_rate = 2,
+		      device = 'nasal cannula',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'the respiratory rate was 21, and the oxygen saturation was 80% to 92%'\
+        ' on a 100% nonrebreather mask':[
+	    _O2Result(text = 'oxygen saturation was 80% to 92% on a 100% nonrebreather mask',
+		      pao2_est = 44,
+		      fio2_est = 100,
+		      p_to_f_ratio_est = 44,
+		      device = '100% nonrebreather mask',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 80,
+		      value2 = 92)
+        ],
+        'temperature 100 F., orally.  O2 saturation 98% on room air':[
+	    _O2Result(text = 'O2 saturation 98% on room air',
+		      pao2_est = 112,
+		      fio2_est = 21,
+		      p_to_f_ratio_est = 533,
+		      device = 'room air',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'o2 sat 93% on 5l':[
+	    _O2Result(text = 'o2 sat 93% on 5l',
+		      pao2_est = 69,
+		      flow_rate = 5,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 93)
+        ],
+        'O2 sat were 90-95.':[
+	    _O2Result(text = 'O2 sat were 90-95',
+		      pao2_est = 60,
+		      condition = o2f.STR_O2_RANGE,
+		      value = 90,
+		      value2 = 95)
+            ],
+        'O2 sat then decreased again to 89 - 90% while on 50% face tent':[
+	    _O2Result(text = 'O2 sat then decreased again to 89 - 90% while on 50% face tent',
+		      pao2_est = 57,
+		      fio2_est = 50,
+		      p_to_f_ratio_est = 114,
+		      device = '50% face tent',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 89,
+		      value2 = 90)
+        ],
+        'O2sat >93':[
+	    _O2Result(text = 'O2sat >93',
+		      pao2_est = 69,
+		      condition = o2f.STR_O2_GT,
+		      value = 93)
+        ],
+        'patient spo2 < 93 % all night':[
+	    _O2Result(text = 'spo2 < 93 %',
+		      pao2_est = 69,
+		      condition = o2f.STR_O2_LT,
+		      value = 93)
+        ],
+        'an oxygen saturation ~=90 for prev. 5 hrs':[
+	    _O2Result(text = 'oxygen saturation ~=90',
+		      pao2_est = 60,
+		      condition = o2f.STR_O2_APPROX,
+		      value = 90)
+        ],
+        'This morning SpO2 values began to improve again able to wean back ' \
+        'peep to 5 SpO2 holding at 94%':[
+	    _O2Result(text = 'SpO2 holding at 94%',
+		      pao2_est = 73,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 94)
+        ],
+        'O2 sats ^ 96%.':[
+	    _O2Result(text = 'O2 sats ^ 96%',
+		      pao2_est = 86,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'O2 sats ^ back to 96-98%.':[
+	    _O2Result(text = 'O2 sats ^ back to 96-98%',
+		      pao2_est = 86,
+		      condition = o2f.STR_O2_RANGE,
+		      value = 96,
+		      value2 = 98)
+        ],
+        'O2 sats improving over course of shift and O2 further weaned to ' \
+        '5lpm nasal prongs: O2 sats 99%.':[
+	    _O2Result(text = '5lpm nasal prongs: O2 sats 99%',
+		      pao2_est = 145,
+		      fio2_est = 40,
+		      p_to_f_ratio_est = 363,
+		      flow_rate = 5,
+		      device = 'nasal prongs',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 99)
+        ],
+        'O2 sats 93-94% on 50% face tent.':[
+	    _O2Result(text = 'O2 sats 93-94% on 50% face tent',
+		      pao2_est = 69,
+		      fio2_est = 50,
+		      p_to_f_ratio_est = 138,
+		      device = '50% face tent',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 93,
+		      value2 = 94)
+        ],
+        'O2 SATS WERE BELOW 86':[
+	    _O2Result(text = 'O2 SATS WERE BELOW 86',
+		      pao2_est = 52,
+		      condition = o2f.STR_O2_LT,
+		      value = 86)
+        ],
+        'O2 sats down to 88':[
+	    _O2Result(text = 'O2 sats down to 88',
+		      pao2_est = 55,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 88)
+        ],
+        'She arrived with B/P 182/80, O2 sats on 100% NRB were 100&.':[
+	    _O2Result(text = 'O2 sats on 100% NRB were 100',
+		      pao2_est = 145,
+		      fio2_est = 100,
+		      p_to_f_ratio_est = 145,
+		      device = '100% NRB',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 100)
+        ],
+        'Plan:  Wean o2 to maintain o2 sats >85%':[
+	    _O2Result(text = 'o2 sats >85%',
+		      pao2_est = 50,
+		      condition = o2f.STR_O2_GT,
+		      value = 85)
+        ],
+        'At start of shift, LS with rhonchi throughout and ' \
+        'O2 sats > 94% on 5  liters.':[
+	    _O2Result(text = 'O2 sats > 94% on 5 liters',
+		      pao2_est = 73,
+		      flow_rate = 5,
+		      condition = o2f.STR_O2_GT,
+		      value = 94)
+        ],
+        'O2 sats are 92-94% on 3L NP & 91-93% on room air.':[
+	    _O2Result(text = 'O2 sats are 92-94% on 3L NP',
+		      pao2_est = 65,
+		      fio2_est = 32,
+		      p_to_f_ratio_est = 203,
+		      flow_rate = 3,
+		      device = 'NP',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 92,
+		      value2 = 94),
+	    _O2Result(text = '91-93% on room air',
+		      pao2_est = 62,
+		      fio2_est = 21,
+		      p_to_f_ratio_est = 295,
+		      device = 'room air',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 91,
+		      value2 = 93)
+        ],
+        'Pt. taken off mask ventilation and put on NRM with ' \
+        '6lpm nasal prongs. O2 sats 96%.':[
+	    _O2Result(text = '6lpm nasal prongs. O2 sats 96%',
+		      pao2_est = 86,
+		      fio2_est = 44,
+		      p_to_f_ratio_est = 195,
+		      flow_rate = 6,
+		      device = 'nasal prongs',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 96)
+        ],
+        'Oxygen again weaned in   evening to 6L n.c. while pt ' \
+        'eating dinner O2 sats 91-92%.':[
+	    _O2Result(text = '6L n.c. while pt eating dinner O2 sats 91-92%',
+		      pao2_est = 62,
+		      fio2_est = 44,
+		      p_to_f_ratio_est = 141,
+		      flow_rate = 6,
+		      device = 'n.c.',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 91,
+		      value2 = 92)
+        ],
+        'episodes of desaturation overnoc to O2 Sat 80%, on RBM & O2 NC 8L':[
+	    _O2Result(text = 'O2 Sat 80% on RBM O2 NC 8L',
+		      pao2_est = 44,
+		      fio2_est = 52,
+		      p_to_f_ratio_est = 85,
+		      flow_rate = 8,
+		      device = 'O2 NC',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 80)
+        ],
+        'Pt initially put on nasal prongs, O2 sats low @ 89% and patient ' \
+        'changed over to NRM.':[
+	    _O2Result(text = 'nasal prongs O2 sats low @ 89%',
+		      pao2_est = 57,
+		      device = 'nasal prongs',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 89)
+        ],
+        'O2 at 2 l nc, o2 sats 98 %, resp rate 16-24':[
+	    _O2Result(text = '2 l nc o2 sats 98 %',
+		      pao2_est = 112,
+		      fio2_est = 28,
+		      p_to_f_ratio_est = 400,
+		      flow_rate = 2,
+		      device = 'nc',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98),
+        ],
+        'Changed to 4 liters n/c O2 sats   86%,  increased ' \
+        'to 6 liters n/c ~ O2 sats 88%':[
+	    _O2Result(text = '4 liters n/c O2 sats 86%',
+		      pao2_est = 52,
+		      fio2_est = 36,
+		      p_to_f_ratio_est = 144,
+		      flow_rate = 4,
+		      device = 'n/c',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 86),
+	    _O2Result(text = '6 liters n/c ~ O2 sats 88%',
+		      pao2_est = 55,
+		      fio2_est = 44,
+		      p_to_f_ratio_est = 125,
+		      flow_rate = 6,
+		      device = 'n/c',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 88)
+        ],
+        ' Pt with trach mask 50% FiO2 and oxygen saturation 98-100% ' \
+        'Lungs rhonchorous.':[
+	    _O2Result(text = 'oxygen saturation 98-100%',
+		      pao2_est = 112,
+		      fio2 = 50,
+		      p_to_f_ratio_est = 224,
+		      device = 'trach mask',
+		      condition = o2f.STR_O2_RANGE,
+		      value = 98,
+		      value2 = 100)
+        ],
+        'Respiratory support O2 Delivery Device: Nasal cannula SpO2: 95%':[
+            _O2Result(text = 'O2 Delivery Device: Nasal cannula SpO2: 95%',
+		      pao2_est = 79,
+		      device = 'Nasal cannula',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+        ],
+        'found with O2 sat of 65% on RA. Pt was initially satting 95% on NRB':[
+            _O2Result(text = 'O2 sat of 65% on RA.',
+		      pao2_est = 44,
+		      device = 'RA.',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 65),
+	    _O2Result(text = 'satting 95% on NRB',
+		      pao2_est = 79,
+		      device = 'NRB',
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 95)
+        ],
+        'Fi02 also weaned to 40% as 02 sat ~100%.':[
+            # note the zero '0' character in Fi02
+            _O2Result(text = 'sat ~100%',
+		      pao2_est = 145,
+		      fio2 = 40.0,
+		      p_to_f_ratio_est = 363,
+		      condition = o2f.STR_O2_APPROX,
+		      value = 100)
+        ],
+        'SpO2: 98% Physical Examination General: sleeping in NAD easily ' \
+        'arousable HEENT: NC':[
+            # do not capture the 'NC' in HEENT: NC
+            _O2Result(text = 'SpO2: 98%',
+		      pao2_est = 112,
+		      condition = o2f.STR_O2_EQUAL,
+		      value = 98)
+        ],
+        'Upon arrival left pupil blown to 6mm mannitol 100gm given along ' \
+        'with keppra.':[
+            # should not capture the 'ra' in 'keppra'
+        ],
+        '78 yo F s/p laparoscopic paraesophageal hernia repair with ' \
+        'Collis gastroplasty':[
+            # should not capture the 'air' in 'repair'
+        ],
+        '75yoM CAD CHF PVD s/p resp failure with trach/PEG with vent assoc ' \
+        'ESBL Klebsiella and Acineotbacter pna now with ileus.':[
+            # don't capture 75..vent
+        ],
+        'for MAP > 60 Pulmonary: Cont ETT (Ventilator mode: CPAP + PS) ' \
+        'liberate from vent as tolerated':[
+            # don't capture 'Ventilator' or 'vent'
+        ],
+        '- Pressors for MAP >60 - Mechanical ventilation daily SBT ' \
+        'wean vent settings as tolerat':[
+            # don't capture any 'vent' strings
+        ],
+    }
+
+    if not _run_tests(_MODULE_O2, test_data):
+        return False
+
+    return True
+    
+
+###############################################################################
 def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
 
@@ -1329,4 +2013,5 @@ if __name__ == '__main__':
     assert test_time_finder()
     assert test_date_finder()
     assert test_size_measurement_finder()
+    assert test_o2sat_finder()
 
