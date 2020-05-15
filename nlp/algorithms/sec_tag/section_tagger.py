@@ -24,7 +24,7 @@ import pkg_resources
 SCRIPT_DIR = os.path.dirname(__file__)
 
 SEC_TAG_VERSION_MAJOR = 1
-SEC_TAG_VERSION_MINOR = 1
+SEC_TAG_VERSION_MINOR = 2
 
 # set to True to trace ambiguity resolution process, False otherwise
 TRACE = False
@@ -848,6 +848,13 @@ def process_report(report):
 
             # match must end in a known termination character; do not include it in the
             # search for candidate headers
+            if s[end-1] != ':' and s[end-1] != '-' and s[end-1] != '\n':
+                log('*** section_tagger.py: unexpected terminating char: "{0}"'.format(s[end-1]))
+                log('start: {0}, end: {1}'.format(start, end))
+                log('matching text: "{0}"'.format(matching_text))
+                log('sentence: "{0}"'.format(s))
+                # play it safe and skip this match
+                continue
             assert s[end-1] == ':' or s[end-1] == '-' or s[end-1] == '\n'
             end_delta = -1
 
