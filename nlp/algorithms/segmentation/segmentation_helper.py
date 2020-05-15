@@ -39,7 +39,7 @@ except Exception as e:
     import lab_value_matcher as lvm
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _MODULE_NAME = 'segmentation_helper.py'
 
 # set to True to enable debug output
@@ -672,7 +672,7 @@ def fixup_sentences(sentence_list):
         s = sentence_list[i]
         match1 = _regex_ending_dashword.search(s)
         match2 = _regex_endswith_operator.search(s)
-        if match1 or match2 and i < num-1:
+        if (match1 or match2) and (i < num-1):
             merged_sentences.append(s + ' ' + sentence_list[i+1])
             i += 2
             merge_count += 1
@@ -686,12 +686,20 @@ def fixup_sentences(sentence_list):
     num = len(merged_sentences)
     results = [merged_sentences[0]]
     merge_count = 0
+    skip_count = 0
+
     for i in range(1, len(merged_sentences)): 
         s = merged_sentences[i].strip()
-        
-        # Is the first char of the sentence an operator?
+
+        if _TRACE:
+            print('next sentence: ->{0}<-'.format(s))
+
         if len(s) < 1:
+            # was all whitespace, now zero length
+            skip_count += 1
             continue
+            
+        # Is the first char of the sentence an operator?        
         c = s[0]
         starts_with_op = c in _operator_set
 
@@ -705,14 +713,22 @@ def fixup_sentences(sentence_list):
         if match1 or match2 or starts_with_op:
             
             if _TRACE:
-                log('Appending sentence: "{0}"'.format(s))
+                log('Appending sentence: "{0}" to "{1}"'.format(s, results[-1]))
             
             results[-1] = results[-1] + ' ' + s
             merge_count += 1
         else:
             results.append(s)
 
-    assert len(results) + merge_count == num
+    # account for all sentences
+    if len(results) + merge_count + skip_count != num:
+        log('*** SEG_HELPER PROBLEM ***: len(results): {0}, merge_count: {1}, skip_count: {2}, num: {3}'.
+            format(len(results), merge_count, skip_count, num))
+        log('MERGED SENTENCES: ')
+        for s in merged_sentences:
+            log(s)
+            
+    assert len(results) + merge_count + skip_count == num
             
     # The Spacy tokenizer tends to break sentences after each period in a
     # numbered list of items. Look for a sequence of sentences with
