@@ -39,7 +39,7 @@ except Exception as e:
     import lab_value_matcher as lvm
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 _MODULE_NAME = 'segmentation_helper.py'
 
 # set to True to enable debug output
@@ -146,6 +146,28 @@ _regex_multi_token = re.compile(_str_multi_token)
 _operator_set = {
     '+', '*', '/', '%', '^', '>=', '>', '<=', '<', '=', '!='
 }
+
+# These abbreviations, when followed by a '.' char, then followed by a new
+# sentence, tend to cause Spacy to NOT split the two sentences at the period.
+#     c/c/e    clubbing, cyanosis, edema
+#     c/d/i    clean, dry, intact
+#     d/c      discharge or discontinue
+#     d/w      discuss with
+#     f/c      fevers, chills
+#     m/r/g    murmurs, rubs, gallops
+#     n/v      nausea, vomiting
+#     nt/nd    nontender, nondistended
+#     s/p      status post
+#     t/c      to consider
+#     w/r/r/c  wheeze, rales, rhonchi, crackles
+_str_slash_concat = r'\b(c/c/e|c/d/i|m/r/g|nt/nd|w/r/r/c|' +\
+    r'd/[cw]|f/c|n/v|s/p|t/c)\.\s?(?P<new_sentence>[A-Z][-a-z]+)\b'
+_regex_slash_concat = re.compile(_str_slash_concat, re.IGNORECASE)
+
+_regex_ends_with_numeric_age = re.compile(r'(1[0-3]\d|[1-9]?\d)\s*\Z')
+_str_starts_with_age_expr = r'\A(years?|yrs?|y[/.]?o\.?)\b'
+_regex_starts_with_age_exp = re.compile(_str_starts_with_age_expr,
+                                        re.IGNORECASE)
 
 # lists to keep track of token substitutions; add any new to _all_subs
 _fov_subs          = []
@@ -638,13 +660,30 @@ def cleanup_report(report):
     
 
 ###############################################################################
-def fixup_sentences(sentence_list):
+def fixup_sentences(sentence_list_in):
     """
-    Move punctuation from the start of a sentence to the end of the previous
-    sentence.
     """
 
+    # Look for certain problematic abbreviations followed by a period char,
+    # then followed by the start of a new sentence. Split at the period.
+    # An example would be: "Denies F/C. Denies CP or SOB.", which should be
+    # split into "Denies F/C." and "Denies CP or SOB."
+    sentence_list = []
+    for s in sentence_list_in:
+        match = _regex_slash_concat.search(s)
+        if match:
+            pos = match.start('new_sentence')
+            s1 = s[:pos]
+            s2 = s[pos:]
+            sentence_list.append(s1)
+            sentence_list.append(s2)
+        else:
+            sentence_list.append(s)
+
     num = len(sentence_list)
+            
+    # Move certain punctuation chars from the start of a sentence to the end
+    # of the previous sentence.
     
     i = 1
     while i < num:
@@ -709,8 +748,16 @@ def fixup_sentences(sentence_list):
 
         # Does the sentence consist of a single word?
         match2 = _regex_single_word.match(s)
+
+        # Does the sentence contain an incorrectly split age expression?
+        s_prev = merged_sentences[i-1]
+        match3 = _regex_ends_with_numeric_age.search(s_prev)
+        match4 = _regex_starts_with_age_exp.search(s)
+
+        # Does the sentence start with 'and'?
+        match5 = re.match(r'\Aand\b', s)
         
-        if match1 or match2 or starts_with_op:
+        if match1 or match2 or starts_with_op or (match3 and match4) or match5:
             
             if _TRACE:
                 log('Appending sentence: "{0}" to "{1}"'.format(s, results[-1]))
@@ -776,6 +823,8 @@ def fixup_sentences(sentence_list):
         else:
             i += 1
 
+    
+            
     return results
 
 
@@ -886,4 +935,3 @@ def delete_junk(sentence_list):
 ###############################################################################
 def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
-
