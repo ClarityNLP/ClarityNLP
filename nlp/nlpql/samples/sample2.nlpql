@@ -25,7 +25,8 @@ termset RigorsTerms: [
     "Rigors",
     "Rigoring",
     "Shivers",
-    "Shivering"
+    "Shivering",
+    ""
 ];
 termset DyspneaTerms: [
     "Labored respiration",

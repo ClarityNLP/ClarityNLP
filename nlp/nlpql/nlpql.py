@@ -48,7 +48,7 @@ def get_array_context(array_context: nlpql_parserParser.ArrayContext):
     for c in array_context.getChildren():
         if type(c) == nlpql_parserParser.ValueContext:
             ary.append(get_value_context(c))
-
+    ary = [i for i in ary if i.strip() != '']
     return ary
 
 
