@@ -94,26 +94,27 @@ pipeline{
         }
 
         //Define stage to notify rancher
-        stage('Notify orchestrator (Rancher v1)'){
-            steps{
-                //Write a script that notifies the Rancher API that the Docker Image for the application has been updated.
-                script{
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "microsoft/mssql-server-linux", ports: '', service: 'ClarityNLP/mssql', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/identity-provider:latest", ports: '', service: 'ClarityNLP/identity-provider', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/identity-and-access-proxy:latest", ports: '', service: 'ClarityNLP/identity-and-access-proxy', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-api:latest", ports: '', service: 'ClarityNLP/nlp-api', timeout: 2700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: 'axiom/docker-luigi:2.7.1', ports: '', service: 'ClarityNLP/scheduler', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-solr:latest", ports: '', service: 'ClarityNLP/nlp-solr', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-mongo:latest", ports: '', service: 'ClarityNLP/nlp-mongo', timeout: 5000
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-postgres:latest", ports: '', service: 'ClarityNLP/nlp-postgres', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/ingest-api:latest", ports: '', service: 'ClarityNLP/ingest-api', timeout: 700
-                    // rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/ingest-mongo:latest", ports: '', service: 'ClarityNLP/ingest-mongo', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/ingest-client:latest-vhost", ports: '', service: 'ClarityNLP/ingest-client', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "redis:4.0.10", ports: '', service: 'ClarityNLP/redis', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/viewer-client:latest-vhost", ports: '', service: 'ClarityNLP/results-client', timeout: 700
-                    rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/dashboard-client:latest-vhost", ports: '', service: 'ClarityNLP/dashboard-client', timeout: 700
-                }
-            }
-        }
+        //NOTE: temp turn off rancher v1 notification - 6/2/2020
+        // stage('Notify orchestrator (Rancher v1)'){
+        //     steps{
+        //         //Write a script that notifies the Rancher API that the Docker Image for the application has been updated.
+        //         script{
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "microsoft/mssql-server-linux", ports: '', service: 'ClarityNLP/mssql', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/identity-provider:latest", ports: '', service: 'ClarityNLP/identity-provider', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/identity-and-access-proxy:latest", ports: '', service: 'ClarityNLP/identity-and-access-proxy', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-api:latest", ports: '', service: 'ClarityNLP/nlp-api', timeout: 2700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: 'axiom/docker-luigi:2.7.1', ports: '', service: 'ClarityNLP/scheduler', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-solr:latest", ports: '', service: 'ClarityNLP/nlp-solr', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-mongo:latest", ports: '', service: 'ClarityNLP/nlp-mongo', timeout: 5000
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/nlp-postgres:latest", ports: '', service: 'ClarityNLP/nlp-postgres', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/ingest-api:latest", ports: '', service: 'ClarityNLP/ingest-api', timeout: 700
+        //             // rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/ingest-mongo:latest", ports: '', service: 'ClarityNLP/ingest-mongo', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/ingest-client:latest-vhost", ports: '', service: 'ClarityNLP/ingest-client', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "redis:4.0.10", ports: '', service: 'ClarityNLP/redis', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/viewer-client:latest-vhost", ports: '', service: 'ClarityNLP/results-client', timeout: 700
+        //             rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/dashboard-client:latest-vhost", ports: '', service: 'ClarityNLP/dashboard-client', timeout: 700
+        //         }
+        //     }
+        // }
     }
 }
