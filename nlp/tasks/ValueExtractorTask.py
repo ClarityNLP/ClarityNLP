@@ -52,6 +52,7 @@ class ValueExtractorTask(BaseTask):
                     value = meas['X']
 
                     obj = {
+                        "values_before_terms": values_before_terms,
                         "sentence": meas.sentence,
                         "text": meas.text,
                         "start": meas.start,
