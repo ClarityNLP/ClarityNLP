@@ -17,6 +17,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
 
 class PhenotypeTask(luigi.Task):
+    worker_timeout = 60 * 60 * 4
     phenotype = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
@@ -160,6 +161,7 @@ def run_pipeline(pipeline, pipelinetype, job, owner):
 
 
 class PipelineTask(luigi.Task):
+    worker_timeout = 60 * 60 * 4
     pipeline = luigi.IntParameter()
     job = luigi.IntParameter()
     owner = luigi.Parameter()
