@@ -60,52 +60,104 @@ _MODULE_NAME   = 'covid_finder.py'
 _TRACE = False
 
 # connectors between portions of the regexes below; either symbols or words
-_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.@^]+|\s[a-z\s]+)+)?'
+#_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.@^]+|\s[a-z\s]+)+)?'
 
 # words, possibly hyphenated or abbreviated, nongreedy match
-_str_words = r'([-a-z\s./:~]+?)?'
-
-# # wordy relationships
-# _str_equal     = r'\b(equal|eq\.?)'
-# _str_approx    = r'(~=|~|\b(approx\.?|approximately|near(ly)?|about))'
-# _str_less_than = r'\b(less\s+than|lt\.?|up\s+to|under|below)'
-# _str_gt_than   = r'\b(greater\s+than|gt\.?|exceed(ing|s)|above|over)'
-
-# _str_lt  = r'(<|' + _str_less_than + r')'
-# _str_lte = r'(<=|</=|' + _str_less_than + r'\s+or\s+' + _str_equal + r')'
-# _str_gt  = r'(>|' + _str_gt_than + r')'
-# _str_gte = r'(>=|>/=|' + _str_gt_than + r'\s+or\s+' + _str_equal + r')'
-
-# _regex_lt     = re.compile(_str_lt,     re.IGNORECASE)
-# _regex_lte    = re.compile(_str_lte,    re.IGNORECASE)
-# _regex_gt     = re.compile(_str_gt,     re.IGNORECASE)
-# _regex_gte    = re.compile(_str_gte,    re.IGNORECASE)
-# _regex_approx = re.compile(_str_approx, re.IGNORECASE)
+_str_words = r'([-a-z\s.]+?)?'
 
 
 _str_units = r'\(?(percent|pct\.?|%|mmHg)\)?'
 
 
+# textual numbers and related regexes
+_str_tnum_digit = r'(one|two|three|four|five|six|seven|eight|nine|zero)'
+_str_tnum_10s = r'(ten|eleven|twelve|(thir|four|fif|six|seven|eight|nine)teen)'
+_str_tnum_20s  = r'(twenty[-\s]?' + _str_tnum_digit + r'|twenty)'
+_str_tnum_30s  = r'(thirty[-\s]?' + _str_tnum_digit + r'|thirty)'
+_str_tnum_40s  = r'(forty[-\s]?' + _str_tnum_digit + r'|forty)'
+_str_tnum_50s  = r'(fifty[-\s]?' + _str_tnum_digit + r'|fifty)'
+_str_tnum_60s  = r'(sixty[-\s]?' + _str_tnum_digit + r'|sixty)'
+_str_tnum_70s  = r'(seventy[-\s]?' + _str_tnum_digit + r'|seventy)'
+_str_tnum_80s  = r'(eighty[-\s]?' + _str_tnum_digit + r'|eighty)'
+_str_tnum_90s  = r'(ninety[-\s]?' + _str_tnum_digit + r'|ninety)'
+_str_tnum_100s = _str_tnum_digit + r'[-\s]hundred[-\s](and[-\s])?' +\
+    r'(' +\
+    _str_tnum_90s + r'|' + _str_tnum_80s + r'|' + _str_tnum_70s + r'|' +\
+    _str_tnum_60s + r'|' + _str_tnum_50s + r'|' + _str_tnum_40s + r'|' +\
+    _str_tnum_30s + r'|' + _str_tnum_20s + r'|' + _str_tnum_20s + r'|' +\
+    _str_tnum_10s + r'|' + _str_tnum_digit +\
+    r')?'
+_str_tnum = r'(?P<tnum>(' +\
+    _str_tnum_100s + r'|' + _str_tnum_90s + r'|' + _str_tnum_80s + r'|' +\
+    _str_tnum_70s +  r'|' + _str_tnum_60s + r'|' + _str_tnum_50s + r'|' +\
+    _str_tnum_40s +  r'|' + _str_tnum_30s + r'|' + _str_tnum_20s + r'|' +\
+    _str_tnum_10s +  r'|' + _str_tnum_digit +\
+    r'))'
+
+_regex_tnum_digit = re.compile(_str_tnum_digit)
+_regex_tnum_10s   = re.compile(_str_tnum_10s)
+_regex_tnum_20s   = re.compile(_str_tnum_20s)
+_regex_tnum_30s   = re.compile(_str_tnum_30s)
+_regex_tnum_40s   = re.compile(_str_tnum_40s)
+_regex_tnum_50s   = re.compile(_str_tnum_50s)
+_regex_tnum_60s   = re.compile(_str_tnum_60s)
+_regex_tnum_70s   = re.compile(_str_tnum_70s)
+_regex_tnum_80s   = re.compile(_str_tnum_80s)
+_regex_tnum_90s   = re.compile(_str_tnum_90s)
+_regex_tnum_100s  = re.compile(_str_tnum_100s)
+_regex_hundreds   = re.compile(_str_tnum_digit + r'[-\s]?hundred[-\s]?', re.IGNORECASE)
+
+# used for conversions from tnum to int
+_tnum_to_int_map = {
+    'one':1, 'two':2, 'three':3, 'four':4, 'five':5, 'six':6, 'seven':7,
+    'eight':8, 'nine':9, 'ten':10, 'eleven':11, 'twelve':12, 'thirteen':13,
+    'fourteen':14, 'fifteen':15, 'sixteen':16, 'seventeen':17, 'eighteen':18,
+    'nineteen':19, 'twenty':20, 'thirty':30, 'forty':40, 'fifty':50,
+    'sixty':60, 'seventy':70, 'eighty':80, 'ninety':90,
+    'zero':0
+}
+
 # integers, possibly including commas
 _str_int = r'(?P<int>(\d{3}(,\d{3})+|\d+))'
 
-_str_qual = r'((lab(oratory)?[-\s])?confirmed|probable|suspected)\s?'
+# general integer number, both decimals and text
+_str_num = r'(' + _str_int + r'|' + _str_tnum + r')'
+
+_str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
+    r'more|(brand[-\s]?)?new)\s?'
 
 # covid cases
-_str_covid = r'covid(\-?19)?' + _str_words + r'cases?\s?'
+_str_covid0 = r'covid([-\s]?19)?\s?'
+_str_covid1 = _str_covid0 + _str_words + r'cases?\s?'
+_str_covid2 = r'cases?\sof\s' + _str_covid0 #covid([-\s]19)?\s?'
+_str_covid = r'(' + _str_covid1 + r'|' + _str_covid2 + r'|' + _str_covid0 + r')'
 
-# find '97 confirmed cases' and similar
-_str_case0 = _str_int + r'\s?' + _str_qual + r'\scases?\b'
+#
+# regexes to find case reports
+#
+
+# find '97 confirmed cases', 16 new cases,  and similar
+_str_case0 = r'(?<!covid-)(?!<covid)(?<!\d)' + _str_num + r'\s?' + _str_qual + r'\scases?\b'
 _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
 
 # find 'the number of confirmed COVID-19 cases increased to 12' and similar
-_str_case1 = _str_qual + _str_words + _str_covid + _str_words + _str_int
+_str_case1 = _str_qual + _str_words + _str_covid + _str_words + _str_num
 _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
 
+# find 'cumulative total of 137 cases of COVID-19' and similar
+_str_case2 = _str_qual + _str_words + _str_num + _str_words + _str_covid
+_regex_case2 = re.compile(_str_case2, re.IGNORECASE)
+
+# find 'two employees test positive for COVID-19' similar
+_str_case3 = r'(?<!covid-)(?!<covid)(?<!\d)' + _str_num + r'\s?' +\
+    _str_words + r'positive\sfor\s' + _str_covid
+_regex_case3 = re.compile(_str_case3, re.IGNORECASE)
 
 _CASE_REGEXES = [
     _regex_case0,
     _regex_case1,
+    _regex_case2,
+    _regex_case3
 ]
 
 
@@ -128,12 +180,85 @@ def _cleanup(sentence):
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
     
     # replace selected chars with whitespace
-    sentence = re.sub(r'[,&(){}\[\]]', ' ', sentence)
+    sentence = re.sub(r'[,&(){}\[\]:~/@]', ' ', sentence)
 
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
+    print('sentence after cleanup: "{0}"'.format(sentence))
     return sentence
+
+
+###############################################################################
+def _tnum_to_int(_str_tnum):
+    """
+    Convert a textual number to an integer. Returns None if number cannot
+    be converted, or the actual integer value.
+    """
+
+    if _TRACE:
+        print('calling _tnum_to_int...')
+        print('\t_str_tnum: "{0}"'.format(_str_tnum))
+
+    # replace dashes with a space and collapse any repeated spaces
+    text = re.sub(r'\-', ' ', _str_tnum)
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
+
+    if _TRACE:
+        print('\ttnum after dash replacement: "{0}"'.format(text))
+    
+    if text in _tnum_to_int_map:
+        return _tnum_to_int_map[text]
+
+    val_h = 0
+    val_t = 0
+    val_o = 0
+    
+    # extract hundreds, if any
+    match = _regex_hundreds.match(text)
+    if match:
+        tnum = match.group().split()[0].strip()
+        if tnum in _tnum_to_int_map:
+            val_h += _tnum_to_int_map[tnum]
+            text = text[match.end():].strip()
+        else:
+            # invalid number
+            if _TRACE:
+                print('invalid textual number: "{0}"'.format(text))
+                return None
+
+    if len(text) > 0:
+
+        # strip 'and', if any
+        pos = text.find('and')
+        if -1 != pos:
+            text = text[pos+3:]
+            text = text.strip()
+
+        # extract tens
+        words = text.split()
+        assert len(words) <= 2
+        if 2 == len(words):
+            if words[0] not in _tnum_to_int_map or words[1] not in _tnum_to_int_map:
+                # invalid number
+                if _TRACE:
+                    print('invalid textual number: "{0}"'.format(text))
+                    return None
+
+            val_t = _tnum_to_int_map[words[0]]
+            val_o = _tnum_to_int_map[words[1]]
+        else:
+            if words[0] not in _tnum_to_int_map:
+                # invalid number
+                if _TRACE:
+                    print('invalid textual number: "{0}"'.format(text))
+                    return None
+            val_o = _tnum_to_int_map[words[0]]                                       
+
+    # for val_t, a textual number such as "forty-four" will return 40 from the
+    # map lookup, so no need to multiply by 10
+    return 100*val_h + val_t + val_o
 
 
 ###############################################################################
@@ -306,46 +431,6 @@ def run(sentence):
     # erase these matches from the sentence
     remaining_sentence = _erase(cleaned_sentence, case_candidates)
     
-    # # only a single match for pao2, fio2, p_to_f_ratio
-
-    # if _TRACE:
-    #     print('PaO2 candidates: ')
-    # pao2 = EMPTY_FIELD
-    # pao2_candidates = _regex_match(remaining_sentence, [_regex_pao2])
-    # if len(pao2_candidates) > 0:
-    #     # take the first match
-    #     match_obj = pao2_candidates[0].other
-    #     pao2, pao2_2 = _extract_values(match_obj)
-
-    # # erase these matches also
-    # remaining_sentence = _erase(remaining_sentence, pao2_candidates)
-
-    # if _TRACE:
-    #     print('FiO2 candidates: ')
-    # fio2 = EMPTY_FIELD
-    # fio2_candidates = _regex_match(remaining_sentence, _FIO2_REGEXES)
-    # if len(fio2_candidates) > 0:
-    #     # take the first match
-    #     match_obj = fio2_candidates[0].other
-    #     fio2, fio2_2 = _extract_values(match_obj)
-    #     # convert fio2 to a percentage
-    #     if fio2 < 1.0:
-    #         fio2 *= 100.0
-
-    # # erase these matches
-    # remaining_sentence = _erase(remaining_sentence, fio2_candidates)
-            
-    # if _TRACE:
-    #     print('PaO2/FiO2 candidates: ')
-    # p_to_f_ratio = EMPTY_FIELD
-    # pf_candidates = _regex_match(cleaned_sentence, [_regex_pf_ratio])
-    # if len(pf_candidates) > 0:
-    #     # take the first match
-    #     match_obj = pf_candidates[0].other
-    #     p_to_f_ratio, p_to_f_ratio_2 = _extract_values(match_obj)
-
-    # if _TRACE:
-    #     print('Extracting data from pruned candidates...')
 
     results = []
     case_results = []
@@ -379,6 +464,13 @@ def run(sentence):
                 continue
             if 'int' == k:
                 value_case_list.append(int(v))
+            elif 'tnum' == k:
+                val = _tnum_to_int(v)
+                if val is not None:
+                    value_case_list.append(int(val))
+                else:
+                    # invalid number
+                    continue
 
     case_count  = len(value_case_list)
     hosp_count  = len(value_hosp_list)
@@ -465,7 +557,12 @@ if __name__ == '__main__':
         _enable_debug()
 
     SENTENCES = [
+        '16 New Cases COVID-19 Claims Three More Lives in Atlantic County',
+        
         'Currently, there are 97 confirmed cases in North Carolina.',
+
+        'The Newton Co Health Dept reports 2 more cases of COVID-19 for ' \
+        'our county-this brings our total to 9.',
         
         'As of Tuesday morning, the number of confirmed COVID-19 cases in ' \
         'Mercer County increased to 12.',
@@ -477,7 +574,12 @@ if __name__ == '__main__':
         'The Wyoming Department of Health reports that 674lab-confirmed ' \
         'cases have recovered and 196 probable cases have recoveredacross ' \
         'the state.',
-        
+
+        'The new cases bring the health district up to a cumulative total ' \
+        'of 137 cases of COVID-19, including 111 in Cache and 26 in Elder.',
+
+        'has had   one hundred forty seven test positive for COVID-19, the ' \
+        'manager said',
     ]
 
     for i, sentence in enumerate(SENTENCES):
