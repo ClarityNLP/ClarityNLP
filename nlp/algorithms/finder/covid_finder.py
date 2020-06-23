@@ -87,12 +87,12 @@ _str_tnum_100s = _str_tnum_digit + r'[-\s]hundred[-\s](and[-\s])?' +\
     _str_tnum_30s + r'|' + _str_tnum_20s + r'|' + _str_tnum_20s + r'|' +\
     _str_tnum_10s + r'|' + _str_tnum_digit +\
     r')?'
-_str_tnum = r'(?P<tnum>(' +\
+_str_tnum = r'(' +\
     _str_tnum_100s + r'|' + _str_tnum_90s + r'|' + _str_tnum_80s + r'|' +\
     _str_tnum_70s +  r'|' + _str_tnum_60s + r'|' + _str_tnum_50s + r'|' +\
     _str_tnum_40s +  r'|' + _str_tnum_30s + r'|' + _str_tnum_20s + r'|' +\
     _str_tnum_10s +  r'|' + _str_tnum_digit +\
-    r'))'
+    r')'
 
 _regex_tnum_digit = re.compile(_str_tnum_digit)
 _regex_tnum_10s   = re.compile(_str_tnum_10s)
@@ -118,46 +118,63 @@ _tnum_to_int_map = {
 }
 
 # integers, possibly including commas
-_str_int = r'(?P<int>(\d{3}(,\d{3})+|\d+))'
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{3}(,\d{3})+|\d+)'
 
 # general integer number, both decimals and text
-_str_num = r'(' + _str_int + r'|' + _str_tnum + r')'
+def _make_num_regex(a,b):
+    _str_num = r'((?P<{0}>'.format(a) + _str_int + r')|(?P<{0}>'.format(b) + _str_tnum + r'))'
+    return _str_num
 
 _str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
     r'more|(brand[-\s]?)?new)\s?'
 
-# covid cases
-_str_covid0 = r'covid([-\s]?19)?\s?'
+# covid case statements
+_str_covid0 = r'(covid([-\s]?19)?|coronavirus)\s?'
 _str_covid1 = _str_covid0 + _str_words + r'cases?\s?'
-_str_covid2 = r'cases?\sof\s' + _str_covid0 #covid([-\s]19)?\s?'
-_str_covid = r'(' + _str_covid1 + r'|' + _str_covid2 + r'|' + _str_covid0 + r')'
+_str_covid2 = r'cases?\sof\s' + _str_covid0
+_str_covid3 = r'cases?'
+_str_covid = r'(' + _str_covid1 + r'|' + _str_covid2 + r'|' +\
+    _str_covid0 + r'|' + _str_covid3 + r')'
 
 #
 # regexes to find case reports
 #
 
 # find '97 confirmed cases', 16 new cases,  and similar
-_str_case0 = r'(?<!covid-)(?!<covid)(?<!\d)' + _str_num + r'\s?' + _str_qual + r'\scases?\b'
+_str_case0 = _make_num_regex('int', 'tnum') + r'\s?' + _str_qual + _str_covid #r'\scases?\b'
 _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
 
 # find 'the number of confirmed COVID-19 cases increased to 12' and similar
-_str_case1 = _str_qual + _str_words + _str_covid + _str_words + _str_num
+_str_case1 = _str_qual + _str_words + _str_covid + _str_words +\
+    _make_num_regex('int', 'tnum')
 _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
 
 # find 'cumulative total of 137 cases of COVID-19' and similar
-_str_case2 = _str_qual + _str_words + _str_num + _str_words + _str_covid
+_str_case2 = _str_qual + _str_words + _make_num_regex('int', 'tnum') +\
+    _str_words + _str_covid
 _regex_case2 = re.compile(_str_case2, re.IGNORECASE)
 
 # find 'two employees test positive for COVID-19' similar
-_str_case3 = r'(?<!covid-)(?!<covid)(?<!\d)' + _str_num + r'\s?' +\
-    _str_words + r'positive\sfor\s' + _str_covid
+_str_case3 = _make_num_regex('int', 'tnum') + r'\s?' + _str_words +\
+    r'positive\sfor\s' + _str_covid
 _regex_case3 = re.compile(_str_case3, re.IGNORECASE)
+
+# find '30 coronavirus cases' and similar
+_str_case4 = _make_num_regex('int', 'tnum') + r'\s?' + _str_covid
+_regex_case4 = re.compile(_str_case4, re.IGNORECASE)
+
+# find 'number of confirmed cases from 10 to 8' and similar
+_str_case5 = r'\bfrom\s' + _str_words + _make_num_regex('int_from', 'tnum_from') +\
+    r'\s?to\s?' + _make_num_regex('int', 'tnum')
+_regex_case5 = re.compile(_str_case5, re.IGNORECASE)
 
 _CASE_REGEXES = [
     _regex_case0,
     _regex_case1,
     _regex_case2,
-    _regex_case3
+    _regex_case3,
+    _regex_case4,
+    _regex_case5,
 ]
 
 
@@ -176,6 +193,9 @@ def _cleanup(sentence):
     cleaned sentence.
     """
 
+    # convert to lowercase
+    sentence = sentence.lower()
+    
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
     
@@ -580,6 +600,16 @@ if __name__ == '__main__':
 
         'has had   one hundred forty seven test positive for COVID-19, the ' \
         'manager said',
+
+        'saw the biggest three-day increase of positive cases yet with 16 ' \
+        'new cases reported over the weekend and 12 on Monday.',
+
+        'officials confirm 692 coronavirus cases as hospitalizations ' \
+        'continue to decline',
+
+        'decreasing the number of confirmed cases from 19 to 18.',
+
+        'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ',
     ]
 
     for i, sentence in enumerate(SENTENCES):
