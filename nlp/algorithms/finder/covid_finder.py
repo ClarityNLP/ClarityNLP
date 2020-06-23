@@ -23,10 +23,19 @@ if __name__ == '__main__':
         print('\n*** covid_finder.py: nlp dir not found ***\n')
         sys.exit(0)
 
-try:
-    import finder_overlap as overlap
-except:
-    from algorithms.finder import finder_overlap as overlap
+#try:
+    # for normal operation via NLP pipeline
+    # from algorithms.finder.date_finder import run as \
+    #     run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    # from algorithms.finder.time_finder import run as \
+    #     run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    #from algorithms.finder import finder_overlap as overlap
+#except:
+from date_finder import run as run_date_finder, \
+    DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+from time_finder import run as run_time_finder, \
+    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+import finder_overlap as overlap    
 
 # default value for all fields
 EMPTY_FIELD = None
@@ -107,6 +116,12 @@ _regex_tnum_90s   = re.compile(_str_tnum_90s)
 _regex_tnum_100s  = re.compile(_str_tnum_100s)
 _regex_hundreds   = re.compile(_str_tnum_digit + r'[-\s]?hundred[-\s]?', re.IGNORECASE)
 
+# enumerations
+_str_enum = r'(first|second|third|fourth|fifth|sixth|seventh|eighth|' +\
+    r'ninth|tenth|eleventh|twelfth|'                                  +\
+    r'(thir|four|fif|six|seven|eight|nine)teenth|twentieth|'          +\
+    r'(20|19|18|17|16|15|14|13|12|11|10|9|8|7|6|5|4)th|3rd|2nd|1st)'
+
 # used for conversions from tnum to int
 _tnum_to_int_map = {
     'one':1, 'two':2, 'three':3, 'four':4, 'five':5, 'six':6, 'seven':7,
@@ -117,16 +132,38 @@ _tnum_to_int_map = {
     'zero':0
 }
 
-# integers, possibly including commas
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{3}(,\d{3})+|\d+)'
+# used for conversions from enum to int
+_enum_to_int_map = {
+    'first':1, '1st':1, 'second':2, '2nd':2, 'third':3, '3rd':3,
+    'fourth':4, '4th':4, 'fifth':5, '5th':5, 'sixth':6, '6th':6,
+    'seventh':7, '7th':7, 'eighth':8, '8th':8, 'ninth':9, '9th':9,
+    'tenth':10, '10th':10, 'eleventh':11, '11th':11, 'twelfth':12, '12th':12,
+    'thirteenth':13, '13th':13, 'fourteenth':14, '14th':14,
+    'fifteenth':15, '15th':15, 'sixteenth':16, '16th':16,
+    'seventeenth':17, '17th':17, 'eighteenth':18, '18th':18,
+    'ninenteenth':19, '19th':19, 'twentieth':20, '20th':20,
+}
 
-# general integer number, both decimals and text
-def _make_num_regex(a,b):
-    _str_num = r'((?P<{0}>'.format(a) + _str_int + r')|(?P<{0}>'.format(b) + _str_tnum + r'))'
+# integers, possibly including commas
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|\d+)'
+
+# helper function; creates a regex that recognizes either an int with commas,
+# a decimal integer, a textual integer, or an enumerated int
+def _make_num_regex(a='int', b='tnum', c='enum'):
+    _str_num = r'((?P<{0}>'.format(a) + _str_int + r')|' +\
+        r'(?P<{0}>'.format(b) + _str_tnum + r')|'        +\
+        r'(?P<{0}>'.format(c) + _str_enum + r'))'
     return _str_num
 
+# regex to recognize either a range or a single integer
+_str_num = r'(' + r'\bfrom\s' +\
+    _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
+    r'\s?to\s?' +\
+    _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
+    r'|' + _make_num_regex() + r')'
+
 _str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
-    r'more|(brand[-\s]?)?new)\s?'
+    r'active|more|(brand[-\s]?)?new)\s?'
 
 # covid case statements
 _str_covid0 = r'(covid([-\s]?19)?|coronavirus)\s?'
@@ -136,37 +173,38 @@ _str_covid3 = r'cases?'
 _str_covid = r'(' + _str_covid1 + r'|' + _str_covid2 + r'|' +\
     _str_covid0 + r'|' + _str_covid3 + r')'
 
+_str_death = r'(deaths?|fatalit(ies|y))'
+_str_hosp  = r'(hospitalizations?)'
+_str_death_or_hosp = r'(' + _str_death + r'|' + _str_hosp + r')'
+
 #
 # regexes to find case reports
 #
 
 # find '97 confirmed cases', 16 new cases,  and similar
-_str_case0 = _make_num_regex('int', 'tnum') + r'\s?' + _str_qual + _str_covid #r'\scases?\b'
+_str_case0 = _str_num + r'\s?' + _str_qual + _str_words + _str_covid
 _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
 
 # find 'the number of confirmed COVID-19 cases increased to 12' and similar
-_str_case1 = _str_qual + _str_words + _str_covid + _str_words +\
-    _make_num_regex('int', 'tnum')
+# make sure the number is not followed by 'death' or 'hospitalization'
+# and related words
+#_str_case1 = _str_words + _str_covid + _str_words + _make_num_regex() +\
+#    r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
+_str_case1 = _str_words + _str_covid + _str_words + _str_num +\
+    r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
 _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
 
 # find 'cumulative total of 137 cases of COVID-19' and similar
-_str_case2 = _str_qual + _str_words + _make_num_regex('int', 'tnum') +\
-    _str_words + _str_covid
+_str_case2 = _str_words + _str_num + _str_words + _str_covid
 _regex_case2 = re.compile(_str_case2, re.IGNORECASE)
 
 # find 'two employees test positive for COVID-19' similar
-_str_case3 = _make_num_regex('int', 'tnum') + r'\s?' + _str_words +\
-    r'positive\sfor\s' + _str_covid
+_str_case3 = _str_num + r'\s?' + _str_words + r'positive\sfor\s' + _str_covid
 _regex_case3 = re.compile(_str_case3, re.IGNORECASE)
 
 # find '30 coronavirus cases' and similar
-_str_case4 = _make_num_regex('int', 'tnum') + r'\s?' + _str_covid
+_str_case4 = _str_num + r'\s?' + _str_covid
 _regex_case4 = re.compile(_str_case4, re.IGNORECASE)
-
-# find 'number of confirmed cases from 10 to 8' and similar
-_str_case5 = r'\bfrom\s' + _str_words + _make_num_regex('int_from', 'tnum_from') +\
-    r'\s?to\s?' + _make_num_regex('int', 'tnum')
-_regex_case5 = re.compile(_str_case5, re.IGNORECASE)
 
 _CASE_REGEXES = [
     _regex_case0,
@@ -174,7 +212,6 @@ _CASE_REGEXES = [
     _regex_case2,
     _regex_case3,
     _regex_case4,
-    _regex_case5,
 ]
 
 
@@ -184,8 +221,63 @@ def _enable_debug():
 
     global _TRACE
     _TRACE = True
+
+
+###############################################################################
+def _erase(sentence, candidates):
+    """
+    Erase all candidate matches from the sentence. Only substitute a single
+    whitespace for the region, since this is performed on the previously
+    cleaned sentence.
+    """
+
+    new_sentence = sentence
+    for c in candidates:
+        start = c.start
+        end = c.end
+        s1 = new_sentence[:start]
+        s2 = ' '
+        s3 = new_sentence[end:]
+        new_sentence = s1 + s2 + s3
+
+    # collapse repeated whitespace, if any
+    new_sentence = re.sub(r'\s+', ' ', new_sentence)
+        
+    return new_sentence
     
 
+###############################################################################
+def _erase_dates(sentence):
+    """
+    Find date expressions in the sentence and erase them.
+    """
+    
+    json_string = run_date_finder(sentence)
+    json_data = json.loads(json_string)
+
+    # unpack JSON result into a list of DateMeasurement namedtuples
+    dates = [DateValue(**record) for record in json_data]
+
+    # erase each date expression from the sentence
+    for date in dates:
+        start = int(date.start)
+        end   = int(date.end)
+
+        if _TRACE:
+            print('\tfound date expression: "{0}"'.format(date))
+
+        # erase date if not all digits
+        if not re.match(r'\A\d+\Z', date.text):
+            if _TRACE:
+                print('\terasing date "{0}"'.format(date.text))
+            s1 = sentence[:start]
+            s2 = ' '*(end - start)
+            s3 = sentence[end:]
+            sentence = s1 + s2 + s3
+
+    return sentence
+
+            
 ###############################################################################
 def _cleanup(sentence):
     """
@@ -195,19 +287,61 @@ def _cleanup(sentence):
 
     # convert to lowercase
     sentence = sentence.lower()
+
+    sentence = _erase_dates(sentence)
     
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
+
+    # erase apostrophes
+    sentence = re.sub(r'[\']', '', sentence)
     
     # replace selected chars with whitespace
-    sentence = re.sub(r'[,&(){}\[\]:~/@]', ' ', sentence)
+    sentence = re.sub(r'[&(){}\[\]:~/@]', ' ', sentence)
 
+    # replace commas with whitespace if not inside a number (such as 32,768)
+    comma_pos = []
+    iterator = re.finditer(r'\D,\D', sentence, re.IGNORECASE)
+    for match in iterator:
+        pos = match.start() + 1
+        comma_pos.append(pos)
+    for pos in comma_pos:
+        sentence = sentence[:pos] + ' ' + sentence[pos+1:]    
+        
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
     print('sentence after cleanup: "{0}"'.format(sentence))
     return sentence
 
+
+###############################################################################
+def _to_int(str_int):
+    """
+    Convert a string to int; the string could contain embedded commas.
+    """
+
+    if -1 == _str_int.find(','):
+        val = int(str_int)
+    else:
+        text = re.sub(r',', '', str_int)
+        val = int(text)
+
+    return val
+    
+
+###############################################################################
+def _enum_to_int(_str_enum):
+    """
+    Convert an enumerated count such as 'third' or 'ninenteenth' to an int.
+    """
+
+    text = _str_enum.strip()
+    if text in _enum_to_int_map:
+        val = _enum_to_int_map[text]
+    else:
+        return None
+    
 
 ###############################################################################
 def _tnum_to_int(_str_tnum):
@@ -297,7 +431,7 @@ def _regex_match(sentence, regex_list):
             candidates.append(overlap.Candidate(start, end, match_text, regex,
                                                 other=match))
             if _TRACE:
-                print('[{0:2}]: [{1:3}, {2:3})\tMATCH TEXT: ->{3}<-'.
+                print('R[{0:2}]: [{1:3}, {2:3})\tMATCH TEXT: ->{3}<-'.
                       format(i, start, end, match_text))
                 print('\tmatch.groupdict entries: ')
                 for k,v in match.groupdict().items():
@@ -412,29 +546,6 @@ def _regex_match(sentence, regex_list):
         print()
 
     return pruned_candidates
-    
-
-###############################################################################
-def _erase(sentence, candidates):
-    """
-    Erase all candidate matches from the sentence. Only substitute a single
-    whitespace for the region, since this is performed on the previously
-    cleaned sentence.
-    """
-
-    new_sentence = sentence
-    for c in candidates:
-        start = c.start
-        end = c.end
-        s1 = new_sentence[:start]
-        s2 = ' '
-        s3 = new_sentence[end:]
-        new_sentence = s1 + s2 + s3
-
-    # collapse repeated whitespace, if any
-    new_sentence = re.sub(r'\s+', ' ', new_sentence)
-        
-    return new_sentence
 
 
 ###############################################################################
@@ -482,15 +593,21 @@ def run(sentence):
         for k,v in match.groupdict().items():
             if v is None:
                 continue
-            if 'int' == k:
-                value_case_list.append(int(v))
-            elif 'tnum' == k:
+
+            # convert integer text captures to int
+            val = None
+            if 'int_to' == k or 'int' == k:
+                val = _to_int(v)
+            elif 'tnum_to' == k or 'tnum' == k:
                 val = _tnum_to_int(v)
-                if val is not None:
-                    value_case_list.append(int(val))
-                else:
-                    # invalid number
-                    continue
+            elif 'enum_to' == k or 'enum' == k:
+                val = _enum_to_int(v)
+                
+            if val is not None:
+                value_case_list.append(val)
+            else:
+                # invalid number
+                continue
 
     case_count  = len(value_case_list)
     hosp_count  = len(value_hosp_list)
@@ -591,7 +708,7 @@ if __name__ == '__main__':
         'and 18 from May 12 through May 14. As of May 16, the county has ' \
         'had 463 confirmed cases in the coronavirus pandemic.',
 
-        'The Wyoming Department of Health reports that 674lab-confirmed ' \
+        'The Wyoming Department of Health reports that 674lab-confirmed '   \
         'cases have recovered and 196 probable cases have recoveredacross ' \
         'the state.',
 
@@ -610,6 +727,26 @@ if __name__ == '__main__':
         'decreasing the number of confirmed cases from 19 to 18.',
 
         'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ',
+
+        'The announcement, of this sixth case in Floyd County comes '      \
+        'alongside reports from Gov. Andy Beshear on April 21 that there ' \
+        'are 3,192 positive cases in the state, as well as 171 deaths '    \
+        'from the virus.',
+
+        # 'Contra Costa also reported that its total number of coronavirus ' \
+        # 'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
+        # 'from the day before.',
+
+        # 'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
+        # 'to 77, Blood Donors Needed',
+
+        # 'The North Dakota Department of Health confirmed Friday 40 ' \
+        # 'additional cases of COVID-19 out of 2,894 total tests completed',
+
+        # 'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
+        # 'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
+        # 'deaths, 621 active cases (including eight in Richland County, '  \
+        # 'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
     ]
 
     for i, sentence in enumerate(SENTENCES):
