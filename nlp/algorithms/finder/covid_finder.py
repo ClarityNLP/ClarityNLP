@@ -58,6 +58,9 @@ COVID_TUPLE_FIELDS = [
 ]
 CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 
+_STR_THOUSAND = 'thousand'
+_STR_MILLION  = 'million'
+
 
 ###############################################################################
 
@@ -71,11 +74,11 @@ _TRACE = False
 # connectors between portions of the regexes below; either symbols or words
 #_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.@^]+|\s[a-z\s]+)+)?'
 
+_str_word = r'[-a-z]+\.?\s?'
+_str_words = r'(' + _str_word + r'){0,5}?'
+
 # words, possibly hyphenated or abbreviated, nongreedy match
-_str_words = r'([-a-z\s.]+?)?'
-
-
-_str_units = r'\(?(percent|pct\.?|%|mmHg)\)?'
+#_str_words = r'([-a-z\s.]+?)?'
 
 
 # textual numbers and related regexes
@@ -116,11 +119,14 @@ _regex_tnum_90s   = re.compile(_str_tnum_90s)
 _regex_tnum_100s  = re.compile(_str_tnum_100s)
 _regex_hundreds   = re.compile(_str_tnum_digit + r'[-\s]?hundred[-\s]?', re.IGNORECASE)
 
+# 2.4 million, 
+
 # enumerations
 _str_enum = r'(first|second|third|fourth|fifth|sixth|seventh|eighth|' +\
     r'ninth|tenth|eleventh|twelfth|'                                  +\
-    r'(thir|four|fif|six|seven|eight|nine)teenth|twentieth|'          +\
-    r'(20|19|18|17|16|15|14|13|12|11|10|9|8|7|6|5|4)th|3rd|2nd|1st)'
+    r'(thir|four|fif|six|seven|eight|nine)teenth|'                    +\
+    r'1[0-9]th|[2-9]0th|[4-9]th|3rd|2nd|1st|'                         +\
+    r'(twen|thir|for|fif|six|seven|eigh|nine)tieth)'
 
 # used for conversions from tnum to int
 _tnum_to_int_map = {
@@ -134,6 +140,7 @@ _tnum_to_int_map = {
 
 # used for conversions from enum to int
 _enum_to_int_map = {
+    'zeroth':0,
     'first':1, '1st':1, 'second':2, '2nd':2, 'third':3, '3rd':3,
     'fourth':4, '4th':4, 'fifth':5, '5th':5, 'sixth':6, '6th':6,
     'seventh':7, '7th':7, 'eighth':8, '8th':8, 'ninth':9, '9th':9,
@@ -142,25 +149,48 @@ _enum_to_int_map = {
     'fifteenth':15, '15th':15, 'sixteenth':16, '16th':16,
     'seventeenth':17, '17th':17, 'eighteenth':18, '18th':18,
     'ninenteenth':19, '19th':19, 'twentieth':20, '20th':20,
+    'thirtieth':30, '30th':30, 'fortieth':40, '40th':40,
+    'fiftieth':50, '50th':50, 'sixtieth':60, '60th':60,
+    'seventieth':70, '70th':70, 'eightieth':80, '80th':80,
+    'ninetieth':90, '90th':90,
 }
 
 # integers, possibly including commas
 _str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|\d+)'
 
-# helper function; creates a regex that recognizes either an int with commas,
-# a decimal integer, a textual integer, or an enumerated int
+# find numbers such as 3.4 million, 4 thousand, etc.
+_str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
+    r'(?P<floatunits>(thousand|million))'
+_regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
+
+# Create a regex that recognizes either an int with commas, a decimal integer,
+# a textual integer, or an enumerated integer. The enum must be followed either
+# by ' (confirmed|positive)?\s?case'. For example, these would be accepted:
+#
+#    sixth case
+#    fourth positive case in the county
+#
+# but not this:
+#
+#     third highest number of confirmed cases
+#
 def _make_num_regex(a='int', b='tnum', c='enum'):
-    _str_num = r'((?P<{0}>'.format(a) + _str_int + r')|' +\
-        r'(?P<{0}>'.format(b) + _str_tnum + r')|'        +\
-        r'(?P<{0}>'.format(c) + _str_enum + r'))'
+    _str_num = r'('                                          +\
+        r'(?P<{0}>'.format(a) + _str_int + r')|'             +\
+        r'(?P<{0}>'.format(b) + _str_tnum + r')|'            +\
+        r'(?P<{0}>'.format(c)                                +\
+        r'(' + _str_enum + r'(?= case)' + r'|'               +\
+               _str_enum + r'(?= (confirmed|positive) case)' +\
+        r'))'                                                +\
+        r')'
     return _str_num
 
 # regex to recognize either a range or a single integer
-_str_num = r'(' + r'\bfrom\s' +\
+_str_num = r'(' + r'(\bfrom\s)?' +\
     _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
     r'\s?to\s?' +\
     _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
-    r'|' + _make_num_regex() + r')'
+    r'|' + _str_float_word + r'|' + _make_num_regex() + r')'
 
 _str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
     r'active|more|(brand[-\s]?)?new)\s?'
@@ -297,23 +327,23 @@ number of confirmed cases from <num1> to <num2>
 # _regex_case4 = re.compile(_str_case4, re.IGNORECASE)
 
 # <num> <words> positive for <words> <coronavirus>
-_str_case0 = _str_num + _str_words + r'positive\sfor\s' + _str_words + _str_coronavirus
+_str_case0 = _str_num + r'\s' + _str_words + r'positive\sfor\s' + _str_words + _str_coronavirus
 _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
 
 # <num> <words> tested positive
-_str_case1 = _str_num + _str_words + r'tested\spositive'
+_str_case1 = _str_num + r'\s' + _str_words + r'tested\spositive'
 _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
 
 # <num> <words> <coronavirus> cases?
-_str_case2 = _str_num + _str_words + _str_coronavirus + r'cases?'
+_str_case2 = _str_num + r'\s' + _str_words + _str_coronavirus + r'cases?'
 _regex_case2 = re.compile(_str_case2, re.IGNORECASE)
 
 # <num> <words> cases? <words> <coronavirus>
-_str_case3 = _str_num + _str_words + r'cases?\s' + _str_words + _str_coronavirus
+_str_case3 = _str_num + r'\s' + _str_words + r'cases?\s' + _str_words + _str_coronavirus
 _regex_case3 = re.compile(_str_case3, re.IGNORECASE)
 
 # <num> <words> with <coronavirus>
-_str_case4 = _str_num + _str_words + r'with\s' + _str_coronavirus
+_str_case4 = _str_num + r'\s' + _str_words + r'with\s' + _str_coronavirus
 _regex_case4 = re.compile(_str_case4, re.IGNORECASE)
 
 # (total|number of) <words> <coronavirus> cases? <words> <num>
@@ -328,12 +358,12 @@ _regex_case6 = re.compile(_str_case6, re.IGNORECASE)
 _str_case7 = _str_coronavirus + r'cases?\s' + _str_words + _str_num
 _regex_case7 = re.compile(_str_case7, re.IGNORECASE)
 
-# cases  <words> <num>
-_str_case8 = r'(cases|total)\s' + _str_words + _str_num
+# cases (at|to(\sover)?)\s <num>
+_str_case8 = r'(cases|total)\s(at|to(\sover))\s' + _str_num
 _regex_case8 = re.compile(_str_case8, re.IGNORECASE)
 
 # <num> <words> cases?
-_str_case9 = _str_num + _str_words + r'cases?'
+_str_case9 = _str_num + r'\s' + _str_words + r'cases?'
 _regex_case9 = re.compile(_str_case9, re.IGNORECASE)
 
 _CASE_REGEXES = [
@@ -428,11 +458,11 @@ def _cleanup(sentence):
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
 
-    # erase apostrophes
+    # erase certain characters
     sentence = re.sub(r'[\']', '', sentence)
     
     # replace selected chars with whitespace
-    sentence = re.sub(r'[&(){}\[\]:~/@]', ' ', sentence)
+    sentence = re.sub(r'[&(){}\[\]:~/@;]', ' ', sentence)
 
     # replace commas with whitespace if not inside a number (such as 32,768)
     comma_pos = []
@@ -471,11 +501,12 @@ def _enum_to_int(_str_enum):
     Convert an enumerated count such as 'third' or 'ninenteenth' to an int.
     """
 
+    val = None
     text = _str_enum.strip()
     if text in _enum_to_int_map:
         val = _enum_to_int_map[text]
-    else:
-        return None
+
+    return val
     
 
 ###############################################################################
@@ -652,7 +683,10 @@ def run(sentence):
             if v is None:
                 continue
 
-            # convert integer text captures to int
+            #if _TRACE:
+            #    print('{0} => {1}'.format(k,v))
+            
+            # convert number text captures
             val = None
             if 'int_to' == k or 'int' == k:
                 val = _to_int(v)
@@ -660,6 +694,15 @@ def run(sentence):
                 val = _tnum_to_int(v)
             elif 'enum_to' == k or 'enum' == k:
                 val = _enum_to_int(v)
+            elif 'floatnum' == k:
+                val = float(v)
+                # get the units
+                if 'floatunits' in match.groupdict():
+                    str_units = match.groupdict()['floatunits']
+                    if _STR_THOUSAND == str_units:
+                        val *= 1000.0
+                    elif _STR_MILLION == str_units:
+                        val *= 1.0e6
                 
             if val is not None:
                 value_case_list.append(val)
@@ -723,7 +766,10 @@ def run(sentence):
         results.append(covid_tuple)
 
     # sort results to match order of occurrence in sentence
-    #results = sorted(results, key=lambda x: x.start)
+    results = sorted(results, key=lambda x: x.case_start)
+
+    # hospitalizations
+    # deaths
 
     # convert to list of dicts to preserve field names in JSON output
     return json.dumps([r._asdict() for r in results], indent=4)
@@ -779,41 +825,58 @@ if __name__ == '__main__':
         'saw the biggest three-day increase of positive cases yet with 16 ' \
         'new cases reported over the weekend and 12 on Monday.',
 
-        # 'officials confirm 692 coronavirus cases as hospitalizations ' \
-        # 'continue to decline',
+        'officials confirm 692 coronavirus cases as hospitalizations ' \
+        'continue to decline',
 
-        # 'decreasing the number of confirmed cases from 19 to 18.',
+        'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ',
 
-        # 'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ',
+        'The announcement, of this sixth case in Floyd County comes '      \
+        'alongside reports from Gov. Andy Beshear on April 21 that there ' \
+        'are 3,192 positive cases in the state, as well as 171 deaths '    \
+        'from the virus.',
 
-        # 'The announcement, of this sixth case in Floyd County comes '      \
-        # 'alongside reports from Gov. Andy Beshear on April 21 that there ' \
-        # 'are 3,192 positive cases in the state, as well as 171 deaths '    \
-        # 'from the virus.',
+        'Contra Costa also reported that its total number of coronavirus ' \
+        'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
+        'from the day before.',
 
-        # 'Contra Costa also reported that its total number of coronavirus ' \
-        # 'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
-        # 'from the day before.',
+        'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
+        'to 77, Blood Donors Needed',
 
-        # 'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
-        # 'to 77, Blood Donors Needed',
+        'The North Dakota Department of Health confirmed Friday 40 ' \
+        'additional cases of COVID-19 out of 2,894 total tests completed',
 
-        # 'The North Dakota Department of Health confirmed Friday 40 ' \
-        # 'additional cases of COVID-19 out of 2,894 total tests completed',
+        'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
+        'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
+        'deaths, 621 active cases (including eight in Richland County, '  \
+        'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
 
-        # 'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
-        # 'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
-        # 'deaths, 621 active cases (including eight in Richland County, '  \
-        # 'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
+        'Wednesdays totals include 21 new cases in Cass County; five new ' \
+        'cases in Stutsman County; two new cases in Burleigh and Ransom '  \
+        'counties and one new case each in Grand Forks, Walsh and Ward '   \
+        'counties.',
 
-        # 'Wednesdays totals include 21 new cases in Cass County; five new ' \
-        # 'cases in Stutsman County; two new cases in Burleigh and Ransom '  \
-        # 'counties and one new case each in Grand Forks, Walsh and Ward '   \
-        # 'counties.',
+        'Coronavirus cases are surging past 5 million worldwide, with '    \
+        'most of the new cases coming from just four countries: Russia, '  \
+        'Brazil, India, and the United States.',
 
-        # ' Coronavirus cases are surging past 5 million worldwide, with '   \
-        # 'most of the new cases coming from just four countries: Russia, '  \
-        # 'Brazil, India, and the United States.',
+        'decreasing the number of confirmed cases from 19 to 18.',
+
+        'Macon County reported just three positive cases of COVID-19 '     \
+        'for 12 weeks.',
+
+        'Carroll County surpasses 1,000 coronavirus cases - Carroll '      \
+        'County Times Carroll County surpassed 1,000 cases of COVID-19 '   \
+        'on Wednesday, according to the health department.',
+        
+        # do NOT capture anything here
+        'In fact, the Bear River Health District has the third highest '   \
+        'amount of total cases in the state.',
+
+        # TBD
+        # 'Two residents at Fairhaven in Sykesville, one resident at '       \
+        # 'Flying Colors of Success in Westminster and two staff members '   \
+        # 'at Pleasant View Nursing Home in Mount Airy who live in Carroll ' \
+        # 'tested positive, pushing the facilities total to 559.',        
     ]
 
     for i, sentence in enumerate(SENTENCES):
