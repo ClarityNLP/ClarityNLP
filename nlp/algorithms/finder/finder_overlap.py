@@ -15,7 +15,7 @@ Candidate.__new__.__defaults__ = (None,) * len(Candidate._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME   = 'finder_overlap.py'
 
 
@@ -37,13 +37,14 @@ def has_overlap(a1, b1, a2, b2):
 
 
 ###############################################################################
-def remove_overlap(candidates, debug=False):
+def remove_overlap(candidates, debug=False, keep_longest=True):
     """
     Given a set of match candidates, resolve into nonoverlapping matches.
-    Take the longest match at any given position.
+    Take the longest or the shortest match at any given position.
 
-    ASSUMES that the candidate list has been sorted by matching text length,
-    from longest to shortest.
+    ASSUMES that the candidate list has been sorted by matching text length.
+    If keep_longest is True, the list should be sorted from longest to shortest.
+    If keep_longest is False, the list should be sorted from shortest to longest.
     """
 
     if debug:
@@ -84,12 +85,21 @@ def remove_overlap(candidates, debug=False):
                                  candidates[index_j].match_text,
                                  len_i, len_j))
                 overlaps.append(j)
-                # keep the longest match at any overlap region
-                if len_j > len_i:
-                    start_i = start_j
-                    end_i   = end_j
-                    len_i   = len_j
-                    candidate_index = index_j
+
+                if keep_longest:
+                    # keep the longest match at any overlap region
+                    if len_j > len_i:
+                        start_i = start_j
+                        end_i   = end_j
+                        len_i   = len_j
+                        candidate_index = index_j
+                else:
+                    # keep the shortest match at any overlap region
+                    if len_j < len_i:
+                        start_i = start_j
+                        end_i   = end_j
+                        len_i   = len_j
+                        candidate_index = index_j
             j += 1
 
         if debug:
