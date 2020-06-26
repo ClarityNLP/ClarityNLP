@@ -101,7 +101,7 @@ _str_tnum = r'(' +\
     _str_tnum_70s +  r'|' + _str_tnum_60s + r'|' + _str_tnum_50s + r'|' +\
     _str_tnum_40s +  r'|' + _str_tnum_30s + r'|' + _str_tnum_20s + r'|' +\
     _str_tnum_10s +  r'|' + _str_tnum_digit +\
-    r')'
+    r')(?!\-)'
 
 _regex_tnum_digit = re.compile(_str_tnum_digit)
 _regex_tnum_10s   = re.compile(_str_tnum_10s)
@@ -166,12 +166,14 @@ _str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
     r'active|more|(brand[-\s]?)?new)\s?'
 
 # covid case statements
-_str_covid0 = r'(covid([-\s]?19)?|coronavirus)\s?'
-_str_covid1 = _str_covid0 + _str_words + r'cases?\s?'
-_str_covid2 = r'cases?\sof\s' + _str_covid0
-_str_covid3 = r'cases?'
-_str_covid = r'(' + _str_covid1 + r'|' + _str_covid2 + r'|' +\
-    _str_covid0 + r'|' + _str_covid3 + r')'
+# _str_covid0 = r'(covid([-\s]?19)?|(corona)?virus)\s?'
+# _str_covid1 = _str_covid0 + _str_words + r'cases?\s?'
+# _str_covid2 = r'cases?\sof\s' + _str_covid0
+# _str_covid3 = r'cases?'
+# _str_covid = r'(' + _str_covid1 + r'|' + _str_covid2 + r'|' +\
+#     _str_covid0 + r'|' + _str_covid3 + r')'
+
+_str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus)\s?'
 
 _str_death = r'(deaths?|fatalit(ies|y))'
 _str_hosp  = r'(hospitalizations?)'
@@ -181,30 +183,158 @@ _str_death_or_hosp = r'(' + _str_death + r'|' + _str_hosp + r')'
 # regexes to find case reports
 #
 
-# find '97 confirmed cases', 16 new cases,  and similar
-_str_case0 = _str_num + r'\s?' + _str_qual + _str_words + _str_covid
+"""
+
+# 1. <num> <words> <coronavirus> cases?
+<num> covid-19 cases
+<num> coronavirus cases
+<num> new covid-19 cases
+<num> confirmed coronavirus cases
+<num> new <location> covid-19 cases
+
+# 2. <num> <words> cases? <words> <coronavirus>
+<num> cases of covid-19
+<num> new cases of covid-19
+<num> more cases of covid-19
+<num> positive covid-19 cases
+<num> active cases of covid-19
+<num> confirmed cases of covid-19
+<enum> confirmed case of covid-19
+<num> additional cases of covid-19
+<num> positive case of coronavirus
+<num> confirmed cases of the virus
+<num> confirmed cases of the coronavirus
+
+# 3. <num> <words> cases?
+<num> cases
+<num> new cases
+<num> total cases
+<num> active cases
+<num> probable cases
+<num> positive cases
+<num> positive cases
+<num> new daily cases
+<num> confirmed cases
+<num> new positive cases
+<num> lab-confirmed cases
+<num> total confirmed cases
+<num> confirmed and probable cases
+
+# 4. <num> <words> with <coronavirus>
+<num> employees with coronavirus
+
+# 5. <num> <words> positive for <words> <coronavirus>
+<num> test positive for covid-19
+<num> have tested positive for the virus
+<num> <words> tested positive for the coronavirus
+<num> residents having tested positive for covid-19
+<num> additional staff members are positive for covid-19
+<num> people had tested positive for the novel coronavirus
+
+# 6. <num> <words> tested positive
+<num> inmates have tested positive
+
+# 7. (total|number of) <words> <coronavirus> cases? <words> <num>
+total number of coronavirus cases had reached <num>
+total number of covid-19 cases in <location> to <num>
+      number of COVID cases recorded in a one day was <num>
+
+# 8. <coronavirus> cases? <words> <num>
+coronavirus cases (<num>)
+covid-19 cases below <num>
+covid-19 cases up to <num>
+covid-19 cases <words> <num>
+coronavirus cases reach <num>
+coronavirus cases rise to <num>
+coronavirus case total tops <num>
+covid-19 cases in <location> increased to <num>
+
+# 9. (total|number of) <words> cases? <words> <num>
+total number of positive cases <words> <num>
+total of positive cases has been updated to <num>
+total of lab-confirmed cases in <location> is now <num>
+total tally of cases in <location> since the pandemic began to <num>
+
+# 10. cases <words> <num>
+cases-<num>
+cases at <num>
+cases balloon to over <num>
+
+# 11. total <words> <num>
+total of <num>
+brings our total to <num>
+
+number of confirmed cases from <num1> to <num2>
+<num1>-<num2> positive cases in <location>
+<num1> staff members and <num2> residents have now tested positive
+<num1> words and <num2> words cases of covid-19
+<num1> new cases in <location1> and <num2> in <location2>
+"""
+
+# # find '97 confirmed cases', 16 new cases,  and similar
+# _str_case0 = _str_num + r'\s?' + _str_qual + _str_words + _str_covid
+# _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
+
+# # find 'the number of confirmed COVID-19 cases increased to 12' and similar
+# # make sure the number is not followed by 'death' or 'hospitalization'
+# # and related words
+# #_str_case1 = _str_words + _str_covid + _str_words + _make_num_regex() +\
+# #    r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
+# _str_case1 = _str_words + _str_covid + _str_words + _str_num +\
+#     r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
+# _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
+
+# # find 'cumulative total of 137 cases of COVID-19' and similar
+# _str_case2 = _str_words + _str_num + _str_words + _str_covid
+# _regex_case2 = re.compile(_str_case2, re.IGNORECASE)
+
+# # find 'two employees test positive for COVID-19' similar
+# _str_case3 = _str_num + r'\s?' + _str_words + r'positive\sfor\s' + _str_covid
+# _regex_case3 = re.compile(_str_case3, re.IGNORECASE)
+
+# # find '30 coronavirus cases' and similar
+# _str_case4 = _str_num + r'\s?' + _str_covid
+# _regex_case4 = re.compile(_str_case4, re.IGNORECASE)
+
+# <num> <words> positive for <words> <coronavirus>
+_str_case0 = _str_num + _str_words + r'positive\sfor\s' + _str_words + _str_coronavirus
 _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
 
-# find 'the number of confirmed COVID-19 cases increased to 12' and similar
-# make sure the number is not followed by 'death' or 'hospitalization'
-# and related words
-#_str_case1 = _str_words + _str_covid + _str_words + _make_num_regex() +\
-#    r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
-_str_case1 = _str_words + _str_covid + _str_words + _str_num +\
-    r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
+# <num> <words> tested positive
+_str_case1 = _str_num + _str_words + r'tested\spositive'
 _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
 
-# find 'cumulative total of 137 cases of COVID-19' and similar
-_str_case2 = _str_words + _str_num + _str_words + _str_covid
+# <num> <words> <coronavirus> cases?
+_str_case2 = _str_num + _str_words + _str_coronavirus + r'cases?'
 _regex_case2 = re.compile(_str_case2, re.IGNORECASE)
 
-# find 'two employees test positive for COVID-19' similar
-_str_case3 = _str_num + r'\s?' + _str_words + r'positive\sfor\s' + _str_covid
+# <num> <words> cases? <words> <coronavirus>
+_str_case3 = _str_num + _str_words + r'cases?\s' + _str_words + _str_coronavirus
 _regex_case3 = re.compile(_str_case3, re.IGNORECASE)
 
-# find '30 coronavirus cases' and similar
-_str_case4 = _str_num + r'\s?' + _str_covid
+# <num> <words> with <coronavirus>
+_str_case4 = _str_num + _str_words + r'with\s' + _str_coronavirus
 _regex_case4 = re.compile(_str_case4, re.IGNORECASE)
+
+# (total|number of) <words> <coronavirus> cases? <words> <num>
+_str_case5 = r'(total|number\sof)\s' + _str_words + _str_coronavirus + r'cases?\s' + _str_words + _str_num
+_regex_case5 = re.compile(_str_case5, re.IGNORECASE)
+
+# (total|number of) <words> cases? <words> <num>
+_str_case6 = r'(total|number\sof)\s' + _str_words + r'cases?\s' + _str_words + _str_num
+_regex_case6 = re.compile(_str_case6, re.IGNORECASE)
+
+# <coronavirus> cases? <words> <num>
+_str_case7 = _str_coronavirus + r'cases?\s' + _str_words + _str_num
+_regex_case7 = re.compile(_str_case7, re.IGNORECASE)
+
+# cases  <words> <num>
+_str_case8 = r'(cases|total)\s' + _str_words + _str_num
+_regex_case8 = re.compile(_str_case8, re.IGNORECASE)
+
+# <num> <words> cases?
+_str_case9 = _str_num + _str_words + r'cases?'
+_regex_case9 = re.compile(_str_case9, re.IGNORECASE)
 
 _CASE_REGEXES = [
     _regex_case0,
@@ -212,6 +342,11 @@ _CASE_REGEXES = [
     _regex_case2,
     _regex_case3,
     _regex_case4,
+    _regex_case5,
+    _regex_case6,
+    _regex_case7,
+    _regex_case8,
+    _regex_case9,
 ]
 
 
@@ -441,9 +576,9 @@ def _regex_match(sentence, regex_list):
     if 0 == len(candidates):
         return []        
     
-    # sort the candidates in descending order of length, which is needed for
+    # sort the candidates in ASCENDING order of length, which is needed for
     # one-pass overlap resolution later on
-    candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
+    candidates = sorted(candidates, key=lambda x: x.end-x.start)
     
     if _TRACE:
         print('\tCandidate matches: ')
@@ -454,88 +589,11 @@ def _regex_match(sentence, regex_list):
             index += 1
         print()
 
-    # if two overlap exactly, keep candidate with longer device string
-    prev_start = candidates[0].start
-    prev_end = candidates[0].end
-    delete_index = None
-    for i in range(1, len(candidates)):
-        c = candidates[i]
-        if c.start == prev_start and c.end == prev_end:
-            if _TRACE:
-                print('\tCandidates at indices {0} and {1} have ' \
-                      'identical overlap'.format(i-1, i))
-            # the regex match object is stored in the 'other' field
-            matchobj = c.other
-            matchobj_prev = candidates[i-1].other
-            if 'device' in matchobj.groupdict() and 'device' in matchobj_prev.groupdict():
-                device = matchobj.group('device')
-                device_prev = matchobj_prev.group('device')
-                if device is not None and device_prev is not None:
-                    len_device = len(device)
-                    len_device_prev = len(device_prev)
-                    if _TRACE:
-                        print('\t\tdevice string for index {0}: {1}'.
-                              format(i-1, device_prev))
-                        print('\t\tdevice string for index {0}: {1}'.
-                              format(i, device))
-                    if len_device > len_device_prev:
-                        delete_index = i-1
-                    else:
-                        delete_index = i
-                    if _TRACE:
-                        print('\t\t\tdelete_index: {0}'.format(delete_index))
-                    break
-        prev_start = c.start
-        prev_end = c.end
-
-    if delete_index is not None:
-        del candidates[delete_index]
-        if _TRACE:
-            print('\tRemoved candidate at index {0} with shorter device string'.
-                  format(delete_index))
-
-    # remove any that are proper substrings of another, exploiting the fact
-    # that the candidate list is sorted in decreasing order of length
-    discard_set = set()
-    for i in range(1, len(candidates)):
-        start = candidates[i].start
-        end   = candidates[i].end
-        for j in range(0, i):
-            prev_start = candidates[j].start
-            prev_end   = candidates[j].end
-            if start >= prev_start and end <= prev_end:
-                discard_set.add(i)
-                if _TRACE:
-                    print('\t[{0:2}] is a substring of [{1}], discarding...'.
-                          format(i, j))
-                break
-
-    survivors = []
-    for i in range(len(candidates)):
-        if i not in discard_set:
-            survivors.append(candidates[i])
-
-    candidates = survivors
-        
-
-    # Now find the maximum number of non-overlapping candidates. This is an
-    # instance of the equal-weight interval scheduling problem, which has an
-    # optimal greedy solution. See the book "Algorithm Design" by Kleinberg and
-    # Tardos, ch. 4.
-    
-    # sort candidates in increasing order of their END points
-    candidates = sorted(candidates, key=lambda x: x.end)
-    
-    pruned_candidates = [candidates[0]]
-    prev_end = pruned_candidates[0].end
-    for i in range(1, len(candidates)):
-        c = candidates[i]
-        if c.start >= prev_end:
-            pruned_candidates.append(c)
-            prev_end = c.end
-#    else:
-#        # run the usual overlap resolution
-#        pruned_candidates = overlap.remove_overlap(candidates, _TRACE)
+    # keep the SHORTEST of any overlapping matches, to minimize chances
+    # of capturing junk
+    pruned_candidates = overlap.remove_overlap(candidates,
+                                               _TRACE,
+                                               keep_longest=False)
 
     if _TRACE:
         print('\tcandidate count after overlap removal: {0}'.
@@ -721,17 +779,17 @@ if __name__ == '__main__':
         'saw the biggest three-day increase of positive cases yet with 16 ' \
         'new cases reported over the weekend and 12 on Monday.',
 
-        'officials confirm 692 coronavirus cases as hospitalizations ' \
-        'continue to decline',
+        # 'officials confirm 692 coronavirus cases as hospitalizations ' \
+        # 'continue to decline',
 
-        'decreasing the number of confirmed cases from 19 to 18.',
+        # 'decreasing the number of confirmed cases from 19 to 18.',
 
-        'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ',
+        # 'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ',
 
-        'The announcement, of this sixth case in Floyd County comes '      \
-        'alongside reports from Gov. Andy Beshear on April 21 that there ' \
-        'are 3,192 positive cases in the state, as well as 171 deaths '    \
-        'from the virus.',
+        # 'The announcement, of this sixth case in Floyd County comes '      \
+        # 'alongside reports from Gov. Andy Beshear on April 21 that there ' \
+        # 'are 3,192 positive cases in the state, as well as 171 deaths '    \
+        # 'from the virus.',
 
         # 'Contra Costa also reported that its total number of coronavirus ' \
         # 'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
@@ -747,6 +805,15 @@ if __name__ == '__main__':
         # 'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
         # 'deaths, 621 active cases (including eight in Richland County, '  \
         # 'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
+
+        # 'Wednesdays totals include 21 new cases in Cass County; five new ' \
+        # 'cases in Stutsman County; two new cases in Burleigh and Ransom '  \
+        # 'counties and one new case each in Grand Forks, Walsh and Ward '   \
+        # 'counties.',
+
+        # ' Coronavirus cases are surging past 5 million worldwide, with '   \
+        # 'most of the new cases coming from just four countries: Russia, '  \
+        # 'Brazil, India, and the United States.',
     ]
 
     for i, sentence in enumerate(SENTENCES):
