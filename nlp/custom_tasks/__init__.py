@@ -10,3 +10,5 @@ from .pft_value_extraction import *
 from .TNMStagerTask import TNMStagerTask
 from .CQLExecutionTask import CQLExecutionTask
 from .PregnancyTask import PregnancyTask
+from .O2SaturationTask import O2SaturationTask
+from .CovidTask import CovidTask
