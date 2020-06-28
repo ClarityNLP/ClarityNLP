@@ -13,29 +13,43 @@ import json
 import argparse
 from collections import namedtuple
 
-if __name__ == '__main__':
-    # for interactive testing only
-    match = re.search(r'nlp/', sys.path[0])
-    if match:
-        nlp_dir = sys.path[0][:match.end()]
-        sys.path.append(nlp_dir)
-    else:
-        print('\n*** covid_finder.py: nlp dir not found ***\n')
-        sys.exit(0)
-
-#try:
+try:
     # for normal operation via NLP pipeline
-    # from algorithms.finder.date_finder import run as \
-    #     run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    # from algorithms.finder.time_finder import run as \
-    #     run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    #from algorithms.finder import finder_overlap as overlap
-#except:
-from date_finder import run as run_date_finder, \
-    DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-from time_finder import run as run_time_finder, \
-    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
-import finder_overlap as overlap    
+    from algorithms.finder.date_finder import run as \
+        run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from algorithms.finder.time_finder import run as \
+        run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from algorithms.finder import finder_overlap as overlap
+    
+except:
+    this_module_dir = sys.path[0]
+    pos = this_module_dir.find('/nlp')
+    if -1 != pos:
+        nlp_dir = this_module_dir[:pos+4]
+        finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+        sys.path.append(finder_dir)    
+    from date_finder import run as run_date_finder, \
+        DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from time_finder import run as run_time_finder, \
+        TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+    import finder_overlap as overlap
+
+# if __name__ == '__main__':
+#     # for interactive testing only
+#     match = re.search(r'nlp/', sys.path[0])
+#     if match:
+#         nlp_dir = sys.path[0][:match.end()]
+#         sys.path.append(nlp_dir)
+#     else:
+#         print('\n*** covid_finder.py: nlp dir not found ***\n')
+#         sys.exit(0)
+
+# from date_finder import run as run_date_finder, \
+#     DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+# from time_finder import run as run_time_finder, \
+#     TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+# import finder_overlap as overlap    
+
 
 # default value for all fields
 EMPTY_FIELD = None
@@ -476,7 +490,7 @@ def _cleanup(sentence):
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
-    print('sentence after cleanup: "{0}"'.format(sentence))
+    #print('sentence after cleanup: "{0}"'.format(sentence))
     return sentence
 
 
@@ -872,6 +886,48 @@ if __name__ == '__main__':
         'In fact, the Bear River Health District has the third highest '   \
         'amount of total cases in the state.',
 
+        # new errors
+
+        # returns 9
+        'nearly 300 new covid-19 cases 9 more deaths',
+
+        # returns 9
+        'on sunday the indiana state department of health announced '      \
+        '397 new covid-19 cases and 9 additional deaths.',
+
+        # returns 10
+        'as the number of cases of the coronavirus are flattening '        \
+        'locally greene county offices will reopen on monday to a '        \
+        'regular volume of traffic.',
+
+        # returns 2 only, misses 48
+        'greene county now has two active cases with 48 reported since '   \
+        'the pandemic began',
+
+        # returns 0
+        'according tothe center for systems science and engineering at '   \
+        'johns hopkins university there have been more than 6,200,00 '     \
+        'confirmed cases worldwide with more than 2,660,000 recoveries '   \
+        'and more than 372,000 deaths. 2020',
+
+        # misses 1,373
+        'officials announced 16 new covid-19 cases on sunday bringing '    \
+        'the countywide total to 1,373.',
+
+        # returns 6
+        'after 6 days of no new covid-19 cases in st. louis county '       \
+        'public health director says its too soon to make conclusions '    \
+        'numbers as of thursday .',
+
+        # captures 'coronavirus cases 9'
+        'indiana reports 292 new coronavirus cases 9 additional deaths '   \
+        'indiana health officials nearly 300 new coronavirus cases '       \
+        'monday along with 9 additional deaths related to the virus.',
+
+        # captures 29
+        'while african-americans make up 14 percent of the states '        \
+        'population they represented 29 percent of coronavirus cases.'
+        
         # TBD
         # 'Two residents at Fairhaven in Sykesville, one resident at '       \
         # 'Flying Colors of Success in Westminster and two staff members '   \
