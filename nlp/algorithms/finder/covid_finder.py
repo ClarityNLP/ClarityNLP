@@ -13,42 +13,42 @@ import json
 import argparse
 from collections import namedtuple
 
-try:
-    # for normal operation via NLP pipeline
-    from algorithms.finder.date_finder import run as \
-        run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    from algorithms.finder.time_finder import run as \
-        run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    from algorithms.finder import finder_overlap as overlap
+# try:
+#     # for normal operation via NLP pipeline
+#     from algorithms.finder.date_finder import run as \
+#         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     from algorithms.finder.time_finder import run as \
+#         run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     from algorithms.finder import finder_overlap as overlap
     
-except:
-    this_module_dir = sys.path[0]
-    pos = this_module_dir.find('/nlp')
-    if -1 != pos:
-        nlp_dir = this_module_dir[:pos+4]
-        finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
-        sys.path.append(finder_dir)    
-    from date_finder import run as run_date_finder, \
-        DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    from time_finder import run as run_time_finder, \
-        TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
-    import finder_overlap as overlap
+# except:
+#     this_module_dir = sys.path[0]
+#     pos = this_module_dir.find('/nlp')
+#     if -1 != pos:
+#         nlp_dir = this_module_dir[:pos+4]
+#         finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+#         sys.path.append(finder_dir)    
+#     from date_finder import run as run_date_finder, \
+#         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     from time_finder import run as run_time_finder, \
+#         TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+#     import finder_overlap as overlap
 
-# if __name__ == '__main__':
-#     # for interactive testing only
-#     match = re.search(r'nlp/', sys.path[0])
-#     if match:
-#         nlp_dir = sys.path[0][:match.end()]
-#         sys.path.append(nlp_dir)
-#     else:
-#         print('\n*** covid_finder.py: nlp dir not found ***\n')
-#         sys.exit(0)
+if __name__ == '__main__':
+    # for interactive testing only
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** covid_finder.py: nlp dir not found ***\n')
+        sys.exit(0)
 
-# from date_finder import run as run_date_finder, \
-#     DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-# from time_finder import run as run_time_finder, \
-#     TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
-# import finder_overlap as overlap    
+from date_finder import run as run_date_finder, \
+    DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#from time_finder import run as run_time_finder, \
+#    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+import finder_overlap as overlap    
 
 
 # default value for all fields
@@ -90,6 +90,8 @@ _TRACE = False
 
 _str_word = r'[-a-z]+\.?\s?'
 _str_words = r'(' + _str_word + r'){0,5}?'
+
+_str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
 # words, possibly hyphenated or abbreviated, nongreedy match
 #_str_words = r'([-a-z\s.]+?)?'
@@ -133,15 +135,6 @@ _regex_tnum_90s   = re.compile(_str_tnum_90s)
 _regex_tnum_100s  = re.compile(_str_tnum_100s)
 _regex_hundreds   = re.compile(_str_tnum_digit + r'[-\s]?hundred[-\s]?', re.IGNORECASE)
 
-# 2.4 million, 
-
-# enumerations
-_str_enum = r'(first|second|third|fourth|fifth|sixth|seventh|eighth|' +\
-    r'ninth|tenth|eleventh|twelfth|'                                  +\
-    r'(thir|four|fif|six|seven|eight|nine)teenth|'                    +\
-    r'1[0-9]th|[2-9]0th|[4-9]th|3rd|2nd|1st|'                         +\
-    r'(twen|thir|for|fif|six|seven|eigh|nine)tieth)'
-
 # used for conversions from tnum to int
 _tnum_to_int_map = {
     'one':1, 'two':2, 'three':3, 'four':4, 'five':5, 'six':6, 'seven':7,
@@ -149,8 +142,16 @@ _tnum_to_int_map = {
     'fourteen':14, 'fifteen':15, 'sixteen':16, 'seventeen':17, 'eighteen':18,
     'nineteen':19, 'twenty':20, 'thirty':30, 'forty':40, 'fifty':50,
     'sixty':60, 'seventy':70, 'eighty':80, 'ninety':90,
-    'zero':0
+    'zero':0,
 }
+
+# enumerations
+# 'no' is needed for "no new cases" and similar
+_str_enum = r'(first|second|third|fourth|fifth|sixth|seventh|eighth|' +\
+    r'ninth|tenth|eleventh|twelfth|'                                  +\
+    r'(thir|four|fif|six|seven|eight|nine)teenth|'                    +\
+    r'1[0-9]th|[2-9]0th|[4-9]th|3rd|2nd|1st|'                         +\
+    r'(twen|thir|for|fif|six|seven|eigh|nine)tieth)'
 
 # used for conversions from enum to int
 _enum_to_int_map = {
@@ -196,7 +197,7 @@ def _make_num_regex(a='int', b='tnum', c='enum'):
         r'(' + _str_enum + r'(?= case)' + r'|'               +\
                _str_enum + r'(?= (confirmed|positive) case)' +\
         r'))'                                                +\
-        r')'
+        r')(?!%)(?! %)(?! percent)(?! pct)'
     return _str_num
 
 # regex to recognize either a range or a single integer
@@ -208,6 +209,11 @@ _str_num = r'(' + r'(\bfrom\s)?' +\
 
 _str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
     r'active|more|(brand[-\s]?)?new)\s?'
+
+# time durations
+_str_duration = r'(?<!\d)\d+\s(year|yr\.?|month|mo\.?|week|wk\.?|day|' +\
+    r'hour|hr\.?|minute|min\.?|second|sec\.?)s?'
+_regex_duration = re.compile(_str_duration, re.IGNORECASE)
 
 # covid case statements
 # _str_covid0 = r'(covid([-\s]?19)?|(corona)?virus)\s?'
@@ -369,7 +375,7 @@ _str_case6 = r'(total|number\sof)\s' + _str_words + r'cases?\s' + _str_words + _
 _regex_case6 = re.compile(_str_case6, re.IGNORECASE)
 
 # <coronavirus> cases? <words> <num>
-_str_case7 = _str_coronavirus + r'cases?\s' + _str_words + _str_num
+_str_case7 = _str_coronavirus + r'cases?\s' + _str_one_or_more_words + _str_num
 _regex_case7 = re.compile(_str_case7, re.IGNORECASE)
 
 # cases (at|to(\sover)?)\s <num>
@@ -426,6 +432,28 @@ def _erase(sentence, candidates):
     
 
 ###############################################################################
+def _erase_durations(sentence):
+    """
+    Erase expressions such as 10 minutes, 4 days, etc.
+    """
+
+    segments = []
+    iterator = _regex_duration.finditer(sentence)
+    for match in iterator:
+        segments.append( (match.start(), match.end()) )
+
+    for start,end in segments:
+        if _TRACE:
+            print('\terasing duration "{0}"'.format(sentence[start:end]))
+            s1 = sentence[:start]
+            s2 = ' '*(end - start)
+            s3 = sentence[end:]
+            sentence = s1 + s2 + s3
+
+    return sentence
+
+
+###############################################################################
 def _erase_dates(sentence):
     """
     Find date expressions in the sentence and erase them.
@@ -468,6 +496,7 @@ def _cleanup(sentence):
     sentence = sentence.lower()
 
     sentence = _erase_dates(sentence)
+    sentence = _erase_durations(sentence)
     
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
@@ -634,6 +663,8 @@ def _regex_match(sentence, regex_list):
             index += 1
         print()
 
+    # find 
+        
     # keep the SHORTEST of any overlapping matches, to minimize chances
     # of capturing junk
     pruned_candidates = overlap.remove_overlap(candidates,
@@ -919,14 +950,14 @@ if __name__ == '__main__':
         'public health director says its too soon to make conclusions '    \
         'numbers as of thursday .',
 
-        # captures 'coronavirus cases 9'
-        'indiana reports 292 new coronavirus cases 9 additional deaths '   \
-        'indiana health officials nearly 300 new coronavirus cases '       \
-        'monday along with 9 additional deaths related to the virus.',
+        # # captures 'coronavirus cases 9' (fixed)
+        # 'indiana reports 292 new coronavirus cases 9 additional deaths '   \
+        # 'indiana health officials nearly 300 new coronavirus cases '       \
+        # 'monday along with 9 additional deaths related to the virus.',
 
-        # captures 29
-        'while african-americans make up 14 percent of the states '        \
-        'population they represented 29 percent of coronavirus cases.'
+        # # captures 29 (fixed)
+        # 'while african-americans make up 14 percent of the states '        \
+        # 'population they represented 29 percent of coronavirus cases.'
         
         # TBD
         # 'Two residents at Fairhaven in Sykesville, one resident at '       \
