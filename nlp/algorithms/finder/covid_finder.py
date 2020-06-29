@@ -72,9 +72,6 @@ COVID_TUPLE_FIELDS = [
 ]
 CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 
-_STR_THOUSAND = 'thousand'
-_STR_MILLION  = 'million'
-
 
 ###############################################################################
 
@@ -84,6 +81,29 @@ _MODULE_NAME   = 'covid_finder.py'
 
 # set to True to enable debug output
 _TRACE = False
+
+_STR_THOUSAND = 'thousand'
+_STR_MILLION  = 'million'
+
+# throwaway words
+_THROWAWAY_SET = {
+    'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your',
+    'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she',
+    'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their',
+    'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that',
+    'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an',
+    'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of',
+    'at', 'by', 'for', 'with', 'against', 'between', 'into', 'through',
+    'during', 'before', 'after', 'above', 'below', 'from', 'up', 'down',
+    'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then',
+    'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any',
+    'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no',
+    'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can',
+    'will', 'just', 'dont', 'should', 'shouldve', 'now', 'arent', 'couldnt',
+    'didnt', 'doesnt', 'hadnt', 'hasnt', 'havent', 'isnt', 'shouldnt',
+    'wasnt', 'werent', 'wont', 'wouldnt'
+}
 
 # connectors between portions of the regexes below; either symbols or words
 #_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.@^]+|\s[a-z\s]+)+)?'
@@ -98,16 +118,16 @@ _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
 
 # textual numbers and related regexes
-_str_tnum_digit = r'(one|two|three|four|five|six|seven|eight|nine|zero)'
-_str_tnum_10s = r'(ten|eleven|twelve|(thir|four|fif|six|seven|eight|nine)teen)'
-_str_tnum_20s  = r'(twenty[-\s]?' + _str_tnum_digit + r'|twenty)'
-_str_tnum_30s  = r'(thirty[-\s]?' + _str_tnum_digit + r'|thirty)'
-_str_tnum_40s  = r'(forty[-\s]?' + _str_tnum_digit + r'|forty)'
-_str_tnum_50s  = r'(fifty[-\s]?' + _str_tnum_digit + r'|fifty)'
-_str_tnum_60s  = r'(sixty[-\s]?' + _str_tnum_digit + r'|sixty)'
-_str_tnum_70s  = r'(seventy[-\s]?' + _str_tnum_digit + r'|seventy)'
-_str_tnum_80s  = r'(eighty[-\s]?' + _str_tnum_digit + r'|eighty)'
-_str_tnum_90s  = r'(ninety[-\s]?' + _str_tnum_digit + r'|ninety)'
+_str_tnum_digit = r'\b(one|two|three|four|five|six|seven|eight|nine|zero)'
+_str_tnum_10s  = r'\b(ten|eleven|twelve|(thir|four|fif|six|seven|eight|nine)teen)'
+_str_tnum_20s  = r'\b(twenty[-\s]?' + _str_tnum_digit + r'|twenty)'
+_str_tnum_30s  = r'\b(thirty[-\s]?' + _str_tnum_digit + r'|thirty)'
+_str_tnum_40s  = r'\b(forty[-\s]?' + _str_tnum_digit + r'|forty)'
+_str_tnum_50s  = r'\b(fifty[-\s]?' + _str_tnum_digit + r'|fifty)'
+_str_tnum_60s  = r'\b(sixty[-\s]?' + _str_tnum_digit + r'|sixty)'
+_str_tnum_70s  = r'\b(seventy[-\s]?' + _str_tnum_digit + r'|seventy)'
+_str_tnum_80s  = r'\b(eighty[-\s]?' + _str_tnum_digit + r'|eighty)'
+_str_tnum_90s  = r'\b(ninety[-\s]?' + _str_tnum_digit + r'|ninety)'
 _str_tnum_100s = _str_tnum_digit + r'[-\s]hundred[-\s](and[-\s])?' +\
     r'(' +\
     _str_tnum_90s + r'|' + _str_tnum_80s + r'|' + _str_tnum_70s + r'|' +\
@@ -171,7 +191,7 @@ _enum_to_int_map = {
 }
 
 # integers, possibly including commas
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|\d+)'
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<!,)\d+)'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
 _str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
@@ -200,19 +220,22 @@ def _make_num_regex(a='int', b='tnum', c='enum'):
         r')(?!%)(?! %)(?! percent)(?! pct)'
     return _str_num
 
+#r'(' + r'\b(?P<no>no)\b' + r'|'
+
 # regex to recognize either a range or a single integer
+# also recognize 'no' for situations such as "no new cases of covid-19"
 _str_num = r'(' + r'(\bfrom\s)?' +\
     _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
     r'\s?to\s?' +\
     _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
-    r'|' + _str_float_word + r'|' + _make_num_regex() + r')'
+    r'|' + r'\b(?P<no>no)\b' + r'|' +  _str_float_word + r'|' + _make_num_regex() + r')'
 
 _str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
     r'active|more|(brand[-\s]?)?new)\s?'
 
 # time durations
 _str_duration = r'(?<!\d)\d+\s(year|yr\.?|month|mo\.?|week|wk\.?|day|' +\
-    r'hour|hr\.?|minute|min\.?|second|sec\.?)s?'
+    r'hour|hr\.?|minute|min\.?|second|sec\.?)(?![a-z])s?'
 _regex_duration = re.compile(_str_duration, re.IGNORECASE)
 
 # covid case statements
@@ -235,14 +258,14 @@ _str_death_or_hosp = r'(' + _str_death + r'|' + _str_hosp + r')'
 
 """
 
-# 1. <num> <words> <coronavirus> cases?
+# <num> <words> <coronavirus> cases?
 <num> covid-19 cases
 <num> coronavirus cases
 <num> new covid-19 cases
 <num> confirmed coronavirus cases
 <num> new <location> covid-19 cases
 
-# 2. <num> <words> cases? <words> <coronavirus>
+# <num> <words> cases? <words> <coronavirus>
 <num> cases of covid-19
 <num> new cases of covid-19
 <num> more cases of covid-19
@@ -255,7 +278,7 @@ _str_death_or_hosp = r'(' + _str_death + r'|' + _str_hosp + r')'
 <num> confirmed cases of the virus
 <num> confirmed cases of the coronavirus
 
-# 3. <num> <words> cases?
+# <num> <words> cases?
 <num> cases
 <num> new cases
 <num> total cases
@@ -270,10 +293,10 @@ _str_death_or_hosp = r'(' + _str_death + r'|' + _str_hosp + r')'
 <num> total confirmed cases
 <num> confirmed and probable cases
 
-# 4. <num> <words> with <coronavirus>
+# <num> <words> with <coronavirus>
 <num> employees with coronavirus
 
-# 5. <num> <words> positive for <words> <coronavirus>
+# <num> <words> positive for <words> <coronavirus>
 <num> test positive for covid-19
 <num> have tested positive for the virus
 <num> <words> tested positive for the coronavirus
@@ -281,15 +304,15 @@ _str_death_or_hosp = r'(' + _str_death + r'|' + _str_hosp + r')'
 <num> additional staff members are positive for covid-19
 <num> people had tested positive for the novel coronavirus
 
-# 6. <num> <words> tested positive
+# <num> <words> tested positive
 <num> inmates have tested positive
 
-# 7. (total|number of) <words> <coronavirus> cases? <words> <num>
+# (total|number of) <words> <coronavirus> cases? <words> <num>
 total number of coronavirus cases had reached <num>
 total number of covid-19 cases in <location> to <num>
       number of COVID cases recorded in a one day was <num>
 
-# 8. <coronavirus> cases? <words> <num>
+# <coronavirus> cases? <words> <num>
 coronavirus cases (<num>)
 covid-19 cases below <num>
 covid-19 cases up to <num>
@@ -299,18 +322,18 @@ coronavirus cases rise to <num>
 coronavirus case total tops <num>
 covid-19 cases in <location> increased to <num>
 
-# 9. (total|number of) <words> cases? <words> <num>
+# (total|number of) <words> cases? <words> <num>
 total number of positive cases <words> <num>
 total of positive cases has been updated to <num>
 total of lab-confirmed cases in <location> is now <num>
 total tally of cases in <location> since the pandemic began to <num>
 
-# 10. cases <words> <num>
+# cases <words> <num>
 cases-<num>
 cases at <num>
 cases balloon to over <num>
 
-# 11. total <words> <num>
+# total <words> <num>
 total of <num>
 brings our total to <num>
 
@@ -375,7 +398,7 @@ _str_case6 = r'(total|number\sof)\s' + _str_words + r'cases?\s' + _str_words + _
 _regex_case6 = re.compile(_str_case6, re.IGNORECASE)
 
 # <coronavirus> cases? <words> <num>
-_str_case7 = _str_coronavirus + r'cases?\s' + _str_one_or_more_words + _str_num
+_str_case7 = _str_coronavirus + r'cases?\s' + r'(?P<words>' + _str_one_or_more_words + r')' + _str_num
 _regex_case7 = re.compile(_str_case7, re.IGNORECASE)
 
 # cases (at|to(\sover)?)\s <num>
@@ -432,6 +455,18 @@ def _erase(sentence, candidates):
     
 
 ###############################################################################
+def _erase_segment(sentence, start, end):
+    """
+    Replace sentence[start:end] with whitespace.
+    """
+    
+    s1 = sentence[:start]
+    s2 = ' '*(end - start)
+    s3 = sentence[end:]
+    return s1 + s2 + s3
+    
+
+###############################################################################
 def _erase_durations(sentence):
     """
     Erase expressions such as 10 minutes, 4 days, etc.
@@ -444,11 +479,8 @@ def _erase_durations(sentence):
 
     for start,end in segments:
         if _TRACE:
-            print('\terasing duration "{0}"'.format(sentence[start:end]))
-            s1 = sentence[:start]
-            s2 = ' '*(end - start)
-            s3 = sentence[end:]
-            sentence = s1 + s2 + s3
+            print('\terasing duration "{0}"'.format(sentence[start:end]))    
+        sentence = _erase_segment(sentence, start, end)
 
     return sentence
 
@@ -477,10 +509,7 @@ def _erase_dates(sentence):
         if not re.match(r'\A\d+\Z', date.text):
             if _TRACE:
                 print('\terasing date "{0}"'.format(date.text))
-            s1 = sentence[:start]
-            s2 = ' '*(end - start)
-            s3 = sentence[end:]
-            sentence = s1 + s2 + s3
+            sentence = _erase_segment(sentence, start, end)
 
     return sentence
 
@@ -631,9 +660,48 @@ def _regex_match(sentence, regex_list):
     
     candidates = []
     for i, regex in enumerate(regex_list):
+        # finditer finds non-overlapping matches
         iterator = regex.finditer(sentence)
         for match in iterator:
             match_text = match.group().strip()
+
+            # special handling for _regex_case2
+            if _regex_case2 == regex:
+                # check for smaller overlapping match within the current one
+                offset = match_text.find(' ')
+                if -1 != offset:
+                    sentence2 = sentence[match.start() + offset:]
+                    match2 = _regex_case2.search(sentence2)
+                    if match2:
+                        if _TRACE:
+                            print('_regex_case2 override: "{0}"'.
+                                  format(match2.group()))
+                        match = match2
+
+            # special handling for _regex_case7
+            if _regex_case7 == regex:
+                # check 'words' capture for throwaway words
+                words = [w.strip() for w in match.group('words').split()]
+                last_word = words[-1]
+                if last_word in _THROWAWAY_SET:
+                    if _TRACE:
+                        print('ignoring match "{0}"; the final word in the '
+                              'words capture is a throwaway word')
+                    continue
+
+                # all_throwaway = True
+                # for w in words:
+                #     if w not in _THROWAWAY_SET:
+                #         all_throwaway = False
+                #         break
+
+                # # ignore this match if all throwaway words
+                # if all_throwaway:
+                #     if _TRACE:
+                #         print('ignoring match "{0}"; the "words" capture ' \
+                #               'contains only throwaway words'.
+                #               format(match_text))
+                #     continue
 
             start = match.start()
             end   = start + len(match_text)
@@ -733,6 +801,8 @@ def run(sentence):
             
             # convert number text captures
             val = None
+            if 'no' == k:
+                val = 0
             if 'int_to' == k or 'int' == k:
                 val = _to_int(v)
             elif 'tnum_to' == k or 'tnum' == k:
@@ -884,9 +954,6 @@ if __name__ == '__main__':
         'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
         'from the day before.',
 
-        'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
-        'to 77, Blood Donors Needed',
-
         'The North Dakota Department of Health confirmed Friday 40 ' \
         'additional cases of COVID-19 out of 2,894 total tests completed',
 
@@ -912,58 +979,53 @@ if __name__ == '__main__':
         'Carroll County surpasses 1,000 coronavirus cases - Carroll '      \
         'County Times Carroll County surpassed 1,000 cases of COVID-19 '   \
         'on Wednesday, according to the health department.',
+
+        'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
+        'to 77, Blood Donors Needed',        
+
+        
+        # new errors
+
+        # returns 9 (fixed)
+        'on sunday the indiana state department of health announced '      \
+        '397 new covid-19 cases and 9 additional deaths.',
+
+        # returns 6 (fixed)
+        'after 6 days of no new covid-19 cases in st. louis county '       \
+        'public health director says its too soon to make conclusions '    \
+        'numbers as of thursday .',
+
+        # captures 'coronavirus cases 9' (fixed)
+        'indiana reports 292 new coronavirus cases 9 additional deaths '   \
+        'indiana health officials nearly 300 new coronavirus cases '       \
+        'monday along with 9 additional deaths related to the virus.',
+
+        # captures 29 (fixed, should return nothing)
+        'while african-americans make up 14 percent of the states '        \
+        'population they represented 29 percent of coronavirus cases.'
+        
+        # returns 0 (fixed: 6,200,00 is an invalid integer, should return nothing)
+        'according tothe center for systems science and engineering at '   \
+        'johns hopkins university there have been more than 6,200,00 '     \
+        'confirmed cases worldwide with more than 2,660,000 recoveries '   \
+        'and more than 372,000 deaths. 2020',
+        
+        # returns 10 (fixed, should return nothing)
+        'as the number of cases of the coronavirus are flattening '        \
+        'locally greene county offices will reopen on monday to a '        \
+        'regular volume of traffic.',
         
         # do NOT capture anything here
         'In fact, the Bear River Health District has the third highest '   \
         'amount of total cases in the state.',
 
-        # new errors
 
-        # returns 9
-        'nearly 300 new covid-19 cases 9 more deaths',
-
-        # returns 9
-        'on sunday the indiana state department of health announced '      \
-        '397 new covid-19 cases and 9 additional deaths.',
-
-        # returns 10
-        'as the number of cases of the coronavirus are flattening '        \
-        'locally greene county offices will reopen on monday to a '        \
-        'regular volume of traffic.',
-
-        # returns 2 only, misses 48
-        'greene county now has two active cases with 48 reported since '   \
-        'the pandemic began',
-
-        # returns 0
-        'according tothe center for systems science and engineering at '   \
-        'johns hopkins university there have been more than 6,200,00 '     \
-        'confirmed cases worldwide with more than 2,660,000 recoveries '   \
-        'and more than 372,000 deaths. 2020',
-
-        # misses 1,373
-        'officials announced 16 new covid-19 cases on sunday bringing '    \
-        'the countywide total to 1,373.',
-
-        # returns 6
-        'after 6 days of no new covid-19 cases in st. louis county '       \
-        'public health director says its too soon to make conclusions '    \
-        'numbers as of thursday .',
-
-        # # captures 'coronavirus cases 9' (fixed)
-        # 'indiana reports 292 new coronavirus cases 9 additional deaths '   \
-        # 'indiana health officials nearly 300 new coronavirus cases '       \
-        # 'monday along with 9 additional deaths related to the virus.',
-
-        # # captures 29 (fixed)
-        # 'while african-americans make up 14 percent of the states '        \
-        # 'population they represented 29 percent of coronavirus cases.'
-        
         # TBD
         # 'Two residents at Fairhaven in Sykesville, one resident at '       \
         # 'Flying Colors of Success in Westminster and two staff members '   \
         # 'at Pleasant View Nursing Home in Mount Airy who live in Carroll ' \
-        # 'tested positive, pushing the facilities total to 559.',        
+        # 'tested positive, pushing the facilities total to 559.',
+        
     ]
 
     for i, sentence in enumerate(SENTENCES):
