@@ -105,17 +105,11 @@ _THROWAWAY_SET = {
     'wasnt', 'werent', 'wont', 'wouldnt'
 }
 
-# connectors between portions of the regexes below; either symbols or words
-#_str_cond = r'(?P<cond>(~=|>=|<=|[-/:<>=~\s.@^]+|\s[a-z\s]+)+)?'
-
+# a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
+
 _str_words = r'(' + _str_word + r'){0,5}?'
-
 _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
-
-# words, possibly hyphenated or abbreviated, nongreedy match
-#_str_words = r'([-a-z\s.]+?)?'
-
 
 # textual numbers and related regexes
 _str_tnum_digit = r'\b(one|two|three|four|five|six|seven|eight|nine|zero)'
@@ -220,37 +214,46 @@ def _make_num_regex(a='int', b='tnum', c='enum'):
         r')(?!%)(?! %)(?! percent)(?! pct)'
     return _str_num
 
-#r'(' + r'\b(?P<no>no)\b' + r'|'
-
 # regex to recognize either a range or a single integer
 # also recognize 'no' for situations such as "no new cases of covid-19"
 _str_num = r'(' + r'(\bfrom\s)?' +\
     _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
     r'\s?to\s?' +\
     _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
-    r'|' + r'\b(?P<no>no)\b' + r'|' +  _str_float_word + r'|' + _make_num_regex() + r')'
+    r'|' + r'\b(?P<no>no)\b' + r'|' +  _str_float_word    +\
+    r'|' + _make_num_regex() + r')'
 
-_str_qual = r'(total|(lab(oratory)?[-\s])?confirmed|probable|suspected|' \
-    r'active|more|(brand[-\s]?)?new)\s?'
 
 # time durations
 _str_duration = r'(?<!\d)\d+\s(year|yr\.?|month|mo\.?|week|wk\.?|day|' +\
     r'hour|hr\.?|minute|min\.?|second|sec\.?)(?![a-z])s?'
 _regex_duration = re.compile(_str_duration, re.IGNORECASE)
 
-# covid case statements
-# _str_covid0 = r'(covid([-\s]?19)?|(corona)?virus)\s?'
-# _str_covid1 = _str_covid0 + _str_words + r'cases?\s?'
-# _str_covid2 = r'cases?\sof\s' + _str_covid0
-# _str_covid3 = r'cases?'
-# _str_covid = r'(' + _str_covid1 + r'|' + _str_covid2 + r'|' +\
-#     _str_covid0 + r'|' + _str_covid3 + r')'
+# clock times
+
+# am or pm indicator
+_str_am_pm = r'[ap]\.?m\.?'
+# time zone, either standard time or daylight time
+_str_tz = r'(ak|ha|e|c|m|p|h)[sd]t\b'
+_str_clock = r'(?<!\d)(2[0-3]|1[0-9]|0[0-9])[-:\s][0-5][0-9]\s?' +\
+    _str_am_pm + r'\s?' + _str_tz
+_regex_clock = re.compile(_str_clock, re.IGNORECASE)
+
 
 _str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus)\s?'
 
 _str_death = r'(deaths?|fatalit(ies|y))'
 _str_hosp  = r'(hospitalizations?)'
 _str_death_or_hosp = r'(' + _str_death + r'|' + _str_hosp + r')'
+
+# names of groups of people who might become infected
+_str_who = r'\b(babies|baby|boy|captive|child|children|citizen|client|'      +\
+    r'convict|customer|detainee|employee|girl|guest|holidaymaker|'           +\
+    r'individual|infant|inhabitant|inmate|internee|laborer|man|men|native|'  +\
+    r'national|neighbor|newborn|occupant|passenger|patient|patron|people|'   +\
+    r'personnel|prisoner|regular|resident|shopper|staff|tourist|traveler|'   +\
+    r'victim|visitor|voter|woman|women|worker)s?\s?'
+_regex_who = re.compile(_str_who, re.IGNORECASE)
 
 #
 # regexes to find case reports
@@ -344,37 +347,14 @@ number of confirmed cases from <num1> to <num2>
 <num1> new cases in <location1> and <num2> in <location2>
 """
 
-# # find '97 confirmed cases', 16 new cases,  and similar
-# _str_case0 = _str_num + r'\s?' + _str_qual + _str_words + _str_covid
-# _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
-
-# # find 'the number of confirmed COVID-19 cases increased to 12' and similar
-# # make sure the number is not followed by 'death' or 'hospitalization'
-# # and related words
-# #_str_case1 = _str_words + _str_covid + _str_words + _make_num_regex() +\
-# #    r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
-# _str_case1 = _str_words + _str_covid + _str_words + _str_num +\
-#     r'(?!\d)(?!\s?{0})'.format(_str_death_or_hosp)
-# _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
-
-# # find 'cumulative total of 137 cases of COVID-19' and similar
-# _str_case2 = _str_words + _str_num + _str_words + _str_covid
-# _regex_case2 = re.compile(_str_case2, re.IGNORECASE)
-
-# # find 'two employees test positive for COVID-19' similar
-# _str_case3 = _str_num + r'\s?' + _str_words + r'positive\sfor\s' + _str_covid
-# _regex_case3 = re.compile(_str_case3, re.IGNORECASE)
-
-# # find '30 coronavirus cases' and similar
-# _str_case4 = _str_num + r'\s?' + _str_covid
-# _regex_case4 = re.compile(_str_case4, re.IGNORECASE)
-
 # <num> <words> positive for <words> <coronavirus>
-_str_case0 = _str_num + r'\s' + _str_words + r'positive\sfor\s' + _str_words + _str_coronavirus
+_str_case0 = _str_num + r'\s' + r'(?P<words>' + _str_words + r')' +\
+    r'(?<!\bnot tested )positive\sfor\s' + _str_words + _str_coronavirus
 _regex_case0 = re.compile(_str_case0, re.IGNORECASE)
 
 # <num> <words> tested positive
-_str_case1 = _str_num + r'\s' + _str_words + r'tested\spositive'
+_str_case1 = _str_num + r'\s' + r'(?P<words>' + _str_words + r')' +\
+    r'(?<!\bnot )tested\spositive'
 _regex_case1 = re.compile(_str_case1, re.IGNORECASE)
 
 # <num> <words> <coronavirus> cases?
@@ -386,7 +366,8 @@ _str_case3 = _str_num + r'\s' + _str_words + r'cases?\s' + _str_words + _str_cor
 _regex_case3 = re.compile(_str_case3, re.IGNORECASE)
 
 # <num> <words> with <coronavirus>
-_str_case4 = _str_num + r'\s' + _str_words + r'with\s' + _str_coronavirus
+#_str_case4 = _str_num + r'\s' + _str_words + r'with\s' + _str_coronavirus
+_str_case4 = _str_num + r'\s' + _str_who + r'with\s' + _str_coronavirus
 _regex_case4 = re.compile(_str_case4, re.IGNORECASE)
 
 # (total|number of) <words> <coronavirus> cases? <words> <num>
@@ -467,19 +448,25 @@ def _erase_segment(sentence, start, end):
     
 
 ###############################################################################
-def _erase_durations(sentence):
+def _erase_time_expressions(sentence):
     """
-    Erase expressions such as 10 minutes, 4 days, etc.
     """
 
     segments = []
+    
+    # erase expressions such as 10 minutes, 4 days, etc.
     iterator = _regex_duration.finditer(sentence)
     for match in iterator:
         segments.append( (match.start(), match.end()) )
 
+    # erase clock times
+    iterator = _regex_clock.finditer(sentence)
+    for match in iterator:
+        segments.append ( (match.start(), match.end()) )
+
     for start,end in segments:
         if _TRACE:
-            print('\terasing duration "{0}"'.format(sentence[start:end]))    
+            print('\terasing time expression "{0}"'.format(sentence[start:end]))    
         sentence = _erase_segment(sentence, start, end)
 
     return sentence
@@ -511,6 +498,20 @@ def _erase_dates(sentence):
                 print('\terasing date "{0}"'.format(date.text))
             sentence = _erase_segment(sentence, start, end)
 
+    # look for constructs such as 6-24 and similar
+    _str_month_day = r'(?<!\d)(0?[0-9]|1[0-2])[-/]([0-2][0-9]|3[01])'
+    _regex_month_day = re.compile(_str_month_day)
+
+    segments = []
+    iterator = _regex_month_day.finditer(sentence)
+    for match in iterator:
+        segments.append( (match.start(), match.end()))
+    for start,end in segments:
+        if _TRACE:
+            print('\terasing month-day expression "{0}"'.
+                  format(sentence[start:end]))
+        sentence = _erase_segment(sentence, start, end)
+            
     return sentence
 
             
@@ -525,7 +526,7 @@ def _cleanup(sentence):
     sentence = sentence.lower()
 
     sentence = _erase_dates(sentence)
-    sentence = _erase_durations(sentence)
+    sentence = _erase_time_expressions(sentence)
     
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
@@ -665,6 +666,19 @@ def _regex_match(sentence, regex_list):
         for match in iterator:
             match_text = match.group().strip()
 
+            # special handling for _regex_case0 and _regex_case1
+            if _regex_case0 == regex or _regex_case1 == regex:
+                words = match.group('words').strip()
+                # remove 'tested' or 'test'
+                words = re.sub(r'test(ed)?', ' ', words)
+                match2 = _regex_who.search(words)
+                if not match2 and not words.isspace():
+                    # skip this, does not refer to groups of people
+                    if _TRACE:
+                        print('_regex_case[01] override: "{0}"'.
+                              format(match_text))
+                    continue
+            
             # special handling for _regex_case2
             if _regex_case2 == regex:
                 # check for smaller overlapping match within the current one
@@ -731,8 +745,6 @@ def _regex_match(sentence, regex_list):
             index += 1
         print()
 
-    # find 
-        
     # keep the SHORTEST of any overlapping matches, to minimize chances
     # of capturing junk
     pruned_candidates = overlap.remove_overlap(candidates,
@@ -927,10 +939,6 @@ if __name__ == '__main__':
         'and 18 from May 12 through May 14. As of May 16, the county has ' \
         'had 463 confirmed cases in the coronavirus pandemic.',
 
-        'The Wyoming Department of Health reports that 674lab-confirmed '   \
-        'cases have recovered and 196 probable cases have recoveredacross ' \
-        'the state.',
-
         'The new cases bring the health district up to a cumulative total ' \
         'of 137 cases of COVID-19, including 111 in Cache and 26 in Elder.',
 
@@ -981,7 +989,12 @@ if __name__ == '__main__':
         'on Wednesday, according to the health department.',
 
         'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
-        'to 77, Blood Donors Needed',        
+        'to 77, Blood Donors Needed',
+
+        'The Wyoming Department of Health reports that 674lab-confirmed '   \
+        'cases have recovered and 196 probable cases have recoveredacross ' \
+        'the state.',
+
 
         
         # new errors
@@ -1019,7 +1032,29 @@ if __name__ == '__main__':
         'In fact, the Bear River Health District has the third highest '   \
         'amount of total cases in the state.',
 
+        # new2
 
+        # returns 1000 (fixed)
+        'his nursing homes in murray and in orem have sent residents to '  \
+        'city creek 165 s. 1000 east after they tested positive for '      \
+        'the virus.',
+
+        # returns 32 (fixed)
+        'betty along with her husband gery were discharged after '         \
+        'spending a total of 32 days in the hospital with covid-19.',
+
+        # returns 1 (fixed, should return nothing)
+        'asking only one visitor who has not tested positive for '         \
+        'covid-19 per patient the wearing of facial covering',
+
+        # returns 5 (fixed, should return nothing)
+        'black lives matter protest video covid-19 case report 5-31',
+        
+        # returns 57 (fixed, should return nothing)
+        'posted 08 45 pm cdt updated 08 57 pm cdt covid-19 cases in '      \
+        'north dakota have hit record highs',
+        
+        
         # TBD
         # 'Two residents at Fairhaven in Sykesville, one resident at '       \
         # 'Flying Colors of Success in Westminster and two staff members '   \
