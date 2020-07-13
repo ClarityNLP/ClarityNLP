@@ -277,8 +277,8 @@ _str_death1 = _str_num + r'\s?' + _str_words + r'deaths?\s?' +\
     _str_words + _str_coronavirus
 _regex_death1 = re.compile(_str_death1, re.IGNORECASE)
 
-# <num> <words> deaths
-_str_death2 = _str_num + r'\s?' + _str_words + r'deaths?'
+# <num> <words> (deaths?|died)
+_str_death2 = _str_num + r'\s?' + _str_words + r'(deaths?|died)'
 _regex_death2 = re.compile(_str_death2, re.IGNORECASE)
 
 # <coronavirus> <words> deaths <words> <num>
@@ -286,12 +286,12 @@ _str_death3 = _str_coronavirus + _str_words + r'deaths?\s?' +\
     _str_words + _str_num
 _regex_death3 = re.compile(_str_death3, re.IGNORECASE)
 
-"""
+# <num> <who> (have)? died <words> <coronavirus>
+_str_death4 = _str_num + r'\s?' + r'(' + _str_who + r')?' +\
+    r'(have\s)?died\s' + _str_words + _str_coronavirus
+_regex_death4 = re.compile(_str_death4, re.IGNORECASE)
 
-2nd    <coronavirus> death
-second <coronavirus> death
-third  <coronavirus>-related death
-<num> deaths
+"""
 
 <num> residents dying
 
@@ -372,6 +372,7 @@ _DEATH_REGEXES = [
     _regex_death1,
     _regex_death2,
     _regex_death3,
+    _regex_death4,
 ]
 
 # matching data used to build the result object
@@ -659,6 +660,28 @@ def _tnum_to_int(_str_tnum):
     return 100*val_h + val_t + val_o
 
 
+# ###############################################################################
+# def _check_smaller_match(regex, match, sentence):
+#     """
+#     Check for another smaller-spanning match within the original match for
+#     the same regex.
+#     """
+
+#     # check for smaller overlapping match within the current one
+#     match_text = match.group().strip()
+#     offset = match_text.find(' ')
+#     if -1 != offset:
+#         sentence2 = sentence[match.start() + offset:]
+#         match2 = regex.search(sentence2)
+#         if match2:
+#             if _TRACE:
+#                 print('_regex match override: "{0}"'.
+#                       format(match2.group()))
+#             match = match2
+
+#     return match
+    
+
 ###############################################################################
 def _regex_match(sentence, regex_list):
     """
@@ -684,7 +707,7 @@ def _regex_match(sentence, regex_list):
                               format(match_text))
                     continue
             
-            # special handling for _regex_case2
+            # special handling for _regex_case2, _regex_death2
             if _regex_case2 == regex:
                 # check for smaller overlapping match within the current one
                 offset = match_text.find(' ')
@@ -796,22 +819,18 @@ def _text_to_num(match, key, textval):
 
 
 ###############################################################################
-def _extract_candidates(candidates): #, start_list, end_list, text_list):
+def _extract_candidates(candidates):
     """
-    Extract match candidates and return a list of
+    Extract match results and return a list of
     (start, end, matching_text, value) tuples.
     """
 
-    #value_list = []
     tuples = []
     for c in candidates:
         # recover the regex match object from the 'other' field
         match = c.other
         assert match is not None
 
-        #start_list.append(match.start())
-        #end_list.append(match.end())
-        #text_list.append(match.group())
         start = match.start()
         end   = match.end()
         text  = match.group()
@@ -825,7 +844,6 @@ def _extract_candidates(candidates): #, start_list, end_list, text_list):
             
             val = _text_to_num(match, k, v)
             if val is not None:
-                #value_list.append(val)
                 match_tuple = MatchTuple(start, end, text, val)
                 tuples.append(match_tuple)
             else:
@@ -833,7 +851,7 @@ def _extract_candidates(candidates): #, start_list, end_list, text_list):
                 continue
 
     if len(tuples) > 1:
-        tuples = sorted(tuples, key=lambda x: x.start) #value_list
+        tuples = sorted(tuples, key=lambda x: x.start)
         
     return tuples
             
@@ -861,60 +879,15 @@ def run(sentence):
         print('hosp count candidates: ')
     hosp_candidates = []
 
-    results = []
-    case_results = []
-    hosp_results = []
-    death_results = []
-
-    # case_start_list  = []
-    # case_end_list    = []
-    # hosp_start_list  = []
-    # hosp_end_list    = []
-    # death_start_list = []
-    # death_end_list   = []
-    # text_case_list   = []
-    # text_hosp_list   = []
-    # text_death_list  = []
-    # value_case_list  = []
-    # value_hosp_list  = []
-    # value_death_list = []
-    
-    # for c in case_candidates:
-    #     # recover the regex match object from the 'other' field
-    #     match = c.other
-    #     assert match is not None
-
-    #     case_start_list.append(match.start())
-    #     case_end_list.append(match.end())
-    #     text_case_list.append(match.group())
-
-    #     for k,v in match.groupdict().items():
-    #         if v is None:
-    #             continue
-
-    #         #if _TRACE:
-    #         #    print('{0} => {1}'.format(k,v))
-            
-    #         val = _text_to_num(match, k, v)
-    #         if val is not None:
-    #             value_case_list.append(val)
-    #         else:
-    #             # invalid number
-    #             continue
-
-    case_tuples = _extract_candidates(case_candidates)
-                                      #    case_start_list,
-                                      #    case_end_list,
-                                      #    text_case_list)
-    hosp_tuples = _extract_candidates(hosp_candidates)
+    # get result tuples for each, sorted in order of occurrence in sentence
+    case_tuples  = _extract_candidates(case_candidates)
+    hosp_tuples  = _extract_candidates(hosp_candidates)
     death_tuples = _extract_candidates(death_candidates)
-                                       #    death_start_list,
-                                       #    death_end_list,
-                                       #    text_death_list)
-    
-    case_count  = len(case_tuples)#value_case_list)
-    hosp_count  = len(hosp_tuples)#value_hosp_list)
-    death_count = len(death_tuples)#value_death_list)
+
+    # find which has the most entries
+    case_count  = len(case_tuples)
+    hosp_count  = len(hosp_tuples)
+    death_count = len(death_tuples)
     count = max(case_count, hosp_count, death_count)
     
     if _TRACE:
@@ -926,6 +899,9 @@ def run(sentence):
         print('death_tuples: {0}'.format(death_tuples))
         print(' hosp_tuples: {0}'.format(hosp_tuples))
 
+    # Build result objects, taking results from cases, hosp, and deaths
+    # in order.
+    results = []
     for i in range(count):
 
         case_start  = EMPTY_FIELD
@@ -942,22 +918,22 @@ def run(sentence):
         value_death = EMPTY_FIELD
 
         if i < case_count:
-            case_start = case_tuples[i].start #case_start_list.pop(0)
-            case_end   = case_tuples[i].end   #case_end_list.pop(0)
-            text_case  = case_tuples[i].text  #text_case_list.pop(0)
-            value_case = case_tuples[i].value #value_case_list.pop(0)
+            case_start = case_tuples[i].start
+            case_end   = case_tuples[i].end
+            text_case  = case_tuples[i].text
+            value_case = case_tuples[i].value
 
         if i < hosp_count:
-            hosp_start = hosp_tuples[i].start #hosp_start_list.pop(0)
-            hosp_end   = hosp_tuples[i].end   #hosp_end_list.pop(0)
-            text_hosp  = hosp_tuples[i].text #text_hosp_list.pop(0)
-            value_hosp = hosp_tuples[i].value #value_hosp_list.pop(0)
+            hosp_start = hosp_tuples[i].start
+            hosp_end   = hosp_tuples[i].end
+            text_hosp  = hosp_tuples[i].text
+            value_hosp = hosp_tuples[i].value
 
         if i < death_count:
-            death_start = death_tuples[i].start #death_start_list.pop(0)
-            death_end   = death_tuples[i].end   #death_end_list.pop(0)
-            text_death  = death_tuples[i].text #text_death_list.pop(0)
-            value_death = death_tuples[i].value #value_death_list.pop(0)
+            death_start = death_tuples[i].start
+            death_end   = death_tuples[i].end
+            text_death  = death_tuples[i].text
+            value_death = death_tuples[i].value
         
         covid_tuple = CovidTuple(
             sentence    = cleaned_sentence,
@@ -975,9 +951,6 @@ def run(sentence):
             value_death = value_death,
         )
         results.append(covid_tuple)
-
-    # sort results to match order of occurrence in sentence
-    results = sorted(results, key=lambda x: x.case_start)
 
     # convert to list of dicts to preserve field names in JSON output
     return json.dumps([r._asdict() for r in results], indent=4)
@@ -1048,6 +1021,30 @@ if __name__ == '__main__':
         'deaths, 621 active cases (including eight in Richland County, '  \
         'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
 
+        #<num> residents dying
+
+        #<num> residents   died as a result of the <coronavirus>
+        #<num> people have died 
+        #<num>        have died after contracting it
+        #<num> inmates     died of the <coronavirus>
+
+        'As of last count, 24 residents have died as a result of Covid-19.',
+        '16 have died from the coronavirus',
+        '42 have died after contracting it',
+
+        'Coronavirus Seven new deaths, 288 new cases in Orange County as of ' \
+        'June 19 The Orange County Health Care Agency reported on Friday, '   \
+        'June 18, the second consecutive day of seven additional deaths '     \
+        'attributed to the coronavirus, pushing the total number of people '  \
+        'who have died in the county to 257.',
+        
+        # 'The figures from the state Department of Public Health come after '  \
+        # 'two consecutive days where the coronavirus death toll rose by less ' \
+        # 'than 24, dramatically lower than at the height of the coronavirus '  \
+        # 'surge, when more than 150 people in the state were dying every day.',
+
+
+        
         
         #'The announcement, of this sixth case in Floyd County comes '      \
         #'alongside reports from Gov. Andy Beshear on April 21 that there ' \
