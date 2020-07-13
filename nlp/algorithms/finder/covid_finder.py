@@ -13,42 +13,42 @@ import json
 import argparse
 from collections import namedtuple
 
-try:
-    # for normal operation via NLP pipeline
-    from algorithms.finder.date_finder import run as \
-        run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    #from algorithms.finder.time_finder import run as \
-    #    run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    from algorithms.finder import finder_overlap as overlap
+# try:
+#     # for normal operation via NLP pipeline
+#     from algorithms.finder.date_finder import run as \
+#         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     #from algorithms.finder.time_finder import run as \
+#     #    run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     from algorithms.finder import finder_overlap as overlap
     
-except:
-    this_module_dir = sys.path[0]
-    pos = this_module_dir.find('/nlp')
-    if -1 != pos:
-        nlp_dir = this_module_dir[:pos+4]
-        finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
-        sys.path.append(finder_dir)    
-    from date_finder import run as run_date_finder, \
-        DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    #from time_finder import run as run_time_finder, \
-    #    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
-    import finder_overlap as overlap
+# except:
+#     this_module_dir = sys.path[0]
+#     pos = this_module_dir.find('/nlp')
+#     if -1 != pos:
+#         nlp_dir = this_module_dir[:pos+4]
+#         finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+#         sys.path.append(finder_dir)    
+#     from date_finder import run as run_date_finder, \
+#         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     #from time_finder import run as run_time_finder, \
+#     #    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+#     import finder_overlap as overlap
 
-# if __name__ == '__main__':
-#     # for interactive testing only
-#     match = re.search(r'nlp/', sys.path[0])
-#     if match:
-#         nlp_dir = sys.path[0][:match.end()]
-#         sys.path.append(nlp_dir)
-#     else:
-#         print('\n*** covid_finder.py: nlp dir not found ***\n')
-#         sys.exit(0)
+if __name__ == '__main__':
+    # for interactive testing only
+    match = re.search(r'nlp/', sys.path[0])
+    if match:
+        nlp_dir = sys.path[0][:match.end()]
+        sys.path.append(nlp_dir)
+    else:
+        print('\n*** covid_finder.py: nlp dir not found ***\n')
+        sys.exit(0)
 
-# from date_finder import run as run_date_finder, \
-#     DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-# from time_finder import run as run_time_finder, \
-#     TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
-# import finder_overlap as overlap    
+from date_finder import run as run_date_finder, \
+    DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+from time_finder import run as run_time_finder, \
+    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+import finder_overlap as overlap    
 
 
 # default value for all fields
@@ -204,15 +204,24 @@ _regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
 #     third highest number of confirmed cases
 #
 def _make_num_regex(a='int', b='tnum', c='enum'):
-    _str_num = r'('                                          +\
-        r'(?P<{0}>'.format(a) + _str_int + r')|'             +\
-        r'(?P<{0}>'.format(b) + _str_tnum + r')|'            +\
-        r'(?P<{0}>'.format(c)                                +\
-        r'(' + _str_enum + r'(?= case)' + r'|'               +\
-               _str_enum + r'(?= (confirmed|positive) case)' +\
-        r'))'                                                +\
+    _str_num = r'('                                                         +\
+        r'(?P<{0}>'.format(a) +  _str_int + r')|'                           +\
+        r'(?P<{0}>'.format(b) + _str_tnum + r')|'                           +\
+        r'(?P<{0}>'.format(c) + _str_enum + r'(?! (high|large|great)est))'  +\
         r')(?!%)(?! %)(?! percent)(?! pct)'
     return _str_num
+
+# def _make_num_regex(a='int', b='tnum', c='enum'):
+#     _str_num = r'('                                          +\
+#         r'(?P<{0}>'.format(a) + _str_int + r')|'             +\
+#         r'(?P<{0}>'.format(b) + _str_tnum + r')|'            +\
+#         r'(?P<{0}>'.format(c)                                +\
+#         r'(' + _str_enum + r'(?= case)' + r'|'               +\
+#                _str_enum + r'(?= (confirmed|positive) case)' +\
+#         r'))'                                                +\
+#         r')(?!%)(?! %)(?! percent)(?! pct)'
+#     return _str_num
+
 
 # regex to recognize either a range or a single integer
 # also recognize 'no' for situations such as "no new cases of covid-19"
@@ -240,7 +249,7 @@ _str_clock = r'(?<!\d)(2[0-3]|1[0-9]|0[0-9])[-:\s][0-5][0-9]\s?' +\
 _regex_clock = re.compile(_str_clock, re.IGNORECASE)
 
 
-_str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus)\s?'
+_str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus)([-\s]related)?\s?'
 
 _str_death = r'(deaths?|fatalit(ies|y))'
 _str_hosp  = r'(hospitalizations?)'
@@ -254,6 +263,52 @@ _str_who = r'\b(babies|baby|boy|captive|child|children|citizen|client|'      +\
     r'personnel|prisoner|regular|resident|shopper|staff|tourist|traveler|'   +\
     r'victim|visitor|voter|woman|women|worker)s?\s?'
 _regex_who = re.compile(_str_who, re.IGNORECASE)
+
+#
+# death regexes
+#
+
+# <num> <words> <coronavirus> deaths
+_str_death0 = _str_num + r'\s?' + _str_words + _str_coronavirus + r'deaths?'
+_regex_death0 = re.compile(_str_death0, re.IGNORECASE)
+
+# <num> <words> deaths <words> <coronavirus>
+_str_death1 = _str_num + r'\s?' + _str_words + r'deaths?\s?' +\
+    _str_words + _str_coronavirus
+_regex_death1 = re.compile(_str_death1, re.IGNORECASE)
+
+# <num> <words> deaths
+_str_death2 = _str_num + r'\s?' + _str_words + r'deaths?'
+_regex_death2 = re.compile(_str_death2, re.IGNORECASE)
+
+# <coronavirus> <words> deaths <words> <num>
+_str_death3 = _str_coronavirus + _str_words + r'deaths?\s?' +\
+    _str_words + _str_num
+_regex_death3 = re.compile(_str_death3, re.IGNORECASE)
+
+"""
+
+2nd    <coronavirus> death
+second <coronavirus> death
+third  <coronavirus>-related death
+<num> deaths
+
+<num> residents dying
+
+<num> residents   died as a result of the <coronavirus>
+<num> people have died 
+<num>        have died after contracting it
+<num> inmates     died of the <coronavirus>
+
+total number of <coronavirus>-related deaths stands at <num>
+                <coronavirus>-related deaths near      <num>
+
+<coronavirus> death toll hits <num>
+
+              total deaths to <num>
+                    deaths-<num>
+number of confirmed deaths: <num>
+"""
 
 
 # <num> <words> positive for <words> <coronavirus>
@@ -312,6 +367,15 @@ _CASE_REGEXES = [
     _regex_case9,
 ]
 
+_DEATH_REGEXES = [
+    _regex_death0,
+    _regex_death1,
+    _regex_death2,
+    _regex_death3,
+]
+
+# matching data used to build the result object
+MatchTuple = namedtuple('MatchTuple', ['start', 'end', 'text', 'value'])
 
 
 ###############################################################################
@@ -423,7 +487,24 @@ def _erase_dates(sentence):
             
     return sentence
 
-            
+
+###############################################################################
+def _split_at_positions(text, pos_list):
+    """
+    Split a string at the list of positions in the string and return a list
+    of chunks.
+    """
+
+    chunks = []
+    prev_end = 0
+    for pos in pos_list:
+        chunk = text[prev_end:pos]
+        chunks.append(chunk)
+        prev_end = pos
+    chunks.append(text[prev_end:])
+    return chunks
+
+
 ###############################################################################
 def _cleanup(sentence):
     """
@@ -446,19 +527,34 @@ def _cleanup(sentence):
     # replace selected chars with whitespace
     sentence = re.sub(r'[&(){}\[\]:~/@;]', ' ', sentence)
 
+    # insert a missing space surrounding Covid-19
+    space_pos = []
+    iterator = re.finditer(r'[a-z]covid\-?19', sentence, re.IGNORECASE)
+    for match in iterator:
+        # position where the space is needed
+        pos = match.start() + 1
+        space_pos.append(pos)
+    chunks = _split_at_positions(sentence, space_pos)
+    sentence = ' '.join(chunks)
+    
     # replace commas with whitespace if not inside a number (such as 32,768)
     comma_pos = []
     iterator = re.finditer(r'\D,\D', sentence, re.IGNORECASE)
     for match in iterator:
         pos = match.start() + 1
         comma_pos.append(pos)
-    for pos in comma_pos:
-        sentence = sentence[:pos] + ' ' + sentence[pos+1:]    
+    chunks = _split_at_positions(sentence, comma_pos)
+    # strip the comma from the first char of each chunk, if present
+    for i in range(len(chunks)):
+        if chunks[i].startswith(','):
+            chunks[i] = chunks[i][1:]
+    sentence = ' '.join(chunks)
         
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
-    #print('sentence after cleanup: "{0}"'.format(sentence))
+    if _TRACE:
+        print('sentence after cleanup: "{0}"'.format(sentence))
     return sentence
 
 
@@ -672,6 +768,77 @@ def _regex_match(sentence, regex_list):
 
 
 ###############################################################################
+def _text_to_num(match, key, textval):
+    """
+    Convert a text capture (in 'text') to a numeric value, or return None.
+    """
+
+    val = None
+    if 'no' == key:
+        val = 0
+    if 'int_to' == key or 'int' == key:
+        val = _to_int(textval)
+    elif 'tnum_to' == key or 'tnum' == key:
+        val = _tnum_to_int(textval)
+    elif 'enum_to' == key or 'enum' == key:
+        val = _enum_to_int(textval)
+    elif 'floatnum' == key:
+        val = float(textval)
+        # get the units
+        if 'floatunits' in match.groupdict():
+            str_units = match.groupdict()['floatunits']
+            if _STR_THOUSAND == str_units:
+                val *= 1000.0
+            elif _STR_MILLION == str_units:
+                val *= 1.0e6
+
+    return val
+
+
+###############################################################################
+def _extract_candidates(candidates): #, start_list, end_list, text_list):
+    """
+    Extract match candidates and return a list of
+    (start, end, matching_text, value) tuples.
+    """
+
+    #value_list = []
+    tuples = []
+    for c in candidates:
+        # recover the regex match object from the 'other' field
+        match = c.other
+        assert match is not None
+
+        #start_list.append(match.start())
+        #end_list.append(match.end())
+        #text_list.append(match.group())
+        start = match.start()
+        end   = match.end()
+        text  = match.group()
+
+        for k,v in match.groupdict().items():
+            if v is None:
+                continue
+
+            #if _TRACE:
+            #    print('{0} => {1}'.format(k,v))
+            
+            val = _text_to_num(match, k, v)
+            if val is not None:
+                #value_list.append(val)
+                match_tuple = MatchTuple(start, end, text, val)
+                tuples.append(match_tuple)
+            else:
+                # invalid number
+                continue
+
+    if len(tuples) > 1:
+        tuples = sorted(tuples, key=lambda x: x.start) #value_list
+        
+    return tuples
+            
+            
+###############################################################################
 def run(sentence):
     """
     """
@@ -684,72 +851,80 @@ def run(sentence):
 
     # erase these matches from the sentence
     remaining_sentence = _erase(cleaned_sentence, case_candidates)
-    
+
+    if _TRACE:
+        print('death count candidates: ')
+    death_candidates = _regex_match(remaining_sentence, _DEATH_REGEXES)
+    remaining_sentence = _erase(remaining_sentence, death_candidates)
+
+    if _TRACE:
+        print('hosp count candidates: ')
+    hosp_candidates = []
 
     results = []
     case_results = []
     hosp_results = []
     death_results = []
 
-    case_start_list  = []
-    case_end_list    = []
-    hosp_start_list  = []
-    hosp_end_list    = []
-    death_start_list = []
-    death_end_list   = []
-    text_case_list   = []
-    text_hosp_list   = []
-    text_death_list  = []
-    value_case_list  = []
-    value_hosp_list  = []
-    value_death_list = []
+    # case_start_list  = []
+    # case_end_list    = []
+    # hosp_start_list  = []
+    # hosp_end_list    = []
+    # death_start_list = []
+    # death_end_list   = []
+    # text_case_list   = []
+    # text_hosp_list   = []
+    # text_death_list  = []
+    # value_case_list  = []
+    # value_hosp_list  = []
+    # value_death_list = []
     
-    for c in case_candidates:
-        # recover the regex match object from the 'other' field
-        match = c.other
-        assert match is not None
+    # for c in case_candidates:
+    #     # recover the regex match object from the 'other' field
+    #     match = c.other
+    #     assert match is not None
 
-        case_start_list.append(match.start())
-        case_end_list.append(match.end())
-        text_case_list.append(match.group())
+    #     case_start_list.append(match.start())
+    #     case_end_list.append(match.end())
+    #     text_case_list.append(match.group())
 
-        for k,v in match.groupdict().items():
-            if v is None:
-                continue
+    #     for k,v in match.groupdict().items():
+    #         if v is None:
+    #             continue
 
-            #if _TRACE:
-            #    print('{0} => {1}'.format(k,v))
+    #         #if _TRACE:
+    #         #    print('{0} => {1}'.format(k,v))
             
-            # convert number text captures
-            val = None
-            if 'no' == k:
-                val = 0
-            if 'int_to' == k or 'int' == k:
-                val = _to_int(v)
-            elif 'tnum_to' == k or 'tnum' == k:
-                val = _tnum_to_int(v)
-            elif 'enum_to' == k or 'enum' == k:
-                val = _enum_to_int(v)
-            elif 'floatnum' == k:
-                val = float(v)
-                # get the units
-                if 'floatunits' in match.groupdict():
-                    str_units = match.groupdict()['floatunits']
-                    if _STR_THOUSAND == str_units:
-                        val *= 1000.0
-                    elif _STR_MILLION == str_units:
-                        val *= 1.0e6
-                
-            if val is not None:
-                value_case_list.append(val)
-            else:
-                # invalid number
-                continue
+    #         val = _text_to_num(match, k, v)
+    #         if val is not None:
+    #             value_case_list.append(val)
+    #         else:
+    #             # invalid number
+    #             continue
 
-    case_count  = len(value_case_list)
-    hosp_count  = len(value_hosp_list)
-    death_count = len(value_death_list)
+    case_tuples = _extract_candidates(case_candidates)
+                                      #    case_start_list,
+                                      #    case_end_list,
+                                      #    text_case_list)
+    hosp_tuples = _extract_candidates(hosp_candidates)
+    death_tuples = _extract_candidates(death_candidates)
+                                       #    death_start_list,
+                                       #    death_end_list,
+                                       #    text_death_list)
+    
+    case_count  = len(case_tuples)#value_case_list)
+    hosp_count  = len(hosp_tuples)#value_hosp_list)
+    death_count = len(death_tuples)#value_death_list)
     count = max(case_count, hosp_count, death_count)
+    
+    if _TRACE:
+        print('  case_count: {0}'.format(case_count))
+        print('  hosp_count: {0}'.format(hosp_count))
+        print(' death_count: {0}'.format(death_count))
+        print('       count: {0}'.format(count))
+        print(' case_tuples: {0}'.format(case_tuples))
+        print('death_tuples: {0}'.format(death_tuples))
+        print(' hosp_tuples: {0}'.format(hosp_tuples))
 
     for i in range(count):
 
@@ -767,22 +942,22 @@ def run(sentence):
         value_death = EMPTY_FIELD
 
         if i < case_count:
-            case_start = case_start_list.pop(0)
-            case_end   = case_end_list.pop(0)
-            text_case  = text_case_list.pop(0)
-            value_case = value_case_list.pop(0)
+            case_start = case_tuples[i].start #case_start_list.pop(0)
+            case_end   = case_tuples[i].end   #case_end_list.pop(0)
+            text_case  = case_tuples[i].text  #text_case_list.pop(0)
+            value_case = case_tuples[i].value #value_case_list.pop(0)
 
         if i < hosp_count:
-            hosp_start = hosp_start_list.pop(0)
-            hosp_end   = hosp_end_list.pop(0)
-            text_hosp  = text_hosp_list.pop(0)
-            value_hosp = value_hosp_list.pop(0)
+            hosp_start = hosp_tuples[i].start #hosp_start_list.pop(0)
+            hosp_end   = hosp_tuples[i].end   #hosp_end_list.pop(0)
+            text_hosp  = hosp_tuples[i].text #text_hosp_list.pop(0)
+            value_hosp = hosp_tuples[i].value #value_hosp_list.pop(0)
 
         if i < death_count:
-            death_start = death_start_list.pop(0)
-            death_end   = death_end_list.pop(0)
-            text_death  = text_death_list.pop(0)
-            value_death = value_death_list.pop(0)
+            death_start = death_tuples[i].start #death_start_list.pop(0)
+            death_end   = death_tuples[i].end   #death_end_list.pop(0)
+            text_death  = death_tuples[i].text #text_death_list.pop(0)
+            value_death = death_tuples[i].value #value_death_list.pop(0)
         
         covid_tuple = CovidTuple(
             sentence    = cleaned_sentence,
@@ -803,9 +978,6 @@ def run(sentence):
 
     # sort results to match order of occurrence in sentence
     results = sorted(results, key=lambda x: x.case_start)
-
-    # hospitalizations
-    # deaths
 
     # convert to list of dicts to preserve field names in JSON output
     return json.dumps([r._asdict() for r in results], indent=4)
@@ -835,6 +1007,48 @@ if __name__ == '__main__':
 
     SENTENCES = [
 
+        'Read more for free Three more COVID-19 deaths in Saugus',
+
+        'There have now been 224 COVID-19 deaths and 2,888 confirmed '      \
+        'cases of COVID-19 in Monroe County.',
+
+        'The county spokesperson said that there have been no additional '  \
+        'coronavirus-related deaths since last week.',
+
+        'One hundred-thirteen deaths due to COVID-19 occurred among '       \
+        'reported cases.',
+        
+        '16 New CasesChris ColemanShare on FacebookShare on Twitter Three '  \
+        'more deaths related to COVID-19 were reported earlier today',
+
+        'on sunday the indiana state department of health announced '      \
+        '397 new covid-19 cases and 9 additional deaths.',
+
+        'there were 3 more deaths related to COVID-19 vs yesterday',
+        
+        'reported fourteen more deaths related to the coronavirus',
+        
+        'health officials counted 15 deaths due to coronavirus',
+        'health officials counted 12 deaths from covid19',
+        'there were no new deaths related to COVID-19 last week',
+
+        'Utahs Megaplex Theatres plan to reopen 12 multiplexes starting '  \
+        'Thursday Utahs coronavirus death toll hits 139, includes a Utah ' \
+        'Valley University student and a 34-year-old mom',
+
+        "Oakley announced the county's firstCOVID-19 related death.",
+
+        'Blaine County Health officials announced the second coronavirus '  \
+        'death on the afternoon of March 26. The victim was over the age '  \
+        'of 80, but authorities have not said whether he had any other '    \
+        'health issues.',
+
+        'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
+        'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
+        'deaths, 621 active cases (including eight in Richland County, '  \
+        'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
+
+        
         #'The announcement, of this sixth case in Floyd County comes '      \
         #'alongside reports from Gov. Andy Beshear on April 21 that there ' \
         #'are 3,192 positive cases in the state, as well as 171 deaths '    \
@@ -890,6 +1104,7 @@ death reports
 <num>           <coronavirus> deaths
 <num> more      <coronavirus> deaths
 <num> confirmed <coronavirus> deaths
+no additional <coronavirus>-related deaths
 
 <num> more deaths related to <coronavirus>
 <num>      deaths due     to <coronavirus>
@@ -904,7 +1119,7 @@ no    new                deaths
 
 2nd    <coronavirus> death
 second <coronavirus> death
-no additional <coronavirus>-related deaths
+third  <coronavirus>-related death
 
 <num> residents dying
 
@@ -918,8 +1133,7 @@ total number of <coronavirus>-related deaths stands at <num>
 
 <coronavirus> death toll hits <num>
 
-total deaths to <num>
-
+              total deaths to <num>
                     deaths-<num>
 number of confirmed deaths: <num>
 

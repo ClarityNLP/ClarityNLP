@@ -2064,8 +2064,9 @@ def test_covid_finder():
         'alongside reports from Gov. Andy Beshear on April 21 that there ' \
         'are 3,192 positive cases in the state, as well as 171 deaths '    \
         'from the virus.':[
-            _CovidResult(text_case = 'sixth case', value_case = 6),
-            _CovidResult(text_case = '3,192 positive cases', value_case = 3192)
+            _CovidResult(text_case = 'sixth case', value_case = 6,
+                         text_death = '171 deaths', value_death = 171),
+            _CovidResult(text_case = '3,192 positive cases', value_case = 3192),
         ],
         'Contra Costa also reported that its total number of coronavirus ' \
         'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
@@ -2082,7 +2083,8 @@ def test_covid_finder():
         'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
         'deaths, 621 active cases (including eight in Richland County, '  \
         'North Dakota), 1,762 recoveries and 2,439 total cases to date.':[
-            _CovidResult(text_case = 'seventeen new covid-19 cases', value_case=17),
+            _CovidResult(text_case = 'seventeen new covid-19 cases', value_case=17,
+                         text_death = '56 deaths', value_death = 56),
             _CovidResult(text_case = '621 active cases', value_case=621),
             _CovidResult(text_case = '2,439 total cases', value_case=2439)
         ],
@@ -2117,28 +2119,31 @@ def test_covid_finder():
         ],
         'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
         'to 77, Blood Donors Needed':[
-            _CovidResult('coronavirus cases rise to 77', value_case=77),
+            _CovidResult(text_case = 'coronavirus cases rise to 77', value_case=77),
         ],
         'The Wyoming Department of Health reports that 674lab-confirmed '   \
         'cases have recovered and 196 probable cases have recoveredacross ' \
         'the state.':[
-            _CovidResult('674lab-confirmed cases', value_case=674),
-            _CovidResult('196 probable cases', value_case=196)
+            _CovidResult(text_case = '674lab-confirmed cases', value_case=674),
+            _CovidResult(text_case = '196 probable cases', value_case=196)
         ],
         'on sunday the indiana state department of health announced '      \
         '397 new covid-19 cases and 9 additional deaths.':[
-            _CovidResult('397 new covid-19 cases', value_case=397)
+            _CovidResult(text_case = '397 new covid-19 cases', value_case=397,
+                         text_death = '9 additional deaths', value_death=9)
         ],
         'after 6 days of no new covid-19 cases in st. louis county '       \
         'public health director says its too soon to make conclusions '    \
         'numbers as of thursday .':[
-            _CovidResult('no new covid-19 cases', value_case=0)
+            _CovidResult(text_case='no new covid-19 cases', value_case=0)
         ],
         'indiana reports 292 new coronavirus cases 9 additional deaths '   \
         'indiana health officials nearly 300 new coronavirus cases '       \
         'monday along with 9 additional deaths related to the virus.':[
-            _CovidResult('292 new coronavirus cases', value_case=292),
-            _CovidResult('300 new coronavirus cases', value_case=300)
+            _CovidResult(text_case='292 new coronavirus cases', value_case=292,
+                         text_death='9 additional deaths', value_death=9),
+            _CovidResult(text_case='300 new coronavirus cases', value_case=300,
+                         text_death='9 additional deaths', value_death=9),
         ],
         'while african-americans make up 14 percent of the states '        \
         'population they represented 29 percent of coronavirus cases':[
@@ -2148,7 +2153,8 @@ def test_covid_finder():
         'johns hopkins university there have been more than 6,200,00 '     \
         'confirmed cases worldwide with more than 2,660,000 recoveries '   \
         'and more than 372,000 deaths. 2020':[
-            # no result, since "6,200,00" is not a valid integer
+            # no case result, since "6,200,00" is not a valid integer
+            _CovidResult(text_death='372,000 deaths', value_death=372000)
         ],
         'as the number of cases of the coronavirus are flattening '        \
         'locally greene county offices will reopen on monday to a '        \
