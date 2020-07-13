@@ -31,14 +31,16 @@ try:
     import date_finder as df
     import size_measurement_finder as smf
     import o2sat_finder as o2f
+    import covid_finder as cf
 except:
     from algorithms.finder import time_finder as tf
     from algorithms.finder import date_finder as df
     from algorithms.finder import size_measurement_finder as smf
     from algorithms.finder import o2sat_finder as o2f
+    from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 8
+_VERSION_MINOR = 9
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -117,10 +119,26 @@ _O2_RESULT_FIELDS = [
 _O2Result = namedtuple('_O2Result', _O2_RESULT_FIELDS)
 _O2Result.__new__.__defaults__ = (None,) * len(_O2Result._fields)
 
+#
+# Covid result fields
+#
+
+_COVID_RESULT_FIELDS = [
+    'text_case',
+    'text_hosp',
+    'text_death',
+    'value_case',
+    'value_hosp',
+    'value_death'
+]
+_CovidResult = namedtuple('_CovidResult', _COVID_RESULT_FIELDS)
+_CovidResult.__new__.__defaults__ = (None,) * len(_CovidResult._fields)
+
 _MODULE_TIME = 'time'
 _MODULE_DATE = 'date'
 _MODULE_SIZE_MEAS = 'size_meas'
 _MODULE_O2 = 'o2'
+_MODULE_COVID = 'covid'
 
 
 ###############################################################################
@@ -232,6 +250,20 @@ def _run_tests(module_type, test_data):
                 sentence,
                 _O2_RESULT_FIELDS)
 
+        elif _MODULE_COVID == module_type:
+
+            # run CovidFinder on the next test sentence
+            json_result = cf.run(sentence)
+            json_data = json.loads(json_result)
+            computed_values = [cf.CovidTuple(**d) for d in json_data]
+
+            ok = _compare_results(
+                computed_values,
+                expected_values,
+                sentence,
+                _COVID_RESULT_FIELDS)
+            
+            
         if not ok:
             return False
 
@@ -1978,7 +2010,183 @@ def test_o2sat_finder():
         return False
 
     return True
-    
+
+
+###############################################################################
+def test_covid_finder():
+
+    test_data = {
+        '16 New Cases COVID-19 Claims Three More Lives in Atlantic County':[
+            _CovidResult(text_case = '16 new cases', value_case = 16)
+        ],
+        'Currently, there are 97 confirmed cases in North Carolina.':[
+            _CovidResult(text_case = '97 confirmed cases', value_case = 97)
+        ],
+
+        # maybe capture "of Covid-19" also?
+        'The Newton Co Health Dept reports 2 more cases of COVID-19 for ' \
+        'our county-this brings our total to 9.':[
+            _CovidResult(text_case = '2 more cases', value_case = 2)
+        ],
+        'As of Tuesday morning, the number of confirmed COVID-19 cases in ' \
+        'Mercer County increased to 12.':[
+            _CovidResult(text_case = 'covid-19 cases in mercer county increased to 12',
+                         value_case = 12)
+        ],
+        'Williamson Countys confirmed cases of COVID-19 spiked by 17, 27 ' \
+        'and 18 from May 12 through May 14. As of May 16, the county has ' \
+        'had 463 confirmed cases in the coronavirus pandemic.':[
+            _CovidResult(text_case = '463 confirmed cases',
+                         value_case = 463)
+        ],
+        'The new cases bring the health district up to a cumulative total ' \
+        'of 137 cases of COVID-19, including 111 in Cache and 26 in Elder.':[
+            _CovidResult(text_case = '137 cases', value_case = 137)
+        ],
+        'has had   one hundred forty seven test positive for COVID-19, the ' \
+        'manager said':[
+            _CovidResult(text_case = 'one hundred forty seven test positive for covid-19',
+                         value_case = 147)
+        ],
+        'saw the biggest three-day increase of positive cases yet with 16 ' \
+        'new cases reported over the weekend and 12 on Monday.':[
+            _CovidResult(text_case = '16 new cases', value_case = 16)
+        ],
+        'officials confirm 692 coronavirus cases as hospitalizations ' \
+        'continue to decline':[
+            _CovidResult(text_case = '692 coronavirus cases', value_case = 692)
+        ],
+        'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ':[
+            _CovidResult(text_case = 'two confirmed covid-19 cases',
+                         value_case = 2)
+        ],
+        'The announcement, of this sixth case in Floyd County comes '      \
+        'alongside reports from Gov. Andy Beshear on April 21 that there ' \
+        'are 3,192 positive cases in the state, as well as 171 deaths '    \
+        'from the virus.':[
+            _CovidResult(text_case = 'sixth case', value_case = 6),
+            _CovidResult(text_case = '3,192 positive cases', value_case = 3192)
+        ],
+        'Contra Costa also reported that its total number of coronavirus ' \
+        'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
+        'from the day before.':[
+            _CovidResult(text_case = 'coronavirus cases had reached 1,336',
+                         value_case = 1336),
+            _CovidResult(text_case = '15 new cases', value_case = 15)
+        ],
+        'The North Dakota Department of Health confirmed Friday 40 ' \
+        'additional cases of COVID-19 out of 2,894 total tests completed':[
+            _CovidResult(text_case = '40 additional cases', value_case=40)
+        ],
+        'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
+        'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
+        'deaths, 621 active cases (including eight in Richland County, '  \
+        'North Dakota), 1,762 recoveries and 2,439 total cases to date.':[
+            _CovidResult(text_case = 'seventeen new covid-19 cases', value_case=17),
+            _CovidResult(text_case = '621 active cases', value_case=621),
+            _CovidResult(text_case = '2,439 total cases', value_case=2439)
+        ],
+        'Wednesdays totals include 21 new cases in Cass County; five new ' \
+        'cases in Stutsman County; two new cases in Burleigh and Ransom '  \
+        'counties and one new case each in Grand Forks, Walsh and Ward '   \
+        'counties.':[
+            _CovidResult(text_case = '21 new cases', value_case=21),
+            _CovidResult(text_case = 'five new cases', value_case=5),
+            _CovidResult(text_case = 'two new cases', value_case=2),
+            _CovidResult(text_case = 'one new case', value_case=1)
+        ],
+        'Coronavirus cases are surging past 5 million worldwide, with '    \
+        'most of the new cases coming from just four countries: Russia, '  \
+        'Brazil, India, and the United States.':[
+            _CovidResult(text_case = 'coronavirus cases are surging past 5 million',
+                         value_case = 5000000)
+        ],
+        'decreasing the number of confirmed cases from 19 to 18.':[
+            _CovidResult(text_case = 'number of confirmed cases from 19 to 18',
+                         value_case=18)
+        ],
+        'Macon County reported just three positive cases of COVID-19 '     \
+        'for 12 weeks.':[
+            _CovidResult(text_case = 'three positive cases', value_case=3)
+        ],
+        'Carroll County surpasses 1,000 coronavirus cases - Carroll '      \
+        'County Times Carroll County surpassed 1,000 cases of COVID-19 '   \
+        'on Wednesday, according to the health department.':[
+            _CovidResult(text_case = '1,000 coronavirus cases', value_case=1000),
+            _CovidResult(text_case = '1,000 cases', value_case=1000),
+        ],
+        'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
+        'to 77, Blood Donors Needed':[
+            _CovidResult('coronavirus cases rise to 77', value_case=77),
+        ],
+        'The Wyoming Department of Health reports that 674lab-confirmed '   \
+        'cases have recovered and 196 probable cases have recoveredacross ' \
+        'the state.':[
+            _CovidResult('674lab-confirmed cases', value_case=674),
+            _CovidResult('196 probable cases', value_case=196)
+        ],
+        'on sunday the indiana state department of health announced '      \
+        '397 new covid-19 cases and 9 additional deaths.':[
+            _CovidResult('397 new covid-19 cases', value_case=397)
+        ],
+        'after 6 days of no new covid-19 cases in st. louis county '       \
+        'public health director says its too soon to make conclusions '    \
+        'numbers as of thursday .':[
+            _CovidResult('no new covid-19 cases', value_case=0)
+        ],
+        'indiana reports 292 new coronavirus cases 9 additional deaths '   \
+        'indiana health officials nearly 300 new coronavirus cases '       \
+        'monday along with 9 additional deaths related to the virus.':[
+            _CovidResult('292 new coronavirus cases', value_case=292),
+            _CovidResult('300 new coronavirus cases', value_case=300)
+        ],
+        'while african-americans make up 14 percent of the states '        \
+        'population they represented 29 percent of coronavirus cases':[
+            # no result - do not capture 29 as a case count
+        ],
+        'according tothe center for systems science and engineering at '   \
+        'johns hopkins university there have been more than 6,200,00 '     \
+        'confirmed cases worldwide with more than 2,660,000 recoveries '   \
+        'and more than 372,000 deaths. 2020':[
+            # no result, since "6,200,00" is not a valid integer
+        ],
+        'as the number of cases of the coronavirus are flattening '        \
+        'locally greene county offices will reopen on monday to a '        \
+        'regular volume of traffic.':[
+            # no result
+        ],
+        'In fact, the Bear River Health District has the third highest '   \
+        'amount of total cases in the state.':[
+            # no result
+        ],
+        'his nursing homes in murray and in orem have sent residents to '  \
+        'city creek 165 s. 1000 east after they tested positive for '      \
+        'the virus.':[
+            # no result - do not capture 1000 as a case count
+        ],
+        'betty along with her husband gery were discharged after '         \
+        'spending a total of 32 days in the hospital with covid-19.':[
+            # no result - do not capture 32 as a case count
+        ],
+        'asking only one visitor who has not tested positive for '         \
+        'covid-19 per patient the wearing of facial covering':[
+            # no result = do not capture "one" as a count of 1
+        ],
+        'black lives matter protest video covid-19 case report 5-31':[
+            # no result - do not capture 5 as a case count
+        ],
+        'posted 08 45 pm cdt updated 08 57 pm cdt covid-19 cases in '      \
+        'north dakota have hit record highs':[
+            # no result - do not capture 57 as a case count
+        ],
+
+    }
+
+    if not _run_tests(_MODULE_COVID, test_data):
+        return False
+
+    return True
+
 
 ###############################################################################
 def get_version():
@@ -2014,4 +2222,4 @@ if __name__ == '__main__':
     assert test_date_finder()
     assert test_size_measurement_finder()
     assert test_o2sat_finder()
-
+    assert test_covid_finder()

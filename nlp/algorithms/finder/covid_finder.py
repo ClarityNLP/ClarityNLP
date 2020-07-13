@@ -255,97 +255,6 @@ _str_who = r'\b(babies|baby|boy|captive|child|children|citizen|client|'      +\
     r'victim|visitor|voter|woman|women|worker)s?\s?'
 _regex_who = re.compile(_str_who, re.IGNORECASE)
 
-#
-# regexes to find case reports
-#
-
-"""
-
-# <num> <words> <coronavirus> cases?
-<num> covid-19 cases
-<num> coronavirus cases
-<num> new covid-19 cases
-<num> confirmed coronavirus cases
-<num> new <location> covid-19 cases
-
-# <num> <words> cases? <words> <coronavirus>
-<num> cases of covid-19
-<num> new cases of covid-19
-<num> more cases of covid-19
-<num> positive covid-19 cases
-<num> active cases of covid-19
-<num> confirmed cases of covid-19
-<enum> confirmed case of covid-19
-<num> additional cases of covid-19
-<num> positive case of coronavirus
-<num> confirmed cases of the virus
-<num> confirmed cases of the coronavirus
-
-# <num> <words> cases?
-<num> cases
-<num> new cases
-<num> total cases
-<num> active cases
-<num> probable cases
-<num> positive cases
-<num> positive cases
-<num> new daily cases
-<num> confirmed cases
-<num> new positive cases
-<num> lab-confirmed cases
-<num> total confirmed cases
-<num> confirmed and probable cases
-
-# <num> <words> with <coronavirus>
-<num> employees with coronavirus
-
-# <num> <words> positive for <words> <coronavirus>
-<num> test positive for covid-19
-<num> have tested positive for the virus
-<num> <words> tested positive for the coronavirus
-<num> residents having tested positive for covid-19
-<num> additional staff members are positive for covid-19
-<num> people had tested positive for the novel coronavirus
-
-# <num> <words> tested positive
-<num> inmates have tested positive
-
-# (total|number of) <words> <coronavirus> cases? <words> <num>
-total number of coronavirus cases had reached <num>
-total number of covid-19 cases in <location> to <num>
-      number of COVID cases recorded in a one day was <num>
-
-# <coronavirus> cases? <words> <num>
-coronavirus cases (<num>)
-covid-19 cases below <num>
-covid-19 cases up to <num>
-covid-19 cases <words> <num>
-coronavirus cases reach <num>
-coronavirus cases rise to <num>
-coronavirus case total tops <num>
-covid-19 cases in <location> increased to <num>
-
-# (total|number of) <words> cases? <words> <num>
-total number of positive cases <words> <num>
-total of positive cases has been updated to <num>
-total of lab-confirmed cases in <location> is now <num>
-total tally of cases in <location> since the pandemic began to <num>
-
-# cases <words> <num>
-cases-<num>
-cases at <num>
-cases balloon to over <num>
-
-# total <words> <num>
-total of <num>
-brings our total to <num>
-
-number of confirmed cases from <num1> to <num2>
-<num1>-<num2> positive cases in <location>
-<num1> staff members and <num2> residents have now tested positive
-<num1> words and <num2> words cases of covid-19
-<num1> new cases in <location1> and <num2> in <location2>
-"""
 
 # <num> <words> positive for <words> <coronavirus>
 _str_case0 = _str_num + r'\s' + r'(?P<words>' + _str_words + r')' +\
@@ -387,7 +296,7 @@ _str_case8 = r'(cases|total)\s(at|to(\sover))\s' + _str_num
 _regex_case8 = re.compile(_str_case8, re.IGNORECASE)
 
 # <num> <words> cases?
-_str_case9 = _str_num + r'\s' + _str_words + r'cases?'
+_str_case9 = _str_num + r'\s?' + _str_words + r'cases?'
 _regex_case9 = re.compile(_str_case9, re.IGNORECASE)
 
 _CASE_REGEXES = [
@@ -925,141 +834,33 @@ if __name__ == '__main__':
         _enable_debug()
 
     SENTENCES = [
-        '16 New Cases COVID-19 Claims Three More Lives in Atlantic County',
-        
-        'Currently, there are 97 confirmed cases in North Carolina.',
 
-        'The Newton Co Health Dept reports 2 more cases of COVID-19 for ' \
-        'our county-this brings our total to 9.',
-        
-        'As of Tuesday morning, the number of confirmed COVID-19 cases in ' \
-        'Mercer County increased to 12.',
-        
-        'Williamson Countys confirmed cases of COVID-19 spiked by 17, 27 ' \
-        'and 18 from May 12 through May 14. As of May 16, the county has ' \
-        'had 463 confirmed cases in the coronavirus pandemic.',
-
-        'The new cases bring the health district up to a cumulative total ' \
-        'of 137 cases of COVID-19, including 111 in Cache and 26 in Elder.',
-
-        'has had   one hundred forty seven test positive for COVID-19, the ' \
-        'manager said',
-
-        'saw the biggest three-day increase of positive cases yet with 16 ' \
-        'new cases reported over the weekend and 12 on Monday.',
-
-        'officials confirm 692 coronavirus cases as hospitalizations ' \
-        'continue to decline',
-
-        'now has two confirmed COVID-19 cases Facebook Staff WriterLocal ',
-
-        'The announcement, of this sixth case in Floyd County comes '      \
-        'alongside reports from Gov. Andy Beshear on April 21 that there ' \
-        'are 3,192 positive cases in the state, as well as 171 deaths '    \
-        'from the virus.',
-
-        'Contra Costa also reported that its total number of coronavirus ' \
-        'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
-        'from the day before.',
-
-        'The North Dakota Department of Health confirmed Friday 40 ' \
-        'additional cases of COVID-19 out of 2,894 total tests completed',
-
-        'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
-        'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
-        'deaths, 621 active cases (including eight in Richland County, '  \
-        'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
-
-        'Wednesdays totals include 21 new cases in Cass County; five new ' \
-        'cases in Stutsman County; two new cases in Burleigh and Ransom '  \
-        'counties and one new case each in Grand Forks, Walsh and Ward '   \
-        'counties.',
-
-        'Coronavirus cases are surging past 5 million worldwide, with '    \
-        'most of the new cases coming from just four countries: Russia, '  \
-        'Brazil, India, and the United States.',
-
-        'decreasing the number of confirmed cases from 19 to 18.',
-
-        'Macon County reported just three positive cases of COVID-19 '     \
-        'for 12 weeks.',
-
-        'Carroll County surpasses 1,000 coronavirus cases - Carroll '      \
-        'County Times Carroll County surpassed 1,000 cases of COVID-19 '   \
-        'on Wednesday, according to the health department.',
-
-        'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
-        'to 77, Blood Donors Needed',
-
-        'The Wyoming Department of Health reports that 674lab-confirmed '   \
-        'cases have recovered and 196 probable cases have recoveredacross ' \
-        'the state.',
-
-
-        
-        # new errors
+        #'The announcement, of this sixth case in Floyd County comes '      \
+        #'alongside reports from Gov. Andy Beshear on April 21 that there ' \
+        #'are 3,192 positive cases in the state, as well as 171 deaths '    \
+        #'from the virus.',
 
         # returns 9 (fixed)
-        'on sunday the indiana state department of health announced '      \
-        '397 new covid-19 cases and 9 additional deaths.',
-
-        # returns 6 (fixed)
-        'after 6 days of no new covid-19 cases in st. louis county '       \
-        'public health director says its too soon to make conclusions '    \
-        'numbers as of thursday .',
+        #'on sunday the indiana state department of health announced '      \
+        #'397 new covid-19 cases and 9 additional deaths.',
 
         # captures 'coronavirus cases 9' (fixed)
-        'indiana reports 292 new coronavirus cases 9 additional deaths '   \
-        'indiana health officials nearly 300 new coronavirus cases '       \
-        'monday along with 9 additional deaths related to the virus.',
+        #'indiana reports 292 new coronavirus cases 9 additional deaths '   \
+        #'indiana health officials nearly 300 new coronavirus cases '       \
+        #'monday along with 9 additional deaths related to the virus.',
 
-        # captures 29 (fixed, should return nothing)
-        'while african-americans make up 14 percent of the states '        \
-        'population they represented 29 percent of coronavirus cases.'
-        
         # returns 0 (fixed: 6,200,00 is an invalid integer, should return nothing)
-        'according tothe center for systems science and engineering at '   \
-        'johns hopkins university there have been more than 6,200,00 '     \
-        'confirmed cases worldwide with more than 2,660,000 recoveries '   \
-        'and more than 372,000 deaths. 2020',
-        
-        # returns 10 (fixed, should return nothing)
-        'as the number of cases of the coronavirus are flattening '        \
-        'locally greene county offices will reopen on monday to a '        \
-        'regular volume of traffic.',
-        
-        # do NOT capture anything here
-        'In fact, the Bear River Health District has the third highest '   \
-        'amount of total cases in the state.',
-
-        # new2
-
-        # returns 1000 (fixed)
-        'his nursing homes in murray and in orem have sent residents to '  \
-        'city creek 165 s. 1000 east after they tested positive for '      \
-        'the virus.',
-
-        # returns 32 (fixed)
-        'betty along with her husband gery were discharged after '         \
-        'spending a total of 32 days in the hospital with covid-19.',
-
-        # returns 1 (fixed, should return nothing)
-        'asking only one visitor who has not tested positive for '         \
-        'covid-19 per patient the wearing of facial covering',
-
-        # returns 5 (fixed, should return nothing)
-        'black lives matter protest video covid-19 case report 5-31',
-        
-        # returns 57 (fixed, should return nothing)
-        'posted 08 45 pm cdt updated 08 57 pm cdt covid-19 cases in '      \
-        'north dakota have hit record highs',
+        #'according tothe center for systems science and engineering at '   \
+        #'johns hopkins university there have been more than 6,200,00 '     \
+        #'confirmed cases worldwide with more than 2,660,000 recoveries '   \
+        #'and more than 372,000 deaths. 2020',
         
         
-        # TBD
-        # 'Two residents at Fairhaven in Sykesville, one resident at '       \
-        # 'Flying Colors of Success in Westminster and two staff members '   \
-        # 'at Pleasant View Nursing Home in Mount Airy who live in Carroll ' \
-        # 'tested positive, pushing the facilities total to 559.',
+        # # TBD
+        # # 'Two residents at Fairhaven in Sykesville, one resident at '       \
+        # # 'Flying Colors of Success in Westminster and two staff members '   \
+        # # 'at Pleasant View Nursing Home in Mount Airy who live in Carroll ' \
+        # # 'tested positive, pushing the facilities total to 559.',
         
     ]
 
@@ -1077,3 +878,142 @@ if __name__ == '__main__':
 ###############################################################################
 def get_version():
     return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
+
+
+
+
+"""
+death reports
+
+<num> deaths
+
+<num>           <coronavirus> deaths
+<num> more      <coronavirus> deaths
+<num> confirmed <coronavirus> deaths
+
+<num> more deaths related to <coronavirus>
+<num>      deaths due     to <coronavirus>
+<num>      deaths from the   <coronavirus>
+<num> new  deaths directly caused by or related to <coronavirus>
+
+<num> additional         deaths
+no    new                deaths
+<num> new                deaths
+<num> total              deaths
+<num> confirmed resident deaths
+
+2nd    <coronavirus> death
+second <coronavirus> death
+no additional <coronavirus>-related deaths
+
+<num> residents dying
+
+<num> residents   died as a result of the <coronavirus>
+<num> people have died 
+<num>        have died after contracting it
+<num> inmates     died of the <coronavirus>
+
+total number of <coronavirus>-related deaths stands at <num>
+                <coronavirus>-related deaths near      <num>
+
+<coronavirus> death toll hits <num>
+
+total deaths to <num>
+
+                    deaths-<num>
+number of confirmed deaths: <num>
+
+
+false positives:
+    two-thirds of all <coronavirus> deaths
+
+
+
+
+case reports
+
+# <num> <words> <coronavirus> cases?
+<num> covid-19 cases
+<num> coronavirus cases
+<num> new covid-19 cases
+<num> confirmed coronavirus cases
+<num> new <location> covid-19 cases
+
+# <num> <words> cases? <words> <coronavirus>
+<num> cases of covid-19
+<num> new cases of covid-19
+<num> more cases of covid-19
+<num> positive covid-19 cases
+<num> active cases of covid-19
+<num> confirmed cases of covid-19
+<enum> confirmed case of covid-19
+<num> additional cases of covid-19
+<num> positive case of coronavirus
+<num> confirmed cases of the virus
+<num> confirmed cases of the coronavirus
+
+# <num> <words> cases?
+<num> cases
+<num> new cases
+<num> total cases
+<num> active cases
+<num> probable cases
+<num> positive cases
+<num> positive cases
+<num> new daily cases
+<num> confirmed cases
+<num> new positive cases
+<num> lab-confirmed cases
+<num> total confirmed cases
+<num> confirmed and probable cases
+
+# <num> <words> with <coronavirus>
+<num> employees with coronavirus
+
+# <num> <words> positive for <words> <coronavirus>
+<num> test positive for covid-19
+<num> have tested positive for the virus
+<num> <words> tested positive for the coronavirus
+<num> residents having tested positive for covid-19
+<num> additional staff members are positive for covid-19
+<num> people had tested positive for the novel coronavirus
+
+# <num> <words> tested positive
+<num> inmates have tested positive
+
+# (total|number of) <words> <coronavirus> cases? <words> <num>
+total number of coronavirus cases had reached <num>
+total number of covid-19 cases in <location> to <num>
+      number of COVID cases recorded in a one day was <num>
+
+# <coronavirus> cases? <words> <num>
+coronavirus cases (<num>)
+covid-19 cases below <num>
+covid-19 cases up to <num>
+covid-19 cases <words> <num>
+coronavirus cases reach <num>
+coronavirus cases rise to <num>
+coronavirus case total tops <num>
+covid-19 cases in <location> increased to <num>
+
+# (total|number of) <words> cases? <words> <num>
+total number of positive cases <words> <num>
+total of positive cases has been updated to <num>
+total of lab-confirmed cases in <location> is now <num>
+total tally of cases in <location> since the pandemic began to <num>
+
+# cases <words> <num>
+cases-<num>
+cases at <num>
+cases balloon to over <num>
+
+# total <words> <num>
+total of <num>
+brings our total to <num>
+
+number of confirmed cases from <num1> to <num2>
+<num1>-<num2> positive cases in <location>
+<num1> staff members and <num2> residents have now tested positive
+<num1> words and <num2> words cases of covid-19
+<num1> new cases in <location1> and <num2> in <location2>
+"""
