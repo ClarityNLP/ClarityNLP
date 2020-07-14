@@ -185,7 +185,7 @@ _enum_to_int_map = {
 }
 
 # integers, possibly including commas
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<!,)\d+)'
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+)'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
 _str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
@@ -693,6 +693,8 @@ def _regex_match(sentence, regex_list):
         iterator = regex.finditer(sentence)
         for match in iterator:
             match_text = match.group().strip()
+            start = None
+            start_offset = 0
 
             # special handling for _regex_case0 and _regex_case1
             if _regex_case0 == regex or _regex_case1 == regex:
@@ -707,7 +709,7 @@ def _regex_match(sentence, regex_list):
                               format(match_text))
                     continue
             
-            # special handling for _regex_case2, _regex_death2
+            # special handling for _regex_case2
             if _regex_case2 == regex:
                 # check for smaller overlapping match within the current one
                 offset = match_text.find(' ')
@@ -731,21 +733,26 @@ def _regex_match(sentence, regex_list):
                               'words capture is a throwaway word')
                     continue
 
-                # all_throwaway = True
-                # for w in words:
-                #     if w not in _THROWAWAY_SET:
-                #         all_throwaway = False
-                #         break
-
-                # # ignore this match if all throwaway words
-                # if all_throwaway:
-                #     if _TRACE:
-                #         print('ignoring match "{0}"; the "words" capture ' \
-                #               'contains only throwaway words'.
-                #               format(match_text))
-                #     continue
-
-            start = match.start()
+            # special handling for _regex_death2
+            if _regex_death2 == regex:
+                # find the first space char after the initial number
+                start_offset = match_text.find(' ')
+                if -1 != start_offset:
+                    # new text to search is a subset of the original match
+                    sentence2 = match_text[start_offset:]
+                    # search it again for a more compact match
+                    match2 = _regex_death2.search(sentence2)
+                    if match2:
+                        if _TRACE:
+                            print('_regex_death2 override: "{0}"'.
+                                  format(match2.group()))
+                        # set start explicitly before overwriting 'match'
+                        start = match.start() + start_offset
+                        match = match2
+                        match_text = match2.group().strip()
+                        
+            if start is None:
+                start = match.start()
             end   = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex,
                                                 other=match))
@@ -1037,20 +1044,19 @@ if __name__ == '__main__':
         'June 18, the second consecutive day of seven additional deaths '     \
         'attributed to the coronavirus, pushing the total number of people '  \
         'who have died in the county to 257.',
-        
+
         # 'The figures from the state Department of Public Health come after '  \
         # 'two consecutive days where the coronavirus death toll rose by less ' \
         # 'than 24, dramatically lower than at the height of the coronavirus '  \
         # 'surge, when more than 150 people in the state were dying every day.',
 
 
+        'The announcement, of this sixth case in Floyd County comes '      \
+        'alongside reports from Gov. Andy Beshear on April 21 that there ' \
+        'are 3,192 positive cases in the state, as well as 171 deaths '    \
+        'from the virus.',
         
         
-        #'The announcement, of this sixth case in Floyd County comes '      \
-        #'alongside reports from Gov. Andy Beshear on April 21 that there ' \
-        #'are 3,192 positive cases in the state, as well as 171 deaths '    \
-        #'from the virus.',
-
         # returns 9 (fixed)
         #'on sunday the indiana state department of health announced '      \
         #'397 new covid-19 cases and 9 additional deaths.',
