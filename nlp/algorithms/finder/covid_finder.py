@@ -76,7 +76,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME   = 'covid_finder.py'
 
 # set to True to enable debug output
@@ -187,7 +187,7 @@ _enum_to_int_map = {
 
 # integers, possibly including commas
 # do not capture numbers in phrases such as "in their 90s", etc
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(?!\'?s))'
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(?!\d)(?!\'?s))'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
 _str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
@@ -251,7 +251,7 @@ _str_clock = r'(?<!\d)(2[0-3]|1[0-9]|0[0-9])[-:\s][0-5][0-9]\s?' +\
 _regex_clock = re.compile(_str_clock, re.IGNORECASE)
 
 
-_str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus)([-\s]related)?\s?'
+_str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus|disease)([-\s]related)?\s?'
 
 _str_death = r'(deaths?|fatalit(ies|y))'
 _str_hosp  = r'(hospitalizations?)'
@@ -292,8 +292,9 @@ _str_death3 = _str_coronavirus + _str_words + r'deaths?\s?' +\
 _regex_death3 = re.compile(_str_death3, re.IGNORECASE)
 
 # <num> <who> (have)? died <words> <coronavirus>
-_str_death4 = _str_num + r'\s?' + r'(' + _str_who + r')?' +\
-    r'(have\s)?(?<![a-z])died\s' + _str_words + _str_coronavirus
+_str_death4 = _str_num + r'\s?' + _str_words + r'\s?'      +\
+    r'(' + _str_who + r')?' + r'(have\s)?(?<![a-z])died\s' +\
+    _str_words + _str_coronavirus
 _regex_death4 = re.compile(_str_death4, re.IGNORECASE)
 
 # deaths|died <connector> <words> <num>
@@ -659,7 +660,41 @@ def _tnum_to_int(_str_tnum):
     # for val_t, a textual number such as "forty-four" will return 40 from the
     # map lookup, so no need to multiply by 10
     return 100*val_h + val_t + val_o
+
+
+###############################################################################
+def _remove_inferior_matches(candidates, regex_list, regex_minor):
+    """
+    If a match from regex_minor overlaps any other regex in the list, remove
+    the match from regex_minor in the list of candidates. Returns the updated
+    list of candidates.
+    """
     
+    to_remove = set()
+    for i in range(len(candidates)):
+        if candidates[i].regex != regex_minor:
+            continue
+        c1 = candidates[i]        
+        for j in range(len(candidates)):
+            c2 = candidates[j]
+            if j != i and c2.regex in regex_list and c2.regex != regex_minor:
+                # check for overlap
+                if overlap.has_overlap(c1.start, c1.end, c2.start, c2.end):
+                    to_remove.add(i)
+                    if _TRACE:
+                        print('removing overlapping inferior match "{0}", '.
+                              format(c1.match_text))
+                    break
+                
+    if len(to_remove) > 0:
+        new_candidates = []
+        for i in range(len(candidates)):
+            if i not in to_remove:
+                new_candidates.append(candidates[i])
+        candidates = new_candidates
+
+    return candidates
+
 
 ###############################################################################
 def _regex_match(sentence, regex_list):
@@ -714,8 +749,7 @@ def _regex_match(sentence, regex_list):
                 last_word = words[-1]
                 if last_word in _THROWAWAY_SET:
                     if _TRACE:
-                        print('ignoring match "{0}"; the final word in the '
-                              'words capture is a throwaway word'.
+                        print('ignoring match "{0}"; final word is throwaway'.
                               format(match_text))
                     continue
 
@@ -752,31 +786,16 @@ def _regex_match(sentence, regex_list):
     if 0 == len(candidates):
         return []        
 
-    # for the death regexes: if regex_death5 overlaps any others, remove the
-    # match for regex_death5
-    to_remove = set()
-    for i in range(len(candidates)):
-        if candidates[i].regex != _regex_death5:
-            continue
-        c1 = candidates[i]        
-        for j in range(len(candidates)):
-            c2 = candidates[j]
-            if j != i and c2.regex in _DEATH_REGEXES and c2.regex != _regex_death5:
-                # check for overlap
-                if overlap.has_overlap(c1.start, c1.end, c2.start, c2.end):
-                    to_remove.add(i)
-                    if _TRACE:
-                        print('removing match "{0}", _regex_death5 overlap'.
-                              format(c1.match_text))
-                    break
-                
-    if len(to_remove) > 0:
-        new_candidates = []
-        for i in range(len(candidates)):
-            if i not in to_remove:
-                new_candidates.append(candidates[i])
-        candidates = new_candidates
+    # if _regex_case8 overlaps any others, remove the matches for _regex_case8
+    candidates = _remove_inferior_matches(candidates,
+                                          _CASE_REGEXES,
+                                          _regex_case8)
     
+    # if _regex_death5 overlaps any others, remove the match for _regex_death5
+    candidates = _remove_inferior_matches(candidates,
+                                          _DEATH_REGEXES,
+                                          _regex_death5)
+        
     # sort the candidates in ASCENDING order of length, which is needed for
     # one-pass overlap resolution later on
     candidates = sorted(candidates, key=lambda x: x.end-x.start)
@@ -848,9 +867,11 @@ def _extract_candidates(candidates):
         match = c.other
         assert match is not None
 
+        text  = match.group().strip()
         start = match.start()
-        end   = match.end()
-        text  = match.group()
+        # recompute the end position, since match.group() could include space at
+        # the end of the match
+        end   = start + len(text)
 
         for k,v in match.groupdict().items():
             if v is None:
@@ -997,14 +1018,30 @@ if __name__ == '__main__':
 
     SENTENCES = [
 
-        # FIX THIS
-        #'at least 10 covid-19 cases at two ellensburg long-term care centers ' \
-        #'kittitas county reported monday an increase in coronavirus cases '    \
-        #'associated with long-term care facilities',
-        
         # errors
 
+        # captures "first reported a death" and returns a count of 1
+        'the county first reported a death on the post no new covid-19 ' \
+        'deaths reported in winnebago county appeared first on wrex.',
 
+        # lots of problems
+        'three loudoun supervisors urge governor to allow western districts ' \
+        'to reopen 131 loudoun county to begin researching local impact of '  \
+        'gun control measures signed by governor 116 update six new deaths '  \
+        '56 new coronavirus cases reported in loudoun county 109 update '     \
+        'four new deaths 35 new coronavirus cases reported in loudoun county '\
+        '100 stocks market data by tradingview + update 111 new coronavirus ' \
+        'cases reported in loudoun county loudoun county has 2,429 confirmed '\
+        'cases of covid-19, according to the virginia department o loudoun '  \
+        'times to view our latest e-edition click the image on the left.',
+
+        # captures "deaths decreased by one" and returns a count of 1
+        'the weekly number of deaths decreased by one from 17 a week ago '    \
+        'to 16 this week.',
+
+        # captures "three weeks ago who has not died", returns count of 3
+        'a case with a diagnosis date of more than three weeks ago who has '  \
+        'not died is considered recovered.',
         
         #<num> residents dying
         

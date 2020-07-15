@@ -40,7 +40,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 9
+_VERSION_MINOR = 10
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -2278,8 +2278,21 @@ def test_covid_finder():
             _CovidResult(text_death='no additional coronavirus-related deaths',
                          value_death=0)
         ],
-        
-        
+        'four county residents have died of the disease and 111 have recovered.':[
+            _CovidResult(text_death='four county residents have died of the disease',
+                         value_death=4)
+        ],
+        'earlier deaths were a man in his 80s from suffolk county who had '   \
+        'been hospitalized and had pre-existing health conditions and a '     \
+        'woman in her 50s from middlesex county who had a pre-existing '      \
+        'condition.':[
+            # no result
+        ],
+        'at least 10 covid-19 cases at two ellensburg long-term care centers ' \
+        'kittitas county reported monday an increase in coronavirus cases '    \
+        'associated with long-term care facilities':[
+            _CovidResult(text_case='10 covid-19 cases', value_case=10)
+        ],
     }
 
     if not _run_tests(_MODULE_COVID, test_data):
