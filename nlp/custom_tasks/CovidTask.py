@@ -34,8 +34,10 @@ from collections import namedtuple
 from tasks.task_utilities import BaseTask
 from algorithms import run_covid_finder, CovidTuple, EMPTY_COVID_FIELD
 
+from claritynlp_logging import log, ERROR, DEBUG
+
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 
 
 ###############################################################################
@@ -52,6 +54,16 @@ class CovidTask(BaseTask):
 
         # for each document in the documentset
         for doc in self.docs:
+
+            # skip any doc with a missing 'subject' field
+            if 'subject' not in doc:
+                if 'id' in doc:
+                    log('***** DOC ID WITH MISSING SUBJECT FIELD: {0}'.
+                        format(doc['id']))
+                else:
+                    log('***** DOC WITH MISSING SUBJECT FIELD: {0}'.
+                        format(doc))
+                continue
 
             # get all sentences in this document
             sentence_list = self.get_document_sentences(doc)
