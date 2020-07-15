@@ -108,6 +108,7 @@ _THROWAWAY_SET = {
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
 
+# nongreedy word captures
 _str_words = r'(' + _str_word + r'){0,5}?'
 _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
@@ -205,10 +206,10 @@ _regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
 #     third highest number of confirmed cases
 #
 def _make_num_regex(a='int', b='tnum', c='enum'):
-    _str_num = r'('                                                         +\
+    _str_num = r'(?<![-])('                                                 +\
         r'(?P<{0}>'.format(a) +  _str_int + r')|'                           +\
         r'(?P<{0}>'.format(b) + _str_tnum + r')|'                           +\
-        r'(?P<{0}>'.format(c) + _str_enum + r'(?! (high|large|great)est))'  +\
+        r'(?P<{0}>'.format(c) + _str_enum + r'(?![-])(?! (high|large|great|small|tini)est))'  +\
         r')(?!%)(?! %)(?! percent)(?! pct)'
     return _str_num
 
@@ -278,8 +279,11 @@ _str_death1 = _str_num + r'\s?' + _str_words + r'deaths?\s?' +\
     _str_words + _str_coronavirus
 _regex_death1 = re.compile(_str_death1, re.IGNORECASE)
 
-# <num> <words> (deaths?|died) # don't capture "candied"
-_str_death2 = _str_num + r'\s?' + _str_words + r'(deaths?|(?<![a-z])died)'
+# <num> <words> (deaths?|died)
+# don't capture "candied", "deaths of", "died of" with this regex
+# if regex index is changed from 2, fix special handling below in _regex_match
+_str_death2 = _str_num + r'\s?' + r'(?P<words>' + _str_words + r')' +\
+    r'(deaths?|(?<![a-z])(died|dead))(?! of)'
 _regex_death2 = re.compile(_str_death2, re.IGNORECASE)
 
 # <coronavirus> <words> deaths <words> <num>
@@ -293,15 +297,12 @@ _str_death4 = _str_num + r'\s?' + r'(' + _str_who + r')?' +\
 _regex_death4 = re.compile(_str_death4, re.IGNORECASE)
 
 # deaths|died <connector> <words> <num>
-_str_death5 = r'\b(deaths?|died)[-\s:]+' + _str_words + _str_num
+_str_death5 = r'\b(deaths?|died)[-\s:]+' + _str_words + _str_num + r'(?! of)'
 _regex_death5 = re.compile(_str_death5, re.IGNORECASE)
 
-"""
-              total deaths to <num>
-                    deaths-<num>
-number of confirmed deaths: <num>
-"""
-
+#
+# case count regexes
+#
 
 # <num> <words> positive for <words> <coronavirus>
 _str_case0 = _str_num + r'\s' + r'(?P<words>' + _str_words + r')' +\
@@ -389,7 +390,7 @@ def _erase(sentence, candidates):
     """
     Erase all candidate matches from the sentence. Only substitute a single
     whitespace for the region, since this is performed on the previously
-    cleaned sentence.
+    cleaned sentence and offsets need to be preserved.
     """
 
     new_sentence = sentence
@@ -397,12 +398,14 @@ def _erase(sentence, candidates):
         start = c.start
         end = c.end
         s1 = new_sentence[:start]
-        s2 = ' '
+        s2 = ' '*(end-start)
         s3 = new_sentence[end:]
         new_sentence = s1 + s2 + s3
 
-    # collapse repeated whitespace, if any
-    new_sentence = re.sub(r'\s+', ' ', new_sentence)
+    if _TRACE:
+        print('sentence after erasing candidates: ')
+        print(new_sentence)
+        print()
         
     return new_sentence
     
@@ -669,6 +672,9 @@ def _regex_match(sentence, regex_list):
     candidates = []
     for i, regex in enumerate(regex_list):
         # finditer finds non-overlapping matches
+        # print()
+        # print('[{0}]: {1}'.format(i, regex.pattern))
+        # print()
         iterator = regex.finditer(sentence)
         for match in iterator:
             match_text = match.group().strip()
@@ -709,11 +715,12 @@ def _regex_match(sentence, regex_list):
                 if last_word in _THROWAWAY_SET:
                     if _TRACE:
                         print('ignoring match "{0}"; the final word in the '
-                              'words capture is a throwaway word')
+                              'words capture is a throwaway word'.
+                              format(match_text))
                     continue
 
             # special handling for _regex_death2
-            if _regex_death2 == regex:
+            if _regex_death2 == regex:                
                 # find the first space char after the initial number
                 start_offset = match_text.find(' ')
                 if -1 != start_offset:
@@ -990,91 +997,16 @@ if __name__ == '__main__':
 
     SENTENCES = [
 
-        'Read more for free Three more COVID-19 deaths in Saugus',
-
-        'There have now been 224 COVID-19 deaths and 2,888 confirmed '      \
-        'cases of COVID-19 in Monroe County.',
-
-        'The county spokesperson said that there have been no additional '  \
-        'coronavirus-related deaths since last week.',
-
-        'One hundred-thirteen deaths due to COVID-19 occurred among '       \
-        'reported cases.',
+        # FIX THIS
+        #'at least 10 covid-19 cases at two ellensburg long-term care centers ' \
+        #'kittitas county reported monday an increase in coronavirus cases '    \
+        #'associated with long-term care facilities',
         
-        '16 New CasesChris ColemanShare on FacebookShare on Twitter Three '  \
-        'more deaths related to COVID-19 were reported earlier today',
-
-        'on sunday the indiana state department of health announced '      \
-        '397 new covid-19 cases and 9 additional deaths.',
-
-        'there were 3 more deaths related to COVID-19 vs yesterday',
-        
-        'reported fourteen more deaths related to the coronavirus',
-        
-        'health officials counted 15 deaths due to coronavirus',
-        'health officials counted 12 deaths from covid19',
-        'there were no new deaths related to COVID-19 last week',
-
-        'Utahs Megaplex Theatres plan to reopen 12 multiplexes starting '  \
-        'Thursday Utahs coronavirus death toll hits 139, includes a Utah ' \
-        'Valley University student and a 34-year-old mom',
-
-        "Oakley announced the county's firstCOVID-19 related death.",
-
-        'Blaine County Health officials announced the second coronavirus '  \
-        'death on the afternoon of March 26. The victim was over the age '  \
-        'of 80, but authorities have not said whether he had any other '    \
-        'health issues.',
-
-        'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
-        'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
-        'deaths, 621 active cases (including eight in Richland County, '  \
-        'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
-
-        'As of last count, 24 residents have died as a result of Covid-19.',
-        '16 have died from the coronavirus',
-        '42 have died after contracting it',
-        '12 inmates died of the coronavirus',
-
         # errors
 
-        # finds "death tweetedmonday that five" and reports death count as 5
-        'tampa police chief brian dugan who expressed dis last week '       \
-        'about floyds death tweetedmonday that five of his officers were '  \
-        'exposed to the protester whom he did not identify.',
 
-        # finds "2015 death" and reports death count as 2015
-        'wen was baltimores health commissioner when protests erupted '     \
-        'following the 2015 death of john doe.',
-
-        # finds "second-worst death" and reports death count as t
-        'britain which with over 38,500 dead has the worlds second-worst '  \
-        'death toll behind the united states eased restrictions despite '   \
-        'warnings from health officials that the risk of spreading '        \
-        'covid-19 was still too great.',
-
-        # finds "68 case deaths" and reports death count as 68
-        'choctaw county has 48 cases with 2 deaths webster county has 68 '  \
-        'cases and 2 deaths and winston county has 120 cases with 1 death ' \
-        'recorded by mdhs.',
-
+        
         #<num> residents dying
-        
-        # returns 9 (fixed)
-        #'on sunday the indiana state department of health announced '      \
-        #'397 new covid-19 cases and 9 additional deaths.',
-
-        # captures 'coronavirus cases 9' (fixed)
-        #'indiana reports 292 new coronavirus cases 9 additional deaths '   \
-        #'indiana health officials nearly 300 new coronavirus cases '       \
-        #'monday along with 9 additional deaths related to the virus.',
-
-        # returns 0 (fixed: 6,200,00 is an invalid integer, should return nothing)
-        #'according tothe center for systems science and engineering at '   \
-        #'johns hopkins university there have been more than 6,200,00 '     \
-        #'confirmed cases worldwide with more than 2,660,000 recoveries '   \
-        #'and more than 372,000 deaths. 2020',
-        
         
         # # TBD
         # # 'Two residents at Fairhaven in Sykesville, one resident at '       \

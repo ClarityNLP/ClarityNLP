@@ -2227,6 +2227,58 @@ def test_covid_finder():
                          'south carolina to 11,394', value_case=11394,
                          text_death='died to 487', value_death=487)
         ],
+        'choctaw county has 48 cases with 2 deaths webster county has 68 '  \
+        'cases and 2 deaths and winston county has 120 cases with 1 death ' \
+        'recorded by mdhs.':[
+            _CovidResult(text_case='48 cases', value_case=48,
+                         text_death='2 deaths', value_death=2),
+            _CovidResult(text_case='68 cases', value_case=68,
+                         text_death='2 deaths', value_death=2),
+            _CovidResult(text_case='120 cases', value_case=120,
+                         text_death='1 death', value_death=1),
+        ],
+        'britain which with over 38,500 dead has the worlds second-worst '  \
+        'death toll behind the united states eased restrictions despite '   \
+        'warnings from health officials that the risk of spreading '        \
+        'covid-19 was still too great.':[
+            _CovidResult(text_death='38,500 dead', value_death=38500)
+        ],
+        'wen was baltimores health commissioner when protests erupted '     \
+        'following the 2015 death of john doe.':[
+            # no result - do not capture 2015 as a death count
+        ],
+        'tampa police chief brian dugan who expressed dis last week '       \
+        'about floyds death tweetedmonday that five of his officers were '  \
+        'exposed to the protester whom he did not identify.':[
+            # no result - do not capture "death tweetedmonday that five" and
+            # return a death count of 5
+        ],
+        'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
+        'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
+        'deaths, 621 active cases (including eight in Richland County, '  \
+        'North Dakota), 1,762 recoveries and 2,439 total cases to date.':[
+            _CovidResult(text_case='seventeen new covid-19 cases', value_case=17,
+                         text_death='56 deaths', value_death=56),
+            _CovidResult(text_case='621 active cases', value_case=621),
+            _CovidResult(text_case='2,439 total cases', value_case=2439)                         
+        ],
+        'Blaine County Health officials announced the second coronavirus '  \
+        'death on the afternoon of March 26.':[
+            _CovidResult(text_death='second coronavirus death', value_death=2)
+        ],
+        "Oakley announced the county's firstCOVID-19 related death.":[
+            _CovidResult(text_death='first covid-19 related death', value_death=1)                         
+        ],
+        'One hundred-thirteen deaths due to COVID-19 occurred among '       \
+        'reported cases.':[
+            _CovidResult(text_death='one hundred-thirteen deaths', value_death=113)
+        ],
+        'The county spokesperson said that there have been no additional '  \
+        'coronavirus-related deaths since last week.':[
+            _CovidResult(text_death='no additional coronavirus-related deaths',
+                         value_death=0)
+        ],
+        
         
     }
 
