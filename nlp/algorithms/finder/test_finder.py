@@ -2036,6 +2036,8 @@ def test_covid_finder():
         'Williamson Countys confirmed cases of COVID-19 spiked by 17, 27 ' \
         'and 18 from May 12 through May 14. As of May 16, the county has ' \
         'had 463 confirmed cases in the coronavirus pandemic.':[
+            _CovidResult(text_case = 'confirmed cases of covid-19 spiked by 17',
+                         value_case = 17),
             _CovidResult(text_case = '463 confirmed cases',
                          value_case = 463)
         ],
@@ -2185,7 +2187,47 @@ def test_covid_finder():
         'north dakota have hit record highs':[
             # no result - do not capture 57 as a case count
         ],
-
+        'iowans set to gather for another event to mourn the death of '     \
+        'him news 2 hours ago video police davenport officer shot '\
+        '2 killings reported news 2 hours':[
+            # no result - do not capture "death of him news 2" and return
+            # a death count of 2
+        ],
+        'shows the state saw five more covid-19 deaths over the 24-hour '   \
+        'period between 10 00 a.m. sunday and 10 00 a.m. monday.':[
+            # do not capture "deaths over the 24" and return
+            # a death count of 24
+            _CovidResult(text_death='five more covid-19 deaths',
+                         value_death=5)
+        ],
+        'kingstons death came 3 weeks after his legal wife luana joan '     \
+        'kingston died of breast cancer according to her obituary.':
+        [
+            # no result - do not capture "death came 3" and return a
+            # death count of 3
+        ],
+        'the new guidance comes in an executive order that takes effect '   \
+        'immediately and runs through courtney tanner 1 p.m. utah reports ' \
+        'four new deaths four more utahns have died from covid-19, the '    \
+        'utah department of health announced wednesday bringing the states '\
+        'death toll to 105.':[
+            _CovidResult(text_death='four new deaths', value_death=4),
+            _CovidResult(text_death='four more utahns have died', value_death=4),
+            _CovidResult(text_death='death toll to 105', value_death=105)
+        ],
+        "the department said three mentwo in their 70s from hampden and "   \
+        "berkshire counties and a third man in his 90's from suffolk "      \
+        "countydied from covid-19-related illness.":[
+            # do not capture "90's from suffolk countydied" and return
+            # a death count of 90
+        ],
+        'this brings the total number of people confirmed to have covid-19 '\
+        'in south carolina to 11,394 and those who have died to 487.':[
+            _CovidResult(text_case='confirmed to have covid-19 in ' \
+                         'south carolina to 11,394', value_case=11394,
+                         text_death='died to 487', value_death=487)
+        ],
+        
     }
 
     if not _run_tests(_MODULE_COVID, test_data):
