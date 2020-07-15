@@ -185,7 +185,8 @@ _enum_to_int_map = {
 }
 
 # integers, possibly including commas
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+)'
+# do not capture numbers in phrases such as "in their 90s", etc
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(?!\'?s))'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
 _str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
@@ -234,8 +235,8 @@ _str_num = r'(' + r'(\bfrom\s)?' +\
 
 
 # time durations
-_str_duration = r'(?<!\d)\d+\s(year|yr\.?|month|mo\.?|week|wk\.?|day|' +\
-    r'hour|hr\.?|minute|min\.?|second|sec\.?)(?![a-z])s?'
+_str_duration = r'(?<!\d)\d+[-\s](years?|yr\.?|months?|mo\.?|weeks?|wk\.?|' +\
+    r'days?|hours?|hr\.?|minutes?|min\.?|seconds?|sec\.?)(?![a-z])'
 _regex_duration = re.compile(_str_duration, re.IGNORECASE)
 
 # clock times
@@ -277,8 +278,8 @@ _str_death1 = _str_num + r'\s?' + _str_words + r'deaths?\s?' +\
     _str_words + _str_coronavirus
 _regex_death1 = re.compile(_str_death1, re.IGNORECASE)
 
-# <num> <words> (deaths?|died)
-_str_death2 = _str_num + r'\s?' + _str_words + r'(deaths?|died)'
+# <num> <words> (deaths?|died) # don't capture "candied"
+_str_death2 = _str_num + r'\s?' + _str_words + r'(deaths?|(?<![a-z])died)'
 _regex_death2 = re.compile(_str_death2, re.IGNORECASE)
 
 # <coronavirus> <words> deaths <words> <num>
@@ -288,23 +289,14 @@ _regex_death3 = re.compile(_str_death3, re.IGNORECASE)
 
 # <num> <who> (have)? died <words> <coronavirus>
 _str_death4 = _str_num + r'\s?' + r'(' + _str_who + r')?' +\
-    r'(have\s)?died\s' + _str_words + _str_coronavirus
+    r'(have\s)?(?<![a-z])died\s' + _str_words + _str_coronavirus
 _regex_death4 = re.compile(_str_death4, re.IGNORECASE)
 
+# deaths|died <connector> <words> <num>
+_str_death5 = r'\b(deaths?|died)[-\s:]+' + _str_words + _str_num
+_regex_death5 = re.compile(_str_death5, re.IGNORECASE)
+
 """
-
-<num> residents dying
-
-<num> residents   died as a result of the <coronavirus>
-<num> people have died 
-<num>        have died after contracting it
-<num> inmates     died of the <coronavirus>
-
-total number of <coronavirus>-related deaths stands at <num>
-                <coronavirus>-related deaths near      <num>
-
-<coronavirus> death toll hits <num>
-
               total deaths to <num>
                     deaths-<num>
 number of confirmed deaths: <num>
@@ -354,6 +346,10 @@ _regex_case8 = re.compile(_str_case8, re.IGNORECASE)
 _str_case9 = _str_num + r'\s?' + _str_words + r'cases?'
 _regex_case9 = re.compile(_str_case9, re.IGNORECASE)
 
+# confirmed <words> <coronavirus> <words> <num>
+_str_case10 = r'\bconfirmed\s' + _str_words + _str_coronavirus + _str_words + _str_num
+_regex_case10 = re.compile(_str_case10, re.IGNORECASE)
+
 _CASE_REGEXES = [
     _regex_case0,
     _regex_case1,
@@ -365,6 +361,7 @@ _CASE_REGEXES = [
     _regex_case7,
     _regex_case8,
     _regex_case9,
+    _regex_case10,
 ]
 
 _DEATH_REGEXES = [
@@ -373,6 +370,7 @@ _DEATH_REGEXES = [
     _regex_death2,
     _regex_death3,
     _regex_death4,
+    _regex_death5,
 ]
 
 # matching data used to build the result object
@@ -658,33 +656,14 @@ def _tnum_to_int(_str_tnum):
     # for val_t, a textual number such as "forty-four" will return 40 from the
     # map lookup, so no need to multiply by 10
     return 100*val_h + val_t + val_o
-
-
-# ###############################################################################
-# def _check_smaller_match(regex, match, sentence):
-#     """
-#     Check for another smaller-spanning match within the original match for
-#     the same regex.
-#     """
-
-#     # check for smaller overlapping match within the current one
-#     match_text = match.group().strip()
-#     offset = match_text.find(' ')
-#     if -1 != offset:
-#         sentence2 = sentence[match.start() + offset:]
-#         match2 = regex.search(sentence2)
-#         if match2:
-#             if _TRACE:
-#                 print('_regex match override: "{0}"'.
-#                       format(match2.group()))
-#             match = match2
-
-#     return match
     
 
 ###############################################################################
 def _regex_match(sentence, regex_list):
     """
+    Run a list of regexes against a sentence, produce candidate matches, apply
+    regex-dependent special handling where need, and run a candidate resolution
+    process to select the winning match(es).
     """
     
     candidates = []
@@ -763,9 +742,33 @@ def _regex_match(sentence, regex_list):
                 for k,v in match.groupdict().items():
                     print('\t\t{0} => {1}'.format(k,v))
                 
-
     if 0 == len(candidates):
         return []        
+
+    # for the death regexes: if regex_death5 overlaps any others, remove the
+    # match for regex_death5
+    to_remove = set()
+    for i in range(len(candidates)):
+        if candidates[i].regex != _regex_death5:
+            continue
+        c1 = candidates[i]        
+        for j in range(len(candidates)):
+            c2 = candidates[j]
+            if j != i and c2.regex in _DEATH_REGEXES and c2.regex != _regex_death5:
+                # check for overlap
+                if overlap.has_overlap(c1.start, c1.end, c2.start, c2.end):
+                    to_remove.add(i)
+                    if _TRACE:
+                        print('removing match "{0}", _regex_death5 overlap'.
+                              format(c1.match_text))
+                    break
+                
+    if len(to_remove) > 0:
+        new_candidates = []
+        for i in range(len(candidates)):
+            if i not in to_remove:
+                new_candidates.append(candidates[i])
+        candidates = new_candidates
     
     # sort the candidates in ASCENDING order of length, which is needed for
     # one-pass overlap resolution later on
@@ -1028,34 +1031,34 @@ if __name__ == '__main__':
         'deaths, 621 active cases (including eight in Richland County, '  \
         'North Dakota), 1,762 recoveries and 2,439 total cases to date.',
 
-        #<num> residents dying
-
-        #<num> residents   died as a result of the <coronavirus>
-        #<num> people have died 
-        #<num>        have died after contracting it
-        #<num> inmates     died of the <coronavirus>
-
         'As of last count, 24 residents have died as a result of Covid-19.',
         '16 have died from the coronavirus',
         '42 have died after contracting it',
+        '12 inmates died of the coronavirus',
 
-        'Coronavirus Seven new deaths, 288 new cases in Orange County as of ' \
-        'June 19 The Orange County Health Care Agency reported on Friday, '   \
-        'June 18, the second consecutive day of seven additional deaths '     \
-        'attributed to the coronavirus, pushing the total number of people '  \
-        'who have died in the county to 257.',
+        # errors
 
-        # 'The figures from the state Department of Public Health come after '  \
-        # 'two consecutive days where the coronavirus death toll rose by less ' \
-        # 'than 24, dramatically lower than at the height of the coronavirus '  \
-        # 'surge, when more than 150 people in the state were dying every day.',
+        # finds "death tweetedmonday that five" and reports death count as 5
+        'tampa police chief brian dugan who expressed dis last week '       \
+        'about floyds death tweetedmonday that five of his officers were '  \
+        'exposed to the protester whom he did not identify.',
 
+        # finds "2015 death" and reports death count as 2015
+        'wen was baltimores health commissioner when protests erupted '     \
+        'following the 2015 death of john doe.',
 
-        'The announcement, of this sixth case in Floyd County comes '      \
-        'alongside reports from Gov. Andy Beshear on April 21 that there ' \
-        'are 3,192 positive cases in the state, as well as 171 deaths '    \
-        'from the virus.',
-        
+        # finds "second-worst death" and reports death count as t
+        'britain which with over 38,500 dead has the worlds second-worst '  \
+        'death toll behind the united states eased restrictions despite '   \
+        'warnings from health officials that the risk of spreading '        \
+        'covid-19 was still too great.',
+
+        # finds "68 case deaths" and reports death count as 68
+        'choctaw county has 48 cases with 2 deaths webster county has 68 '  \
+        'cases and 2 deaths and winston county has 120 cases with 1 death ' \
+        'recorded by mdhs.',
+
+        #<num> residents dying
         
         # returns 9 (fixed)
         #'on sunday the indiana state department of health announced '      \
