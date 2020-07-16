@@ -40,7 +40,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 10
+_VERSION_MINOR = 11
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -2293,6 +2293,24 @@ def test_covid_finder():
         'associated with long-term care facilities':[
             _CovidResult(text_case='10 covid-19 cases', value_case=10)
         ],
+        'a case with a diagnosis date of more than three weeks ago who has '  \
+        'not died is considered recovered.':[
+            # no result - do not capture "three weeks ago who has not died"
+            # and return a count of 3
+        ],
+        'the weekly number of deaths decreased by one from 17 a week ago '    \
+        'to 16 this week.':[
+            # capturing "one" is incorrect
+            _CovidResult(text_death='deaths decreased by one from 17 to 16',
+                         value_death=16)
+        ],
+        'the county first reported a death on the post no new covid-19 ' \
+        'deaths reported in winnebago county appeared first on wrex.':[
+            # do not capture "first reported a death" and
+            # return a count of 1
+            _CovidResult(text_death='no new covid-19 deaths', value_death=0)
+        ],
+        
     }
 
     if not _run_tests(_MODULE_COVID, test_data):

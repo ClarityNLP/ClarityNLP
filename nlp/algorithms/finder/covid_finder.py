@@ -227,17 +227,20 @@ def _make_num_regex(a='int', b='tnum', c='enum'):
 
 # regex to recognize either a range or a single integer
 # also recognize 'no' for situations such as "no new cases of covid-19"
+# do not capture a text num followed by 'from', as in
+# "decreased by one from 17 to 16", in which the desired num is 16, not "one"
 _str_num = r'(' + r'(\bfrom\s)?' +\
     _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
     r'\s?to\s?' +\
     _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
     r'|' + r'\b(?P<no>no)\b' + r'|' +  _str_float_word    +\
-    r'|' + _make_num_regex() + r')'
+    r'|' + _make_num_regex() + r')(?!\sfrom\s)'
 
 
-# time durations
-_str_duration = r'(?<!\d)\d+[-\s](years?|yr\.?|months?|mo\.?|weeks?|wk\.?|' +\
-    r'days?|hours?|hr\.?|minutes?|min\.?|seconds?|sec\.?)(?![a-z])'
+# time durations, also relative times such as "a week ago"
+_str_duration = r'(' + _str_num + r'|' + r'\ba\b' + r')' +\
+    r'[-\s](years?|yr\.?|months?|mo\.?|weeks?|wk\.?|' +\
+    r'days?|hours?|hr\.?|minutes?|min\.?|seconds?|sec\.?)(?![a-z])(\sago\s)?'
 _regex_duration = re.compile(_str_duration, re.IGNORECASE)
 
 # clock times
@@ -271,11 +274,12 @@ _regex_who = re.compile(_str_who, re.IGNORECASE)
 #
 
 # <num> <words> <coronavirus> deaths
-_str_death0 = _str_num + r'\s?' + _str_words + _str_coronavirus + r'deaths?'
+_str_death0 = _str_num + r'\s?' + _str_words + _str_coronavirus +\
+    r'(deaths|(?<!a\s)death)'
 _regex_death0 = re.compile(_str_death0, re.IGNORECASE)
 
 # <num> <words> deaths <words> <coronavirus>
-_str_death1 = _str_num + r'\s?' + _str_words + r'deaths?\s?' +\
+_str_death1 = _str_num + r'\s?' + _str_words + r'(deaths|(?<!a\s)death)\s?' +\
     _str_words + _str_coronavirus
 _regex_death1 = re.compile(_str_death1, re.IGNORECASE)
 
@@ -283,11 +287,11 @@ _regex_death1 = re.compile(_str_death1, re.IGNORECASE)
 # don't capture "candied", "deaths of", "died of" with this regex
 # if regex index is changed from 2, fix special handling below in _regex_match
 _str_death2 = _str_num + r'\s?' + r'(?P<words>' + _str_words + r')' +\
-    r'(deaths?|(?<![a-z])(died|dead))(?! of)'
+    r'((deaths|(?<!a\s)death)|(?<![a-z])(died|dead))(?! of)'
 _regex_death2 = re.compile(_str_death2, re.IGNORECASE)
 
 # <coronavirus> <words> deaths <words> <num>
-_str_death3 = _str_coronavirus + _str_words + r'deaths?\s?' +\
+_str_death3 = _str_coronavirus + _str_words + r'(deaths|(?<!a\s)death)\s?' +\
     _str_words + _str_num
 _regex_death3 = re.compile(_str_death3, re.IGNORECASE)
 
@@ -298,7 +302,8 @@ _str_death4 = _str_num + r'\s?' + _str_words + r'\s?'      +\
 _regex_death4 = re.compile(_str_death4, re.IGNORECASE)
 
 # deaths|died <connector> <words> <num>
-_str_death5 = r'\b(deaths?|died)[-\s:]+' + _str_words + _str_num + r'(?! of)'
+_str_death5 = r'\b((deaths|(?<!a\s)death)|died)[-\s:]+' + _str_words +\
+    _str_num + r'(?! of)'
 _regex_death5 = re.compile(_str_death5, re.IGNORECASE)
 
 #
@@ -773,7 +778,7 @@ def _regex_match(sentence, regex_list):
                         
             if start is None:
                 start = match.start()
-            end   = start + len(match_text)
+            end = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex,
                                                 other=match))
             if _TRACE:
@@ -1020,10 +1025,6 @@ if __name__ == '__main__':
 
         # errors
 
-        # captures "first reported a death" and returns a count of 1
-        'the county first reported a death on the post no new covid-19 ' \
-        'deaths reported in winnebago county appeared first on wrex.',
-
         # lots of problems
         'three loudoun supervisors urge governor to allow western districts ' \
         'to reopen 131 loudoun county to begin researching local impact of '  \
@@ -1035,14 +1036,6 @@ if __name__ == '__main__':
         'cases of covid-19, according to the virginia department o loudoun '  \
         'times to view our latest e-edition click the image on the left.',
 
-        # captures "deaths decreased by one" and returns a count of 1
-        'the weekly number of deaths decreased by one from 17 a week ago '    \
-        'to 16 this week.',
-
-        # captures "three weeks ago who has not died", returns count of 3
-        'a case with a diagnosis date of more than three weeks ago who has '  \
-        'not died is considered recovered.',
-        
         #<num> residents dying
         
         # # TBD
