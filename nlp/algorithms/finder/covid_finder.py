@@ -17,8 +17,6 @@ try:
     # for normal operation via NLP pipeline
     from algorithms.finder.date_finder import run as \
         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    #from algorithms.finder.time_finder import run as \
-    #    run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
     from algorithms.finder import finder_overlap as overlap
     
 except:
@@ -30,8 +28,6 @@ except:
         sys.path.append(finder_dir)    
     from date_finder import run as run_date_finder, \
         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    #from time_finder import run as run_time_finder, \
-    #    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
     import finder_overlap as overlap
 
 # if __name__ == '__main__':
@@ -76,7 +72,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 _MODULE_NAME   = 'covid_finder.py'
 
 # set to True to enable debug output
@@ -302,7 +298,7 @@ _str_death4 = _str_num + r'\s?' + _str_words + r'\s?'      +\
 _regex_death4 = re.compile(_str_death4, re.IGNORECASE)
 
 # deaths|died <connector> <words> <num>
-_str_death5 = r'\b((deaths|(?<!a\s)death)|died)[-\s:]+' + _str_words +\
+_str_death5 = r'\b((deaths|(?<!a\s)death)|died)[-\s:]{1,2}' + _str_words +\
     _str_num + r'(?! of)'
 _regex_death5 = re.compile(_str_death5, re.IGNORECASE)
 
@@ -702,6 +698,35 @@ def _remove_inferior_matches(candidates, regex_list, regex_minor):
 
 
 ###############################################################################
+def _find_contained_match(regex, match):
+    """
+    Find another match from the same regex within the original match. This
+    situation is possible with a few of the regexes. Smaller spans of matched
+    text are preferred for the CovidFinder.
+    """
+
+    match_text = match.group().rstrip()
+    
+    # find the first whitespace char
+    start_offset = match_text.find(' ')
+    if -1 != start_offset:
+        # new text to search is a subset of the original match
+        sentence2 = match_text[start_offset:]
+        # search it again for a more compact match
+        match2 = _regex_death2.search(sentence2)
+        if match2:
+            if _TRACE:
+                print('\tfound contained match: "{0}" in "{1}"'.
+                      format(match2.group(), match_text))
+            # set start explicitly before overwriting 'match'
+            start = match.start() + start_offset + match2.start()    
+            return match2, start
+
+    # return originals if no secondary match
+    return match, match.start()
+
+
+###############################################################################
 def _regex_match(sentence, regex_list):
     """
     Run a list of regexes against a sentence, produce candidate matches, apply
@@ -712,12 +737,11 @@ def _regex_match(sentence, regex_list):
     candidates = []
     for i, regex in enumerate(regex_list):
         # finditer finds non-overlapping matches
-        # print()
-        # print('[{0}]: {1}'.format(i, regex.pattern))
-        # print()
         iterator = regex.finditer(sentence)
         for match in iterator:
-            match_text = match.group().strip()
+            # strip any trailing whitespace
+            # NOTE: this invalidates match.end()!
+            match_text = match.group().rstrip()
             start = None
             start_offset = 0
 
@@ -734,19 +758,6 @@ def _regex_match(sentence, regex_list):
                               format(match_text))
                     continue
             
-            # special handling for _regex_case2
-            if _regex_case2 == regex:
-                # check for smaller overlapping match within the current one
-                offset = match_text.find(' ')
-                if -1 != offset:
-                    sentence2 = sentence[match.start() + offset:]
-                    match2 = _regex_case2.search(sentence2)
-                    if match2:
-                        if _TRACE:
-                            print('_regex_case2 override: "{0}"'.
-                                  format(match2.group()))
-                        match = match2
-
             # special handling for _regex_case7
             if _regex_case7 == regex:
                 # check 'words' capture for throwaway words
@@ -758,27 +769,20 @@ def _regex_match(sentence, regex_list):
                               format(match_text))
                     continue
 
-            # special handling for _regex_death2
-            if _regex_death2 == regex:                
-                # find the first space char after the initial number
-                start_offset = match_text.find(' ')
-                if -1 != start_offset:
-                    # new text to search is a subset of the original match
-                    sentence2 = match_text[start_offset:]
-                    # search it again for a more compact match
-                    match2 = _regex_death2.search(sentence2)
-                    if match2:
-                        if _TRACE:
-                            print('_regex_death2 override: "{0}"'.
-                                  format(match2.group()))
-                        # set start explicitly before overwriting 'match'
-                        start = match.start() + start_offset
-                        match = match2
-                        match_text = match2.group().strip()
-                        
+            # look for contained matches for _regex_case2 and _regex_death2
+            if _regex_case2 == regex:
+                match, start = _find_contained_match(_regex_case2, match)
+                match_text = match.group().rstrip()
+            elif _regex_death2 == regex:
+                match, start = _find_contained_match(_regex_death2, match)
+                match_text = match.group().rstrip()
+
+            # update the start position of the match and recompute the end    
             if start is None:
                 start = match.start()
             end = start + len(match_text)
+
+            # found one more candidate, still need overlap resolution
             candidates.append(overlap.Candidate(start, end, match_text, regex,
                                                 other=match))
             if _TRACE:
@@ -906,18 +910,21 @@ def run(sentence):
 
     cleaned_sentence = _cleanup(sentence)
 
+    # find case report counts and erase matches from sentence
     if _TRACE:
         print('case count candidates: ')
     case_candidates = _regex_match(cleaned_sentence, _CASE_REGEXES)
-
-    # erase these matches from the sentence
     remaining_sentence = _erase(cleaned_sentence, case_candidates)
 
+    assert len(cleaned_sentence) == len(remaining_sentence)
+
+    # find death report counts and erase matches from sentence
     if _TRACE:
         print('death count candidates: ')
     death_candidates = _regex_match(remaining_sentence, _DEATH_REGEXES)
     remaining_sentence = _erase(remaining_sentence, death_candidates)
 
+    # find hospitalization counts and erase matches from sentence
     if _TRACE:
         print('hosp count candidates: ')
     hosp_candidates = []
@@ -1023,19 +1030,22 @@ if __name__ == '__main__':
 
     SENTENCES = [
 
-        # errors
+        # captures "deaths matter pentecost tongues of fire four"
+        'not want not call waiting four questions blake elder rockhill '     \
+        'studios the afterwife mosquito appeal which deaths matter '         \
+        'pentecost tongues of fire four questions wolf loescher balls to '   \
+        'the walls more articles',
+        
+        # two overlapping results - why
+        'alex brandon ap nearly 26,000 nursing home covid-19 deaths reported '\
+        'to feds 1 11 back to gallery washington ap ',
 
-        # lots of problems
-        'three loudoun supervisors urge governor to allow western districts ' \
-        'to reopen 131 loudoun county to begin researching local impact of '  \
-        'gun control measures signed by governor 116 update six new deaths '  \
-        '56 new coronavirus cases reported in loudoun county 109 update '     \
-        'four new deaths 35 new coronavirus cases reported in loudoun county '\
-        '100 stocks market data by tradingview + update 111 new coronavirus ' \
-        'cases reported in loudoun county loudoun county has 2,429 confirmed '\
-        'cases of covid-19, according to the virginia department o loudoun '  \
-        'times to view our latest e-edition click the image on the left.',
-
+        # captures "1st dead" and returns 1
+        'if they dont have covid-19, they want to do anything they can to '   \
+        'avoid getting it he said.related 1st deadlines approach for '        \
+        'laid-off workers to get health insurance disposable mask against '   \
+        'coronavirus.',
+        
         #<num> residents dying
         
         # # TBD

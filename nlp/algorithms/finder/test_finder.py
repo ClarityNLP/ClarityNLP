@@ -40,7 +40,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 11
+_VERSION_MINOR = 12
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -2310,7 +2310,23 @@ def test_covid_finder():
             # return a count of 1
             _CovidResult(text_death='no new covid-19 deaths', value_death=0)
         ],
-        
+        # crazy
+        'three loudoun supervisors urge governor to allow western districts ' \
+        'to reopen 131 loudoun county to begin researching local impact of '  \
+        'gun control measures signed by governor 116 update six new deaths '  \
+        '56 new coronavirus cases reported in loudoun county 109 update '     \
+        'four new deaths 35 new coronavirus cases reported in loudoun county '\
+        '100 stocks market data by tradingview + update 111 new coronavirus ' \
+        'cases reported in loudoun county loudoun county has 2,429 confirmed '\
+        'cases of covid-19, according to the virginia department o loudoun '  \
+        'times to view our latest e-edition click the image on the left.':[
+            _CovidResult(text_case='56 new coronavirus cases', value_case=56,
+                         text_death='six new deaths', value_death=6),
+            _CovidResult(text_case='35 new coronavirus cases', value_case=35,
+                         text_death='four new deaths', value_death=4),
+            _CovidResult(text_case='111 new coronavirus cases', value_case=111),
+            _CovidResult(text_case='2,429 confirmed cases', value_case=2429)
+        ],
     }
 
     if not _run_tests(_MODULE_COVID, test_data):
