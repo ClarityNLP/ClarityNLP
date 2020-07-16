@@ -40,7 +40,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 9
+_VERSION_MINOR = 13
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -2036,6 +2036,8 @@ def test_covid_finder():
         'Williamson Countys confirmed cases of COVID-19 spiked by 17, 27 ' \
         'and 18 from May 12 through May 14. As of May 16, the county has ' \
         'had 463 confirmed cases in the coronavirus pandemic.':[
+            _CovidResult(text_case = 'confirmed cases of covid-19 spiked by 17',
+                         value_case = 17),
             _CovidResult(text_case = '463 confirmed cases',
                          value_case = 463)
         ],
@@ -2064,8 +2066,9 @@ def test_covid_finder():
         'alongside reports from Gov. Andy Beshear on April 21 that there ' \
         'are 3,192 positive cases in the state, as well as 171 deaths '    \
         'from the virus.':[
-            _CovidResult(text_case = 'sixth case', value_case = 6),
-            _CovidResult(text_case = '3,192 positive cases', value_case = 3192)
+            _CovidResult(text_case = 'sixth case', value_case = 6,
+                         text_death = '171 deaths', value_death = 171),
+            _CovidResult(text_case = '3,192 positive cases', value_case = 3192),
         ],
         'Contra Costa also reported that its total number of coronavirus ' \
         'cases had reached 1,336 by the end of Sunday, with 15 new cases ' \
@@ -2082,7 +2085,8 @@ def test_covid_finder():
         'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
         'deaths, 621 active cases (including eight in Richland County, '  \
         'North Dakota), 1,762 recoveries and 2,439 total cases to date.':[
-            _CovidResult(text_case = 'seventeen new covid-19 cases', value_case=17),
+            _CovidResult(text_case = 'seventeen new covid-19 cases', value_case=17,
+                         text_death = '56 deaths', value_death = 56),
             _CovidResult(text_case = '621 active cases', value_case=621),
             _CovidResult(text_case = '2,439 total cases', value_case=2439)
         ],
@@ -2117,28 +2121,31 @@ def test_covid_finder():
         ],
         'Some Are Turned Away Health Governor Says Coronavirus Cases Rise ' \
         'to 77, Blood Donors Needed':[
-            _CovidResult('coronavirus cases rise to 77', value_case=77),
+            _CovidResult(text_case = 'coronavirus cases rise to 77', value_case=77),
         ],
         'The Wyoming Department of Health reports that 674lab-confirmed '   \
         'cases have recovered and 196 probable cases have recoveredacross ' \
         'the state.':[
-            _CovidResult('674lab-confirmed cases', value_case=674),
-            _CovidResult('196 probable cases', value_case=196)
+            _CovidResult(text_case = '674lab-confirmed cases', value_case=674),
+            _CovidResult(text_case = '196 probable cases', value_case=196)
         ],
         'on sunday the indiana state department of health announced '      \
         '397 new covid-19 cases and 9 additional deaths.':[
-            _CovidResult('397 new covid-19 cases', value_case=397)
+            _CovidResult(text_case = '397 new covid-19 cases', value_case=397,
+                         text_death = '9 additional deaths', value_death=9)
         ],
         'after 6 days of no new covid-19 cases in st. louis county '       \
         'public health director says its too soon to make conclusions '    \
         'numbers as of thursday .':[
-            _CovidResult('no new covid-19 cases', value_case=0)
+            _CovidResult(text_case='no new covid-19 cases', value_case=0)
         ],
         'indiana reports 292 new coronavirus cases 9 additional deaths '   \
         'indiana health officials nearly 300 new coronavirus cases '       \
         'monday along with 9 additional deaths related to the virus.':[
-            _CovidResult('292 new coronavirus cases', value_case=292),
-            _CovidResult('300 new coronavirus cases', value_case=300)
+            _CovidResult(text_case='292 new coronavirus cases', value_case=292,
+                         text_death='9 additional deaths', value_death=9),
+            _CovidResult(text_case='300 new coronavirus cases', value_case=300,
+                         text_death='9 additional deaths', value_death=9),
         ],
         'while african-americans make up 14 percent of the states '        \
         'population they represented 29 percent of coronavirus cases':[
@@ -2148,7 +2155,8 @@ def test_covid_finder():
         'johns hopkins university there have been more than 6,200,00 '     \
         'confirmed cases worldwide with more than 2,660,000 recoveries '   \
         'and more than 372,000 deaths. 2020':[
-            # no result, since "6,200,00" is not a valid integer
+            # no case result, since "6,200,00" is not a valid integer
+            _CovidResult(text_death='372,000 deaths', value_death=372000)
         ],
         'as the number of cases of the coronavirus are flattening '        \
         'locally greene county offices will reopen on monday to a '        \
@@ -2179,7 +2187,158 @@ def test_covid_finder():
         'north dakota have hit record highs':[
             # no result - do not capture 57 as a case count
         ],
-
+        'iowans set to gather for another event to mourn the death of '     \
+        'him news 2 hours ago video police davenport officer shot '\
+        '2 killings reported news 2 hours':[
+            # no result - do not capture "death of him news 2" and return
+            # a death count of 2
+        ],
+        'shows the state saw five more covid-19 deaths over the 24-hour '   \
+        'period between 10 00 a.m. sunday and 10 00 a.m. monday.':[
+            # do not capture "deaths over the 24" and return
+            # a death count of 24
+            _CovidResult(text_death='five more covid-19 deaths',
+                         value_death=5)
+        ],
+        'kingstons death came 3 weeks after his legal wife luana joan '     \
+        'kingston died of breast cancer according to her obituary.':
+        [
+            # no result - do not capture "death came 3" and return a
+            # death count of 3
+        ],
+        'the new guidance comes in an executive order that takes effect '   \
+        'immediately and runs through courtney tanner 1 p.m. utah reports ' \
+        'four new deaths four more utahns have died from covid-19, the '    \
+        'utah department of health announced wednesday bringing the states '\
+        'death toll to 105.':[
+            _CovidResult(text_death='four new deaths', value_death=4),
+            _CovidResult(text_death='four more utahns have died', value_death=4),
+            _CovidResult(text_death='death toll to 105', value_death=105)
+        ],
+        "the department said three mentwo in their 70s from hampden and "   \
+        "berkshire counties and a third man in his 90's from suffolk "      \
+        "countydied from covid-19-related illness.":[
+            # do not capture "90's from suffolk countydied" and return
+            # a death count of 90
+        ],
+        'this brings the total number of people confirmed to have covid-19 '\
+        'in south carolina to 11,394 and those who have died to 487.':[
+            _CovidResult(text_case='confirmed to have covid-19 in ' \
+                         'south carolina to 11,394', value_case=11394,
+                         text_death='died to 487', value_death=487)
+        ],
+        'choctaw county has 48 cases with 2 deaths webster county has 68 '  \
+        'cases and 2 deaths and winston county has 120 cases with 1 death ' \
+        'recorded by mdhs.':[
+            _CovidResult(text_case='48 cases', value_case=48,
+                         text_death='2 deaths', value_death=2),
+            _CovidResult(text_case='68 cases', value_case=68,
+                         text_death='2 deaths', value_death=2),
+            _CovidResult(text_case='120 cases', value_case=120,
+                         text_death='1 death', value_death=1),
+        ],
+        'britain which with over 38,500 dead has the worlds second-worst '  \
+        'death toll behind the united states eased restrictions despite '   \
+        'warnings from health officials that the risk of spreading '        \
+        'covid-19 was still too great.':[
+            _CovidResult(text_death='38,500 dead', value_death=38500)
+        ],
+        'wen was baltimores health commissioner when protests erupted '     \
+        'following the 2015 death of john doe.':[
+            # no result - do not capture 2015 as a death count
+        ],
+        'tampa police chief brian dugan who expressed dis last week '       \
+        'about floyds death tweetedmonday that five of his officers were '  \
+        'exposed to the protester whom he did not identify.':[
+            # no result - do not capture "death tweetedmonday that five" and
+            # return a death count of 5
+        ],
+        'Seventeen new COVID-19 cases in North Dakota were confirmed '    \
+        'Wednesday, May 27. As of Wednesday morning, the state is at 56 ' \
+        'deaths, 621 active cases (including eight in Richland County, '  \
+        'North Dakota), 1,762 recoveries and 2,439 total cases to date.':[
+            _CovidResult(text_case='seventeen new covid-19 cases', value_case=17,
+                         text_death='56 deaths', value_death=56),
+            _CovidResult(text_case='621 active cases', value_case=621),
+            _CovidResult(text_case='2,439 total cases', value_case=2439)                         
+        ],
+        'Blaine County Health officials announced the second coronavirus '  \
+        'death on the afternoon of March 26.':[
+            _CovidResult(text_death='second coronavirus death', value_death=2)
+        ],
+        "Oakley announced the county's firstCOVID-19 related death.":[
+            _CovidResult(text_death='first covid-19 related death', value_death=1)                         
+        ],
+        'One hundred-thirteen deaths due to COVID-19 occurred among '       \
+        'reported cases.':[
+            _CovidResult(text_death='one hundred-thirteen deaths', value_death=113)
+        ],
+        'The county spokesperson said that there have been no additional '  \
+        'coronavirus-related deaths since last week.':[
+            _CovidResult(text_death='no additional coronavirus-related deaths',
+                         value_death=0)
+        ],
+        'four county residents have died of the disease and 111 have recovered.':[
+            _CovidResult(text_death='four county residents have died of the disease',
+                         value_death=4)
+        ],
+        'earlier deaths were a man in his 80s from suffolk county who had '   \
+        'been hospitalized and had pre-existing health conditions and a '     \
+        'woman in her 50s from middlesex county who had a pre-existing '      \
+        'condition.':[
+            # no result
+        ],
+        'at least 10 covid-19 cases at two ellensburg long-term care centers ' \
+        'kittitas county reported monday an increase in coronavirus cases '    \
+        'associated with long-term care facilities':[
+            _CovidResult(text_case='10 covid-19 cases', value_case=10)
+        ],
+        'a case with a diagnosis date of more than three weeks ago who has '  \
+        'not died is considered recovered.':[
+            # no result - do not capture "three weeks ago who has not died"
+            # and return a count of 3
+        ],
+        'the weekly number of deaths decreased by one from 17 a week ago '    \
+        'to 16 this week.':[
+            # capturing "one" is incorrect
+            _CovidResult(text_death='deaths decreased by one from 17 to 16',
+                         value_death=16)
+        ],
+        'the county first reported a death on the post no new covid-19 ' \
+        'deaths reported in winnebago county appeared first on wrex.':[
+            # do not capture "first reported a death" and
+            # return a count of 1
+            _CovidResult(text_death='no new covid-19 deaths', value_death=0)
+        ],
+        'if they dont have covid-19, they want to do anything they can to '   \
+        'avoid getting it he said.related 1st deadlines approach for '        \
+        'laid-off workers to get health insurance disposable mask against '   \
+        'coronavirus.':[
+            # no result - do not capture "1st dead" and return a count of 1
+        ],
+        'alex brandon ap nearly 26,000 nursing home covid-19 deaths reported '\
+        'to feds 1 11 back to gallery washington ap ':[
+            _CovidResult(text_death='26,000 nursing home covid-19 deaths',
+                         value_death=26000)
+            # no match to "covid-19 deaths reported to feds 1"
+        ],
+        # crazy
+        'three loudoun supervisors urge governor to allow western districts ' \
+        'to reopen 131 loudoun county to begin researching local impact of '  \
+        'gun control measures signed by governor 116 update six new deaths '  \
+        '56 new coronavirus cases reported in loudoun county 109 update '     \
+        'four new deaths 35 new coronavirus cases reported in loudoun county '\
+        '100 stocks market data by tradingview + update 111 new coronavirus ' \
+        'cases reported in loudoun county loudoun county has 2,429 confirmed '\
+        'cases of covid-19, according to the virginia department o loudoun '  \
+        'times to view our latest e-edition click the image on the left.':[
+            _CovidResult(text_case='56 new coronavirus cases', value_case=56,
+                         text_death='six new deaths', value_death=6),
+            _CovidResult(text_case='35 new coronavirus cases', value_case=35,
+                         text_death='four new deaths', value_death=4),
+            _CovidResult(text_case='111 new coronavirus cases', value_case=111),
+            _CovidResult(text_case='2,429 confirmed cases', value_case=2429)
+        ],
     }
 
     if not _run_tests(_MODULE_COVID, test_data):

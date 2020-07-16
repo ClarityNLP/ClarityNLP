@@ -17,8 +17,6 @@ try:
     # for normal operation via NLP pipeline
     from algorithms.finder.date_finder import run as \
         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    #from algorithms.finder.time_finder import run as \
-    #    run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_DATE_FIELD
     from algorithms.finder import finder_overlap as overlap
     
 except:
@@ -30,8 +28,6 @@ except:
         sys.path.append(finder_dir)    
     from date_finder import run as run_date_finder, \
         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    #from time_finder import run as run_time_finder, \
-    #    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
     import finder_overlap as overlap
 
 # if __name__ == '__main__':
@@ -76,7 +72,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 4
 _MODULE_NAME   = 'covid_finder.py'
 
 # set to True to enable debug output
@@ -108,6 +104,7 @@ _THROWAWAY_SET = {
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
 
+# nongreedy word captures
 _str_words = r'(' + _str_word + r'){0,5}?'
 _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
@@ -185,7 +182,8 @@ _enum_to_int_map = {
 }
 
 # integers, possibly including commas
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<!,)\d+)'
+# do not capture numbers in phrases such as "in their 90s", etc
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(?!\d)(?!\'?s))'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
 _str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
@@ -204,29 +202,41 @@ _regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
 #     third highest number of confirmed cases
 #
 def _make_num_regex(a='int', b='tnum', c='enum'):
-    _str_num = r'('                                          +\
-        r'(?P<{0}>'.format(a) + _str_int + r')|'             +\
-        r'(?P<{0}>'.format(b) + _str_tnum + r')|'            +\
-        r'(?P<{0}>'.format(c)                                +\
-        r'(' + _str_enum + r'(?= case)' + r'|'               +\
-               _str_enum + r'(?= (confirmed|positive) case)' +\
-        r'))'                                                +\
+    _str_num = r'(?<![-])('                                                 +\
+        r'(?P<{0}>'.format(a) +  _str_int + r')|'                           +\
+        r'(?P<{0}>'.format(b) + _str_tnum + r')|'                           +\
+        r'(?P<{0}>'.format(c) + _str_enum + r'(?![-])(?! (high|large|great|small|tini)est))'  +\
         r')(?!%)(?! %)(?! percent)(?! pct)'
     return _str_num
 
+# def _make_num_regex(a='int', b='tnum', c='enum'):
+#     _str_num = r'('                                          +\
+#         r'(?P<{0}>'.format(a) + _str_int + r')|'             +\
+#         r'(?P<{0}>'.format(b) + _str_tnum + r')|'            +\
+#         r'(?P<{0}>'.format(c)                                +\
+#         r'(' + _str_enum + r'(?= case)' + r'|'               +\
+#                _str_enum + r'(?= (confirmed|positive) case)' +\
+#         r'))'                                                +\
+#         r')(?!%)(?! %)(?! percent)(?! pct)'
+#     return _str_num
+
+
 # regex to recognize either a range or a single integer
 # also recognize 'no' for situations such as "no new cases of covid-19"
+# do not capture a text num followed by 'from', as in
+# "decreased by one from 17 to 16", in which the desired num is 16, not "one"
 _str_num = r'(' + r'(\bfrom\s)?' +\
     _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
     r'\s?to\s?' +\
     _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
     r'|' + r'\b(?P<no>no)\b' + r'|' +  _str_float_word    +\
-    r'|' + _make_num_regex() + r')'
+    r'|' + _make_num_regex() + r')(?!\sfrom\s)'
 
 
-# time durations
-_str_duration = r'(?<!\d)\d+\s(year|yr\.?|month|mo\.?|week|wk\.?|day|' +\
-    r'hour|hr\.?|minute|min\.?|second|sec\.?)(?![a-z])s?'
+# time durations, also relative times such as "a week ago"
+_str_duration = r'(' + _str_num + r'|' + r'\ba\b' + r')' +\
+    r'[-\s](years?|yr\.?|months?|mo\.?|weeks?|wk\.?|' +\
+    r'days?|hours?|hr\.?|minutes?|min\.?|seconds?|sec\.?)(?![a-z])(\sago\s)?'
 _regex_duration = re.compile(_str_duration, re.IGNORECASE)
 
 # clock times
@@ -240,7 +250,7 @@ _str_clock = r'(?<!\d)(2[0-3]|1[0-9]|0[0-9])[-:\s][0-5][0-9]\s?' +\
 _regex_clock = re.compile(_str_clock, re.IGNORECASE)
 
 
-_str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus)\s?'
+_str_coronavirus = r'(covid([-\s]?19)?|(novel\s)?(corona)?virus|disease)([-\s]related)?\s?'
 
 _str_death = r'(deaths?|fatalit(ies|y))'
 _str_hosp  = r'(hospitalizations?)'
@@ -255,6 +265,48 @@ _str_who = r'\b(babies|baby|boy|captive|child|children|citizen|client|'      +\
     r'victim|visitor|voter|woman|women|worker)s?\s?'
 _regex_who = re.compile(_str_who, re.IGNORECASE)
 
+#
+# death regexes
+#
+
+# <num> <words> <coronavirus> deaths
+_str_death0 = _str_num + r'\s?' + _str_words + _str_coronavirus +\
+    r'(deaths|(?<!a\s)death)'
+_regex_death0 = re.compile(_str_death0, re.IGNORECASE)
+
+# <num> <words> deaths <words> <coronavirus>
+_str_death1 = _str_num + r'\s?' + _str_words + r'(deaths|(?<!a\s)death)\s?' +\
+    _str_words + _str_coronavirus
+_regex_death1 = re.compile(_str_death1, re.IGNORECASE)
+
+# <num> <words> (deaths?|died)
+# don't capture "candied", "deaths of", "died of" with this regex
+# if regex index is changed from 2, fix special handling below in _regex_match
+_str_death2 = _str_num + r'\s?' + r'(?P<words>' + _str_words + r')' +\
+    r'((deaths|(?<!a\s)death)|(?<![a-z])(died|dead(?![a-z])))(?! of)'
+_regex_death2 = re.compile(_str_death2, re.IGNORECASE)
+
+# <coronavirus> <words> deaths <words> <num>
+# prevent a match at the start of a space-separated list of numbers
+_str_death3 = _str_coronavirus + _str_words + r'(deaths|(?<!a\s)death)\s?' +\
+    _str_words + _str_num + r'(?! \d)'
+_regex_death3 = re.compile(_str_death3, re.IGNORECASE)
+
+# <num> <who> (have)? died <words> <coronavirus>
+_str_death4 = _str_num + r'\s?' + _str_words + r'\s?'      +\
+    r'(' + _str_who + r')?' + r'(have\s)?(?<![a-z])died\s' +\
+    _str_words + _str_coronavirus
+_regex_death4 = re.compile(_str_death4, re.IGNORECASE)
+
+# deaths|died <connector> <words> <num>
+# also prevent a match at the start of a space-separated list of numbers
+_str_death5 = r'\b((deaths|(?<!a\s)death)|died)[-\s:]{1,2}' + _str_words +\
+    _str_num + r'(?! (of|\d))'
+_regex_death5 = re.compile(_str_death5, re.IGNORECASE)
+
+#
+# case count regexes
+#
 
 # <num> <words> positive for <words> <coronavirus>
 _str_case0 = _str_num + r'\s' + r'(?P<words>' + _str_words + r')' +\
@@ -299,6 +351,10 @@ _regex_case8 = re.compile(_str_case8, re.IGNORECASE)
 _str_case9 = _str_num + r'\s?' + _str_words + r'cases?'
 _regex_case9 = re.compile(_str_case9, re.IGNORECASE)
 
+# confirmed <words> <coronavirus> <words> <num>
+_str_case10 = r'\bconfirmed\s' + _str_words + _str_coronavirus + _str_words + _str_num
+_regex_case10 = re.compile(_str_case10, re.IGNORECASE)
+
 _CASE_REGEXES = [
     _regex_case0,
     _regex_case1,
@@ -310,8 +366,20 @@ _CASE_REGEXES = [
     _regex_case7,
     _regex_case8,
     _regex_case9,
+    _regex_case10,
 ]
 
+_DEATH_REGEXES = [
+    _regex_death0,
+    _regex_death1,
+    _regex_death2,
+    _regex_death3,
+    _regex_death4,
+    _regex_death5,
+]
+
+# matching data used to build the result object
+MatchTuple = namedtuple('MatchTuple', ['start', 'end', 'text', 'value'])
 
 
 ###############################################################################
@@ -326,7 +394,7 @@ def _erase(sentence, candidates):
     """
     Erase all candidate matches from the sentence. Only substitute a single
     whitespace for the region, since this is performed on the previously
-    cleaned sentence.
+    cleaned sentence and offsets need to be preserved.
     """
 
     new_sentence = sentence
@@ -334,12 +402,14 @@ def _erase(sentence, candidates):
         start = c.start
         end = c.end
         s1 = new_sentence[:start]
-        s2 = ' '
+        s2 = ' '*(end-start)
         s3 = new_sentence[end:]
         new_sentence = s1 + s2 + s3
 
-    # collapse repeated whitespace, if any
-    new_sentence = re.sub(r'\s+', ' ', new_sentence)
+    if _TRACE:
+        print('sentence after erasing candidates: ')
+        print(new_sentence)
+        print()
         
     return new_sentence
     
@@ -423,7 +493,24 @@ def _erase_dates(sentence):
             
     return sentence
 
-            
+
+###############################################################################
+def _split_at_positions(text, pos_list):
+    """
+    Split a string at the list of positions in the string and return a list
+    of chunks.
+    """
+
+    chunks = []
+    prev_end = 0
+    for pos in pos_list:
+        chunk = text[prev_end:pos]
+        chunks.append(chunk)
+        prev_end = pos
+    chunks.append(text[prev_end:])
+    return chunks
+
+
 ###############################################################################
 def _cleanup(sentence):
     """
@@ -446,19 +533,34 @@ def _cleanup(sentence):
     # replace selected chars with whitespace
     sentence = re.sub(r'[&(){}\[\]:~/@;]', ' ', sentence)
 
+    # insert a missing space surrounding Covid-19
+    space_pos = []
+    iterator = re.finditer(r'[a-z]covid\-?19', sentence, re.IGNORECASE)
+    for match in iterator:
+        # position where the space is needed
+        pos = match.start() + 1
+        space_pos.append(pos)
+    chunks = _split_at_positions(sentence, space_pos)
+    sentence = ' '.join(chunks)
+    
     # replace commas with whitespace if not inside a number (such as 32,768)
     comma_pos = []
     iterator = re.finditer(r'\D,\D', sentence, re.IGNORECASE)
     for match in iterator:
         pos = match.start() + 1
         comma_pos.append(pos)
-    for pos in comma_pos:
-        sentence = sentence[:pos] + ' ' + sentence[pos+1:]    
+    chunks = _split_at_positions(sentence, comma_pos)
+    # strip the comma from the first char of each chunk, if present
+    for i in range(len(chunks)):
+        if chunks[i].startswith(','):
+            chunks[i] = chunks[i][1:]
+    sentence = ' '.join(chunks)
         
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
-    #print('sentence after cleanup: "{0}"'.format(sentence))
+    if _TRACE:
+        print('sentence after cleanup: "{0}"'.format(sentence))
     return sentence
 
 
@@ -564,8 +666,74 @@ def _tnum_to_int(_str_tnum):
 
 
 ###############################################################################
+def _remove_inferior_matches(candidates, regex_list, regex_minor):
+    """
+    If a match from regex_minor overlaps any other regex in the list, remove
+    the match from regex_minor in the list of candidates. Returns the updated
+    list of candidates.
+    """
+    
+    to_remove = set()
+    for i in range(len(candidates)):
+        if candidates[i].regex != regex_minor:
+            continue
+        c1 = candidates[i]        
+        for j in range(len(candidates)):
+            c2 = candidates[j]
+            if j != i and c2.regex in regex_list and c2.regex != regex_minor:
+                # check for overlap
+                if overlap.has_overlap(c1.start, c1.end, c2.start, c2.end):
+                    to_remove.add(i)
+                    if _TRACE:
+                        print('removing overlapping inferior match "{0}", '.
+                              format(c1.match_text))
+                    break
+                
+    if len(to_remove) > 0:
+        new_candidates = []
+        for i in range(len(candidates)):
+            if i not in to_remove:
+                new_candidates.append(candidates[i])
+        candidates = new_candidates
+
+    return candidates
+
+
+###############################################################################
+def _find_contained_match(regex, match):
+    """
+    Find another match from the same regex within the original match. This
+    situation is possible with a few of the regexes. Smaller spans of matched
+    text are preferred for the CovidFinder.
+    """
+
+    match_text = match.group().rstrip()
+    
+    # find the first whitespace char
+    start_offset = match_text.find(' ')
+    if -1 != start_offset:
+        # new text to search is a subset of the original match
+        sentence2 = match_text[start_offset:]
+        # search it again for a more compact match
+        match2 = _regex_death2.search(sentence2)
+        if match2:
+            if _TRACE:
+                print('\tfound contained match: "{0}" in "{1}"'.
+                      format(match2.group(), match_text))
+            # set start explicitly before overwriting 'match'
+            start = match.start() + start_offset + match2.start()    
+            return match2, start
+
+    # return originals if no secondary match
+    return match, match.start()
+
+
+###############################################################################
 def _regex_match(sentence, regex_list):
     """
+    Run a list of regexes against a sentence, produce candidate matches, apply
+    regex-dependent special handling where need, and run a candidate resolution
+    process to select the winning match(es).
     """
     
     candidates = []
@@ -573,7 +741,11 @@ def _regex_match(sentence, regex_list):
         # finditer finds non-overlapping matches
         iterator = regex.finditer(sentence)
         for match in iterator:
-            match_text = match.group().strip()
+            # strip any trailing whitespace
+            # NOTE: this invalidates match.end()!
+            match_text = match.group().rstrip()
+            start = None
+            start_offset = 0
 
             # special handling for _regex_case0 and _regex_case1
             if _regex_case0 == regex or _regex_case1 == regex:
@@ -588,19 +760,6 @@ def _regex_match(sentence, regex_list):
                               format(match_text))
                     continue
             
-            # special handling for _regex_case2
-            if _regex_case2 == regex:
-                # check for smaller overlapping match within the current one
-                offset = match_text.find(' ')
-                if -1 != offset:
-                    sentence2 = sentence[match.start() + offset:]
-                    match2 = _regex_case2.search(sentence2)
-                    if match2:
-                        if _TRACE:
-                            print('_regex_case2 override: "{0}"'.
-                                  format(match2.group()))
-                        match = match2
-
             # special handling for _regex_case7
             if _regex_case7 == regex:
                 # check 'words' capture for throwaway words
@@ -608,26 +767,24 @@ def _regex_match(sentence, regex_list):
                 last_word = words[-1]
                 if last_word in _THROWAWAY_SET:
                     if _TRACE:
-                        print('ignoring match "{0}"; the final word in the '
-                              'words capture is a throwaway word')
+                        print('ignoring match "{0}"; final word is throwaway'.
+                              format(match_text))
                     continue
 
-                # all_throwaway = True
-                # for w in words:
-                #     if w not in _THROWAWAY_SET:
-                #         all_throwaway = False
-                #         break
+            # look for contained matches for _regex_case2 and _regex_death2
+            if _regex_case2 == regex:
+                match, start = _find_contained_match(_regex_case2, match)
+                match_text = match.group().rstrip()
+            elif _regex_death2 == regex:
+                match, start = _find_contained_match(_regex_death2, match)
+                match_text = match.group().rstrip()
 
-                # # ignore this match if all throwaway words
-                # if all_throwaway:
-                #     if _TRACE:
-                #         print('ignoring match "{0}"; the "words" capture ' \
-                #               'contains only throwaway words'.
-                #               format(match_text))
-                #     continue
+            # update the start position of the match and recompute the end    
+            if start is None:
+                start = match.start()
+            end = start + len(match_text)
 
-            start = match.start()
-            end   = start + len(match_text)
+            # found one more candidate, still need overlap resolution
             candidates.append(overlap.Candidate(start, end, match_text, regex,
                                                 other=match))
             if _TRACE:
@@ -637,10 +794,19 @@ def _regex_match(sentence, regex_list):
                 for k,v in match.groupdict().items():
                     print('\t\t{0} => {1}'.format(k,v))
                 
-
     if 0 == len(candidates):
         return []        
+
+    # if _regex_case8 overlaps any others, remove the matches for _regex_case8
+    candidates = _remove_inferior_matches(candidates,
+                                          _CASE_REGEXES,
+                                          _regex_case8)
     
+    # if _regex_death5 overlaps any others, remove the match for _regex_death5
+    candidates = _remove_inferior_matches(candidates,
+                                          _DEATH_REGEXES,
+                                          _regex_death5)
+        
     # sort the candidates in ASCENDING order of length, which is needed for
     # one-pass overlap resolution later on
     candidates = sorted(candidates, key=lambda x: x.end-x.start)
@@ -672,46 +838,51 @@ def _regex_match(sentence, regex_list):
 
 
 ###############################################################################
-def run(sentence):
+def _text_to_num(match, key, textval):
     """
+    Convert a text capture (in 'text') to a numeric value, or return None.
     """
 
-    cleaned_sentence = _cleanup(sentence)
+    val = None
+    if 'no' == key:
+        val = 0
+    if 'int_to' == key or 'int' == key:
+        val = _to_int(textval)
+    elif 'tnum_to' == key or 'tnum' == key:
+        val = _tnum_to_int(textval)
+    elif 'enum_to' == key or 'enum' == key:
+        val = _enum_to_int(textval)
+    elif 'floatnum' == key:
+        val = float(textval)
+        # get the units
+        if 'floatunits' in match.groupdict():
+            str_units = match.groupdict()['floatunits']
+            if _STR_THOUSAND == str_units:
+                val *= 1000.0
+            elif _STR_MILLION == str_units:
+                val *= 1.0e6
 
-    if _TRACE:
-        print('case count candidates: ')
-    case_candidates = _regex_match(cleaned_sentence, _CASE_REGEXES)
+    return val
 
-    # erase these matches from the sentence
-    remaining_sentence = _erase(cleaned_sentence, case_candidates)
-    
 
-    results = []
-    case_results = []
-    hosp_results = []
-    death_results = []
+###############################################################################
+def _extract_candidates(candidates):
+    """
+    Extract match results and return a list of
+    (start, end, matching_text, value) tuples.
+    """
 
-    case_start_list  = []
-    case_end_list    = []
-    hosp_start_list  = []
-    hosp_end_list    = []
-    death_start_list = []
-    death_end_list   = []
-    text_case_list   = []
-    text_hosp_list   = []
-    text_death_list  = []
-    value_case_list  = []
-    value_hosp_list  = []
-    value_death_list = []
-    
-    for c in case_candidates:
+    tuples = []
+    for c in candidates:
         # recover the regex match object from the 'other' field
         match = c.other
         assert match is not None
 
-        case_start_list.append(match.start())
-        case_end_list.append(match.end())
-        text_case_list.append(match.group())
+        text  = match.group().strip()
+        start = match.start()
+        # recompute the end position, since match.group() could include space at
+        # the end of the match
+        end   = start + len(text)
 
         for k,v in match.groupdict().items():
             if v is None:
@@ -720,37 +891,69 @@ def run(sentence):
             #if _TRACE:
             #    print('{0} => {1}'.format(k,v))
             
-            # convert number text captures
-            val = None
-            if 'no' == k:
-                val = 0
-            if 'int_to' == k or 'int' == k:
-                val = _to_int(v)
-            elif 'tnum_to' == k or 'tnum' == k:
-                val = _tnum_to_int(v)
-            elif 'enum_to' == k or 'enum' == k:
-                val = _enum_to_int(v)
-            elif 'floatnum' == k:
-                val = float(v)
-                # get the units
-                if 'floatunits' in match.groupdict():
-                    str_units = match.groupdict()['floatunits']
-                    if _STR_THOUSAND == str_units:
-                        val *= 1000.0
-                    elif _STR_MILLION == str_units:
-                        val *= 1.0e6
-                
+            val = _text_to_num(match, k, v)
             if val is not None:
-                value_case_list.append(val)
+                match_tuple = MatchTuple(start, end, text, val)
+                tuples.append(match_tuple)
             else:
                 # invalid number
                 continue
 
-    case_count  = len(value_case_list)
-    hosp_count  = len(value_hosp_list)
-    death_count = len(value_death_list)
-    count = max(case_count, hosp_count, death_count)
+    if len(tuples) > 1:
+        tuples = sorted(tuples, key=lambda x: x.start)
+        
+    return tuples
+            
+            
+###############################################################################
+def run(sentence):
+    """
+    """
 
+    cleaned_sentence = _cleanup(sentence)
+
+    # find case report counts and erase matches from sentence
+    if _TRACE:
+        print('case count candidates: ')
+    case_candidates = _regex_match(cleaned_sentence, _CASE_REGEXES)
+    remaining_sentence = _erase(cleaned_sentence, case_candidates)
+
+    assert len(cleaned_sentence) == len(remaining_sentence)
+
+    # find death report counts and erase matches from sentence
+    if _TRACE:
+        print('death count candidates: ')
+    death_candidates = _regex_match(remaining_sentence, _DEATH_REGEXES)
+    remaining_sentence = _erase(remaining_sentence, death_candidates)
+
+    # find hospitalization counts and erase matches from sentence
+    if _TRACE:
+        print('hosp count candidates: ')
+    hosp_candidates = []
+
+    # get result tuples for each, sorted in order of occurrence in sentence
+    case_tuples  = _extract_candidates(case_candidates)
+    hosp_tuples  = _extract_candidates(hosp_candidates)
+    death_tuples = _extract_candidates(death_candidates)
+
+    # find which has the most entries
+    case_count  = len(case_tuples)
+    hosp_count  = len(hosp_tuples)
+    death_count = len(death_tuples)
+    count = max(case_count, hosp_count, death_count)
+    
+    if _TRACE:
+        print('  case_count: {0}'.format(case_count))
+        print('  hosp_count: {0}'.format(hosp_count))
+        print(' death_count: {0}'.format(death_count))
+        print('       count: {0}'.format(count))
+        print(' case_tuples: {0}'.format(case_tuples))
+        print('death_tuples: {0}'.format(death_tuples))
+        print(' hosp_tuples: {0}'.format(hosp_tuples))
+
+    # Build result objects, taking results from cases, hosp, and deaths
+    # in order.
+    results = []
     for i in range(count):
 
         case_start  = EMPTY_FIELD
@@ -767,22 +970,22 @@ def run(sentence):
         value_death = EMPTY_FIELD
 
         if i < case_count:
-            case_start = case_start_list.pop(0)
-            case_end   = case_end_list.pop(0)
-            text_case  = text_case_list.pop(0)
-            value_case = value_case_list.pop(0)
+            case_start = case_tuples[i].start
+            case_end   = case_tuples[i].end
+            text_case  = case_tuples[i].text
+            value_case = case_tuples[i].value
 
         if i < hosp_count:
-            hosp_start = hosp_start_list.pop(0)
-            hosp_end   = hosp_end_list.pop(0)
-            text_hosp  = text_hosp_list.pop(0)
-            value_hosp = value_hosp_list.pop(0)
+            hosp_start = hosp_tuples[i].start
+            hosp_end   = hosp_tuples[i].end
+            text_hosp  = hosp_tuples[i].text
+            value_hosp = hosp_tuples[i].value
 
         if i < death_count:
-            death_start = death_start_list.pop(0)
-            death_end   = death_end_list.pop(0)
-            text_death  = text_death_list.pop(0)
-            value_death = value_death_list.pop(0)
+            death_start = death_tuples[i].start
+            death_end   = death_tuples[i].end
+            text_death  = death_tuples[i].text
+            value_death = death_tuples[i].value
         
         covid_tuple = CovidTuple(
             sentence    = cleaned_sentence,
@@ -800,12 +1003,6 @@ def run(sentence):
             value_death = value_death,
         )
         results.append(covid_tuple)
-
-    # sort results to match order of occurrence in sentence
-    results = sorted(results, key=lambda x: x.case_start)
-
-    # hospitalizations
-    # deaths
 
     # convert to list of dicts to preserve field names in JSON output
     return json.dumps([r._asdict() for r in results], indent=4)
@@ -835,26 +1032,13 @@ if __name__ == '__main__':
 
     SENTENCES = [
 
-        #'The announcement, of this sixth case in Floyd County comes '      \
-        #'alongside reports from Gov. Andy Beshear on April 21 that there ' \
-        #'are 3,192 positive cases in the state, as well as 171 deaths '    \
-        #'from the virus.',
-
-        # returns 9 (fixed)
-        #'on sunday the indiana state department of health announced '      \
-        #'397 new covid-19 cases and 9 additional deaths.',
-
-        # captures 'coronavirus cases 9' (fixed)
-        #'indiana reports 292 new coronavirus cases 9 additional deaths '   \
-        #'indiana health officials nearly 300 new coronavirus cases '       \
-        #'monday along with 9 additional deaths related to the virus.',
-
-        # returns 0 (fixed: 6,200,00 is an invalid integer, should return nothing)
-        #'according tothe center for systems science and engineering at '   \
-        #'johns hopkins university there have been more than 6,200,00 '     \
-        #'confirmed cases worldwide with more than 2,660,000 recoveries '   \
-        #'and more than 372,000 deaths. 2020',
+        # captures "deaths matter pentecost tongues of fire four"
+        'not want not call waiting four questions blake elder rockhill '     \
+        'studios the afterwife mosquito appeal which deaths matter '         \
+        'pentecost tongues of fire four questions wolf loescher balls to '   \
+        'the walls more articles',
         
+        #<num> residents dying
         
         # # TBD
         # # 'Two residents at Fairhaven in Sykesville, one resident at '       \
@@ -890,6 +1074,7 @@ death reports
 <num>           <coronavirus> deaths
 <num> more      <coronavirus> deaths
 <num> confirmed <coronavirus> deaths
+no additional <coronavirus>-related deaths
 
 <num> more deaths related to <coronavirus>
 <num>      deaths due     to <coronavirus>
@@ -904,7 +1089,7 @@ no    new                deaths
 
 2nd    <coronavirus> death
 second <coronavirus> death
-no additional <coronavirus>-related deaths
+third  <coronavirus>-related death
 
 <num> residents dying
 
@@ -918,8 +1103,7 @@ total number of <coronavirus>-related deaths stands at <num>
 
 <coronavirus> death toll hits <num>
 
-total deaths to <num>
-
+              total deaths to <num>
                     deaths-<num>
 number of confirmed deaths: <num>
 
