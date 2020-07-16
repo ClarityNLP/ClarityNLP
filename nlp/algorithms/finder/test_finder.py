@@ -40,7 +40,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 12
+_VERSION_MINOR = 13
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -2309,6 +2309,18 @@ def test_covid_finder():
             # do not capture "first reported a death" and
             # return a count of 1
             _CovidResult(text_death='no new covid-19 deaths', value_death=0)
+        ],
+        'if they dont have covid-19, they want to do anything they can to '   \
+        'avoid getting it he said.related 1st deadlines approach for '        \
+        'laid-off workers to get health insurance disposable mask against '   \
+        'coronavirus.':[
+            # no result - do not capture "1st dead" and return a count of 1
+        ],
+        'alex brandon ap nearly 26,000 nursing home covid-19 deaths reported '\
+        'to feds 1 11 back to gallery washington ap ':[
+            _CovidResult(text_death='26,000 nursing home covid-19 deaths',
+                         value_death=26000)
+            # no match to "covid-19 deaths reported to feds 1"
         ],
         # crazy
         'three loudoun supervisors urge governor to allow western districts ' \

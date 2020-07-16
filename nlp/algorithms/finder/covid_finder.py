@@ -72,7 +72,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME   = 'covid_finder.py'
 
 # set to True to enable debug output
@@ -283,12 +283,13 @@ _regex_death1 = re.compile(_str_death1, re.IGNORECASE)
 # don't capture "candied", "deaths of", "died of" with this regex
 # if regex index is changed from 2, fix special handling below in _regex_match
 _str_death2 = _str_num + r'\s?' + r'(?P<words>' + _str_words + r')' +\
-    r'((deaths|(?<!a\s)death)|(?<![a-z])(died|dead))(?! of)'
+    r'((deaths|(?<!a\s)death)|(?<![a-z])(died|dead(?![a-z])))(?! of)'
 _regex_death2 = re.compile(_str_death2, re.IGNORECASE)
 
 # <coronavirus> <words> deaths <words> <num>
+# prevent a match at the start of a space-separated list of numbers
 _str_death3 = _str_coronavirus + _str_words + r'(deaths|(?<!a\s)death)\s?' +\
-    _str_words + _str_num
+    _str_words + _str_num + r'(?! \d)'
 _regex_death3 = re.compile(_str_death3, re.IGNORECASE)
 
 # <num> <who> (have)? died <words> <coronavirus>
@@ -298,8 +299,9 @@ _str_death4 = _str_num + r'\s?' + _str_words + r'\s?'      +\
 _regex_death4 = re.compile(_str_death4, re.IGNORECASE)
 
 # deaths|died <connector> <words> <num>
+# also prevent a match at the start of a space-separated list of numbers
 _str_death5 = r'\b((deaths|(?<!a\s)death)|died)[-\s:]{1,2}' + _str_words +\
-    _str_num + r'(?! of)'
+    _str_num + r'(?! (of|\d))'
 _regex_death5 = re.compile(_str_death5, re.IGNORECASE)
 
 #
@@ -1035,16 +1037,6 @@ if __name__ == '__main__':
         'studios the afterwife mosquito appeal which deaths matter '         \
         'pentecost tongues of fire four questions wolf loescher balls to '   \
         'the walls more articles',
-        
-        # two overlapping results - why
-        'alex brandon ap nearly 26,000 nursing home covid-19 deaths reported '\
-        'to feds 1 11 back to gallery washington ap ',
-
-        # captures "1st dead" and returns 1
-        'if they dont have covid-19, they want to do anything they can to '   \
-        'avoid getting it he said.related 1st deadlines approach for '        \
-        'laid-off workers to get health insurance disposable mask against '   \
-        'coronavirus.',
         
         #<num> residents dying
         
