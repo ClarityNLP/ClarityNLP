@@ -29,7 +29,7 @@ except:
 
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME = 'test_lab_value_matcher.py'
 
 _RESULT_FIELDS = ['match_text']
@@ -536,6 +536,14 @@ def run():
             _Result(match_text="E/E': 20.2"),
             _Result(match_text="E/E' lat: 27.4"),
             _Result(match_text="E/E' med: 12.9"),
+        ],
+        'Ao V2 max        266 cm/sec\r               Ao max PG         ' +\
+        '29 mmHg\r              Ao V2 mean        172 cm/sec\r         ' +\
+        'Ao mean PG         14 mmHg\r':[
+            _Result(match_text="Ao V2 max 266 cm/sec"),
+            _Result(match_text="Ao max PG 29 mmHg"),
+            _Result(match_text="Ao V2 mean 172 cm/sec"),
+            _Result(match_text="Ao mean PG 14 mmHg"),
         ],
     }
 

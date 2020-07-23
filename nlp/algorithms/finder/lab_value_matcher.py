@@ -34,7 +34,7 @@ except:
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 _MODULE_NAME = 'lab_value_matcher.py'
 
 # set to True to see debug output
@@ -197,7 +197,12 @@ _regex_caps_with_parens = re.compile(_str_caps_with_parens, re.IGNORECASE)
 # various echocardiogram quantities, including tissue doppler E/E', ...
 _str_echo1 = r'\bE/E\'(\s?(lat|med))?:\s?' + _str_num
 _str_echo2 = r'\bcmg:\s?' + _str_num + r'\s?' + _str_units + r'\s?'
-_str_echo = r'(' + _str_echo1 + r'|' + _str_echo2 + r')'
+_str_echo3 = r'\bAo ((mean|max|peak) pg|V\d (mean|min|max|vti|root (diam|area)))\s?' +\
+    _str_num + r'\s?' + _str_units + r'\s?'
+_str_echo4 = r'\bLV V\d (mean|max|vti)\s?' + _str_num + r'\s?' + _str_units + r'\s?'
+_str_echo5 = r'\bTR (min|max) (pg|vel)\s?' + _str_num + r'\s?' + _str_units + r'\s?'
+_str_echo = r'(' + _str_echo1 + r'|' + _str_echo2 + r'|' + _str_echo3 + r'|' +\
+    _str_echo4 + r'|' + _str_echo5 + r')'
 _regex_echo = re.compile(_str_echo, re.IGNORECASE)
 
 _all_regex_lists = []
