@@ -672,7 +672,7 @@ def fixup_sentences(sentence_list):
         s = sentence_list[i]
         match1 = _regex_ending_dashword.search(s)
         match2 = _regex_endswith_operator.search(s)
-        if match1 or match2 and i < num-1:
+        if (match1 or match2) and i < num-1:
             merged_sentences.append(s + ' ' + sentence_list[i+1])
             i += 2
             merge_count += 1
@@ -691,6 +691,7 @@ def fixup_sentences(sentence_list):
         
         # Is the first char of the sentence an operator?
         if len(s) < 1:
+            merge_count += 1
             continue
         c = s[0]
         starts_with_op = c in _operator_set
