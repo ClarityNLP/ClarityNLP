@@ -235,8 +235,8 @@ _str_num = r'(' + r'(\bfrom\s)?' +\
 
 # time durations, also relative times such as "a week ago"
 _str_duration = r'(' + _str_num + r'|' + r'\ba\b' + r')' +\
-    r'[-\s](years?|yr\.?|months?|mo\.?|weeks?|wk\.?|' +\
-    r'days?|hours?|hr\.?|minutes?|min\.?|seconds?|sec\.?)(?![a-z])(\sago\s)?'
+    r'[-\s](years?|yrs?\.?|months?|mo\.?|weeks?|wk\.?|' +\
+    r'days?|hours?|hrs?\.?|minutes?|min\.?|seconds?|sec\.?)(?![a-z])(\sago\s)?'
 _regex_duration = re.compile(_str_duration, re.IGNORECASE)
 
 # clock times
