@@ -13,38 +13,39 @@ import json
 import argparse
 from collections import namedtuple
 
-# try:
-#     # for normal operation via NLP pipeline
-#     from algorithms.finder.date_finder import run as \
-#         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-#     from algorithms.finder import finder_overlap as overlap
+try:
+    # for normal operation via NLP pipeline
+    from algorithms.finder.date_finder import run as \
+        run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    from algorithms.finder import finder_overlap as overlap
     
-# except:
-#     this_module_dir = sys.path[0]
-#     pos = this_module_dir.find('/nlp')
-#     if -1 != pos:
-#         nlp_dir = this_module_dir[:pos+4]
-#         finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
-#         sys.path.append(finder_dir)    
-#     from date_finder import run as run_date_finder, \
-#         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-#     import finder_overlap as overlap
+except:
+    this_module_dir = sys.path[0]
+    pos = this_module_dir.find('/nlp')
+    if -1 != pos:
+        nlp_dir = this_module_dir[:pos+4]
+        finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+        sys.path.append(finder_dir)    
+    from date_finder import run as run_date_finder, \
+        DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+    import finder_overlap as overlap
 
-if __name__ == '__main__':
-    # for interactive testing only
-    match = re.search(r'nlp/', sys.path[0])
-    if match:
-        nlp_dir = sys.path[0][:match.end()]
-        sys.path.append(nlp_dir)
-    else:
-        print('\n*** covid_finder.py: nlp dir not found ***\n')
-        sys.exit(0)
 
-from date_finder import run as run_date_finder, \
-    DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-from time_finder import run as run_time_finder, \
-    TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
-import finder_overlap as overlap    
+# if __name__ == '__main__':
+#     # for interactive testing only
+#     match = re.search(r'nlp/', sys.path[0])
+#     if match:
+#         nlp_dir = sys.path[0][:match.end()]
+#         sys.path.append(nlp_dir)
+#     else:
+#         print('\n*** covid_finder.py: nlp dir not found ***\n')
+#         sys.exit(0)
+
+# from date_finder import run as run_date_finder, \
+#     DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+# from time_finder import run as run_time_finder, \
+#     TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
+# import finder_overlap as overlap    
 
 
 # default value for all fields
