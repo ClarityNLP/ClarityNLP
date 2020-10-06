@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """
-    Test program for the time_finder, date_finder,
-    size_measurement_finder, and o2sat_finder modules.
+    Test program for the time_finder, date_finder, size_measurement_finder,
+    o2sat_finder, and covid_finder modules.
 
     Run from the finder folder with this command:
 
@@ -40,7 +40,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 13
+_VERSION_MINOR = 14
 _MODULE_NAME = 'test_finder.py'
 
 #
@@ -2338,6 +2338,9 @@ def test_covid_finder():
                          text_death='four new deaths', value_death=4),
             _CovidResult(text_case='111 new coronavirus cases', value_case=111),
             _CovidResult(text_case='2,429 confirmed cases', value_case=2429)
+        ],
+        # do not interpret 'no change' as zero count
+        'no change in the number of covid-19 cases': [
         ],
     }
 

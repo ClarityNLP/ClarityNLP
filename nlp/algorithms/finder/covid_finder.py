@@ -18,6 +18,7 @@ try:
     from algorithms.finder.date_finder import run as \
         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
     from algorithms.finder import finder_overlap as overlap
+    from algorithms.finder import text_number as tnum
     
 except:
     this_module_dir = sys.path[0]
@@ -29,6 +30,7 @@ except:
     from date_finder import run as run_date_finder, \
         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
     import finder_overlap as overlap
+    import text_number as tnum
 
 
 # if __name__ == '__main__':
@@ -73,7 +75,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 _MODULE_NAME   = 'covid_finder.py'
 
 # set to True to enable debug output
@@ -109,79 +111,6 @@ _str_word = r'[-a-z]+\.?\s?'
 _str_words = r'(' + _str_word + r'){0,5}?'
 _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
-# textual numbers and related regexes
-_str_tnum_digit = r'\b(one|two|three|four|five|six|seven|eight|nine|zero)'
-_str_tnum_10s  = r'\b(ten|eleven|twelve|(thir|four|fif|six|seven|eight|nine)teen)'
-_str_tnum_20s  = r'\b(twenty[-\s]?' + _str_tnum_digit + r'|twenty)'
-_str_tnum_30s  = r'\b(thirty[-\s]?' + _str_tnum_digit + r'|thirty)'
-_str_tnum_40s  = r'\b(forty[-\s]?' + _str_tnum_digit + r'|forty)'
-_str_tnum_50s  = r'\b(fifty[-\s]?' + _str_tnum_digit + r'|fifty)'
-_str_tnum_60s  = r'\b(sixty[-\s]?' + _str_tnum_digit + r'|sixty)'
-_str_tnum_70s  = r'\b(seventy[-\s]?' + _str_tnum_digit + r'|seventy)'
-_str_tnum_80s  = r'\b(eighty[-\s]?' + _str_tnum_digit + r'|eighty)'
-_str_tnum_90s  = r'\b(ninety[-\s]?' + _str_tnum_digit + r'|ninety)'
-_str_tnum_100s = _str_tnum_digit + r'[-\s]hundred[-\s](and[-\s])?' +\
-    r'(' +\
-    _str_tnum_90s + r'|' + _str_tnum_80s + r'|' + _str_tnum_70s + r'|' +\
-    _str_tnum_60s + r'|' + _str_tnum_50s + r'|' + _str_tnum_40s + r'|' +\
-    _str_tnum_30s + r'|' + _str_tnum_20s + r'|' + _str_tnum_20s + r'|' +\
-    _str_tnum_10s + r'|' + _str_tnum_digit +\
-    r')?'
-_str_tnum = r'(' +\
-    _str_tnum_100s + r'|' + _str_tnum_90s + r'|' + _str_tnum_80s + r'|' +\
-    _str_tnum_70s +  r'|' + _str_tnum_60s + r'|' + _str_tnum_50s + r'|' +\
-    _str_tnum_40s +  r'|' + _str_tnum_30s + r'|' + _str_tnum_20s + r'|' +\
-    _str_tnum_10s +  r'|' + _str_tnum_digit +\
-    r')(?!\-)'
-
-_regex_tnum_digit = re.compile(_str_tnum_digit)
-_regex_tnum_10s   = re.compile(_str_tnum_10s)
-_regex_tnum_20s   = re.compile(_str_tnum_20s)
-_regex_tnum_30s   = re.compile(_str_tnum_30s)
-_regex_tnum_40s   = re.compile(_str_tnum_40s)
-_regex_tnum_50s   = re.compile(_str_tnum_50s)
-_regex_tnum_60s   = re.compile(_str_tnum_60s)
-_regex_tnum_70s   = re.compile(_str_tnum_70s)
-_regex_tnum_80s   = re.compile(_str_tnum_80s)
-_regex_tnum_90s   = re.compile(_str_tnum_90s)
-_regex_tnum_100s  = re.compile(_str_tnum_100s)
-_regex_hundreds   = re.compile(_str_tnum_digit + r'[-\s]?hundred[-\s]?', re.IGNORECASE)
-
-# used for conversions from tnum to int
-_tnum_to_int_map = {
-    'one':1, 'two':2, 'three':3, 'four':4, 'five':5, 'six':6, 'seven':7,
-    'eight':8, 'nine':9, 'ten':10, 'eleven':11, 'twelve':12, 'thirteen':13,
-    'fourteen':14, 'fifteen':15, 'sixteen':16, 'seventeen':17, 'eighteen':18,
-    'nineteen':19, 'twenty':20, 'thirty':30, 'forty':40, 'fifty':50,
-    'sixty':60, 'seventy':70, 'eighty':80, 'ninety':90,
-    'zero':0,
-}
-
-# enumerations
-# 'no' is needed for "no new cases" and similar
-_str_enum = r'(first|second|third|fourth|fifth|sixth|seventh|eighth|' +\
-    r'ninth|tenth|eleventh|twelfth|'                                  +\
-    r'(thir|four|fif|six|seven|eight|nine)teenth|'                    +\
-    r'1[0-9]th|[2-9]0th|[4-9]th|3rd|2nd|1st|'                         +\
-    r'(twen|thir|for|fif|six|seven|eigh|nine)tieth)'
-
-# used for conversions from enum to int
-_enum_to_int_map = {
-    'zeroth':0,
-    'first':1, '1st':1, 'second':2, '2nd':2, 'third':3, '3rd':3,
-    'fourth':4, '4th':4, 'fifth':5, '5th':5, 'sixth':6, '6th':6,
-    'seventh':7, '7th':7, 'eighth':8, '8th':8, 'ninth':9, '9th':9,
-    'tenth':10, '10th':10, 'eleventh':11, '11th':11, 'twelfth':12, '12th':12,
-    'thirteenth':13, '13th':13, 'fourteenth':14, '14th':14,
-    'fifteenth':15, '15th':15, 'sixteenth':16, '16th':16,
-    'seventeenth':17, '17th':17, 'eighteenth':18, '18th':18,
-    'ninenteenth':19, '19th':19, 'twentieth':20, '20th':20,
-    'thirtieth':30, '30th':30, 'fortieth':40, '40th':40,
-    'fiftieth':50, '50th':50, 'sixtieth':60, '60th':60,
-    'seventieth':70, '70th':70, 'eightieth':80, '80th':80,
-    'ninetieth':90, '90th':90,
-}
-
 # integers, possibly including commas
 # do not capture numbers in phrases such as "in their 90s", etc
 _str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(?!\d)(?!\'?s))'
@@ -205,22 +134,10 @@ _regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
 def _make_num_regex(a='int', b='tnum', c='enum'):
     _str_num = r'(?<![-])('                                                 +\
         r'(?P<{0}>'.format(a) +  _str_int + r')|'                           +\
-        r'(?P<{0}>'.format(b) + _str_tnum + r')|'                           +\
-        r'(?P<{0}>'.format(c) + _str_enum + r'(?![-])(?! (high|large|great|small|tini)est))'  +\
+        r'(?P<{0}>'.format(b) + tnum.str_tnum + r')|'                       +\
+        r'(?P<{0}>'.format(c) + tnum.str_enum + r'(?![-])(?! (high|large|great|small|tini)est))'  +\
         r')(?!%)(?! %)(?! percent)(?! pct)'
     return _str_num
-
-# def _make_num_regex(a='int', b='tnum', c='enum'):
-#     _str_num = r'('                                          +\
-#         r'(?P<{0}>'.format(a) + _str_int + r')|'             +\
-#         r'(?P<{0}>'.format(b) + _str_tnum + r')|'            +\
-#         r'(?P<{0}>'.format(c)                                +\
-#         r'(' + _str_enum + r'(?= case)' + r'|'               +\
-#                _str_enum + r'(?= (confirmed|positive) case)' +\
-#         r'))'                                                +\
-#         r')(?!%)(?! %)(?! percent)(?! pct)'
-#     return _str_num
-
 
 # regex to recognize either a range or a single integer
 # also recognize 'no' for situations such as "no new cases of covid-19"
@@ -230,9 +147,8 @@ _str_num = r'(' + r'(\bfrom\s)?' +\
     _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
     r'\s?to\s?' +\
     _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
-    r'|' + r'\b(?P<no>no)\b' + r'|' +  _str_float_word    +\
+    r'|' + r'\b(?P<no>no(?! change))\b' + r'|' +  _str_float_word    +\
     r'|' + _make_num_regex() + r')(?!\sfrom\s)'
-
 
 # time durations, also relative times such as "a week ago"
 _str_duration = r'(' + _str_num + r'|' + r'\ba\b' + r')' +\
@@ -581,92 +497,6 @@ def _to_int(str_int):
     
 
 ###############################################################################
-def _enum_to_int(_str_enum):
-    """
-    Convert an enumerated count such as 'third' or 'ninenteenth' to an int.
-    """
-
-    val = None
-    text = _str_enum.strip()
-    if text in _enum_to_int_map:
-        val = _enum_to_int_map[text]
-
-    return val
-    
-
-###############################################################################
-def _tnum_to_int(_str_tnum):
-    """
-    Convert a textual number to an integer. Returns None if number cannot
-    be converted, or the actual integer value.
-    """
-
-    if _TRACE:
-        print('calling _tnum_to_int...')
-        print('\t_str_tnum: "{0}"'.format(_str_tnum))
-
-    # replace dashes with a space and collapse any repeated spaces
-    text = re.sub(r'\-', ' ', _str_tnum)
-    text = re.sub(r'\s+', ' ', text)
-    text = text.strip()
-
-    if _TRACE:
-        print('\ttnum after dash replacement: "{0}"'.format(text))
-    
-    if text in _tnum_to_int_map:
-        return _tnum_to_int_map[text]
-
-    val_h = 0
-    val_t = 0
-    val_o = 0
-    
-    # extract hundreds, if any
-    match = _regex_hundreds.match(text)
-    if match:
-        tnum = match.group().split()[0].strip()
-        if tnum in _tnum_to_int_map:
-            val_h += _tnum_to_int_map[tnum]
-            text = text[match.end():].strip()
-        else:
-            # invalid number
-            if _TRACE:
-                print('invalid textual number: "{0}"'.format(text))
-                return None
-
-    if len(text) > 0:
-
-        # strip 'and', if any
-        pos = text.find('and')
-        if -1 != pos:
-            text = text[pos+3:]
-            text = text.strip()
-
-        # extract tens
-        words = text.split()
-        assert len(words) <= 2
-        if 2 == len(words):
-            if words[0] not in _tnum_to_int_map or words[1] not in _tnum_to_int_map:
-                # invalid number
-                if _TRACE:
-                    print('invalid textual number: "{0}"'.format(text))
-                    return None
-
-            val_t = _tnum_to_int_map[words[0]]
-            val_o = _tnum_to_int_map[words[1]]
-        else:
-            if words[0] not in _tnum_to_int_map:
-                # invalid number
-                if _TRACE:
-                    print('invalid textual number: "{0}"'.format(text))
-                    return None
-            val_o = _tnum_to_int_map[words[0]]                                       
-
-    # for val_t, a textual number such as "forty-four" will return 40 from the
-    # map lookup, so no need to multiply by 10
-    return 100*val_h + val_t + val_o
-
-
-###############################################################################
 def _remove_inferior_matches(candidates, regex_list, regex_minor):
     """
     If a match from regex_minor overlaps any other regex in the list, remove
@@ -850,9 +680,9 @@ def _text_to_num(match, key, textval):
     if 'int_to' == key or 'int' == key:
         val = _to_int(textval)
     elif 'tnum_to' == key or 'tnum' == key:
-        val = _tnum_to_int(textval)
+        val = tnum.tnum_to_int(textval, _TRACE)
     elif 'enum_to' == key or 'enum' == key:
-        val = _enum_to_int(textval)
+        val = tnum.enum_to_int(textval)
     elif 'floatnum' == key:
         val = float(textval)
         # get the units
