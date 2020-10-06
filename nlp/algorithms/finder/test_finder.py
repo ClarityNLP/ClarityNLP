@@ -2340,8 +2340,15 @@ def test_covid_finder():
             _CovidResult(text_case='2,429 confirmed cases', value_case=2429)
         ],
         # do not interpret 'no change' as zero count
-        'no change in the number of covid-19 cases': [
+        'no change in the number of covid-19 cases':[
         ],
+        # do not mistake a copyright year for a case count
+        'additional covid-19 cases copyright 2020':[
+        ],
+        # do not mistake a concatenated date for a case count
+        'Tuesday, Aug. 18Coronavirus cases in Arizona':[
+        ],
+        # 2 dozen cases
     }
 
     if not _run_tests(_MODULE_COVID, test_data):
@@ -2379,6 +2386,9 @@ if __name__ == '__main__':
         tf.enable_debug()
         df.enable_debug()
         smf.enable_debug()
+        o2f.enable_debug()
+        cf.enable_debug()
+        
         
     assert test_time_finder()
     assert test_date_finder()

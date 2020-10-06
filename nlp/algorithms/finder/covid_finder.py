@@ -84,7 +84,7 @@ _TRACE = False
 _STR_THOUSAND = 'thousand'
 _STR_MILLION  = 'million'
 
-# throwaway words
+# throwaway words for a particular regex
 _THROWAWAY_SET = {
     'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your',
     'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she',
@@ -101,7 +101,8 @@ _THROWAWAY_SET = {
     'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can',
     'will', 'just', 'dont', 'should', 'shouldve', 'now', 'arent', 'couldnt',
     'didnt', 'doesnt', 'hadnt', 'hasnt', 'havent', 'isnt', 'shouldnt',
-    'wasnt', 'werent', 'wont', 'wouldnt'
+    'wasnt', 'werent', 'wont', 'wouldnt',
+    'copyright',
 }
 
 # a word, possibly hyphenated or abbreviated
@@ -300,7 +301,7 @@ MatchTuple = namedtuple('MatchTuple', ['start', 'end', 'text', 'value'])
 
 
 ###############################################################################
-def _enable_debug():
+def enable_debug():
 
     global _TRACE
     _TRACE = True
@@ -438,8 +439,16 @@ def _cleanup(sentence):
     # convert to lowercase
     sentence = sentence.lower()
 
-    sentence = _erase_dates(sentence)
-    sentence = _erase_time_expressions(sentence)
+    # insert a missing space prior to a virus-related word
+    space_pos = []
+    iterator = re.finditer(r'[a-z\d](covid|coronavirus)',
+                           sentence, re.IGNORECASE)
+    for match in iterator:
+        # position where the space is needed
+        pos = match.start() + 1
+        space_pos.append(pos)
+    chunks = _split_at_positions(sentence, space_pos)
+    sentence = ' '.join(chunks)
     
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
@@ -449,16 +458,6 @@ def _cleanup(sentence):
     
     # replace selected chars with whitespace
     sentence = re.sub(r'[&(){}\[\]:~/@;]', ' ', sentence)
-
-    # insert a missing space surrounding Covid-19
-    space_pos = []
-    iterator = re.finditer(r'[a-z]covid\-?19', sentence, re.IGNORECASE)
-    for match in iterator:
-        # position where the space is needed
-        pos = match.start() + 1
-        space_pos.append(pos)
-    chunks = _split_at_positions(sentence, space_pos)
-    sentence = ' '.join(chunks)
     
     # replace commas with whitespace if not inside a number (such as 32,768)
     comma_pos = []
@@ -472,7 +471,10 @@ def _cleanup(sentence):
         if chunks[i].startswith(','):
             chunks[i] = chunks[i][1:]
     sentence = ' '.join(chunks)
-        
+
+    sentence = _erase_dates(sentence)
+    sentence = _erase_time_expressions(sentence)
+    
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
@@ -859,7 +861,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'debug' in args and args.debug:
-        _enable_debug()
+        enable_debug()
 
     SENTENCES = [
 
