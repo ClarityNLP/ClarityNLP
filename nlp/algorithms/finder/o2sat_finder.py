@@ -504,7 +504,7 @@ _MIN_SPO2_PCT = 50
 
 
 ###############################################################################
-def _enable_debug():
+def enable_debug():
 
     global _TRACE
     _TRACE = True
@@ -1102,7 +1102,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if 'debug' in args and args.debug:
-        _enable_debug()
+        enable_debug()
 
     SENTENCES = [
         'Vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM',
