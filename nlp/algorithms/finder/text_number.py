@@ -84,7 +84,7 @@ str_tnum = r'(' +\
     _str_tnum_70s +  r'|' + _str_tnum_60s + r'|' + _str_tnum_50s + r'|' +\
     _str_tnum_40s +  r'|' + _str_tnum_30s + r'|' + _str_tnum_20s + r'|' +\
     _str_tnum_10s +  r'|' + _str_tnum_digit +\
-    r')(?!\-)'
+    r')(?![a-z])(?!\-)'
 
 # 'no' is needed for "no new cases" and similar
 str_enum = r'(first|second|third|fourth|fifth|sixth|seventh|eighth|' +\
