@@ -4,13 +4,13 @@
 This is a module for finding and extracting the number of COVID-19 cases,
 hospitalizations, and deaths from text scraped from the Internet.
 
+Test the module by running the test suite in test_finder.py.
 """
 
 import os
 import re
 import sys
 import json
-import argparse
 from collections import namedtuple
 
 try:
@@ -19,7 +19,6 @@ try:
         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
     from algorithms.finder import finder_overlap as overlap
     from algorithms.finder import text_number as tnum
-    
 except:
     this_module_dir = sys.path[0]
     pos = this_module_dir.find('/nlp')
@@ -33,26 +32,8 @@ except:
     import text_number as tnum
 
 
-# if __name__ == '__main__':
-#     # for interactive testing only
-#     match = re.search(r'nlp/', sys.path[0])
-#     if match:
-#         nlp_dir = sys.path[0][:match.end()]
-#         sys.path.append(nlp_dir)
-#     else:
-#         print('\n*** covid_finder.py: nlp dir not found ***\n')
-#         sys.exit(0)
-
-# from date_finder import run as run_date_finder, \
-#     DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-# from time_finder import run as run_time_finder, \
-#     TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
-# import finder_overlap as overlap    
-
-
 # default value for all fields
 EMPTY_FIELD = None
-
 
 COVID_TUPLE_FIELDS = [
     'sentence',
@@ -75,8 +56,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
-_MODULE_NAME   = 'covid_finder.py'
+_VERSION_MINOR = 6
 
 # set to True to enable debug output
 _TRACE = False
@@ -273,6 +253,10 @@ _regex_case9 = re.compile(_str_case9, re.IGNORECASE)
 _str_case10 = r'\bconfirmed\s' + _str_words + _str_coronavirus + _str_words + _str_num
 _regex_case10 = re.compile(_str_case10, re.IGNORECASE)
 
+# cases? <words> for a total of <num>
+_str_case11 = r'\bcases?\s' + _str_words  + r'\s?for a total of ' + _str_num
+_regex_case11 = re.compile(_str_case11, re.IGNORECASE)
+
 _CASE_REGEXES = [
     _regex_case0,
     _regex_case1,
@@ -285,6 +269,7 @@ _CASE_REGEXES = [
     _regex_case8,
     _regex_case9,
     _regex_case10,
+    _regex_case11,
 ]
 
 _DEATH_REGEXES = [
@@ -634,6 +619,11 @@ def _regex_match(sentence, regex_list):
     candidates = _remove_inferior_matches(candidates,
                                           _CASE_REGEXES,
                                           _regex_case8)
+
+    # if _regex_case9 overlaps _regex_case11, remove the matches for _regex_case9
+    candidates = _remove_inferior_matches(candidates,
+                                          [_regex_case11],
+                                          _regex_case9)
     
     # if _regex_death5 overlaps any others, remove the match for _regex_death5
     candidates = _remove_inferior_matches(candidates,
@@ -843,194 +833,5 @@ def run(sentence):
 
 ###############################################################################
 def get_version():
-    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
-
-                        
-###############################################################################
-if __name__ == '__main__':
-
-    # for command-line testing only
-
-    parser = argparse.ArgumentParser(
-        description='test covid finder task locally')
-
-    parser.add_argument('--debug',
-                        action='store_true',
-                        help='print debugging information')
-
-    args = parser.parse_args()
-
-    if 'debug' in args and args.debug:
-        enable_debug()
-
-    SENTENCES = [
-
-        # captures "deaths matter pentecost tongues of fire four"
-        'not want not call waiting four questions blake elder rockhill '     \
-        'studios the afterwife mosquito appeal which deaths matter '         \
-        'pentecost tongues of fire four questions wolf loescher balls to '   \
-        'the walls more articles',
-        
-        #<num> residents dying
-        
-        # # TBD
-        # # 'Two residents at Fairhaven in Sykesville, one resident at '       \
-        # # 'Flying Colors of Success in Westminster and two staff members '   \
-        # # 'at Pleasant View Nursing Home in Mount Airy who live in Carroll ' \
-        # # 'tested positive, pushing the facilities total to 559.',
-        
-    ]
-
-    for i, sentence in enumerate(SENTENCES):
-        print('\n[{0:2d}]: {1}'.format(i, sentence))
-        result = run(sentence)
-        #print(result)
-
-        data = json.loads(result)
-        for d in data:
-            for k,v in d.items():
-                print('\t\t{0} = {1}'.format(k, v))
-            
-        
-###############################################################################
-def get_version():
-    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
-
-
-
-
-"""
-death reports
-
-<num> deaths
-
-<num>           <coronavirus> deaths
-<num> more      <coronavirus> deaths
-<num> confirmed <coronavirus> deaths
-no additional <coronavirus>-related deaths
-
-<num> more deaths related to <coronavirus>
-<num>      deaths due     to <coronavirus>
-<num>      deaths from the   <coronavirus>
-<num> new  deaths directly caused by or related to <coronavirus>
-
-<num> additional         deaths
-no    new                deaths
-<num> new                deaths
-<num> total              deaths
-<num> confirmed resident deaths
-
-2nd    <coronavirus> death
-second <coronavirus> death
-third  <coronavirus>-related death
-
-<num> residents dying
-
-<num> residents   died as a result of the <coronavirus>
-<num> people have died 
-<num>        have died after contracting it
-<num> inmates     died of the <coronavirus>
-
-total number of <coronavirus>-related deaths stands at <num>
-                <coronavirus>-related deaths near      <num>
-
-<coronavirus> death toll hits <num>
-
-              total deaths to <num>
-                    deaths-<num>
-number of confirmed deaths: <num>
-
-
-false positives:
-    two-thirds of all <coronavirus> deaths
-
-
-
-
-case reports
-
-# <num> <words> <coronavirus> cases?
-<num> covid-19 cases
-<num> coronavirus cases
-<num> new covid-19 cases
-<num> confirmed coronavirus cases
-<num> new <location> covid-19 cases
-
-# <num> <words> cases? <words> <coronavirus>
-<num> cases of covid-19
-<num> new cases of covid-19
-<num> more cases of covid-19
-<num> positive covid-19 cases
-<num> active cases of covid-19
-<num> confirmed cases of covid-19
-<enum> confirmed case of covid-19
-<num> additional cases of covid-19
-<num> positive case of coronavirus
-<num> confirmed cases of the virus
-<num> confirmed cases of the coronavirus
-
-# <num> <words> cases?
-<num> cases
-<num> new cases
-<num> total cases
-<num> active cases
-<num> probable cases
-<num> positive cases
-<num> positive cases
-<num> new daily cases
-<num> confirmed cases
-<num> new positive cases
-<num> lab-confirmed cases
-<num> total confirmed cases
-<num> confirmed and probable cases
-
-# <num> <words> with <coronavirus>
-<num> employees with coronavirus
-
-# <num> <words> positive for <words> <coronavirus>
-<num> test positive for covid-19
-<num> have tested positive for the virus
-<num> <words> tested positive for the coronavirus
-<num> residents having tested positive for covid-19
-<num> additional staff members are positive for covid-19
-<num> people had tested positive for the novel coronavirus
-
-# <num> <words> tested positive
-<num> inmates have tested positive
-
-# (total|number of) <words> <coronavirus> cases? <words> <num>
-total number of coronavirus cases had reached <num>
-total number of covid-19 cases in <location> to <num>
-      number of COVID cases recorded in a one day was <num>
-
-# <coronavirus> cases? <words> <num>
-coronavirus cases (<num>)
-covid-19 cases below <num>
-covid-19 cases up to <num>
-covid-19 cases <words> <num>
-coronavirus cases reach <num>
-coronavirus cases rise to <num>
-coronavirus case total tops <num>
-covid-19 cases in <location> increased to <num>
-
-# (total|number of) <words> cases? <words> <num>
-total number of positive cases <words> <num>
-total of positive cases has been updated to <num>
-total of lab-confirmed cases in <location> is now <num>
-total tally of cases in <location> since the pandemic began to <num>
-
-# cases <words> <num>
-cases-<num>
-cases at <num>
-cases balloon to over <num>
-
-# total <words> <num>
-total of <num>
-brings our total to <num>
-
-number of confirmed cases from <num1> to <num2>
-<num1>-<num2> positive cases in <location>
-<num1> staff members and <num2> residents have now tested positive
-<num1> words and <num2> words cases of covid-19
-<num1> new cases in <location1> and <num2> in <location2>
-"""
+    path, module_name = os.path.split(__file__)
+    return '{0} {1}.{2}'.format(module_name, _VERSION_MAJOR, _VERSION_MINOR)
