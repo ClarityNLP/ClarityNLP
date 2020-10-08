@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """
-    Test program for the time_finder, date_finder,
-    size_measurement_finder, and o2sat_finder modules.
+    Test program for the time_finder, date_finder, size_measurement_finder,
+    o2sat_finder, and covid_finder modules.
 
     Run from the finder folder with this command:
 
@@ -23,7 +23,8 @@ if __name__ == '__main__':
         nlp_dir = sys.path[0][:match.end()]
         sys.path.append(nlp_dir)
     else:
-        print('\n*** o2_finder.py: nlp dir not found ***\n')
+        path, module_name = os.path.split(__file__)
+        print('\n*** {0}: nlp dir not found ***\n'.format(module_name))
         sys.exit(0)
 
 try:
@@ -40,8 +41,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 13
-_MODULE_NAME = 'test_finder.py'
+_VERSION_MINOR = 15
 
 #
 # time results
@@ -2339,6 +2339,24 @@ def test_covid_finder():
             _CovidResult(text_case='111 new coronavirus cases', value_case=111),
             _CovidResult(text_case='2,429 confirmed cases', value_case=2429)
         ],
+        # do not interpret 'no change' as zero count
+        'no change in the number of covid-19 cases':[
+        ],
+        # do not mistake a copyright year for a case count
+        'additional covid-19 cases copyright 2020':[
+        ],
+        # do not mistake a concatenated date for a case count
+        'Tuesday, Aug. 18Coronavirus cases in Arizona':[
+        ],
+        'Butte County reported one new case for a total of 47.':[
+            _CovidResult(text_case='case for a total of 47', value_case=47)
+        ],
+        'Lawrence County reported eight new cases for a total of 225 '\
+        'Meade County reported six new cases for a total of 300.':[
+            _CovidResult(text_case='cases for a total of 225', value_case=225),
+            _CovidResult(text_case='cases for a total of 300', value_case=300)
+        ]
+        # 2 dozen cases
     }
 
     if not _run_tests(_MODULE_COVID, test_data):
@@ -2348,8 +2366,9 @@ def test_covid_finder():
 
 
 ###############################################################################
-def get_version():
-    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
+def _get_version():
+    path, module_name = os.path.split(__file__)
+    return '{0} {1}.{2}'.format(module_name, _VERSION_MAJOR, _VERSION_MINOR)
 
 
 ###############################################################################
@@ -2376,6 +2395,9 @@ if __name__ == '__main__':
         tf.enable_debug()
         df.enable_debug()
         smf.enable_debug()
+        o2f.enable_debug()
+        cf.enable_debug()
+        
         
     assert test_time_finder()
     assert test_date_finder()

@@ -13,6 +13,9 @@ def test_size_measurement_finder():
 def test_o2sat_finder():
     assert tf.test_o2sat_finder()
 
+def test_covid_finder():
+    assert tf.test_covid_finder()
+    
 def test_lvm():
     assert test_lab_value_matcher.run()
 
