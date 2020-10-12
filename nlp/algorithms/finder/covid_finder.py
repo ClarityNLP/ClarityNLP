@@ -56,7 +56,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 
 # set to True to enable debug output
 _TRACE = False
@@ -94,7 +94,8 @@ _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
 # integers, possibly including commas
 # do not capture numbers in phrases such as "in their 90s", etc
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(?!\d)(?!\'?s))'
+# the k or m suffixes are for thousands and millions, i.e. 4k, 12m
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(k|m)?(?!\d)(?!\'?s))'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
 _str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
@@ -126,7 +127,7 @@ def _make_num_regex(a='int', b='tnum', c='enum'):
 # "decreased by one from 17 to 16", in which the desired num is 16, not "one"
 _str_num = r'(' + r'(\bfrom\s)?' +\
     _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
-    r'\s?to\s?' +\
+    r'\s?to( as (many|much) as)?\s?' +\
     _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
     r'|' + r'\b(?P<no>no(?! change))\b' + r'|' +  _str_float_word    +\
     r'|' + _make_num_regex() + r')(?!\sfrom\s)'
@@ -478,7 +479,14 @@ def _to_int(str_int):
         val = int(str_int)
     else:
         text = re.sub(r',', '', str_int)
-        val = int(text)
+        multiplier = 1
+        if text.endswith('k'):
+            multiplier = 1000
+            text = text[:-1]
+        elif text.endswith('m'):
+            multiplier = 1000000
+            text = text[:-1]
+        val = int(text)*multiplier
 
     return val
     

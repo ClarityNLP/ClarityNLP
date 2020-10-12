@@ -41,7 +41,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 15
+_VERSION_MINOR = 16
 
 #
 # time results
@@ -2355,7 +2355,16 @@ def test_covid_finder():
         'Meade County reported six new cases for a total of 300.':[
             _CovidResult(text_case='cases for a total of 225', value_case=225),
             _CovidResult(text_case='cases for a total of 300', value_case=300)
-        ]
+        ],
+        # k suffixes on numbers
+        'the state exceeds 13k total coronavirus cases so far':[
+            _CovidResult(text_case='13k total coronavirus cases',
+                         value_case=13000)
+        ],
+        'there could be from 800k to as many as 2m cases by next year':[
+            _CovidResult(text_case='from 800k to as many as 2m cases',
+                         value_case=2000000)
+        ],
         # 2 dozen cases
     }
 
