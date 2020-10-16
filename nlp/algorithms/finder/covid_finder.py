@@ -56,7 +56,7 @@ CovidTuple = namedtuple('CovidTuple', COVID_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 
 # set to True to enable debug output
 _TRACE = False
@@ -95,7 +95,7 @@ _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 # integers, possibly including commas
 # do not capture numbers in phrases such as "in their 90s", etc
 # the k or m suffixes are for thousands and millions, i.e. 4k, 12m
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(k|m)?(?!\d)(?!\'?s))'
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(k|m|\s?dozen)?(?!\d)(?!\'?s))'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
 _str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
@@ -480,7 +480,15 @@ def _to_int(str_int):
     else:
         text = re.sub(r',', '', str_int)
         multiplier = 1
-        if text.endswith('k'):
+        if text.endswith(' dozen'):
+            # note the space preceding 'dozen'
+            multiplier = 12
+            text = text[:-6]
+        elif text.endswith('dozen'):
+            # no space preceding 'dozen'
+            multiplier = 12
+            text = text[:-5]
+        elif text.endswith('k'):
             multiplier = 1000
             text = text[:-1]
         elif text.endswith('m'):

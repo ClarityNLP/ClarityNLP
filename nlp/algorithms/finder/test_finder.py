@@ -41,7 +41,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 16
+_VERSION_MINOR = 17
 
 #
 # time results
@@ -2365,7 +2365,13 @@ def test_covid_finder():
             _CovidResult(text_case='from 800k to as many as 2m cases',
                          value_case=2000000)
         ],
-        # 2 dozen cases
+        # dozens
+        'the state health department reported four dozen more cases yesterday':[
+            _CovidResult(text_case='four dozen more cases', value_case=48)            
+        ],
+        'the state health department reported 2 dozen more cases yesterday':[
+           _CovidResult(text_case='2 dozen more cases', value_case=24)
+        ],
     }
 
     if not _run_tests(_MODULE_COVID, test_data):

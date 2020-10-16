@@ -8,6 +8,9 @@ integer equivalents.
 
 import re
 
+_VERSION_MAJOR = 0
+_VERSION_MINOR = 1
+
 
 # textual numbers and related regexes
 _str_tnum_digit = r'\b(one|two|three|four|five|six|seven|eight|nine|zero)'
@@ -27,6 +30,8 @@ _str_tnum_100s = _str_tnum_digit + r'[-\s]hundred[-\s](and[-\s])?' +\
     _str_tnum_30s + r'|' + _str_tnum_20s + r'|' + _str_tnum_20s + r'|' +\
     _str_tnum_10s + r'|' + _str_tnum_digit +\
     r')?'
+
+_str_tnum_dozen = r'\b((one|two|three|four|five|six|seven|eight|nine)\sdozen)'
 
 # _regex_tnum_digit = re.compile(_str_tnum_digit)
 # _regex_tnum_10s   = re.compile(_str_tnum_10s)
@@ -79,7 +84,7 @@ _enum_to_int_map = {
 #                                                                             #
 ###############################################################################
 
-str_tnum = r'(' +\
+str_tnum = r'(' + _str_tnum_dozen + r'|' +\
     _str_tnum_100s + r'|' + _str_tnum_90s + r'|' + _str_tnum_80s + r'|' +\
     _str_tnum_70s +  r'|' + _str_tnum_60s + r'|' + _str_tnum_50s + r'|' +\
     _str_tnum_40s +  r'|' + _str_tnum_30s + r'|' + _str_tnum_20s + r'|' +\
@@ -126,7 +131,16 @@ def tnum_to_int(str_tnum, debug=False):
 
     if debug:
         print('\ttnum after dash replacement: "{0}"'.format(text))
-    
+
+    pos = str_tnum.find('dozen')
+    if -1 != pos:
+        str_num = str_tnum[:pos-1]
+        if str_num.isdigit():
+            val = int(str_num) * 12
+        elif str_num in _tnum_to_int_map:
+            val = _tnum_to_int_map[str_num] * 12
+        return val
+        
     if text in _tnum_to_int_map:
         return _tnum_to_int_map[text]
 
