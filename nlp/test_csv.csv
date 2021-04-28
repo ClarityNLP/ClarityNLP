@@ -1,0 +1,9 @@
+#,question_name,answers,group,type,evidence_bundle,feature_name,feature_display_name,fhir_resource_type,code_system,codes,valueset_oid,cql_expression,Referenced Feature,where_clause_attribute,where_clause_value,where_clause_during_begin,where_clause_during_after,relationship_fhir_resource_type,relationship_codes,relationship_code_system,relationship_valueset,relationship_where_clause,nlp_task_type,text_terms,values_before_terms,value_min,value_max,value_enum_set,logic,notes,autofill,autofill_mc_answer,default_answer,report_types,report_tags
+1,Chlaymydia,,Main,CQL,chlamydia,Chlamydia Conditions,,Condition,http://snomed.info/sct,A56:A56.00,,,,,,,,,,,,,CQL,,,,,,,,,,,,
+2,Procedures where the subject refused treatment,,Main,CQL,Test,Procedures Refused,,Procedure,,,,[Procedure: Code in ['someCode] p where p.status in ['not done'] and p.statusReason in ['183944003'] /*Procedure refused */,,,,,,,,,,,CQL,,,,,,,,,,,,
+3,Chlaymydia_2019,,Main,CQL,chlamydia,Chlamydia During 2019,,Condition,http://snomed.info/sct,A56.01:A56.02,,,,onset,,1/1/2019,1/1/2020,,,,,,CQL,,,,,,,,,,,,
+4,Active Encounters,,Main,CQL,chlamydia,Encounters with active status,,Encounter,,,,,,status,['active'],,,,,,,,CQL,,,,,,,,,,,,
+5,Encounters 2 Weeks before Conditions,,Main,CQL,chlamydia,Encounters with chlamydia conditions,,Condition,http://snomed.info/sct,A56.01:A56.02,,,,,,,,Encounter,,,2.16.840.1.114222.4.1,target2.period.start after target1.onsetDateTime by 2 weeks,CQL,,,,,,,,,,,,
+6,Encounters via direct referennce to question name,,Main,CQL,chlamydia,Manual Grouping Example,,Encounter,,,,where $this$.period.start after $Chlamydia_Conditions$.onsetDateTime by 2 weeks,,,,,,,,,,,CQL,,,,,,,,,,,,
+7,Macrolides Medication,,Main,CQL,chlamydia,Macrolides Medication,,Medication,http://snomed.info/sct,Some code,,,,,,,,,,,,,,,,,,,,,,,,,
+8,Macrolides MedicationRequest,,Main,CQL,chlamydia,Macrolides Medication Request,,MedicationRequest,,Some code,,,Macrolides Medication,,,,,,,,,,,,,,,,,,,,,,
