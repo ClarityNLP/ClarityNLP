@@ -71,11 +71,39 @@ def _extract_items(text, str_section_start, str_section_end=None):
         # trim trailing space
         item = match.group('item').strip()
         if len(item) > 1:
+            # clades could have a '/' character; split at that char and
+            # also enter both parts separately, as well as the whole thing
+            # see https://nextstrain.org/ncov/global?f_pango_lineage=A&gmin=113
+            pos = item.find('/')
+            if -1 != pos:
+                first = item[:pos]
+                second = item[pos+1:]
+                items.append(first)
+                items.append(second)
+                
             items.append(item)
 
     return _to_regex_string(items)
 
-    
+
+###############################################################################
+def _extract_amino_changes(yaml_file_list):
+    """
+    """
+
+    amino_changes = set()
+    for f in yaml_file_list:
+        with open(f, 'rt') as infile:
+            for line in infile:
+                #match = re.search(r'\bamino\-acid\-change: (?P<change>\.+?)\Z', line)
+                match = re.search(r'\bamino-acid-change: (?P<change>[^\n]+)\n\Z', line)
+                if match:
+                    amino_changes.add(match.group('change').strip())
+
+    amino_changes = list(amino_changes)
+    return _to_regex_string(amino_changes)
+                    
+
 ###############################################################################
 def get_version():
     path, module_name = os.path.split(__file__)
@@ -99,6 +127,11 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--file',
                         help='Nexstrain HTML input file',
                         dest='filepath')
+    parser.add_argument('-p', '--phe',
+                        help='path to clone of the Public Health England ' \
+                        '"variant_definitions" GitHub repository: ' \
+                        'https://github.com/phe-genomics/variant_definitions',
+                        dest='phe_dir')
 
     args = parser.parse_args()
 
@@ -110,18 +143,40 @@ if __name__ == '__main__':
         print('\n*** Missing --file argument ***')
         sys.exit(-1)
 
-    html_file = args.filepath
-    if not os.path.isfile(html_file):
-        print('\n*** File not found: "{0}" ***.'.format(html_file))
+    if args.phe_dir is None:
+        print('\n*** Missing --phe_dir argument ***')
         sys.exit(-1)
 
+    phe_dir = args.phe_dir
+    if not os.path.isdir(phe_dir):
+        print('\n*** Directory does not exist: "{0}" ***'.format(phe_dir))
+        
+    # set path to the YAML folder in the clone of the PHE repo
+    yaml_dir = os.path.join(phe_dir, 'variant_yaml')
+    if not os.path.isdir(yaml_dir):
+        print('\n*** The "variant_yaml" subdirectory of the PHE repo was not found. ***')
+        sys.exit(-1)
+
+    # get all YAML files in this dir
+    yaml_files = []
+    items = os.listdir(yaml_dir)
+    for f in items:
+        fullpath = os.path.join(yaml_dir, f)
+        if os.path.isfile(fullpath):
+            yaml_files.append(fullpath)
+    print('Found {0} .yaml files in {1}.'.format(len(yaml_files), yaml_dir))
+        
+    html_file = args.filepath
+    if not os.path.isfile(html_file):
+        print('\n*** File does not exist: "{0}" ***.'.format(html_file))
+        sys.exit(-1)
+
+    # load the Nextstrain HTML file
     with open(html_file, 'rt') as infile:
         # read entire contents
         text = infile.read()
-
     text = text.lower()
 
-    #regex_string_clades = _extract_clades(text)
     regex_string_clades = _extract_items(text, 'filter by clade', 'filter by emerging lineage')
     print(regex_string_clades)
     
@@ -131,6 +186,10 @@ if __name__ == '__main__':
     regex_string_lineages = _extract_items(text, 'filter by pango lineage')
     print(regex_string_lineages)
 
+    # extract amino acid changes from YAML files
+    regex_string_amino = _extract_amino_changes(yaml_files)
+    print(regex_string_amino)
+    
     # write regex strings to output file
     with open(_OUTPUT_FILE, 'w') as outfile:
         outfile.write('{0}\n'.format(regex_string_clades))
@@ -138,3 +197,5 @@ if __name__ == '__main__':
         outfile.write('{0}\n'.format(regex_string_places))
         outfile.write('\n')
         outfile.write('{0}\n'.format(regex_string_lineages))
+        outfile.write('\n')
+        outfile.write('{0}\n'.format(regex_string_amino))

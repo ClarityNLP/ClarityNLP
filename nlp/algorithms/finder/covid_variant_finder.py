@@ -63,12 +63,19 @@ _regex_locations = None
 # regex for matching Covid variant lineages (loaded at init)
 _regex_pango_lineage = None
 
+# regex for matching amino acid changes (loaded at init)
+_regex_amino_changes = None
+
 # spike protein
 _str_spike = r'\bspike\s(glyco)?proteins?'
 _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 
+# emerging
+_str_emerging = r'\b(new|novel|emerg(en(t|ce))?|ing)'
+_regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
+
 # match mention of variants
-_str_variants = r'(variants? of (concern|interest|high consequence)|' \
+_str_variants = r'\b(variants? of (concern|interest|high consequence)|' \
     r'variant|mutation|strain|change|lineage|clade)s?'
 _regex_variant = re.compile(_str_variants, re.IGNORECASE)
 
@@ -89,7 +96,8 @@ _str_british2 = r'\bv(oc|ui)\-?2[0-9]' \
 _str_british_lineage = r'((' + _str_british1 + r')|(' + _str_british2 + r'))'
 _regex_british_lineage = re.compile(_str_british_lineage, re.IGNORECASE)
 
-
+# some of the major amino acid changes
+#_str_amino = r'(E484K|A1526V|T1830I|A194S|A117V|T19R|L452R|E484Q|P681R|'
 
 
 ###############################################################################
@@ -109,6 +117,7 @@ def init():
     global _regex_clades
     global _regex_locations
     global _regex_pango_lineage
+    global _regex_amino_changes
     
     # load the regex file and compile the regexes for locations and lineages
     with open(_VARIANT_REGEX_FILE, 'rt') as infile:
@@ -122,15 +131,18 @@ def init():
             # line 2 is the 'locations' regex string
             # line 3 is blank
             # line 4 is the pango lineage regex string
+            # line 6 is the amino acid change string
             if 0 == line_idx:
                 _regex_clades = re.compile(text, re.IGNORECASE)
             elif 2 == line_idx:
                 _regex_locations = re.compile(text, re.IGNORECASE)
             elif 4 == line_idx:
                 _regex_pango_lineage = re.compile(text, re.IGNORECASE)
-                
+            elif 6 == line_idx:
+                _regex_amino_changes = re.compile(text, re.IGNORECASE)
 
-    if _regex_clades is None or _regex_locations is None or _regex_pango_lineage is None:
+    if _regex_clades is None or _regex_locations is None or \
+       _regex_pango_lineage is None or _regex_amino_changes is None:
         return False
     else:
         return True
@@ -234,12 +246,14 @@ def run(sentence):
     cleaned_sentence = _cleanup(sentence)
 
     covid_matchobjs = _find_matches(cleaned_sentence, _regex_covid, 'COVID')
+    emerging_matchobjs = _find_matches(cleaned_sentence, _regex_emerging, 'EMERGING')
     variant_matchobjs = _find_matches(cleaned_sentence, _regex_variant, 'VARIANT')
     spike_matchobjs = _find_matches(cleaned_sentence, _regex_spike, 'SPIKE')
     clade_matchobjs = _find_matches(cleaned_sentence, _regex_clades, 'CLADE')
     location_matchobjs = _find_matches(cleaned_sentence, _regex_locations, 'LOCATION')
     pango_matchobjs = _find_matches(cleaned_sentence, _regex_pango_lineage, 'PANGO')
     british_matchobjs = _find_matches(cleaned_sentence, _regex_british_lineage, 'BRITISH')
+    amino_matchobjs   = _find_matches(cleaned_sentence, _regex_amino_changes, 'AMINO')
     
     
 ###############################################################################
