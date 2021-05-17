@@ -43,67 +43,37 @@ def _to_regex_string(item_list):
     regex_string = r'(' + r'|'.join(item_list) + r')'
     return regex_string
 
-    
-###############################################################################
-def _extract_places(text):
-    """
-    Extract all countries, admin divisions, and locations and return a
-    properly-escaped regex string for recognizing them.
 
-    Returns an empty string if none are found.
+###############################################################################
+def _extract_items(text, str_section_start, str_section_end=None):
+    """
+    Extract all items from the <span> elements  and return a properly-escaped
+    regex string for recognizing them.
     """
 
     # locate the appropriate section of the file
-    pos1 = text.find('filter by country')
+    pos1 = text.find(str_section_start)
     if -1 == pos1:
         return _EMPTY_STRING
 
-    pos2 = text.find('filter by host')
-    place_text = text[pos1:pos2]
+    if str_section_end is not None:
+        pos2 = text.find(str_section_end)
+        item_text = text[pos1:pos2]
+    else:
+        item_text = text[pos1:]
 
-    # places are located inside the subsequent <span> elements
-    
-    places = []
-    iterator = re.finditer(r'<span>(?P<place>[^(]+)\(\d+\)</span>',
-                           place_text)
+    # are located inside the subsequent <span> elements
+
+    items = []
+    iterator = re.finditer(r'<span>(?P<item>[^(]+)\(\d+\)</span>',
+                           item_text)
     for match in iterator:
-        # trim the trailing space
-        place = match.group('place').strip()
-        # skip the 'USA' abbreviation
-        if 'usa' != place:
-            places.append(place)
+        # trim trailing space
+        item = match.group('item').strip()
+        if len(item) > 1:
+            items.append(item)
 
-    return _to_regex_string(places)
-    
-    
-###############################################################################
-def _extract_pango_lineages(text):
-    """
-    Extract the PANGO lineages and returns a properly-escaped regex string
-    for recognizing them.
-
-    Returns an empty string if none are found.
-    """
-
-    # locate the appropriate section of the file
-    pos = text.find('filter by pango lineage')
-    if -1 == pos:
-        return _EMPTY_STRING
-
-    text = text[pos:]
-
-    # lineages are located inside the subsequent <span> elements
-
-    lineages = []
-
-    iterator = re.finditer(r'<span>(?P<lineage>[a-z\d.]+)\s\(\d+\)</span>', text)
-    for match in iterator:
-        lineage = match.group('lineage')
-        # ignore any single-char lineages (such as 'a', 'b')
-        if len(lineage) > 1:
-            lineages.append(lineage)
-
-    return _to_regex_string(lineages)
+    return _to_regex_string(items)
 
     
 ###############################################################################
@@ -151,14 +121,20 @@ if __name__ == '__main__':
 
     text = text.lower()
 
-    regex_string_places = _extract_places(text)
+    #regex_string_clades = _extract_clades(text)
+    regex_string_clades = _extract_items(text, 'filter by clade', 'filter by emerging lineage')
+    print(regex_string_clades)
+    
+    regex_string_places = _extract_items(text, 'filter by country', 'filter by host')
     print(regex_string_places)
     
-    regex_string_lineages = _extract_pango_lineages(text)
+    regex_string_lineages = _extract_items(text, 'filter by pango lineage')
     print(regex_string_lineages)
 
     # write regex strings to output file
     with open(_OUTPUT_FILE, 'w') as outfile:
+        outfile.write('{0}\n'.format(regex_string_clades))
+        outfile.write('\n')
         outfile.write('{0}\n'.format(regex_string_places))
         outfile.write('\n')
         outfile.write('{0}\n'.format(regex_string_lineages))

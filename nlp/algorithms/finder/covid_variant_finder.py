@@ -13,23 +13,23 @@ import sys
 import json
 from collections import namedtuple
 
-try:
-    # for normal operation via NLP pipeline
-    from algorithms.finder.date_finder import run as \
-        run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    from algorithms.finder import finder_overlap as overlap
-    from algorithms.finder import text_number as tnum
-except:
-    this_module_dir = sys.path[0]
-    pos = this_module_dir.find('/nlp')
-    if -1 != pos:
-        nlp_dir = this_module_dir[:pos+4]
-        finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
-        sys.path.append(finder_dir)    
-    from date_finder import run as run_date_finder, \
-        DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-    import finder_overlap as overlap
-    import text_number as tnum
+# try:
+#     # for normal operation via NLP pipeline
+#     from algorithms.finder.date_finder import run as \
+#         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     from algorithms.finder import finder_overlap as overlap
+#     from algorithms.finder import text_number as tnum
+# except:
+#     this_module_dir = sys.path[0]
+#     pos = this_module_dir.find('/nlp')
+#     if -1 != pos:
+#         nlp_dir = this_module_dir[:pos+4]
+#         finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+#         sys.path.append(finder_dir)    
+#     from date_finder import run as run_date_finder, \
+#         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
+#     import finder_overlap as overlap
+#     import text_number as tnum
 
 
 # default value for all fields
@@ -49,7 +49,47 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 
 # set to True to enable debug output
-_TRACE = False
+_TRACE = True
+
+# name of the file containing covid variant regexes
+_VARIANT_REGEX_FILE = 'covid_variant_regexes.txt'
+
+# regex for matching Covid-related clades (loaded at init)
+_regex_clades = None
+
+# regex for matching locations with known Covid variants (loaded at init)
+_regex_locations = None
+
+# regex for matching Covid variant lineages (loaded at init)
+_regex_pango_lineage = None
+
+# spike protein
+_str_spike = r'\bspike\s(glyco)?proteins?'
+_regex_spike = re.compile(_str_spike, re.IGNORECASE)
+
+# match mention of variants
+_str_variants = r'(variants? of (concern|interest|high consequence)|' \
+    r'variant|mutation|strain|change|lineage|clade)s?'
+_regex_variant = re.compile(_str_variants, re.IGNORECASE)
+
+# find various forms of Covid-19
+#    <covid names> SARS-CoV-2, hCoV-19, covid-19, coronavirus, ...
+_str_covid = r'(sars-cov-2|hcov-19|covid([-\s]?19)?|(novel\s)?coronavirus)'
+_regex_covid = re.compile(_str_covid, re.IGNORECASE)
+
+# Lineage Nomenclature from Public Health England
+
+# old format: V(UI|OC)-YYYYMM/NN, i.e. VUI-202101/01, # NN is a two-digit int
+_str_british1 = r'\bv(oc|ui)\-?202[0-9](0[1-9]|1[1-2])/(0[1-9]|[1-9][0-9])'
+
+# new format: V(UI|OC)-YYMMM-NN, i.e. VUI-21JAN-01
+_str_british2 = r'\bv(oc|ui)\-?2[0-9]' \
+    r'(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\-(0[1-9]|[1-9][0-9])'
+
+_str_british_lineage = r'((' + _str_british1 + r')|(' + _str_british2 + r'))'
+_regex_british_lineage = re.compile(_str_british_lineage, re.IGNORECASE)
+
+
 
 
 ###############################################################################
@@ -57,6 +97,60 @@ def enable_debug():
 
     global _TRACE
     _TRACE = True
+
+
+###############################################################################
+def init():
+    """
+    Load the file containing regex strings for Covid variant clades, locations,
+    and lineages. Return a Boolean indicating success or failure.
+    """
+
+    global _regex_clades
+    global _regex_locations
+    global _regex_pango_lineage
+    
+    # load the regex file and compile the regexes for locations and lineages
+    with open(_VARIANT_REGEX_FILE, 'rt') as infile:
+        for line_idx, line in enumerate(infile):
+            if 0 == len(line):
+                continue
+            text = line.strip()
+
+            # line 0 is the 'clades' regex string
+            # line 1 is blank
+            # line 2 is the 'locations' regex string
+            # line 3 is blank
+            # line 4 is the pango lineage regex string
+            if 0 == line_idx:
+                _regex_clades = re.compile(text, re.IGNORECASE)
+            elif 2 == line_idx:
+                _regex_locations = re.compile(text, re.IGNORECASE)
+            elif 4 == line_idx:
+                _regex_pango_lineage = re.compile(text, re.IGNORECASE)
+                
+
+    if _regex_clades is None or _regex_locations is None or _regex_pango_lineage is None:
+        return False
+    else:
+        return True
+            
+    
+###############################################################################
+def _split_at_positions(text, pos_list):
+    """
+    Split a string at the list of positions in the string and return a list
+    of chunks.
+    """
+
+    chunks = []
+    prev_end = 0
+    for pos in pos_list:
+        chunk = text[prev_end:pos]
+        chunks.append(chunk)
+        prev_end = pos
+    chunks.append(text[prev_end:])
+    return chunks
 
 
 ###############################################################################
@@ -87,7 +181,7 @@ def _cleanup(sentence):
     sentence = re.sub(r'[\']', '', sentence)
     
     # replace selected chars with whitespace
-    sentence = re.sub(r'[&(){}\[\]:~/@;]', ' ', sentence)
+    sentence = re.sub(r'[&{}\[\]:~@;]', ' ', sentence)
     
     # replace commas with whitespace if not inside a number (such as 32,768)
     comma_pos = []
@@ -102,23 +196,50 @@ def _cleanup(sentence):
             chunks[i] = chunks[i][1:]
     sentence = ' '.join(chunks)
 
-    sentence = _erase_dates(sentence)
-    sentence = _erase_time_expressions(sentence)
+    #sentence = _erase_dates(sentence)
+    #sentence = _erase_time_expressions(sentence)
     
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
     if _TRACE:
-        print('sentence after cleanup: "{0}"'.format(sentence))
+        #print('\tsentence after cleanup: "{0}"'.format(sentence))
+        print('\t{0}'.format(sentence))
     return sentence
 
+
+###############################################################################
+def _find_matches(sentence, regex, display_text):
+    """
+    Find all matches for the given regex and return a list of match objects.
+    """
+
+    matchobj_list = []
     
+    iterator = regex.finditer(sentence)
+    for match in iterator:
+        match_text = match.group()
+        if _TRACE:
+            print('\t{0}: "{1}"'.format(display_text, match_text))
+        matchobj_list.append(match)
+
+    return matchobj_list
+        
+
 ###############################################################################
 def run(sentence):
     """
     """
 
     cleaned_sentence = _cleanup(sentence)
+
+    covid_matchobjs = _find_matches(cleaned_sentence, _regex_covid, 'COVID')
+    variant_matchobjs = _find_matches(cleaned_sentence, _regex_variant, 'VARIANT')
+    spike_matchobjs = _find_matches(cleaned_sentence, _regex_spike, 'SPIKE')
+    clade_matchobjs = _find_matches(cleaned_sentence, _regex_clades, 'CLADE')
+    location_matchobjs = _find_matches(cleaned_sentence, _regex_locations, 'LOCATION')
+    pango_matchobjs = _find_matches(cleaned_sentence, _regex_pango_lineage, 'PANGO')
+    british_matchobjs = _find_matches(cleaned_sentence, _regex_british_lineage, 'BRITISH')
     
     
 ###############################################################################
@@ -126,12 +247,38 @@ if __name__ == '__main__':
 
     
     SENTENCES = [
-        'the trajectory of the B.1.1.7 variant',
-        'in this model, B.1.1.7 prevalence is initially low',
+        'The B.1.1.7, B.1.351, P.1, B.1.427, and B.1.429 variants '      \
+        'circulating in the United States are classified as variants '   \
+        'of concern.',
         
+        'To date, no variants of high consequence have been identified ' \
+        'in the United States.',
+
+        'In laboratory studies, specific monoclonal antibody treatments ' \
+        'may be less effective for treating cases of COVID-19 caused by ' \
+        'variants with the L452R or E484K substitution in the spike protein.',
+
+        'L452R is present in B.1.526.1, B.1.427, and B.1.429.',
+        'E484K is present in B.1.525, P.2, P.1, and B.1.351, but only some ' \
+        'strains of B.1.526 and B.1.1.7.',
+
+        'This variant is a cluster of B.1.1.7 (VOC202012/01) that contains ' \
+        'E484K and is associated with the Bristol area',
     ]
 
+    if not init():
+        print('*** init() failed ***')
+        sys.exit(-1)
 
+    # find <location> variant, i.e. <South African> variant
+    #   search for place name with variant|strain|mutation
+    # 'mink' is also important to search for
+    # spike protein substitutions (E484K and others)
+
+    for sentence in SENTENCES:
+        print('SENTENCE: ')
+        print('\t{0}'.format(sentence))
+        run(sentence)
     
 """
 
@@ -147,8 +294,8 @@ if __name__ == '__main__':
 
     <covid names> SARS-CoV-2, hCoV-19, covid-19, coronavirus, ...
 
-    VOC = variant of concern
-    VUI = variant under investigation
+    VOC = variants? of concern
+    VUI = variants? under investigation
 
     new format: V(UI|OC)-YYMMM-NN, i.e. VUI-21JAN-01; NN is a sequential two-digit number
     r'v(oc|ui)\-(2[0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\-(0[1-9]|[1-9][0-9])'
@@ -238,7 +385,7 @@ if __name__ == '__main__':
     SARS-CoV-2 variant(s)
     resistance of SARS-CoV-2 variants B.1.351 and B.1.1.7
     neutralization of SARS-CoV-2 lineage B.1.1.7 pseudovirus
-    novel SARS-CoV-2 variant of concern
+    Novel SARS-CoV-2 variant of concern
     spike protein
     multiple spike mutations
     reinfection case with E484K SpikeMutation
