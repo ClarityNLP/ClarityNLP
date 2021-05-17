@@ -64,10 +64,11 @@ def _extract_places(text):
     # places are located inside the subsequent <span> elements
     
     places = []
-    iterator = re.finditer(r'<span>(?P<place>[^\s]+)\s\(\d+\)</span>',
+    iterator = re.finditer(r'<span>(?P<place>[^(]+)\(\d+\)</span>',
                            place_text)
     for match in iterator:
-        place = match.group('place')
+        # trim the trailing space
+        place = match.group('place').strip()
         # skip the 'USA' abbreviation
         if 'usa' != place:
             places.append(place)
