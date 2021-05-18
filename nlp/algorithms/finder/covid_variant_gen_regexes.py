@@ -11,7 +11,7 @@ import os
 import re
 import sys
 import argparse
-
+import requests
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
@@ -24,14 +24,20 @@ _EMPTY_STRING = ''
 # output file
 _OUTPUT_FILE = 'covid_variant_regexes.txt'
 
+# Nextstrain global Covid subsampling page
+_NEXTSTRAIN_GLOBAL_URL = 'https://nextstrain.org/ncov/global'
+
+# PANGO Covid lineage page
+_PANGO_URL = 'https://cov-lineages.org/lineages.html'
+
 
 ###############################################################################
 def enable_debug():
 
     global _TRACE
     _TRACE = True
-
-
+    
+    
 ###############################################################################
 def _to_regex_string(item_list):
     """
@@ -87,22 +93,49 @@ def _extract_items(text, str_section_start, str_section_end=None):
 
 
 ###############################################################################
-def _extract_amino_changes(yaml_file_list):
+def _extract_amino_mutations(yaml_file_list):
     """
     """
 
-    amino_changes = set()
+    amino_mutations = set()
     for f in yaml_file_list:
         with open(f, 'rt') as infile:
             for line in infile:
-                #match = re.search(r'\bamino\-acid\-change: (?P<change>\.+?)\Z', line)
                 match = re.search(r'\bamino-acid-change: (?P<change>[^\n]+)\n\Z', line)
                 if match:
-                    amino_changes.add(match.group('change').strip())
+                    amino_mutations.add(match.group('change').strip())
 
-    amino_changes = list(amino_changes)
-    return _to_regex_string(amino_changes)
+    amino_mutations = list(amino_mutations)
+
+    # Sometimes the amino acid changes have a space, i.e. "N 203K" instead of
+    # "N203K". Enter both forms in the list.
+    new_aminos = []
+    for a in amino_mutations:
+        amino_with_space = a[0] + ' ' + a[1:]
+        new_aminos.append(amino_with_space)
+    amino_mutations.extend(new_aminos)
+    
+    return _to_regex_string(amino_mutations)
                     
+
+###############################################################################
+def _get_pango_lineages():
+    """
+    """
+
+    html = requests.get(_PANGO_URL).text
+
+    # the lineages are contained inside specific <a> elements
+    lineages = []
+    iterator = re.finditer(r'<a href="/lineages/lineage_[^>]+>(?P<lineage>[^<]+)</a>', html)
+    for match in iterator:
+        lineage = match.group('lineage')
+        # skip single-char lineages
+        if len(lineage) > 1:
+            lineages.append(lineage)
+
+    return _to_regex_string(lineages)
+
 
 ###############################################################################
 def get_version():
@@ -113,7 +146,6 @@ def get_version():
 ###############################################################################
 if __name__ == '__main__':
 
-    
     parser = argparse.ArgumentParser(
         description='Extract information on Covid-19 variants from text.'
     )
@@ -183,11 +215,14 @@ if __name__ == '__main__':
     regex_string_places = _extract_items(text, 'filter by country', 'filter by host')
     print(regex_string_places)
     
-    regex_string_lineages = _extract_items(text, 'filter by pango lineage')
-    print(regex_string_lineages)
+    #regex_string_lineages = _extract_items(text, 'filter by pango lineage')
+    #print(regex_string_lineages)
 
-    # extract amino acid changes from YAML files
-    regex_string_amino = _extract_amino_changes(yaml_files)
+    regex_string_lineages = _get_pango_lineages()
+    print(regex_string_lineages)
+    
+    # extract amino acid mutations from YAML files
+    regex_string_amino = _extract_amino_mutations(yaml_files)
     print(regex_string_amino)
     
     # write regex strings to output file
