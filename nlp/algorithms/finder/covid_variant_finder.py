@@ -63,20 +63,20 @@ _regex_locations = None
 # regex for matching Covid variant lineages (loaded at init)
 _regex_pango_lineage = None
 
-# regex for matching amino acid changes (loaded at init)
-_regex_amino_changes = None
+# regex for matching amino acid mutations (loaded at init)
+_regex_amino_mutations = None
 
 # spike protein
 _str_spike = r'\bspike\s(glyco)?proteins?'
 _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 
 # emerging
-_str_emerging = r'\b(new|novel|emerg(en(t|ce))?|ing)'
+_str_emerging = r'\b(new|novel|unknown|emerg(ed|ing)|emergen(t|ce))'
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # match mention of variants
 _str_variants = r'\b(variants? of (concern|interest|high consequence)|' \
-    r'variant|mutation|strain|change|lineage|clade)s?'
+    r'variant|(missense\s)?mutation|strain|change|lineage|clade)s?'
 _regex_variant = re.compile(_str_variants, re.IGNORECASE)
 
 # find various forms of Covid-19
@@ -96,9 +96,6 @@ _str_british2 = r'\bv(oc|ui)\-?2[0-9]' \
 _str_british_lineage = r'((' + _str_british1 + r')|(' + _str_british2 + r'))'
 _regex_british_lineage = re.compile(_str_british_lineage, re.IGNORECASE)
 
-# some of the major amino acid changes
-#_str_amino = r'(E484K|A1526V|T1830I|A194S|A117V|T19R|L452R|E484Q|P681R|'
-
 
 ###############################################################################
 def enable_debug():
@@ -117,7 +114,7 @@ def init():
     global _regex_clades
     global _regex_locations
     global _regex_pango_lineage
-    global _regex_amino_changes
+    global _regex_amino_mutations
     
     # load the regex file and compile the regexes for locations and lineages
     with open(_VARIANT_REGEX_FILE, 'rt') as infile:
@@ -131,7 +128,7 @@ def init():
             # line 2 is the 'locations' regex string
             # line 3 is blank
             # line 4 is the pango lineage regex string
-            # line 6 is the amino acid change string
+            # line 6 is the amino acid mutation string
             if 0 == line_idx:
                 _regex_clades = re.compile(text, re.IGNORECASE)
             elif 2 == line_idx:
@@ -139,10 +136,10 @@ def init():
             elif 4 == line_idx:
                 _regex_pango_lineage = re.compile(text, re.IGNORECASE)
             elif 6 == line_idx:
-                _regex_amino_changes = re.compile(text, re.IGNORECASE)
+                _regex_amino_mutations = re.compile(text, re.IGNORECASE)
 
     if _regex_clades is None or _regex_locations is None or \
-       _regex_pango_lineage is None or _regex_amino_changes is None:
+       _regex_pango_lineage is None or _regex_amino_mutations is None:
         return False
     else:
         return True
@@ -195,18 +192,18 @@ def _cleanup(sentence):
     # replace selected chars with whitespace
     sentence = re.sub(r'[&{}\[\]:~@;]', ' ', sentence)
     
-    # replace commas with whitespace if not inside a number (such as 32,768)
-    comma_pos = []
-    iterator = re.finditer(r'\D,\D', sentence, re.IGNORECASE)
-    for match in iterator:
-        pos = match.start() + 1
-        comma_pos.append(pos)
-    chunks = _split_at_positions(sentence, comma_pos)
-    # strip the comma from the first char of each chunk, if present
-    for i in range(len(chunks)):
-        if chunks[i].startswith(','):
-            chunks[i] = chunks[i][1:]
-    sentence = ' '.join(chunks)
+    # # replace commas with whitespace if not inside a number (such as 32,768)
+    # comma_pos = []
+    # iterator = re.finditer(r'\D,\D', sentence, re.IGNORECASE)
+    # for match in iterator:
+    #     pos = match.start() + 1
+    #     comma_pos.append(pos)
+    # chunks = _split_at_positions(sentence, comma_pos)
+    # # strip the comma from the first char of each chunk, if present
+    # for i in range(len(chunks)):
+    #     if chunks[i].startswith(','):
+    #         chunks[i] = chunks[i][1:]
+    # sentence = ' '.join(chunks)
 
     #sentence = _erase_dates(sentence)
     #sentence = _erase_time_expressions(sentence)
@@ -216,7 +213,7 @@ def _cleanup(sentence):
 
     if _TRACE:
         #print('\tsentence after cleanup: "{0}"'.format(sentence))
-        print('\t{0}'.format(sentence))
+        print('{0}'.format(sentence))
     return sentence
 
 
@@ -231,12 +228,27 @@ def _find_matches(sentence, regex, display_text):
     iterator = regex.finditer(sentence)
     for match in iterator:
         match_text = match.group()
-        if _TRACE:
-            print('\t{0}: "{1}"'.format(display_text, match_text))
+        #if _TRACE:
+        #    print('\t{0}: "{1}"'.format(display_text, match_text))
         matchobj_list.append(match)
 
     return matchobj_list
         
+
+###############################################################################
+def _to_result_string(matchobj_list):
+    """
+    Extract the matching text from a list of match objects and return a comma-
+    separated string containing the texts.
+    """
+
+    texts = []
+    for obj in matchobj_list:
+        text = obj.group()
+        texts.append(text)
+
+    return ','.join(texts)
+
 
 ###############################################################################
 def run(sentence):
@@ -253,7 +265,36 @@ def run(sentence):
     location_matchobjs = _find_matches(cleaned_sentence, _regex_locations, 'LOCATION')
     pango_matchobjs = _find_matches(cleaned_sentence, _regex_pango_lineage, 'PANGO')
     british_matchobjs = _find_matches(cleaned_sentence, _regex_british_lineage, 'BRITISH')
-    amino_matchobjs   = _find_matches(cleaned_sentence, _regex_amino_changes, 'AMINO')
+    amino_matchobjs   = _find_matches(cleaned_sentence, _regex_amino_mutations, 'AMINO')
+
+    str_covid = _to_result_string(covid_matchobjs)
+    str_emerg = _to_result_string(emerging_matchobjs)
+    str_var   = _to_result_string(variant_matchobjs)
+    str_spike = _to_result_string(spike_matchobjs)
+    str_clade = _to_result_string(clade_matchobjs)
+    str_loc   = _to_result_string(location_matchobjs)
+    str_pango = _to_result_string(pango_matchobjs)
+    str_brit  = _to_result_string(british_matchobjs)
+    str_amino = _to_result_string(amino_matchobjs)
+
+    obj = {
+        'sentence' : sentence,
+        'covid'    : str_covid,
+        'emerging' : str_emerg,
+        'variant'  : str_var,
+        'spike'    : str_spike,
+        'clade'    : str_clade,
+        'location' : str_loc,
+        'pango'    : str_pango,
+        'british'  : str_brit,
+        'amino'    : str_amino,        
+    }
+
+    if _TRACE:
+        maxlen = max([len(k) for k in obj.keys()])
+        for k,v in obj.items():
+            if 'sentence' != k:
+                print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
     
     
 ###############################################################################
@@ -278,6 +319,21 @@ if __name__ == '__main__':
 
         'This variant is a cluster of B.1.1.7 (VOC202012/01) that contains ' \
         'E484K and is associated with the Bristol area',
+
+        'An unknown Covid-19 variant has emerged in the latest survey',
+
+        'At this moment, major clades from 2020 onwards are: 20I/501Y.V1: ' \
+        'derived from 20B bearing S 501Y, S 570D, S 681H, ORF8 27*, ' \
+        'concentrated in the United Kingdom.',
+
+        'Alternatively, Nextstrain divides the SARS-CoV-2 strains into 19A, ' \
+        '19B, 20A, 20B, 20C, 20D, 20E, 20F, 20G, 20H, 20I, 20 J. ',
+
+        'Within these clades, 19B is the original reference strain. ' \
+        '20I/501Y.V1 refers to the B.1.1.7 variant that originated in ' \
+        'Britain; 20H/501Y.V2 refers to the B.1.351 strain that originated ' \
+        'in South Africa; and 20J/501Y.V3 refers to the P.1 strain that ' \
+        'originated and spread from Brazil.',
     ]
 
     if not init():
@@ -289,9 +345,9 @@ if __name__ == '__main__':
     # 'mink' is also important to search for
     # spike protein substitutions (E484K and others)
 
-    for sentence in SENTENCES:
-        print('SENTENCE: ')
-        print('\t{0}'.format(sentence))
+    for i, sentence in enumerate(SENTENCES):
+        print('[{0:3}]: '.format(i))
+        print('{0}'.format(sentence))
         run(sentence)
     
 """
