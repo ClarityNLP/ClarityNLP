@@ -30,6 +30,8 @@ _NEXTSTRAIN_GLOBAL_URL = 'https://nextstrain.org/ncov/global'
 # PANGO Covid lineage page
 _PANGO_URL = 'https://cov-lineages.org/lineages.html'
 
+_EXTRA_PLACES = ['Britain', 'Bristol', 'United States']
+
 
 ###############################################################################
 def enable_debug():
@@ -51,10 +53,15 @@ def _to_regex_string(item_list):
 
 
 ###############################################################################
-def _extract_items(text, str_section_start, str_section_end=None):
+def _extract_items(text,
+                   str_section_start,
+                   str_section_end=None,
+                   extra_items = []):
     """
     Extract all items from the <span> elements  and return a properly-escaped
     regex string for recognizing them.
+
+    Extra is a list of additional strings to add to the item list.
     """
 
     # locate the appropriate section of the file
@@ -89,6 +96,9 @@ def _extract_items(text, str_section_start, str_section_end=None):
                 
             items.append(item)
 
+    # add any extra items
+    items.extend(extra_items)
+            
     return _to_regex_string(items)
 
 
@@ -209,10 +219,15 @@ if __name__ == '__main__':
         text = infile.read()
     text = text.lower()
 
-    regex_string_clades = _extract_items(text, 'filter by clade', 'filter by emerging lineage')
+    regex_string_clades = _extract_items(text,
+                                         'filter by clade',
+                                         'filter by emerging lineage')
     print(regex_string_clades)
-    
-    regex_string_places = _extract_items(text, 'filter by country', 'filter by host')
+
+    regex_string_places = _extract_items(text,
+                                         'filter by country',
+                                         'filter by host',
+                                         _EXTRA_PLACES)
     print(regex_string_places)
     
     #regex_string_lineages = _extract_items(text, 'filter by pango lineage')

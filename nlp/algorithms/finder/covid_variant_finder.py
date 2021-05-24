@@ -76,7 +76,8 @@ _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # match mention of variants
 _str_variants = r'\b(variants? of (concern|interest|high consequence)|' \
-    r'variant|(missense\s)?mutation|strain|change|lineage|clade)s?'
+    r'variant|mutation|strain|change|substitution|deletion|insertion|' \
+    'stop\sgain(ed)?|lineage|clade)s?'
 _regex_variant = re.compile(_str_variants, re.IGNORECASE)
 
 # find various forms of Covid-19
