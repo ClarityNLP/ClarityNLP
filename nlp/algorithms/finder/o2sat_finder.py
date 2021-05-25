@@ -171,7 +171,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 _MODULE_NAME   = 'o2sat_finder.py'
 
 # set to True to enable debug output
@@ -202,7 +202,7 @@ _regex_approx = re.compile(_str_approx, re.IGNORECASE)
 
 # O2 saturation header
 # do not capture 'sat up', such as 'sat up in bed'
-_str_o2_sat_hdr = r'(?<![a-z])(spo2|sao2|pox|so2|'                    +\
+_str_o2_sat_hdr = r'(?<![a-z])(spo2|sao2|pox|so2|'   +\
     r'(o2|oxygen)[-\s]?saturation|o2[-\s]sat\.?s?|satting|o2sats?|'   +\
     r'sat\.?s|sat(?!\sup)|pulse ox|o2(?!\s?flow)|desatt?ing|desat\.?)\s?%?'
 
@@ -218,9 +218,11 @@ _str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?![Ly])(?! y))(\s?' + _str_units + r
 _str_o2_val = r'(' + _str_o2_val_range + r'|' + _str_o2_value + r')'
 
 # O2 flow rate in L/min
-_str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
+_str_flow_rate = r'(?<!\d)(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
 
 # devices and related acronyms
+#         NC : nasal cannula
+#       HFNC : high-flow nasal cannula
 #         RA : right atrial, usually via fiberoptic oximetry
 #         FM : face mask
 #        BVM : bag valve mask
@@ -230,9 +232,17 @@ _str_flow_rate = r'(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
 
 # sometimes see NC called "O2 NC"; also called "nasal prongs", abbrev NP
 # do not capture 'HEENT:NC', in which case the 'NC' means 'normocephalic'
-_str_device_nc  = r'(?P<nc>(O2\s)?'                                   +\
+
+# this is reused by DEVICE_NC and DEVICE_HFNC
+_str_nc = r'(O2\s)?'                                                  +\
     r'(?<!HEENT:)(?<!HEENT :)(?<!HEENT: )(?<!HEENT : )'               +\
-    r'(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z]))'
+    r'(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z])'
+#_str_device_nc  = r'(?P<nc>(O2\s)?'                                   +\
+#    r'(?<!HEENT:)(?<!HEENT :)(?<!HEENT: )(?<!HEENT : )'               +\
+#    r'(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z]))'
+_str_device_nc = r'(?P<nc>' + _str_nc + r')'
+_str_device_hfnc = r'(?P<hfnc>(O2\s)?(h\.?f\.?|h/f|high[- ]?flow)\s?' +\
+    _str_nc + r')'
 _str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|'                 +\
     r'non[-\s]?rebreather(\smask)?)(?![a-z]))'
 _str_device_ra  = r'(?P<ra>(?<![a-z])(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
@@ -330,6 +340,7 @@ def _to_fio2_nasocath(flow_rate_l_min):
 # all device capture group names are keys
 # each is mapped to an FiO2 conversion function taking O2 flow_rate as arg
 _DEVICE_NC  = 'nc'
+_DEVICE_HFNC = 'hfnc'
 _DEVICE_NRB = 'nrb'
 _DEVICE_RA  = 'ra'
 _DEVICE_VENTURI = 'venturi'
@@ -349,6 +360,7 @@ _DEVICES_WITH_FIO2_PCT = {
 # maps a device to an FiO2 conversion/estimation function
 _DEVICE_MAP = {
     _DEVICE_NC       : _to_fio2_nc,
+    _DEVICE_HFNC     : None,
     _DEVICE_NRB      : _to_fio2_nrb,
     _DEVICE_RA       : None,
     _DEVICE_VENTURI  : _to_fio2_venturi,
@@ -364,6 +376,7 @@ _DEVICE_MAP = {
 # master regex for all devices
 _str_device = r'\(?(o2\s?delivery\sdevice\s?:\s?)?(?P<device>' +\
     r'(' + _str_device_nc + r')'       + r'|' +\
+    r'(' + _str_device_hfnc + r')'     + r'|' +\
     r'(' + _str_device_nrb + r')'      + r'|' +\
     r'(' + _str_device_ra + r')'       + r'|' +\
     r'(' + _str_device_venturi + r')'  + r'|' +\
@@ -381,6 +394,17 @@ _regex_device = re.compile(_str_device, re.IGNORECASE)
 # character used to encode the device
 _DEVICE_ENC_CHAR = '|'
 
+# finds statements about needing oxygen
+_str_oxygen = r'(supplemental\s)?(o2|oxygen)'
+_str_need   = r'((need|requir|increas|receiv)(ed|ing)|(placed|continu(ed|ing))\son)'
+_str_demand = r'(demand|requirement)s?'
+_str_need_o2 = _str_need + _str_words + _str_oxygen + r'(\s?' + _str_demand + r')?'
+# need oxygen, no O2 pct, flow rate, or device
+_regex_need_o2 = re.compile(_str_need_o2, re.IGNORECASE)
+# need oxygen, device only
+_str_need_o2_device = _str_need + _str_words + _str_device
+_regex_need_o2_device = re.compile(_str_need_o2_device, re.IGNORECASE)
+
 # finds "spo2: 98% on 2L NC" and similar
 _str0 = _str_o2_sat_hdr + _str_cond + _str_o2_val           +\
     _str_words + _str_flow_rate + _str_words + _str_device
@@ -391,7 +415,8 @@ _str1 = _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words + _str_device
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
 # finds "spo2: 98%/3L" and similar
-_str2= _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words + _str_flow_rate
+_str2= _str_o2_sat_hdr + _str_cond + _str_o2_val + _str_words +\
+    _str_flow_rate + r'(\s?' + _str_oxygen + r')?'
 _regex2 = re.compile(_str2, re.IGNORECASE)
 
 # finds "spo2=98%" and similar
@@ -424,6 +449,10 @@ _str8 = _str_o2_sat_hdr + _str_words + r'(' + _str_flow_rate + r')?' +\
     _str_device + _str_cond + _str_o2_val
 _regex8 = re.compile(_str8, re.IGNORECASE)
 
+# finds flow rate and device only, such as 'pt was at 30l hfnc prior to ...'
+_str9 = _str_flow_rate + _str_words + _str_device
+_regex9 = re.compile(_str9, re.IGNORECASE)
+
 _SAO2_REGEXES = [
     _regex0,
     _regex1,
@@ -434,6 +463,9 @@ _SAO2_REGEXES = [
     _regex6,
     _regex7,
     _regex8,
+    _regex9,
+    _regex_need_o2,
+    _regex_need_o2_device,
 ]
 
 # o2 partial pressure (prevent captures of 'PaO2 / FiO2')
@@ -501,6 +533,10 @@ _SPO2_TO_PAO2 = {
 # range. See this article, for instance:
 #     https://www.karger.com/Article/FullText/451030
 _MIN_SPO2_PCT = 50
+
+# For regexes with 'cond' groups, discard matches that include these words.
+# Sometimes the 'cond' group captures too much.
+_COND_DISCARD_SET = {'sat', 'saturation', 'o2', 'oxygen'}
 
 
 ###############################################################################
@@ -671,6 +707,25 @@ def _regex_match(sentence, regex_list):
             # a new sentence at "Pt", in which case the match would be correct.
             special_match = re.search(r'\.\s[A-Z][a-z]+', match_text)
             if special_match:
+                continue
+
+            # Special case for regexes with conditions. Prevent a match if
+            # the condition captures sat, saturation, etc.
+            
+            discard_match = False
+            for k,v in match.groupdict().items():
+                if 'cond' == k:
+                    if v is not None:
+                        text = v.lower()
+                        for word in _COND_DISCARD_SET:
+                            if word in text:
+                                if _TRACE:
+                                    print('\tDiscarding match; discard ' \
+                                          'word "{0}" appears in "cond" '  \
+                                          'group "{1}"'.format(word, text))
+                                discard_match = True
+                                break
+            if discard_match:
                 continue
             
             start = match.start()
@@ -975,7 +1030,7 @@ def run(sentence):
                 nc3 = v
 
         # check oxygen saturation for valid range
-        if o2_sat < _MIN_SPO2_PCT:
+        if EMPTY_FIELD != o2_sat and o2_sat < _MIN_SPO2_PCT:
             continue
 
         # if no device found, check device regex independently
@@ -1223,10 +1278,20 @@ if __name__ == '__main__':
 
         # fix this - device is NC not 50% face tent
         'Pt has weaned to nasal cannula from 50% face tent and still sats are 95-100%.',
+
+        'the patient is experiencing increased O2 demand',
+        'pt started having increased o2 requirements',
+        'needing supplemental oxygen',
+        'the patient required oxygen',
+        'tachypneic requiring o2',
+        'placed on oxygen for pulse ox 94%',
+        'continued on hfnc',
+        'pt was at 40l hfnc prior to inubation',
+        'now with sob o2 sat 94% requiring 2l o2 to maintain sat to > 95%',
     ]
 
     for i, sentence in enumerate(SENTENCES):
-        print('\n[{0:2d}]: {1}'.format(i, sentence))
+        print('\n[[{0:2d}]]: {1}'.format(i, sentence))
         result = run(sentence)
         #print(result)
 

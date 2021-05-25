@@ -2004,6 +2004,41 @@ def test_o2sat_finder():
         'wean vent settings as tolerat':[
             # don't capture any 'vent' strings
         ],
+        'the patient is experiencing increased O2 demand':[
+            _O2Result(text = 'increased O2 demand',
+                      condition = o2f.STR_O2_EQUAL)
+        ],
+        'pt started having increased o2 requirements':[
+            _O2Result(text = 'increased o2 requirements',
+                      condition = o2f.STR_O2_EQUAL)
+        ],
+        'needing supplemental oxygen':[
+            _O2Result(text = 'needing supplemental oxygen',
+                      condition = o2f.STR_O2_EQUAL)
+            ],
+        'the patient required oxygen':[
+            _O2Result(text = 'required oxygen',
+                      condition = o2f.STR_O2_EQUAL)
+        ],
+        'placed on oxygen for pulse ox 94%':[
+            _O2Result(text = 'placed on oxygen',
+                      condition = o2f.STR_O2_EQUAL),
+            _O2Result(text = 'pulse ox 94%',
+                      pao2_est = 73,
+                      condition = o2f.STR_O2_EQUAL,
+                      value = 94)
+        ],
+        'continued on hfnc':[
+            _O2Result(text = 'continued on hfnc',
+                      device = 'hfnc',
+                      condition = o2f.STR_O2_EQUAL)
+        ],
+        'pt was at 40l hfnc prior to intubation':[
+            _O2Result(text = '40l hfnc',
+                      flow_rate = 40,
+                      device = 'hfnc',
+                      condition = o2f.STR_O2_EQUAL)
+        ],
     }
 
     if not _run_tests(_MODULE_O2, test_data):
