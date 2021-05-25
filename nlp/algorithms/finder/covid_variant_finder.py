@@ -70,9 +70,36 @@ _regex_amino_mutations = None
 _str_spike = r'\bspike\s(glyco)?proteins?'
 _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 
+# possible
+_str_possible = r'\b(possible|potential|suspected|suspicious|rumors?( of)?)'
+_regex_possible = re.compile(_str_possible, re.IGNORECASE)
+
 # emerging
-_str_emerging = r'\b(new|novel|unknown|emerg(ed|ing)|emergen(t|ce))'
+_str_emerging = r'\b(new|novel|unknown|mysterious|mystery|emerg(ed|ing)|' \
+    r'emergen(t|ce)|detection of|early stages of|appearance of|originated)'
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
+
+# related
+_str_related = r'\b(related to|(relative|derivative) of)'
+_regex_related = re.compile(_str_related, re.IGNORECASE)
+
+# spreading
+_str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
+    r'(re)?infection|spread(ing)|circulating|expanding|growing|ongoing)'
+_regex_spread = re.compile(_str_spread, re.IGNORECASE)
+
+# cases
+_str_cases = r'\b(cases|cluster|outbreak)'
+_regex_cases = re.compile(_str_cases, re.IGNORECASE)
+
+# symptoms
+_str_symptoms = r'\b(cough(ing)?|fever(ish)?|respirat(ory|ion)|breathing|breath|' \
+    r'lungs|sore throat)'
+_regex_symptoms = re.compile(_str_symptoms, re.IGNORECASE)
+
+# illness
+_str_illness = r'\b(contracted|caught|come down with|(fallen|become) ill)'
+_regex_illness = re.compile(_str_illness, re.IGNORECASE)
 
 # match mention of variants
 _str_variants = r'\b(variants? of (concern|interest|high consequence)|' \
@@ -258,37 +285,55 @@ def run(sentence):
 
     cleaned_sentence = _cleanup(sentence)
 
-    covid_matchobjs = _find_matches(cleaned_sentence, _regex_covid, 'COVID')
-    emerging_matchobjs = _find_matches(cleaned_sentence, _regex_emerging, 'EMERGING')
-    variant_matchobjs = _find_matches(cleaned_sentence, _regex_variant, 'VARIANT')
-    spike_matchobjs = _find_matches(cleaned_sentence, _regex_spike, 'SPIKE')
-    clade_matchobjs = _find_matches(cleaned_sentence, _regex_clades, 'CLADE')
-    location_matchobjs = _find_matches(cleaned_sentence, _regex_locations, 'LOCATION')
-    pango_matchobjs = _find_matches(cleaned_sentence, _regex_pango_lineage, 'PANGO')
-    british_matchobjs = _find_matches(cleaned_sentence, _regex_british_lineage, 'BRITISH')
-    amino_matchobjs   = _find_matches(cleaned_sentence, _regex_amino_mutations, 'AMINO')
+    covid_matchobjs     = _find_matches(cleaned_sentence, _regex_covid, 'COVID')
+    possible_matchobjs  = _find_matches(cleaned_sentence, _regex_possible, 'POSSIBLE')
+    related_matchobjs   = _find_matches(cleaned_sentence, _regex_related, 'RELATED')
+    emerging_matchobjs  = _find_matches(cleaned_sentence, _regex_emerging, 'EMERGING')
+    spreading_matchobjs = _find_matches(cleaned_sentence, _regex_spread, 'SPREADING')
+    variant_matchobjs   = _find_matches(cleaned_sentence, _regex_variant, 'VARIANT')
+    symptom_matchobjs   = _find_matches(cleaned_sentence, _regex_symptoms, 'SYMPTOMS')
+    case_matchobjs      = _find_matches(cleaned_sentence, _regex_cases, 'CASES')
+    illness_matchobjs   = _find_matches(cleaned_sentence, _regex_cases, 'ILLNESS')
+    spike_matchobjs     = _find_matches(cleaned_sentence, _regex_spike, 'SPIKE')
+    clade_matchobjs     = _find_matches(cleaned_sentence, _regex_clades, 'CLADE')
+    location_matchobjs  = _find_matches(cleaned_sentence, _regex_locations, 'LOCATION')
+    pango_matchobjs     = _find_matches(cleaned_sentence, _regex_pango_lineage, 'PANGO')
+    british_matchobjs   = _find_matches(cleaned_sentence, _regex_british_lineage, 'BRITISH')
+    amino_matchobjs     = _find_matches(cleaned_sentence, _regex_amino_mutations, 'AMINO')
 
-    str_covid = _to_result_string(covid_matchobjs)
-    str_emerg = _to_result_string(emerging_matchobjs)
-    str_var   = _to_result_string(variant_matchobjs)
-    str_spike = _to_result_string(spike_matchobjs)
-    str_clade = _to_result_string(clade_matchobjs)
-    str_loc   = _to_result_string(location_matchobjs)
-    str_pango = _to_result_string(pango_matchobjs)
-    str_brit  = _to_result_string(british_matchobjs)
-    str_amino = _to_result_string(amino_matchobjs)
+    str_covid    = _to_result_string(covid_matchobjs)
+    str_possible = _to_result_string(possible_matchobjs)
+    str_related  = _to_result_string(related_matchobjs)
+    str_emerg    = _to_result_string(emerging_matchobjs)
+    str_spread   = _to_result_string(spreading_matchobjs)
+    str_var      = _to_result_string(variant_matchobjs)
+    str_symptom  = _to_result_string(symptom_matchobjs)
+    str_case     = _to_result_string(case_matchobjs)
+    str_ill      = _to_result_string(illness_matchobjs)
+    str_spike    = _to_result_string(spike_matchobjs)
+    str_clade    = _to_result_string(clade_matchobjs)
+    str_loc      = _to_result_string(location_matchobjs)
+    str_pango    = _to_result_string(pango_matchobjs)
+    str_brit     = _to_result_string(british_matchobjs)
+    str_amino    = _to_result_string(amino_matchobjs)
 
     obj = {
-        'sentence' : sentence,
-        'covid'    : str_covid,
-        'emerging' : str_emerg,
-        'variant'  : str_var,
-        'spike'    : str_spike,
-        'clade'    : str_clade,
-        'location' : str_loc,
-        'pango'    : str_pango,
-        'british'  : str_brit,
-        'amino'    : str_amino,        
+        'sentence'  : sentence,
+        'covid'     : str_covid,
+        'possible'  : str_possible,
+        'related'   : str_related,
+        'emerging'  : str_emerg,
+        'spreading' : str_spread,
+        'variant'   : str_var,
+        'symptom'   : str_symptom,
+        'case'      : str_case,
+        'illness'   : str_ill,
+        'spike'     : str_spike,
+        'clade'     : str_clade,
+        'location'  : str_loc,
+        'pango'     : str_pango,
+        'british'   : str_brit,
+        'amino'     : str_amino,        
     }
 
     if _TRACE:
@@ -335,6 +380,11 @@ if __name__ == '__main__':
         'Britain; 20H/501Y.V2 refers to the B.1.351 strain that originated ' \
         'in South Africa; and 20J/501Y.V3 refers to the P.1 strain that ' \
         'originated and spread from Brazil.',
+
+        'new outbreak of covid cases in Brazil',
+        'authorities reported the appearance of two distinct clusters of suspected Covid-19',
+        'rumors of a suspected covid outbreak have residents worried',
+        'potential novel SARS-CoV-2 variant of interest identified in Germany',
     ]
 
     if not init():
@@ -359,6 +409,7 @@ if __name__ == '__main__':
     https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/979818/Variants_of_Concern_VOC_Technical_Briefing_9_England.pdf
     https://cov-lineages.org/index.html
     https://github.com/phe-genomics/variant_definitions
+    virological.org
 
     This page has everything:
         https://nextstrain.org/ncov/global?f_pango_lineage=A
@@ -523,4 +574,14 @@ if __name__ == '__main__':
     find mention of <lineage>
     find mention of <amino acid change>
 
+    (possible|potential) <new> <emerging> <lineage, sub-lineage, sublineage, clade, subclade>
+    (introduction|emergence|resurgence) (and spread of )?<covid> in <location>
+    spread of endemic <covid>
+    (spreading|spotted|circulating|(rapidly )?growing|(currently )?expanding) <exponentially>? in <location>
+    local cluster in <location>
+    <number> of cases in less than <timespan>
+    <covid> reinfection by <variant> in <location>
+    early stages of <covid> outbreak
+    <covid> spikes
+    detection of <lineage, covid, variant> in <location>
 """
