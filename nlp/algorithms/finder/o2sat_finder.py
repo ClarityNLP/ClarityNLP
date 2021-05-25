@@ -172,7 +172,6 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
-_MODULE_NAME   = 'o2sat_finder.py'
 
 # set to True to enable debug output
 _TRACE = False
@@ -544,8 +543,14 @@ def enable_debug():
 
     global _TRACE
     _TRACE = True
-    
 
+    
+###############################################################################
+def get_version():
+    path, module_name = os.path.split(__file__)
+    return '{0} {1}.{2}'.format(module_name, _VERSION_MAJOR, _VERSION_MINOR)
+
+    
 ###############################################################################
 def _cleanup(sentence):
     """
@@ -1138,11 +1143,6 @@ def run(sentence):
     
 
 ###############################################################################
-def get_version():
-    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
-
-                        
-###############################################################################
 if __name__ == '__main__':
 
     # for command-line testing only
@@ -1150,14 +1150,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='test P/F ratio task locally')
 
-    parser.add_argument('--debug',
+    parser.add_argument('-d', '--debug',
                         action='store_true',
                         help='print debugging information')
+    parser.add_argument('-v', '--version',
+                        action = 'store_true',
+                        help = 'print version to stdout and then exit')
 
     args = parser.parse_args()
 
     if 'debug' in args and args.debug:
         enable_debug()
+
+    if 'version' in args and args.version:
+        print(get_version())
+        sys.exit(0)
 
     SENTENCES = [
         'Vitals were HR=120, BP=109/44, RR=29, POx=93% on 8L FM',
@@ -1300,7 +1307,3 @@ if __name__ == '__main__':
             for k,v in d.items():
                 print('\t\t{0} = {1}'.format(k, v))
             
-        
-###############################################################################
-def get_version():
-    return '{0} {1}.{2}'.format(_MODULE_NAME, _VERSION_MAJOR, _VERSION_MINOR)
