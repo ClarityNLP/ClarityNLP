@@ -37,10 +37,23 @@ EMPTY_FIELD = None
 
 COVID_VARIANT_TUPLE_FIELDS = [
     'sentence',
-    'text'
+    'covid',
+    'possible',
+    'related',
+    'emerging',
+    'spreading',
+    'variant',
+    'symptom',
+    'case',
+    'illness',
+    'spike',
+    'clade',
+    'location',
+    'pango',
+    'british',
+    'amino',
 ]
-CovidVariantTuple = namedtuple('CovidVariantTuple',
-                               COVID_VARIANT_TUPLE_FIELDS)
+CovidVariantTuple = namedtuple('CovidVariantTuple', COVID_VARIANT_TUPLE_FIELDS)
 
 
 ###############################################################################
@@ -71,12 +84,14 @@ _str_spike = r'\bspike\s(glyco)?proteins?'
 _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 
 # possible
-_str_possible = r'\b(possible|potential|suspected|suspicious|rumors?( of)?)'
+_str_possible = r'\b(possible|potential|suspected|suspicious|' \
+    r'(reported|rumored|rumor|report)s?( of)?)'
 _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 
 # emerging
 _str_emerging = r'\b(new|novel|unknown|mysterious|mystery|emerg(ed|ing)|' \
-    r'emergen(t|ce)|detection of|early stages of|appearance of|originated)'
+    r'emergen(t|ce)|detect(ed|ing)|appear(ed|ing)|detection of|'          \
+    r'early stages of|appearance of|originat(ed|ing))'
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # related
@@ -84,26 +99,32 @@ _str_related = r'\b(related to|(relative|derivative) of)'
 _regex_related = re.compile(_str_related, re.IGNORECASE)
 
 # spreading
-_str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
-    r'(re)?infection|spread(ing)|circulating|expanding|growing|ongoing)'
+_str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|increas(e[sd]|ing)|'\
+    r'(re)?infection|spread(s|ing)?|circulat(e[sd]|ing)|expand(s|ed|ing)|'     \
+    r'grow(s|ing)|progress(es|ing)|ongoing|trend(s|ed|ing)|ris(es|ing)|'       \
+    r'contagious|overwhelm(s|ed|ing)?|balloon(s|ed|ing)|spill(ing)|higher|'    \
+    r'greater|more|)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
 # cases
-_str_cases = r'\b(cases|cluster|outbreak)'
+_str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection' \
+    r'pandemic|contagion)s?'
 _regex_cases = re.compile(_str_cases, re.IGNORECASE)
 
 # symptoms
-_str_symptoms = r'\b(cough(ing)?|fever(ish)?|respirat(ory|ion)|breathing|breath|' \
-    r'lungs|sore throat)'
+_str_symptoms = r'\b(cough(ing)?|fever(ish)?|chills?|respirat(ory|ion)|'      \
+    r'shortness of breath|difficulty breathing|fatigue|(muscle|body) aches?|' \
+    r'loss of (taste|smell)|sore throat|high temp\.?(erature)?)'
 _regex_symptoms = re.compile(_str_symptoms, re.IGNORECASE)
 
 # illness
-_str_illness = r'\b(contracted|caught|come down with|(fallen|become) ill)'
+_str_illness = r'\b(contracted|caught|c[ao]me down with|(fallen|fell|' \
+    r'bec[ao]me) ill|ill(ness)?)'
 _regex_illness = re.compile(_str_illness, re.IGNORECASE)
 
 # match mention of variants
-_str_variants = r'\b(variants? of (concern|interest|high consequence)|' \
-    r'variant|mutation|strain|change|substitution|deletion|insertion|' \
+_str_variants = r'\b(variants? of (concern|interest|high consequence)|'       \
+    r'variant|mutation|mutant|strain|change|substitution|deletion|insertion|' \
     'stop\sgain(ed)?|lineage|clade)s?'
 _regex_variant = re.compile(_str_variants, re.IGNORECASE)
 
@@ -220,19 +241,6 @@ def _cleanup(sentence):
     # replace selected chars with whitespace
     sentence = re.sub(r'[&{}\[\]:~@;]', ' ', sentence)
     
-    # # replace commas with whitespace if not inside a number (such as 32,768)
-    # comma_pos = []
-    # iterator = re.finditer(r'\D,\D', sentence, re.IGNORECASE)
-    # for match in iterator:
-    #     pos = match.start() + 1
-    #     comma_pos.append(pos)
-    # chunks = _split_at_positions(sentence, comma_pos)
-    # # strip the comma from the first char of each chunk, if present
-    # for i in range(len(chunks)):
-    #     if chunks[i].startswith(','):
-    #         chunks[i] = chunks[i][1:]
-    # sentence = ' '.join(chunks)
-
     #sentence = _erase_dates(sentence)
     #sentence = _erase_time_expressions(sentence)
     
@@ -256,8 +264,6 @@ def _find_matches(sentence, regex, display_text):
     iterator = regex.finditer(sentence)
     for match in iterator:
         match_text = match.group()
-        #if _TRACE:
-        #    print('\t{0}: "{1}"'.format(display_text, match_text))
         matchobj_list.append(match)
 
     return matchobj_list
@@ -293,7 +299,7 @@ def run(sentence):
     variant_matchobjs   = _find_matches(cleaned_sentence, _regex_variant, 'VARIANT')
     symptom_matchobjs   = _find_matches(cleaned_sentence, _regex_symptoms, 'SYMPTOMS')
     case_matchobjs      = _find_matches(cleaned_sentence, _regex_cases, 'CASES')
-    illness_matchobjs   = _find_matches(cleaned_sentence, _regex_cases, 'ILLNESS')
+    illness_matchobjs   = _find_matches(cleaned_sentence, _regex_illness, 'ILLNESS')
     spike_matchobjs     = _find_matches(cleaned_sentence, _regex_spike, 'SPIKE')
     clade_matchobjs     = _find_matches(cleaned_sentence, _regex_clades, 'CLADE')
     location_matchobjs  = _find_matches(cleaned_sentence, _regex_locations, 'LOCATION')
@@ -317,31 +323,34 @@ def run(sentence):
     str_brit     = _to_result_string(british_matchobjs)
     str_amino    = _to_result_string(amino_matchobjs)
 
-    obj = {
-        'sentence'  : sentence,
-        'covid'     : str_covid,
-        'possible'  : str_possible,
-        'related'   : str_related,
-        'emerging'  : str_emerg,
-        'spreading' : str_spread,
-        'variant'   : str_var,
-        'symptom'   : str_symptom,
-        'case'      : str_case,
-        'illness'   : str_ill,
-        'spike'     : str_spike,
-        'clade'     : str_clade,
-        'location'  : str_loc,
-        'pango'     : str_pango,
-        'british'   : str_brit,
-        'amino'     : str_amino,        
-    }
+    obj = CovidVariantTuple(
+        sentence  = sentence,
+        covid     = str_covid,
+        possible  = str_possible,
+        related   = str_related,
+        emerging  = str_emerg,
+        spreading = str_spread,
+        variant   = str_var,
+        symptom   = str_symptom,
+        case      = str_case,
+        illness   = str_ill,
+        spike     = str_spike,
+        clade     = str_clade,
+        location  = str_loc,
+        pango     = str_pango,
+        british   = str_brit,
+        amino     = str_amino,        
+    )
 
-    if _TRACE:
-        maxlen = max([len(k) for k in obj.keys()])
-        for k,v in obj.items():
-            if 'sentence' != k:
-                print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
-    
+    # if _TRACE:
+    #     objdict = obj._asdict()
+    #     maxlen = max([len(k) for k in objdict.keys()])
+    #     for k,v in objdict.items():
+    #         if 'sentence' != k:
+    #             print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
+
+    return json.dumps(obj._asdict(), indent=4)
+
     
 ###############################################################################
 if __name__ == '__main__':
@@ -385,6 +394,7 @@ if __name__ == '__main__':
         'authorities reported the appearance of two distinct clusters of suspected Covid-19',
         'rumors of a suspected covid outbreak have residents worried',
         'potential novel SARS-CoV-2 variant of interest identified in Germany',
+        'reports of rising case counts of an unknown respiratory illness',
     ]
 
     if not init():
@@ -399,7 +409,17 @@ if __name__ == '__main__':
     for i, sentence in enumerate(SENTENCES):
         print('[{0:3}]: '.format(i))
         print('{0}'.format(sentence))
-        run(sentence)
+        json_string = run(sentence)
+        obj = json.loads(json_string)
+
+        #objdict = obj._asdict()
+        maxlen = max([len(k) for k in obj.keys()])
+        for k,v in obj.items():
+            if 'sentence' != k:
+                print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
+
+        
+        #print(json_string)
     
 """
 
