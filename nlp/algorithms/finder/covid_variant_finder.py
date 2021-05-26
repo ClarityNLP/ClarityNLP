@@ -91,7 +91,8 @@ _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 # emerging
 _str_emerging = r'\b(new|novel|unknown|mysterious|mystery|emerg(ed|ing)|' \
     r'emergen(t|ce)|detect(ed|ing)|appear(ed|ing)|detection of|'          \
-    r'early stages of|appearance of|originat(ed|ing))'
+    r'early stages of|appearance of|originat(ed|ing)|re-?emerge(d)?|' \
+    r'(re-?)?activat(ed?|ing)|recurr(ing|ences?))'
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # related
@@ -103,13 +104,13 @@ _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|'               \
     r'increas(e[sd]|ing)|(re)?infection|widespread|spread(s|ing)?|'        \
     r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
     r'ongoing|trend(s|ed|ing)|ris(es|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
-    r'spill(ing)|contagious|out of control|uncontroll(ed|able)|'           \
-    r'overwhelm(s|ed|ing)?higher|greater|more)'
+    r'spill(ing|over)|contagious|out of control|uncontroll(ed|able)|'      \
+    r'overwhelm(s|ed|ing)?|higher|greater)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
 # cases
 _str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection' \
-    r'(pan|epi)demic|contagion)s?'
+    r'(pan|epi)demic|contagion|plague|emergence)s?'
 _regex_cases = re.compile(_str_cases, re.IGNORECASE)
 
 # symptoms
