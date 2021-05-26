@@ -84,8 +84,8 @@ _str_spike = r'\bspike\s(glyco)?proteins?'
 _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 
 # possible
-_str_possible = r'\b(possible|potential|suspected|suspicious|' \
-    r'(reported|rumored|rumor|report)s?( of)?)'
+_str_possible = r'\b(possible|potential|probable|plausible|suspected|' \
+    r'suspicious|(reported|rumor(ed)?|report)s?( of)?)'
 _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 
 # emerging
@@ -99,16 +99,17 @@ _str_related = r'\b(related to|(relative|derivative) of)'
 _regex_related = re.compile(_str_related, re.IGNORECASE)
 
 # spreading
-_str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|increas(e[sd]|ing)|'\
-    r'(re)?infection|spread(s|ing)?|circulat(e[sd]|ing)|expand(s|ed|ing)|'     \
-    r'grow(s|ing)|progress(es|ing)|ongoing|trend(s|ed|ing)|ris(es|ing)|'       \
-    r'contagious|overwhelm(s|ed|ing)?|balloon(s|ed|ing)|spill(ing)|higher|'    \
-    r'greater|more|)'
+_str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|'               \
+    r'increas(e[sd]|ing)|(re)?infection|widespread|spread(s|ing)?|'        \
+    r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
+    r'ongoing|trend(s|ed|ing)|ris(es|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
+    r'spill(ing)|contagious|out of control|uncontroll(ed|able)|'           \
+    r'overwhelm(s|ed|ing)?higher|greater|more)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
 # cases
 _str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection' \
-    r'pandemic|contagion)s?'
+    r'(pan|epi)demic|contagion)s?'
 _regex_cases = re.compile(_str_cases, re.IGNORECASE)
 
 # symptoms
