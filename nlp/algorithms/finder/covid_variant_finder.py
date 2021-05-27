@@ -84,39 +84,45 @@ _str_spike = r'\bspike\s(glyco)?proteins?'
 _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 
 # possible
-_str_possible = r'\b(possible|potential|probable|plausible|suspected|' \
-    r'suspicious|(reported|rumor(ed)?|report)s?( of)?)'
+_str_possible = r'\b(possible|potential|probable|plausible|suspected|'   \
+    r'suspicious|unexplained|((under|un)?reported|rumor(ed)?|report)s?( of)?|' \
+    r'undisclosed|undetected)'
 _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 
 # emerging
-_str_emerging = r'\b(new|novel|unknown|mysterious|mystery|emerg(ed|ing)|' \
+_str_emerging = r'\b(new|novel|unknown|myster(y|ious)|emerg(ed|ing)|' \
     r'emergen(t|ce)|detect(ed|ing)|appear(ed|ing)|detection of|'          \
     r'early stages of|appearance of|originat(ed|ing)|re-?emerge(d)?|' \
     r'(re-?)?activat(ed?|ing)|recurr(ing|ences?))'
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # related
-_str_related = r'\b(related to|(relative|derivative) of)'
+_str_related = r'\b(related to|(relative|derivative|suggestive) of)'
 _regex_related = re.compile(_str_related, re.IGNORECASE)
 
 # spreading
-_str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|'               \
-    r'increas(e[sd]|ing)|(re)?infection|widespread|spread(s|ing)?|'        \
+_str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
+    r'increase in frequency|increas(e[sd]|ing)|(re)?infection|' \
+    r'(wide|super-?)?spread(s|er|ing)?(\s(exponential|rapid|quick)ly)?|' \
+    r'(rapid|quick)ly|' \
     r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
     r'ongoing|trend(s|ed|ing)|ris(es|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
     r'spill(ing|over)|contagious|out of control|uncontroll(ed|able)|'      \
-    r'overwhelm(s|ed|ing)?|higher|greater)'
+    r'overwhelm(s|ed|ing)?|clustering|tipping point|higher|greater|infectious)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
 # cases
 _str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection' \
-    r'(pan|epi)demic|contagion|plague|emergence)s?'
+    r'(pan|epi)demic|contagion|plague|disease|vir(us|al)|emergence|' \
+    r'sickness|tested positive)s?'
 _regex_cases = re.compile(_str_cases, re.IGNORECASE)
 
 # symptoms
 _str_symptoms = r'\b(cough(ing)?|fever(ish)?|chills?|respirat(ory|ion)|'      \
-    r'shortness of breath|difficulty breathing|fatigue|(muscle|body) aches?|' \
-    r'loss of (taste|smell)|sore throat|high temp\.?(erature)?)'
+    r'short(ness)? of breath|difficulty breathing|fatigue|'    \
+    r'(muscle|body) aches?|loss of (taste|smell)|sore throat|' \
+    r'high temp\.?(erature)?|diarrhea|acute|severe|bluish|dyspnea|hypoxia|'   \
+    r'respiratory failure|multiorgan dysfunction)'
 _regex_symptoms = re.compile(_str_symptoms, re.IGNORECASE)
 
 # illness
@@ -127,7 +133,7 @@ _regex_illness = re.compile(_str_illness, re.IGNORECASE)
 # match mention of variants
 _str_variants = r'\b(variants? of (concern|interest|high consequence)|'       \
     r'variant|mutation|mutant|strain|change|substitution|deletion|insertion|' \
-    'stop\sgain(ed)?|lineage|clade)s?'
+    'stop\sgain(ed)?|(sub-?)?lineage|clade)s?'
 _regex_variant = re.compile(_str_variants, re.IGNORECASE)
 
 # find various forms of Covid-19
@@ -249,9 +255,8 @@ def _cleanup(sentence):
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
-    if _TRACE:
-        #print('\tsentence after cleanup: "{0}"'.format(sentence))
-        print('{0}'.format(sentence))
+    #if _TRACE:
+    #    print('{0}'.format(sentence))
     return sentence
 
 
@@ -397,6 +402,24 @@ if __name__ == '__main__':
         'rumors of a suspected covid outbreak have residents worried',
         'potential novel SARS-CoV-2 variant of interest identified in Germany',
         'reports of rising case counts of an unknown respiratory illness',
+
+        'First reported cases of SARS-CoV-2 sub-lineage B.1.617.2 in Brazil: ' \
+        'an outbreak in a ship and alert for spread',
+        
+        'concerned about a possible COVID-19 outbreak after two coaches ' \
+        'tested positive for the virus',
+
+        'Proposal of two new lineages from B.1.1 that seem to rapidly ' \
+        'increase in frequency in Russia proposed ',
+
+        'A New Potential lineage (T.1) specifically located in Campania, ' \
+        'Italy, is spreading exponentially.',
+
+        'Possible new emerging sub-lineage under recently designated lineage B.1.617',
+        'Sublineage of B.1.351 spreading rapidly in Bangladesh',
+
+        'DHSS and the CDC are responding to an outbreak of respiratory disease ' \
+        'caused by a novel (new) coronavirus ',
     ]
 
     if not init():
@@ -409,7 +432,7 @@ if __name__ == '__main__':
     # spike protein substitutions (E484K and others)
 
     for i, sentence in enumerate(SENTENCES):
-        print('[{0:3}]: '.format(i))
+        print('[[{0:4}]] '.format(i))
         print('{0}'.format(sentence))
         json_string = run(sentence)
         obj = json.loads(json_string)
