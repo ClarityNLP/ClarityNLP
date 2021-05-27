@@ -28,7 +28,7 @@ _OUTPUT_FILE = 'covid_variant_regexes.txt'
 _NEXTSTRAIN_GLOBAL_URL = 'https://nextstrain.org/ncov/global'
 
 # PANGO Covid lineage page
-_PANGO_URL = 'https://cov-lineages.org/lineages.html'
+_PANGO_URL = 'https://cov-lineages.org/lineage_description_list.html'
 
 _EXTRA_PLACES = ['Britain', 'Bristol', 'United States']
 
@@ -41,14 +41,17 @@ def enable_debug():
     
     
 ###############################################################################
-def _to_regex_string(item_list):
+def _to_regex_string(item_list, force_word_boundary = False):
     """
     """
 
     # reverse sort by length
     item_list = sorted(item_list, key=lambda x: len(x), reverse=True)
     item_list = [re.escape(item) for item in item_list]
-    regex_string = r'(' + r'|'.join(item_list) + r')'
+    if force_word_boundary:
+        regex_string = r'\b(' + r'|'.join(item_list) + r')'
+    else:
+        regex_string = r'(' + r'|'.join(item_list) + r')'
     return regex_string
 
 
@@ -56,7 +59,8 @@ def _to_regex_string(item_list):
 def _extract_items(text,
                    str_section_start,
                    str_section_end=None,
-                   extra_items = []):
+                   extra_items = [],
+                   force_word_boundary = False):
     """
     Extract all items from the <span> elements  and return a properly-escaped
     regex string for recognizing them.
@@ -99,7 +103,7 @@ def _extract_items(text,
     # add any extra items
     items.extend(extra_items)
             
-    return _to_regex_string(items)
+    return _to_regex_string(items, force_word_boundary)
 
 
 ###############################################################################
@@ -186,7 +190,7 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     if args.phe_dir is None:
-        print('\n*** Missing --phe_dir argument ***')
+        print('\n*** Missing --phe argument ***')
         sys.exit(-1)
 
     phe_dir = args.phe_dir
@@ -222,22 +226,27 @@ if __name__ == '__main__':
     regex_string_clades = _extract_items(text,
                                          'filter by clade',
                                          'filter by emerging lineage')
+    print('\nRegex string for clades: ')
     print(regex_string_clades)
 
     regex_string_places = _extract_items(text,
                                          'filter by country',
                                          'filter by host',
-                                         _EXTRA_PLACES)
+                                         _EXTRA_PLACES,
+                                         force_word_boundary = True)
+    print('\nRegex string for places: ')
     print(regex_string_places)
     
     #regex_string_lineages = _extract_items(text, 'filter by pango lineage')
     #print(regex_string_lineages)
 
     regex_string_lineages = _get_pango_lineages()
+    print('\nRegex string for lineages: ')
     print(regex_string_lineages)
     
     # extract amino acid mutations from YAML files
     regex_string_amino = _extract_amino_mutations(yaml_files)
+    print('\nRegex string for amino acid mutations: ')
     print(regex_string_amino)
     
     # write regex strings to output file
