@@ -128,7 +128,8 @@ if __name__ == '__main__':
         nlp_dir = sys.path[0][:match.end()]
         sys.path.append(nlp_dir)
     else:
-        print('\n*** o2_finder.py: nlp dir not found ***\n')
+        path, module_name = os.path.split(__file__)
+        print('\n*** {0}: nlp dir not found ***\n'.format(module_name))
         sys.exit(0)
 
 try:
@@ -172,7 +173,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 
 # set to True to enable debug output
 _TRACE = False
