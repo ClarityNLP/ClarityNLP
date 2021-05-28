@@ -41,7 +41,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 17
+_VERSION_MINOR = 18
 
 #
 # time results
@@ -111,6 +111,7 @@ _O2_RESULT_FIELDS = [
     'p_to_f_ratio',
     'p_to_f_ratio_est', # estimated
     'flow_rate',        # [L/min]
+    'flow_rate2',
     'device',
     'condition',        # STR_APPROX, STR_LT, etc.
     'value',            # [%] (O2 saturation value)
@@ -2037,6 +2038,14 @@ def test_o2sat_finder():
             _O2Result(text = '40l hfnc',
                       flow_rate = 40,
                       device = 'hfnc',
+                      condition = o2f.STR_O2_EQUAL)
+        ],
+        'pt treated with 2-3l o2 nc':[
+            _O2Result(text = '2-3l o2 nc',
+                      fio2_est = 28,
+                      flow_rate = 2.0,
+                      flow_rate2 = 3.0,
+                      device = 'o2 nc',
                       condition = o2f.STR_O2_EQUAL)
         ],
     }

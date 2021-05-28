@@ -160,6 +160,7 @@ O2_TUPLE_FIELDS = [
     'p_to_f_ratio',
     'p_to_f_ratio_est', # estimated
     'flow_rate',        # [L/min]
+    'flow_rate2',        
     'device',
     'condition',        # STR_APPROX, STR_LT, etc.
     'value',            # [%] (O2 saturation value)
@@ -171,7 +172,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 
 # set to True to enable debug output
 _TRACE = False
@@ -209,15 +210,22 @@ _str_units = r'\(?(percent|pct\.?|%|mmHg)\)?'
 
 # o2 saturation value
 _str_o2_val_range = r'\b(was|from)?\s?(?P<val1>\d\d?)(\s?' + _str_units + r')?' +\
-    r'(\s?(\-|to)\s?)(?P<val2>(100|\d\d?))(\s?' + _str_units + r')?'
+    r'(\s?(-|to)\s?)(?P<val2>(100|\d\d?)(?!l))(\s?' + _str_units + r')?'
 _regex_o2_val_range = re.compile(_str_o2_val_range, re.IGNORECASE)
 
 # prevent capture of ages, such as '\d+ years old', '\d+yo', etc.
-_str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?![Ly])(?! y))(\s?' + _str_units + r')?'
+# also prevent capture of the first value in a range, such as 1-2l
+_str_o2_value = r'(?<!o)(?P<val>(100|\d\d?)(?![-ly])(?! y))(\s?' + _str_units + r')?'
 _str_o2_val = r'(' + _str_o2_val_range + r'|' + _str_o2_value + r')'
 
 # O2 flow rate in L/min
-_str_flow_rate = r'(?<!\d)(?P<flow_rate>\d+)\s?(Liters|L)(/min\.?|pm)?'
+_str_flow_rate_units = r'\s?(Liters|L)(/min\.?|pm)?'
+_str_flow_rate_range = r'(?<![-\d])(?P<flow1>\d+)' + r'(' + _str_flow_rate_units + r')?' +\
+    r'(\s?(-|to)\s?)(?P<flow2>\d+)' + _str_flow_rate_units
+#_str_flow_rate = r'(?<![-\d])(?P<flow_rate>\d+)' + _str_flow_rate_units
+_str_flow_rate_val = r'(?<![-\d])(?P<flow_rate>\d+)' + _str_flow_rate_units
+#_str_flow_rate = r'(' + _str_flow_rate_val + r')'
+_str_flow_rate = r'(' + _str_flow_rate_range + r'|' + _str_flow_rate_val + r')'
 
 # devices and related acronyms
 #         NC : nasal cannula
@@ -997,6 +1005,7 @@ def run(sentence):
                 
         o2_sat           = EMPTY_FIELD
         flow_rate        = EMPTY_FIELD
+        flow2            = EMPTY_FIELD
         device           = EMPTY_FIELD
         value            = EMPTY_FIELD
         value2           = EMPTY_FIELD
@@ -1033,6 +1042,10 @@ def run(sentence):
                 nc2 = v
             elif 'nc3' == k:
                 nc3 = v
+            elif 'flow1' == k:
+                flow_rate = float(v)
+            elif 'flow2' == k:
+                flow2 = float(v)
 
         # check oxygen saturation for valid range
         if EMPTY_FIELD != o2_sat and o2_sat < _MIN_SPO2_PCT:
@@ -1122,6 +1135,7 @@ def run(sentence):
             start            = pc.start,
             end              = pc.end,
             flow_rate        = flow_rate,
+            flow_rate2       = flow2,
             device           = device,
             condition        = condition,
             value            = value,
@@ -1295,6 +1309,7 @@ if __name__ == '__main__':
         'continued on hfnc',
         'pt was at 40l hfnc prior to inubation',
         'now with sob o2 sat 94% requiring 2l o2 to maintain sat to > 95%',
+        'pt treated with 2-3l o2 nc',
     ]
 
     for i, sentence in enumerate(SENTENCES):
