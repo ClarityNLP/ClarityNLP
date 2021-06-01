@@ -148,7 +148,7 @@ def _get_pango_lineages():
         if len(lineage) > 1:
             lineages.append(lineage)
 
-    return _to_regex_string(lineages)
+    return _to_regex_string(lineages, force_word_boundary=True)
 
 
 ###############################################################################
