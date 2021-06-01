@@ -13,6 +13,7 @@ def init():
             segmentation_init()
             context_init()
             lab_value_matcher_init()
+            covid_variant_init()
             init_status = "done"
         except Exception as ex:
             log(ex, ERROR)

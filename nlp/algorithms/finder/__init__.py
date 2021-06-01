@@ -3,6 +3,7 @@ from .date_finder import run as run_date_finder, DateValue, EMPTY_FIELD as EMPTY
 from .time_finder import run as run_time_finder, TimeValue, EMPTY_FIELD as EMPTY_TIME_FIELD
 from .o2sat_finder import run as run_o2sat_finder, O2Tuple, EMPTY_FIELD as EMPTY_O2_FIELD
 from .covid_finder import run as run_covid_finder, CovidTuple, EMPTY_FIELD as EMPTY_COVID_FIELD
+from .covid_variant_finder import run as run_covid_variant_finder, CovidVariantTuple, EMPTY_FIELD as EMPTY_COVID_VARIANT_FIELD, init as covid_variant_init
 from .terms import *
 from .named_entity_recognition import get_standard_entities, NamedEntity
 from .subject_finder import run as run_subject_finder, clean_sentence as subject_clean_sentence, init as subject_finder_init

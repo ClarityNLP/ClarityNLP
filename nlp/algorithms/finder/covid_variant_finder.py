@@ -3,8 +3,6 @@
 
 This is a module for finding and extracting Covid variants from text scraped
 from the Internet.
-
-Test the module by running the test suite in test_finder.py.
 """
 
 import os
@@ -12,25 +10,6 @@ import re
 import sys
 import json
 from collections import namedtuple
-
-# try:
-#     # for normal operation via NLP pipeline
-#     from algorithms.finder.date_finder import run as \
-#         run_date_finder, DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-#     from algorithms.finder import finder_overlap as overlap
-#     from algorithms.finder import text_number as tnum
-# except:
-#     this_module_dir = sys.path[0]
-#     pos = this_module_dir.find('/nlp')
-#     if -1 != pos:
-#         nlp_dir = this_module_dir[:pos+4]
-#         finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
-#         sys.path.append(finder_dir)    
-#     from date_finder import run as run_date_finder, \
-#         DateValue, EMPTY_FIELD as EMPTY_DATE_FIELD
-#     import finder_overlap as overlap
-#     import text_number as tnum
-
 
 # default value for all fields
 EMPTY_FIELD = None
@@ -93,7 +72,7 @@ _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 _str_emerging = r'\b(new|novel|unknown|myster(y|ious)|emerg(ed|ing)|' \
     r'emergen(t|ce)|detect(ed|ing)|appear(ed|ing)|detection of|'          \
     r'early stages of|appearance of|originat(ed|ing)|re-?emerge(d)?|' \
-    r'(re-?)?activat(ed?|ing)|recurr(ing|ences?))'
+    r'(re-?)?activat(ed?|ing)|recurr(ing|ences?)|spotted)'
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # related
@@ -103,8 +82,8 @@ _regex_related = re.compile(_str_related, re.IGNORECASE)
 # spreading
 _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
     r'increase in frequency|increas(e[sd]|ing)|(re)?infection|' \
-    r'(wide|super-?)?spread(s|er|ing)?(\s(exponential|rapid|quick)ly)?|' \
-    r'(rapid|quick)ly|' \
+    r'(wide|super-?)?spread(s|er|ing)?|' \
+    r'(rapid|quick|exponential)ly|' \
     r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
     r'ongoing|trend(s|ed|ing)|ris(es|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
     r'spill(ing|over)|contagious|out of control|uncontroll(ed|able)|'      \
@@ -127,7 +106,7 @@ _regex_symptoms = re.compile(_str_symptoms, re.IGNORECASE)
 
 # illness
 _str_illness = r'\b(contracted|caught|c[ao]me down with|(fallen|fell|' \
-    r'bec[ao]me) ill|ill(ness)?)'
+    r'bec[ao]me) ill|ill(ness)?|developed)'
 _regex_illness = re.compile(_str_illness, re.IGNORECASE)
 
 # match mention of variants
@@ -172,9 +151,22 @@ def init():
     global _regex_locations
     global _regex_pango_lineage
     global _regex_amino_mutations
+
+
+    # construct path to the regex file to be loaded
+    cwd = os.getcwd()
+    filepath = os.path.join(cwd, _VARIANT_REGEX_FILE)
+    if not os.path.isfile(filepath):
+        # running ClarityNLP
+        this_module_dir = sys.path[0]
+        pos = this_module_dir.find('/nlp')
+        if -1 != pos:
+            nlp_dir = this_module_dir[:pos+4]
+            finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+            filepath = os.path.join(finder_dir, _VARIANT_REGEX_FILE)
     
     # load the regex file and compile the regexes for locations and lineages
-    with open(_VARIANT_REGEX_FILE, 'rt') as infile:
+    with open(filepath, 'rt') as infile:
         for line_idx, line in enumerate(infile):
             if 0 == len(line):
                 continue
