@@ -7,8 +7,10 @@ from the Internet.
 
 import os
 import re
+import csv
 import sys
 import json
+import argparse
 from collections import namedtuple
 
 # default value for all fields
@@ -65,14 +67,14 @@ _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 # possible
 _str_possible = r'\b(possible|potential|probable|plausible|suspected|'   \
     r'suspicious|unexplained|((under|un)?reported|rumor(ed)?|report)s?( of)?|' \
-    r'undisclosed|undetected)'
+    r'undisclosed|undetected|likely)'
 _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 
 # emerging
 _str_emerging = r'\b(new|novel|unknown|myster(y|ious)|emerg(ed|ing)|' \
     r'emergen(t|ce)|detect(ed|ing)|appear(ed|ing)|detection of|'          \
     r'early stages of|appearance of|originat(ed|ing)|re-?emerge(d)?|' \
-    r'(re-?)?activat(ed?|ing)|recurr(ing|ences?)|spotted)'
+    r'(re-?)?activat(ed?|ing)|recurr(ing|ences?)|spotted|identified)'
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # related
@@ -83,10 +85,10 @@ _regex_related = re.compile(_str_related, re.IGNORECASE)
 _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
     r'increase in frequency|increas(e[sd]|ing)|(re)?infection|' \
     r'(wide|super-?)?spread(s|er|ing)?|' \
-    r'(rapid|quick|exponential)ly|' \
+    r'(rapid|quick|exponential)ly|on the rise|rise in|' \
     r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
     r'ongoing|trend(s|ed|ing)|ris(es|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
-    r'spill(ing|over)|contagious|out of control|uncontroll(ed|able)|'      \
+    r'spill(ing|over)|(more )?contagious|out of control|uncontroll(ed|able)|'      \
     r'overwhelm(s|ed|ing)?|clustering|tipping point|higher|greater|infectious)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
@@ -350,11 +352,25 @@ def run(sentence):
 
     return json.dumps(obj._asdict(), indent=4)
 
-    
-###############################################################################
-if __name__ == '__main__':
 
+###############################################################################
+def _print_results(sentences):
     
+    for i, sentence in enumerate(sentences):
+        print('[[{0:4}]] '.format(i))
+        print('{0}'.format(sentence))
+        json_string = run(sentence)
+        obj = json.loads(json_string)
+
+        maxlen = max([len(k) for k in obj.keys()])
+        for k,v in obj.items():
+            if 'sentence' != k:
+                print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
+
+
+###############################################################################
+def _run_tests():
+
     SENTENCES = [
         'The B.1.1.7, B.1.351, P.1, B.1.427, and B.1.429 variants '      \
         'circulating in the United States are classified as variants '   \
@@ -414,30 +430,69 @@ if __name__ == '__main__':
         'caused by a novel (new) coronavirus ',
     ]
 
+    _print_results(SENTENCES)
+    
+
+###############################################################################
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(
+        description='Run tests on the Covid variant finder module')
+
+    parser.add_argument('-v', '--version',
+                        help='show version and exit',
+                        action='store_true')
+
+    parser.add_argument('-d', '--debug',
+                        help='print debug information to stdout',
+                        action='store_true')
+
+    parser.add_argument('-f', '--file',
+                        help='path to Covid scraper CSV result file',
+                        dest='filepath')
+
+    args = parser.parse_args()
+
+    if 'version' in args and args.version:
+        print(_get_version())
+        sys.exit(0)
+
+    if 'debug' in args and args.debug:
+        enable_debug()
+
+    if args.filepath is None:
+        print('\n*** Missing --file argument ***')
+        sys.exit(-1)
+
+    filepath = args.filepath
+    if not os.path.isfile(filepath):
+        print('\n*** File not found: "{0}" ***'.format(filepath))
+        sys.exit(-1)
+
     if not init():
         print('*** init() failed ***')
         sys.exit(-1)
+    
+    #_run_tests()
+
+    unique_sentences = set()
+    with open(filepath, newline='') as infile:
+        reader = csv.DictReader(infile)
+        for row in reader:
+            sentence = row['sample_sentence']
+            cleaned_sentence = _cleanup(sentence)
+            unique_sentences.add(cleaned_sentence)
+
+    sentences = sorted(list(unique_sentences), key=lambda x: len(x), reverse=True)
+    _print_results(sentences)
+    
 
     # find <location> variant, i.e. <South African> variant
     #   search for place name with variant|strain|mutation
     # 'mink' is also important to search for
     # spike protein substitutions (E484K and others)
 
-    for i, sentence in enumerate(SENTENCES):
-        print('[[{0:4}]] '.format(i))
-        print('{0}'.format(sentence))
-        json_string = run(sentence)
-        obj = json.loads(json_string)
 
-        #objdict = obj._asdict()
-        maxlen = max([len(k) for k in obj.keys()])
-        for k,v in obj.items():
-            if 'sentence' != k:
-                print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
-
-        
-        #print(json_string)
-    
 """
 
     References:
