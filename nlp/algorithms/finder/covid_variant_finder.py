@@ -14,8 +14,17 @@ import argparse
 from collections import namedtuple
 
 try:
+    from algorithms.finder import finder_overlap as overlap
     from algorithms.finder import text_number as tnum
 except:
+    this_module_dir = sys.path[0]
+    pos = this_module_dir.find('/nlp')
+    if -1 != pos:
+        nlp_dir = this_module_dir[:pos+4]
+        finder_dir = os.path.join(nlp_dir, 'algorithms', 'finder')
+        sys.path.append(finder_dir)
+        sys.path.append(nlp_dir)
+    import finder_overlap as overlap
     import text_number as tnum
 
 # default value for all fields
@@ -38,10 +47,7 @@ COVID_VARIANT_TUPLE_FIELDS = [
     'pango',
     'british',
     'amino',
-    'expr1',
-    'expr2',
-    'expr3',
-    #'expr4', 
+    'expr',
 ]
 CovidVariantTuple = namedtuple('CovidVariantTuple', COVID_VARIANT_TUPLE_FIELDS)
 
@@ -52,7 +58,7 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
 
 # set to True to enable debug output
-_TRACE = True
+_TRACE = False
 
 # name of the file containing covid variant regexes
 _VARIANT_REGEX_FILE = 'covid_variant_regexes.txt'
@@ -127,7 +133,7 @@ _regex_related = re.compile(_str_related, re.IGNORECASE)
 
 # spreading
 _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
-    r'increase in frequency|increas(e[sd]|ing)|(re)?infection|' \
+    r'increase in frequency|increas(e[sd]|ing)|' \
     r'(wide|super-?)?spread(s|er|ing)?|' \
     r'(rapid|quick|exponential)ly|on the rise|rise in|' \
     r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
@@ -137,7 +143,7 @@ _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
 # cases
-_str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection' \
+_str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection|' \
     r'(pan|epi)demic|contagion|plague|disease|vir(us|al)|emergence|' \
     r'sickness|tested positive)s?'
 _regex_cases = re.compile(_str_cases, re.IGNORECASE)
@@ -189,7 +195,11 @@ _regex1 = re.compile(_str1, re.IGNORECASE)
 #<num> <words> cases? of <words> <covid-19> <variant|lineage>+ <words> in
 _regex2 = None
 _regex3 = None
-#_regex4 = None
+
+# <identified> <words> cases? of <words> variant
+_str4 = r'\b(identified|found|detected|confirmed)' + _str_words + \
+    r'cases? of' + _str_words + r'variants?'
+_regex4 = re.compile(_str4, re.IGNORECASE)
 
 
 ###############################################################################
@@ -212,7 +222,6 @@ def init():
     global _regex_amino_mutations
     global _regex2
     global _regex3
-    #global _regex4
 
     # construct path to the regex file to be loaded
     cwd = os.getcwd()
@@ -401,23 +410,26 @@ def run(sentence):
     str_brit     = _to_result_string(british_matchobjs)
     str_amino    = _to_result_string(amino_matchobjs)
 
-    str_expr1 = ''
-    str_expr2 = ''
-    str_expr3 = ''
-    #str_expr4 = ''
-    match = _regex1.search(cleaned_sentence)
-    if match:
-        str_expr1 = match.group()
-    match = _regex2.search(cleaned_sentence)
-    if match:
-        str_expr2 = match.group()
-    match = _regex3.search(cleaned_sentence)
-    if match:
-        str_expr3 = match.group()
-    #match = _regex4.search(cleaned_sentence)
-    #if match:
-    #    str_expr4 = match.group()
-        
+    
+    candidates = []
+    REGEXES = [_regex1, _regex2, _regex3, _regex4]
+
+    for i, regex in enumerate(REGEXES):
+        iterator = regex.finditer(cleaned_sentence)
+        for match in iterator:
+            match_text = match.group().rstrip()
+            start = match.start()
+            end = start + len(match_text)
+            candidates.append(overlap.Candidate(start, end, match_text, regex, other=match))
+
+    # sort candidates in decreasing order of length
+    candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
+    pruned_candidates = overlap.remove_overlap(candidates, _TRACE, keep_longest=True)
+
+    pruned_candidates = sorted(pruned_candidates, key=lambda x: x.start)
+    texts = [candidate.match_text for candidate in pruned_candidates]
+    expr = ','.join(texts)
+    
     obj = CovidVariantTuple(
         sentence  = sentence,
         covid     = str_covid,
@@ -435,10 +447,7 @@ def run(sentence):
         pango     = str_pango,
         british   = str_brit,
         amino     = str_amino,
-        expr1     = str_expr1,
-        expr2     = str_expr2,
-        expr3     = str_expr3,
-        #expr4     = str_expr4,
+        expr      = expr,
     )
 
     # if _TRACE:
@@ -783,6 +792,10 @@ if __name__ == '__main__':
     <num> <words> cases? of <words> <covid-19> <variant|lineage>+
     <num> <words> cases? of <words> <covid-19> <variant|lineage>+ <words> in
 
+    cases? of <words> <covid-19> <variant|lineage>+
+
+    identified <words> variant
+
     covid-19 surge
     record-breaking outbreak
     multiple variants of concern
@@ -812,8 +825,8 @@ if __name__ == '__main__':
     identified a variant thats similar to
     predominant strain
     more contagious covid-19 variant from <location>
-    identified first cases of <indian variant>
-    identified the states first two cases of a covid-19 variant
+    *identified first cases of <indian variant>
+    *identified the states first two cases of a covid-19 variant
     detected in <location>
     a case of the covid-19 variant first identified in brazil has been detected in elmore county
     brazilian covid-19 variant detected in milam county
@@ -822,7 +835,7 @@ if __name__ == '__main__':
     11 variants have been discovered in maine
  
     spread to other countries
-    spread(s) easier
+    spreads? easier
     spreading to
     spreads faster
     spread widely
@@ -833,5 +846,7 @@ if __name__ == '__main__':
     significantly more contagious
     overwhelm healthcare systems
     coronavirus spike
+
+    
 
 """
