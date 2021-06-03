@@ -39,6 +39,7 @@ COVID_VARIANT_TUPLE_FIELDS = [
     'spreading',
     'variant',
     'symptom',
+    'severity',
     'case',
     'illness',
     'spike',
@@ -163,7 +164,7 @@ _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 # possible
 _str_possible = r'\b(possible|potential(ly)?|probable|plausible|suspected|'   \
     r'suspicious|unexplained|((under|un)?reported|rumor(ed)?|report)s?( of)?|' \
-    r'undisclosed|undetected|likely)'
+    r'undisclosed|undetected|likely|may)'
 _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 
 # emerging
@@ -174,18 +175,18 @@ _str_emerging = r'\b(new|novel|unknown|myster(y|ious)|emerg(ed|ing)|' \
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # related
-_str_related = r'\b(related to|(relative|derivative|suggestive) of)'
+_str_related = r'\b((related|linked) to|(relative|derivative|indicative|suggestive) of)'
 _regex_related = re.compile(_str_related, re.IGNORECASE)
 
 # spreading
 _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
-    r'increase in frequency|increas(e[sd]|ing)|' \
-    r'(wide|super-?)?spread(s|er|ing)?|' \
-    r'(rapid|quick|exponential)ly|on the rise|rise in|' \
+    r'increase in frequency|increas(e[sd]|ing)|mutating|spread(ing)? widely|' \
+    r'(wide|super-?)?spread(s|er|ing)?|becoming|' \
+    r'(rapid|quick|exponential)ly|on the rise|rise in|rise|' \
     r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
     r'ongoing|trend(s|ed|ing)|ris(es|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
-    r'spill(ing|over)|(more )?contagious|out of control|uncontroll(ed|able)|'      \
-    r'overwhelm(s|ed|ing)?|clustering|tipping point|higher|greater|infectious)'
+    r'spill(ing|over)|sentinel|now in|'      \
+    r'clustering|higher|greater|infectious)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
 # cases
@@ -194,12 +195,20 @@ _str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection|' \
     r'sickness|tested positive)s?'
 _regex_cases = re.compile(_str_cases, re.IGNORECASE)
 
+# severity
+_str_severity = r'\b(more )?(antibody-?resistant|staggering|' \
+    r'record-?breaking|severe|horrible situation|overwhelm(s|ed|ing)?|' \
+    r'out of control|acute|uncontroll(ed|able)|tipping point|despair|'  \
+    r'contagious|spread(s|ing)? fast(er)?|increase(d| the) risk of death|' \
+    r'deadly|cause(ed|ing|s)? (of )?concern|concerns?|ban travel|travel ban)'
+_regex_severity = re.compile(_str_severity, re.IGNORECASE)
+
 # symptoms
 _str_symptoms = r'\b(cough(ing)?|fever(ish)?|chills?|respirat(ory|ion)|'      \
     r'short(ness)? of breath|difficulty breathing|fatigue|'    \
     r'(muscle|body) aches?|loss of (taste|smell)|sore throat|' \
-    r'high temp\.?(erature)?|diarrhea|acute|severe|bluish|dyspnea|hypoxia|'   \
-    r'respiratory failure|multiorgan dysfunction)'
+    r'high temp\.?(erature)?|diarrhea|bluish|dyspnea|hypoxia|'   \
+    r'respiratory failure|multiorgan dysfunction|complications)'
 _regex_symptoms = re.compile(_str_symptoms, re.IGNORECASE)
 
 # illness
@@ -236,7 +245,8 @@ _regex_british_lineage = re.compile(_str_british_lineage, re.IGNORECASE)
 str_lin = r'\b[a-z]{1,2}(\.\d+)*\b(?!%)'
 
 #<num> <words> cases?
-_str0 = r'(from )?' + _str_num + _str_words + 'cases?' + \
+#_str0 = r'(from )?' + _str_num + _str_words + 'cases?' +
+_str0 = r'(from )?' + _str_num + _str_words + _str_cases + \
     r'( to ' + r'(\d+|' + _str_tnum + r'))?'
 _regex0 = re.compile(_str0, re.IGNORECASE)
 
@@ -257,10 +267,10 @@ _str3 = r'\b(identified|found|detected|confirmed)' + _str_words + \
     r'cases? of' + _str_words + r'\bvariants?'
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
-#<variant> <words> (identified|detected|found|discovered|reported) in
+#<variant> <words> (identified|detected|found|discovered|reported|originated) in
 # <words> (count(y|ies)|residents?)
-_str4 = _str_variants + _str_words + \
-    r'(found|(identifi|detect|discover|report|confirm|observ|' \
+_str4 = _str_variants + _str_words + r'(' + _str_covid + _str_words + r')?' \
+    r'(found|(identifi|detect|discover|report|confirm|observ|originat|' \
     r'suspect|fear)ed) in' + r'(' + _str_words + _str_where + r')?'
 _regex4 = re.compile(_str4, re.IGNORECASE)
 
@@ -273,6 +283,15 @@ _regex5 = re.compile(_str5, re.IGNORECASE)
 _str6 = r'\bthe\b' + _str_words + _str_variants
 _regex6 = re.compile(_str6, re.IGNORECASE)
 
+# <related> <words> <variant>
+_str7 = _str_related + _str_words + _str_variants
+_regex7 = re.compile(_str7, re.IGNORECASE)
+
+# <possible>? <spreading> <words> <variant>
+_str8 = r'(' + _str_possible + r'\s?)?' + _str_spread + \
+    _str_words + _str_variants
+_regex8 = re.compile(_str8, re.IGNORECASE)
+
 _REGEXES = [
     _regex0,
     _regex1,
@@ -281,6 +300,8 @@ _REGEXES = [
     _regex4,
     _regex5,
     _regex6,
+    _regex7,
+    _regex8,
 ]
 
 
@@ -422,14 +443,15 @@ def _find_matches(sentence, regex, display_text):
 def _to_result_string(matchobj_list):
     """
     Extract the matching text from a list of match objects and return a comma-
-    separated string containing the texts.
+    separated string containing the *unique* texts.
     """
 
-    texts = []
+    texts = set()
     for obj in matchobj_list:
         text = obj.group()
-        texts.append(text)
+        texts.add(text)
 
+    texts = sorted(list(texts))
     return ','.join(texts)
 
 
@@ -447,6 +469,7 @@ def run(sentence):
     spreading_matchobjs = _find_matches(cleaned_sentence, _regex_spread, 'SPREADING')
     variant_matchobjs   = _find_matches(cleaned_sentence, _regex_variant, 'VARIANT')
     symptom_matchobjs   = _find_matches(cleaned_sentence, _regex_symptoms, 'SYMPTOMS')
+    severity_matchobjs  = _find_matches(cleaned_sentence, _regex_severity, 'SEVERITY')
     case_matchobjs      = _find_matches(cleaned_sentence, _regex_cases, 'CASES')
     illness_matchobjs   = _find_matches(cleaned_sentence, _regex_illness, 'ILLNESS')
     spike_matchobjs     = _find_matches(cleaned_sentence, _regex_spike, 'SPIKE')
@@ -463,6 +486,7 @@ def run(sentence):
     str_spread   = _to_result_string(spreading_matchobjs)
     str_var      = _to_result_string(variant_matchobjs)
     str_symptom  = _to_result_string(symptom_matchobjs)
+    str_severity = _to_result_string(severity_matchobjs)
     str_case     = _to_result_string(case_matchobjs)
     str_ill      = _to_result_string(illness_matchobjs)
     str_spike    = _to_result_string(spike_matchobjs)
@@ -507,6 +531,7 @@ def run(sentence):
         spreading = str_spread,
         variant   = str_var,
         symptom   = str_symptom,
+        severity  = str_severity,
         case      = str_case,
         illness   = str_ill,
         spike     = str_spike,
