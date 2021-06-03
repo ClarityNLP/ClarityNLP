@@ -15,7 +15,7 @@ from collections import namedtuple
 
 try:
     from algorithms.finder import finder_overlap as overlap
-    from algorithms.finder import text_number as tnum
+    #from algorithms.finder import text_number as tnum
 except:
     this_module_dir = sys.path[0]
     pos = this_module_dir.find('/nlp')
@@ -25,7 +25,7 @@ except:
         sys.path.append(finder_dir)
         sys.path.append(nlp_dir)
     import finder_overlap as overlap
-    import text_number as tnum
+    #import text_number as tnum
 
 # default value for all fields
 EMPTY_FIELD = None
@@ -52,6 +52,30 @@ COVID_VARIANT_TUPLE_FIELDS = [
 CovidVariantTuple = namedtuple('CovidVariantTuple', COVID_VARIANT_TUPLE_FIELDS)
 
 
+_STATE_NAMES = [
+    "Alaska", "Alabama", "Arkansas", "Arizona",
+    "California", "Colorado", "Connecticut", "DC", "District of Columbia",
+    "Delaware", "Florida", "Georgia", "Hawaii", "Iowa", "Idaho", "Illinois",
+    "Indiana", "Kansas", "Kentucky", "Louisiana", "Massachusetts", "Maryland",
+    "Maine", "Michigan", "Minnesota", "Missouri", "Mississippi", "Montana",
+    "North Carolina", "North Dakota", "Nebraska", "New Hampshire",
+    "New Jersey", "New Mexico", "Nevada", "New York", "Ohio", "Oklahoma",
+    "Oregon", "Pennsylvania", "Puerto Rico", "Rhode Island", "South Carolina",
+    "South Dakota", "Tennessee", "Texas", "Utah", "Virginia", "Virgin Islands",
+    "Vermont", "Washington", "Wisconsin", "West Virginia", "Wyoming"
+]
+_str_states = r'\b(' + '|'.join(_STATE_NAMES) + r')'
+
+_str_where = r'(count(y|ies)|residents?|person|people|brazil|' \
+    r'india|(great )?britain|uk|' + _str_states + r')'
+
+_str_tnum  = r'\b(one|two|three|four|five|six|seven|eight|nine|ten|' \
+    r'eleven|twelve|twenty|thirty|forty|fifty|sixty|seventy|eighty|' \
+    r'ninety|(a|one) hundred)'
+#(a|one|two|three|four|five|six|seven|eight|nine) hundred|' \
+#    r'(a|one|two|three|four|five|six|seven|eight|nine) thousand)'
+
+
 ###############################################################################
 
 _VERSION_MAJOR = 0
@@ -75,40 +99,61 @@ _regex_pango_lineage = None
 # regex for matching amino acid mutations (loaded at init)
 _regex_amino_mutations = None
 
-# words, possibly hyphenated, nongreedy captures
-_str_word = r'\s?[-a-z]+\s?'
-_str_words = r'(' + _str_word + r'){0,5}?'
+# words, possibly hyphenated or containing an apostrophe
+# nongreedy captures
+#_str_word = r'\s?[-a-z\'\d]+\s?'
+#_str_words = r'(' + _str_word + r'){0,5}?'
+
+# nongreedy word captures
+_str_word = r'\s?[-a-z\'\d]+\s?'
+
+_str_five_words  = r'(' + _str_word + r'){5}'
+_str_four_words  = r'(' + _str_word + r'){4}'
+_str_three_words = r'(' + _str_word + r'){3}'
+_str_two_words   = r'(' + _str_word + r'){2}'
+_str_one_word    = r'(' + _str_word + r'){1}'
+_str_space       = r'\s?'
+_str_words = r'(' + _str_five_words + r'|' + _str_four_words + \
+    r'|' + _str_three_words + r'|' + _str_two_words +          \
+    r'|' + _str_one_word + r'|' + _str_space + r')'
 
 # integers, possibly including commas
 # do not capture numbers in phrases such as "in their 90s", etc
 # the k or m suffixes are for thousands and millions, i.e. 4k, 12m
-_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|(?<![,\d])\d+(k|m|\s?dozen)?(?!\d)(?!\'?s))'
+_str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|' \
+    r'(?<![,\d])\d+(k|m|\s?dozen)?(?!\d)(?!\'?s))'
 
 # find numbers such as 3.4 million, 4 thousand, etc.
-_str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
-    r'(?P<floatunits>(thousand|million))'
-_regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
+#_str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
+#    r'(?P<floatunits>(thousand|million))'
+#_regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
 
-# Create a regex that recognizes either an int with commas, a decimal integer,
-# a textual integer, or an enumerated integer. 
-def _make_num_regex(a='int', b='tnum', c='enum'):
-    _str_num = r'(?<![-])('                                                 +\
-        r'(?P<{0}>'.format(a) +  _str_int + r')|'                           +\
-        r'(?P<{0}>'.format(b) + tnum.str_tnum + r')|'                       +\
-        r'(?P<{0}>'.format(c) + tnum.str_enum + r'(?![-]))'  +\
-        r')(?!%)(?! %)(?! percent)(?! pct)'
-    return _str_num
+# # Create a regex that recognizes either an int with commas, a decimal integer,
+# # a textual integer, or an enumerated integer. 
+# def _make_num_regex(a='int', b='tnum', c='enum'):
+#     _str_num = r'(?<![-.])('                                                 +\
+#         r'(?P<{0}>'.format(a) +  _str_int + r')|'                           +\
+#         r'(?P<{0}>'.format(b) + tnum.str_tnum + r')|'                       +\
+#         r'(?P<{0}>'.format(c) + tnum.str_enum + r'(?![-]))'  +\
+#         r')(?!%)(?! %)(?! percent)(?! pct)'
+#     return _str_num
 
 # regex to recognize either a range or a single integer
 # also recognize 'no' for situations such as "no new cases of covid-19"
 # do not capture a text num followed by 'from', as in
 # "decreased by one from 17 to 16", in which the desired num is 16, not "one"
-_str_num = r'(' + r'(\bfrom\s)?' +\
-    _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
-    r'\s?to( as (many|much) as)?\s?' +\
-    _make_num_regex('int_to',   'tnum_to',   'enum_to')   +\
-    r'|' + r'\b(?P<no>no(?! change))\b' + r'|' +  _str_float_word    +\
-    r'|' + _make_num_regex() + r')(?!\sfrom\s)'
+#_str_num = r'(' + r'(\bfrom\s)?' +\
+#   _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
+#   r'\s?to( as (many|much) as)?\s?' +\
+#   _make_num_regex('int_to',   'tnum_to',   'enum_to') + r')'
+#+\
+#   r'|' + r'\b(?P<no>no(?! change))\b' + r'|' +  _str_float_word    +\
+#   r'|' + _make_num_regex() + r')(?!\sfrom\s)'
+
+#_str_num = r'(' + _str_int + r'|' + tnum.str_tnum + r'|' + \
+#    tnum.str_enum + r'(?![-]))(?!%)'
+
+_str_num = r'(?<![-.])(' + _str_int + r'|' + _str_tnum + r')'
 
 # spike protein
 _str_spike = r'\bspike\s(glyco)?proteins?\b'
@@ -187,7 +232,8 @@ _regex_british_lineage = re.compile(_str_british_lineage, re.IGNORECASE)
 
 
 #<num> <words> cases?
-_str1 = _str_num + _str_words + 'cases?'
+_str1 = r'(from )?' + _str_num + _str_words + 'cases?' + \
+    r'( to ' + r'(\d+|' + _str_tnum + r'))?'
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
 #<num> <words> <covid-19> <variant|lineage>+ <words> in
@@ -200,6 +246,9 @@ _regex3 = None
 _str4 = r'\b(identified|found|detected|confirmed)' + _str_words + \
     r'cases? of' + _str_words + r'variants?'
 _regex4 = re.compile(_str4, re.IGNORECASE)
+
+_regex5 = None
+_regex6 = None
 
 
 ###############################################################################
@@ -222,6 +271,8 @@ def init():
     global _regex_amino_mutations
     global _regex2
     global _regex3
+    global _regex5
+    global _regex6
 
     # construct path to the regex file to be loaded
     cwd = os.getcwd()
@@ -237,6 +288,7 @@ def init():
     
     # load the regex file and compile the regexes for locations and lineages
     str_lineage = None
+    str_location = None
     with open(filepath, 'rt') as infile:
         for line_idx, line in enumerate(infile):
             if 0 == len(line):
@@ -252,6 +304,7 @@ def init():
             if 0 == line_idx:
                 _regex_clades = re.compile(text, re.IGNORECASE)
             elif 2 == line_idx:
+                str_location = text
                 _regex_locations = re.compile(text, re.IGNORECASE)
             elif 4 == line_idx:
                 str_lineage = text
@@ -259,25 +312,39 @@ def init():
             elif 6 == line_idx:
                 _regex_amino_mutations = re.compile(text, re.IGNORECASE)
 
+    assert str_location is not None
     assert str_lineage is not None
                 
     if _regex_clades is None or _regex_locations is None or \
        _regex_pango_lineage is None or _regex_amino_mutations is None:
         return False
 
+    str_lin = r'\b[-a-z.\d]+'
+    
     # construct remaining regexes
     #<num> <words> <covid-19> <variant|lineage>+ <words> in
-    str2 = _str_num + _str_words + _str_covid + r'\s?' +         \
-        r'(' + _str_variants + r'\s?|' + str_lineage + r'\s?)+' + \
-        _str_words + r'in\s'
+    str2 = r'(\ba\b|' + _str_num + r')' + _str_words + _str_covid + r'\s?' + \
+        r'(' + _str_variants + r'\s?|' + str_lin + r'\s?)' + \
+        _str_words + r'in' + r'(' + _str_words + _str_where + r')?'
     _regex2 = re.compile(str2, re.IGNORECASE)
 
     #<num> <words> cases? of <words> <covid-19> <variant|lineage>+
-    str3 = _str_num + _str_words + r'cases? of' + _str_words + \
+    str3 = r'(\ba\b|' + _str_num + r')' + _str_words + r'cases? of' + _str_words + \
         _str_covid + r'\s?' + \
-        r'(' + _str_variants + r'\s?|' + str_lineage + r'\s?)+'
+        r'(' + _str_variants + r'\s?|' + str_lin + r'\s?)'
     _regex3 = re.compile(str3, re.IGNORECASE)
 
+    #<variant> <words> (identified|detected|found|discovered|reported) in
+    # <words> (count(y|ies)|residents?)
+    str5 = _str_variants + _str_words + \
+        r'(identified|detected|found|discovered|reported|confirmed|observed) in' + \
+        r'(' + _str_words + _str_where + r')?'
+    _regex5 = re.compile(str5, re.IGNORECASE)
+
+    #<num> <words> cases? of <words> <lineage> <variant>
+    str6 = r'(\ba |' + _str_num + r')' + _str_words + r'cases? of' + _str_words + \
+        str_lin + r'\s?' + _str_variants
+    _regex6 = re.compile(str6, re.IGNORECASE)
     
     return True
             
@@ -324,10 +391,10 @@ def _cleanup(sentence):
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
 
     # erase certain characters
-    sentence = re.sub(r'[\']', '', sentence)
+    #entence = re.sub(r'[\']', '', sentence)
     
     # replace selected chars with whitespace
-    sentence = re.sub(r'[&{}\[\]:~@;]', ' ', sentence)
+    sentence = re.sub(r'[&{}\[\]:~@;?]', ' ', sentence)
     
     #sentence = _erase_dates(sentence)
     #sentence = _erase_time_expressions(sentence)
@@ -412,7 +479,9 @@ def run(sentence):
 
     
     candidates = []
-    REGEXES = [_regex1, _regex2, _regex3, _regex4]
+    REGEXES = [
+        _regex1, _regex2, _regex3, _regex4, _regex5, _regex6
+    ]
 
     for i, regex in enumerate(REGEXES):
         iterator = regex.finditer(cleaned_sentence)
@@ -535,6 +604,16 @@ def _run_tests():
 
         'DHSS and the CDC are responding to an outbreak of respiratory disease ' \
         'caused by a novel (new) coronavirus ',
+
+        'hawaii has gone from one covid-19 variant case to twelve',
+
+        'two cases of brazil covid-19 variant found in louisiana baton rouge, ' \
+        'la.-- the louisiana department of health confirmed on thursday two ' \
+        'identified cases of the sars-cov-2 virus known as the brazil ' \
+        'p.1 variant in louisiana.',
+
+        'sentinel testing found a case of the p.1 variant in pennington county.',
+        
     ]
 
     _print_results(SENTENCES)
@@ -543,6 +622,13 @@ def _run_tests():
 ###############################################################################
 if __name__ == '__main__':
 
+    if not init():
+        print('*** init() failed ***')
+        sys.exit(-1)
+    
+    #_run_tests()
+    #sys.exit(0)
+    
     parser = argparse.ArgumentParser(
         description='Run tests on the Covid variant finder module')
 
@@ -575,12 +661,6 @@ if __name__ == '__main__':
     if not os.path.isfile(filepath):
         print('\n*** File not found: "{0}" ***'.format(filepath))
         sys.exit(-1)
-
-    if not init():
-        print('*** init() failed ***')
-        sys.exit(-1)
-    
-    #_run_tests()
 
     unique_sentences = set()
     with open(filepath, newline='') as infile:
@@ -827,12 +907,15 @@ if __name__ == '__main__':
     more contagious covid-19 variant from <location>
     *identified first cases of <indian variant>
     *identified the states first two cases of a covid-19 variant
+
+
     detected in <location>
     a case of the covid-19 variant first identified in brazil has been detected in elmore county
     brazilian covid-19 variant detected in milam county
     india variant of covid-19 confirmed in two iowa residents
     india covid-19 variant found in ada county resident
     11 variants have been discovered in maine
+    has been found in <location> county
  
     spread to other countries
     spreads? easier
@@ -847,6 +930,5 @@ if __name__ == '__main__':
     overwhelm healthcare systems
     coronavirus spike
 
-    
 
 """
