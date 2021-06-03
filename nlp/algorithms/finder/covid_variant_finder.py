@@ -175,7 +175,8 @@ _str_emerging = r'\b(new|novel|unknown|myster(y|ious)|emerg(ed|ing)|' \
 _regex_emerging = re.compile(_str_emerging, re.IGNORECASE)
 
 # related
-_str_related = r'\b((related|linked) to|(relative|derivative|indicative|suggestive) of)'
+_str_related = r'\b((related|linked|comparable) to|' \
+    r'(relative|derivative|indicative|suggestive) of)'
 _regex_related = re.compile(_str_related, re.IGNORECASE)
 
 # spreading
