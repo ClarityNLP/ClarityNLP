@@ -30,7 +30,7 @@ _NEXTSTRAIN_GLOBAL_URL = 'https://nextstrain.org/ncov/global'
 # PANGO Covid lineage page
 _PANGO_URL = 'https://cov-lineages.org/lineage_description_list.html'
 
-_EXTRA_PLACES = ['Britain', 'Bristol', 'United States']
+_EXTRA_PLACES = ['Britain', 'Bristol', 'UK', 'U.K.', 'United States']
 
 
 ###############################################################################
