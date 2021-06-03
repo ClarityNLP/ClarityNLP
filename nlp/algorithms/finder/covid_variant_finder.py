@@ -107,14 +107,15 @@ _regex_amino_mutations = None
 # nongreedy word captures
 _str_word = r'\s?[-a-z\'\d]+\s?'
 
-_str_five_words  = r'(' + _str_word + r'){5}'
-_str_four_words  = r'(' + _str_word + r'){4}'
+#_str_five_words  = r'(' + _str_word + r'){5}'
+#_str_four_words  = r'(' + _str_word + r'){4}'
 _str_three_words = r'(' + _str_word + r'){3}'
 _str_two_words   = r'(' + _str_word + r'){2}'
 _str_one_word    = r'(' + _str_word + r'){1}'
 _str_space       = r'\s?'
-_str_words = r'(' + _str_five_words + r'|' + _str_four_words + \
-    r'|' + _str_three_words + r'|' + _str_two_words +          \
+#_str_words = r'(' + _str_five_words + r'|' + _str_four_words +
+#\
+_str_words = r'(' + _str_three_words + r'|' + _str_two_words + \
     r'|' + _str_one_word + r'|' + _str_space + r')'
 
 # integers, possibly including commas
@@ -231,24 +232,56 @@ _str_british_lineage = r'((' + _str_british1 + r')|(' + _str_british2 + r'))'
 _regex_british_lineage = re.compile(_str_british_lineage, re.IGNORECASE)
 
 
+# simpler regex to identify pango lineage designations in the following regexes
+str_lin = r'\b[a-z]{1,2}(\.\d+)*\b(?!%)'
+
 #<num> <words> cases?
-_str1 = r'(from )?' + _str_num + _str_words + 'cases?' + \
+_str0 = r'(from )?' + _str_num + _str_words + 'cases?' + \
     r'( to ' + r'(\d+|' + _str_tnum + r'))?'
-_regex1 = re.compile(_str1, re.IGNORECASE)
+_regex0 = re.compile(_str0, re.IGNORECASE)
 
 #<num> <words> <covid-19> <variant|lineage>+ <words> in
+_str1 = r'(\ba\b|' + _str_num + r')' + _str_words + _str_covid + r'\s?' + \
+    r'(' + _str_variants + r'\s?|' + str_lin + r'\s?)' + \
+    _str_words + r'\bin\b' + r'(' + _str_words + _str_where + r')?'
+_regex1 = re.compile(_str1, re.IGNORECASE)
+
 #<num> <words> cases? of <words> <covid-19> <variant|lineage>+
-#<num> <words> cases? of <words> <covid-19> <variant|lineage>+ <words> in
-_regex2 = None
-_regex3 = None
+_str2 = r'(\ba\b|' + _str_num + r')' + _str_words + r'cases? of' + _str_words + \
+    _str_covid + r'\s?' + \
+    r'(' + _str_variants + r'\s?|' + str_lin + r'\s?)'
+_regex2 = re.compile(_str2, re.IGNORECASE)
 
 # <identified> <words> cases? of <words> variant
-_str4 = r'\b(identified|found|detected|confirmed)' + _str_words + \
-    r'cases? of' + _str_words + r'variants?'
+_str3 = r'\b(identified|found|detected|confirmed)' + _str_words + \
+    r'cases? of' + _str_words + r'\bvariants?'
+_regex3 = re.compile(_str3, re.IGNORECASE)
+
+#<variant> <words> (identified|detected|found|discovered|reported) in
+# <words> (count(y|ies)|residents?)
+_str4 = _str_variants + _str_words + \
+    r'(found|(identifi|detect|discover|report|confirm|observ|' \
+    r'suspect|fear)ed) in' + r'(' + _str_words + _str_where + r')?'
 _regex4 = re.compile(_str4, re.IGNORECASE)
 
-_regex5 = None
-_regex6 = None
+#<num> <words> cases? of <words> <lineage> <variant>
+_str5 = r'(\ba |' + _str_num + r')' + _str_words + r'cases? of' + _str_words + \
+    str_lin + r'\s?' + _str_variants
+_regex5 = re.compile(_str5, re.IGNORECASE)
+
+#the <words> variant
+_str6 = r'\bthe\b' + _str_words + _str_variants
+_regex6 = re.compile(_str6, re.IGNORECASE)
+
+_REGEXES = [
+    _regex0,
+    _regex1,
+    _regex2,
+    _regex3,
+    _regex4,
+    _regex5,
+    _regex6,
+]
 
 
 ###############################################################################
@@ -269,10 +302,6 @@ def init():
     global _regex_locations
     global _regex_pango_lineage
     global _regex_amino_mutations
-    global _regex2
-    global _regex3
-    global _regex5
-    global _regex6
 
     # construct path to the regex file to be loaded
     cwd = os.getcwd()
@@ -287,8 +316,6 @@ def init():
             filepath = os.path.join(finder_dir, _VARIANT_REGEX_FILE)
     
     # load the regex file and compile the regexes for locations and lineages
-    str_lineage = None
-    str_location = None
     with open(filepath, 'rt') as infile:
         for line_idx, line in enumerate(infile):
             if 0 == len(line):
@@ -304,48 +331,16 @@ def init():
             if 0 == line_idx:
                 _regex_clades = re.compile(text, re.IGNORECASE)
             elif 2 == line_idx:
-                str_location = text
                 _regex_locations = re.compile(text, re.IGNORECASE)
             elif 4 == line_idx:
-                str_lineage = text
                 _regex_pango_lineage = re.compile(text, re.IGNORECASE)
             elif 6 == line_idx:
                 _regex_amino_mutations = re.compile(text, re.IGNORECASE)
 
-    assert str_location is not None
-    assert str_lineage is not None
-                
     if _regex_clades is None or _regex_locations is None or \
        _regex_pango_lineage is None or _regex_amino_mutations is None:
         return False
 
-    str_lin = r'\b[-a-z.\d]+'
-    
-    # construct remaining regexes
-    #<num> <words> <covid-19> <variant|lineage>+ <words> in
-    str2 = r'(\ba\b|' + _str_num + r')' + _str_words + _str_covid + r'\s?' + \
-        r'(' + _str_variants + r'\s?|' + str_lin + r'\s?)' + \
-        _str_words + r'in' + r'(' + _str_words + _str_where + r')?'
-    _regex2 = re.compile(str2, re.IGNORECASE)
-
-    #<num> <words> cases? of <words> <covid-19> <variant|lineage>+
-    str3 = r'(\ba\b|' + _str_num + r')' + _str_words + r'cases? of' + _str_words + \
-        _str_covid + r'\s?' + \
-        r'(' + _str_variants + r'\s?|' + str_lin + r'\s?)'
-    _regex3 = re.compile(str3, re.IGNORECASE)
-
-    #<variant> <words> (identified|detected|found|discovered|reported) in
-    # <words> (count(y|ies)|residents?)
-    str5 = _str_variants + _str_words + \
-        r'(identified|detected|found|discovered|reported|confirmed|observed) in' + \
-        r'(' + _str_words + _str_where + r')?'
-    _regex5 = re.compile(str5, re.IGNORECASE)
-
-    #<num> <words> cases? of <words> <lineage> <variant>
-    str6 = r'(\ba |' + _str_num + r')' + _str_words + r'cases? of' + _str_words + \
-        str_lin + r'\s?' + _str_variants
-    _regex6 = re.compile(str6, re.IGNORECASE)
-    
     return True
             
     
@@ -479,11 +474,8 @@ def run(sentence):
 
     
     candidates = []
-    REGEXES = [
-        _regex1, _regex2, _regex3, _regex4, _regex5, _regex6
-    ]
 
-    for i, regex in enumerate(REGEXES):
+    for i, regex in enumerate(_REGEXES):
         iterator = regex.finditer(cleaned_sentence)
         for match in iterator:
             match_text = match.group().rstrip()
@@ -491,6 +483,13 @@ def run(sentence):
             end = start + len(match_text)
             candidates.append(overlap.Candidate(start, end, match_text, regex, other=match))
 
+            if _TRACE:
+                print('[{0:2}]: [{1:3}, {2:3})\tMATCH TEXT: ->{3}<-'.
+                      format(i, start, end, match_text))
+                print('\tmatch.groupdict entries: ')
+                for k,v in match.groupdict().items():
+                    print('\t\t{0} => {1}'.format(k,v))
+            
     # sort candidates in decreasing order of length
     candidates = sorted(candidates, key=lambda x: x.end-x.start, reverse=True)
     pruned_candidates = overlap.remove_overlap(candidates, _TRACE, keep_longest=True)
