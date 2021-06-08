@@ -45,6 +45,7 @@ COVID_VARIANT_TUPLE_FIELDS = [
     'spike',
     'clade',
     'location',
+    'setting',
     'pango',
     'british',
     'amino',
@@ -73,8 +74,26 @@ _str_where = r'(count(y|ies)|residents?|person|people|brazil|' \
 _str_tnum  = r'\b(one|two|three|four|five|six|seven|eight|nine|ten|' \
     r'eleven|twelve|twenty|thirty|forty|fifty|sixty|seventy|eighty|' \
     r'ninety|(a|one) hundred)'
-#(a|one|two|three|four|five|six|seven|eight|nine) hundred|' \
-#    r'(a|one|two|three|four|five|six|seven|eight|nine) thousand)'
+
+# 'no' is needed for "no new cases" and similar
+_str_enum = r'(first|second|third|fourth|fifth|sixth|seventh|eighth|' +\
+    r'ninth|tenth|eleventh|twelfth|'                                  +\
+    r'(thir|four|fif|six|seven|eight|nine)teenth|'                    +\
+    r'1[0-9]th|[2-9]0th|[4-9]th|3rd|2nd|1st|'                         +\
+    r'(twen|thir|for|fif|six|seven|eigh|nine)tieth)'
+
+# Covid variants labeled with Greek letters
+_GREEK_LETTERS = [
+    'alpha', 'beta',  'gamma',  'delta',   'epsilon', 'zeta', 'eta',     'theta',
+    'iota',  'kappa' ,'lambda', 'mu',      'nu',      'xi',   'omicron', 'pi',
+    'rho',   'sigma', 'tau',    'upsilon', 'phi',     'chi',  'psi',     'omega'
+]
+
+_str_greek = r'\b(' + '|'.join(_GREEK_LETTERS) + r')\b'
+
+_str_month = r'\b(january|february|march|april|may|june|july|august|'  \
+    r'september|october|november|december|jan|feb|mar|apr|may|jun|jul|' \
+    r'aug|sept|sep|oct|nov|dec)\b'
 
 
 ###############################################################################
@@ -100,22 +119,12 @@ _regex_pango_lineage = None
 # regex for matching amino acid mutations (loaded at init)
 _regex_amino_mutations = None
 
-# words, possibly hyphenated or containing an apostrophe
-# nongreedy captures
-#_str_word = r'\s?[-a-z\'\d]+\s?'
-#_str_words = r'(' + _str_word + r'){0,5}?'
-
 # nongreedy word captures
 _str_word = r'\s?[-a-z\'\d]+\s?'
-
-#_str_five_words  = r'(' + _str_word + r'){5}'
-#_str_four_words  = r'(' + _str_word + r'){4}'
 _str_three_words = r'(' + _str_word + r'){3}'
 _str_two_words   = r'(' + _str_word + r'){2}'
 _str_one_word    = r'(' + _str_word + r'){1}'
 _str_space       = r'\s?'
-#_str_words = r'(' + _str_five_words + r'|' + _str_four_words +
-#\
 _str_words = r'(' + _str_three_words + r'|' + _str_two_words + \
     r'|' + _str_one_word + r'|' + _str_space + r')'
 
@@ -125,36 +134,7 @@ _str_words = r'(' + _str_three_words + r'|' + _str_two_words + \
 _str_int = r'(?<!covid)(?<!covid-)(?<!\d)(\d{1,3}(,\d{3})+|' \
     r'(?<![,\d])\d+(k|m|\s?dozen)?(?!\d)(?!\'?s))'
 
-# find numbers such as 3.4 million, 4 thousand, etc.
-#_str_float_word = r'(?<!\d)(?P<floatnum>\d+(\.\d+)?)\s' +\
-#    r'(?P<floatunits>(thousand|million))'
-#_regex_float_word = re.compile(_str_float_word, re.IGNORECASE)
-
-# # Create a regex that recognizes either an int with commas, a decimal integer,
-# # a textual integer, or an enumerated integer. 
-# def _make_num_regex(a='int', b='tnum', c='enum'):
-#     _str_num = r'(?<![-.])('                                                 +\
-#         r'(?P<{0}>'.format(a) +  _str_int + r')|'                           +\
-#         r'(?P<{0}>'.format(b) + tnum.str_tnum + r')|'                       +\
-#         r'(?P<{0}>'.format(c) + tnum.str_enum + r'(?![-]))'  +\
-#         r')(?!%)(?! %)(?! percent)(?! pct)'
-#     return _str_num
-
-# regex to recognize either a range or a single integer
-# also recognize 'no' for situations such as "no new cases of covid-19"
-# do not capture a text num followed by 'from', as in
-# "decreased by one from 17 to 16", in which the desired num is 16, not "one"
-#_str_num = r'(' + r'(\bfrom\s)?' +\
-#   _make_num_regex('int_from', 'tnum_from', 'enum_from') +\
-#   r'\s?to( as (many|much) as)?\s?' +\
-#   _make_num_regex('int_to',   'tnum_to',   'enum_to') + r')'
-#+\
-#   r'|' + r'\b(?P<no>no(?! change))\b' + r'|' +  _str_float_word    +\
-#   r'|' + _make_num_regex() + r')(?!\sfrom\s)'
-
-#_str_num = r'(' + _str_int + r'|' + tnum.str_tnum + r'|' + \
-#    tnum.str_enum + r'(?![-]))(?!%)'
-
+# integer, numeric or textual
 _str_num = r'(?<![-.])(' + _str_int + r'|' + _str_tnum + r')'
 
 # spike protein
@@ -164,7 +144,7 @@ _regex_spike = re.compile(_str_spike, re.IGNORECASE)
 # possible
 _str_possible = r'\b(possible|potential(ly)?|probable|plausible|suspected|'   \
     r'suspicious|unexplained|((under|un)?reported|rumor(ed)?|report)s?( of)?|' \
-    r'undisclosed|undetected|likely|may)'
+    r'undisclosed|undetected|likely|may|alert)'
 _regex_possible = re.compile(_str_possible, re.IGNORECASE)
 
 # emerging
@@ -183,9 +163,9 @@ _regex_related = re.compile(_str_related, re.IGNORECASE)
 _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
     r'increase in frequency|increas(e[sd]|ing)|mutating|spread(ing)? widely|' \
     r'(wide|super-?)?spread(s|er|ing)?|becoming|' \
-    r'(rapid|quick|exponential)ly|on the rise|rise in|rise|' \
-    r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(s|ing)|progress(es|ing)|'  \
-    r'ongoing|trend(s|ed|ing)|ris(es|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
+    r'(rapid|quick|exponential)ly( growing)?|on the rise|rise in|rise|ris(es|ing)|' \
+    r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(n|s|ing)|progress(es|ing)|'  \
+    r'ongoing|trend(s|ed|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
     r'spill(ing|over)|sentinel|now in|'      \
     r'clustering|higher|greater|infectious)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
@@ -197,11 +177,13 @@ _str_cases = r'\b(case (count|number)|case|cluster|outbreak|wave|infection|' \
 _regex_cases = re.compile(_str_cases, re.IGNORECASE)
 
 # severity
-_str_severity = r'\b(more )?(antibody-?resistant|staggering|' \
+_str_severity = r'\b(more )?(antibody-?resistant|staggering|aggressive(ly)?|' \
     r'record-?breaking|severe|horrible situation|overwhelm(s|ed|ing)?|' \
     r'out of control|acute|uncontroll(ed|able)|tipping point|despair|'  \
+    r'highly infectious|dangerous|deadl(y|ier)|transmissible' \
     r'contagious|spread(s|ing)? fast(er)?|increase(d| the) risk of death|' \
-    r'deadly|cause(ed|ing|s)? (of )?concern|concerns?|ban travel|travel ban)'
+    r'deadly|cause(ed|ing|s)? (of )?concern|(major )?concerns?|ban travel|' \
+    r'travel ban)'
 _regex_severity = re.compile(_str_severity, re.IGNORECASE)
 
 # symptoms
@@ -229,6 +211,20 @@ _str_covid = r'(sars-cov-2|hcov-19|covid([-\s]?19)?|(novel\s)?coronavirus)' \
     r'( virus)?'
 _regex_covid = re.compile(_str_covid, re.IGNORECASE)
 
+_str_setting = r'\b(ship|boat|vessel|(nursing|care|retirement) home|hospital|'  \
+    r'(long-?term|residential) care (facilit(y|ies)|home)|ltc|' \
+    r'multicare (facilit(y|ies)|home)|skilled nursing facilit(y|ies)|' \
+    r'congregate living (facilit(y|ies)|home)|' \
+    r'assisted-?living (facilit(y|ies)|home)|alf|workplace|office|building|' \
+    r'bus|ferry|train|jail|correctional facilit(y|ies)|prison|' \
+    r'(child|day) care facilit(y|ies)|kindergarten|gym|fair|festival|concert|' \
+    r'rave|club|preschool|daycare|k-12|' \
+    r'hotel|motel|casino|bar|construction site|church|synagogue|temple|' \
+    r'wedding|(bar|bat) mitzvah|reception|party|celebration|funeral|' \
+    r'plant|warehouse|factory|industrial setting|' \
+    r'school|college|university|campus|(air)?plane|flight|camp|hot spot)s?\b'
+_regex_setting = re.compile(_str_setting, re.IGNORECASE)
+
 # Lineage Nomenclature from Public Health England
 
 # old format: V(UI|OC)-YYYYMM/NN, i.e. VUI-202101/01, # NN is a two-digit int
@@ -241,6 +237,9 @@ _str_british2 = r'\bv(oc|ui)\-?2[0-9]' \
 _str_british_lineage = r'((' + _str_british1 + r')|(' + _str_british2 + r'))'
 _regex_british_lineage = re.compile(_str_british_lineage, re.IGNORECASE)
 
+# month followed by number
+_str_day_of_month = _str_month + r'\s?' + r'(' + _str_enum + r'|' + _str_num + r')'
+_regex_day_of_month = re.compile(_str_day_of_month, re.IGNORECASE)
 
 # simpler regex to identify pango lineage designations in the following regexes
 str_lin = r'\b[a-z]{1,2}(\.\d+)*\b(?!%)'
@@ -293,6 +292,18 @@ _str8 = r'(' + _str_possible + r'\s?)?' + _str_spread + \
     _str_words + _str_variants
 _regex8 = re.compile(_str8, re.IGNORECASE)
 
+# first reported cases and similar
+_str9 = _str_enum + _str_words + _str_cases
+_regex9 = re.compile(_str9, re.IGNORECASE)
+
+# severity of spread
+_str10 = _str_spread + _str_words + _str_severity
+_regex10 = re.compile(_str10, re.IGNORECASE)
+
+# named variants
+_str11 = _str_greek + _str_words + _str_variants
+_regex11 = re.compile(_str11, re.IGNORECASE)
+
 _REGEXES = [
     _regex0,
     _regex1,
@@ -303,6 +314,9 @@ _REGEXES = [
     _regex6,
     _regex7,
     _regex8,
+    _regex9,
+    _regex10,
+    _regex11,
 ]
 
 
@@ -365,7 +379,19 @@ def init():
 
     return True
             
-    
+
+###############################################################################
+def _erase(sentence, start, end):
+    """
+    Replace sentence[start:end] by whitespace.
+    """
+
+    chunk1 = sentence[:start]
+    chunk2 = ' '*(end - start)
+    chunk3 = sentence[end:]
+    return chunk1 + chunk2 + chunk3
+
+
 ###############################################################################
 def _split_at_positions(text, pos_list):
     """
@@ -395,8 +421,7 @@ def _cleanup(sentence):
 
     # insert a missing space prior to a virus-related word
     space_pos = []
-    iterator = re.finditer(r'[a-z\d](covid|coronavirus)',
-                           sentence, re.IGNORECASE)
+    iterator = re.finditer(r'[a-z\d](covid|coronavirus)', sentence, re.IGNORECASE)
     for match in iterator:
         # position where the space is needed
         pos = match.start() + 1
@@ -407,6 +432,13 @@ def _cleanup(sentence):
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
 
+    # erase days of the month such as 'April 4'
+    iterator = _regex_day_of_month.finditer(sentence)
+    for match in iterator:
+        sentence = _erase(sentence, match.start(), match.end())
+        if _TRACE:
+            print('{0}'.format(sentence))
+    
     # erase certain characters
     #entence = re.sub(r'[\']', '', sentence)
     
@@ -419,8 +451,6 @@ def _cleanup(sentence):
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
 
-    #if _TRACE:
-    #    print('{0}'.format(sentence))
     return sentence
 
 
@@ -476,6 +506,7 @@ def run(sentence):
     spike_matchobjs     = _find_matches(cleaned_sentence, _regex_spike, 'SPIKE')
     clade_matchobjs     = _find_matches(cleaned_sentence, _regex_clades, 'CLADE')
     location_matchobjs  = _find_matches(cleaned_sentence, _regex_locations, 'LOCATION')
+    setting_matchobjs   = _find_matches(cleaned_sentence, _regex_setting, 'SETTING')
     pango_matchobjs     = _find_matches(cleaned_sentence, _regex_pango_lineage, 'PANGO')
     british_matchobjs   = _find_matches(cleaned_sentence, _regex_british_lineage, 'BRITISH')
     amino_matchobjs     = _find_matches(cleaned_sentence, _regex_amino_mutations, 'AMINO')
@@ -493,6 +524,7 @@ def run(sentence):
     str_spike    = _to_result_string(spike_matchobjs)
     str_clade    = _to_result_string(clade_matchobjs)
     str_loc      = _to_result_string(location_matchobjs)
+    str_setting  = _to_result_string(setting_matchobjs)
     str_pango    = _to_result_string(pango_matchobjs)
     str_brit     = _to_result_string(british_matchobjs)
     str_amino    = _to_result_string(amino_matchobjs)
@@ -538,6 +570,7 @@ def run(sentence):
         spike     = str_spike,
         clade     = str_clade,
         location  = str_loc,
+        setting   = str_setting,
         pango     = str_pango,
         british   = str_brit,
         amino     = str_amino,
@@ -639,6 +672,22 @@ def _run_tests():
 
         'sentinel testing found a case of the p.1 variant in pennington county.',
         
+        'First reported cases of SARS-CoV-2 sub-lineage B.1.617.2 in Brazil: ' \
+        'an outbreak in a ship and alert for spread',
+
+        'B.1.617.2 subclade with N:G215C; may be spreading more aggressively ' \
+        'than the rest of B.1.617.2.',
+
+        'The delta variant has grown at the fastest rate of any of the other ' \
+        'variants that have appeared.',
+
+        'The new outbreak has been traced to a wedding from four weeks ago',
+
+        '21 infected in 8 new coronavirus outbreaks at schools, says ' \
+        'Michigan’s June 7 and March 8th school outbreak report',
+
+        'A rapidly growing outbreak of variant COVID-19 among people ' \
+        r'in Carver County',
     ]
 
     _print_results(SENTENCES)
@@ -650,10 +699,7 @@ if __name__ == '__main__':
     if not init():
         print('*** init() failed ***')
         sys.exit(-1)
-    
-    #_run_tests()
-    #sys.exit(0)
-    
+        
     parser = argparse.ArgumentParser(
         description='Run tests on the Covid variant finder module')
 
@@ -678,6 +724,9 @@ if __name__ == '__main__':
     if 'debug' in args and args.debug:
         enable_debug()
 
+    _run_tests()
+    sys.exit(0)
+        
     if args.filepath is None:
         print('\n*** Missing --file argument ***')
         sys.exit(-1)
