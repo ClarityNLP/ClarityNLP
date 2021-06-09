@@ -15,7 +15,6 @@ from collections import namedtuple
 
 try:
     from algorithms.finder import finder_overlap as overlap
-    #from algorithms.finder import text_number as tnum
 except:
     this_module_dir = sys.path[0]
     pos = this_module_dir.find('/nlp')
@@ -25,7 +24,6 @@ except:
         sys.path.append(finder_dir)
         sys.path.append(nlp_dir)
     import finder_overlap as overlap
-    #import text_number as tnum
 
 # default value for all fields
 EMPTY_FIELD = None
@@ -95,11 +93,14 @@ _str_month = r'\b(january|february|march|april|may|june|july|august|'  \
     r'september|october|november|december|jan|feb|mar|apr|may|jun|jul|' \
     r'aug|sept|sep|oct|nov|dec)\b'
 
+# default name for output file
+_DEFAULT_OUTFILE = 'results.csv'
+
 
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 2
+_VERSION_MINOR = 3
 
 # set to True to enable debug output
 _TRACE = False
@@ -167,7 +168,7 @@ _str_spread = r'\b(introduction|resurgen(ce|t)|surg(e|ing)|' \
     r'circulat(e[sd]|ing)|expand(s|ed|ing)|grow(n|s|ing)|progress(es|ing)|'  \
     r'ongoing|trend(s|ed|ing)|spark(s|ing)|balloon(s|ed|ing)|' \
     r'spill(ing|over)|sentinel|now in|'      \
-    r'clustering|higher|greater|infectious)'
+    r'clustering)'
 _regex_spread = re.compile(_str_spread, re.IGNORECASE)
 
 # cases
@@ -183,7 +184,7 @@ _str_severity = r'\b(more )?(antibody-?resistant|staggering|aggressive(ly)?|' \
     r'highly infectious|dangerous|deadl(y|ier)|transmissible' \
     r'contagious|spread(s|ing)? fast(er)?|increase(d| the) risk of death|' \
     r'deadly|cause(ed|ing|s)? (of )?concern|(major )?concerns?|ban travel|' \
-    r'travel ban)'
+    r'travel ban|higher|greater|infectious|hard-?hit)'
 _regex_severity = re.compile(_str_severity, re.IGNORECASE)
 
 # symptoms
@@ -439,14 +440,8 @@ def _cleanup(sentence):
         if _TRACE:
             print('{0}'.format(sentence))
     
-    # erase certain characters
-    #entence = re.sub(r'[\']', '', sentence)
-    
     # replace selected chars with whitespace
     sentence = re.sub(r'[&{}\[\]:~@;?]', ' ', sentence)
-    
-    #sentence = _erase_dates(sentence)
-    #sentence = _erase_time_expressions(sentence)
     
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
@@ -577,13 +572,6 @@ def run(sentence):
         expr      = expr,
     )
 
-    # if _TRACE:
-    #     objdict = obj._asdict()
-    #     maxlen = max([len(k) for k in objdict.keys()])
-    #     for k,v in objdict.items():
-    #         if 'sentence' != k:
-    #             print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
-
     return json.dumps(obj._asdict(), indent=4)
 
 
@@ -602,6 +590,32 @@ def _print_results(sentences):
                 print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
 
 
+###############################################################################
+def _write_results(outfile, result_obj_list):
+    """
+    """
+
+    if 0 == len(result_obj_list):
+        return
+    
+    if _TRACE:
+        # find max key length for printing to stdout
+        maxlen = max([len(k) for k in result_obj_list[0].keys()])
+    
+    with open(outfile, 'w') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=COVID_VARIANT_TUPLE_FIELDS)
+        writer.writeheader()
+
+        for i, obj in enumerate(result_obj_list):
+            writer.writerow(obj)            
+            if _TRACE:
+                print('[[{0:4}]] '.format(i))
+                print('{0}'.format(obj['sentence']))
+                for k,v in obj.items():
+                    if 'sentence' != k:
+                        print('\t{0:>{1}} : {2}'.format(k, maxlen, v))
+    
+                
 ###############################################################################
 def _run_tests():
 
@@ -711,9 +725,14 @@ if __name__ == '__main__':
                         help='print debug information to stdout',
                         action='store_true')
 
-    parser.add_argument('-f', '--file',
+    parser.add_argument('-i', '--infile',
                         help='path to Covid scraper CSV result file',
-                        dest='filepath')
+                        dest='infile')
+
+    parser.add_argument('-o', '--outfile',
+                        help='name of CSV result file',
+                        default=_DEFAULT_OUTFILE,
+                        dest='outfile')
 
     args = parser.parse_args()
 
@@ -724,35 +743,28 @@ if __name__ == '__main__':
     if 'debug' in args and args.debug:
         enable_debug()
 
-    _run_tests()
-    sys.exit(0)
-        
-    if args.filepath is None:
-        print('\n*** Missing --file argument ***')
+    if args.infile is None:
+        print('\n*** Missing --infile argument ***')
         sys.exit(-1)
 
-    filepath = args.filepath
-    if not os.path.isfile(filepath):
-        print('\n*** File not found: "{0}" ***'.format(filepath))
+    infile = args.infile
+    if not os.path.isfile(infile):
+        print('\n*** Input file not found: "{0}" ***'.format(infile))
         sys.exit(-1)
 
-    unique_sentences = set()
-    with open(filepath, newline='') as infile:
-        reader = csv.DictReader(infile)
+    outfile = args.outfile
+
+    result_obj_list = []
+    with open(infile, newline='') as scraperfile:
+        reader = csv.DictReader(scraperfile)
         for row in reader:
             sentence = row['sample_sentence']
-            cleaned_sentence = _cleanup(sentence)
-            unique_sentences.add(cleaned_sentence)
+            json_string = run(sentence)
+            obj = json.loads(json_string)
+            result_obj_list.append(obj)
 
-    sentences = sorted(list(unique_sentences), key=lambda x: len(x), reverse=True)
-    _print_results(sentences)
+    _write_results(outfile, result_obj_list)
     
-
-    # find <location> variant, i.e. <South African> variant
-    #   search for place name with variant|strain|mutation
-    # 'mink' is also important to search for
-    # spike protein substitutions (E484K and others)
-
 
 """
 
