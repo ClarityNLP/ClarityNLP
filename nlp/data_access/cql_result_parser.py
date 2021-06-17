@@ -37,7 +37,7 @@ KEY_DATE_TIME     = 'date_time'
 KEY_END_DATE_TIME = 'end_date_time'
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 11
+_VERSION_MINOR = 12
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -1130,6 +1130,8 @@ def _process_bundle(name, bundle_obj, result_type_str):
         if rts.endswith('stu2') or rts.endswith('stu3'):
             result = _process_resource(elt)
         if result is not None:
+            # insert the name as the 'cql_feature'
+            result['cql_feature'] = name
             bundled_objs.append(result)
     
     return bundled_objs
