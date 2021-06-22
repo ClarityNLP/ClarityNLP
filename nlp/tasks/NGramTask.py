@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from textacy import extract, make_spacy_doc, preprocess_text
+from textacy import extract, make_spacy_doc
 from claritynlp_logging import log, ERROR, DEBUG
 try:
     from .task_utilities import BaseTask, BaseCollector, pipeline_mongo_writer, get_config_integer
@@ -86,8 +86,8 @@ class NGramTask(BaseTask):
 
         for doc in self.docs:
             ngrams = list()
-            cln_txt = self.get_document_text(doc, clean=True)
-            t_doc = make_spacy_doc(preprocess_text(cln_txt, lowercase=True), lang='en_core_web_sm')
+            cln_txt = self.get_document_text(doc, clean=True).lower()
+            t_doc = make_spacy_doc(cln_txt, lang='en_core_web_sm')
             res = extract.ngrams(t_doc, n_num, filter_stops=filter_stops, filter_punct=filter_punct,
                                  filter_nums=filter_nums)
             for r in res:
