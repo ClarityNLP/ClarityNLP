@@ -1,0 +1,34 @@
+# FROM python:3.6.8
+FROM continuumio/miniconda3
+
+MAINTAINER Health Data Analytics
+
+
+RUN apt-get update && apt-get install -y \
+    less \
+    vim
+
+ARG NLP_API_CONTAINER_PORT
+ENV APP_HOME /api
+RUN mkdir $APP_HOME
+WORKDIR $APP_HOME
+
+VOLUME ["/tmp"]
+
+COPY conda_requirements.txt $APP_HOME
+COPY conda_pip_requirements.txt $APP_HOME
+COPY install_models.py $APP_HOME
+COPY config.py $APP_HOME
+
+RUN conda create --name claritynlp python=3.8.10
+
+RUN echo "conda activate claritynlp" >> ~/.bashrc
+SHELL ["/bin/bash", "--login", "-c"]
+
+RUN conda config --env --append channels conda-forge
+RUN conda install --file conda_requirements.txt
+RUN pip install -r conda_pip_requirements.txt
+
+COPY . .
+ENV PATH /opt/conda/envs/claritynlp/bin:$PATH
+CMD ["gunicorn", "api", "--config", "config.py", "-b", "$NLP_API_CONTAINER_PORT"]
