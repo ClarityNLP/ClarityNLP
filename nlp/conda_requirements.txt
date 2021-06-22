@@ -22,5 +22,5 @@ sly=0.4
 spacy=2.3.7
 sphinx=4.0.1
 sphinx-autobuild=2021.3.14
-textacy=0.10.0
+textacy=0.7.0
 typing=3.10.0.0
