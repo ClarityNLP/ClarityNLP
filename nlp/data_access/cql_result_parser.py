@@ -30,14 +30,16 @@ else:
 from claritynlp_logging import log, ERROR, DEBUG
     
 # exported for result display
+KEY_NAME          = 'name'
 KEY_VALUE_NAME    = 'value_name'
 KEY_VALUE         = 'value'
 KEY_UNITS         = 'unit'
 KEY_DATE_TIME     = 'date_time'
 KEY_END_DATE_TIME = 'end_date_time'
-    
+KEY_CQL_FEATURE   = 'cql_feature'
+
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 12
+_VERSION_MINOR = 13
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -288,7 +290,10 @@ def _process_datetime(obj):
     # add 'date_time' field for time sorting
     if _KEY_RESULT in obj:
         dt = obj[_KEY_RESULT]
-        obj[KEY_DATE_TIME] = dt
+        flattened_dt[KEY_DATE_TIME] = dt
+
+    if KEY_NAME in flattened_dt:
+        flattened_dt[KEY_CQL_FEATURE] = flattened_dt[KEY_NAME]
     
     if _TRACE:
         _dump_dict(flattened_dt, 'Flattened dateTime resource: ')
@@ -307,12 +312,80 @@ def _process_string(obj):
     # flatten the JSON
     flattened_string = flatten(obj)
     
+    if KEY_NAME in flattened_string:
+        flattened_string[KEY_CQL_FEATURE] = flattened_string[KEY_NAME]
+
     if _TRACE:
         _dump_dict(flattened_string, 'Flattened string resource: ')
 
     return flattened_string
     
             
+###############################################################################
+def _process_list(obj):
+    """
+    Process a FHIR List resource.
+    """
+
+    if _TRACE:
+        log('cql_result_parser: Processing list resource')
+    
+    KEY_TUPLE = 'Tuple'
+    
+    assert dict == type(obj)
+    flattened_list = flatten(obj)
+
+    if _KEY_RESULT in flattened_list:
+        # extract the bracketed tuples and create sequentially-numbered keys
+        # if present, these will be in the 'result' value string
+        s = flattened_list[_KEY_RESULT]
+        len_s = len(s)
+
+        # list of [start, end) pairs for Tuple brackets
+        brackets = []
+        pos = 0
+        while (pos < len_s):
+            pos = s.find(KEY_TUPLE, pos)
+            if -1 == pos:
+                # no more tuples
+                break
+            else:
+                # found another Tuple, find '{' and '}' brackets
+                start = None
+                end   = None
+                for j in range(pos+5, len_s):
+                    if '{' == s[j]:
+                        start = j
+                    elif '}' == s[j]:
+                        end = j
+                        break
+                assert start is not None
+                assert end is not None
+                brackets.append( (start, end))
+                pos = j+1
+
+        tuple_index = 0
+        for start,end in brackets:
+            tuple_string = s[start:end+1]
+            key = 'tuple_{0}'.format(tuple_index)
+            flattened_list[key] = tuple_string
+            tuple_index += 1
+
+        # remove the 'result' key from the flattened list
+        del flattened_list[_KEY_RESULT]
+
+        # add a 'len_tuple' key, indicating the number of tuples
+        flattened_list['len_tuple'] = int(tuple_index)
+    
+    if KEY_NAME in flattened_list:
+        flattened_list[KEY_CQL_FEATURE] = flattened_list[KEY_NAME]
+
+    if _TRACE:
+        _dump_dict(flattened_list, 'Flattened list resource: ')
+
+    return flattened_list
+
+
 ###############################################################################
 def _process_observation(obj):
     """
@@ -1131,7 +1204,7 @@ def _process_bundle(name, bundle_obj, result_type_str):
             result = _process_resource(elt)
         if result is not None:
             # insert the name as a new 'cql_feature' field
-            result['cql_feature'] = name
+            result[KEY_CQL_FEATURE] = name
             bundled_objs.append(result)
     
     return bundled_objs
@@ -1150,6 +1223,7 @@ def decode_top_level_obj(obj):
     STR_PATIENT     = 'patient'
     STR_STR         = 'string'
     STR_DT          = 'datetime'
+    STR_LIST        = 'list'
     
     result_obj = None
     
@@ -1174,6 +1248,10 @@ def decode_top_level_obj(obj):
                 result_obj = _process_datetime(obj)
                 if _TRACE:
                     log('decoded dateTime resource')
+            elif STR_LIST == result_type_str:
+                result_obj = _process_list(obj)
+                if _TRACE:
+                    log('decoded list resource')
       ##      elif STR_PATIENT == result_type_str:
       ##          result_obj = _process_patient(result_obj)
       ##          if _TRACE:
