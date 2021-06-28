@@ -55,14 +55,15 @@ container-based, secure version of ClarityNLP.
 
 The instructions below have been tested on:
 
+- MacOS 10.15 "Catalina"
 - MacOS 10.14 "Mojave"
-- MacOS 10.13 "High Sierra"
 - Ubuntu Linux 18.04 LTS "Bionic Beaver"
 
 Recent versions of MongoDB, PostgreSQL, and Solr are assumed:
 
-- MongoDB version 3.6 or greater
-- PostgreSQL version 10 or 11
+- MongoDB version 3.6 - 4.2 community edition on Mac
+- MongoDB version 3.6 or greater on Linux
+- PostgreSQL version 10, 11, 12, 13
 - Solr version 7 or 8
 
 Roadmap
@@ -189,7 +190,7 @@ Create the Conda Environment for ClarityNLP
 From the ``ClarityNLPNative/ClarityNLP/native_setup`` folder, create a
 new conda managed environment with:
 ::
-   conda create --name claritynlp python=3.6   
+   conda create --name claritynlp python=3.8
    conda activate claritynlp
    conda config --env --append channels conda-forge
    conda install --file conda_requirements.txt
