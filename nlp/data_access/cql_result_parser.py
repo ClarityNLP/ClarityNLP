@@ -39,7 +39,7 @@ KEY_END_DATE_TIME = 'end_date_time'
 KEY_CQL_FEATURE   = 'cql_feature'
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 13
+_VERSION_MINOR = 14
 _MODULE_NAME   = 'cql_result_parser.py'
 
 # set to True to enable debug output
@@ -1040,7 +1040,7 @@ def _process_procedure(obj):
         
         
 ###############################################################################
-def _process_patient(obj):
+def _process_patient(name, obj):
     """
     Process a FHIR 'Patient' resource.
     """
@@ -1111,19 +1111,22 @@ def _process_patient(obj):
     _set_list_length(flattened_patient, 'link')
 
     # set data for result display
-    family = ''
-    if 'name_0_family' in flattened_patient:
-        family = flattened_patient['name_0_family']
-    elif 'name_0_family_0' in flattened_patient:
-        family = flattened_patient['name_0_family_0']
-    given = ''
-    if 'name_0_given' in flattened_patient:
-        given = flattened_patient['name_0_given']
-    elif 'name_0_given_0' in flattened_patient:
-        given = flattened_patient['name_0_given_0']
-    name = '{0}, {1}'.format(family, given)
-    flattened_patient[KEY_VALUE_NAME] = name
+    # family = ''
+    # if 'name_0_family' in flattened_patient:
+    #     family = flattened_patient['name_0_family']
+    # elif 'name_0_family_0' in flattened_patient:
+    #     family = flattened_patient['name_0_family_0']
+    # given = ''
+    # if 'name_0_given' in flattened_patient:
+    #     given = flattened_patient['name_0_given']
+    # elif 'name_0_given_0' in flattened_patient:
+    #     given = flattened_patient['name_0_given_0']
+    # name = '{0}, {1}'.format(family, given)
+    # flattened_patient[KEY_VALUE_NAME] = name
 
+    # add 'cql_feature' key
+    flattened_patient[KEY_CQL_FEATURE] = name
+    
     # set 'subject' field to the patient_id
     if 'id' in flattened_patient:
         flattened_patient[_KEY_SUBJECT] = str(flattened_patient['id'])
@@ -1252,10 +1255,10 @@ def decode_top_level_obj(obj):
                 result_obj = _process_list(obj)
                 if _TRACE:
                     log('decoded list resource')
-      ##      elif STR_PATIENT == result_type_str:
-      ##          result_obj = _process_patient(result_obj)
-      ##          if _TRACE:
-      ##             log('decoded patient resource')
+            elif STR_PATIENT == result_type_str:
+                result_obj = _process_patient(name, obj)
+                if _TRACE:
+                    log('decoded patient resource')
             else:
                 # check for DSTU2 or DSTU3 resource bundles
                 if result_type_str.endswith('stu2') or \
