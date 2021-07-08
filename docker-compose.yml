@@ -23,7 +23,7 @@ services:
   mssql:
     container_name: IDP_MSSQL
     hostname: ${IDP_DB_HOSTNAME}
-    image: microsoft/mssql-server-linux
+    image: mcr.microsoft.com/mssql/server
     expose:
       - ${IDP_DB_CONTAINER_PORT}
     volumes:
