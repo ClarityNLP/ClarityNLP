@@ -166,6 +166,8 @@ O2_TUPLE_FIELDS = [
     'condition',        # STR_APPROX, STR_LT, etc.
     'value',            # [%] (O2 saturation value)
     'value2',           # [%] (second O2 saturation value for ranges)
+    'needs_o2',         # patient needs O2, no saturation, flow rate or device
+    'needs_o2_device',  # patient needs O2, device only
 ]
 O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 
@@ -173,7 +175,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 4
+_VERSION_MINOR = 5
 
 # set to True to enable debug output
 _TRACE = False
@@ -406,11 +408,13 @@ _DEVICE_ENC_CHAR = '|'
 _str_oxygen = r'(supplemental\s)?(o2|oxygen)'
 _str_need   = r'((need|requir|increas|receiv)(ed|ing)|(placed|continu(ed|ing))\son)'
 _str_demand = r'(demand|requirement)s?'
-_str_need_o2 = _str_need + _str_words + _str_oxygen + r'(\s?' + _str_demand + r')?'
+_str_need_o2 = r'(?P<needs_o2>' + _str_need + _str_words + _str_oxygen + r')' + \
+    r'(\s?' + _str_demand + r')?'
 # need oxygen, no O2 pct, flow rate, or device
 _regex_need_o2 = re.compile(_str_need_o2, re.IGNORECASE)
 # need oxygen, device only
-_str_need_o2_device = _str_need + _str_words + _str_device
+_str_need_o2_device = r'(?P<needs_o2_device>' + _str_need + _str_words + \
+    _str_device + r')'
 _regex_need_o2_device = re.compile(_str_need_o2_device, re.IGNORECASE)
 
 # finds "spo2: 98% on 2L NC" and similar
@@ -1019,6 +1023,8 @@ def run(sentence):
         tent3            = EMPTY_FIELD
         flow_rate3       = EMPTY_FIELD
         nc3              = EMPTY_FIELD
+        needs_o2         = EMPTY_FIELD
+        needs_o2_device  = EMPTY_FIELD
         condition        = STR_O2_EQUAL
 
         for k,v in match.groupdict().items():
@@ -1047,6 +1053,11 @@ def run(sentence):
                 flow_rate = float(v)
             elif 'flow2' == k:
                 flow2 = float(v)
+            elif 'needs_o2' == k:
+                needs_o2 = True
+            elif 'needs_o2_device' == k:
+                needs_o2_device = True
+                
 
         # check oxygen saturation for valid range
         if EMPTY_FIELD != o2_sat and o2_sat < _MIN_SPO2_PCT:
@@ -1146,7 +1157,9 @@ def run(sentence):
             fio2             = fio2,
             fio2_est         = fio2_est,
             p_to_f_ratio     = p_to_f_ratio,            
-            p_to_f_ratio_est = p_to_f_ratio_est
+            p_to_f_ratio_est = p_to_f_ratio_est,
+            needs_o2         = needs_o2,
+            needs_o2_device  = needs_o2_device,
         )
         results.append(o2_tuple)
 
