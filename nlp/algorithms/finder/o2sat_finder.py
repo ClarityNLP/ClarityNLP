@@ -175,7 +175,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
+_VERSION_MINOR = 6
 
 # set to True to enable debug output
 _TRACE = False
@@ -261,10 +261,10 @@ _str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|'      +\
 _str_device_bvm = r'(?P<bvm>(b\.?v\.?m\.?|bag[-\s]valve\smask))'
 _str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|' +\
     r'bipap(\s\d+/\d+)?))'
-# vent(?!ilation))
+# vent(?!ilation)); rule out "PEG with vent" (percutaneous endoscopic gastrostomy)
 _str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|'                         +\
     r'[a-z]+\s?([a-z]+\s?)?[-\s]?mask|'                               +\
-    r'(ventilator|vent(?![a-z]))(?!\s(setting|mode))|'                +\
+    r'(ventilator|(?<!peg with )vent(?![a-z]))(?!\s(setting|mode))|'                +\
     r'\d+%\s?[a-z]+[-\s]?mask|mask))'
 _str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
 # face tent with a nasal cannula; flow rate prior to NC
@@ -478,6 +478,9 @@ _SAO2_REGEXES = [
     _regex9,
     _regex_need_o2,
     _regex_need_o2_device,
+
+    # this must be the final regex; the code in _regex_match assumes it
+    _regex_device,
 ]
 
 # o2 partial pressure (prevent captures of 'PaO2 / FiO2')
@@ -710,6 +713,8 @@ def _extract_values(match_obj):
 def _regex_match(sentence, regex_list):
     """
     """
+
+    num_regexes = len(regex_list)
     
     candidates = []
     for i, regex in enumerate(regex_list):
@@ -744,6 +749,12 @@ def _regex_match(sentence, regex_list):
                                 discard_match = True
                                 break
             if discard_match:
+                continue
+            
+            # special case for _regex_device; keep a device-only match if
+            # no other matches have been found (because they will also match
+            # the device)
+            if i == num_regexes-1 and len(candidates) > 0:
                 continue
             
             start = match.start()

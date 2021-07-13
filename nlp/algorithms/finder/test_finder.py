@@ -41,7 +41,7 @@ except:
     from algorithms.finder import covid_finder as cf
     
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 18
+_VERSION_MINOR = 19
 
 #
 # time results
@@ -1999,7 +1999,7 @@ def test_o2sat_finder():
         ],
         'for MAP > 60 Pulmonary: Cont ETT (Ventilator mode: CPAP + PS) ' \
         'liberate from vent as tolerated':[
-            # don't capture 'Ventilator' or 'vent'
+            _O2Result(text = 'vent', device = 'vent', condition = o2f.STR_O2_EQUAL)
         ],
         '- Pressors for MAP >60 - Mechanical ventilation daily SBT ' \
         'wean vent settings as tolerat':[
