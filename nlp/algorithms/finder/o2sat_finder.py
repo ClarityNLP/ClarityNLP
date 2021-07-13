@@ -168,6 +168,7 @@ O2_TUPLE_FIELDS = [
     'value2',           # [%] (second O2 saturation value for ranges)
     'needs_o2',         # patient needs O2, no saturation, flow rate or device
     'needs_o2_device',  # patient needs O2, device only
+    'needs_o2_flow',    # patient needs O2, flow rate only
 ]
 O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 
@@ -175,7 +176,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 
 # set to True to enable debug output
 _TRACE = False
@@ -417,6 +418,11 @@ _str_need_o2_device = r'(?P<needs_o2_device>' + _str_need + _str_words + \
     _str_device + r')'
 _regex_need_o2_device = re.compile(_str_need_o2_device, re.IGNORECASE)
 
+# need oxyten, flow rate only
+_str_need_o2_flow = r'(?P<needs_o2_flow>' + _str_need + _str_words + \
+    _str_flow_rate + r')'
+_regex_need_o2_flow = re.compile(_str_need_o2_flow, re.IGNORECASE)
+
 # finds "spo2: 98% on 2L NC" and similar
 _str0 = _str_o2_sat_hdr + _str_cond + _str_o2_val           +\
     _str_words + _str_flow_rate + _str_words + _str_device
@@ -478,6 +484,7 @@ _SAO2_REGEXES = [
     _regex9,
     _regex_need_o2,
     _regex_need_o2_device,
+    _regex_need_o2_flow,
 
     # this must be the final regex; the code in _regex_match assumes it
     _regex_device,
@@ -1036,6 +1043,7 @@ def run(sentence):
         nc3              = EMPTY_FIELD
         needs_o2         = EMPTY_FIELD
         needs_o2_device  = EMPTY_FIELD
+        needs_o2_flow    = EMPTY_FIELD
         condition        = STR_O2_EQUAL
 
         for k,v in match.groupdict().items():
@@ -1068,6 +1076,8 @@ def run(sentence):
                 needs_o2 = True
             elif 'needs_o2_device' == k:
                 needs_o2_device = True
+            elif 'needs_o2_flow' == k:
+                needs_o2_flow = True
                 
 
         # check oxygen saturation for valid range
@@ -1171,6 +1181,7 @@ def run(sentence):
             p_to_f_ratio_est = p_to_f_ratio_est,
             needs_o2         = needs_o2,
             needs_o2_device  = needs_o2_device,
+            needs_o2_flow    = needs_o2_flow,
         )
         results.append(o2_tuple)
 
