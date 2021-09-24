@@ -1173,6 +1173,9 @@ def _process_resource(obj):
         elif 'MedicationAdministration' == rt:
             result = _process_medication_administration(flattened_obj)
 
+        # insert the original FHIR resource as the 'result' field
+        result[_KEY_RESULT] = obj        
+
     return result
     
 
