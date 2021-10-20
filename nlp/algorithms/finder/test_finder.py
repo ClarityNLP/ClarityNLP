@@ -1573,7 +1573,14 @@ def test_o2sat_finder():
 		      p_to_f_ratio_est = 55,
 		      device = 'Non-Rebreather',
 		      condition = o2f.STR_O2_EQUAL,
-		      value = 88)
+		      value = 88),
+            # _O2Result(text = 'O2 Flow: 100 (Non-Rebreather)',
+            #           pao2_est = 145,
+            #           #fio2 = 100,
+            #           #p_to_f_ratio_est = 55,
+            #           device = 'Non-Rebreather',
+            #           condition = o2f.STR_O2_EQUAL,
+            #           value = 100)
         ],
         'Vitals were T 97.1 HR 76 BP 148/80 RR 25 SpO2 92%/RA.':[
 	    _O2Result(text = 'SpO2 92%/RA.',
@@ -1970,7 +1977,7 @@ def test_o2sat_finder():
         ],
         'Fi02 also weaned to 40% as 02 sat ~100%.':[
             # note the zero '0' character in Fi02
-            _O2Result(text = 'sat ~100%',
+            _O2Result(text = 'o2 sat ~100%',
 		      pao2_est = 145,
 		      fio2 = 40.0,
 		      p_to_f_ratio_est = 363,
@@ -2048,6 +2055,18 @@ def test_o2sat_finder():
                       device = 'o2 nc',
                       condition = o2f.STR_O2_EQUAL)
         ],
+        'patient is on home oxygen':[
+            _O2Result(text = 'on home oxygen',
+                      condition = o2f.STR_O2_EQUAL)
+        ],
+        'O2 at 2L per nasal canula':[
+            # note the zero char and misspelling of cannula
+            _O2Result(text = '2L per nasal canula',
+                      fio2_est = 28,
+                      flow_rate = 2.0,
+                      device = 'nasal canula',
+                      condition = o2f.STR_O2_EQUAL)
+        ]
     }
 
     if not _run_tests(_MODULE_O2, test_data):

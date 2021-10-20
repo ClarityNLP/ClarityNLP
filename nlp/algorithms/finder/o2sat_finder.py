@@ -176,7 +176,7 @@ O2Tuple = namedtuple('O2Tuple', O2_TUPLE_FIELDS)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 7
+_VERSION_MINOR = 8
 
 # set to True to enable debug output
 _TRACE = False
@@ -246,38 +246,38 @@ _str_flow_rate = r'(' + _str_flow_rate_range + r'|' + _str_flow_rate_val + r')'
 
 # this is reused by DEVICE_NC and DEVICE_HFNC
 _str_nc = r'(O2\s)?'                                                  +\
-    r'(?<!HEENT:)(?<!HEENT :)(?<!HEENT: )(?<!HEENT : )'               +\
-    r'(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z])'
+    r'(?<!HEENT:)(?<!HEENT :)(?<!HEENT: )(?<!HEENT : )(?<![^fl\s/])'     +\
+    r'(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cann?ula|prongs?))(?![a-z])'
 #_str_device_nc  = r'(?P<nc>(O2\s)?'                                   +\
 #    r'(?<!HEENT:)(?<!HEENT :)(?<!HEENT: )(?<!HEENT : )'               +\
 #    r'(n\.?[cp]\.?|n/c|(nas[ae]l[-\s]?)?(cannula|prongs?))(?![a-z]))'
 _str_device_nc = r'(?P<nc>' + _str_nc + r')'
 _str_device_hfnc = r'(?P<hfnc>(O2\s)?(h\.?f\.?|h/f|high[- ]?flow)\s?' +\
     _str_nc + r')'
-_str_device_nrb = r'(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|'                 +\
+_str_device_nrb = r'\b(?P<nrb>(\d+%?\s)?(n\.?r\.?b\.?|'                 +\
     r'non[-\s]?rebreather(\smask)?)(?![a-z]))'
-_str_device_ra  = r'(?P<ra>(?<![a-z])(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
-_str_device_venturi = r'(?P<venturi>((venturi|venti)[-\s]?mask|'      +\
+_str_device_ra  = r'\b(?P<ra>(?<![a-z])(r\.?a\.?|radial[-\s]?artery)(?![a-z]))'
+_str_device_venturi = r'\b(?P<venturi>((venturi|venti)[-\s]?mask|'      +\
     r'\d+\s?%\s?(venturi|venti)[-\s]?mask)(?![a-z]))'
-_str_device_bvm = r'(?P<bvm>(b\.?v\.?m\.?|bag[-\s]valve\smask))'
-_str_device_bipap = r'(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|' +\
+_str_device_bvm = r'\b(?P<bvm>(b\.?v\.?m\.?|bag[-\s]valve\smask))'
+_str_device_bipap = r'\b(?P<bipap>(bipap\s\d+/\d+\s?(with\s\d+L|\d+%)|' +\
     r'bipap(\s\d+/\d+)?))'
 # vent(?!ilation)); rule out "PEG with vent" (percutaneous endoscopic gastrostomy)
-_str_device_mask = r'(?P<mask>(f\.?m\.?|rbm|'                         +\
+_str_device_mask = r'\b(?P<mask>(f\.?m\.?|rbm|'                         +\
     r'[a-z]+\s?([a-z]+\s?)?[-\s]?mask|'                               +\
     r'(ventilator|(?<!peg with )vent(?![a-z]))(?!\s(setting|mode))|'                +\
     r'\d+%\s?[a-z]+[-\s]?mask|mask))'
-_str_device_tent = r'(?P<tent>\d+\s?%\s?face\s?tent)'
+_str_device_tent = r'\b(?P<tent>\d+\s?%\s?face\s?tent)'
 # face tent with a nasal cannula; flow rate prior to NC
-_str_device_tent_nc = r'(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
+_str_device_tent_nc = r'\b(?P<tent2>\d+\s?%\s?face\s?tent)[a-z\s]+'     +\
     r'(?P<flow_rate2>\d+)\s?(Liters|L)(/min\.?)?\s?'                  +\
     r'(?P<nc2>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))'
 # face tent with a nasal cannula; flow rate after NC
-_str_device_tent_nc2 = r'(?P<tent3>\d+\s?%\s?face\s?tent)[a-z\s]+'    +\
+_str_device_tent_nc2 = r'\b(?P<tent3>\d+\s?%\s?face\s?tent)[a-z\s]+'    +\
     r'(?P<nc3>(O2\s)?(n\.?c\.?|nasal[-\s]?cannula|cannula))[a-z\s]+'  +\
     r'(?P<flow_rate3>\d+)\s?(Liters|L)(/min\.?)?\s?'
-_str_device_air = r'(?P<air>(?<![a-z])(room[-\s]air|air))'
-_str_device_nasocath = r'(?P<nasocath>(naso[-\.\s]?(pharyngeal)?'     +\
+_str_device_air = r'\b(?P<air>(?<![a-z])(room[-\s]air|air))'
+_str_device_nasocath = r'\b(?P<nasocath>(naso[-\.\s]?(pharyngeal)?'     +\
     r'[-\s]?cath\.?(eter)?))'
 
 ##### Functions to convert an O2 flow rate into an estimated FiO2 value. #####
@@ -407,9 +407,9 @@ _DEVICE_ENC_CHAR = '|'
 
 # finds statements about needing oxygen
 _str_oxygen = r'(supplemental\s)?(o2|oxygen)'
-_str_need   = r'((need|requir|increas|receiv)(ed|ing)|(placed|continu(ed|ing))\son)'
+_str_need   = r'((need|requir|increas|receiv)(ed|ing)|(placed|continu(ed|ing))\son|on home)'
 _str_demand = r'(demand|requirement)s?'
-_str_need_o2 = r'(?P<needs_o2>' + _str_need + _str_words + _str_oxygen + r')' + \
+_str_need_o2 = r'(?P<needs_o2>(?<!never )(?<!no )(?<!did not )' + _str_need + _str_words + _str_oxygen + r')' + \
     r'(\s?' + _str_demand + r')?'
 # need oxygen, no O2 pct, flow rate, or device
 _regex_need_o2 = re.compile(_str_need_o2, re.IGNORECASE)
@@ -586,6 +586,9 @@ def _cleanup(sentence):
     
     # replace selected chars with whitespace
     sentence = re.sub(r'[,&]', ' ', sentence)
+
+    # replace "02" (zero char) with O2
+    sentence = re.sub(r'\b02\b', 'o2', sentence)
 
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', ' ', sentence)
