@@ -16,7 +16,7 @@ log(registered_collectors)
 phenotype_app = Blueprint('phenotype_app', __name__)
 
 
-def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False):
+def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False, tuple_def_docs=None):
     validated = phenotype_helper.validate_phenotype(p_cfg)
     if not validated['success']:
         return validated
@@ -35,6 +35,13 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False)
                                              date_started=datetime.now(),
                                              job_type='PHENOTYPE'), util.conn_string)
 
+    if tuple_def_docs is not None:
+        # insert tuple def docs into Mongo
+        client = util.mongo_client()
+        mongo_db_obj = client[util.mongo_db]
+        mongo_collection_obj = mongo_db_obj['phenotype_results']
+        tuple_processor.insert_tuple_def_docs(mongo_collection_obj, tuple_def_docs, job_id)
+        
     pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id, background=background)
     pipeline_urls = ["%s/pipeline_id/%s" %
                      (util.main_url, str(pid)) for pid in pipeline_ids]
@@ -90,7 +97,12 @@ def nlpql():
     """POST to run NLPQL phenotype"""
     if request.method == 'POST' and request.data:
         raw_nlpql = request.data.decode("utf-8")
-        nlpql_results = run_nlpql_parser(raw_nlpql)
+        modified_nlpql, tuple_def_docs = tuple_processor.modify_nlpql(raw_nlpql)
+        if tuple_def_docs is None:
+            # tuple syntax error
+            return 'Tuple syntax error'
+
+        nlpql_results = run_nlpql_parser(modified_nlpql)
         if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
             return json.dumps(nlpql_results)
         else:
@@ -100,7 +112,7 @@ def nlpql():
             else:
                 background = True
             p_cfg = nlpql_results['phenotype']
-            phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background)
+            phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background, tuple_def_docs=tuple_def_docs)
             return json.dumps(phenotype_info, indent=4)
 
     return "Please POST text containing NLPQL."
@@ -167,7 +179,13 @@ def phenotype_id(phenotype_id: int):
 @phenotype_app.route("/nlpql_tester", methods=["POST"])
 def nlpql_tester():
     if request.method == 'POST' and request.data:
-        return parse_nlpql(request.data.decode("utf-8"))
+        raw_nlpql = request.data.decode("utf-8")
+        modified_nlpql, tuple_def_docs = tuple_processor.modify_nlpql(raw_nlpql)
+        if tuple_def_docs is None:
+            # tuple syntax error
+            return 'Tuple syntax error'
+        else:
+            return parse_nlpql(modified_nlpql)
 
     return "Please POST text containing NLPQL."
 
