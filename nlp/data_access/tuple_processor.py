@@ -695,8 +695,9 @@ def get_tuple_definition(nlpql_define_statement):
 ###############################################################################
 def modify_nlpql(nlpql_text):
     """
-    Modify the NLPQL text to strip tuple definitions and write tuple definition
-    documents into mongo. Return the modified NLPQL text.
+    Modify the NLPQL text to strip tuple definitions and create tuple 
+    definition documents. Return the modified NLPQL text and the tuple def
+    documents.
     """
 
     define_statement_data = []
@@ -719,10 +720,14 @@ def modify_nlpql(nlpql_text):
     for start, end, statement in define_statement_data:
         # remove tuple defs from NLPQL text
         stripped, tuple_def_doc = get_tuple_definition(statement)
-        tuple_def_docs.append(tuple_def_doc)
-        new_text.append(nlpql_text[prev_end:start])
-        new_text.append(stripped)
-        prev_end = end
+        if stripped is None and tuple_def_doc is None:
+            # tuple syntax error
+            return None, None
+        elif tuple_def_doc is not None:
+            tuple_def_docs.append(tuple_def_doc)
+            new_text.append(nlpql_text[prev_end:start])
+            new_text.append(stripped)
+            prev_end = end
     new_text.append(nlpql_text[prev_end:])
     new_text = ' '.join(new_text)
 
@@ -870,6 +875,8 @@ if __name__ == '__main__':
         print('*** Mongo exception: ConnectionFailure ***')
         print(e)
 
+    do_processing = True
+    
     # if using clarity, read NLPQL define statements from an NLPQL file
     if 'clarity' in args and args.clarity:
         use_test_db = False
@@ -899,17 +906,18 @@ if __name__ == '__main__':
             print('------------------------------------')                
             print()
 
-        # insert the tuple definition docs into Mongo
-        if not insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
-            sys.exit(-1)
-        # if not insert_docs(mongo_obj, tuple_def_docs):
-        #     print('\ttuple processor: failed to insert tuple def docs')
-        #     print('\tjob_id: "{0}"'.format(job_id))
-        #     print('\ttuple def docs: ')
-        #     for tdd in tuple_def_docs:
-        #         for k,v in tdd.items():
-        #             print('\t\t{0} => {1}'.format(k,v))
-        #     sys.exit(-1)
+        if stripped_nlpql is None and tuple_def_docs is None:
+            # tuple syntax error
+            print('Tuple syntax error')
+            do_processing = False
+        elif tuple_def_docs is None:
+            # no tuples
+            print('No tuples found')
+            do_processing = False
+        else:
+            # insert the tuple definition docs into Mongo
+            if not insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
+                sys.exit(-1)
 
     # 
     # load test data into Mongo if not using Clarity
@@ -927,27 +935,37 @@ if __name__ == '__main__':
         # write the tuple definition documents into Mongo, and return modified
         # NLPQL statements to be sent through the ClarityNLP pipeline.
         # 
-    
+        
         print()
         for statement in TEST_STATEMENTS:
             new_statement, tuple_def_docs = get_tuple_definition(statement)
 
-            # insert tuple definition docs into Mongo
-            if not insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
-                sys.exit(-1)
+            if new_statement is None and tuple_def_docs is None:
+                # tuple syntax error
+                print('Tuple syntax error')
+                do_processing = False
+            elif tuple_def_docs is None:
+                # no tuples found
+                print('Found no tuples in the NLPQL')
+                do_processing = False
+            else:
+                # insert tuple definition docs into Mongo
+                if not insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
+                    sys.exit(-1)
             
-            # send 'new_statement' through the normal ClarityNLP pipeline
-            if new_statement is not None:
-                if _TRACE:
-                    print('\tmodified NLPQL statement: "{0}"'.format(new_statement))
-                    print()
+                # send 'new_statement' through the normal ClarityNLP pipeline
+                if new_statement is not None:
+                    if _TRACE:
+                        print('\tmodified NLPQL statement: "{0}"'.format(new_statement))
+                        print()
 
-                # send through ClarityNLP pipeline...
+            # send through ClarityNLP pipeline...
 
-    # the (fake) pipeline has finished, now do tuple processing
-    succeeded = process_tuples(mongo_obj, job_id)
-    if not succeeded:
-        print('*** ERROR: some mongo writes failed. ***')
+    if do_processing:
+        # the (fake) pipeline has finished, now do tuple processing
+        succeeded = process_tuples(mongo_obj, job_id)
+        if not succeeded:
+            print('*** ERROR: some mongo writes failed. ***')
 
     if 'cleanup' in args and args.cleanup and use_test_db:
         _cleanup_db(db_name, mongo_obj, mongo_client_obj)

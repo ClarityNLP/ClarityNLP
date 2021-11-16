@@ -9,4 +9,4 @@ from .phenotype import *
 from .measurement_model import *
 from .library import *
 from .cql_result_parser import decode_top_level_obj
-from .tuple_processor import modify_nlpql
+from .tuple_processor import modify_nlpql, process_tuples

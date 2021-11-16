@@ -8,6 +8,7 @@ import data_access
 from data_access import pipeline_config as config
 from data_access import solr_data, phenotype_stats
 from data_access import update_phenotype_model
+from data_access import tuple_processor
 from luigi_tools import phenotype_helper
 from tasks import *
 from claritynlp_logging import log, ERROR, DEBUG
@@ -91,6 +92,12 @@ class PhenotypeTask(luigi.Task):
                                               "Job completed successfully")
                 outfile.write("DONE!")
                 outfile.write('\n')
+
+            # do tuple processing now that all tasks have completed
+            succeeded = tuple_processor.process_tuples(db['phenotype_results'], int(self.job))
+            if not succeeded:
+                log('*** ERROR: tuple processing failed ***')
+                
             log("job {} done!".format(self.job))
         except BulkWriteError as bwe:
             log(bwe.details)

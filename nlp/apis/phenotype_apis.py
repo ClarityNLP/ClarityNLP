@@ -41,6 +41,7 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False,
         mongo_db_obj = client[util.mongo_db]
         mongo_collection_obj = mongo_db_obj['phenotype_results']
         tuple_processor.insert_tuple_def_docs(mongo_collection_obj, tuple_def_docs, job_id)
+        log('inserted {0} tuple definition docs for job_id {1}'.format(len(tuple_def_docs), job_id))
         
     pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id, background=background)
     pipeline_urls = ["%s/pipeline_id/%s" %
@@ -181,7 +182,7 @@ def nlpql_tester():
     if request.method == 'POST' and request.data:
         raw_nlpql = request.data.decode("utf-8")
         modified_nlpql, tuple_def_docs = tuple_processor.modify_nlpql(raw_nlpql)
-        if tuple_def_docs is None:
+        if modified_nlpql is None and tuple_def_docs is None:
             # tuple syntax error
             return 'Tuple syntax error'
         else:
