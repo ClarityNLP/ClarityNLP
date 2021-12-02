@@ -737,6 +737,10 @@ def modify_nlpql(nlpql_text):
 ###############################################################################
 def insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
 
+    assert tuple_def_docs is not None
+    if 0 == len(tuple_def_docs):
+        return True
+    
     # insert the job_id into each tuple def doc
     for tdd in tuple_def_docs:
         tdd['job_id'] = job_id

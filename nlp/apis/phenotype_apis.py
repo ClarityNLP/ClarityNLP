@@ -35,13 +35,16 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False,
                                              date_started=datetime.now(),
                                              job_type='PHENOTYPE'), util.conn_string)
 
-    if tuple_def_docs is not None:
+    if tuple_def_docs is not None and len(tuple_def_docs) > 0:
         # insert tuple def docs into Mongo
         client = util.mongo_client()
         mongo_db_obj = client[util.mongo_db]
         mongo_collection_obj = mongo_db_obj['phenotype_results']
-        tuple_processor.insert_tuple_def_docs(mongo_collection_obj, tuple_def_docs, job_id)
-        log('inserted {0} tuple definition docs for job_id {1}'.format(len(tuple_def_docs), job_id))
+        result = tuple_processor.insert_tuple_def_docs(mongo_collection_obj, tuple_def_docs, job_id)
+        if result:
+            log('inserted {0} tuple definition docs for job_id {1}'.format(len(tuple_def_docs), job_id))
+        else:
+            log('failed to insert {0} tuple definition docs for job_id {1}'.format(len(tuple_def_docs), job_id))
         
     pipeline_ids = luigi_runner.run_phenotype(p_cfg, p_id, job_id, background=background)
     pipeline_urls = ["%s/pipeline_id/%s" %
