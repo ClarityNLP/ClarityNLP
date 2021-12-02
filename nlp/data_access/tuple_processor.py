@@ -36,9 +36,16 @@ from pymongo.errors import ConnectionFailure, BulkWriteError
 from collections import namedtuple, defaultdict
 
 try:
+    # claritynlp path
+    from claritynlp_logging import log, ERROR, DEBUG
+    DISPLAY = log
     from .tuple_lexer_and_parser import TupleLexer, TupleParser
+
 except:
+    # interactive path
     from tuple_lexer_and_parser import TupleLexer, TupleParser
+    DISPLAY = print
+
 
 # mongo params for testing only
 _DB_NAME         = 'tuple_test'
@@ -111,7 +118,7 @@ def insert_docs(mongo_obj, doc_list):
     try:
         result = mongo_obj.insert_many(doc_list, ordered=False)
     except BulkWriteError as e:
-        print(e.details['writeErrors'])
+        DISPLAY(e.details['writeErrors'])
         result = None
 
     return result is not None
@@ -232,7 +239,7 @@ def parse_tuple_definition(tuple_def_string):
         parse_result = parser.parse(lexer.tokenize(tuple_def_string))
     except EOFError:
         parse_result = None
-        print('*** ERROR: tuple_processor: tuple parse failed ***')
+        DISPLAY('*** ERROR: tuple_processor: tuple parse failed ***')
 
     return parse_result
 
@@ -254,7 +261,7 @@ def _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def_string):
     doc_count = all_docs.count()
 
     if _TRACE:
-        print('_build_patient_map found {0} documents'.format(doc_count))
+        DISPLAY('_build_patient_map found {0} documents'.format(doc_count))
 
     patient_map = defaultdict(list)
     for doc in all_docs:
@@ -270,7 +277,7 @@ def _get_feature_lists(mongo_obj, job_id):
     """
 
     if _TRACE:
-        print('Calling _get_feature_lists...')
+        DISPLAY('Calling _get_feature_lists...')
     
     # find all tuple definition docs
     tuple_def_docs = mongo_obj.find(
@@ -289,14 +296,14 @@ def _get_feature_lists(mongo_obj, job_id):
         assert _FIELD_TUPLE_DEF in doc
         tuple_feature = doc[_FIELD_TUPLE_FEATURE]
         if _TRACE:
-            print('\tFound tuple_feature: "{0}"'.format(tuple_feature))
+            DISPLAY('\tFound tuple_feature: "{0}"'.format(tuple_feature))
 
         tuple_def = doc[_FIELD_TUPLE_DEF]
         # collapse repeated whitespace
         tuple_def = re.sub(r'\s+', ' ', tuple_def)
 
         #if _TRACE:
-        #    print('\tTuple definition: ->{0}<-'.format(tuple_def))
+        #    DISPLAY('\tTuple definition: ->{0}<-'.format(tuple_def))
 
         # # parse the tuple def and clean up any concatenated strings
         parse_result = parse_tuple_definition(tuple_def)
@@ -304,10 +311,10 @@ def _get_feature_lists(mongo_obj, job_id):
         # parser = TupleParser()
         # try:
         #     parse_result = parser.parse(lexer.tokenize(tuple_def))
-        #     #print('raw parse result: ->{0}<-'.format(parse_result))            
+        #     #DISPLAY('raw parse result: ->{0}<-'.format(parse_result))            
         # except EOFError:
         #     parse_result = None
-        #     print('*** ERROR: tuple_processor: tuple parse failed ***')
+        #     DISPLAY('*** ERROR: tuple_processor: tuple parse failed ***')
 
         if parse_result is None:
             continue
@@ -323,7 +330,7 @@ def _get_feature_lists(mongo_obj, job_id):
                 feature = match.group('feature')
                 field   = match.group('field')
                 if _TRACE:
-                    print('\t\tTuple "{0}" has feature "{1}" with field "{2}"'.
+                    DISPLAY('\t\tTuple "{0}" has feature "{1}" with field "{2}"'.
                           format(doc[_FIELD_TUPLE_FEATURE], feature, field))
                 feature_set.add( (feature, field) )
         feature_list = list(feature_set)
@@ -334,7 +341,7 @@ def _get_feature_lists(mongo_obj, job_id):
         tuple_defs.append(tuple_def)
         
     if _TRACE:
-        print('\tReturning from _get_feature_lists...')
+        DISPLAY('\tReturning from _get_feature_lists...')
         
     return feature_lists, tuple_features, tuple_defs
 
@@ -382,10 +389,10 @@ def _to_output_tuples(tuple_def, feature_list, value_tuples):
     """
 
     if _TRACE:
-        print('\nCalling _to_output_tuples...')
-        print('\t   Tuple def: {0}'.format(tuple_def))
-        print('\tfeature_list: {0}'.format(feature_list))
-        print('\tvalue_tuples: {0}'.format(value_tuples))
+        DISPLAY('\nCalling _to_output_tuples...')
+        DISPLAY('\t   Tuple def: {0}'.format(tuple_def))
+        DISPLAY('\tfeature_list: {0}'.format(feature_list))
+        DISPLAY('\tvalue_tuples: {0}'.format(value_tuples))
     
     strings = []
     for tup in value_tuples:
@@ -414,15 +421,15 @@ def process_tuples(mongo_obj, job_id):
                                                                    job_id)
 
     if _TRACE:
-        print('\nResults of _get_feature_list: ')
+        DISPLAY('\nResults of _get_feature_list: ')
         for i in range(len(feature_lists)):
-            print('\tfeature_list   : {0}'.format(feature_lists[i]))
-            print('\ttuple_features : {0}'.format(tuple_features[i]))
-            print('\ttuple_defs     : {0}'.format(tuple_defs[i]))
-            print()
+            DISPLAY('\tfeature_list   : {0}'.format(feature_lists[i]))
+            DISPLAY('\ttuple_features : {0}'.format(tuple_features[i]))
+            DISPLAY('\ttuple_defs     : {0}'.format(tuple_defs[i]))
+            DISPLAY()
 
     if _TRACE:
-        print('Calling process_tuples...')
+        DISPLAY('Calling process_tuples...')
         
     all_writes_ok = True
     for f_index in range(len(feature_lists)):
@@ -430,159 +437,73 @@ def process_tuples(mongo_obj, job_id):
         feature_list  = feature_lists[f_index]
         tuple_feature = tuple_features[f_index]
         tuple_def     = tuple_defs[f_index]
-    
+
         patient_map = _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def)
         
         for patient_id, id_list in patient_map.items():
-            # print('{0}: {1}'.format(patient_id, id_list))
+            # DISPLAY('{0}: {1}'.format(patient_id, id_list))
             if _TRACE:
-                print('\n\tPatient {0} has {1} result documents for feature {2}.'.
+                DISPLAY('\n\tPatient {0} has {1} result documents for tuple_feature {2}.'.
                       format(patient_id, len(id_list), tuple_feature))
 
-            # find unique combinations of feature.field
-            unique_value_map = defaultdict(set)
-            for feature,field in feature_list:
-                #print('feature: "{0}"'.format(feature))
-                #print('  field: "{0}"'.format(field))
+            docs_updated = 0
+            for feature, field in feature_list:
+                #DISPLAY('feature: "{0}"'.format(feature))
+                #DISPLAY('  field: "{0}"'.format(field))
                 # find all (job_id, patient_id, feature) docs
                 query = {
                     'job_id':job_id,
                     'subject':patient_id,
                     'nlpql_feature':feature
                 }
-                feature_docs = mongo_obj.find(query)
+                feature_doc_cursor = mongo_obj.find(query)
+                feature_docs = [c for c in feature_doc_cursor]
+                if _TRACE:
+                    DISPLAY('\tPatient {0} has {1} result documents for feature {2}.'.
+                            format(patient_id, len(feature_docs), feature))
                 # get the field value from each doc and find uniques
                 for fd in feature_docs:
                     assert field in fd
                     value = fd[field]
-                    key = '{0}.{1}'.format(feature, field)
-                    unique_value_map[key].add(value)
+                    obj_id = fd['_id']
+
+                    # compute unique tuple strings for this patient by replacing the
+                    # field.value constructs with actual data
+                    tuple_strings = _to_output_tuples(tuple_def,
+                                                      [(feature, field)],
+                                                      [(value,)])
+
+                    assert 1 == len(tuple_strings)
+                    tuple_string = tuple_strings[0]
+                    if _TRACE:
+                        DISPLAY('\tOUTPUT TUPLE STRING: ')
+                        DISPLAY('\t\t{0}'.format(tuple_string))
+                        DISPLAY()
+
+                    # Update all existing docs by inserting a tuple string into each.
+                    # Tile the strings if more strings than objects.
+                    # Also delete the _NLPQL_FEATURE_SUFFIX from the nlpql_feature.
+                    nlpql_feature = tuple_feature[:-len(_NLPQL_FEATURE_SUFFIX)]
+
+                    if _TRACE:
+                        DISPLAY('\tUpdating mongo doc with _id == {0}: tuple: {1}'.format(obj_id, tuple_string))
+                    update_result = mongo_obj.update_one(
+                        {'_id':obj_id},
+                        {"$set":{
+                            'tuple':tuple_string,
+                            'nlpql_feature':nlpql_feature
+                        }}
+                    )
+                    if 1 != update_result.modified_count:
+                        DISPLAY('\tupdate_one failed for _id {0}'.format(obj_id))
+                        all_writes_ok = False
+                    else:
+                        docs_updated += 1
 
             if _TRACE:
-                print('\tUnique values of feature.field: ')
-                for feature, value_set in unique_value_map.items():
-                    print('\t\t{0}: {1}'.format(feature, value_set))
-
-            # create minimal representation of these unique values
-            # (list of tuples)
-            value_tuples, features_in_order = _to_minimal_representation(unique_value_map)
-            if _TRACE:
-                print('\tMinimal representation: {0}'.format(value_tuples))
-                print('\tfeatures_in_order: {0}'.format(features_in_order))
-
-            # get the list of feature.field in the correct order
-            feature_list_in_order = []
-            for fv in features_in_order:
-                # these are actually feature.field strings
-                f,v = fv.split('.')
-                found_it = False
-                for feature,field in feature_list:
-                    if f == feature and v == field:
-                        found_it = True
-                        feature_list_in_order.append( (feature, field))
-                        break
-                assert found_it
-                    
-            # compute unique tuple strings for this patient by replacing the
-            # field.value constructs with actual data
-            tuple_strings = _to_output_tuples(tuple_def,
-                                              feature_list_in_order,
-                                              value_tuples)
-
-            if _TRACE:
-                print('\tOUTPUT TUPLE STRINGS: ')
-                for s in tuple_strings:
-                    print('\t\t{0}'.format(s))
-                print()
-
-            num_strings = len(tuple_strings)
-            num_objs = len(id_list)
-
-            if _TRACE:
-                print('\tNum strings: {0}'.format(num_strings))
-                print('\tNum objs   : {0}'.format(num_objs))
-            
-            # need at least as many output objects as tuple strings
-
-            copy_objs = []
-            if num_objs < num_strings:
-                # fewer objects than tuple strings
-                # need to generate num_strings - num_objs object copies
-                num_to_generate = num_strings - num_objs
-
-                # copy all existing objects
-                cursor = mongo_obj.find({'job_id':job_id, '_id': {'$in':id_list}})
-
-                num_generated = 0
-                for c in cursor:
-                    obj = deepcopy(c)
-                    del obj['_id']
-                    copy_objs.append(obj)
-                    num_generated += 1
-                    if num_generated == num_to_generate:
-                        break
-
-                while num_generated < num_to_generate:
-                    k=0
-                    obj = deepcopy(copy_objs[k])
-                    copy_objs.append(obj)
-                    num_generated += 1
-                    k += 1
-                    
-                assert len(copy_objs) == num_to_generate
-                if _TRACE:
-                    print('\tCOPIED OBJECTS: ')
-                    for e in copy_objs:
-                        print('\t{0}'.format(e))
-                    print()
-
-            if _TRACE:
-                print('\tlen id_list: {0}'.format(len(id_list)))
-                print('\tnum_strings: {0}'.format(num_strings))
-                print()
-
-            # Update all existing docs by inserting a tuple string into each.
-            # Tile the strings if more strings than objects.
-            # Also delete the _NLPQL_FEATURE_SUFFIX from the nlpql_feature.
-            nlpql_feature = tuple_feature[:-len(_NLPQL_FEATURE_SUFFIX)]
-
-            # 'index' is for the tuple strings
-            index = 0
-            for obj_id in id_list:
-                s = tuple_strings[index]
-                index += 1
-                if index >= len(tuple_strings):
-                    # wrap around to the first tuple string
-                    index = 0
-                if _TRACE:
-                    print('\tUpdating mongo doc with _id == {0}: tuple: {1}'.format(obj_id, s))
-                mongo_obj.update_one(
-                    {'_id':obj_id},
-                    {"$set":{'tuple':s, 'nlpql_feature':nlpql_feature}}
-                )
-
-            # Insert a tuple string into the copy_objs and do a bulk insert
-            # of these augmented objects into Mongo. Also correct the nlpql_feature
-            # field.
-            if len(copy_objs) > 0:
-                for obj in copy_objs:
-                    s = tuple_strings[index]
-                    index += 1
-                    if index >= len(tuple_strings):
-                        index = 0
-                    assert 'tuple' not in obj
-                    obj['tuple'] = s
-                    obj['nlpql_feature'] = nlpql_feature
-
-                if _TRACE:
-                    print('\n\tAUGMENTED COPY OBJS: ')
-                    print('\t{0}'.format(copy_objs))
-                    print()
-
-                # insert these docs into Mongo
-                if not insert_docs(mongo_obj, copy_objs):
-                    all_writes_ok = False
-
+                DISPLAY('\tUpdated {0} docs with feature {1} for patient {2}'.
+                      format(docs_updated, feature, patient_id))
+                
     return all_writes_ok
                 
 
@@ -622,7 +543,7 @@ def get_tuple_definition(nlpql_define_statement):
     """
 
     if _TRACE:
-        print('Calling get_tuple_definition...')
+        DISPLAY('Calling get_tuple_definition...')
     
     # remove repeated whitespace
     statement = re.sub(r'\s+', ' ', nlpql_define_statement)
@@ -646,18 +567,18 @@ def get_tuple_definition(nlpql_define_statement):
         return None, None
 
     #if _TRACE:
-    #    print('\ttuple_processor: found tuple {0}'.format(tuple_string))
+    #    DISPLAY('\ttuple_processor: found tuple {0}'.format(tuple_string))
 
     # get the NLPQL feature name in the 'define' string
     match = _regex_define.search(statement)
     if match:
         nlpql_feature = match.group('nlpql_feature')
         if _TRACE:
-            print('\tFound a tuple for feature: "{0}"'.format(nlpql_feature))
+            DISPLAY('\tFound a tuple for feature: "{0}"'.format(nlpql_feature))
 
     if nlpql_feature is None:
         if _TRACE:
-            print('\ttuple_processor: failed to capture NLPQL feature ' \
+            DISPLAY('\ttuple_processor: failed to capture NLPQL feature ' \
                   'for tuple "{0}"'.format(tuple_string))
         return None, None
 
@@ -684,10 +605,10 @@ def get_tuple_definition(nlpql_define_statement):
     }
 
     if _TRACE:
-        print('\nGenerated tuple definition document: ')
+        DISPLAY('\nGenerated tuple definition document: ')
         for k,v in tuple_def_doc.items():
-            print('\t{0} => {1}'.format(k,v))
-        print()
+            DISPLAY('\t{0} => {1}'.format(k,v))
+        DISPLAY()
     
     return new_statement, tuple_def_doc
     
@@ -746,11 +667,11 @@ def insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
         tdd['job_id'] = job_id
     
     if not insert_docs(mongo_obj, tuple_def_docs):
-        print('\ttuple processor: failed to insert tuple def docs')
-        print('\ttuple def docs: ')
+        DISPLAY('\ttuple processor: failed to insert tuple def docs')
+        DISPLAY('\ttuple def docs: ')
         for tdd in tuple_def_docs:
             for k,v in tdd.items():
-                print('\t\t{0} => {1}'.format(k,v))
+                DISPLAY('\t\t{0} => {1}'.format(k,v))
         return False
     return True
 
