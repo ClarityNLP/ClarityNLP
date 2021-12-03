@@ -266,7 +266,8 @@ def _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def_string):
     patient_map = defaultdict(list)
     for doc in all_docs:
         patient_id = doc[_FIELD_PATIENT_ID]
-        patient_map[patient_id].append(doc['_id'])
+        #patient_map[patient_id].append(doc['_id'])
+        patient_map[patient_id].append(doc)
 
     return patient_map
 
@@ -423,7 +424,9 @@ def process_tuples(mongo_obj, job_id):
     if _TRACE:
         DISPLAY('\nResults of _get_feature_list: ')
         for i in range(len(feature_lists)):
+            # [('Temperature', 'value')]
             DISPLAY('\tfeature_list   : {0}'.format(feature_lists[i]))
+            # PatientTemp_Step1
             DISPLAY('\ttuple_features : {0}'.format(tuple_features[i]))
             DISPLAY('\ttuple_defs     : {0}'.format(tuple_defs[i]))
             DISPLAY()
@@ -439,70 +442,82 @@ def process_tuples(mongo_obj, job_id):
         tuple_def     = tuple_defs[f_index]
 
         patient_map = _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def)
-        
-        for patient_id, id_list in patient_map.items():
-            # DISPLAY('{0}: {1}'.format(patient_id, id_list))
-            if _TRACE:
-                DISPLAY('\n\tPatient {0} has {1} result documents for tuple_feature {2}.'.
-                      format(patient_id, len(id_list), tuple_feature))
 
-            docs_updated = 0
-            for feature, field in feature_list:
+        docs_updated = 0        
+        for patient_id, doc_list in patient_map.items():
+            # DISPLAY('{0}: {1}'.format(patient_id, doc_list))
+            if _TRACE:
+                DISPLAY('\n*** Patient {0} has {1} result documents for tuple_feature "{2}" ***.'.
+                      format(patient_id, len(doc_list), tuple_feature))
+
+            assert 1 == len(feature_list)
+            
+            feature, field = feature_list[0]
+            for doc in doc_list:
+                # extract relevant values needed later
+                obj_id = doc['_id']
+                
+                value = doc[field]
+                if type(value) == list:
+                    assert 1 == len(value)
+                    value = value[0]
+            #for feature, field in feature_list:
                 #DISPLAY('feature: "{0}"'.format(feature))
                 #DISPLAY('  field: "{0}"'.format(field))
                 # find all (job_id, patient_id, feature) docs
-                query = {
-                    'job_id':job_id,
-                    'subject':patient_id,
-                    'nlpql_feature':feature
-                }
-                feature_doc_cursor = mongo_obj.find(query)
-                feature_docs = [c for c in feature_doc_cursor]
+                # query = {
+                #     'job_id':job_id,
+                #     'subject':patient_id,
+                #     'nlpql_feature':feature
+                # }
+                # feature_doc_cursor = mongo_obj.find(query)
+                # feature_docs = [c for c in feature_doc_cursor]
+                # if _TRACE:
+                #     DISPLAY('\tPatient {0} has {1} result documents for feature {2}.'.
+                #             format(patient_id, len(feature_docs), feature))
+                # # get the field value from each doc and find uniques
+                # for fd in feature_docs:
+                #     assert field in fd
+                #     value = fd[field]
+                #     obj_id = fd['_id']
+
+                # compute unique tuple strings for this patient by replacing the
+                # field.value constructs with actual data
+                tuple_strings = _to_output_tuples(tuple_def,
+                                                  [(feature, field)],
+                                                  [(value,)])
+
+                assert 1 == len(tuple_strings)
+                tuple_string = tuple_strings[0]
                 if _TRACE:
-                    DISPLAY('\tPatient {0} has {1} result documents for feature {2}.'.
-                            format(patient_id, len(feature_docs), feature))
-                # get the field value from each doc and find uniques
-                for fd in feature_docs:
-                    assert field in fd
-                    value = fd[field]
-                    obj_id = fd['_id']
+                    DISPLAY('\tOUTPUT TUPLE STRING: ')
+                    DISPLAY('\t\t{0}'.format(tuple_string))
+                    DISPLAY()
 
-                    # compute unique tuple strings for this patient by replacing the
-                    # field.value constructs with actual data
-                    tuple_strings = _to_output_tuples(tuple_def,
-                                                      [(feature, field)],
-                                                      [(value,)])
+                # Update all existing docs by inserting a tuple string into each.
+                # Tile the strings if more strings than objects.
+                # Also delete the _NLPQL_FEATURE_SUFFIX from the nlpql_feature.
+                nlpql_feature = tuple_feature[:-len(_NLPQL_FEATURE_SUFFIX)]
 
-                    assert 1 == len(tuple_strings)
-                    tuple_string = tuple_strings[0]
-                    if _TRACE:
-                        DISPLAY('\tOUTPUT TUPLE STRING: ')
-                        DISPLAY('\t\t{0}'.format(tuple_string))
-                        DISPLAY()
+                if _TRACE:
+                    DISPLAY('\tUpdating mongo doc with _id == {0}: tuple: {1}'.format(obj_id, tuple_string))
+                    
+                update_result = mongo_obj.update_one(
+                {'_id':obj_id},
+                    {"$set":{
+                        'tuple':tuple_string,
+                        'nlpql_feature':nlpql_feature
+                    }}
+                )
+                if 1 != update_result.modified_count:
+                    DISPLAY('\tupdate_one failed for _id {0}'.format(obj_id))
+                    all_writes_ok = False
+                else:
+                    docs_updated += 1
 
-                    # Update all existing docs by inserting a tuple string into each.
-                    # Tile the strings if more strings than objects.
-                    # Also delete the _NLPQL_FEATURE_SUFFIX from the nlpql_feature.
-                    nlpql_feature = tuple_feature[:-len(_NLPQL_FEATURE_SUFFIX)]
-
-                    if _TRACE:
-                        DISPLAY('\tUpdating mongo doc with _id == {0}: tuple: {1}'.format(obj_id, tuple_string))
-                    update_result = mongo_obj.update_one(
-                        {'_id':obj_id},
-                        {"$set":{
-                            'tuple':tuple_string,
-                            'nlpql_feature':nlpql_feature
-                        }}
-                    )
-                    if 1 != update_result.modified_count:
-                        DISPLAY('\tupdate_one failed for _id {0}'.format(obj_id))
-                        all_writes_ok = False
-                    else:
-                        docs_updated += 1
-
-            if _TRACE:
-                DISPLAY('\tUpdated {0} docs with feature {1} for patient {2}'.
-                      format(docs_updated, feature, patient_id))
+        if _TRACE:
+            DISPLAY('\n\tUpdated {0} docs with tuple feature "{1}"'.
+                    format(docs_updated, tuple_feature))
                 
     return all_writes_ok
                 
