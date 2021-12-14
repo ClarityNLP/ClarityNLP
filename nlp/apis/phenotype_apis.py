@@ -187,12 +187,7 @@ def phenotype_id(phenotype_id: int):
 def nlpql_tester():
     if request.method == 'POST' and request.data:
         raw_nlpql = request.data.decode("utf-8")
-        modified_nlpql, tuple_def_docs = tuple_processor.modify_nlpql(raw_nlpql)
-        if modified_nlpql is None and tuple_def_docs is None:
-            # tuple syntax error
-            return 'Tuple syntax error'
-        else:
-            return parse_nlpql(modified_nlpql)
+        return parse_nlpql(raw_nlpql)
 
     return "Please POST text containing NLPQL."
 
