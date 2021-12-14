@@ -384,8 +384,9 @@ def handle_tuple(context, phenotype: PhenotypeModel, define_name, final):
     obj = get_obj_context(context.getChild(0).getChild(1), to_string=True)
     num_children = len(context.children)
     op_raw_text = ''
+    tuple_name = '{}_Step1'.format(define_name)
     if num_children == 2:
-        operation = parse_operation(context.getChild(1), define_name, final)
+        operation = parse_operation(context.getChild(1), tuple_name, final)
         if operation:
             if not phenotype.operations:
                 phenotype.operations = list()
@@ -405,7 +406,7 @@ def handle_tuple(context, phenotype: PhenotypeModel, define_name, final):
     else:
         where = 'where {}'.format(op_raw_text)
     tuple_str = json.dumps(obj, indent=4)
-    pe = PhenotypeEntity(define_name, 'define', final=final, tuple_=True, tuple_object=obj, tuple_predicate=operation,
+    pe = PhenotypeEntity(tuple_name, 'define', final=final, tuple_=True, tuple_object=obj, tuple_predicate=operation,
                          raw_text=raw_text.format(tuple_str, where), tuple_raw_text='Tuple {}'.format(tuple_str))
 
     if not phenotype.tuples:
@@ -668,7 +669,7 @@ def get_tuple_def(phenotype: PhenotypeModel):
             tuple_def_doc = {
                 'job_id': None,
                 'nlpql_feature': "tuple_definition",
-                'define_text': '{}_Step1'.format(t.get('name')),
+                'define_text': t.get('name'),
                 'tuple_string': t.get('tuple_raw_text')
             }
             tuple_def_docs.append(tuple_def_doc)
