@@ -46,13 +46,24 @@ class PhenotypeDefine(dict):
                       description=description, concept=concept)
 
 
+class PhenotypeOperations(dict):
+
+    def __init__(self, name: str, action: str, data_entities: list, final: bool = False,
+                 raw_text: str = '', normalized_expr: str = ''):
+        dict.__init__(self, name=name, action=action, data_entities=data_entities, final=final,
+                      raw_text=raw_text, normalized_expr=normalized_expr)
+
+
 class PhenotypeEntity(dict):
 
     def __init__(self, name: str, declaration: str, alias: str = '', version: str = '',
                  library: str = '', named_arguments: dict = None,
                  arguments: list = None, funct: str = '', values: list = None,
                  description: str = '', concept: str = '', final: bool = False,
-                 raw_text: str = '', job_results: list = None):
+                 raw_text: str = '', job_results: list = None,
+                 tuple_: bool = False, tuple_object: dict = None,
+                 tuple_predicate: PhenotypeOperations = None
+                 ):
 
         if named_arguments is None:
             named_arguments_init = dict()
@@ -74,19 +85,18 @@ class PhenotypeEntity(dict):
         else:
             job_results_init = job_results
 
+        if tuple_object is None:
+            tuple_object_init = dict()
+        else:
+            tuple_object_init = tuple_object
+
         dict.__init__(self, name=name, declaration=declaration, version=version,
                       alias=alias, arguments=arguments_init, named_arguments=named_arguments_init,
                       library=library, funct=funct, values=values_init,
                       description=description, concept=concept, final=final,
-                      raw_text=raw_text, job_results=job_results_init)
-
-
-class PhenotypeOperations(dict):
-
-    def __init__(self, name: str, action: str, data_entities: list, final: bool = False,
-                 raw_text: str = '', normalized_expr: str = ''):
-        dict.__init__(self, name=name, action=action, data_entities=data_entities, final=final,
-                      raw_text=raw_text, normalized_expr=normalized_expr)
+                      raw_text=raw_text, job_results=job_results_init,
+                      tuple_=tuple_, tuple_object=tuple_object_init,
+                      tuple_predicate=tuple_predicate)
 
 
 class PhenotypeModel(BaseModel):
@@ -97,7 +107,7 @@ class PhenotypeModel(BaseModel):
                  code_systems: list = None, value_sets: list = None, term_sets: list = None,
                  document_sets: list = None, data_entities: list = None, cohorts: list = None,
                  operations: list = None, debug=False, limit: int = 0, nlpql: str = '',
-                 phenotype_id=1, valid=True):
+                 phenotype_id=1, valid=True, tuples: list = None):
         self.owner = owner
         self.name = name
         self.description = description
@@ -141,6 +151,11 @@ class PhenotypeModel(BaseModel):
             self.operations = list()
         else:
             self.operations = operations
+
+        if tuples is None:
+            self.tuples = list()
+        else:
+            self.tuples = tuples
         self.debug = debug
         self.limit = limit
         self.nlpql = nlpql

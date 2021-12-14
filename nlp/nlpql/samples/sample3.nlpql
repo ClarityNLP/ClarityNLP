@@ -1,0 +1,30 @@
+limit 100;
+
+phenotype "TupleTemps" version "1.0";
+
+include ClarityCore version "1.0" called Clarity;
+
+documentset SubmittedDocs:
+    Clarity.createDocumentSet({
+        "query":"source:%s"});
+
+termset TemperatureTerms:
+    ["temp","temperature","t"];
+
+define Temperature:
+    Clarity.ValueExtraction({
+        termset:[TemperatureTerms],
+        documentset: [SubmittedDocs],
+        minimum_value: "96",
+        maximum_value: "106"
+    });
+
+define final PatientTemp:
+    Tuple {
+        "question_concept": "201342454",
+        "answer_concept": "2313-4",
+        "answer_value": Temperature.value
+    }
+where Temperature.value >= 100.4;
+
+context Patient;

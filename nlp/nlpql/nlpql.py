@@ -11,6 +11,17 @@ else:
     from nlpql_lexer import *
 
 
+def get_obj_context(obj):
+    value = dict()
+    for c in obj.getChildren():
+        if type(c) == nlpql_parserParser.PairContext:
+            pair = get_pair_context(c)
+            c_name = pair["name"]
+            c_value = pair["value"]
+            value[c_name] = c_value
+    return value
+
+
 def get_value_context(value_context: nlpql_parserParser.ValueContext):
     value = None
 
@@ -24,13 +35,7 @@ def get_value_context(value_context: nlpql_parserParser.ValueContext):
         if type(child) == nlpql_parserParser.ArrayContext:
             value = get_array_context(child)
         elif type(child) == nlpql_parserParser.ObjContext:
-            value = dict()
-            for c in child.getChildren():
-                if type(c) == nlpql_parserParser.PairContext:
-                    pair = get_pair_context(c)
-                    c_name = pair["name"]
-                    c_value = pair["value"]
-                    value[c_name] = c_value
+            value = get_obj_context(child)
         else:
             value = txt
     else:
@@ -337,6 +342,8 @@ def handle_define_subject(context, phenotype: PhenotypeModel,  define_name, fina
             handle_operation(child, phenotype, define_name, final)
         elif type(child) == nlpql_parserParser.DataEntityContext:
             handle_data_entity(child, phenotype,  define_name, final)
+        elif type(child) == nlpql_parserParser.TupleOperationContext:
+            handle_tuple(child, phenotype,  define_name, final)
 
 
 def handle_data_entity(context, phenotype: PhenotypeModel, define_name, final):
@@ -365,6 +372,24 @@ def handle_data_entity(context, phenotype: PhenotypeModel, define_name, final):
         phenotype.data_entities = list()
 
     phenotype.data_entities.append(pe)
+
+
+def handle_tuple(context, phenotype: PhenotypeModel, define_name, final):
+    log('tuple')
+
+    obj = get_obj_context(context.getChild(0).getChild(1))
+    num_children = len(context.children)
+    if num_children == 2:
+        operation = parse_operation(context.getChild(1), define_name, final)
+    else:
+        operation = None
+
+    pe = PhenotypeEntity(define_name, 'define', final=final, tuple_=True, tuple_object=obj, tuple_predicate=operation)
+
+    if not phenotype.tuples:
+        phenotype.tuples = list()
+
+    phenotype.tuples.append(pe)
 
 
 def is_operator(c):
@@ -508,14 +533,7 @@ def get_predicate_boolean(expression: nlpql_parserParser.PredicateBooleanContext
     return op
 
 
-def handle_operation(context, phenotype: PhenotypeModel, define_name, final):
-    log('operation')
-
-    # SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'], final=True)
-
-    # : notOperator=(NOT | BANG) expression
-    # | expression logicalOperator expression
-    # | predicate IS NOT? BOOL
+def parse_operation(context, define_name, final):
     expression_context = context.getChild(1)
     first = expression_context.getChild(0)
 
@@ -529,6 +547,19 @@ def handle_operation(context, phenotype: PhenotypeModel, define_name, final):
     elif type(first) == nlpql_parserParser.PredicateContext:
         res = get_predicate_expression(expression_context.getChild(0), define_name, final)
 
+    return res
+
+
+def handle_operation(context, phenotype: PhenotypeModel, define_name, final):
+    log('operation')
+
+    # SepsisState = PhenotypeOperations('SepsisState', 'OR', ['onVentilator', 'hasSepsis'], final=True)
+
+    # : notOperator=(NOT | BANG) expression
+    # | expression logicalOperator expression
+    # | predicate IS NOT? BOOL
+
+    res = parse_operation(context, define_name, final)
     if not phenotype.operations:
         phenotype.operations = list()
 
@@ -602,12 +633,12 @@ def run_nlpql_parser(nlpql_txt: str):
 
 
 if __name__ == '__main__':
-    # with open('samples/sample2.nlpql') as f:
-    #     nlpql_txt = f.read()
-    #     results = run_nlpql_parser(nlpql_txt)
-    #     if results['has_errors'] or results['has_warnings']:
-    #         log(results)
-    #     else:
-    #         log('NLPQL parsed successfully')
-    #         log(results['phenotype'].to_json())
+    with open('samples/sample3.nlpql') as f:
+        nlpql_txt = f.read()
+        results = run_nlpql_parser(nlpql_txt)
+        if results['has_errors'] or results['has_warnings']:
+            log(results)
+        else:
+            log('NLPQL parsed successfully')
+            print(results['phenotype'].to_json())
     log("init nlpql parsing...", DEBUG)

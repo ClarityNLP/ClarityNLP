@@ -91,6 +91,7 @@ BOOL:       'true' | 'TRUE'
             |       'false' | 'FALSE'
             ;
 NULL:       'null' | 'NULL' | 'None' | 'none';
+TUPLE_NAME: 'tuple' | 'TUPLE' | 'Tuple';
 IN:         'IN' | 'in';
 CHAR:       '\'' (~['\\\r\n] | EscapeSequence) '\'';
 STRING:     '"' (~["\\\r\n] | EscapeSequence)* '"';

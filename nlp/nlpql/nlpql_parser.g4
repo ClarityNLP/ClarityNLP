@@ -93,7 +93,8 @@ define:
 
 defineSubject:
     operation |
-    dataEntity
+    dataEntity |
+    tupleOperation
     ;
 
 finalModifier:
@@ -200,6 +201,13 @@ modifiers:
     FINAL
     ;
 
+tupleOperation:
+    tuple_ operation?;
+
+
+tuple_:
+    TUPLE_NAME obj;
+
 obj: L_CURLY pair (COMMA pair)* R_CURLY
    | L_CURLY R_CURLY
    ;
@@ -237,7 +245,9 @@ named:
 
 array: L_BRACKET value (COMMA value)* R_BRACKET
    | L_BRACKET R_BRACKET
+   | L_BRACKET tuple_ R_BRACKET
    ;
+
 
 value:
     STRING
