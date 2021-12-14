@@ -108,7 +108,7 @@ def nlpql():
         #     return 'Tuple syntax error'
 
         nlpql_results = run_nlpql_parser(raw_nlpql)
-        t
+
         if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
             return json.dumps(nlpql_results)
         else:
