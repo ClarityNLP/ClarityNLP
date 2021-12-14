@@ -54,6 +54,7 @@ class PhenotypeOperations(dict):
                       raw_text=raw_text, normalized_expr=normalized_expr)
 
 
+
 class PhenotypeEntity(dict):
 
     def __init__(self, name: str, declaration: str, alias: str = '', version: str = '',
@@ -62,7 +63,8 @@ class PhenotypeEntity(dict):
                  description: str = '', concept: str = '', final: bool = False,
                  raw_text: str = '', job_results: list = None,
                  tuple_: bool = False, tuple_object: dict = None,
-                 tuple_predicate: PhenotypeOperations = None
+                 tuple_predicate: PhenotypeOperations = None,
+                 tuple_raw_text: str = ''
                  ):
 
         if named_arguments is None:
@@ -96,7 +98,7 @@ class PhenotypeEntity(dict):
                       description=description, concept=concept, final=final,
                       raw_text=raw_text, job_results=job_results_init,
                       tuple_=tuple_, tuple_object=tuple_object_init,
-                      tuple_predicate=tuple_predicate)
+                      tuple_predicate=tuple_predicate, tuple_raw_text=tuple_raw_text)
 
 
 class PhenotypeModel(BaseModel):

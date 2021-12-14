@@ -90,7 +90,8 @@ def phenotype():
         else:
             background = True
         p_cfg = PhenotypeModel.from_dict(request.get_json())
-        return json.dumps(post_phenotype(p_cfg, background=background), indent=4)
+        tuple_def_docs = get_tuple_def(p_cfg)
+        return json.dumps(post_phenotype(p_cfg, background=background, tuple_def_docs=tuple_def_docs), indent=4)
     except Exception as ex:
         log(ex)
         return 'Failed to load and insert phenotype. ' + str(ex), 400
@@ -101,12 +102,13 @@ def nlpql():
     """POST to run NLPQL phenotype"""
     if request.method == 'POST' and request.data:
         raw_nlpql = request.data.decode("utf-8")
-        modified_nlpql, tuple_def_docs = tuple_processor.modify_nlpql(raw_nlpql)
-        if tuple_def_docs is None:
-            # tuple syntax error
-            return 'Tuple syntax error'
+        # modified_nlpql, tuple_def_docs = tuple_processor.modify_nlpql(raw_nlpql)
+        # if tuple_def_docs is None:
+        #     # tuple syntax error
+        #     return 'Tuple syntax error'
 
-        nlpql_results = run_nlpql_parser(modified_nlpql)
+        nlpql_results = run_nlpql_parser(raw_nlpql)
+        t
         if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
             return json.dumps(nlpql_results)
         else:
@@ -116,6 +118,7 @@ def nlpql():
             else:
                 background = True
             p_cfg = nlpql_results['phenotype']
+            tuple_def_docs = get_tuple_def(p_cfg)
             phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background, tuple_def_docs=tuple_def_docs)
             return json.dumps(phenotype_info, indent=4)
 

@@ -2,6 +2,7 @@ import antlr4
 import traceback
 from data_access import PhenotypeModel, PhenotypeDefine, PhenotypeEntity, PhenotypeOperations
 from claritynlp_logging import log, ERROR, DEBUG
+import json
 
 if __name__ is not None and "." in __name__:
     from .nlpql_parserParser import *
@@ -11,13 +12,16 @@ else:
     from nlpql_lexer import *
 
 
-def get_obj_context(obj):
+def get_obj_context(obj, to_string=False):
     value = dict()
     for c in obj.getChildren():
         if type(c) == nlpql_parserParser.PairContext:
             pair = get_pair_context(c)
             c_name = pair["name"]
-            c_value = pair["value"]
+            if to_string:
+                c_value = str(pair["value"])
+            else:
+                c_value = pair["value"]
             value[c_name] = c_value
     return value
 
@@ -377,14 +381,32 @@ def handle_data_entity(context, phenotype: PhenotypeModel, define_name, final):
 def handle_tuple(context, phenotype: PhenotypeModel, define_name, final):
     log('tuple')
 
-    obj = get_obj_context(context.getChild(0).getChild(1))
+    obj = get_obj_context(context.getChild(0).getChild(1), to_string=True)
     num_children = len(context.children)
+    op_raw_text = ''
     if num_children == 2:
         operation = parse_operation(context.getChild(1), define_name, final)
+        if operation:
+            if not phenotype.operations:
+                phenotype.operations = list()
+            phenotype.operations.append(operation)
+            op_raw_text = operation.get('raw_text')
+
     else:
         operation = None
 
-    pe = PhenotypeEntity(define_name, 'define', final=final, tuple_=True, tuple_object=obj, tuple_predicate=operation)
+    raw_text = '''
+        Tuple {}
+        {}
+    '''
+
+    if not operation:
+        where = ''
+    else:
+        where = 'where {}'.format(op_raw_text)
+    tuple_str = json.dumps(obj, indent=4)
+    pe = PhenotypeEntity(define_name, 'define', final=final, tuple_=True, tuple_object=obj, tuple_predicate=operation,
+                         raw_text=raw_text.format(tuple_str, where), tuple_raw_text='Tuple {}'.format(tuple_str))
 
     if not phenotype.tuples:
         phenotype.tuples = list()
@@ -533,7 +555,7 @@ def get_predicate_boolean(expression: nlpql_parserParser.PredicateBooleanContext
     return op
 
 
-def parse_operation(context, define_name, final):
+def parse_operation(context, define_name, final) -> PhenotypeOperations:
     expression_context = context.getChild(1)
     first = expression_context.getChild(0)
 
@@ -630,6 +652,27 @@ def run_nlpql_parser(nlpql_txt: str):
     tree = parser.validExpression()
     res = handle_expression(tree)
     return res
+
+
+def get_tuple_def(phenotype: PhenotypeModel):
+    tuple_def_docs = list()
+    if phenotype.tuples:
+        '''
+        { "_id" : ObjectId("61a97048fa06a4f85363a6fb"),
+         "job_id" : 87,
+          "nlpql_feature" : "tuple_definition", 
+          "define_text" : "PatientTemp_Step1", 
+          "tuple_string" : "Tuple { \"question_concept\": \"201342454\", \"answer_concept\": \"2313-4\", \"answer_value\": Temperature.value }" }
+        '''
+        for t in phenotype.tuples:
+            tuple_def_doc = {
+                'job_id': None,
+                'nlpql_feature': "tuple_definition",
+                'define_text': '{}_Step1'.format(t.get('name')),
+                'tuple_string': t.get('tuple_raw_text')
+            }
+            tuple_def_docs.append(tuple_def_doc)
+    return tuple_def_docs
 
 
 if __name__ == '__main__':
