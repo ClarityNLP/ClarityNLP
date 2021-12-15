@@ -88,16 +88,17 @@ class PhenotypeTask(luigi.Task):
                                               util.properties[k])
             with self.output().open('w') as outfile:
                 phenotype_helper.write_phenotype_results(db, self.job, phenotype, self.phenotype, self.phenotype)
+
+                # do tuple processing now that all tasks have completed
+                succeeded = tuple_processor.process_tuples(db['phenotype_results'], int(self.job))
+                if not succeeded:
+                    log('*** ERROR: tuple processing failed ***')
+
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.COMPLETED,
-                                              "Job completed successfully")
+                                          "Job completed successfully")
                 outfile.write("DONE!")
                 outfile.write('\n')
 
-            # do tuple processing now that all tasks have completed
-            succeeded = tuple_processor.process_tuples(db['phenotype_results'], int(self.job))
-            if not succeeded:
-                log('*** ERROR: tuple processing failed ***')
-                
             log("job {} done!".format(self.job))
         except BulkWriteError as bwe:
             log(bwe.details)
