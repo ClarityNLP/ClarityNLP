@@ -30,4 +30,4 @@ CORS(application)
 
 if __name__ == '__main__':
     log('starting claritynlp api...')
-    application.run(host='0.0.0.0', port=8000, threaded=True, debug=True, use_reloader=False)
+    application.run(host='0.0.0.0', port=5000, threaded=True, debug=True, use_reloader=False)
