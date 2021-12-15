@@ -94,6 +94,15 @@ class PhenotypeTask(luigi.Task):
                 if not succeeded:
                     log('*** ERROR: tuple processing failed ***')
 
+                # force all mongo writes to complete by calling fsync on the admin db, then releasing the lock
+                log('*** FORCING MONGO WRITES ***')
+                admin_db = client['admin']
+                fsync_result = admin_db.command('fsync', lock=True)
+                assert 1 == fsync_result['lockCount']
+                unlock_result = admin_db.command('fsyncUnlock')
+                assert 0 == unlock_result['lockCount']
+                log('*** ALL MONGO WRITES COMPLETED ***')
+                    
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.COMPLETED,
                                           "Job completed successfully")
                 outfile.write("DONE!")
