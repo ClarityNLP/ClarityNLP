@@ -5,7 +5,7 @@ import luigi
 from pymongo.errors import BulkWriteError
 
 import data_access
-import multiprocessing
+from ilock import ILock, ILockException
 from data_access import pipeline_config as config
 from data_access import solr_data, phenotype_stats
 from data_access import update_phenotype_model
@@ -18,9 +18,8 @@ from claritynlp_logging import log, ERROR, DEBUG
 # These variables are used to control locking of the Mongo database,
 # to force writes to disk.
 
-# Shared memory value with a lock used to coordinate multi-process access to
-# the Mongo admin database. Only the lock is used, not the value.
-_shared_value = multiprocessing.Value('i', 0, lock=True)
+# name of the shared lock, visible from different ClarityNLP processes
+_LOCK_NAME = 'ClarityNLP_Mongo_Lock'
 
 # wait as long as this many seconds to acquire the lock
 _LOCK_WAIT_SECS = 10.0
@@ -115,24 +114,27 @@ class PhenotypeTask(luigi.Task):
                 wrote_docs = False
                 for tries in range(1, _MAX_ATTEMPTS):
 
-                    got_it = _shared_value.acquire(block=True, timeout = _LOCK_WAIT_SECS)
-                    if got_it:
+                    try:
+                        with ILock(_LOCK_NAME, timeout=_LOCK_WAIT_SECS):
 
-                        # force writes to disk by locking the Mongo admin database
-                        log('*** Job {0}: FORCING MONGO WRITES ***'.format(self.job))
+                            # only a SINGLE ClarityNLP process can execute this code at any time
+                            
+                            # force writes to disk by locking the Mongo admin database
+                            log('*** Job {0}: FORCING MONGO WRITES ***'.format(self.job))
                         
-                        admin_db = client['admin']
-                        fsync_result = admin_db.command('fsync', lock=True)
-                        assert 1 == fsync_result['lockCount']
-                        unlock_result = admin_db.command('fsyncUnlock')
-                        assert 0 == unlock_result['lockCount']
-                        
-                        log('*** Job {0}: ALL MONGO WRITES COMPLETED ***'.format(self.job))
+                            admin_db = client['admin']
+                            fsync_result = admin_db.command('fsync', lock=True)
+                            assert 1 == fsync_result['lockCount']
+                            unlock_result = admin_db.command('fsyncUnlock')
+                            assert 0 == unlock_result['lockCount']
+                            
+                            log('*** Job {0}: ALL MONGO WRITES COMPLETED ***'.format(self.job))
 
-                        wrote_docs = True
+                            wrote_docs = True
 
-                        # release the lock since the docs have now been written
-                        _shared_value.release()
+                    except ILockException:
+                        # timed out before acquiring the lock, will try again
+                        pass
 
                     if wrote_docs:
                         break

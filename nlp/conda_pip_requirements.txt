@@ -1,2 +1,3 @@
+ilock==1.0.3
 redis
 # cld2-cffi==0.1.4
