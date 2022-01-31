@@ -25,7 +25,7 @@ from tasks.task_utilities import BaseTask
 import data_access.cql_result_parser as crp
 from claritynlp_logging import log, ERROR, DEBUG
 
-    
+
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 19
 
@@ -36,10 +36,10 @@ _TRACE = True
 
 _FHIR_VERSION          = 'fhir_version'            # "DSTU2" or "STU3"
 _FHIR_CQL_EVAL_URL     = 'cql_eval_url'            # https://gt-apps.hdap.gatech.edu/cql/evaluate
-_FHIR_PATIENT_ID       = 'patient_id'              # 
+_FHIR_PATIENT_ID       = 'patient_id'              #
 _FHIR_DATA_SERVICE_URI = 'fhir_data_service_uri'   # https://apps.hdap.gatech.edu/gt-fhir/fhir/
-_FHIR_AUTH_TYPE        = 'fhir_auth_type'          # 
-_FHIR_AUTH_TOKEN       = 'fhir_auth_token'         # 
+_FHIR_AUTH_TYPE        = 'fhir_auth_type'          #
+_FHIR_AUTH_TOKEN       = 'fhir_auth_token'         #
 _FHIR_TERMINOLOGY_SERVICE_URI      = 'fhir_terminology_service_uri'      # https://cts.nlm.nih.gov/fhir/
 _FHIR_TERMINOLOGY_SERVICE_ENDPOINT = 'fhir_terminology_service_endpoint' # Terminology Service Endpoint
 _FHIR_TERMINOLOGY_USER_NAME        = 'fhir_terminology_user_name'        # username
@@ -100,7 +100,7 @@ def _sort_by_datetime_desc(result_list):
                 datetime_list.append( (dt, i) )
             else:
                 no_datetime_list.append(i)
-            
+
     datetime_list = sorted(datetime_list, key=lambda x: x[0], reverse=True)
 
     earliest = None
@@ -123,7 +123,7 @@ def _sort_by_datetime_desc(result_list):
     # then sorted timestamped results
     for obj, index in datetime_list:
         new_results.append(result_list[index])
-    
+
     assert len(new_results) == len(result_list)
     return (new_results, earliest, latest)
 
@@ -139,12 +139,12 @@ def _json_to_objs(json_obj):
         log('CQLExecutionTask: Calling _json_to_objs...')
 
     KEY_RESULT_TYPE = 'resultType'
-        
+
     results = []
 
     # assumes we either have a list of objects or a single obj
     obj_type = type(json_obj)
-    
+
     if list == obj_type:
         if _TRACE:
             log('\tfound list of length {0}'.format(len(json_obj)))
@@ -174,10 +174,10 @@ def _json_to_objs(json_obj):
     if _TRACE:
         log('\tThere are {0} results after top-level decode'.
               format(len(results)))
-                
+
     if 0 == len(results):
         return (results, None, None)
-                
+
     # check for presence of the 'error' key in the Patient resource
     # if present, FHIR server returned no useful data
     for obj in results:
@@ -187,7 +187,7 @@ def _json_to_objs(json_obj):
                 if _KEY_ERROR in obj:
                     log('\n*** CQLExecutionTask: ERROR KEY FOUND IN PATIENT RESOURCE ***\n')
                     return (None, None, None)
-                
+
     # sort by datetime from most to least recent
     # element[0] is the patient resource
     results, earliest, latest = _sort_by_datetime_desc(results)
@@ -219,7 +219,7 @@ def _to_result_obj(obj):
         'http://hl7.org/fhir/sid/icd-10-nl':'ICD-10',
         'http://hl7.org/fhir/sid/icd-10-cm':'ICD-10'
     }
-        
+
     KEY_RC = 'result_content'
     KEY_CODE = 'code_coding_0_code'
     KEY_CODESYS = 'code_coding_0_system'
@@ -237,7 +237,7 @@ def _to_result_obj(obj):
                 result_str = result.isoformat()
             else:
                 result_str = result
-            
+
         result_display_obj = {
             'date': '',
             'result_content':result_str,
@@ -251,7 +251,7 @@ def _to_result_obj(obj):
 
         obj[_KEY_RES_DISP] = result_display_obj
         return obj
-    
+
     # insert the display/formatting info
     assert _KEY_RT in obj
     resource_type = obj[_KEY_RT]
@@ -271,7 +271,7 @@ def _to_result_obj(obj):
         'sentence':'',
         'highlights':[value_name]
     }
-        
+
     if _RT_PATIENT == resource_type:
         if 'birthDate' in obj:
             date = obj['birthDate']
@@ -291,7 +291,7 @@ def _to_result_obj(obj):
             code = obj[KEY_CODE]
 
         result_display_obj[KEY_RC] = '{0}\n{1}: {2}'.format(value_name, codesys, code)
-            
+
     elif _RT_ENCOUNTER == resource_type:
         identifier = ''
         subject_ref = ''
@@ -306,7 +306,7 @@ def _to_result_obj(obj):
         if len(name) > 0:
             value += '\n{0}'.format(name)
         result_display_obj[KEY_RC] = value
-        
+
     elif _RT_OBSERVATION == resource_type:
         value = ''
         units = ''
@@ -321,10 +321,10 @@ def _to_result_obj(obj):
         #result_display_obj['highlights']:[value_name, value, units]
         result_display_obj[KEY_RC] = '{0} {1}'.format(value, units)
         result_display_obj['highlights']:[value, units]
-        
+
         # explicitly set report_text field for Observation resources
         obj['report_text'] = '{0}: {1} {2}'.format(value_name, value, units)
-        
+
     elif _RT_MED_STMT == resource_type:
         if 'effectiveDateTime' in obj:
             date = obj['effectiveDateTime']
@@ -335,15 +335,27 @@ def _to_result_obj(obj):
             #    end = obj['effectivePeriod_end']
             #    date += ' to {0}'.format(end)
         result_display_obj['date'] = date
-        
-    elif _RT_MED_ORDER == resource_type:       
+        rcs_system, rcs_code, rcs_display, rcs_dose_value, rcs_dose_unit = ''
+        if 'medicationCodeableConcept_coding_0_system' in obj:
+            rcs_system = obj['medicationCodeableConcept_coding_0_system']
+        if 'medicationCodeableConcept_coding_0_code' in obj:
+            rcs_code = obj['medicationCodeableConcept_coding_0_code']
+        if 'medicationCodeableConcept_coding_0_display' in obj:
+            rcs_display = obj['medicationCodeableConcept_coding_0_display']
+        if 'dosage_0_doseQuantity_value' in obj:
+            rcs_dose_value = obj['dosage_0_doseQuantity_value']
+        if 'dosage_0_doseQuantity_unit' in obj:
+            rcs_dose_unit = obj['dosage_0_doseQuantity_unit']
+        result_display_obj[KEY_RC] = f'{rcs_system}^{rcs_code}^{rcs_display} {rcs_dose_value} {rcs_dose_unit}'
+
+    elif _RT_MED_ORDER == resource_type:
         if 'dateWritten' in obj:
             date = obj['dateWritten']
         if 'dateEnded' in obj:
             end = obj['dateEnded']
             date += ' to {0}'.format(end)
         result_display_obj['date'] = date
-        
+
     elif _RT_MED_ADMIN == resource_type:
         if 'effectiveDateTime' in obj:
             date = obj['effectiveDateTime']
@@ -378,7 +390,7 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
     # treat empty strings as None
     if str == type(value) and 0 == len(value):
         value = None
-            
+
     # echo in job status and in log file
     msg = 'CQLExecutionTask: {0} == {1}'.format(str_variable_name, value)
     data_access.update_job_status(job_id,
@@ -387,7 +399,7 @@ def _get_custom_arg(str_key, str_variable_name, job_id, custom_arg_dict):
                                   msg)
     # write msg to log file
     log(msg)
-    
+
     return value
 
 
@@ -400,14 +412,14 @@ def _get_datetime_window(custom_args, data_earliest, data_latest):
     """
 
     datetime_start = None
-    datetime_end = None    
-    
+    datetime_end = None
+
     if _ARG_TIME_START in custom_args:
         time_start = custom_args[_ARG_TIME_START]
         datetime_start = tc.parse_time_command(time_start,
                                                data_earliest,
                                                data_latest)
-        
+
     if _ARG_TIME_END in custom_args:
         time_end = custom_args[_ARG_TIME_END]
         datetime_end = tc.parse_time_command(time_end,
@@ -417,7 +429,7 @@ def _get_datetime_window(custom_args, data_earliest, data_latest):
     if _TRACE:
         log('\n*** datetime_start: {0}'.format(datetime_start))
         log('***   datetime_end: {0}'.format(datetime_end))
-        
+
     return (datetime_start, datetime_end)
 
 
@@ -436,7 +448,7 @@ def _apply_datetime_filter(samples, t0, t1):
 
     if 0 == len(samples):
         return []
-    
+
     results = []
     for s in samples:
 
@@ -464,10 +476,10 @@ def _apply_value_filter(str_value_filter, result_list):
     """
 
     str_op = str_value_filter.lower()
-    
+
     filter_value = None
     filter_result = None
-    
+
     if str_op.startswith('min'):
         # find minimum value of all results with a 'value' field
         for r in result_list:
@@ -490,19 +502,19 @@ def _apply_value_filter(str_value_filter, result_list):
         return result_list
     else:
         return [filter_result]
-                
+
 
 ###############################################################################
 class CQLExecutionTask(BaseTask):
-    
+
     task_name = "CQLExecutionTask"
 
     # VERY IMPORTANT to prevent parallel execution of this task, to avoid
     # sending lots of identical HTTP POSTs to the CQL Engine
     parallel_task = False
-        
+
     def run_custom_task(self, temp_file, mongo_client: MongoClient):
-        
+
         job_id = str(self.job)
 
         # get the FHIR Version
@@ -709,7 +721,7 @@ class CQLExecutionTask(BaseTask):
 
         if str_value_filter is not None:
             results = _apply_value_filter(str_value_filter, results)
-        
+
         for obj in results:
 
             if obj is None:
@@ -724,7 +736,7 @@ class CQLExecutionTask(BaseTask):
 if __name__ == '__main__':
 
     # for command-line testing only
-    
+
     parser = argparse.ArgumentParser(
         description='test CQL Engine result decoding locally')
 
@@ -746,7 +758,7 @@ if __name__ == '__main__':
 
     if 'debug' in args and args.debug:
         crp.enable_debug()
-        
+
     with open(filepath, 'rt') as infile:
         json_string = infile.read()
         json_data = json.loads(json_string)
@@ -761,9 +773,9 @@ if __name__ == '__main__':
             #     results = _apply_value_filter(str_value_filter, results)
             #     print('filtered to {0} results'.format(len(results)))
 
-            
+
             for counter, obj in enumerate(results):
-                
+
                 if obj is None:
                     continue
 
