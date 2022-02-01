@@ -337,7 +337,11 @@ def _to_result_obj(obj):
             #    end = obj['effectivePeriod_end']
             #    date += ' to {0}'.format(end)
         result_display_obj['date'] = date
-        rcs_system, rcs_code, rcs_display, rcs_dose_value, rcs_dose_unit = ''
+        rcs_system = ''
+        rcs_code = ''
+        rcs_display = ''
+        rcs_dose_value = ''
+        rcs_dose_unit = ''
         if 'medicationCodeableConcept_coding_0_system' in obj:
             rcs_system = obj['medicationCodeableConcept_coding_0_system']
         if 'medicationCodeableConcept_coding_0_code' in obj:
