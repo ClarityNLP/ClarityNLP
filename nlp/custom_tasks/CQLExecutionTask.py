@@ -326,6 +326,9 @@ def _to_result_obj(obj):
 
         # explicitly set report_text field for Observation resources
         obj['report_text'] = '{0}: {1} {2}'.format(value_name, value, units)
+        # fix for undefined Quantity codes
+        if 'valueQuantity_code' not in obj:
+            obj['valueQuantity_code']=units
 
     elif _RT_MED_STMT == resource_type:
         if 'effectiveDateTime' in obj:
