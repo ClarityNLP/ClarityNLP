@@ -317,6 +317,8 @@ def _to_result_obj(obj):
         #    units = obj[crp.KEY_UNITS]
         if 'valueQuantity_code' in obj:
             units = obj['valueQuantity_code']
+        elif 'valueQuantity_unit' in obj:
+            units = obj['valueQuantity_unit']
         #result_display_obj[KEY_RC] = '{0}: {1} {2}'.format(value_name, value, units)
         #result_display_obj['highlights']:[value_name, value, units]
         result_display_obj[KEY_RC] = '{0} {1}'.format(value, units)
