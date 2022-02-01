@@ -337,22 +337,16 @@ def _to_result_obj(obj):
             #    end = obj['effectivePeriod_end']
             #    date += ' to {0}'.format(end)
         result_display_obj['date'] = date
-        rcs_system = ''
-        rcs_code = ''
         rcs_display = ''
         rcs_dose_value = ''
         rcs_dose_unit = ''
-        if 'medicationCodeableConcept_coding_0_system' in obj:
-            rcs_system = obj['medicationCodeableConcept_coding_0_system']
-        if 'medicationCodeableConcept_coding_0_code' in obj:
-            rcs_code = obj['medicationCodeableConcept_coding_0_code']
         if 'medicationCodeableConcept_coding_0_display' in obj:
             rcs_display = obj['medicationCodeableConcept_coding_0_display']
         if 'dosage_0_doseQuantity_value' in obj:
             rcs_dose_value = obj['dosage_0_doseQuantity_value']
         if 'dosage_0_doseQuantity_unit' in obj:
             rcs_dose_unit = obj['dosage_0_doseQuantity_unit']
-        result_display_obj[KEY_RC] = f'{rcs_system}^{rcs_code}^{rcs_display} {rcs_dose_value} {rcs_dose_unit}'
+        result_display_obj[KEY_RC] = f'{rcs_display} {rcs_dose_value} {rcs_dose_unit}'
 
     elif _RT_MED_ORDER == resource_type:
         if 'dateWritten' in obj:
