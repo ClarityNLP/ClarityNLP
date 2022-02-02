@@ -7,7 +7,7 @@ if (db.getUser(user) == null) {
   db.createUser({user: user, pwd: passwd, roles: ["dbOwner"]});
 }
 if (db.getUser("$MONGO_SMARTHUB_USERNAME") == null) { 
-  use $SMARTHUB_MONGO_DATABASE;
+  use $MONGO_SMARTHUB_DATABASE;
   db.createUser({ user: "$MONGO_SMARTHUB_USERNAME", pwd: "$MONGO_SMARTHUB_PASSWORD", roles: [ { role: "readWrite", db: "$MONGO_SMARTHUB_DATABASE" } ]});
 }
 EOF
