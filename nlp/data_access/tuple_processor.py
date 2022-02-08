@@ -4,7 +4,7 @@ Tuple processing code with test data for Mongo.
 Run this code as follows:
 
     1. Launch mongodb in a separate window:
-  
+
         mongod --config /usr/local/etc/mongod.conf
 
     3. Load test data below into Mongo and run:
@@ -90,7 +90,7 @@ _str_define = r'\bdefine\s+(final\s+)?(?P<nlpql_feature>[^:]+):'
 _regex_define = re.compile(_str_define, re.IGNORECASE)
 
 # set to True to enable debug printout
-_TRACE = False
+_TRACE = True
 
 
 ###############################################################################
@@ -109,7 +109,7 @@ def _cleanup_db(db_name, mongo_obj, mongo_client_obj):
     if mongo_client_obj is not None:
         mongo_client_obj.drop_database(db_name)
 
-                
+
 ###############################################################################
 def insert_docs(mongo_obj, doc_list):
     """
@@ -122,8 +122,8 @@ def insert_docs(mongo_obj, doc_list):
         result = None
 
     return result is not None
-    
-    
+
+
 ###############################################################################
 def _load_test_data(db_name, mongo_obj, mongo_client_obj):
 
@@ -189,23 +189,23 @@ def _load_test_data(db_name, mongo_obj, mongo_client_obj):
 
     if not insert_docs(mongo_obj, docs):
         return False
-    
+
     # Example1_Step1 result docs
     # these are the patients who satisfied (hasFever AND (hasDyspnea OR hasTachycardia))
     docs = [
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'097b', 'doc2':'30e1'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'0d45', 'doc2':'30e2'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'0d46', 'doc2':'30e3'},
-        {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'097b', 'doc2':'30e4'},         
+        {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'097b', 'doc2':'30e4'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'0d45', 'doc2':'3efa'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'0d46', 'doc2':'868c'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'097b', 'doc2':'868d'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'0d45', 'doc2':'8f19'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'0d46', 'doc2':'92f6'},
-        {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'097b', 'doc2':'998c'},         
+        {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'097b', 'doc2':'998c'},
         {'job_id':_JOB_ID, 'subject':'1', 'nlpql_feature':'Example1_Step1', 'doc1':'0d45', 'doc2':'998d'},
         {'job_id':_JOB_ID, 'subject':'2', 'nlpql_feature':'Example1_Step1', 'doc1':'0a03', 'doc2':'7abc'},
-        {'job_id':_JOB_ID, 'subject':'2', 'nlpql_feature':'Example2_Step1', 'doc1':'0a04', 'doc2':'7abd'},         
+        {'job_id':_JOB_ID, 'subject':'2', 'nlpql_feature':'Example2_Step1', 'doc1':'0a04', 'doc2':'7abd'},
         {'job_id':_JOB_ID, 'subject':'2', 'nlpql_feature':'Example2_Step1', 'doc1':'0a05', 'doc2':'7abe'},
    ]
 
@@ -219,12 +219,12 @@ def _load_test_data(db_name, mongo_obj, mongo_client_obj):
         {'job_id':_JOB_ID, 'subject':'3', 'nlpql_feature':'ProstateVolumeMeasurement_Step1', 'other':'2'},
         {'job_id':_JOB_ID, 'subject':'4', 'nlpql_feature':'ProstateVolumeMeasurement_Step1', 'other':'3'}
     ]
-    
+
     if not insert_docs(mongo_obj, docs):
         return False
-    
+
     return True
-    
+
 
 ###############################################################################
 def parse_tuple_definition(tuple_def_string):
@@ -232,7 +232,7 @@ def parse_tuple_definition(tuple_def_string):
     Parse the tuple def, clean up any concatenated strings, and return
     the parser output. If there is a parse error, return None.
     """
-    
+
     lexer = TupleLexer()
     parser = TupleParser()
     try:
@@ -251,7 +251,7 @@ def _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def_string):
     ObjectIds. The _id values in the list represent those docs for which
     the nlpql_feature field matches that of the tuple 'define' statement.
     """
-    
+
     # query mongo for all docs with 'nlpql_feature' == tuple_feature
     query = {
         'job_id' : job_id,
@@ -271,7 +271,7 @@ def _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def_string):
 
     return patient_map
 
-        
+
 ###############################################################################
 def _get_feature_lists(mongo_obj, job_id):
     """
@@ -279,7 +279,7 @@ def _get_feature_lists(mongo_obj, job_id):
 
     if _TRACE:
         DISPLAY('Calling _get_feature_lists...')
-    
+
     # find all tuple definition docs
     tuple_def_docs = mongo_obj.find(
         {
@@ -312,7 +312,7 @@ def _get_feature_lists(mongo_obj, job_id):
         # parser = TupleParser()
         # try:
         #     parse_result = parser.parse(lexer.tokenize(tuple_def))
-        #     #DISPLAY('raw parse result: ->{0}<-'.format(parse_result))            
+        #     #DISPLAY('raw parse result: ->{0}<-'.format(parse_result))
         # except EOFError:
         #     parse_result = None
         #     DISPLAY('*** ERROR: tuple_processor: tuple parse failed ***')
@@ -322,7 +322,7 @@ def _get_feature_lists(mongo_obj, job_id):
 
         # parser output becomes the new tuple definition
         tuple_def = parse_result
-        
+
         # build feature list
         feature_set = set()
         iterator = _regex_dotted_identifier.finditer(tuple_def)
@@ -340,10 +340,10 @@ def _get_feature_lists(mongo_obj, job_id):
         feature_lists.append(feature_list)
         tuple_features.append(tuple_feature)
         tuple_defs.append(tuple_def)
-        
+
     if _TRACE:
         DISPLAY('\tReturning from _get_feature_lists...')
-        
+
     return feature_lists, tuple_features, tuple_defs
 
 
@@ -361,10 +361,10 @@ def _to_minimal_representation(unique_value_map):
     meta = sorted(meta, key=lambda x: x[0], reverse=True)
     # max length is the length of the list at meta[0]
     max_len = meta[0][0]
-    
+
     new_lists = [ [] for i in range(max_len)]
 
-    features_in_order = []    
+    features_in_order = []
     for num, feature in meta:
         features_in_order.append(feature)
         values = list(unique_value_map[feature])
@@ -394,7 +394,7 @@ def _to_output_tuples(tuple_def, feature_list, value_tuples):
         DISPLAY('\t   Tuple def: {0}'.format(tuple_def))
         DISPLAY('\tfeature_list: {0}'.format(feature_list))
         DISPLAY('\tvalue_tuples: {0}'.format(value_tuples))
-    
+
     strings = []
     for tup in value_tuples:
         s = tuple_def
@@ -415,9 +415,9 @@ def _to_output_tuples(tuple_def, feature_list, value_tuples):
 ###############################################################################
 def process_tuples(mongo_obj, job_id):
     """
-    
+
     """
-    
+
     feature_lists, tuple_features, tuple_defs = _get_feature_lists(mongo_obj,
                                                                    job_id)
 
@@ -433,7 +433,7 @@ def process_tuples(mongo_obj, job_id):
 
     if _TRACE:
         DISPLAY('Calling process_tuples...')
-        
+
     all_writes_ok = True
     for f_index in range(len(feature_lists)):
 
@@ -443,7 +443,7 @@ def process_tuples(mongo_obj, job_id):
 
         patient_map = _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def)
 
-        docs_updated = 0        
+        docs_updated = 0
         for patient_id, doc_list in patient_map.items():
             # DISPLAY('{0}: {1}'.format(patient_id, doc_list))
             if _TRACE:
@@ -451,12 +451,12 @@ def process_tuples(mongo_obj, job_id):
                       format(patient_id, len(doc_list), tuple_feature))
 
             assert 1 == len(feature_list)
-            
+
             feature, field = feature_list[0]
             for doc in doc_list:
                 # extract relevant values needed later
                 obj_id = doc['_id']
-                
+
                 value = doc[field]
                 if type(value) == list:
                     assert 1 == len(value)
@@ -501,7 +501,7 @@ def process_tuples(mongo_obj, job_id):
 
                 if _TRACE:
                     DISPLAY('\tUpdating mongo doc with _id == {0}: tuple: {1}'.format(obj_id, tuple_string))
-                    
+
                 update_result = mongo_obj.update_one(
                 {'_id':obj_id},
                     {"$set":{
@@ -518,9 +518,9 @@ def process_tuples(mongo_obj, job_id):
         if _TRACE:
             DISPLAY('\n\tUpdated {0} docs with tuple feature "{1}"'.
                     format(docs_updated, tuple_feature))
-                
+
     return all_writes_ok
-                
+
 
 ###############################################################################
 def get_tuple_definition(nlpql_define_statement):
@@ -528,7 +528,7 @@ def get_tuple_definition(nlpql_define_statement):
     Scan the NLPQL "define" statement and look for a tuple definition. If no
     tuple def is found, return the statement unmodified.
 
-    If a tuple def is found, extract the tuple def from the statement and 
+    If a tuple def is found, extract the tuple def from the statement and
     modify the NLPQL feature by appending _NLPQL_FEATURE_SUFFIX to the feature
     name. Also generate a tuple definition document and return it. The tuple
     definition documents have the 'job_id' field set to None, so the job_id
@@ -559,10 +559,10 @@ def get_tuple_definition(nlpql_define_statement):
 
     if _TRACE:
         DISPLAY('Calling get_tuple_definition...')
-    
+
     # remove repeated whitespace
     statement = re.sub(r'\s+', ' ', nlpql_define_statement)
-    
+
     tuple_string  = None
     define_string = None
 
@@ -571,7 +571,7 @@ def get_tuple_definition(nlpql_define_statement):
     if not match:
         # no tuple, return original statement
         return statement, None
-    
+
     tuple_string = match.group('tuple')
     start = match.start('tuple')
     end   = match.end('tuple')
@@ -624,21 +624,21 @@ def get_tuple_definition(nlpql_define_statement):
         for k,v in tuple_def_doc.items():
             DISPLAY('\t{0} => {1}'.format(k,v))
         DISPLAY()
-    
+
     return new_statement, tuple_def_doc
-    
+
 
 ###############################################################################
 def modify_nlpql(nlpql_text):
     """
-    Modify the NLPQL text to strip tuple definitions and create tuple 
+    Modify the NLPQL text to strip tuple definitions and create tuple
     definition documents. Return the modified NLPQL text and the tuple def
     documents.
     """
 
     define_statement_data = []
 
-    # find the tuple-containing "define" statements in the nlpql text    
+    # find the tuple-containing "define" statements in the nlpql text
     iterator = _regex_nlpql_define.finditer(nlpql_text)
     for match in iterator:
         statement = match.group()
@@ -668,7 +668,7 @@ def modify_nlpql(nlpql_text):
     new_text = ' '.join(new_text)
 
     return new_text, tuple_def_docs
-    
+
 
 ###############################################################################
 def insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
@@ -676,11 +676,11 @@ def insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
     assert tuple_def_docs is not None
     if 0 == len(tuple_def_docs):
         return True
-    
+
     # insert the job_id into each tuple def doc
     for tdd in tuple_def_docs:
         tdd['job_id'] = job_id
-    
+
     if not insert_docs(mongo_obj, tuple_def_docs):
         DISPLAY('\ttuple processor: failed to insert tuple def docs')
         DISPLAY('\ttuple def docs: ')
@@ -702,9 +702,9 @@ if __name__ == '__main__':
             Tuple {
                 "QuestionConcept" : "22112145",
                 "Question" : "How large was was the prostatic mass?",
-                "Answer" : ProstateVolumeMeasurement.dimension_X + " x " + 
-                           ProstateVolumeMeasurement.dimension_Y + " x " + 
-                           ProstateVolumeMeasurement.dimension_Z + " "   + 
+                "Answer" : ProstateVolumeMeasurement.dimension_X + " x " +
+                           ProstateVolumeMeasurement.dimension_Y + " x " +
+                           ProstateVolumeMeasurement.dimension_Z + " "   +
                            ProstateVolumeMeasurement.units
             }
         where ProstateVolumeMeasurement.dimension_X > 0;
@@ -732,7 +732,7 @@ if __name__ == '__main__':
         # where (HasChickPox OR Temperature.value >= 100.4)
         # """
     ]
-    
+
     parser = argparse.ArgumentParser(
         description='Test program for tuple generation.'
     )
@@ -742,7 +742,7 @@ if __name__ == '__main__':
                         help='show the version string and exit')
     parser.add_argument('-d', '--debug',
                         action='store_true',
-                        help='print debug information to stdout during the run') 
+                        help='print debug information to stdout during the run')
     parser.add_argument('-j', '--jobid',
                        default=_JOB_ID,
                        help='integer job id of a previous ClarityNLP run')
@@ -772,7 +772,7 @@ if __name__ == '__main__':
     db_name = _DB_NAME
     collection_name = _COLLECTION_NAME
     define_statements = TEST_STATEMENTS
-    
+
     if 'version' in args and args.version:
         print(_get_version())
         sys.exit(0)
@@ -794,16 +794,16 @@ if __name__ == '__main__':
         else:
             print('\n*** Missing required --file argument ***')
             sys.exit(-1)
-        
+
     job_id = int(args.jobid)
 
     print('Using database "{0}" and collection "{1}"'.format(db_name,
                                                              collection_name))
-    
+
     #
     # connect to MongoDB (must already be running)
     #
-    
+
     mongohost = args.mongohost
     mongoport = int(args.mongoport)
 
@@ -816,7 +816,7 @@ if __name__ == '__main__':
         print(e)
 
     do_processing = True
-    
+
     # if using clarity, read NLPQL define statements from an NLPQL file
     if 'clarity' in args and args.clarity:
         use_test_db = False
@@ -843,7 +843,7 @@ if __name__ == '__main__':
             print('stripped NLPQL: ')
             print('------------------------------------')
             print(stripped_nlpql)
-            print('------------------------------------')                
+            print('------------------------------------')
             print()
 
         if stripped_nlpql is None and tuple_def_docs is None:
@@ -859,7 +859,7 @@ if __name__ == '__main__':
             if not insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
                 sys.exit(-1)
 
-    # 
+    #
     # load test data into Mongo if not using Clarity
     #
 
@@ -874,8 +874,8 @@ if __name__ == '__main__':
         # Scan the NLPQL statements above for tuples, extract tuple definitions,
         # write the tuple definition documents into Mongo, and return modified
         # NLPQL statements to be sent through the ClarityNLP pipeline.
-        # 
-        
+        #
+
         print()
         for statement in TEST_STATEMENTS:
             new_statement, tuple_def_docs = get_tuple_definition(statement)
@@ -892,7 +892,7 @@ if __name__ == '__main__':
                 # insert tuple definition docs into Mongo
                 if not insert_tuple_def_docs(mongo_obj, tuple_def_docs, job_id):
                     sys.exit(-1)
-            
+
                 # send 'new_statement' through the normal ClarityNLP pipeline
                 if new_statement is not None:
                     if _TRACE:
