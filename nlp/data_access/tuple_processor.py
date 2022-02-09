@@ -248,7 +248,7 @@ def parse_tuple_definition(tuple_def_string):
 def _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def_string):
     """
     The patient map is a dict that maps a patient_id to a list of mongo
-    ObjectIds. The _id values in the list represent those docs for which
+    documents. The docs in the list represent those docs for which
     the nlpql_feature field matches that of the tuple 'define' statement.
     """
 
@@ -445,72 +445,59 @@ def process_tuples(mongo_obj, job_id):
 
         docs_updated = 0
         for patient_id, doc_list in patient_map.items():
-            # DISPLAY('{0}: {1}'.format(patient_id, doc_list))
             if _TRACE:
                 DISPLAY('\n*** Patient {0} has {1} result documents for tuple_feature "{2}" ***.'.
                       format(patient_id, len(doc_list), tuple_feature))
+               
+            if 0 == len(doc_list):
+                # no docs were found for this patient, so nothing to do
+                continue
 
-            assert 1 == len(feature_list)
-
-            feature, field = feature_list[0]
+            # build a tuple string for each doc for this patient in string s
             for doc in doc_list:
-                # extract relevant values needed later
-                obj_id = doc['_id']
+                doc_id = doc['_id']
+                
+                # start with a new tuple def string, and fill in each field.value item
+                s = tuple_def
+                
+                for feature, field in feature_list:
+                    DISPLAY('Building tuple string for doc {0}, feature {1}, field {2}'.
+                            format(doc_id, feature, field))
 
-                value = doc[field]
-                if type(value) == list:
-                    assert 1 == len(value)
-                    value = value[0]
-            #for feature, field in feature_list:
-                #DISPLAY('feature: "{0}"'.format(feature))
-                #DISPLAY('  field: "{0}"'.format(field))
-                # find all (job_id, patient_id, feature) docs
-                # query = {
-                #     'job_id':job_id,
-                #     'subject':patient_id,
-                #     'nlpql_feature':feature
-                # }
-                # feature_doc_cursor = mongo_obj.find(query)
-                # feature_docs = [c for c in feature_doc_cursor]
-                # if _TRACE:
-                #     DISPLAY('\tPatient {0} has {1} result documents for feature {2}.'.
-                #             format(patient_id, len(feature_docs), feature))
-                # # get the field value from each doc and find uniques
-                # for fd in feature_docs:
-                #     assert field in fd
-                #     value = fd[field]
-                #     obj_id = fd['_id']
+                    # the field must be present in the mongo document
+                    assert field in doc
+                    value = doc[field]
+                    if type(value) == list:
+                        # should only have a single value in the list
+                        if len(value) > 1:
+                            DISPLAY('*** UNEXPECTED MULTI-ELEMENT VALUE LIST: {0}'.format(value))
+                        assert 1 == len(value)
+                        value = value[0]
 
-                # compute unique tuple strings for this patient by replacing the
-                # field.value constructs with actual data
-                tuple_strings = _to_output_tuples(tuple_def,
-                                                  [(feature, field)],
-                                                  [(value,)])
+                    # find offset of this feature.field in the tuple def
+                    search_str = '{0}.{1}'.format(feature,field)
+                    offset = s.find(search_str)
+                    assert -1 != offset
+                    s = s[:offset] + str(value) + s[offset + len(search_str):]
 
-                assert 1 == len(tuple_strings)
-                tuple_string = tuple_strings[0]
-                if _TRACE:
-                    DISPLAY('\tOUTPUT TUPLE STRING: ')
-                    DISPLAY('\t\t{0}'.format(tuple_string))
-                    DISPLAY()
-
-                # Update all existing docs by inserting a tuple string into each.
-                # Tile the strings if more strings than objects.
+                tuple_string = s
+                    
+                # Update this doc by inserting the tuple string into it.
                 # Also delete the _NLPQL_FEATURE_SUFFIX from the nlpql_feature.
                 nlpql_feature = tuple_feature[:-len(_NLPQL_FEATURE_SUFFIX)]
 
                 if _TRACE:
-                    DISPLAY('\tUpdating mongo doc with _id == {0}: tuple: {1}'.format(obj_id, tuple_string))
+                    DISPLAY('\tUpdating mongo doc with _id == {0}: tuple: {1}'.format(doc_id, tuple_string))
 
                 update_result = mongo_obj.update_one(
-                {'_id':obj_id},
+                {'_id':doc_id},
                     {"$set":{
                         'tuple':tuple_string,
                         'nlpql_feature':nlpql_feature
                     }}
                 )
                 if 1 != update_result.modified_count:
-                    DISPLAY('\tupdate_one failed for _id {0}'.format(obj_id))
+                    DISPLAY('\tupdate_one failed for _id {0}'.format(doc_id))
                     all_writes_ok = False
                 else:
                     docs_updated += 1
