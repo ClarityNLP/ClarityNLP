@@ -236,6 +236,7 @@ on your system.
 
 **[MacOS]** Use Homebrew to install MongoDB with:
 ::
+   brew tap mongodb/brew
    brew install mongodb-community@4.2
 
 The ``@4.2`` in the installation command specifies the version of the
@@ -251,6 +252,7 @@ assume manual startup, which can be accomplished by opening another terminal
 window and running this command (assumes the default path to the mongo config
 file):
 ::
+   export PATH="$PATH:/usr/local/opt/mongodb-community@4.2/bin"
    mongod --config /usr/local/etc/mongod.conf
 
 After the server initializes it will deactivate the prompt in the terminal
@@ -306,6 +308,9 @@ menu will appear. The button in the lower right corner of the menu can be used
 to start and stop the database server. For now, click the button and stop the
 server, since we need to make a small change to the postgres configuration
 file.
+
+Be sure to follow the third step outlined in the website that configures your
+``$PATH`` to include in-line commands.
 
 **[Ubuntu]** Install postgres with:
 ::
