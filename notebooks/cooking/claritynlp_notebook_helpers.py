@@ -1,6 +1,7 @@
 import configparser
 import json
 import sys
+import time
 import traceback
 from os import path
 
@@ -8,8 +9,8 @@ import psycopg2
 from psycopg2.extras import NamedTupleCursor
 import requests
 
-url = 'http://18.220.133.76:5000/'
-# url = 'http://localhost:5000/'
+# url = 'http://18.220.133.76:5000/'
+url = 'http://localhost:5000/'
 nlpql_url = url + 'nlpql'
 expander_url = url + 'nlpql_expander'
 tester_url = url + 'nlpql_tester'
@@ -62,7 +63,26 @@ def run_nlpql(nlpql):
         luigi = run_result['luigi_task_monitoring']
         print("Job Successfully Submitted")
         print(json.dumps(run_result, indent=4, sort_keys=True))
-        return run_result, main_csv, intermediate_csv, luigi
+        status_endpoint = run_result['status_endpoint']
+        status = requests.get(status_endpoint).json()['status']
+        i = 0
+        timeout_seconds = 180
+        print('Job in progress', end='')
+        while i < timeout_seconds and (status == 'STARTED' or status == 'IN_PROGRESS'):
+            time.sleep(1)
+            status = requests.get(status_endpoint).json()['status']
+            print('.', end='')
+            i += 1
+        print()
+        if i == timeout_seconds:
+            print(f'Job took longer than {timeout_seconds} seconds, timing out.')
+            return {}, '', '', ''
+        elif status != 'COMPLETED':
+            print(f'Error in processing job: {status}')
+            return {}, '', '', ''
+        else:
+            print('Job successfully completed!')
+            return run_result, main_csv, intermediate_csv, luigi
     else:
         return {}, '', '', ''
 
