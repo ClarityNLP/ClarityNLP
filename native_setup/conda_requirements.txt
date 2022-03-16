@@ -23,5 +23,5 @@ sphinx_rtd_theme==0.4.3
 textacy==0.7.0
 typing==3.6.2
 dateparser==0.7.1
-
+matplotlib-venn==0.11.6
 
