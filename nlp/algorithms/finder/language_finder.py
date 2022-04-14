@@ -151,7 +151,6 @@ _languages = sorted(_LANGUAGES, key=lambda x: len(x), reverse=True)
 _languages = [re.escape(s) for s in _languages]
 _str_language = r'\b(' + r'|'.join(_languages) + r')\b'
 
-fix this so that it recognizes three languages
 #_str_languages = r'(?P<languages>(' + _str_language + r'( )?(and)?)+)'
 _str_languages = r'(?P<languages>(' + _str_language + r'( )?(and)?)+)'
 
