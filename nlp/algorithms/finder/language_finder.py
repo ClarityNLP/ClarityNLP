@@ -8,6 +8,7 @@ Module for finding a patient's primary language.
 import os
 import re
 import sys
+from collections import namedtuple
 
 if __name__ == '__main__':
     # interactive testing
@@ -25,16 +26,28 @@ try:
     import finder_overlap as overlap
 except:
     from algorithms.finder import finder_overlap as overlap
-    
-        
+
+
+LANGUAGE_TUPLE_FIELDS = [
+    'sentence',
+    'language1',
+    'language2',
+    'language3',
+]
+
+LanguageTuple = namedtuple('LanguageTuple', LANGUAGE_TUPLE_FIELDS)
+
+# set default value of all fields to None
+LanguageTuple.__new__.__defaults__ = (None,) * len(LanguageTuple._fields)
+
+
 ###############################################################################
 
 _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 
 # set to True to enable debug output
-_TRACE = True
-
+_TRACE = False
 
 # some world languages and other forms that have been seen in clinical notes
 _LANGUAGES = [
@@ -151,8 +164,13 @@ _languages = sorted(_LANGUAGES, key=lambda x: len(x), reverse=True)
 _languages = [re.escape(s) for s in _languages]
 _str_language = r'\b(' + r'|'.join(_languages) + r')\b'
 
-#_str_languages = r'(?P<languages>(' + _str_language + r'( )?(and)?)+)'
-_str_languages = r'(?P<languages>(' + _str_language + r'( )?(and)?)+)'
+# match a single language
+_regex_language = re.compile(_str_language, re.IGNORECASE)
+
+
+# recognize multiple languages separated by 'and', 'or', 'nor', or space
+_str_languages = r'(?P<languages>((' + _str_language + r'(and|n?or| ))+)?' +\
+    r'(and|n?or| )?[ ]?' + _str_language + r')'
 
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
@@ -163,8 +181,8 @@ _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
 # words used to state that somebody does NOT speak a language
 # (apostrophes are removed in _cleanup)
-_str_neg_words = r'\b(without|other than|lacks|unable to|cannot|cant|not|no)\b'
-_str_neg_language = _str_neg_words + _str_words + _str_language
+_str_neg_words = r'\b(without|other than|lacks|understands neither|unable to|cannot|cant|not|no)\b'
+_str_neg_language = _str_neg_words + _str_words + _str_languages
 _regex_neg_language = re.compile(_str_neg_language, re.IGNORECASE)
 
 # ... English as the primary language
@@ -223,6 +241,15 @@ def _regex_match(sentence, regex_list):
     """
     """
 
+    sentence_save = sentence
+    
+    # erase any negated languages from the sentence, then attempt regexes
+    neg_match = _regex_neg_language.search(sentence)
+    if neg_match:
+        if _TRACE:
+            print('NEG LANGUAGE MATCH: "{0}"'.format(neg_match.group()))
+        sentence = sentence[:neg_match.start()] + sentence[neg_match.end():]
+    
     candidates = []
     for i, regex in enumerate(regex_list):
         iterator = regex.finditer(sentence)
@@ -233,15 +260,10 @@ def _regex_match(sentence, regex_list):
             end = start + len(match_text)
 
             # isolate the matching language(s)
-            language_match = match.group('languages').strip()
-
-            # could have whitespace, so strip
-            neg_match = _regex_neg_language.search(match_text)
-            if neg_match:
-                print('\tNEG LANGUAGE MATCH: "{0}"'.format(neg_match.group()))
-
+            language_text = match.group('languages').strip()
+            
             candidates.append(overlap.Candidate(
-                start, end, match_text, regex, other=None
+                start, end, match_text, regex, other=language_text
             ))
 
     # sort the candidates in DECREASING order of length
@@ -278,14 +300,47 @@ def _regex_match(sentence, regex_list):
 ###############################################################################
 def run(sentence):
 
+    results = []
     cleaned_sentence = _cleanup(sentence)
 
-    print(cleaned_sentence)
+    if _TRACE:
+        print(cleaned_sentence)
     
     candidates = _regex_match(cleaned_sentence, _REGEXES)
-        
-    
-    
+
+    for c in candidates:
+        # extract each language from matching string of languages, stored in c.other
+        language_list = []
+        it2 = _regex_language.finditer(c.other)
+        for match2 in it2:
+            language_text = match2.group().rstrip()
+            language_list.append(language_text)
+
+        num_languages = len(language_list)
+        assert num_languages > 0
+
+        if num_languages >= 3:
+            obj = LanguageTuple(
+                sentence = cleaned_sentence,
+                language1 = language_list[0],
+                language2 = language_list[1],
+                language3 = language_list[2]
+            )
+        elif num_languages >= 2:
+            obj = LanguageTuple(
+                sentence = cleaned_sentence,
+                language1 = language_list[0],
+                language2 = language_list[1]
+            )
+        else:
+            obj = LanguageTuple(
+                sentence = cleaned_sentence,
+                language1 = language_list[0]
+            )
+
+        results.append(obj)
+
+    return results
 
 ###############################################################################
 def get_version():
@@ -316,12 +371,17 @@ if __name__ == '__main__':
         'primary language creole',
         'primary language french, swahili, some broken english',
         'primary language of the caregiver other than english',
+        'she understands neither english nor spanish',
+        'english or spanish as primary language',
         'primary languages are serbo-croatian, sign language, and swahili',
         
     ]
 
     for sentence in SENTENCES:
-        result = run(sentence)
+        print(sentence)
+        results = run(sentence)
+        for r in results:
+            print('\t{0}'.format(r))
 
 """
 
