@@ -192,7 +192,7 @@ _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
 # words used to state that somebody does NOT speak a language
 # (apostrophes are removed in _cleanup)
-_str_neg_words = r'\b(without|other than|lacks|understands neither|unable to|cannot|cant|not|no)\b'
+_str_neg_words = r'\b(without|other than|lacks|understands neither|unable to|cannot|cant|not|non?)\b'
 _str_neg_language = _str_neg_words + _str_words + _str_languages
 _regex_neg_language = re.compile(_str_neg_language, re.IGNORECASE)
 
@@ -204,9 +204,25 @@ _regex_primary1 = re.compile(_str_primary1, re.IGNORECASE)
 _str_primary2 = r'\bprimary languages?\b' + _str_words + _str_languages
 _regex_primary2 = re.compile(_str_primary2, re.IGNORECASE)
 
+# ....needs a Spanish interpreter...
+_str_interp = r'(?P<languages>' + _str_language + r')' + _str_words +\
+    r'\b(interpret(e|o)r|translat(e|o)r)\b'
+_regex_interp = re.compile(_str_interp, re.IGNORECASE)
+
+# ....Mandarin speaking woman...
+_str_l_speaking = _str_languages + r'\s?' + r'\bspeaking\b'
+_regex_l_speaking = re.compile(_str_l_speaking, re.IGNORECASE)
+
+# ...patient only speaks French...
+_str_speak = r'\b(speak(ing|s)?|spoken?)\b' + _str_words + _str_languages
+_regex_speak = re.compile(_str_speak, re.IGNORECASE)
+
 _REGEXES = [
     _regex_primary1,
     _regex_primary2,
+    _regex_interp,
+    _regex_l_speaking,
+    _regex_speak,
 ]
 
 _CHAR_SPACE = ' '
@@ -385,6 +401,56 @@ if __name__ == '__main__':
         'she understands neither english nor spanish',
         'english or spanish as primary language',
         'primary languages are serbo-croatian, sign language, and swahili',
+
+        'spanish translator',
+        'seen with farsi interpreter',
+        'farsi translator in to evaluate pt',
+        'sign language translator at bedside',
+        'russian translator @ bedside',
+        'communicates via sign language interpreter',
+        'with aid of japanese interpreter',
+        'met with family and mandarin interpreter',
+        'met parents with mandarin interpreter',
+        'farsi interpreter present',
+        'patient was deaf, and an american sign language interpreter was utilized',
+        'american sign language interpreter present',
+        'per sign language interpreter',
+        'sign-language interpreter',
+        'sign language interpreter was called and translated',
+        'needs a russian sign language interpreter',
+
+        'are chinese speaking and will require an interpreter',
+        '52 yr old mandarin speaking woman',
+        'mandarin speaking only',
+        'neuro-mandarin speaking only',
+        'pt is farsi speaking only',
+        'spanish speaking primarily',
+        'pt is russian speaking primarily, understands some english',
+        'farsi speaking with little english understanding',
+        'persian (farsi) speaking only',
+        '52 yo woman chinese speaking',
+        'patient is chinese-speaking',
+        'patient is hindi speaking',
+        'pt creole speaking',
+        'primarily spanish speaking',
+        'primarily chinese speaking but speaks english',
+        'who is primarily cambodian speaking',
+        'pt is primaily french/swahili speaking',
+        'family is mainly chinese speaking',
+        'portugese-creole speaking female',
+        'russian speaking only-limited understanding of english',
+        'russian speaking only->limited understanding of english',
+        'non english speaking',
+        'non-english speaking individuals',
+
+        'pt only speaks farsi, understands little/no english',
+        'she speaks only farsi',
+        'pt spoke spanish and it was translated by translator',
+        'speaks farsi only',
+        'begins to speak danish',
+        'speaks a dilalect of mandarin called fuzhou',
+        'co-worker who speaks fluent creole, was able to interpret',
+        
         
     ]
 
@@ -392,7 +458,11 @@ if __name__ == '__main__':
         print(sentence)
         results = run(sentence)
         for r in results:
-            print('\t{0}'.format(r))
+            print('\t{0}'.format(r.language1))
+            if r.language2 is not None:
+                print('\t{0}'.format(r.language2))
+                if r.language3 is not None:
+                    print('\t{0}'.format(r.language3))
 
 """
 
@@ -429,70 +499,11 @@ garbled speech per russian speaking nurse
                             yelling in what seemed to be japanese
 
 
-                      pt only speaks farsi, understands little/no english
-                          she speaks only farsi
-                           pt spoke spanish and it was translated by translator
-                              speaks farsi only
-                    begins to speak danish
-                              speaks a dilalect of mandarin called fuzhou
-                co-worker who speaks fluent creole, was able to interpret
-                  are chinese speaking and will require an interpreter
-           52 yr old mandarin speaking woman
-                     mandarin speaking only
-               neuro-mandarin speaking only
-                  pt is farsi speaking only
-                      spanish speaking primarily
-                pt is russian speaking primarily, understands some english
-                        farsi speaking with little english understanding
-              persian (farsi) speaking only
-          52 yo woman chinese speaking
-           patient is chinese-speaking
-             patient is hindi speaking
-                    pt creole speaking
-            primarily spanish speaking
-            primarily chinese speaking but speaks english
-   who is primarily cambodian speaking
-pt is primaily french/swahili speaking
-     family is mainly chinese speaking
-             portugese-creole speaking female
-                      russian speaking only-limited understanding of english
-                      russian speaking only->limited understanding of english
-                  non english speaking
-                  non-english speaking individuals
                      does not speak english
                      language other than english
 
 language barrier, farsi
 
-                                             spanish translator
-                                     seen with farsi interpreter
-                                               farsi translator in to evaluate pt
-                                       sign language translator at bedside
-                                             russian translator @ bedside
-                      communicates via sign language interpreter
-                                with aid of japanese interpreter
-                        met with family and mandarin interpreter
-                           met parents with mandarin interpreter
-                                               farsi interpreter present
-     patient was deaf, and an american sign language interpreter was utilized
-                              american sign language interpreter present
-                                   per sign language interpreter
-                                       sign-language interpreter
-                                       sign language interpreter was called and translated
-                       needs a russian sign language interpreter
-
-
-               english as her primary language
-                   portuguese primary language
-                          yet primary language is portugese
-        english or spanish as primary language
-                        mom's primary language is portugese
-                     patients primary language is farsi and does not comprehend much english
-                              primary language spanish
-                              primary language creole
-                              primary language french, swahili, some broken english
-
-                              primary language of the caregiver other than english
 
 danish only at breakfast
 """
