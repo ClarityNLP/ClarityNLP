@@ -170,6 +170,8 @@ _REPLACEMENTS = {
     'serbo croatian' : 'serbocroatian',
 }
 
+_INV_REPLACEMENTS = {v:k for k,v in _REPLACEMENTS.items()}
+
 # build regex string for recognizing languages
 _languages = sorted(_LANGUAGES, key=lambda x: len(x), reverse=True)
 _languages = [re.escape(s) for s in _languages]
@@ -214,8 +216,14 @@ _str_l_speaking = _str_languages + r'\s?' + r'\bspeaking\b'
 _regex_l_speaking = re.compile(_str_l_speaking, re.IGNORECASE)
 
 # ...patient only speaks French...
-_str_speak = r'\b(speak(ing|s)?|spoken?)\b' + _str_words + _str_languages
+_str_speak = r'\b(speak(ing|s)?|spoken?|talk(ing|ed|s)?|shout(ing|ed|s)|yell(ing|ed|s))\b' + _str_words + _str_languages
 _regex_speak = re.compile(_str_speak, re.IGNORECASE)
+
+# ...patient communicates with sign language...
+_str_comm = r'\b(communicat(ive|ion|ing|es?)|understand(ing|s)?|interact(ing|ion|s)?)\b' +\
+    _str_words + _str_languages
+_regex_comm = re.compile(_str_comm, re.IGNORECASE)
+
 
 _REGEXES = [
     _regex_primary1,
@@ -223,6 +231,7 @@ _REGEXES = [
     _regex_interp,
     _regex_l_speaking,
     _regex_speak,
+    _regex_comm,
 ]
 
 _CHAR_SPACE = ' '
@@ -245,16 +254,16 @@ def _cleanup(sentence):
     sentence = re.sub(r'\s@\s', ' at ', sentence)
 
     # replace "->" with whitespace
-    sentence = re.sub(r'\->', ' ', sentence)
+    sentence = re.sub(r'\->', _CHAR_SPACE, sentence)
 
     # erase commas and apostrophes
     sentence = re.sub(r'[,\'`]', '', sentence)
 
     # replace other chars with whitespace
-    sentence = re.sub(r'[-&(){}\[\]:~/;]', ' ', sentence)
+    sentence = re.sub(r'[-&(){}\[\]:~/;]', _CHAR_SPACE, sentence)
 
     # collapse repeated whitespace
-    sentence = re.sub(r'\s+', ' ', sentence)
+    sentence = re.sub(r'\s+', _CHAR_SPACE, sentence)
 
     # replace multi-word languages with single words
     for old, new in _REPLACEMENTS.items():
@@ -341,6 +350,9 @@ def run(sentence):
         it2 = _regex_language.finditer(c.other)
         for match2 in it2:
             language_text = match2.group().rstrip()
+            # restore space in 'signlanguage' and others
+            if language_text in _INV_REPLACEMENTS:
+                language_text = _INV_REPLACEMENTS[language_text]
             language_list.append(language_text)
 
         num_languages = len(language_list)
@@ -380,14 +392,6 @@ if __name__ == '__main__':
 
 
     SENTENCES = [
-        # 'interacting w/ sign language w/ daughter',
-        # 'pt is deaf, understands sign language, and is able to read lips',
-        # 'russian translator @ bedside',
-        # 'russian speaking only->limited understanding of english',
-        # 'persian (farsi) speaking only',
-        # 'the patient is chinese-speaking only',
-
-
         'english as her primary language',
         'portuguese primary language',
         'yet primary language is portugese',
@@ -401,6 +405,7 @@ if __name__ == '__main__':
         'she understands neither english nor spanish',
         'english or spanish as primary language',
         'primary languages are serbo-croatian, sign language, and swahili',
+        'american sign language is her primary language',
 
         'spanish translator',
         'seen with farsi interpreter',
@@ -450,8 +455,23 @@ if __name__ == '__main__':
         'begins to speak danish',
         'speaks a dilalect of mandarin called fuzhou',
         'co-worker who speaks fluent creole, was able to interpret',
-        
-        
+
+        'more communicative using american sign language',
+        'able to communicate with basic sign language',
+        'communication to family and staff by sign language',
+        'attempting to communicate with sign language',
+        'able to communicate through simple phrases and sign language',
+        'speaks through sign language',
+        'interacting w/ sign language w/ daughter',
+        'able to understand family members with sign language',
+        'parents speak sign language only',
+        'pt communicates with sign language',
+        'communicating c sign language',
+        'pt is deaf, understands sign language, and is able to read lips',
+        'pt does not speak sign language',
+
+        'frequently shouting in Russian interpreter provided',
+        'yelling in what seemed to be japanese',
     ]
 
     for sentence in SENTENCES:
@@ -464,45 +484,15 @@ if __name__ == '__main__':
                 if r.language3 is not None:
                     print('\t{0}'.format(r.language3))
 
+
+                    
 """
-
-handle these also: sign language, indian, creole, armenian, cambodian
-                   portugese and portuguese
-                   cantanese and cantonese
-
-             more communicative using american sign language
-                able to communicate with basic sign language
-          communication to family and staff by sign language
-                attempting to communicate with sign language
-able to communicate through simple phrases and sign language
-                                speaks through sign language
-                                interacting w/ sign language w/ daughter
-        able to understand family members with sign language
-                                 parents speak sign language only
-                          pt communicates with sign language
-                               communicating c sign language
-                                          deaf sign language
-                       pt is deaf, understands sign language, and is able to read lips
-                             pt does not speak sign language
 
 pt is deaf and can read lips
    however able to read lips
 
-          she is deaf and her primary language is Persian
-american sign language is her primary language
-                             maternal language canadian french
-
-
-garbled speech per russian speaking nurse
-                   russian speaking male
-                frequently shouting in Russian interpreter provided
-                            yelling in what seemed to be japanese
-
-
-                     does not speak english
-                     language other than english
-
 language barrier, farsi
+'deaf sign language',
 
 
 danish only at breakfast
