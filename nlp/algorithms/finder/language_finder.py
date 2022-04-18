@@ -30,9 +30,7 @@ except:
 
 LANGUAGE_TUPLE_FIELDS = [
     'sentence',
-    'language1',
-    'language2',
-    'language3',
+    'languages', # list of primary languages
 ]
 
 LanguageTuple = namedtuple('LanguageTuple', LANGUAGE_TUPLE_FIELDS)
@@ -44,7 +42,7 @@ LanguageTuple.__new__.__defaults__ = (None,) * len(LanguageTuple._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 
 # set to True to enable debug output
 _TRACE = False
@@ -358,28 +356,15 @@ def run(sentence):
         num_languages = len(language_list)
         assert num_languages > 0
 
-        if num_languages >= 3:
-            obj = LanguageTuple(
-                sentence = cleaned_sentence,
-                language1 = language_list[0],
-                language2 = language_list[1],
-                language3 = language_list[2]
-            )
-        elif num_languages >= 2:
-            obj = LanguageTuple(
-                sentence = cleaned_sentence,
-                language1 = language_list[0],
-                language2 = language_list[1]
-            )
-        else:
-            obj = LanguageTuple(
-                sentence = cleaned_sentence,
-                language1 = language_list[0]
-            )
+        obj = LanguageTuple(
+            sentence = cleaned_sentence,
+            languages = language_list
+        )
 
         results.append(obj)
 
     return results
+
 
 ###############################################################################
 def get_version():
@@ -478,12 +463,9 @@ if __name__ == '__main__':
         print(sentence)
         results = run(sentence)
         for r in results:
-            print('\t{0}'.format(r.language1))
-            if r.language2 is not None:
-                print('\t{0}'.format(r.language2))
-                if r.language3 is not None:
-                    print('\t{0}'.format(r.language3))
-
+            if len(r.languages) > 0:
+                for l in r.languages:
+                    print('\t{0}'.format(l))
 
                     
 """
