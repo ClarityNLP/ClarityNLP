@@ -12,7 +12,6 @@ from collections import namedtuple
 
 if __name__ == '__main__':
     # interactive testing
-    # interactive testing
     match = re.search(r'nlp/', sys.path[0])
     if match:
         nlp_dir = sys.path[0][:match.end()]
