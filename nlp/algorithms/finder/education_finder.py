@@ -25,16 +25,9 @@ except:
     from algorithms.finder import finder_overlap as overlap
 
 
-# from Wikipedia, List of doctoral degrees in the US
-_DEGREE_MAP = {
-    'doctor of arts' : 'da',
-    'doctor of business administration' : 'dba',
-    'doctor of canon law' : 'jcd',
-    'doctor of design' : 'ddes',
-    
-}
+_str_degrees = r'((ph|sc)\.?d\.?|[bm]\.?[asd]\.?|s\.?[bm]\.?)'
+_regex_degrees = re.compile(_str_degrees, re.IGNORECASE)
 
-    
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
 
@@ -42,12 +35,55 @@ _str_word = r'[-a-z]+\.?\s?'
 _str_words = r'\b\s?(' + _str_word + r'){0,5}?'
 _str_one_or_more_words = r'(' + _str_word + r'){1,5}?'
 
-
 # words used to state that somebody does NOT have a degree
 # (apostrophes are removed in _cleanup)
 _str_neg_words = r'\b(without|other than|lacks|understands neither|unable to|cannot|cant|not|non?)\b'
-_str_neg_degree = _str_neg_words + _str_words + _str_degree
+_str_neg_degree = _str_neg_words + _str_words + _str_degrees
 _regex_neg_degree = re.compile(_str_neg_degree, re.IGNORECASE)
+
+
+_str_elem = r'\b(kindergarten|elementary|preparatory|parochial|day) school\b'
+_str_hs = r'\b((high|h\.?)\s?(school|s\.?)|school)\b'
+_str_jhs = r'\b(junior|j\.?r\.?) ' + _str_hs
+_str_college = r'\b(college|university|grad(uate)? school)\b'
+_str_named_year = r'\b(fresh(man)?|soph(o?more)?|(junior|j\.?r)|(senior|s\.?r))\.?\b'
+
+_str_school = r'(?P<school>(' + _str_college + r'|' + _str_hs + r'|' + _str_jhs + r'|' + _str_elem + r'))'
+
+# some school
+_str_some1 = r'\b(attend(ing|ed|s)|began|dropped out|(never|did not|didnt) finish(ed)?|in)' + _str_words + _str_school
+_regex_some1 = re.compile(_str_some1, re.IGNORECASE)
+
+# ...is a junior in hs...
+_str_some2 = _str_named_year + _str_words + _str_school
+_regex_some2 = re.compile(_str_some2, re.IGNORECASE)
+
+# ... is a school student...
+_str_some3 = _str_school + _str_words + r'\bstudent\b'
+_regex_some3 = re.compile(_str_some3, re.IGNORECASE)
+
+
+# school dropout
+_str_drop1 = _str_school + _str_words + r'\bdropout\b'
+_regex_drop1 = re.compile(_str_drop1, re.IGNORECASE)
+
+# school year
+
+_str_drop2 = r'\bdropped out of' + _str_words + _str_school + _str_words + _str_named_year
+_regex_drop2 = re.compile(_str_drop2, re.IGNORECASE)
+
+
+_REGEXES_SOME_SCHOOL = [
+    _regex_some1,
+    _regex_some2,
+    _regex_some3,
+
+    _regex_drop1,
+    _regex_drop2,
+]
+
+
+_CHAR_SPACE = ' '
 
     
 ###############################################################################
@@ -56,7 +92,7 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 2
 
 # set to True to enable debug output
-_TRACE = False
+_TRACE = True
 
 
 ###############################################################################
@@ -69,6 +105,9 @@ def _cleanup(sentence):
     # convert to lowercase
     sentence = sentence.lower()
 
+    # replace MIMIC [** ... **] anonymizations with whitespace
+    sentence = re.sub(r'\[\*\*[^\]]+\]', _CHAR_SPACE, sentence)
+    
     # replace ' w/ ' with ' with '
     sentence = re.sub(r'\sw/\s', ' with ', sentence)
 
@@ -91,15 +130,81 @@ def _cleanup(sentence):
 
 
 ###############################################################################
+def _regex_match(sentence, regex_list):
+    """
+    """
+
+    sentence_save = sentence
+    
+    # # erase any negated languages from the sentence, then attempt regexes
+    # neg_match = _regex_neg_language.search(sentence)
+    # if neg_match:
+    #     if _TRACE:
+    #         print('NEG LANGUAGE MATCH: "{0}"'.format(neg_match.group()))
+    #     sentence = sentence[:neg_match.start()] + sentence[neg_match.end():]
+    
+    candidates = []
+    for i, regex in enumerate(regex_list):
+        iterator = regex.finditer(sentence)
+        for match in iterator:
+            # strip any trailing whitespace (invalidates match.end())
+            match_text = match.group().rstrip()
+            start = match.start()
+            end = start + len(match_text)
+
+            # isolate the school
+            school_text = match.group('school').strip()
+
+            print('\t{0}'.format(school_text))
+            
+            candidates.append(overlap.Candidate(
+                start, end, match_text, regex, other=school_text
+            ))
+
+    # sort the candidates in DECREASING order of length
+    candidates = sorted(candidates, key=lambda x: x.end-x.start)
+
+    # if _TRACE:
+    #     print('\tCandidate matches: ')
+    #     index = 0
+    #     for c in candidates:
+    #         regex_index = regex_list.index(c.regex)
+    #         print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+    #               format(index, regex_index, c.start, c.end, c.match_text))
+    #         index += 1
+    #     print()
+
+    # # keep the longest of any overlapping matches
+    # pruned_candidates = overlap.remove_overlap(candidates,
+    #                                            False,
+    #                                            keep_longest=True)
+
+    # if _TRACE:
+    #     print('\tCandidate matches after overlap resolution: ')
+    #     index = 0
+    #     for c in pruned_candidates:
+    #         regex_index = regex_list.index(c.regex)
+    #         print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+    #               format(index, regex_index, c.start, c.end, c.match_text))
+    #         index += 1
+    #     print()
+    
+    # return pruned_candidates
+
+
+###############################################################################
 def run(sentence):
 
     results = []
     cleaned_sentence = _cleanup(sentence)
 
-    if _TRACE:
-        print(cleaned_sentence)
+    # if _TRACE:
+    #     print(cleaned_sentence)
+
+    candidates = _regex_match(cleaned_sentence, _REGEXES_SOME_SCHOOL)
 
 
+        
 ###############################################################################
 def get_version():
     path, module_name = os.path.split(__file__)
@@ -110,62 +215,70 @@ def get_version():
 if __name__ == '__main__':
 
 
-    SENTENCES = [
-        'she has a Ph.D in chemistry from MIT',
-        'pt does construction work and has a high school education',
-        'mo completed high school and had planned to attend college when ' \
-        'she became pregnant',        
-        'she graduated high school',
+    # some school, either attending or dropped out
+    SENTENCES_1 = [
         'lives at home and attends [**Location (un) 1375**] High School',
         'Pt is a senior at [**Location (un) **] High School',
         'in high school and lives in [**Location 3356**] with his brother',
-        'allow pt. to attend his High School graduation tomorrow',
         "I'm only in High School",
-        'Pt. is a recent high school graduate',
-        'Mother also attends high school in [**Name (NI) 21**] and is in the 11th grade',
-        "Pt recently graduated from high school and is working at Stop'n'Shop",
+        'Pt is an 18 year old college student',        
+        'Mother also attends high school in [**Name (NI) 21**] and is in the 11th grade',        
         'Mom is [**Initials (NamePattern4) **] [**Last Name (NamePattern4) 1486**] ' \
         'in high school and plans to get a home tutor',
-        'Employment status: Employed. Pt is high school student',
-        'Pt was identified by his high school ID',
+        'Employment status: Employed. Pt is high school student',        
         'Pt lives with her dtr, [**Name (NI) 500**], who is [**Initials (NamePattern4) **] ' \
         '[**Last Name (NamePattern4) 3066**] in high school (attending night school)',
         'Pt also has a son who recently began college',
-        'HIGH SCHOOL BIOLOGY TEACHER AWAITS TRANSFER',
-        'senior in high school at [**Location (un) 4358**] High',
-        'This is an 18yr old high school senior admitted to 11R',
-        'He is second to the youngest and due to graduate High School this Weekend',
-        'he received a HS diploma',
+        
         'dropped out of HS at tenth grade',
         'he dropped out of high school two years ago',
         'she dropped out of high school when she was in 11th grade',
         'he dropped out of school in his senior year and is presently working',
         'he dropped out of school in 11th grade',
         'she has dropped out of high school',
+        'fob is still attending high school',
+        'he never finished high school',        
+        'She states pt lives at home, he dropped out of high school 2 years ago and is unemployed',
+
+        # neg
+        'There is also evidence of signal dropout on the gradient echo images'
+        'Faint area of susceptibility dropout on the GRE images is again noted',
+        'Pt is an elementary school principal and lives with his youngest son',
+        'found by police after breaking and entering into elementary school',
+        'she has two elementary shool age children',
+        'and then dropped out of treatment',        
+        
+    ]
+
+    for sentence in SENTENCES_1:
+        print(sentence)
+        results = run(sentence)
+        
+    
+    SENTENCES = [
+        'allow pt. to attend his High School graduation tomorrow',        
+        'she has a Ph.D in chemistry from MIT',
+        'pt does construction work and has a high school education',
+        'mo completed high school and had planned to attend college when ',
+        'pt graduated high school',
+        'Pt. is a recent high school graduate',
+        "Pt recently graduated from high school and is working at Stop'n'Shop",
+        'Pt was identified by his high school ID',
+        'HIGH SCHOOL BIOLOGY TEACHER AWAITS TRANSFER',
+        'senior in high school at [**Location (un) 4358**] High',
+        'This is an 18yr old high school senior admitted to 11R',
+        'He is second to the youngest and due to graduate High School this Weekend',
+        'he received a HS diploma',
 
         "later went to grad school for Master's in French Lit.",
 
-        'Pt is an 18 year old college student',
         'He played football and baseball in high school and then played football ' \
         'in his first (and only) semester of college',
         
         'one of her goals remains to finish high school',
         'patient has been very unhappy in her degree program',
         'will not likely see their son go through his senior year in HS',
-        'Pt is [**Initials (NamePattern4) **] [**Last Name (NamePattern4) 3066**] ' \
-        'but have been high school sweethearts for past x 14 yrs.',
-        'Pt has had issues with etoh and drugs since his sophomore year in high school',        
         
-        'fob is still attending high school',
-        'he never finished high school',
-        'will finish the school year with a tutor',
-        'She states pt lives at home, he dropped out of high school 2 years ago and is unemployed',
-
-        'There is also evidence of signal dropout on the gradient echo images'
-        'Faint area of susceptibility dropout on the\n GRE images is again noted',
-        'Pt is an elementary school principal and lives with his youngest son',
-        'found by police after breaking and entering into elementary school',
-        'she has two elementary shool age children',
 
         'pt electively intubated for GED procedure',
         'Underwent GED, dubhoff tube placed',
@@ -208,6 +321,5 @@ if __name__ == '__main__':
         'he has some college courses',
         'Completed some college level education',
 
-        'and then dropped out of treatment',
         
     ]
