@@ -51,7 +51,8 @@ _str_named_year = r'\b(fresh(man)?|soph(o?more)?|(junior|j\.?r)|(senior|s\.?r))\
 _str_school = r'(?P<school>(' + _str_college + r'|' + _str_hs + r'|' + _str_jhs + r'|' + _str_elem + r'))'
 
 # some school
-_str_some1 = r'\b(attend(ing|ed|s)|began|dropped out|(never|did not|didnt) finish(ed)?|in)' + _str_words + _str_school
+_str_some1 = r'\b(attend(ing|ed|s)|began|dropped out|(never|did not|didnt) finish(ed)?|some|in)' +\
+    _str_words + _str_school
 _regex_some1 = re.compile(_str_some1, re.IGNORECASE)
 
 # ...is a junior in hs...
@@ -62,15 +63,26 @@ _regex_some2 = re.compile(_str_some2, re.IGNORECASE)
 _str_some3 = _str_school + _str_words + r'\bstudent\b'
 _regex_some3 = re.compile(_str_some3, re.IGNORECASE)
 
-
-# school dropout
+# ...high school dropout...
 _str_drop1 = _str_school + _str_words + r'\bdropout\b'
 _regex_drop1 = re.compile(_str_drop1, re.IGNORECASE)
 
-# school year
-
+# ...dropped out of college...
 _str_drop2 = r'\bdropped out of' + _str_words + _str_school + _str_words + _str_named_year
 _regex_drop2 = re.compile(_str_drop2, re.IGNORECASE)
+
+# ...graduated from high school...
+_str_grad1 = r'\b(?<!never )(graduated( from)?|completed|finished)\b' + _str_words + _str_school
+_regex_grad1 = re.compile(_str_grad1, re.IGNORECASE)
+
+# ...is a college graduate...
+_str_grad2 = r'\bis a\b' + _str_words + _str_school + _str_words + r'\bgraduate\b'
+_regex_grad2 = re.compile(_str_grad2, re.IGNORECASE)
+
+# ...has a college degree...
+_str_grad3 = r'\b(received|earned|completed|finished|has)\b' + _str_words +\
+    _str_school + _str_words + r'\b(degree|diploma|education|certificat(ion|e))s?\b'
+_regex_grad3 = re.compile(_str_grad3, re.IGNORECASE)
 
 
 _REGEXES_SOME_SCHOOL = [
@@ -80,6 +92,12 @@ _REGEXES_SOME_SCHOOL = [
 
     _regex_drop1,
     _regex_drop2,
+]
+
+_REGEXES_GRADUATED = [
+    _regex_grad1,
+    _regex_grad2,
+    _regex_grad3,
 ]
 
 
@@ -155,7 +173,7 @@ def _regex_match(sentence, regex_list):
             # isolate the school
             school_text = match.group('school').strip()
 
-            print('\t{0}'.format(school_text))
+            #print('\t{0}'.format(school_text))
             
             candidates.append(overlap.Candidate(
                 start, end, match_text, regex, other=school_text
@@ -163,6 +181,7 @@ def _regex_match(sentence, regex_list):
 
     # sort the candidates in DECREASING order of length
     candidates = sorted(candidates, key=lambda x: x.end-x.start)
+    return candidates
 
     # if _TRACE:
     #     print('\tCandidate matches: ')
@@ -201,8 +220,15 @@ def run(sentence):
     # if _TRACE:
     #     print(cleaned_sentence)
 
-    candidates = _regex_match(cleaned_sentence, _REGEXES_SOME_SCHOOL)
+    candidates1 = _regex_match(cleaned_sentence, _REGEXES_SOME_SCHOOL)
+    print('SOME SCHOOL: ')
+    for c in candidates1:
+        print('\t{0}, {1}'.format(c.match_text, c.other))
 
+    candidates2 = _regex_match(cleaned_sentence, _REGEXES_GRADUATED)
+    print('GRADUATED: ')
+    for c in candidates2:
+        print('\t{0}, {1}'.format(c.match_text, c.other))
 
         
 ###############################################################################
@@ -228,7 +254,7 @@ if __name__ == '__main__':
         'Employment status: Employed. Pt is high school student',        
         'Pt lives with her dtr, [**Name (NI) 500**], who is [**Initials (NamePattern4) **] ' \
         '[**Last Name (NamePattern4) 3066**] in high school (attending night school)',
-        'Pt also has a son who recently began college',
+        'senior in high school at [**Location (un) 4358**] High',        
         
         'dropped out of HS at tenth grade',
         'he dropped out of high school two years ago',
@@ -239,6 +265,10 @@ if __name__ == '__main__':
         'fob is still attending high school',
         'he never finished high school',        
         'She states pt lives at home, he dropped out of high school 2 years ago and is unemployed',
+        'High school graduate, some college',
+        'He did complete some college',
+        'Completed some college',
+        'Finished high school and took some college courses',        
 
         # neg
         'There is also evidence of signal dropout on the gradient echo images'
@@ -251,24 +281,31 @@ if __name__ == '__main__':
     ]
 
     for sentence in SENTENCES_1:
-        print(sentence)
+        print('\n' + sentence)
+        results = run(sentence)
+
+
+    # graduated from a school
+    SENTENCES_2  = [
+        'pt graduated high school',
+        'he received a HS diploma',        
+        'Pt. is a recent high school graduate',
+        'pt does construction work and has a high school education',
+        'mo completed high school and had planned to attend college when ',
+        "Pt recently graduated from high school and is working at Stop'n'Shop",        
+        
+    ]
+
+    for sentence in SENTENCES_2:
+        print('\n' + sentence)
         results = run(sentence)
         
     
     SENTENCES = [
         'allow pt. to attend his High School graduation tomorrow',        
         'she has a Ph.D in chemistry from MIT',
-        'pt does construction work and has a high school education',
-        'mo completed high school and had planned to attend college when ',
-        'pt graduated high school',
-        'Pt. is a recent high school graduate',
-        "Pt recently graduated from high school and is working at Stop'n'Shop",
-        'Pt was identified by his high school ID',
-        'HIGH SCHOOL BIOLOGY TEACHER AWAITS TRANSFER',
-        'senior in high school at [**Location (un) 4358**] High',
         'This is an 18yr old high school senior admitted to 11R',
         'He is second to the youngest and due to graduate High School this Weekend',
-        'he received a HS diploma',
 
         "later went to grad school for Master's in French Lit.",
 
@@ -277,11 +314,8 @@ if __name__ == '__main__':
         
         'one of her goals remains to finish high school',
         'patient has been very unhappy in her degree program',
-        'will not likely see their son go through his senior year in HS',
         
 
-        'pt electively intubated for GED procedure',
-        'Underwent GED, dubhoff tube placed',
         'he could not pass a GED exam',
         'is being told, even with a GED, that \"she is over\n   qualified.\"',
         'Occupation: studying for GED',
@@ -311,11 +345,10 @@ if __name__ == '__main__':
         'prior to this illness had been attending night school to get her GED',
         'would eventually like to get his GED',
         'Going to get his GED and eventually hopes to work for the EPA',
+        'pt electively intubated for GED procedure',
+        'Underwent GED, dubhoff tube placed',
+        
 
-        'High school graduate, some college',
-        'He did complete some college',
-        'Completed some college',
-        'Finished high school and took some college courses',
         'She attended high school through the 11th grade, obtained a GED and attended some college',
         'exploring option of returning to school and taking some college courses',
         'he has some college courses',
