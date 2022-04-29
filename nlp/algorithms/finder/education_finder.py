@@ -36,8 +36,8 @@ EDUC_TUPLE_FIELDS = [
     'education_level'
 ]
 
-EducTuple = namedtuple('EducTuple', EDUC_TUPLE_FIELDS)
-EducTuple.__new__.__defaults__ = (None,) * len(EducTuple._fields)
+EducationTuple = namedtuple('EducationTuple', EDUC_TUPLE_FIELDS)
+EducationTuple.__new__.__defaults__ = (None,) * len(EducationTuple._fields)
 
 
 ###############################################################################
@@ -49,10 +49,11 @@ _VERSION_MINOR = 2
 _TRACE = False
 
 #_str_degrees = r'\b(?P<degree>(ged|(ph|sc)\.?d\.?|[bm]\.?[asd]\.?|s\.?[bm]\.?)|masters?|batchelors?|doctor(al|s))\b'
-# regex capture group names
+# regex capture group names (all must be present in the _DEGREE_RANK dict below)
 _DEG_DOCTORAL   = 'doctoral'
 _DEG_MASTERS    = 'masters'
 _DEG_BATCHELORS = 'batchelors'
+_DEG_HS         = 'hs'  # not explicitly captured, but implied
 _DEG_GED        = 'ged'
 _str_doctoral = r'\b(doctor(al|ate|s)|(ph|sc)\.?d\.?|m\.?d\.?)\b'
 _str_masters = r'\b(masters?|m\.?[as]\.?|s\.?[bm]\.?)\b'
@@ -85,7 +86,7 @@ _str_college = r'\b(college|university|grad(uate)? school)\b'
 _str_named_year = r'\b(fresh(man)?|soph(o?more)?|(junior|j\.?r)|(senior|s\.?r))\.?\b'
 
 #_str_school = r'(?P<school>(' + _str_college + r'|' + _str_hs + r'|' + _str_jhs + r'|' + _str_elem + r'))'
-# regex capture group names
+# regex capture group names (all must be present in the _SCHOOL_RANK dict below)
 _SCHOOL_COLLEGE = 'college'
 _SCHOOL_HS      = 'hs'
 _SCHOOL_ELEM    = 'elem'
@@ -124,7 +125,7 @@ _str_grad1 = r'\b(?<!never )(graduated( from)?|completed|finished)(?! some)\b' +
 _regex_grad1 = re.compile(_str_grad1, re.IGNORECASE)
 
 # ...is a college graduate...
-_str_grad2 = r'\bis a\b' + _str_words + _str_school + _str_words + r'\bgraduate\b'
+_str_grad2 = r'\b(is a\b' + _str_words + r')?' + _str_school + _str_words + r'\bgraduate\b'
 _regex_grad2 = re.compile(_str_grad2, re.IGNORECASE)
 
 # ...received a college degree...
@@ -167,6 +168,27 @@ _REGEXES_GRADUATED = [
 
 
 _CHAR_SPACE = ' '
+
+_KEY_SCHOOL = 'school'
+_KEY_DEGREE = 'degree'
+
+_SCHOOL_RANK = {
+    _SCHOOL_ELEM    : 0,
+    _SCHOOL_HS      : 1,
+    _SCHOOL_COLLEGE : 2
+}
+
+_DEGREE_RANK = {
+    _DEG_GED        : 0,
+    _DEG_HS         : 0,
+    _DEG_BATCHELORS : 1,
+    _DEG_MASTERS    : 2,
+    _DEG_DOCTORAL   : 3
+    
+}
+
+_HS_DEGREES = {_DEG_HS, _DEG_GED}
+_COLLEGE_DEGREES = {_DEG_BATCHELORS, _DEG_MASTERS, _DEG_DOCTORAL}
 
 
 ###############################################################################
@@ -241,8 +263,8 @@ def _regex_match(sentence, regex_list):
                 degree_text = _DEG_GED
 
             info_dict = {
-                'school' : school_text,
-                'degree' : degree_text,
+                _KEY_SCHOOL : school_text,
+                _KEY_DEGREE : degree_text,
             }
             
             candidates.append(overlap.Candidate(
@@ -251,7 +273,6 @@ def _regex_match(sentence, regex_list):
 
     # sort the candidates in DECREASING order of length
     candidates = sorted(candidates, key=lambda x: x.end-x.start)
-    return candidates
 
     if _TRACE:
         print('\tCandidate matches: ')
@@ -290,19 +311,114 @@ def run(sentence):
     if _TRACE:
         print(cleaned_sentence)
 
-    candidates1 = _regex_match(cleaned_sentence, _REGEXES_SOME_SCHOOL)
-    print('SOME SCHOOL: ')
-    for c in candidates1:
-        print('\t{0}, {1}'.format(c.match_text, c.other))
+    some_school_candidates = _regex_match(cleaned_sentence, _REGEXES_SOME_SCHOOL)
+    #print('SOME SCHOOL: ')
+    #for c in some_school_candidates:
+    #    # no degree if didn't graduate
+    #    assert c.other[_KEY_DEGREE] is None
+    #    print('\t{0}, {1}'.format(c.match_text, c.other))
 
-    candidates2 = _regex_match(cleaned_sentence, _REGEXES_GRADUATED)
-    print('GRADUATED: ')
-    for c in candidates2:
-        print('\t{0}, {1}'.format(c.match_text, c.other))
+    graduated_candidates = _regex_match(cleaned_sentence, _REGEXES_GRADUATED)
+    #print('GRADUATED: ')
+    #for c in graduated_candidates:
+    #   print('\t{0}, {1}'.format(c.match_text, c.other))
 
     # determine the highest level of education
-    
+
+    highest_degree = None
+    highest_school = None
+    for g in graduated_candidates:
+        school = g.other[_KEY_SCHOOL]
+        if school is not None:
+            school_rank = _SCHOOL_RANK[school]
+            if highest_school is None:
+                highest_school = school
+            elif highest_school is not None and school_rank > _SCHOOL_RANK[highest_school]:
+                highest_school = school
+
+        degree = g.other[_KEY_DEGREE]
+        if degree is not None:
+            degree_rank = _DEGREE_RANK[degree]
+            if highest_degree is None:
+                highest_degree = degree
+            elif highest_degree is not None and degree_rank > _DEGREE_RANK[highest_degree]:
+                highest_degree = degree
+
+    # assign school based on degree
+    if highest_degree is not None and highest_school is None:
+        if highest_degree in _COLLEGE_DEGREES:
+            highest_school = _SCHOOL_COLLEGE
+        elif highest_degree in _HS_DEGREES:
+            highest_school = _SCHOOL_HS
+
+    # assign degree based on school
+    if highest_school is not None and highest_degree is None:
+        if highest_school == _SCHOOL_COLLEGE:
+            highest_degree = _DEG_BATCHELORS
+        elif highest_school == _SCHOOL_HS:
+            highest_degree = _DEG_HS
+
+    # check to see if attended a higher-level school
+    for s in some_school_candidates:
+        school = s.other[_KEY_SCHOOL]
+        if school is not None and highest_school is None:
+            highest_school = school
+        elif school is not None and _SCHOOL_RANK[school] > _SCHOOL_RANK[highest_school]:
+            highest_school = school
+
+    print('HIGHEST SCHOOL: {0}'.format(highest_school))
+    print('HIGHEST DEGREE: {0}'.format(highest_degree))
+
+    # EDUC_ELEM         = 'less than high school'
+    # EDUC_SOME_HS      = 'some high school'
+    # EDUC_HS_GED       = 'high school diploma or GED'
+    # EDUC_SOME_COLLEGE = 'some college'
+    # EDUC_COLLEGE_DEG  = 'college degree'
+
+    educ = None
+
+    # assign education level
+
+    if highest_school is not None and highest_degree is not None:
+        if highest_school == _SCHOOL_COLLEGE:
+            if highest_degree in _COLLEGE_DEGREES:
+                # college with a degree
+                educ = EDUC_COLLEGE_DEG
+            elif highest_degree in _HS_DEGREES:
+                # college with a high school degree
+                educ = EDUC_SOME_COLLEGE
+        elif highest_school == _SCHOOL_HS:
+            if highest_degree in _HS_DEGREES:
+                # high school with a high school degree
+                educ = EDUC_HS_GED
+    elif highest_school is not None:
+        if highest_school == _SCHOOL_COLLEGE:
+            educ = EDUC_SOME_COLLEGE
+        elif highest_school == _SCHOOL_HS:
+            educ = EDUC_SOME_HS
+        elif highest_school == _SCHOOL_ELEM:
+            educ = EDUC_ELEM
+    elif highest_degree is not None:
+        if highest_degree in _COLLEGE_DEGREES:
+            educ = EDUC_COLLEGE_DEGREE
+        elif highest_degree in _HS_DEGREES:
+            educ = EDUC_HS_GED
+    else:
+        educ = None
+
+    if _TRACE:
+        print('EDUCATION: {0}'.format(educ))
         
+
+    obj = EducationTuple(
+        sentence = cleaned_sentence,
+        education_level = educ
+    )
+
+    # return a list with a single object in it
+    return [obj]
+
+                
 ###############################################################################
 def get_version():
     path, module_name = os.path.split(__file__)
@@ -312,9 +428,8 @@ def get_version():
 ###############################################################################
 if __name__ == '__main__':
 
-
-    # some school, either attending or dropped out
-    SENTENCES_1 = [
+    SENTENCES = [
+        # some school, either attending or dropped out        
         'lives at home and attends [**Location (un) 1375**] High School',
         'Pt is a senior at [**Location (un) **] High School',
         'in high school and lives in [**Location 3356**] with his brother',
@@ -354,13 +469,6 @@ if __name__ == '__main__':
         'she has two elementary shool age children',
         'and then dropped out of treatment',        
         
-    ]
-
-    for sentence in SENTENCES_1:
-        print('\n' + sentence)
-        results = run(sentence)
-
-    SENTENCES_2  = [
         # graduated from a school        
         'pt graduated high school',
         'he received a HS diploma',        
@@ -369,7 +477,6 @@ if __name__ == '__main__':
         'mo completed high school and had planned to attend college when ',
         "Pt recently graduated from high school and is working at Stop'n'Shop",
         
-
         # has a specific degree
         'she has a Ph.D in chemistry from MIT',
         "later went to grad school for Master's in French Lit.",        
@@ -404,10 +511,12 @@ if __name__ == '__main__':
 
         'one of her goals remains to finish high school',
         'exploring option of returning to school and taking some college courses',
-        
     ]
 
-    for sentence in SENTENCES_2:
+    for sentence in SENTENCES:
         print('\n' + sentence)
         results = run(sentence)
+        for r in results:
+            print('\t{0}'.format(r.sentence))
+            print('\t{0}'.format(r.education_level))
         
