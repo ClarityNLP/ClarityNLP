@@ -6,12 +6,16 @@ Sample NLPQL:
 
     limit 100;
 
-    phenotype "SDOH Task" version "1";
+    phenotype "SDOH Language Task" version "1";
     include ClarityCore version "1.0" called Clarity;
 
     documentset Docs:
         Clarity.createDocumentSet({
-            "report_types":["Discharge Summary"]
+            "report_types":[
+                "Nursing/other",
+                "Nursing Progress Note",
+                "Nursing Transfer Note"
+            ]
         });
 
     define final LanguageFinderResults:
@@ -20,7 +24,6 @@ Sample NLPQL:
         });
 
     context Patient;
-
 
 """
 
