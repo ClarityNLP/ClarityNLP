@@ -12,3 +12,4 @@ from .CQLExecutionTask import CQLExecutionTask
 from .PregnancyTask import PregnancyTask
 from .O2SaturationTask import O2SaturationTask
 from .CovidTask import CovidTask
+from .LanguageFinderTask import LanguageFinderTask

@@ -8,6 +8,7 @@ Module for finding a patient's primary language.
 import os
 import re
 import sys
+import json
 from collections import namedtuple
 
 if __name__ == '__main__':
@@ -362,8 +363,8 @@ def run(sentence):
 
         results.append(obj)
 
-    return results
-
+    return json.dumps([r._asdict() for r in results], indent=4)
+        
 
 ###############################################################################
 def get_version():
@@ -459,12 +460,12 @@ if __name__ == '__main__':
     ]
 
     for sentence in SENTENCES:
-        print(sentence)
-        results = run(sentence)
-        for r in results:
-            if len(r.languages) > 0:
-                for l in r.languages:
-                    print('\t{0}'.format(l))
+        print('\n' + sentence)
+        json_result = run(sentence)
+        json_data = json.loads(json_result)
+        result_list = [LanguageTuple(**d) for d in json_data]
+        for r in result_list:
+            print('\t{0}'.format(r))
 
                     
 """
