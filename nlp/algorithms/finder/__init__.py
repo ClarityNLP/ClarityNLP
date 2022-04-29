@@ -10,4 +10,3 @@ from .lab_value_matcher import init as lab_value_matcher_init
 from .text_number import *
 from .language_finder import run as run_language_finder, LanguageTuple
 from .education_finder import run as run_education_finder, EducationTuple
-

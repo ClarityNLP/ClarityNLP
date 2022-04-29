@@ -6,6 +6,7 @@ Module for finding someone's education level.
 import os
 import re
 import sys
+import json
 from collections import namedtuple
 
 if __name__ == '__main__':
@@ -55,9 +56,12 @@ _DEG_MASTERS    = 'masters'
 _DEG_BATCHELORS = 'batchelors'
 _DEG_HS         = 'hs'  # not explicitly captured, but implied
 _DEG_GED        = 'ged'
-_str_doctoral = r'\b(doctor(al|ate|s)|(ph|sc)\.?d\.?|m\.?d\.?)\b'
-_str_masters = r'\b(masters?|m\.?[as]\.?|s\.?[bm]\.?)\b'
-_str_batchelors = r'\b(batchelors?|b\.?[as]\.?|s\.?[ab]\.?)\b'
+
+# do not look for BS, MS, etc, too often confused with other medical abbreviations
+
+_str_doctoral = r'\b(doctor(al|ate|s)|(ph|sc)\.?d\.?)\b'
+_str_masters = r'\bmasters?\b'
+_str_batchelors = r'\bbatchelors?\b'
 _str_ged = r'\bged\b'
 _str_degrees = r'(' + r'(?P<doctoral>' + _str_doctoral + r')|' +\
     r'(?P<masters>' + _str_masters + r')|' +\
@@ -366,8 +370,9 @@ def run(sentence):
         elif school is not None and _SCHOOL_RANK[school] > _SCHOOL_RANK[highest_school]:
             highest_school = school
 
-    print('HIGHEST SCHOOL: {0}'.format(highest_school))
-    print('HIGHEST DEGREE: {0}'.format(highest_degree))
+    if _TRACE:
+        print('HIGHEST SCHOOL: {0}'.format(highest_school))
+        print('HIGHEST DEGREE: {0}'.format(highest_degree))
 
     # EDUC_ELEM         = 'less than high school'
     # EDUC_SOME_HS      = 'some high school'
@@ -410,13 +415,15 @@ def run(sentence):
         print('EDUCATION: {0}'.format(educ))
         
 
-    obj = EducationTuple(
-        sentence = cleaned_sentence,
-        education_level = educ
-    )
+    if educ is not None:
+        obj = EducationTuple(
+            sentence = cleaned_sentence,
+            education_level = educ
+        )
 
-    # return a list with a single object in it
-    return [obj]
+        results.append(obj)
+        
+    return json.dumps([r._asdict() for r in results], indent=4)
 
                 
 ###############################################################################
@@ -515,8 +522,9 @@ if __name__ == '__main__':
 
     for sentence in SENTENCES:
         print('\n' + sentence)
-        results = run(sentence)
-        for r in results:
-            print('\t{0}'.format(r.sentence))
-            print('\t{0}'.format(r.education_level))
+        json_result = run(sentence)
+        json_data = json.loads(json_result)
+        result_list = [EducationTuple(**d) for d in json_data]
+        for r in result_list:
+            print('\t{0}'.format(r))
         
