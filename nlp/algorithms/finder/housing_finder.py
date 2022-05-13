@@ -28,6 +28,17 @@ except:
     from algorithms.finder import finder_overlap as overlap
 
 
+HOUSING_TUPLE_FIELDS = [
+    'sentence',
+    'housing',   # type of housing
+]
+
+HousingTuple = namedtuple('HousingTuple', HOUSING_TUPLE_FIELDS)
+
+# set default value of all fields to None
+HousingTuple.__new__.__defaults__ = (None,) * len(HousingTuple._fields)
+    
+
 ###############################################################################
 
 _VERSION_MAJOR = 0
@@ -60,24 +71,27 @@ _regex_homeless4 = re.compile(_str_homeless4, re.IGNORECASE)
 
 _regex_homeless5 = re.compile(r'\bhomeless\b', re.IGNORECASE)
 
-_str_home = r'\b(shelter|(halfway )?house|home|apartment|room|app?t\.?)\b'
+_GROUP_HOUSING = 'housing'
+_str_housing = r'\b(?P<housing>(shelter|(halfway )?house|home|apartment|room|app?t\.?))\b'
 
-_str_shelter1 = r'\b(resides|resident of|place(d|ment)|liv(ing|es)|renting|is)\b' + _str_words + _str_home
+_str_shelter1 = r'\b(resides|resident of|place(d|ment)|liv(ing|es)|renting|is)\b' + _str_words + _str_housing
 _regex_shelter1 = re.compile(_str_shelter1, re.IGNORECASE)
 
-_str_shelter2 = r'\b(assigned|admit(ted)?|discharged?|transfer(red)?|return(ed)?|necessary|needs|expects) ((back )?to|a)\b' + _str_words + _str_home
+_str_shelter2 = r'\b(assigned|admit(ted)?|discharged?|transfer(red)?|return(ed)?|necessary|needs|expects) ((back )?to|a)\b' + _str_words + _str_housing
 _regex_shelter2 = re.compile(_str_shelter2, re.IGNORECASE)
 
-_str_shelter3 = r'\bat\b' + _str_words + _str_home
+_str_shelter3 = r'\bat\b' + _str_words + _str_housing
 _regex_shelter3 = re.compile(_str_shelter3, re.IGNORECASE)
 
-_REGEXES = [
+_HOMELESS_REGEXES = [
     _regex_homeless1,
     _regex_homeless2,
     _regex_homeless3,
     _regex_homeless4,
     _regex_homeless5,
+]
 
+_SHELTER_REGEXES = [
     _regex_shelter1,
     _regex_shelter2,
     _regex_shelter3,
@@ -137,10 +151,13 @@ def _regex_match(sentence, regex_list):
             start = match.start()
             end = start + len(match_text)
 
-            print('\t{0}'.format(match_text))
+            #print('\t{0}'.format(match_text))
+            housing = None
+            if _GROUP_HOUSING in match.groupdict():
+                housing = match.group(_GROUP_HOUSING)
             
             candidates.append(overlap.Candidate(
-               start, end, match_text, regex, other=None
+               start, end, match_text, regex, other=housing
             ))
 
     # sort the candidates in DECREASING order of length
@@ -184,7 +201,32 @@ def run(sentence):
     if _TRACE:
         print(cleaned_sentence)
 
-    candidates = _regex_match(cleaned_sentence, _REGEXES)
+    candidates = _regex_match(cleaned_sentence, _HOMELESS_REGEXES)
+    if len(candidates) > 0:
+        obj = HousingTuple(
+            sentence = cleaned_sentence,
+            housing = 'homeless'
+        )
+
+        results.append(obj)
+    else:
+        # not homeless, so check for housing
+        candidates = _regex_match(cleaned_sentence, _SHELTER_REGEXES)
+        for c in candidates:
+            assert c.other is not None
+            housing = c.other
+
+            if housing.startswith('apt') or housing.startswith('appt'):
+                housing = 'apartment'
+
+            obj = HousingTuple(
+                sentence = cleaned_sentence,
+                housing = housing
+            )
+
+            results.append(obj)
+
+    return json.dumps([r._asdict() for r in results], indent=4)
     
 
 ###############################################################################
@@ -244,7 +286,11 @@ if __name__ == '__main__':
 
     for sentence in SENTENCES:
         print('\n' + sentence)
-        run(sentence)
+        json_result = run(sentence)
+        json_data = json.loads(json_result)
+        result_list = [HousingTuple(**d) for d in json_data]
+        for r in result_list:
+            print('\t{0}'.format(r))
     
     
     # DTA = Department of Transitional Assistance
