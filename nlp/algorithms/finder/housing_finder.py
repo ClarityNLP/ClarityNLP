@@ -60,12 +60,27 @@ _regex_homeless4 = re.compile(_str_homeless4, re.IGNORECASE)
 
 _regex_homeless5 = re.compile(r'\bhomeless\b', re.IGNORECASE)
 
+_str_home = r'\b(shelter|(halfway )?house|home|apartment|room|app?t\.?)\b'
+
+_str_shelter1 = r'\b(resides|resident of|place(d|ment)|liv(ing|es)|renting|is)\b' + _str_words + _str_home
+_regex_shelter1 = re.compile(_str_shelter1, re.IGNORECASE)
+
+_str_shelter2 = r'\b(assigned|admit(ted)?|discharged?|transfer(red)?|return(ed)?|necessary|needs|expects) ((back )?to|a)\b' + _str_words + _str_home
+_regex_shelter2 = re.compile(_str_shelter2, re.IGNORECASE)
+
+_str_shelter3 = r'\bat\b' + _str_words + _str_home
+_regex_shelter3 = re.compile(_str_shelter3, re.IGNORECASE)
+
 _REGEXES = [
     _regex_homeless1,
     _regex_homeless2,
     _regex_homeless3,
     _regex_homeless4,
     _regex_homeless5,
+
+    _regex_shelter1,
+    _regex_shelter2,
+    _regex_shelter3,
 ]
 
 _CHAR_SPACE = ' '
@@ -92,6 +107,9 @@ def _cleanup(sentence):
 
     # replace "->" with whitespace
     sentence = re.sub(r'\->', _CHAR_SPACE, sentence)
+
+    # replace "d/c" with " discharge "
+    sentence = re.sub(r'\bd/c\b', ' discharge ', sentence)
 
     # erase commas, apostrophes, and quotation marks
     sentence = re.sub(r'[,\'`\\""]', '', sentence)
@@ -194,6 +212,34 @@ if __name__ == '__main__':
         'she currently resides in homeless shelter',
         'Mom tearful and verbalized that she is homeless and making plans to find shelter',
         'PMHX: homeless',
+
+        # shelter
+        'possible TB exposure in shelter',
+        'mom resides in shelter in [**Hospital1 2000**]',
+        'Pt is a 32 year old divorced African-American woman who is living in a \"scattered site\" shelter',
+        'recommended that mother apply for a \"Scattered Site Shelter\" which would provide her with her own apt vs living in the more typical family group home shelter',
+        'mother is in shelter',
+        'Social services in to arrange discharge to safe   shelter',
+        'info necessary to find a shelter when discharged',
+        'Mom repeated that she expects to be in a shelter by Saturday',
+        'will return to the shelter in [**Location (un) 2334**] where she has been living',
+        'assigned a room in a famly shelter',
+        'she expects to be in a shelter by Saturday',
+        'she is currently residing in a shelter that does not accomodate newborns',
+        'Mom to meet with DTA housing worker tomorrow to initiate process for placement in shelter',        
+        
+        # halfway house
+        'plan to d/c to halfway house',
+        'she will not be accepted back to her halfway house due to pt continuing to OD',
+        'found unresponsive at halfway house',
+        'paranoid, thinks people are trying to harm her at her halfway house',
+        'most likely will be transferred back to halfway house',
+        'she lives in a multiple family house',
+
+        # renting
+        'Now renting a room   with friends',
+        'They are renting appt in [**Location (un) 24**] at least into [**Month (only) **]',
+        
     ]
 
     for sentence in SENTENCES:
@@ -214,7 +260,6 @@ if __name__ == '__main__':
     'talked about housing options in this area',
     'dad reports housing concerns to be his greatest worry at the moment',
     'it is unlikely that housing will be secured by month's end',
-    'housing case worker',
     'DTA will help mother access temporary housing',
     'mother could then remain there until permanent housing became available',
     'looking for alternative, less expensive housing',
@@ -222,7 +267,6 @@ if __name__ == '__main__':
     'until she secures permanent housing',
     'pt has modest income, and has had unstable housing for nearly 3 years',
     'her goal is to get her own apartment',
-    'she expects to be in a shelter by Saturday',
     'mom to contact DTA worker today',
     'have arranged for them to meet with Community Resource Specialist [**First Name8 (NamePattern2) 1820**] [**Last Name (NamePattern1) 1706**] who will discuss various housing possibilities with them',
 
@@ -233,55 +277,14 @@ if __name__ == '__main__':
     'mother is living in one room of 4-bedroom apt.',
     'plan for discharge early so mom can arrange housing',
     'met with her yesterday to compete more applications for Sec.8 housing',
-    'she is currently residing in a shelter that does not accomodate newborns',
     'pt's wife continues search for new housing',
     'Housing Authority waived rent for [**Month (only) 1121**] as pt  is on section 8',
     'housing case worker',
-    'she lives in a multiple family house',
     'speak with pt. and provide her with temporary housing resources',
     '72 year old female from senior housing found lethargic',
-    'Mom to meet with DTA housing worker tomorrow to initiate process for placement in shelter',
     'investigated possibilities for temporary housing with nothing available for several days',
     'did not notify any one of his hospitalization until he returned to his   home',
     'She plans to live with her parents until an apt becomes available thru subsidized housing.',
     'Mother is interested in going into a family shelter as she has no other viable housing options',
-    
-    # renting
-    'Recently living in halfway house, [**Hospital3 11064**].  Now renting a room\n   with friends',
-    'They are renting appt in [**Location (un) 24**] at least into [**Month (only) **]',
-    
-
-
-
-   
-
-
-    # shelter
-    'possible TB exposure in shelter',
-    'mom resides in shelter in [**Hospital1 2000**]',
-    'Pt is a 32 year old divorced African-American woman who is living in a \"scattered site\" shelter',
-    'recommended that mother apply for a \"Scattered Site Shelter\" which would provide her with her own apt vs living in the more typical family group home shelter',
-    'mother is in shelter',
-    'Social services in to arrange discharge to safe   shelter',
-    'info necessary to find a shelter when discharged',
-    'Mom repeated that she expects to be in a shelter by Saturday',
-    'will return to the shelter in [**Location (un) 2334**] where she has been living',
-    'assigned a room in a famly shelter',
-    
-    # halfway house
-    'plan to d/c to halfway house',
-    'she will not be accepted back to her halfway house due to pt continuing to OD',
-    'found unresponsive at halfway house',
-    'paranoid, thinks people are trying to harm her at her halfway house',
-    'most likely will be transferred back to halfway house',
-    
-
-    mom    resides  in                      shelter
-    mother is       in                      shelter
-    discharge to                     safe   shelter
-    assigned a room in a             family shelter
-    expects to   be in a                    shelter by Saturday
-    is living       in a \"scattered site\" shelter
-    
-
+        
     """
