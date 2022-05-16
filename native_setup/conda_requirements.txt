@@ -5,7 +5,7 @@ flask-cors==3.0.3
 inflect==2.1.0                  # was 0.3.1, old
 luigi==2.8.6                    # was >2.8.0, could be dangerous since several broken releases > 2.8.0
 msgpack-python==0.5.6           # different name (pip uses 'msgpack'), was >=3.0,<0.6
-nltk==3.4.5
+nltk==3.6.6
 numpy==1.15.4                   # was 1.14.0, conda solver says 1.15.4
 pandas==0.21.1
 psycopg2
