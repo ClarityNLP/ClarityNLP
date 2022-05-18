@@ -64,7 +64,7 @@ _DEG_GED        = 'ged'
 
 # do not look for BS, MS, etc, too often confused with other medical abbreviations
 
-_str_doctoral = r'\b(doctor(al|ate|s)|(ph|sc)\.?d\.?)\b'
+_str_doctoral = r'\b(doctor(al|ate)|(ph|sc)\.?d\.?)\b'
 _str_masters = r'\bmasters?\b'
 _str_batchelors = r'\bbatchelors?\b'
 _str_ged = r'\bged\b'
@@ -89,7 +89,7 @@ _regex_neg_degree = re.compile(_str_neg_degree, re.IGNORECASE)
 
 
 _str_elem = r'\b(kindergarten|elementary|preparatory|parochial|day) school\b'
-_str_hs = r'\b((high|h\.?)\s?(school|s\.?)|school)\b'
+_str_hs = r'\b((high|h\.?)\s?(school|s\.?))\b'
 _str_jhs = r'\b(junior|j\.?r\.?) ' + _str_hs
 _str_college = r'\b(college|university|grad(uate)? school)\b'
 _str_named_year = r'\b(fresh(man)?|soph(o?more)?|(junior|j\.?r)|(senior|s\.?r))\.?\b'
@@ -151,10 +151,13 @@ _regex_grad4 = re.compile(_str_grad4, re.IGNORECASE)
 _str_terse = r'\b(education|social history) ' + _str_degrees
 _regex_terse = re.compile(_str_terse, re.IGNORECASE)
 
-
 # ...went to <college> for <degree>
 _str_specific_degree = r'\b(went to|attended|enrolled (at|in)|graduated from)\b' + _str_words + _str_college + _str_words + _str_degrees
 _regex_specific_degree = re.compile(_str_specific_degree, re.IGNORECASE)
+
+# taught <something> in <school>
+_str_teacher = r'\b(teache[rs]|taught)\b' + _str_words + r' in ' + _str_words + _str_school
+_regex_teacher = re.compile(_str_teacher, re.IGNORECASE)
 
 _REGEXES_SOME_SCHOOL = [
     _regex_some1,
@@ -326,6 +329,27 @@ def run(sentence):
     #    # no degree if didn't graduate
     #    assert c.other[_KEY_DEGREE] is None
     #    DISPLAY('\t{0}, {1}'.format(c.match_text, c.other))
+
+    # check for mention of being a teacher
+
+    to_delete = []
+    match = _regex_teacher.search(cleaned_sentence)
+    if match:
+        match_text = match.group().rstrip()
+        start = match.start()
+        end = start + len(match_text)
+
+        for c in some_school_candidates:
+            if start <= c.start and end >= c.end:
+                # overlap with teacher match, ignore
+                to_delete.append(c)
+                if _TRACE:
+                    DISPLAY('\t\tSubstring of teacher statement, will delete match: "{0}"'.
+                            format(c.match_text))
+                    DISPLAY()
+
+    for d in to_delete:
+        some_school_candidates.remove(d)
 
     graduated_candidates = _regex_match(cleaned_sentence, _REGEXES_GRADUATED)
     #DISPLAY('GRADUATED: ')
@@ -523,6 +547,10 @@ if __name__ == '__main__':
 
         'one of her goals remains to finish high school',
         'exploring option of returning to school and taking some college courses',
+
+        'appreciates straightforward communication with pt s doctors and does not want',
+
+        'had taught english in a ct hs since y o a year early',
     ]
 
     for sentence in SENTENCES:
