@@ -14,7 +14,8 @@ Sample NLPQL:
             "report_types":[
                 "Nursing/other",
                 "Nursing Progress Note",
-                "Nursing Transfer Note"
+                "Nursing Transfer Note",
+                "Social Work"
             ]
         });
 
