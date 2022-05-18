@@ -89,7 +89,7 @@ _LANGUAGES = [
     'gujarati',
     'hausa',
     'hebrew',
-    'hindi','hindustani','indian',
+    'hindi','hindustani','indian','hindu', # sometimes see "Hindu speaking"
     'hmong',
     'hungarian',
     'icelandic',
@@ -457,6 +457,8 @@ if __name__ == '__main__':
 
         'frequently shouting in Russian interpreter provided',
         'yelling in what seemed to be japanese',
+
+        'patient is Hindu-speaking only',
     ]
 
     for sentence in SENTENCES:
