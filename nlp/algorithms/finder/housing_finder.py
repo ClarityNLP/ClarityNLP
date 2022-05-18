@@ -23,8 +23,13 @@ if __name__ == '__main__':
         sys.exit(0)
     
 try:
+    # interactive path
     import finder_overlap as overlap
+    DISPLAY = print
 except:
+    # ClarityNLP path
+    from claritynlp_logging import log, ERROR, DEBUG
+    DISPLAY = log
     from algorithms.finder import finder_overlap as overlap
 
 
@@ -46,7 +51,6 @@ _VERSION_MINOR = 1
 
 # set to True to enable debug output
 _TRACE = False
-
 
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
@@ -72,7 +76,7 @@ _regex_homeless4 = re.compile(_str_homeless4, re.IGNORECASE)
 _regex_homeless5 = re.compile(r'\bhomeless\b', re.IGNORECASE)
 
 _GROUP_HOUSING = 'housing'
-_str_housing = r'\b(?P<housing>(shelter|(halfway )?house|home|apartment|room|app?t\.?))\b'
+_str_housing = r'\b(?P<housing>(shelter|((halfway|sober) )?house|(group|communal) home|apartment|room|app?t\.?))\b'
 
 _str_shelter1 = r'\b(resides|resident of|place(d|ment)|liv(ing|es)|renting|is)\b' + _str_words + _str_housing
 _regex_shelter1 = re.compile(_str_shelter1, re.IGNORECASE)
@@ -80,8 +84,12 @@ _regex_shelter1 = re.compile(_str_shelter1, re.IGNORECASE)
 _str_shelter2 = r'\b(assigned|admit(ted)?|discharged?|transfer(red)?|return(ed)?|necessary|needs|expects) ((back )?to|a)\b' + _str_words + _str_housing
 _regex_shelter2 = re.compile(_str_shelter2, re.IGNORECASE)
 
-_str_shelter3 = r'\bat\b' + _str_words + _str_housing
-_regex_shelter3 = re.compile(_str_shelter3, re.IGNORECASE)
+#_str_shelter3 = r'\bat\b' + _str_words + _str_housing
+#_regex_shelter3 = re.compile(_str_shelter3, re.IGNORECASE)
+
+# pt lives alone in <housing>
+_str_lives_alone_in = r'\blives alone in\b' + _str_words + _str_housing
+_regex_lives_alone_in = re.compile(_str_lives_alone_in, re.IGNORECASE)
 
 _HOMELESS_REGEXES = [
     _regex_homeless1,
@@ -94,7 +102,8 @@ _HOMELESS_REGEXES = [
 _SHELTER_REGEXES = [
     _regex_shelter1,
     _regex_shelter2,
-    _regex_shelter3,
+    #_regex_shelter3,
+    _regex_lives_alone_in,
 ]
 
 _CHAR_SPACE = ' '
@@ -151,7 +160,7 @@ def _regex_match(sentence, regex_list):
             start = match.start()
             end = start + len(match_text)
 
-            #print('\t{0}'.format(match_text))
+            #DISPLAY('\t{0}'.format(match_text))
             housing = None
             if _GROUP_HOUSING in match.groupdict():
                 housing = match.group(_GROUP_HOUSING)
@@ -165,14 +174,14 @@ def _regex_match(sentence, regex_list):
 
 
     if _TRACE:
-        print('\tCandidate matches: ')
+        DISPLAY('\tCandidate matches: ')
         index = 0
         for c in candidates:
             regex_index = regex_list.index(c.regex)
-            print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
                   format(index, regex_index, c.start, c.end, c.match_text))
             index += 1
-        print()
+        DISPLAY()
 
     # keep the longest of any overlapping matches
     pruned_candidates = overlap.remove_overlap(candidates,
@@ -180,14 +189,14 @@ def _regex_match(sentence, regex_list):
                                                keep_longest=True)
 
     if _TRACE:
-        print('\tCandidate matches after overlap resolution: ')
+        DISPLAY('\tCandidate matches after overlap resolution: ')
         index = 0
         for c in pruned_candidates:
             regex_index = regex_list.index(c.regex)
-            print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
                   format(index, regex_index, c.start, c.end, c.match_text))
             index += 1
-        print()
+        DISPLAY()
     
     return pruned_candidates
     
@@ -199,7 +208,7 @@ def run(sentence):
     cleaned_sentence = _cleanup(sentence)
 
     if _TRACE:
-        print(cleaned_sentence)
+        DISPLAY(cleaned_sentence)
 
     candidates = _regex_match(cleaned_sentence, _HOMELESS_REGEXES)
     if len(candidates) > 0:
@@ -278,6 +287,9 @@ if __name__ == '__main__':
         'most likely will be transferred back to halfway house',
         'she lives in a multiple family house',
 
+        'he is living in a group home',
+        'note pt lives alone in an apartment at house a subsidized independent living building for seniors',
+        
         # renting
         'Now renting a room   with friends',
         'They are renting appt in [**Location (un) 24**] at least into [**Month (only) **]',
@@ -285,12 +297,12 @@ if __name__ == '__main__':
     ]
 
     for sentence in SENTENCES:
-        print('\n' + sentence)
+        DISPLAY('\n' + sentence)
         json_result = run(sentence)
         json_data = json.loads(json_result)
         result_list = [HousingTuple(**d) for d in json_data]
         for r in result_list:
-            print('\t{0}'.format(r))
+            DISPLAY('\t{0}'.format(r))
     
     
     # DTA = Department of Transitional Assistance
