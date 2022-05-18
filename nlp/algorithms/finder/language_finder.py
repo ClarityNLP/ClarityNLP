@@ -23,8 +23,13 @@ if __name__ == '__main__':
         sys.exit(0)
     
 try:
+    # interactive path
     import finder_overlap as overlap
+    DISPLAY = print
 except:
+    # ClarityNLP path
+    from claritynlp_logging import log, ERROR, DEBUG
+    DISPLAY = log
     from algorithms.finder import finder_overlap as overlap
 
 
@@ -281,7 +286,7 @@ def _regex_match(sentence, regex_list):
     neg_match = _regex_neg_language.search(sentence)
     if neg_match:
         if _TRACE:
-            print('NEG LANGUAGE MATCH: "{0}"'.format(neg_match.group()))
+            DISPLAY('NEG LANGUAGE MATCH: "{0}"'.format(neg_match.group()))
         sentence = sentence[:neg_match.start()] + sentence[neg_match.end():]
     
     candidates = []
@@ -304,14 +309,14 @@ def _regex_match(sentence, regex_list):
     candidates = sorted(candidates, key=lambda x: x.end-x.start)
 
     if _TRACE:
-        print('\tCandidate matches: ')
+        DISPLAY('\tCandidate matches: ')
         index = 0
         for c in candidates:
             regex_index = regex_list.index(c.regex)
-            print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
                   format(index, regex_index, c.start, c.end, c.match_text))
             index += 1
-        print()
+        DISPLAY()
 
     # keep the longest of any overlapping matches
     pruned_candidates = overlap.remove_overlap(candidates,
@@ -319,14 +324,14 @@ def _regex_match(sentence, regex_list):
                                                keep_longest=True)
 
     if _TRACE:
-        print('\tCandidate matches after overlap resolution: ')
+        DISPLAY('\tCandidate matches after overlap resolution: ')
         index = 0
         for c in pruned_candidates:
             regex_index = regex_list.index(c.regex)
-            print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
                   format(index, regex_index, c.start, c.end, c.match_text))
             index += 1
-        print()
+        DISPLAY()
     
     return pruned_candidates
 
@@ -338,7 +343,7 @@ def run(sentence):
     cleaned_sentence = _cleanup(sentence)
 
     if _TRACE:
-        print(cleaned_sentence)
+        DISPLAY(cleaned_sentence)
     
     candidates = _regex_match(cleaned_sentence, _REGEXES)
 
@@ -462,12 +467,12 @@ if __name__ == '__main__':
     ]
 
     for sentence in SENTENCES:
-        print('\n' + sentence)
+        DISPLAY('\n' + sentence)
         json_result = run(sentence)
         json_data = json.loads(json_result)
         result_list = [LanguageTuple(**d) for d in json_data]
         for r in result_list:
-            print('\t{0}'.format(r))
+            DISPLAY('\t{0}'.format(r))
 
                     
 """

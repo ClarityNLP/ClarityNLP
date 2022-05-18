@@ -21,8 +21,13 @@ if __name__ == '__main__':
         sys.exit(0)
     
 try:
+    # interactive path
     import finder_overlap as overlap
+    DISPLAY = print
 except:
+    # ClarityNLP path
+    from claritynlp_logging import log, ERROR, DEBUG
+    DISPLAY = log
     from algorithms.finder import finder_overlap as overlap
     
 
@@ -279,14 +284,14 @@ def _regex_match(sentence, regex_list):
     candidates = sorted(candidates, key=lambda x: x.end-x.start)
 
     if _TRACE:
-        print('\tCandidate matches: ')
+        DISPLAY('\tCandidate matches: ')
         index = 0
         for c in candidates:
             regex_index = regex_list.index(c.regex)
-            print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
                   format(index, regex_index, c.start, c.end, c.match_text))
             index += 1
-        print()
+        DISPLAY()
 
     # keep the longest of any overlapping matches
     pruned_candidates = overlap.remove_overlap(candidates,
@@ -294,14 +299,14 @@ def _regex_match(sentence, regex_list):
                                                keep_longest=True)
 
     if _TRACE:
-        print('\tCandidate matches after overlap resolution: ')
+        DISPLAY('\tCandidate matches after overlap resolution: ')
         index = 0
         for c in pruned_candidates:
             regex_index = regex_list.index(c.regex)
-            print('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
                   format(index, regex_index, c.start, c.end, c.match_text))
             index += 1
-        print()
+        DISPLAY()
     
     return pruned_candidates
 
@@ -313,19 +318,19 @@ def run(sentence):
     cleaned_sentence = _cleanup(sentence)
 
     if _TRACE:
-        print(cleaned_sentence)
+        DISPLAY(cleaned_sentence)
 
     some_school_candidates = _regex_match(cleaned_sentence, _REGEXES_SOME_SCHOOL)
-    #print('SOME SCHOOL: ')
+    #DISPLAY('SOME SCHOOL: ')
     #for c in some_school_candidates:
     #    # no degree if didn't graduate
     #    assert c.other[_KEY_DEGREE] is None
-    #    print('\t{0}, {1}'.format(c.match_text, c.other))
+    #    DISPLAY('\t{0}, {1}'.format(c.match_text, c.other))
 
     graduated_candidates = _regex_match(cleaned_sentence, _REGEXES_GRADUATED)
-    #print('GRADUATED: ')
+    #DISPLAY('GRADUATED: ')
     #for c in graduated_candidates:
-    #   print('\t{0}, {1}'.format(c.match_text, c.other))
+    #   DISPLAY('\t{0}, {1}'.format(c.match_text, c.other))
 
     # determine the highest level of education
 
@@ -371,8 +376,8 @@ def run(sentence):
             highest_school = school
 
     if _TRACE:
-        print('HIGHEST SCHOOL: {0}'.format(highest_school))
-        print('HIGHEST DEGREE: {0}'.format(highest_degree))
+        DISPLAY('HIGHEST SCHOOL: {0}'.format(highest_school))
+        DISPLAY('HIGHEST DEGREE: {0}'.format(highest_degree))
 
     # EDUC_ELEM         = 'less than high school'
     # EDUC_SOME_HS      = 'some high school'
@@ -412,7 +417,7 @@ def run(sentence):
         educ = None
 
     if _TRACE:
-        print('EDUCATION: {0}'.format(educ))
+        DISPLAY('EDUCATION: {0}'.format(educ))
         
 
     if educ is not None:
@@ -521,10 +526,10 @@ if __name__ == '__main__':
     ]
 
     for sentence in SENTENCES:
-        print('\n' + sentence)
+        DISPLAY('\n' + sentence)
         json_result = run(sentence)
         json_data = json.loads(json_result)
         result_list = [EducationTuple(**d) for d in json_data]
         for r in result_list:
-            print('\t{0}'.format(r))
+            DISPLAY('\t{0}'.format(r))
         
