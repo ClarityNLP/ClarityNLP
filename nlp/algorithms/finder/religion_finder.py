@@ -23,8 +23,13 @@ if __name__ == '__main__':
         sys.exit(0)
     
 try:
+    # interactive path
     import finder_overlap as overlap
+    DISPLAY = print
 except:
+    # ClarityNLP path
+    from claritynlp_logging import log, ERROR, DEBUG
+    DISPLAY = log
     from algorithms.finder import finder_overlap as overlap
 
 
@@ -45,8 +50,7 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 
 # set to True to enable debug output
-_TRACE = True
-
+_TRACE = False
 
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
@@ -61,11 +65,14 @@ _str_religions = r'\b(?<!\bspeaks )(?P<religion>(j(e|o)hovah?s? witness|pentecos
 
 _str_header = r'\b(religion|social( history)?|other)\s?[:= ]?'
 
-# add "temple" and traditions
+# contains some non-person entries also, since these give clues about the religion
 _str_who = r'\b(patient|pt\.?|parents|clergy|rabb?i|minister|priest|reverend|preacher|monk|' +\
-    r'they|family|mother|father|mom|dad|she|he|holy person|imam|temple|traditions)\b'
+    r'they|family|mother|father|mom|dad|she|he|holy person|imam|temple|synagogue|traditions)\b'
 
 _str_practices = r'\b(are|is|were|was|bec(oming|ame)|convert(ed)?|practic(ing|es))\b'
+
+_str_official = r'\b(imam|rabb?i)\b'
+_regex_official = re.compile(_str_official, re.IGNORECASE)
 
 _str_religion1 = _str_header + _str_words + _str_religions
 _regex_religion1 = re.compile(_str_religion1, re.IGNORECASE)
@@ -146,10 +153,62 @@ def _regex_match(sentence, regex_list):
             start = match.start()
             end = start + len(match_text)
 
-            print('\t{0}'.format(match_text))
-            print('\t\t{0}'.format(match.group('religion')))
+            religion_text = match.group('religion').strip()
+            candidates.append(overlap.Candidate(
+                start, end, match_text, regex, other=religion_text
+            ))
+
+
+    # if no matches, try to infer religion from presence of religious official(s)
+    if 0 == len(candidates):
+        match = _regex_official.search(sentence)
+        if match:
+            match_text = match.group().strip()
+            start = match.start()
+            end = start + len(match_text)
             
+            religion_text = None
+            if 'imam' in match_text:
+                religion_text = 'islam'
+            elif 'rabbi' in match_text or 'rabi' in match_text:
+                religion_text = 'judaism'
+
+            if religion_text is not None:
+                candidates.append(overlap.Candidate(
+                    start, end, match_text, regex, other=religion_text
+                ))
             
+    # sort candidates in DECREASING order of length
+    candidates = sorted(candidates, key=lambda x: x.end-x.start)
+
+    if _TRACE:
+        DISPLAY('\tCandidate matches: ')
+        index = 0
+        for c in candidates:
+            regex_index = regex_list.index(c.regex)
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+                  format(index, regex_index, c.start, c.end, c.match_text))
+            index += 1
+        DISPLAY()
+
+    # keep the longest of any overlapping matches
+    pruned_candidates = overlap.remove_overlap(candidates,
+                                               False,
+                                               keep_longest=True)
+
+    if _TRACE:
+        DISPLAY('\tCandidate matches after overlap resolution: ')
+        index = 0
+        for c in pruned_candidates:
+            regex_index = regex_list.index(c.regex)
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+                  format(index, regex_index, c.start, c.end, c.match_text))
+            index += 1
+        DISPLAY()
+    
+    return pruned_candidates
+
+
 ###############################################################################
 def run(sentence):
 
@@ -157,10 +216,22 @@ def run(sentence):
     cleaned_sentence = _cleanup(sentence)
 
     if _TRACE:
-        print(cleaned_sentence)
+        DISPLAY(cleaned_sentence)
 
     candidates = _regex_match(cleaned_sentence, _REGEXES)
     
+    for c in candidates:
+        religion_text = c.other
+
+        obj = ReligionTuple(
+            sentence = cleaned_sentence,
+            religion = religion_text
+        )
+
+        results.append(obj)
+
+    return json.dumps([r._asdict() for r in results], indent=4)
+
 
 ###############################################################################
 def get_version():
@@ -216,6 +287,10 @@ if __name__ == '__main__':
         'Coping with religion, Pentecostal, requested we read her a couple of scripture passages',
         'lives in [**Hospital1 240**] by himself-Muslim-no tobacco or etoh use as per son',        
         'single but has support from her parents as well as elders within her Jehova witness community',
+        'family is praying at the Jewish temple',
+        'had pastoral support from their own church and are following Buddhist traditions',
+        'praying throughout day at Buddhist temple in [**Hospital1 **] and are \"hoping for a miracle.\"',
+        'medical examiner denied examination. per rabi due to religion',        
         
         # negatives
         'Patient is Hindu speaking only',
@@ -227,16 +302,10 @@ if __name__ == '__main__':
     ]
 
     for sentence in SENTENCES:
-        print('\n' + sentence)
-        run(sentence)
+        DISPLAY('\n' + sentence)
+        json_result = run(sentence)
+        json_data = json.loads(json_result)
+        result_list = [ReligionTuple(**d) for d in json_data]
+        for r in result_list:
+            DISPLAY('\t{0}'.format(r))
 
-
-        
-    """
-
-        'medical examiner denied examination. per rabi due to religion',
-        'had pastoral support from their own church and are following Buddhist traditions',
-        'praying throughout day at Buddhist temple in [**Hospital1 **] and are \"hoping for a miracle.\"',
-        
-
-    """
