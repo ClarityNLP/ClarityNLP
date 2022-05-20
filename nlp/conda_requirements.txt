@@ -23,4 +23,3 @@ spacy=2.3.5
 sphinx=4.0.1
 sphinx-autobuild=2021.3.14
 textacy=0.10.0
-typing=3.10.0.0
