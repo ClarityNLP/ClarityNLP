@@ -169,7 +169,7 @@ ValueMeasurement = namedtuple('ValueMeasurement',
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 19
+_VERSION_MINOR = 20
 _MODULE_NAME = 'value_extractor.py'
 
 # set to True to enable debug output
@@ -1483,7 +1483,7 @@ def _clean_sentence(sentence, is_case_sensitive):
             # if so, probably a time expression
             frag = sentence[:end]
             if re.search(r'(@|\b(at|around))\s*' +\
-                         '(approximately|approx\.?)?\d+\Z', frag):
+                         r'(approximately|approx\.?)?\d+\Z', frag):
                 erase_it = True
         if erase_it:
             if _TRACE:

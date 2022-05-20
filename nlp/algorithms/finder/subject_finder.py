@@ -220,7 +220,7 @@ from spacy import displacy
 nlp = spacy.load('en_core_web_sm')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 10
+VERSION_MINOR = 11
 
 # set to True to enable debug output
 TRACE = False
@@ -443,7 +443,7 @@ regex_a_wds_m = re.compile(str_a_wds_m)
 # in largest dimension, in size, in largest axis, on inspiratory imaging, etc.
 str_size_or_image = r'\b(in|on|with)\s+' + str_words_0_to_n                  +\
                     r'(\b(axis|diameter|dimension|imaging|length|width|'     +\
-                    'height|size|area|vol(ume)?)\s*){1,2}(of\s*)?'
+                    r'height|size|area|vol(ume)?)\s*){1,2}(of\s*)?'
 regex_size_or_image = re.compile(str_size_or_image)
 
 # carina
