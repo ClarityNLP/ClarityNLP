@@ -17,7 +17,6 @@ VOLUME ["/tmp"]
 
 COPY conda_requirements.txt $APP_HOME
 COPY conda_pip_requirements.txt $APP_HOME
-COPY install_models.py $APP_HOME
 COPY config.py $APP_HOME
 
 RUN conda create --name claritynlp python=3.8.10

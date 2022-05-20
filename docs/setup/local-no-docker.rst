@@ -224,7 +224,9 @@ support files:
 ::
    conda activate claritynlp   # if not already active
    python -m spacy download en_core_web_sm
-   python ../nlp/install_models.py
+   python -m nltk.downloader "punkt"
+   python -m nltk.downloader "cmudict"
+   python -m nltk.downloader "wordnet"
 
  
 Setup MongoDB

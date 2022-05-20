@@ -14,7 +14,6 @@ WORKDIR $APP_HOME
 VOLUME ["/tmp"]
 
 COPY requirements.txt $APP_HOME
-COPY install_models.py $APP_HOME
 COPY config.py $APP_HOME
 
 RUN CFLAGS="-Wno-narrowing" pip3 install -U cld2-cffi
