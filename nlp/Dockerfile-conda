@@ -1,4 +1,4 @@
-# FROM python:3.6.8
+# FROM python:3.6.13
 FROM continuumio/miniconda3
 
 MAINTAINER Health Data Analytics
@@ -28,9 +28,7 @@ RUN conda config --env --append channels conda-forge
 RUN conda install --file conda_requirements.txt
 RUN pip install -r conda_pip_requirements.txt
 RUN python3 -m spacy download en_core_web_sm
-RUN python3 -m nltk.downloader "punkt"
-RUN python3 -m nltk.downloader "cmudict"
-RUN python3 -m nltk.downloader "wordnet"
+RUN python3 install_models.py
 
 COPY . .
 ENV PATH /opt/conda/envs/claritynlp/bin:$PATH

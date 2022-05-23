@@ -1,4 +1,4 @@
-FROM python:3.6.8
+FROM python:3.6.13
 
 MAINTAINER Health Data Analytics
 
@@ -20,9 +20,7 @@ RUN CFLAGS="-Wno-narrowing" pip3 install -U cld2-cffi
 RUN pip3 install -r requirements.txt
 RUN pip3 install -U pytest
 RUN python3 -m spacy download en_core_web_sm
-RUN python3 -m nltk.downloader "punkt"
-RUN python3 -m nltk.downloader "cmudict"
-RUN python3 -m nltk.downloader "wordnet"
+RUN python3 install_models.py
 
 
 COPY . .
