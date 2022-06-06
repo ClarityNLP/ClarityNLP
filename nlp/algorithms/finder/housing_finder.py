@@ -35,7 +35,8 @@ except:
 
 HOUSING_TUPLE_FIELDS = [
     'sentence',
-    'housing',   # type of housing
+    'housing',    # type of housing
+    'lives_alone', # whether lives alone or not
 ]
 
 HousingTuple = namedtuple('HousingTuple', HOUSING_TUPLE_FIELDS)
@@ -47,7 +48,7 @@ HousingTuple.__new__.__defaults__ = (None,) * len(HousingTuple._fields)
 ###############################################################################
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 1
+_VERSION_MINOR = 2
 
 # set to True to enable debug output
 _TRACE = False
@@ -84,12 +85,13 @@ _regex_shelter1 = re.compile(_str_shelter1, re.IGNORECASE)
 _str_shelter2 = r'\b(assigned|admit(ted)?|discharged?|transfer(red)?|return(ed)?|necessary|needs|expects) ((back )?to|a)\b' + _str_words + _str_housing
 _regex_shelter2 = re.compile(_str_shelter2, re.IGNORECASE)
 
-#_str_shelter3 = r'\bat\b' + _str_words + _str_housing
-#_regex_shelter3 = re.compile(_str_shelter3, re.IGNORECASE)
-
 # pt lives alone in <housing>
-_str_lives_alone_in = r'\blives alone in\b' + _str_words + _str_housing
+_str_lives_alone_in = r'\blives alone\b' + _str_words + _str_housing
 _regex_lives_alone_in = re.compile(_str_lives_alone_in, re.IGNORECASE)
+
+# lives alone
+_str_alone = r'\b(lives|resides) (alone|by (him|her|his|them)self(ves)?)\b'
+_regex_alone = re.compile(_str_alone, re.IGNORECASE)
 
 _HOMELESS_REGEXES = [
     _regex_homeless1,
@@ -228,9 +230,16 @@ def run(sentence):
             if housing.startswith('apt') or housing.startswith('appt'):
                 housing = 'apartment'
 
+            # check for lives alone
+            lives_alone = False
+            match = _regex_alone.search(cleaned_sentence)
+            if match:
+                lives_alone = True
+
             obj = HousingTuple(
                 sentence = cleaned_sentence,
-                housing = housing
+                housing = housing,
+                lives_alone = lives_alone
             )
 
             results.append(obj)
