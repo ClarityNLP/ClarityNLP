@@ -98,6 +98,17 @@ _regex_visiting = re.compile(_str_visiting, re.IGNORECASE)
 _str_visa_days = r'\b(?P<visa>\d+ day visa)\b'
 _regex_visa_days = re.compile(_str_visa_days, re.IGNORECASE)
 
+_str_has_document = r'\b(has|with|obtained|got|possesses|in possession of)\b' + _str_words +\
+    r'\b((?P<visa>visa)|(?P<greencard>green card))\b'
+_regex_has_document = re.compile(_str_has_document, re.IGNORECASE)
+
+_str_greencard_lottery1 = r'\bwon\b' + _str_words + r'\blottery\b' + _str_words + r'\b(?P<greencard>green card)\b'
+_regex_greencard_lottery1 = re.compile(_str_greencard_lottery1, re.IGNORECASE)
+
+_str_greencard_lottery2 = r'\bwon\b' + _str_words + r'\b(?P<greencard>green card)\b' + _str_words + r'\blottery\b'
+_regex_greencard_lottery2 = re.compile(_str_greencard_lottery2, re.IGNORECASE)
+
+
 _REGEXES = [
     _regex_undocumented,
     _regex_immigrant,
@@ -109,6 +120,9 @@ _REGEXES = [
     _regex_work_visa,
     _regex_visiting,
     _regex_visa_days,
+    _regex_has_document,
+    _regex_greencard_lottery1,
+    _regex_greencard_lottery2,
 ]
 
 
@@ -245,11 +259,13 @@ if __name__ == '__main__':
         'Pt is an Indian citizen with US residency and lives here with nephew',
         
         # # green card or not
-        # 'pt may be denied green card if dx known',
-        # 'pt may be denied a Green Card upon receiving the diagnosis of schizophrenia',        
+        'she won a lottery for a Green Card',
+        'he won the green card lottery and lives in the usa',
+        'he posesses a green card and is a us permanent resident',
+        'pt may be denied green card if dx known',
+        'pt may be denied a Green Card upon receiving the diagnosis of schizophrenia',
+        'required to get green card   from Kenyan embassy',        
         # 'PT OFFERING TO SHOW HER GREEN CARD SO SHE COULD GO HOME',
-        # 'she won a lottery for a Green Card',
-        # 'required to get green card   from Kenyan embassy',
         # 'Pt fears that she was using him for a green card, as her behavior changed dramatically when she came to the US',
 
         # visa
@@ -260,10 +276,10 @@ if __name__ == '__main__':
         'She is visiting here from   the [**Country 1168**] Republic',
         'he is a tourist from China',
         'this will enable her to stay for an additional x 30 day visa',
+        'British Mom with temporary Visa negotiating the maze of discharge planning',        
         
         # 'is unsure if he will be able to obtain a visa',
         # 'LETTER FOR FAMILY MEMBER GIVEN FOR VISA FROM [**Location (un) 5841**] AND TOBEGO',
-        # 'British Mom with temporary Visa negotiating the maze of discharge planning',
         # 'SW will prepare letter requesting visa for MD signature',
         # 'SW consult for family regarding obtaining an   emergency visa for pt daughters',
 
