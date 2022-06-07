@@ -38,7 +38,7 @@ except:
 IMMIGRATION_STATUS_US_CITIZEN    = 'US Citizen'
 IMMIGRATION_STATUS_US_RESIDENT   = 'US Resident'   # conditional and permanent residents (green card holders)
 IMMIGRATION_STATUS_NON_IMMIGRANT = 'Non-Immigrant' # students, tourists, temp workers, other visa holders
-IMMIGRATION_STATUS_UNDOCUMENTED  = 'Undocuented'
+IMMIGRATION_STATUS_UNDOCUMENTED  = 'Undocumented'
     
 IMMIGRATION_TUPLE_FIELDS = [
     'sentence',
@@ -55,7 +55,7 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 
 # set to True to enable debug output
-_TRACE = True
+_TRACE = False
 
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
@@ -98,7 +98,7 @@ _regex_visiting = re.compile(_str_visiting, re.IGNORECASE)
 _str_visa_days = r'\b(?P<visa>\d+ day visa)\b'
 _regex_visa_days = re.compile(_str_visa_days, re.IGNORECASE)
 
-_str_has_document = r'\b(has|with|obtained|got|possesses|in possession of)\b' + _str_words +\
+_str_has_document = r'\b(has|with|obtained|got|possesses|in possession of|show)\b' + _str_words +\
     r'\b((?P<visa>visa)|(?P<greencard>green card))\b'
 _regex_has_document = re.compile(_str_has_document, re.IGNORECASE)
 
@@ -108,6 +108,11 @@ _regex_greencard_lottery1 = re.compile(_str_greencard_lottery1, re.IGNORECASE)
 _str_greencard_lottery2 = r'\bwon\b' + _str_words + r'\b(?P<greencard>green card)\b' + _str_words + r'\blottery\b'
 _regex_greencard_lottery2 = re.compile(_str_greencard_lottery2, re.IGNORECASE)
 
+_str_immigrated1 = r'\b(?P<immigrant>immigrated to)\b' + _str_words + r'(united states|usa?)'
+_regex_immigrated1 = re.compile(_str_immigrated1, re.IGNORECASE)
+
+_str_immigrated2 = r'\b(?P<immigrant>(immigrant|immigrated)) from\b'
+_regex_immigrated2 = re.compile(_str_immigrated2, re.IGNORECASE)
 
 _REGEXES = [
     _regex_undocumented,
@@ -123,6 +128,8 @@ _REGEXES = [
     _regex_has_document,
     _regex_greencard_lottery1,
     _regex_greencard_lottery2,
+    _regex_immigrated1,
+    _regex_immigrated2,
 ]
 
 
@@ -177,7 +184,59 @@ def _regex_match(sentence, regex_list):
             start = match.start()
             end = start + len(match_text)
 
-            print('\t' + match_text)
+            # get group name to determine immigration status
+            status = None
+            if 'undocumented' in match.groupdict() and match.group('undocumented') is not None:
+                status = IMMIGRATION_STATUS_UNDOCUMENTED
+            elif 'immigrant' in match.groupdict() and match.group('immigrant') is not None:
+                status = IMMIGRATION_STATUS_US_RESIDENT
+            elif 'uscitizen' in match.groupdict() and match.group('uscitizen') is not None:
+                status = IMMIGRATION_STATUS_US_CITIZEN
+            elif 'permres' in match.groupdict() and match.group('permres') is not None:
+                status = IMMIGRATION_STATUS_US_RESIDENT
+            elif 'visa' in match.groupdict() and match.group('visa') is not None:
+                status = IMMIGRATION_STATUS_NON_IMMIGRANT
+            elif 'greencard' in match.groupdict() and match.group('greencard') is not None:
+                status = IMMIGRATION_STATUS_US_RESIDENT
+            else:
+                DISPLAY('*** Immigration status not determined: "{0}" ***'.format(match_text))
+                
+            
+            #print('\t' + match_text)
+            candidates.append(overlap.Candidate(
+                start, end, match_text, regex, other=status
+            ))
+
+    # sort candidates in DECREASING order of length
+    candidates = sorted(candidates, key=lambda x: x.end-x.start)
+
+    if _TRACE:
+        DISPLAY('\tCandidate matches: ')
+        index = 0
+        for c in candidates:
+            regex_index = regex_list.index(c.regex)
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+                  format(index, regex_index, c.start, c.end, c.match_text))
+            index += 1
+        DISPLAY()
+
+    # keep the longest of any overlapping matches
+    pruned_candidates = overlap.remove_overlap(candidates,
+                                               False,
+                                               keep_longest=True)
+
+    if _TRACE:
+        DISPLAY('\tCandidate matches after overlap resolution: ')
+        index = 0
+        for c in pruned_candidates:
+            regex_index = regex_list.index(c.regex)
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+                  format(index, regex_index, c.start, c.end, c.match_text))
+            index += 1
+        DISPLAY()
+    
+    return pruned_candidates
+    
             
 
 ###############################################################################
@@ -190,6 +249,18 @@ def run(sentence):
         DISPLAY(cleaned_sentence)
 
     candidates = _regex_match(cleaned_sentence, _REGEXES)
+
+    for c in candidates:
+        immigration_status = c.other
+
+        obj = ImmigrationTuple(
+            sentence = cleaned_sentence,
+            immigration_status = immigration_status
+        )
+
+        results.append(obj)
+
+    return json.dumps([r._asdict() for r in results], indent=4)
 
 
 ###############################################################################
@@ -265,7 +336,7 @@ if __name__ == '__main__':
         'pt may be denied green card if dx known',
         'pt may be denied a Green Card upon receiving the diagnosis of schizophrenia',
         'required to get green card   from Kenyan embassy',        
-        # 'PT OFFERING TO SHOW HER GREEN CARD SO SHE COULD GO HOME',
+        'PT OFFERING TO SHOW HER GREEN CARD SO SHE COULD GO HOME',
         # 'Pt fears that she was using him for a green card, as her behavior changed dramatically when she came to the US',
 
         # visa
@@ -283,18 +354,22 @@ if __name__ == '__main__':
         # 'SW will prepare letter requesting visa for MD signature',
         # 'SW consult for family regarding obtaining an   emergency visa for pt daughters',
 
-        # # refugee
-        # 'immigrated to the United States in [**3417**] as a refugee from   [**Country 287**]',
-        # 'Pt is a Ukrainian refugee who immigrated to the US in [**3185**]',
+        # refugee
+        'immigrated to the United States in [**3417**] as a refugee from   [**Country 287**]',
+        'Pt is a Ukrainian refugee who immigrated to the US in [**3185**]',
         
-        # # negative
-        # 'R pupil greater than L at times visa versa, both reactive',
-        # 'ESRD on HD, recent VISA bacteremia who has been intermittently CMO',
-        # 'Formerly worked for the federal government as the Director of Refugee Resettlement',
-        # 'They lived in a refugee camp until [**2629**] when they left for the [**Country 3118**] for 3 months',
+        # negative
+        'R pupil greater than L at times visa versa, both reactive',
+        'ESRD on HD, recent VISA bacteremia who has been intermittently CMO',
+        'Formerly worked for the federal government as the Director of Refugee Resettlement',
+        'They lived in a refugee camp until [**2629**] when they left for the [**Country 3118**] for 3 months',
     ]
 
     for sentence in SENTENCES:
         DISPLAY('\n' + sentence)
-        run(sentence)
+        json_result = run(sentence)
+        json_data = json.loads(json_result)
+        result_list = [ImmigrationTuple(**d) for d in json_data]
+        for r in result_list:
+            DISPLAY('\t{0}'.format(r))
 
