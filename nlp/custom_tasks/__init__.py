@@ -16,3 +16,4 @@ from .LanguageFinderTask import LanguageFinderTask
 from .EducationFinderTask import EducationFinderTask
 from .HousingFinderTask import HousingFinderTask
 from .ReligionFinderTask import ReligionFinderTask
+from .ImmigrationStatusFinderTask import ImmigrationStatusFinderTask

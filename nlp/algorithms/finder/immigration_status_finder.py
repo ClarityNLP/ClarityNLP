@@ -92,7 +92,9 @@ _regex_extend_visa2 = re.compile(_str_extend_visa2, re.IGNORECASE)
 _str_work_visa = r'(?P<visa>(\bvisa\b' + _str_words + r'\bwork(ers?)?\b)|(\bwork(ers?)?\b' + _str_words + r'\bvisa\b))'
 _regex_work_visa = re.compile(_str_work_visa, re.IGNORECASE)
 
-_str_visiting = r'(?P<visa>\b(visit(ing|or)?|tourist)\b' + _str_words + r'\bfrom)\b'
+# don't include "visiting" or "visitor", since relatives often visit patients from other states
+# generates LOTS of false positives, will need to filter out US states if included
+_str_visiting = r'(?P<visa>\btourist\b' + _str_words + r'\bfrom)\b'
 _regex_visiting = re.compile(_str_visiting, re.IGNORECASE)
 
 _str_visa_days = r'\b(?P<visa>\d+ day visa)\b'
@@ -184,6 +186,9 @@ def _regex_match(sentence, regex_list):
             start = match.start()
             end = start + len(match_text)
 
+            if _TRACE:
+                DISPLAY('\t' + match_text)
+            
             # get group name to determine immigration status
             status = None
             if 'undocumented' in match.groupdict() and match.group('undocumented') is not None:
@@ -200,9 +205,7 @@ def _regex_match(sentence, regex_list):
                 status = IMMIGRATION_STATUS_US_RESIDENT
             else:
                 DISPLAY('*** Immigration status not determined: "{0}" ***'.format(match_text))
-                
-            
-            #print('\t' + match_text)
+                                
             candidates.append(overlap.Candidate(
                 start, end, match_text, regex, other=status
             ))
@@ -363,6 +366,8 @@ if __name__ == '__main__':
         'ESRD on HD, recent VISA bacteremia who has been intermittently CMO',
         'Formerly worked for the federal government as the Director of Refugee Resettlement',
         'They lived in a refugee camp until [**2629**] when they left for the [**Country 3118**] for 3 months',
+
+        'would recommend that if she is discharged home with vna a request for sw visit from vna be included in referral.',
     ]
 
     for sentence in SENTENCES:
