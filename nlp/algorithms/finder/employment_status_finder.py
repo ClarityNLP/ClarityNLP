@@ -86,7 +86,16 @@ _regex_unemployed4 = re.compile(_str_unemployed4, re.IGNORECASE)
 _str_disabled = r'\b(?P<disabled>disab(ility|led?))\b'
 _regex_disabled = re.compile(_str_disabled, re.IGNORECASE)
 
+_str_retired = r'\b(?P<retired>retire(d|e))\b'
+_regex_retired = re.compile(_str_retired, re.IGNORECASE)
 
+# explicit statement of employment
+# prevents captures of "employment of", since that often refer to devices
+_str_employed1 = r'\b(?P<employed>(((self|place of) )?employ(ed|ment)(?! of)|work(ing|s)?|career))\b'
+_regex_employed1 = re.compile(_str_employed1, re.IGNORECASE)
+
+_str_ignore = r'\b(unk(nown)?|student)\b'
+_regex_ignore = re.compile(_str_ignore, re.IGNORECASE)
 
 # need explicit check for unknown
 
@@ -96,6 +105,8 @@ _REGEXES = [
     _regex_unemployed3,
     _regex_unemployed4,
     _regex_disabled,
+    _regex_retired,
+    _regex_employed1,
 ]
 
 
@@ -166,6 +177,10 @@ def _regex_match(sentence, regex_list):
                 status = EMPLOYMENT_STATUS_UNEMPLOYED
             elif 'disabled' in match.groupdict() and match.group('disabled') is not None:
                 status = EMPLOYMENT_STATUS_DISABLED
+            elif 'retired' in match.groupdict() and match.group('retired') is not None:
+                status = EMPLOYMENT_STATUS_RETIRED
+            elif 'employed' in match.groupdict() and match.group('employed') is not None:
+                status = EMPLOYMENT_STATUS_EMPLOYED
 
             # append the new match if no other candidates of the same type
             ok_to_append = True
@@ -221,22 +236,40 @@ def run(sentence):
         DISPLAY(cleaned_sentence)
 
     # try the employment statement regex first
-    candidates = None
+    candidates = []
+    match_text = None
     match = _regex_employment_statement.search(cleaned_sentence)
     if match:
+        # matched "Employment Status: <words>"
         match_text = match.group().strip()
         start = match.start()
         end = start + len(match_text)
 
         # get the 'words' group text
         words = match.group('words').strip()
-        
-        candidates = _regex_match(words, _REGEXES)
-        
-        
-    if candidates is None:
-        candidates = _regex_match(cleaned_sentence, _REGEXES)
 
+        # strip out subsequent Mimic headers, if any
+        words = re.sub(r'(legal involvement|mandated reporting information):', '', words)
+        words = re.sub(r'\s+', _CHAR_SPACE, words)
+
+        if words.isspace():
+            candidates = []
+        else:
+            match2 = _regex_ignore.search(words)
+            if match2:
+                candidates = []
+            else:
+                candidates = _regex_match(words, _REGEXES)
+
+                if 0 == len(candidates):
+                    # the default is to assume employed if words appear after "Employment Status: "
+                    # and these other checks have failed
+                    candidates.append(overlap.Candidate(
+                        start, end, match_text, None, other=EMPLOYMENT_STATUS_EMPLOYED
+                    ))
+                    
+    else:
+        candidates = _regex_match(cleaned_sentence, _REGEXES)
 
     for c in candidates:
         employment_status = c.other
@@ -278,43 +311,56 @@ if __name__ == '__main__':
         'she is not currently working',
         'pt was laid off from his job last week',
 
-        # 'Employment status: Unemployed',
-        # 'Employment status: Not working',
-        # 'Employment status: Unemployed--Pt has had numerous jobs',
-        # 'Employment status: Unemployed--Pt was just laid off from his work',        
-        # 'Employment status: part time employment',
-        # "Employment status: works 25 hr's per week",
-        # 'Employment status: Disable',
-        # 'Employment status: Disabled',
-        # 'Employment status: Disability',
-        # 'Employment status: Disable/dog walker',
-        # 'Employment status: Deferred',
-        # 'Employment status: Retired',
-        # 'Employment status: Employed',
-        # 'Employment status: Employed at the time of admission',
-        # 'Employment status: student',
-        # 'Employment status: self employed',
-        # 'Employment status: Good Year Tire - long term disability',
-        # 'Employment status: On medical leave',
-        # 'Employment status: Pt on disability due to illness; previously worked in demolition',
-        # 'Employment status: Post Office',
-        # 'Employment status: Unknown',
-        # 'Employment status: intermittent employment as power washer',
-        # 'Employment status: Employed as civil naval engineer',
-        # 'Employment status: Seeking employment--just finished post doc',
-        # 'Employment status: works as administrative assistant at 2 jobs',
-        # 'Employment status: Career Military, currently at Hanssom AFB',
-        # 'Employment status: full time work at funeral home',
-        # 'Employment status: Employed...works as nursing instructor',
-        # 'Employment status: Employed as freelance text book editor, works from   home',
-        # 'Employment status: Pt reports she has been unemployed since the onset   of health problems',
-        # 'Employment status: Pt works as a sous chef and has worked in restaurants for over 20 years',
+        # unemployed
+        'Employment status: Unemployed',
+        'Employment status: Not working',
+        'Employment status: Unemployed--Pt has had numerous jobs',
+        'Employment status: Unemployed--Pt was just laid off from his work',
+        'Employment status: Deferred',        
+        'Employment status: Seeking employment--just finished post doc',
+        'Employment status: Pt reports she has been unemployed since the onset   of health problems',
+        'Employment status: no job',
+        'Employment status: laid off two months ago',
+
+        # disabled
+        'Employment status: Disable',
+        'Employment status: Disabled',
+        'Employment status: Disability',
+        'Employment status: Disable/dog walker',
+        'Employment status: Good Year Tire - long term disability',
+        'Employment status: Pt on disability due to illness; previously worked in demolition',        
         
-        # 'Pt knows birth date, his current address and place of employment',
+        # retured
+        'Employment status: Retired',
+        'Employment status: five year retiree',
+
+        # employed
+        'Employment status: Employed',
+        'Employment status: Employed at the time of admission',
+        'Employment status: self employed',
+        "Employment status: works 25 hr's per week",
+        'Employment status: Employed as civil naval engineer',
+        'Employment status: works as administrative assistant at 2 jobs',
+        'Employment status: full time work at funeral home',
+        'Pt knows birth date, his current address and place of employment',
+        'Employment status: Employed...works as nursing instructor',
+        'Employment status: Employed as freelance text book editor, works from   home',
+        'Employment status: Pt works as a sous chef and has worked in restaurants for over 20 years',
+        'Employment status: Career Military, currently at Hanssom AFB',
         
-        # # negative
-        # 'Employment of aerosol mask with FIO2 of 35%',
-        # 'Subsequent images demonstrate successful employment of a Wallstent across the stricture',
+        # part-time employment
+        'Employment status: part time employment',        
+        'Employment status: intermittent employment as power washer',
+
+        'Employment status: On medical leave',
+        'Employment status: Post Office',
+        
+        
+        # negative
+        'Employment of aerosol mask with FIO2 of 35%',
+        'Subsequent images demonstrate successful employment of a Wallstent across the stricture',
+        'Employment status: student',        
+        'Employment status: Unknown',
     ]
 
     for sentence in SENTENCES:
