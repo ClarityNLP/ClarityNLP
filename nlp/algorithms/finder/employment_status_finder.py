@@ -66,18 +66,25 @@ _str_words = r'\s?(' + _str_word + r'){0,5}?'
 _str_one_or_more_words = r'\s?(' + _str_word + r'){1,7}'
 
 _str_header = r'\bemployment status:\s?'
+_regex_header = re.compile(_str_header, re.IGNORECASE)
+
+# section tags that might appear after the "Employment Status:" tag
+_str_tags = r'\b(social work( (follow up|initial note))?|legal involvement|previous level of functioning|' +\
+    r'previous living situation|additional information|past psychiatric history|name|title|' +\
+    r'clergy contact)'
 
 _str_employment_statement = _str_header + r'(?P<words>' + _str_one_or_more_words + r')'
 _regex_employment_statement = re.compile(_str_employment_statement, re.IGNORECASE)
 
-_str_unemployed1 = r'\b(?P<unemployed>(unemployed|not? (employed|work(ing)?)|deferred|laid off))\b'
+_str_unemployed1 = r'\b(?P<unemployed>(unemployed|not? (employed|(?<!social )work(ing)?(?! with))|laid off))\b'
 _regex_unemployed1 = re.compile(_str_unemployed1, re.IGNORECASE)
 
-_str_job = r'\b(employment|work(ing)?|job)\b'
+_str_job = r'\b(employment|(?<!social )(?<!return to )work(ing)?(?! with)|job)\b'
 _str_unemployed2 = r'\b(?P<unemployed>(look|search|seek|find)(ing)?\b' + _str_words + _str_job + r')'
 _regex_unemployed2 = re.compile(_str_unemployed2, re.IGNORECASE)
 
-_str_unemployed3 = r'\b(?P<unemployed>(terminat(ed?|ing)|laid off)\b' + _str_words + _str_job + r')'
+_str_unemployed3 = r'\b(?P<unemployed>(terminat(ed?|ing)|stopp(ed|ing)|quit(ing)?|try(ing)?|laid off|out of)\b' +\
+    _str_words + _str_job + r')'
 _regex_unemployed3 = re.compile(_str_unemployed3, re.IGNORECASE)
 
 _str_unemployed4 = r'\b(?P<unemployed>not?\b' + _str_words + _str_job + r')'
@@ -91,7 +98,7 @@ _regex_retired = re.compile(_str_retired, re.IGNORECASE)
 
 # explicit statement of employment
 # prevents captures of "employment of", since that often refer to devices
-_str_employed1 = r'\b(?P<employed>(((self|place of) )?employ(ed|ment)(?! of)|work(ing|s)?|career))\b'
+_str_employed1 = r'\b(?P<employed>(((self|place of) )?employ(ed|ment)(?! of)|(?<!social )work(ing|s)?(?! with)|career))\b'
 _regex_employed1 = re.compile(_str_employed1, re.IGNORECASE)
 
 _str_ignore = r'\b(unk(nown)?|student)\b'
@@ -118,6 +125,9 @@ def _cleanup(sentence):
     """
     Apply some cleanup operations to the sentence and return the
     cleaned sentence.
+
+    Do NOT remove colon characters in this cleanup function, since these
+    often indicate EHR section headers.
     """
 
     # convert to lowercase
@@ -146,6 +156,14 @@ def _cleanup(sentence):
 
     # replace "long term disability" and "short term disability" with "disability"
     sentence = re.sub(r'\b(long|short) term disability', 'disability', sentence)
+
+    # replace some work-related expressions with whitespace, since these are not related to employment
+    sentence = re.sub(r'\btime that would work\b', _CHAR_SPACE, sentence)
+    sentence = re.sub(r'\bway to work\b', _CHAR_SPACE, sentence)
+    sentence = re.sub(r'\bcourse work\b', _CHAR_SPACE, sentence)
+    sentence = re.sub(r'\bwork out\b', _CHAR_SPACE, sentence)
+    sentence = re.sub(r'\bworking to\b', _CHAR_SPACE, sentence)
+    sentence = re.sub(r'\bworking (well|alliance)\b', _CHAR_SPACE, sentence)
     
     # collapse repeated whitespace
     sentence = re.sub(r'\s+', _CHAR_SPACE, sentence)
@@ -235,38 +253,51 @@ def run(sentence):
     if _TRACE:
         DISPLAY(cleaned_sentence)
 
-    # try the employment statement regex first
+    # look for "Employment status:" first
     candidates = []
     match_text = None
-    match = _regex_employment_statement.search(cleaned_sentence)
+    #match = _regex_employment_statement.search(cleaned_sentence)
+    match = _regex_header.search(cleaned_sentence)
     if match:
-        # matched "Employment Status: <words>"
-        match_text = match.group().strip()
-        start = match.start()
-        end = start + len(match_text)
+        
+        # matched "Employment Status:\s?"
+        #match_text = match.group().strip()
+        #start = match.start()
+        #end = start + len(match_text)
 
-        # get the 'words' group text
-        words = match.group('words').strip()
+        # search for the next colon in the sentence, if any
+        substr = cleaned_sentence[match.end():]
+        pos = substr.find(':')
+        if -1 != pos:
+            cleaned_sentence = cleaned_sentence[:pos+len(substr)]
+            cleaned_sentence.strip()
 
-        # strip out subsequent Mimic headers, if any
-        words = re.sub(r'(legal involvement|mandated reporting information):', '', words)
-        words = re.sub(r'\s+', _CHAR_SPACE, words)
+        # strip known section tags from the end of the sentence
+        cleaned_sentence = re.sub(_str_tags, _CHAR_SPACE, cleaned_sentence)
+        cleaned_sentence = re.sub(r'\s+', _CHAR_SPACE, cleaned_sentence)
+            
+        # match again on the truncated sentence
+        match = _regex_employment_statement.search(cleaned_sentence)
+        if match:
+        
+            # get the 'words' group text
+            words = match.group('words').strip()
 
-        if words.isspace():
-            candidates = []
-        else:
-            match2 = _regex_ignore.search(words)
-            if match2:
+            if words.isspace():
                 candidates = []
             else:
-                candidates = _regex_match(words, _REGEXES)
+                match2 = _regex_ignore.search(words)
+                if match2:
+                    candidates = []
+                else:
+                    candidates = _regex_match(words, _REGEXES)
 
-                if 0 == len(candidates):
-                    # the default is to assume employed if words appear after "Employment Status: "
-                    # and these other checks have failed
-                    candidates.append(overlap.Candidate(
-                        start, end, match_text, None, other=EMPLOYMENT_STATUS_EMPLOYED
-                    ))
+                    # if 0 == len(candidates):
+                    #     # the default is to assume employed if words appear after "Employment Status: "
+                    #     # and these other checks have failed
+                    #     candidates.append(overlap.Candidate(
+                    #         start, end, match_text, None, other=EMPLOYMENT_STATUS_EMPLOYED
+                    #     ))
                     
     else:
         candidates = _regex_match(cleaned_sentence, _REGEXES)
@@ -275,7 +306,7 @@ def run(sentence):
         employment_status = c.other
 
         obj = EmploymentTuple(
-            sentence = cleaned_sentence,
+            sentence = sentence,
             employment_status = employment_status
         )
 
@@ -310,13 +341,14 @@ if __name__ == '__main__':
         'pt is trying hard to find a job',
         'she is not currently working',
         'pt was laid off from his job last week',
-
+        'He admits his drinking has increased greatly since stopping work.',
+        'She has been trying to obtain employment but is being told, even with a GED, that "she is over qualified."',
+        
         # unemployed
         'Employment status: Unemployed',
         'Employment status: Not working',
         'Employment status: Unemployed--Pt has had numerous jobs',
         'Employment status: Unemployed--Pt was just laid off from his work',
-        'Employment status: Deferred',        
         'Employment status: Seeking employment--just finished post doc',
         'Employment status: Pt reports she has been unemployed since the onset   of health problems',
         'Employment status: no job',
@@ -347,20 +379,29 @@ if __name__ == '__main__':
         'Employment status: Employed as freelance text book editor, works from   home',
         'Employment status: Pt works as a sous chef and has worked in restaurants for over 20 years',
         'Employment status: Career Military, currently at Hanssom AFB',
+        'Per team, pt works in construction, and will not be able to return to work for 1-2 months.',
         
         # part-time employment
         'Employment status: part time employment',        
         'Employment status: intermittent employment as power washer',
-
-        'Employment status: On medical leave',
-        'Employment status: Post Office',
         
-        
-        # negative
+        # no match
         'Employment of aerosol mask with FIO2 of 35%',
         'Subsequent images demonstrate successful employment of a Wallstent across the stricture',
         'Employment status: student',        
         'Employment status: Unknown',
+        'Employment status: legal involvement:',
+        'will work with me to address some concerns',
+        'Social Work progress Note, Transplant Service Clinical Data:',
+        'confirm a time that would work for all of them.',
+        'she was on her way to work today',
+        "be reliable in working w/ the team, or act in accordance w/ pt's wishes and values.",
+        "completed the course work prior to her daughter's birth",
+        'people who are working to try and facilitate a transfer',
+        
+        # problems
+        'Employment status: On medical leave',
+        'Employment status: Post Office',
     ]
 
     for sentence in SENTENCES:

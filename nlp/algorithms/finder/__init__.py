@@ -13,3 +13,4 @@ from .education_finder import run as run_education_finder, EducationTuple
 from .housing_finder import run as run_housing_finder, HousingTuple
 from .religion_finder import run as run_religion_finder, ReligionTuple
 from .immigration_status_finder import run as run_immigration_status_finder, ImmigrationTuple
+from .employment_status_finder import run as run_employment_status_finder, EmploymentTuple
