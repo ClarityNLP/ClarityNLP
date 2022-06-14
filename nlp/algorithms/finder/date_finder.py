@@ -461,14 +461,14 @@ def run(sentence):
                 int_year = int(v)
             elif 'month' == k:
                 # convert textual months to int
-                if re.search('\D', v):
+                if re.search(r'\D', v):
                     int_month = month_dict[v.strip().lower()]
                 else:
                     int_month = int(v)
             elif 'day' == k:
                 # strip text from 1st, 3rd, etc.
-                if re.search('\D', v):
-                    int_day = int(re.search('\d+', v).group())
+                if re.search(r'\D', v):
+                    int_day = int(re.search(r'\d+', v).group())
                 else:
                     int_day = int(v)
 
