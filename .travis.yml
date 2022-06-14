@@ -5,7 +5,7 @@ before_install:
   - cd nlp
 install:
   - pip install -r requirements.txt
-  - python install_models.py
+  - python install_models.py  
   - python -m spacy download en_core_web_sm
   - python -m spacy download en
 before_script:

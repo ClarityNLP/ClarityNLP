@@ -486,7 +486,7 @@ def _num_to_float(num_str):
     """
 
     # replace any embedded spaces with the empty string
-    str_no_spaces = re.sub('\s', '', num_str)
+    str_no_spaces = re.sub(r'\s', '', num_str)
     return float(str_no_spaces)
 
 
