@@ -14,7 +14,7 @@ from data_access import base_model
 from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
-from data_access import solr_data
+from data_access import solr_data, filesystem_data
 from claritynlp_logging import log, ERROR, DEBUG
 from xml.sax import saxutils as su
 
@@ -274,15 +274,35 @@ class BaseTask(luigi.Task):
 
                 self.pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
-                self.docs = solr_data.query(self.solr_query, rows=util.row_count, start=self.start,
-                                            solr_url=util.solr_url,
-                                            tags=self.pipeline_config.report_tags, mapper_inst=util.report_mapper_inst,
-                                            mapper_url=util.report_mapper_url, mapper_key=util.report_mapper_key,
-                                            types=self.pipeline_config.report_types,
-                                            sources=self.pipeline_config.sources,
-                                            filter_query=self.pipeline_config.filter_query,
-                                            cohort_ids=self.pipeline_config.cohort,
-                                            job_results_filters=self.pipeline_config.job_results)
+                
+                if util.solr_url.startswith('http'):
+                    self.docs = solr_data.query(self.solr_query,
+                                                rows=util.row_count,
+                                                start=self.start,
+                                                solr_url=util.solr_url,
+                                                tags=self.pipeline_config.report_tags,
+                                                mapper_inst=util.report_mapper_inst,
+                                                mapper_url=util.report_mapper_url,
+                                                mapper_key=util.report_mapper_key,
+                                                types=self.pipeline_config.report_types,
+                                                sources=self.pipeline_config.sources,
+                                                filter_query=self.pipeline_config.filter_query,
+                                                cohort_ids=self.pipeline_config.cohort,
+                                                job_results_filters=self.pipeline_config.job_results)
+                else:
+                    self.docs = filesystem_data.query(self.solr_query,
+                                                rows=util.row_count,
+                                                start=self.start,
+                                                solr_url=util.solr_url,
+                                                tags=self.pipeline_config.report_tags,
+                                                mapper_inst=util.report_mapper_inst,
+                                                mapper_url=util.report_mapper_url,
+                                                mapper_key=util.report_mapper_key,
+                                                types=self.pipeline_config.report_types,
+                                                sources=self.pipeline_config.sources,
+                                                filter_query=self.pipeline_config.filter_query,
+                                                cohort_ids=self.pipeline_config.cohort,
+                                                job_results_filters=self.pipeline_config.job_results)
 
                 for d in self.docs:
                     doc_id = d[util.solr_report_id_field]

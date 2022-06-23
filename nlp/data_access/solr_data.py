@@ -198,6 +198,23 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
 
         return list()
 
+    # doc_results is a list of JSON objects with these fields, all of which are string attributes except cg_id
+    '''
+      {
+        "id":"317155",
+        "report_id":"317155",
+        "report_date":"2132-04-17T04:00:00Z",
+        "source":"MIMIC Notes",
+        "subject":"32326",
+        "report_text":"text here",
+        "report_type":"Case Management ",
+        "store_time_attr":"2132-04-17 13:00:24",
+        "admission_id":141691,
+        "chart_time_attr":"2132-04-17 13:00:00",
+        "cg_id":15656,
+        "description_attr":"Case Managment Initial Patient Assessment",
+
+    '''
     doc_results = response.json()['response']['docs']
     return doc_results
 
@@ -207,6 +224,26 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
                    filter_query='', job_results_filters: dict=None, sources: list=None,
                    report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
 
+    # examples of types for language_finder.nlpql
+    # (these are document types)
+    # ['Nursing/other', 'Nursing Progress Note', 'Nursing Transfer Note',
+    #  'Social Work', 'Physician ', 'Discharge summary']
+
+    # covert types as follows:
+    #     Nursing/other         => nursing_other
+    #     Nursing Progress Note => nursing_progress_note
+    #     Nursing Transfer Note => nursing_transfer_note (doesn't exist)
+    #     etc.
+
+    # Simple replacement for Solr:
+    # solr_url becomes path to claritynlp_data document root (document_root)
+    #     can specify more precise path also, such as claritynlp_data/mimic3
+    # types are subdir names within this tree somewhere
+    # need to count docs beforehand - need an index.claritynlp doc in each subdir, for instance
+    #     lists total docs in each folder
+    
+    
+    
     if tags is None:
         tags = list()
     if cohort_ids is None:
