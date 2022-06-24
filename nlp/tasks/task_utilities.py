@@ -31,7 +31,11 @@ segment = segmentation.Segmentation()
 @cached(document_cache)
 def _get_document_by_id(document_id):
     util.add_cache_compute_count()
-    return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+
+    if util.solr_url.startswith('http'):
+        return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+    else:
+        return filesystem_data.query_doc_by_id(document_id, solr_url=util.solr_url)
 
 
 def get_document_by_id(document_id):
@@ -42,7 +46,11 @@ def get_document_by_id(document_id):
         txt = util.get_from_redis_cache("doc:" + document_id)
         if not txt:
             util.add_cache_compute_count()
-            doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+
+            if util.solr_url.startswith('http'):
+                doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+            else:
+                doc = filesystem_data.query_doc_by_id(document_id, solr_url=util.solr_url)
             util.write_to_redis_cache("doc:" + document_id, json.dumps(doc))
         else:
             doc = json.loads(txt)
@@ -51,7 +59,10 @@ def get_document_by_id(document_id):
         doc = _get_document_by_id(document_id)
 
     if not doc:
-        return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+        if util.solr_url.startswith('http'):
+            return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+        else:
+            return filesystem_data.query_doc_by_id(document_id, solr_url=util.solr_url)
     else:
         return doc
 
