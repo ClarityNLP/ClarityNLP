@@ -81,7 +81,7 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
                         json_obj = json.loads(text)
                         docs.append(json_obj)
 
-    return docs
+    return docs[start:]
 
 
 ###############################################################################
@@ -119,6 +119,8 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
                 f, ext = os.path.splitext(item)
                 if ext in _EXTENSIONS:
                     file_count += 1
+                    if _TRACE:
+                        DISPLAY('Found file "{0}"'.format(item))
             elif os.path.isdir(fullpath) and item in new_types:
                 # found a subdir of the requested type, save it
                 queue.append(fullpath)

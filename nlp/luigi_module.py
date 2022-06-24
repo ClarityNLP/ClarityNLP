@@ -204,6 +204,7 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
                                               sources=pipeline_config.sources,
                                               cohort_ids=pipeline_config.cohort,
                                               job_results_filters=pipeline_config.job_results)
+        log('*** FOUND {0} TOTAL DOCS, pipeline_id {1}, job_id {2} ***'.format(total_docs, pipeline_id, job_id))
         
     jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS + "_PIPELINE_" + str(pipeline_id) + "_SOLR_DOCS",
                            str(total_docs))

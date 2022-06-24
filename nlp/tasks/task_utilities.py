@@ -315,6 +315,11 @@ class BaseTask(luigi.Task):
                                                 cohort_ids=self.pipeline_config.cohort,
                                                 job_results_filters=self.pipeline_config.job_results)
 
+                #log('BaseTask::run: found {0} docs with query "{1}"'.format(len(self.docs), self.solr_query))
+                #log('BaseTask::run: start = {0}'.format(self.start))
+                #for line in traceback.format_stack():
+                #    log(line)
+
                 for d in self.docs:
                     doc_id = d[util.solr_report_id_field]
                     if util.use_memory_caching == "true":
