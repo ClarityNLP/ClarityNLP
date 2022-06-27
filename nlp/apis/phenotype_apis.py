@@ -78,6 +78,25 @@ def parse_nlpql(nlpql: str):
         return nlpql_results['phenotype'].to_json()
 
 
+@phenotype_app.route('/reports', methods=['POST'])
+def reports():
+    """POST a JSON array of documents (typically from NLPaaS)."""
+    if 'POST' == request.method and request.data:
+
+        # change the the solr URL to 'memory'
+        util.solr_url = memory_data.IN_MEMORY_DATA
+        
+        json_data = request.get_json()
+
+        docs = []
+        if 'reports' in json_data:
+            docs = json_data['reports']
+            memory_data.load_buffer(docs)
+            return '{0}'.format(memory_data.get_document_count())
+    else:
+        return 'Please POST report documents.'
+
+    
 @phenotype_app.route('/phenotype', methods=['POST'])
 def phenotype():
     """POST a phenotype job (JSON) to run"""

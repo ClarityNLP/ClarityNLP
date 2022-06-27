@@ -7,7 +7,7 @@ from pymongo.errors import BulkWriteError
 import data_access
 from ilock import ILock, ILockException
 from data_access import pipeline_config as config
-from data_access import solr_data, filesystem_data, phenotype_stats
+from data_access import solr_data, filesystem_data, memory_data, phenotype_stats
 from data_access import update_phenotype_model
 from data_access import tuple_processor
 from luigi_tools import phenotype_helper
@@ -180,6 +180,19 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
 
     if util.solr_url.startswith('http'):
         total_docs = solr_data.query_doc_size(solr_query,
+                                              mapper_inst=util.report_mapper_inst,
+                                              mapper_url=util.report_mapper_url,
+                                              mapper_key=util.report_mapper_key,
+                                              solr_url=util.solr_url,
+                                              types=pipeline_config.report_types,
+                                              filter_query=pipeline_config.filter_query,
+                                              tags=pipeline_config.report_tags,
+                                              report_type_query=pipeline_config.report_type_query,
+                                              sources=pipeline_config.sources,
+                                              cohort_ids=pipeline_config.cohort,
+                                              job_results_filters=pipeline_config.job_results)
+    elif memory_data.IN_MEMORY_DATA == util.solr_url:
+        total_docs = memory_data.query_doc_size(solr_query,
                                               mapper_inst=util.report_mapper_inst,
                                               mapper_url=util.report_mapper_url,
                                               mapper_key=util.report_mapper_key,

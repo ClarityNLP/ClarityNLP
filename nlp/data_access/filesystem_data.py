@@ -188,7 +188,7 @@ def banner(msg, width=70):
 ###############################################################################          
 if __name__ == '__main__':
 
-    rootdir = '/Users/rb230/data/claritynlp_data/'#claritynlp_validation_0'
+    rootdir = '/Users/rb230/data/claritynlp_data/'
     types = ['CLARITYNLP_VALIDATION_0'] #['Discharge summary', 'Physician', 'Social Work']
 
     banner('query_doc_size')

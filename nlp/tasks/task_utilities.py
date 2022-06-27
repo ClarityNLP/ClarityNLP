@@ -14,7 +14,7 @@ from data_access import base_model
 from data_access import jobs
 from data_access import pipeline_config
 from data_access import pipeline_config as config
-from data_access import solr_data, filesystem_data
+from data_access import solr_data, filesystem_data, memory_data
 from claritynlp_logging import log, ERROR, DEBUG
 from xml.sax import saxutils as su
 
@@ -34,6 +34,8 @@ def _get_document_by_id(document_id):
 
     if util.solr_url.startswith('http'):
         return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+    elif memory_data.IN_MEMORY_DATA == util.solr_url:
+        return memory_data.query_doc_by_id(document_id, solr_url=util.solr_url)
     else:
         return filesystem_data.query_doc_by_id(document_id, solr_url=util.solr_url)
 
@@ -49,6 +51,8 @@ def get_document_by_id(document_id):
 
             if util.solr_url.startswith('http'):
                 doc = solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+            elif memory_data.IN_MEMORY_DATA == util.solr_url:
+                doc = memory_data.query_doc_by_id(document_id, solr_url=util.solr_url)
             else:
                 doc = filesystem_data.query_doc_by_id(document_id, solr_url=util.solr_url)
             util.write_to_redis_cache("doc:" + document_id, json.dumps(doc))
@@ -61,6 +65,8 @@ def get_document_by_id(document_id):
     if not doc:
         if util.solr_url.startswith('http'):
             return solr_data.query_doc_by_id(document_id, solr_url=util.solr_url)
+        elif memory_data.IN_MEMORY_DATA == util.solr_url:
+            return memory_data.query_doc_by_id(document_id, solr_url=util.solr_url)
         else:
             return filesystem_data.query_doc_by_id(document_id, solr_url=util.solr_url)
     else:
@@ -288,6 +294,20 @@ class BaseTask(luigi.Task):
                 
                 if util.solr_url.startswith('http'):
                     self.docs = solr_data.query(self.solr_query,
+                                                rows=util.row_count,
+                                                start=self.start,
+                                                solr_url=util.solr_url,
+                                                tags=self.pipeline_config.report_tags,
+                                                mapper_inst=util.report_mapper_inst,
+                                                mapper_url=util.report_mapper_url,
+                                                mapper_key=util.report_mapper_key,
+                                                types=self.pipeline_config.report_types,
+                                                sources=self.pipeline_config.sources,
+                                                filter_query=self.pipeline_config.filter_query,
+                                                cohort_ids=self.pipeline_config.cohort,
+                                                job_results_filters=self.pipeline_config.job_results)
+                elif memory_data.IN_MEMORY_DATA == util.solr_url:
+                    self.docs = memory_data.query(self.solr_query,
                                                 rows=util.row_count,
                                                 start=self.start,
                                                 solr_url=util.solr_url,

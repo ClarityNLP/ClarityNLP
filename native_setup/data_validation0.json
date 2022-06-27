@@ -1,0 +1,13 @@
+{
+    "reports" : [
+        {
+            "report_type": "CLARITYNLP_VALIDATION_0",
+            "id": "0",
+            "report_id": "0",
+            "source": "CLARITYNLP_VALIDATION_0",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is a caucasian male, age 40 years.\n\nThe first lesion measures 1.3 cm.\nThe second lesion has a volume of 1.4 cubic centimeters.\nThe third lesion has a size of approximately 1.5 - 1.6 cm in my estimation.\nThe fourth lesion is 1.7 x 1.8 cm in size.\nThe fifth lesion measures 1.9 cm craniocaudal by 2.0 cm transverse on the CT scan.\nThe lesion is 2.1 cm craniocaudal by 2.2 cm transverse by 2.3 cm anterior on the scan.\n\nThe patient does not have fever.\nThe patient has fever.\n\nThe patient has cancer of the prostate with Gleason 2+3 in two out of twelve cores.\n\nThe LVEF was less than 40% on admission.\nThe left ventriclular ejection fraction was measured to be 75%.\n\nThe tumor code pT4bpN1bM0 (stage IIIC) also has a stage indication.\n"
+        }
+    ]
+}
