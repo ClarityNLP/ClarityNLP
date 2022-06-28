@@ -92,7 +92,7 @@ def reports():
         if 'reports' in json_data:
             docs = json_data['reports']
             memory_data.load_buffer(docs)
-            return '{0}'.format(memory_data.get_document_count())
+            return '{0}\n'.format(memory_data.get_document_count())
     else:
         return 'Please POST report documents.'
 

@@ -178,46 +178,28 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
 
     solr_query = config.get_query(custom_query=pipeline_config.custom_query, terms=added)
 
+    # the solr "url" determines where to find the documents
     if util.solr_url.startswith('http'):
-        total_docs = solr_data.query_doc_size(solr_query,
-                                              mapper_inst=util.report_mapper_inst,
-                                              mapper_url=util.report_mapper_url,
-                                              mapper_key=util.report_mapper_key,
-                                              solr_url=util.solr_url,
-                                              types=pipeline_config.report_types,
-                                              filter_query=pipeline_config.filter_query,
-                                              tags=pipeline_config.report_tags,
-                                              report_type_query=pipeline_config.report_type_query,
-                                              sources=pipeline_config.sources,
-                                              cohort_ids=pipeline_config.cohort,
-                                              job_results_filters=pipeline_config.job_results)
+        data_store = solr_data
     elif memory_data.IN_MEMORY_DATA == util.solr_url:
-        total_docs = memory_data.query_doc_size(solr_query,
-                                              mapper_inst=util.report_mapper_inst,
-                                              mapper_url=util.report_mapper_url,
-                                              mapper_key=util.report_mapper_key,
-                                              solr_url=util.solr_url,
-                                              types=pipeline_config.report_types,
-                                              filter_query=pipeline_config.filter_query,
-                                              tags=pipeline_config.report_tags,
-                                              report_type_query=pipeline_config.report_type_query,
-                                              sources=pipeline_config.sources,
-                                              cohort_ids=pipeline_config.cohort,
-                                              job_results_filters=pipeline_config.job_results)
+        data_store = memory_data
     else:
-        total_docs = filesystem_data.query_doc_size(solr_query,
-                                              mapper_inst=util.report_mapper_inst,
-                                              mapper_url=util.report_mapper_url,
-                                              mapper_key=util.report_mapper_key,
-                                              solr_url=util.solr_url,
-                                              types=pipeline_config.report_types,
-                                              filter_query=pipeline_config.filter_query,
-                                              tags=pipeline_config.report_tags,
-                                              report_type_query=pipeline_config.report_type_query,
-                                              sources=pipeline_config.sources,
-                                              cohort_ids=pipeline_config.cohort,
-                                              job_results_filters=pipeline_config.job_results)
-        log('*** FOUND {0} TOTAL DOCS, pipeline_id {1}, job_id {2} ***'.format(total_docs, pipeline_id, job_id))
+        data_store = filesystem_data
+
+    total_docs = data_store.query_doc_size(solr_query,
+                                           mapper_inst=util.report_mapper_inst,
+                                           mapper_url=util.report_mapper_url,
+                                           mapper_key=util.report_mapper_key,
+                                           solr_url=util.solr_url,
+                                           types=pipeline_config.report_types,
+                                           filter_query=pipeline_config.filter_query,
+                                           tags=pipeline_config.report_tags,
+                                           report_type_query=pipeline_config.report_type_query,
+                                           sources=pipeline_config.sources,
+                                           cohort_ids=pipeline_config.cohort,
+                                           job_results_filters=pipeline_config.job_results)
+        
+    #log('*** FOUND {0} TOTAL DOCS, pipeline_id {1}, job_id {2} ***'.format(total_docs, pipeline_id, job_id))
         
     jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS + "_PIPELINE_" + str(pipeline_id) + "_SOLR_DOCS",
                            str(total_docs))

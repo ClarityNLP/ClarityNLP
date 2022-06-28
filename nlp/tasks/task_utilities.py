@@ -291,50 +291,29 @@ class BaseTask(luigi.Task):
 
                 self.pipeline_config = config.get_pipeline_config(self.pipeline, util.conn_string)
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Solr query")
-                
-                if util.solr_url.startswith('http'):
-                    self.docs = solr_data.query(self.solr_query,
-                                                rows=util.row_count,
-                                                start=self.start,
-                                                solr_url=util.solr_url,
-                                                tags=self.pipeline_config.report_tags,
-                                                mapper_inst=util.report_mapper_inst,
-                                                mapper_url=util.report_mapper_url,
-                                                mapper_key=util.report_mapper_key,
-                                                types=self.pipeline_config.report_types,
-                                                sources=self.pipeline_config.sources,
-                                                filter_query=self.pipeline_config.filter_query,
-                                                cohort_ids=self.pipeline_config.cohort,
-                                                job_results_filters=self.pipeline_config.job_results)
-                elif memory_data.IN_MEMORY_DATA == util.solr_url:
-                    self.docs = memory_data.query(self.solr_query,
-                                                rows=util.row_count,
-                                                start=self.start,
-                                                solr_url=util.solr_url,
-                                                tags=self.pipeline_config.report_tags,
-                                                mapper_inst=util.report_mapper_inst,
-                                                mapper_url=util.report_mapper_url,
-                                                mapper_key=util.report_mapper_key,
-                                                types=self.pipeline_config.report_types,
-                                                sources=self.pipeline_config.sources,
-                                                filter_query=self.pipeline_config.filter_query,
-                                                cohort_ids=self.pipeline_config.cohort,
-                                                job_results_filters=self.pipeline_config.job_results)
-                else:
-                    self.docs = filesystem_data.query(self.solr_query,
-                                                rows=util.row_count,
-                                                start=self.start,
-                                                solr_url=util.solr_url,
-                                                tags=self.pipeline_config.report_tags,
-                                                mapper_inst=util.report_mapper_inst,
-                                                mapper_url=util.report_mapper_url,
-                                                mapper_key=util.report_mapper_key,
-                                                types=self.pipeline_config.report_types,
-                                                sources=self.pipeline_config.sources,
-                                                filter_query=self.pipeline_config.filter_query,
-                                                cohort_ids=self.pipeline_config.cohort,
-                                                job_results_filters=self.pipeline_config.job_results)
 
+                # the solr "url" determines where to find the documents
+                if util.solr_url.startswith('http'):
+                    data_store = solr_data
+                elif memory_data.IN_MEMORY_DATA == util.solr_url:
+                    data_store = memory_data
+                else:
+                    data_store = filesystem_data
+
+                self.docs = data_store.query(self.solr_query,
+                                                rows=util.row_count,
+                                                start=self.start,
+                                                solr_url=util.solr_url,
+                                                tags=self.pipeline_config.report_tags,
+                                                mapper_inst=util.report_mapper_inst,
+                                                mapper_url=util.report_mapper_url,
+                                                mapper_key=util.report_mapper_key,
+                                                types=self.pipeline_config.report_types,
+                                                sources=self.pipeline_config.sources,
+                                                filter_query=self.pipeline_config.filter_query,
+                                                cohort_ids=self.pipeline_config.cohort,
+                                                job_results_filters=self.pipeline_config.job_results)
+                
                 #log('BaseTask::run: found {0} docs with query "{1}"'.format(len(self.docs), self.solr_query))
                 #log('BaseTask::run: start = {0}'.format(self.start))
                 #for line in traceback.format_stack():
