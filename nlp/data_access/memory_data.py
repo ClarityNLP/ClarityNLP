@@ -27,10 +27,24 @@ def _clear_buffer():
 
 
 ###############################################################################
+def _filter_docs_by_type(types: list):
+    """
+    Return all docs of the given type in the buffer.
+    """
+
+    docs = []
+    for doc in _BUFFER:
+        if 'report_type' in doc and doc['report_type'] in types:
+            docs.append(doc)
+
+    return docs
+
+
+###############################################################################
 def get_document_count():
     return len(_BUFFER)
 
-    
+
 ###############################################################################
 def load_buffer(list_of_dicts):
     
@@ -41,6 +55,8 @@ def load_buffer(list_of_dicts):
     _clear_buffer()
     for item in list_of_dicts:
         _BUFFER.append(item)
+
+    log('memory_data: loaded {0} docs into buffer'.format(len(_BUFFER)))
     
 
 ###############################################################################
@@ -52,7 +68,8 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     Return docs in the buffer beginning with index 'start'.
     """
 
-    return _BUFFER[start:]
+    docs = _filter_docs_by_type(types)
+    return docs[start:]
 
 
 ###############################################################################
@@ -61,10 +78,11 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
                    filter_query='', job_results_filters: dict=None, sources: list=None,
                    report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
     """
-    Count and return the number of docs in the buffer.
+    Count and return the number of docs in the buffer of the specified types.
     """
 
-    return len(_BUFFER)
+    docs = _filter_docs_by_type(types)
+    return len(docs)
 
 
 ###############################################################################
