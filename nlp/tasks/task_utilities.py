@@ -266,9 +266,10 @@ class BaseCollector(base_model.BaseModel):
 
 
 class BaseTask(luigi.Task):
+    # removing these parameters will require use of 'self.' throughout all tasks
     pipeline = luigi.IntParameter()
-    job = luigi.IntParameter()
-    start = luigi.IntParameter()
+    job =      luigi.IntParameter()
+    start =    luigi.IntParameter()
     solr_query = luigi.Parameter()
     batch = luigi.IntParameter()
     parallel_task = True
@@ -284,7 +285,8 @@ class BaseTask(luigi.Task):
         client = util.mongo_client()
 
         try:
-            with self.output().open('w') as temp_file:
+            #with self.output().open('w') as temp_file:
+            with open(self.output(), 'w') as temp_file:
                 temp_file.write("start writing custom task")
                 jobs.update_job_status(str(self.job), util.conn_string, jobs.IN_PROGRESS, "Running Batch %s" %
                                        self.batch)
@@ -339,8 +341,13 @@ class BaseTask(luigi.Task):
             client.close()
 
     def output(self):
-        return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,
-                                                                       str(self.start)))
+        output_file = '{0}/pipeline_job{1}_{2}_batch{3}.txt'.format(util.tmp_dir,
+                                                                    str(self.job),
+                                                                    self.task_name,
+                                                                    str(self.start))
+        return output_file
+        #return luigi.LocalTarget("%s/pipeline_job%s_%s_batch%s.txt" % (util.tmp_dir, str(self.job), self.task_name,
+        #                                                               str(self.start)))
 
     def set_name(self, name):
         self.task_name = name

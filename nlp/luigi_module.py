@@ -1,7 +1,7 @@
 import copy
 import datetime
 
-import luigi
+#import luigi
 from pymongo.errors import BulkWriteError
 
 import data_access
@@ -32,13 +32,18 @@ _MAX_ATTEMPTS = 10
 # didn't seem like it was with initial efforts
 
 
-class PhenotypeTask(luigi.Task):
+class PhenotypeTask():#luigi.Task):
     worker_timeout = 60 * 60 * 4
-    phenotype = luigi.IntParameter()
-    job = luigi.IntParameter()
-    owner = luigi.Parameter()
+    #phenotype = luigi.IntParameter()
+    #job = luigi.IntParameter()
+    #owner = luigi.Parameter()
 
-    def requires(self):
+    #def requires(self):
+    def __init__(self, job, phenotype, owner):
+        self.job = job
+        self.phenotype = phenotype
+        self.owner = owner
+        
         register_tasks()
         tasks = list()
         pipeline_ids = data_access.query_pipeline_ids(int(self.phenotype), util.conn_string)
@@ -57,11 +62,14 @@ class PhenotypeTask(luigi.Task):
             update_phenotype_model(phenotype_config, util.conn_string)
             for pipeline_config in configs.values():
                 pipeline_id = pipeline_config['pipeline_id']
-                tasks.append(PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
-                                          pipelinetype=pipeline_config.config_type))
+                pipeline_task_obj = PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
+                                                 pipelinetype=pipeline_config.config_type)
+                pipeline_task_obj.run_batch_tasks()
+                tasks.append(pipeline_task_obj)
+
         log(tasks)
 
-        return tasks
+        #return tasks
 
     def run(self):
         log('dependencies done; run phenotype reconciliation')
@@ -101,7 +109,8 @@ class PhenotypeTask(luigi.Task):
             for k in util.properties.keys():
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.PROPERTIES + "_" + k,
                                               util.properties[k])
-            with self.output().open('w') as outfile:
+            #with self.output().open('w') as outfile:
+            with open(self.output(), 'w') as outfile:
                 phenotype_helper.write_phenotype_results(db, self.job, phenotype, self.phenotype, self.phenotype)
 
                 # do tuple processing now that all tasks have completed
@@ -159,7 +168,10 @@ class PhenotypeTask(luigi.Task):
             client.close()
 
     def output(self):
-        return luigi.LocalTarget("%s/phenotype_job%s_output.txt" % (util.tmp_dir, str(self.job)))
+        #output_file = "%s/phenotype_job%s_output.txt" % (util.tmp_dir, str(self.job))
+        output_file = '{0}/phenotype_job{1}_output.txt'.format(util.tmp_dir, str(self.job))
+        return output_file
+        #return luigi.LocalTarget("%s/phenotype_job%s_output.txt" % (util.tmp_dir, str(self.job)))
 
 
 def initialize_task_and_get_documents(pipeline_id, job_id, owner):
@@ -231,36 +243,59 @@ def run_pipeline(pipeline, pipelinetype, job, owner):
     jobs.update_job_status(str(job), util.conn_string, jobs.COMPLETED, "Finished %s Pipeline" % pipelinetype)
 
 
-class PipelineTask(luigi.Task):
+class PipelineTask(): #luigi.Task):
     worker_timeout = 60 * 60 * 4
-    pipeline = luigi.IntParameter()
-    job = luigi.IntParameter()
-    owner = luigi.Parameter()
-    pipelinetype = luigi.Parameter()
-    solr_query = '*:*'
+    # pipeline = luigi.IntParameter()
+    # job = luigi.IntParameter()
+    # owner = luigi.Parameter()
+    # pipelinetype = luigi.Parameter()
+    # solr_query = '*:*'
 
-    def requires(self):
+    #def requires(self):
+    def __init__(self, job, pipeline, owner, pipelinetype, solr_query='*:*'):
+        self.job = job
+        self.pipeline = pipeline
+        self.owner = owner
+        self.pipelinetype = pipelinetype
+        self.solr_query = solr_query
+
+        # list of pipeline tasks, one for each document batch
+        self.batch_task_list = []
+
+    def run_batch_tasks(self):
+
+        self.batch_task_list = []
+        
         try:
             self.solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job,
                                                                                                self
                                                                                                .owner)
-
             task = registered_pipelines[str(self.pipelinetype)]
-            if task.parallel_task:
-                matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
-                           for n in ranges]
-            else:
-                matches = [task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)]
+            log('*** type of task: {0}'.format(type(task)))
+            # if task.parallel_task:
+            #     matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
+            #                for n in ranges]
+            # else:
+            #     matches = [task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)]
+            task_obj = task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)
+            log('*** type of task_obj: {0}'.format(type(task_obj)))
+            matches = [task_obj]
 
-            return matches
+            #return matches
+            self.batch_task_list = matches
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             log(ex)
-        return list()
+        #return list()
+
+        for task in self.batch_task_list:
+            task.run()
 
     def run(self):
         run_pipeline(self.pipeline, self.pipelinetype, self.job, self.owner)
+        # new
+        return self.complete()
 
     def complete(self):
         status = jobs.get_job_status(str(self.job), util.conn_string)
@@ -268,12 +303,12 @@ class PipelineTask(luigi.Task):
             'status'] == jobs.FAILURE
 
 
-if __name__ == "__main__":
-    owner = "tester"
-    p_id = "11469"
-    the_job_id = data_access.create_new_job(
-        data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
-                           owner=owner, status=data_access.STARTED, date_ended=None,
-                           phenotype_id=int(p_id), pipeline_id=-1, date_started=datetime.datetime.now(),
-                           job_type='PHENOTYPE'), util.conn_string)
-    luigi.run(['PhenotypeTask', '--phenotype', p_id, '--job', str(the_job_id), '--owner', 'tester'])
+# if __name__ == "__main__":
+#     owner = "tester"
+#     p_id = "11469"
+#     the_job_id = data_access.create_new_job(
+#         data_access.NlpJob(job_id=-1, name="Test Phenotype", description="Test Phenotype",
+#                            owner=owner, status=data_access.STARTED, date_ended=None,
+#                            phenotype_id=int(p_id), pipeline_id=-1, date_started=datetime.datetime.now(),
+#                            job_type='PHENOTYPE'), util.conn_string)
+#     luigi.run(['PhenotypeTask', '--phenotype', p_id, '--job', str(the_job_id), '--owner', 'tester'])
