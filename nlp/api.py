@@ -4,6 +4,9 @@ from flask_cors import CORS
 import util
 from claritynlp_logging import log, setup_log, ERROR, DEBUG
 
+import sys
+import signal
+from luigi_tools import luigi_runner
 
 def create_app(config_filename=None):
 
@@ -27,6 +30,16 @@ def create_app(config_filename=None):
 # needs to be visible to Flask via import
 application = create_app()
 CORS(application)
+
+# handler for CTRL-C, to shutdown worker threads
+def _ctrl_c_handler(signal, frame):
+    log('CTRL-C PRESSED')
+    luigi_runner.shutdown_workers()
+    sys.exit(0)
+
+# install the singal handler for CTRL-C
+signal.signal(signal.SIGINT, _ctrl_c_handler)
+
 
 if __name__ == '__main__':
     log('starting claritynlp api...')

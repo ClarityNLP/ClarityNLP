@@ -14,7 +14,6 @@ from luigi_tools import phenotype_helper
 from tasks import *
 from claritynlp_logging import log, ERROR, DEBUG
 
-
 # These variables are used to control locking of the Mongo database,
 # to force writes to disk.
 
@@ -26,6 +25,56 @@ _LOCK_WAIT_SECS = 10.0
 
 # each ClarityNLP process will make this many attempts to acquire the lock
 _MAX_ATTEMPTS = 10
+
+
+# import threading
+# import multiprocessing
+# from queue import Queue, Empty
+
+# _cpu_count = multiprocessing.cpu_count()
+# if _cpu_count >= 4:
+#     _worker_count = _cpu_count // 2
+# else:
+#     _worker_count = _cpu_count - 1
+
+# log('luigi_module: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
+
+# # function to execute the pipeline tasks
+# def worker(queue, worker_id):
+#     """
+#     Continually check the queue for work items; terminate if None appears.
+#     Work items must implement a run() function.
+#     """
+    
+#     log('luigi_module: worker {0} running...'.format(worker_id))
+#     while True:
+#         try:
+#             item = queue.get(timeout = 2)
+#         except Empty:
+#             # haven't seen the termination signal yet
+#             continue
+#         if item is None:
+#             # replace so other workers can know to terminate
+#             queue.put(item)
+#             # now exit
+#             break
+#         else:
+#             # run it
+#             item.run()
+#     log('luigi_module: worker {0} exiting...'.format(worker_id))
+
+# # work queue for the worker threads
+# _queue = Queue()
+# _workers = [threading.Thread(target=worker, args=(_queue, i)) for i in range(_worker_count)]
+# for worker in _workers:
+#     worker.start()
+
+
+# def shutdown_workers():
+#     # the shutdown signal is to put None on the queue
+#     _queue.put(None)
+#     for worker in _workers:
+#         worker.join()
 
 
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path

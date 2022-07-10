@@ -14,7 +14,7 @@ import json
 
 utility_app = Blueprint('utility_app', __name__)
 
-
+    
 @utility_app.route('/')
 def home():
     return "Welcome to ClarityNLP!"
