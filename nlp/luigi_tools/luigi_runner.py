@@ -60,7 +60,7 @@ for worker in _workers:
 
 
 def shutdown_workers():
-    # the thread termination command is the appearance of 'None' on the queue
+    # the thread termination command is the appearance of _TERMINATE_WORKERS on the queue
     _queue.put(_TERMINATE_WORKERS)
     for worker in _workers:
         worker.join()
