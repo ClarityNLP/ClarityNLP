@@ -22,10 +22,13 @@ if _cpu_count >= 4:
 else:
     _worker_count = _cpu_count - 1
 
+# special token for terminating worker threads
+_TERMINATE_WORKERS = None
+
 log('luigi_runner: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
 
 # function to execute the phenotype tasks
-def worker(queue, worker_id):
+def _worker(queue, worker_id):
     """
     Continually check the queue for work items; terminate if None appears.
     Work items must implement a run() function.
@@ -38,10 +41,10 @@ def worker(queue, worker_id):
         except Empty:
             # haven't seen the termination signal yet
             continue
-        if item is None:
-            # replace so other workers can know to terminate
+        if item is _TERMINATE_WORKERS:
+            # replace so that other workers will know to terminate
             queue.put(item)
-            # now exit
+            # now exit this worker thread
             break
         else:
             # run it
@@ -51,14 +54,14 @@ def worker(queue, worker_id):
 # work queue for the worker threads
 _queue = Queue()
 # create and start the worker threads, which block until work items appear on the queue
-_workers = [threading.Thread(target=worker, args=(_queue, i)) for i in range(_worker_count)]
+_workers = [threading.Thread(target=_worker, args=(_queue, i)) for i in range(_worker_count)]
 for worker in _workers:
     worker.start()
 
 
 def shutdown_workers():
     # the thread termination command is the appearance of 'None' on the queue
-    _queue.put(None)
+    _queue.put(_TERMINATE_WORKERS)
     for worker in _workers:
         worker.join()
 
