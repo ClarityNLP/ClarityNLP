@@ -11,16 +11,25 @@ from claritynlp_logging import log, ERROR
 from luigi_module import PhenotypeTask
 import luigi
 
+import util
 import threading
 import multiprocessing
 from queue import Queue, Empty
 
-# the number of CPU cores determines the number of worker threads
+# get the number of CPU cores and use it to constrain the number of worker threads
 _cpu_count = multiprocessing.cpu_count()
-if _cpu_count >= 4:
-    _worker_count = _cpu_count // 2
+
+# user-specified number of workers
+_luigi_workers = int(util.luigi_workers)
+
+if _luigi_workers > 0 and _luigi_workers <= _cpu_count:
+    # user specified a valid number of worker threads
+    _worker_count = _luigi_workers
 else:
-    _worker_count = _cpu_count - 1
+    if _cpu_count >= 4:
+        _worker_count = _cpu_count // 2
+    else:
+        _worker_count = _cpu_count - 1
 
 # special token for terminating worker threads
 _TERMINATE_WORKERS = None
