@@ -27,61 +27,11 @@ _LOCK_WAIT_SECS = 10.0
 _MAX_ATTEMPTS = 10
 
 
-# import threading
-# import multiprocessing
-# from queue import Queue, Empty
-
-# _cpu_count = multiprocessing.cpu_count()
-# if _cpu_count >= 4:
-#     _worker_count = _cpu_count // 2
-# else:
-#     _worker_count = _cpu_count - 1
-
-# log('luigi_module: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
-
-# # function to execute the pipeline tasks
-# def worker(queue, worker_id):
-#     """
-#     Continually check the queue for work items; terminate if None appears.
-#     Work items must implement a run() function.
-#     """
-    
-#     log('luigi_module: worker {0} running...'.format(worker_id))
-#     while True:
-#         try:
-#             item = queue.get(timeout = 2)
-#         except Empty:
-#             # haven't seen the termination signal yet
-#             continue
-#         if item is None:
-#             # replace so other workers can know to terminate
-#             queue.put(item)
-#             # now exit
-#             break
-#         else:
-#             # run it
-#             item.run()
-#     log('luigi_module: worker {0} exiting...'.format(worker_id))
-
-# # work queue for the worker threads
-# _queue = Queue()
-# _workers = [threading.Thread(target=worker, args=(_queue, i)) for i in range(_worker_count)]
-# for worker in _workers:
-#     worker.start()
-
-
-# def shutdown_workers():
-#     # the shutdown signal is to put None on the queue
-#     _queue.put(None)
-#     for worker in _workers:
-#         worker.join()
-
-
 # TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
 # didn't seem like it was with initial efforts
 
 
-class PhenotypeTask():#luigi.Task):
+class PhenotypeTask(): #luigi.Task):
     worker_timeout = 60 * 60 * 4
     #phenotype = luigi.IntParameter()
     #job = luigi.IntParameter()
@@ -117,8 +67,6 @@ class PhenotypeTask():#luigi.Task):
                 tasks.append(pipeline_task_obj)
 
         log(tasks)
-
-        #return tasks
 
     def run(self):
         log('dependencies done; run phenotype reconciliation')
@@ -158,7 +106,7 @@ class PhenotypeTask():#luigi.Task):
             for k in util.properties.keys():
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.PROPERTIES + "_" + k,
                                               util.properties[k])
-            #with self.output().open('w') as outfile:
+
             with open(self.output(), 'w') as outfile:
                 phenotype_helper.write_phenotype_results(db, self.job, phenotype, self.phenotype, self.phenotype)
 
