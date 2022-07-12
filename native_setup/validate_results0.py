@@ -393,6 +393,36 @@ def _validate_o2_results(results):
 
 
 ###############################################################################
+def _validate_pregnancy_results(results):
+
+    # date_conception and date_delivery are not checked, since they are
+    # referenced from the date at which the pregnancy finder runs
+
+    FIELDS = ['weeks_pregnant', 'weeks_remaining', 'trimester']
+
+    if 1 != len(results):
+        return False
+
+    result = results[0]
+
+    if not _fields_exist(FIELDS, result):
+        return False
+
+    weeks_pregnant = float(result['weeks_pregnant'])
+    weeks_remaining = float(result['weeks_remaining'])
+    trimester = int(result['trimester'])
+
+    if 5.3 != weeks_pregnant:
+        return False
+    if 34.7 != weeks_remaining:
+        return False
+    if 1 != trimester:
+        return False
+
+    return True
+
+    
+###############################################################################
 def _run(csv_file):
     """
     Load the csv file containing the intermediate phenotype validation results
@@ -409,6 +439,7 @@ def _run(csv_file):
     term_finder_results = []
     ecog_results        = []
     o2_results          = []
+    pregnancy_results   = []
     
     print('Validating results...')
     with open(csv_file, 'rt') as infile:
@@ -437,6 +468,8 @@ def _run(csv_file):
                 ecog_results.append(result)
             elif 'O2TaskResult' == nlpql_feature:
                 o2_results.append(result)
+            elif 'PregnancyTaskResult' == nlpql_feature:
+                pregnancy_results.append(result)
 
     all_valid = True
     
@@ -469,6 +502,9 @@ def _run(csv_file):
         all_valid = False
     if not _validate_o2_results(o2_results):
         print('*** O2SaturationTask results are invalid. ***')
+        all_valid = False
+    if not _validate_pregnancy_results(pregnancy_results):
+        print('*** PregnancyTask results are invalid. ***')
         all_valid = False
         
     if all_valid:

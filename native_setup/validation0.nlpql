@@ -153,6 +153,17 @@ define O2TaskResult:
         documentset: [ValidationDocs]
     });
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// PREGNANCY TASK
+//
+///////////////////////////////////////////////////////////////////////////////
+
+define PregnancyTaskResult:
+    Clarity.PregnancyTask ({
+        documentset: [ValidationDocs]
+    });
+
 
 // logical Context (Patient, Document)
 context Patient;
