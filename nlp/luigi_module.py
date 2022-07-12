@@ -27,9 +27,74 @@ _LOCK_WAIT_SECS = 10.0
 _MAX_ATTEMPTS = 10
 
 
-# TODO eventually move this to luigi_tools, but need to make sure successfully can be found in sys.path
-# didn't seem like it was with initial efforts
+import util
+import threading
+import multiprocessing
+from queue import Queue, Empty
 
+# get the number of CPU cores and use it to constrain the number of worker threads
+_cpu_count = multiprocessing.cpu_count()
+
+# user-specified number of workers
+_luigi_workers = int(util.luigi_workers)
+
+if _luigi_workers > 0 and _luigi_workers <= _cpu_count:
+    # user specified a valid number of worker threads
+    _worker_count = _luigi_workers
+else:
+    if _cpu_count >= 4:
+        _worker_count = _cpu_count // 2
+    else:
+        _worker_count = _cpu_count - 1
+
+# special token for terminating worker threads
+_TERMINATE_WORKERS = None
+
+log('luigi_module: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
+
+# function to execute the phenotype tasks
+def _worker(queue, worker_id):
+    """
+    Continually check the queue for work items; terminate if None appears.
+    Work items must implement a run() function.
+    """
+    
+    log('luigi_module: worker {0} running...'.format(worker_id))
+    while True:
+        try:
+            item = queue.get(timeout = 2)
+        except Empty:
+            # haven't seen the termination signal yet
+            continue
+        if item is _TERMINATE_WORKERS:
+            # replace so that other workers will know to terminate
+            queue.put(item)
+            # now exit this worker thread
+            break
+        else:
+            # run it
+            log('luigi_module: worker {0} now running {1}'.format(worker_id, item))
+            item.run()
+            item.run_collector_pipeline()
+    log('luigi_module: worker {0} exiting...'.format(worker_id))
+
+# work queue for the worker threads
+_queue = Queue()
+
+# # create and start the worker threads, which block until work items appear on the queue
+# _workers = [threading.Thread(target=_worker, args=(_queue, i)) for i in range(_worker_count)]
+# for worker in _workers:
+#     worker.start()
+
+
+# def _shutdown_workers():
+#     # the thread termination command is the appearance of _TERMINATE_WORKERS on the queue
+#     _queue.put(_TERMINATE_WORKERS)
+#     for worker in _workers:
+#         worker.join()
+
+
+        
 
 class PhenotypeTask(): #luigi.Task):
     worker_timeout = 60 * 60 * 4
@@ -44,7 +109,7 @@ class PhenotypeTask(): #luigi.Task):
         self.owner = owner
         
         register_tasks()
-        tasks = list()
+        self.tasks = list()
         pipeline_ids = data_access.query_pipeline_ids(int(self.phenotype), util.conn_string)
         phenotype_config = data_access.query_phenotype(int(self.phenotype), util.conn_string)
         phenotype_config['phenotype_id'] = int(self.phenotype)
@@ -65,13 +130,37 @@ class PhenotypeTask(): #luigi.Task):
                                                  pipelinetype=pipeline_config.config_type)
                 #pipeline_task_obj.run_batch_tasks()
                 #pipeline_task_obj.run()
-                pipeline_task_obj.run()
-                pipeline_task_obj.run_collector_pipeline()
-                tasks.append(pipeline_task_obj)
+                
+                #pipeline_task_obj.run()
+                #pipeline_task_obj.run_collector_pipeline()                
+                #_queue.put(pipeline_task_obj)
+                
+                self.tasks.append(pipeline_task_obj)
 
-        log('task list: {0}'.format(tasks))
+        log('task list: {0}'.format(self.tasks))
 
     def run(self):
+
+        # create and start the worker threads
+        log('luigi_module: creating {0} worker threads'.format(_worker_count))        
+        workers = [threading.Thread(target=_worker, args=(_queue, i)) for i in range(_worker_count)]
+        for worker in workers:
+            worker.start()
+        
+        for task in self.tasks:
+            _queue.put(task)
+
+        # wait for all workers to finish
+        
+        # the thread termination command is the appearance of _TERMINATE_WORKERS on the queue
+        _queue.put(_TERMINATE_WORKERS)
+        for worker in workers:
+            worker.join()
+        
+        
+    #def run(self):
+    def run_reconciliation(self):
+
         log('dependencies done; run phenotype reconciliation')
         client = util.mongo_client()
 
@@ -230,8 +319,8 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
 def run_pipeline(pipeline, pipelinetype, job, owner):
     pipeline_config = data_access.get_pipeline_config(pipeline, util.conn_string)
 
-    log('get collector')
     collector_name = str(pipelinetype)
+    log('get collector: {0}'.format(collector_name))    
     if collector_name in registered_collectors:
         collector_class = registered_collectors[collector_name]
         if collector_class:

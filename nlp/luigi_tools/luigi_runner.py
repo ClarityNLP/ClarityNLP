@@ -11,69 +11,69 @@ from claritynlp_logging import log, ERROR
 from luigi_module import PhenotypeTask
 import luigi
 
-import util
-import threading
-import multiprocessing
-from queue import Queue, Empty
+# import util
+# import threading
+# import multiprocessing
+# from queue import Queue, Empty
 
-# get the number of CPU cores and use it to constrain the number of worker threads
-_cpu_count = multiprocessing.cpu_count()
+# # get the number of CPU cores and use it to constrain the number of worker threads
+# _cpu_count = multiprocessing.cpu_count()
 
-# user-specified number of workers
-_luigi_workers = int(util.luigi_workers)
+# # user-specified number of workers
+# _luigi_workers = int(util.luigi_workers)
 
-if _luigi_workers > 0 and _luigi_workers <= _cpu_count:
-    # user specified a valid number of worker threads
-    _worker_count = _luigi_workers
-else:
-    if _cpu_count >= 4:
-        _worker_count = _cpu_count // 2
-    else:
-        _worker_count = _cpu_count - 1
+# if _luigi_workers > 0 and _luigi_workers <= _cpu_count:
+#     # user specified a valid number of worker threads
+#     _worker_count = _luigi_workers
+# else:
+#     if _cpu_count >= 4:
+#         _worker_count = _cpu_count // 2
+#     else:
+#         _worker_count = _cpu_count - 1
 
-# special token for terminating worker threads
-_TERMINATE_WORKERS = None
+# # special token for terminating worker threads
+# _TERMINATE_WORKERS = None
 
-log('luigi_runner: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
+# log('luigi_runner: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
 
-# function to execute the phenotype tasks
-def _worker(queue, worker_id):
-    """
-    Continually check the queue for work items; terminate if None appears.
-    Work items must implement a run() function.
-    """
+# # function to execute the phenotype tasks
+# def _worker(queue, worker_id):
+#     """
+#     Continually check the queue for work items; terminate if None appears.
+#     Work items must implement a run() function.
+#     """
     
-    log('luigi_runner: worker {0} running...'.format(worker_id))
-    while True:
-        try:
-            item = queue.get(timeout = 2)
-        except Empty:
-            # haven't seen the termination signal yet
-            continue
-        if item is _TERMINATE_WORKERS:
-            # replace so that other workers will know to terminate
-            queue.put(item)
-            # now exit this worker thread
-            break
-        else:
-            # run it
-            log('luigi_runner: worker {0} now running {1}'.format(worker_id, item))
-            item.run()
-    log('luigi_runner: worker {0} exiting...'.format(worker_id))
+#     log('luigi_runner: worker {0} running...'.format(worker_id))
+#     while True:
+#         try:
+#             item = queue.get(timeout = 2)
+#         except Empty:
+#             # haven't seen the termination signal yet
+#             continue
+#         if item is _TERMINATE_WORKERS:
+#             # replace so that other workers will know to terminate
+#             queue.put(item)
+#             # now exit this worker thread
+#             break
+#         else:
+#             # run it
+#             log('luigi_runner: worker {0} now running {1}'.format(worker_id, item))
+#             item.run()
+#     log('luigi_runner: worker {0} exiting...'.format(worker_id))
 
-# work queue for the worker threads
-_queue = Queue()
-# create and start the worker threads, which block until work items appear on the queue
-_workers = [threading.Thread(target=_worker, args=(_queue, i)) for i in range(_worker_count)]
-for worker in _workers:
-    worker.start()
+# # work queue for the worker threads
+# _queue = Queue()
+# # create and start the worker threads, which block until work items appear on the queue
+# _workers = [threading.Thread(target=_worker, args=(_queue, i)) for i in range(_worker_count)]
+# for worker in _workers:
+#     worker.start()
 
 
-def shutdown_workers():
-    # the thread termination command is the appearance of _TERMINATE_WORKERS on the queue
-    _queue.put(_TERMINATE_WORKERS)
-    for worker in _workers:
-        worker.join()
+# def shutdown_workers():
+#     # the thread termination command is the appearance of _TERMINATE_WORKERS on the queue
+#     _queue.put(_TERMINATE_WORKERS)
+#     for worker in _workers:
+#         worker.join()
 
 
 
@@ -153,8 +153,9 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
         #threaded_phenotype_task(job_id, owner, phenotype_id)
         
         task = PhenotypeTask(job=job_id, phenotype=phenotype_id, owner=owner)
-        #task.run()
-        _queue.put(task)
+        task.run()
+        task.run_reconciliation()
+        #_queue.put(task)
     except Exception as ex:
         log(ex, file=sys.stderr, level=ERROR)
         log("unable to execute python task", file=sys.stderr, level=ERROR)
