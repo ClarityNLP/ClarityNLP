@@ -85,7 +85,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 3
+_VERSION_MINOR = 4
 _MODULE_NAME = 'segmentation.py'
 
 _data = {}
@@ -129,7 +129,7 @@ def parse_sentences_spacy(text, spacy=None):
     # replace strings of tokens that tend to be incorrectly split with
     # a single token that will not be split.
     text = seg_helper.cleanup_report(text)
-    text = seg_helper.do_substitutions(text)
+    text, subs = seg_helper.do_substitutions(text)
 
     # now do the sentence tokenization with the substitutions in place
     doc = spacy(text)
@@ -141,7 +141,7 @@ def parse_sentences_spacy(text, spacy=None):
     # do this, if at all, BEFORE undoing the substitutions
     #sentences = seg_helper.split_section_headers(sentences)
     
-    sentences = seg_helper.undo_substitutions(sentences)
+    sentences = seg_helper.undo_substitutions(sentences, subs)
     sentences = seg_helper.fixup_sentences(sentences)
     sentences = seg_helper.delete_junk(sentences)
 

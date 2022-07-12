@@ -39,7 +39,7 @@ except Exception as e:
     import lab_value_matcher as lvm
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 8
+_VERSION_MINOR = 9
 _MODULE_NAME = 'segmentation_helper.py'
 
 # set to True to enable debug output
@@ -169,30 +169,13 @@ _str_starts_with_age_expr = r'\A(years?|yrs?|y[/.]?o\.?)\b'
 _regex_starts_with_age_exp = re.compile(_str_starts_with_age_expr,
                                         re.IGNORECASE)
 
-# lists to keep track of token substitutions; add any new to _all_subs
-_fov_subs          = []
-_anon_subs         = []
-_contrast_subs     = []
-_size_meas_subs    = []
-_header_subs       = []
-_prescription_subs = []
-_vitals_subs       = []
-_abbrev_subs       = []
-_gender_subs       = []
-_date_subs         = []
-_time_subs         = []
-_drug_subs         = []
-_multi_token_subs  = []
-
-_all_subs = [
-    _fov_subs, _anon_subs, _contrast_subs, _size_meas_subs, _header_subs,
-    _prescription_subs, _vitals_subs, _abbrev_subs, _gender_subs, _date_subs,
-    _time_subs, _drug_subs, _multi_token_subs
-]
-
 # This is the start and end character of the replacement token.
 # If this is changed, change _fix_broken_tokens and _check_for_tokens below.
 _DELIMITER = '&&'
+
+
+# ***** no private state variables in this file ****
+# ***** must be re-entrant ***
 
 
 ###############################################################################
@@ -490,42 +473,70 @@ def do_substitutions(report):
     """
     """
 
-    # clear all substitution lists
-    for sub_list in _all_subs:
-        sub_list.clear()
-
+    # lists to keep track of token substitutions
+    fov_subs          = []
+    anon_subs         = []
+    contrast_subs     = []
+    size_meas_subs    = []
+    header_subs       = []
+    prescription_subs = []
+    vitals_subs       = []
+    abbrev_subs       = []
+    gender_subs       = []
+    date_subs         = []
+    time_subs         = []
+    drug_subs         = []
+    multi_token_subs  = []
+    
     if _TRACE:
         log('REPORT BEFORE SUBSTITUTIONS: \n' + report + '\n')
 
     # order matters here...
-    report = _find_substitutions(report, _regex_abbrev, _abbrev_subs, 'ABBREV')
+    report = _find_substitutions(report, _regex_abbrev, abbrev_subs, 'ABBREV')
 
-    report = _find_vitals_subs(report, _vitals_subs, 'VITALS')
+    report = _find_vitals_subs(report, vitals_subs, 'VITALS')
     
     report = _find_substitutions(report, _regex_caps_header,
-                                 _header_subs, 'HEADER')
+                                 header_subs, 'HEADER')
 
-    report = _find_date_subs(report, _date_subs, 'DATE')
-    report = _find_time_subs(report, _time_subs, 'TIME')
+    report = _find_date_subs(report, date_subs, 'DATE')
+    report = _find_time_subs(report, time_subs, 'TIME')
     
-    report = _find_substitutions(report, _regex_anon, _anon_subs, 'ANON')    
+    report = _find_substitutions(report, _regex_anon, anon_subs, 'ANON')    
     
     report = _find_substitutions(report, _regex_contrast,
-                                 _contrast_subs, 'CONTRAST')
-    report = _find_substitutions(report, _regex_fov, _fov_subs, 'FOV')
-    report = _find_size_meas_subs(report, _size_meas_subs, 'MEAS')
+                                 contrast_subs, 'CONTRAST')
+    report = _find_substitutions(report, _regex_fov, fov_subs, 'FOV')
+    report = _find_size_meas_subs(report, size_meas_subs, 'MEAS')
     report = _find_substitutions(report, _regex_prescription_abbrev,
-                                 _prescription_subs, 'PRESCRIPTION_ABBREV')
-    report = _find_substitutions(report, _regex_gender, _gender_subs, 'GENDER')
+                                 prescription_subs, 'PRESCRIPTION_ABBREV')
+    report = _find_substitutions(report, _regex_gender, gender_subs, 'GENDER')
     report = _find_substitutions(report, _regex_drug_amt,
-                                 _drug_subs, 'DRUG_AMOUNT')
+                                 drug_subs, 'DRUG_AMOUNT')
     report = _find_substitutions(report, _regex_multi_token,
-                                 _multi_token_subs, 'MULTITOKEN')
+                                 multi_token_subs, 'MULTITOKEN')
 
     if _TRACE:
         log('REPORT AFTER SUBSTITUTIONS: \n' + report + '\n')
 
-    return report
+    all_subs = {
+        'fov_subs'          : fov_subs,
+        'anon_subs'         : anon_subs,
+        'contrast_subs'     : contrast_subs,
+        'size_meas_subs'    : size_meas_subs,
+        'header_subs'       : header_subs,
+        'prescription_subs' : prescription_subs,
+        'vitals_subs'       : vitals_subs,
+        'abbrev_subs'       : abbrev_subs,
+        'gender_subs'       : gender_subs,
+        'date_subs'         : date_subs,
+        'time_subs'         : time_subs,
+        'drug_subs'         : drug_subs,
+        'multi_token_subs'  : multi_token_subs,
+    }
+
+        
+    return report, all_subs
 
 
 ###############################################################################
@@ -557,7 +568,7 @@ def _replace_text(sentence_list, sub_list):
             
 
 ###############################################################################
-def undo_substitutions(sentence_list):
+def undo_substitutions(sentence_list, all_subs):
     """
     Undo the textual substitutions in 'do_substitions', but in the reverse
     order.
@@ -569,19 +580,19 @@ def undo_substitutions(sentence_list):
     if _TRACE:
         _print_sentence_list('SENTENCE LIST WITH SUBSTITUTIONS', sentence_list)
         
-    sentence_list = _replace_text(sentence_list, _multi_token_subs)
-    sentence_list = _replace_text(sentence_list, _drug_subs)
-    sentence_list = _replace_text(sentence_list, _gender_subs)
-    sentence_list = _replace_text(sentence_list, _prescription_subs)
-    sentence_list = _replace_text(sentence_list, _size_meas_subs)
-    sentence_list = _replace_text(sentence_list, _fov_subs)
-    sentence_list = _replace_text(sentence_list, _contrast_subs)
-    sentence_list = _replace_text(sentence_list, _anon_subs)
-    sentence_list = _replace_text(sentence_list, _time_subs)
-    sentence_list = _replace_text(sentence_list, _date_subs)
-    sentence_list = _replace_text(sentence_list, _header_subs)
-    sentence_list = _replace_text(sentence_list, _vitals_subs)
-    sentence_list = _replace_text(sentence_list, _abbrev_subs)
+    sentence_list = _replace_text(sentence_list, all_subs['multi_token_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['drug_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['gender_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['prescription_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['size_meas_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['fov_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['contrast_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['anon_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['time_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['date_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['header_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['vitals_subs'])
+    sentence_list = _replace_text(sentence_list, all_subs['abbrev_subs'])
 
     # ensure that no more tokens remain
     _check_for_tokens(sentence_list)
