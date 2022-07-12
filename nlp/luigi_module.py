@@ -351,18 +351,21 @@ class PipelineTask(): #luigi.Task):
                                                                                                .owner)
             task = registered_pipelines[str(self.pipelinetype)]
             # log('*** task type: {0}'.format(type(task)))
-            if task.parallel_task:
-                self.batch_task_list = [task(pipeline=self.pipeline,
-                                             job=self.job,
-                                             start=n,
-                                             solr_query=self.solr_query,
-                                             batch=n) for n in ranges]
-            else:
-                self.batch_task_list = [task(pipeline=self.pipeline,
-                                             job=self.job,
-                                             start=0,
-                                             solr_query=self.solr_query,
-                                             batch=0)]
+            # if task.parallel_task:
+            #     self.batch_task_list = [task(pipeline=self.pipeline,
+            #                                  job=self.job,
+            #                                  start=n,
+            #                                  solr_query=self.solr_query,
+            #                                  batch=n) for n in ranges]
+            # else:
+
+            # Run all docs in a single batch. There is no need for document batching, since this
+            # pipeline task is executed by a single thread.
+            self.batch_task_list = [task(pipeline=self.pipeline,
+                                         job=self.job,
+                                         start=0,
+                                         solr_query=self.solr_query,
+                                         batch=0)]
             if len(self.batch_task_list) > 0:
                 log('task_obj type: {0}'.format(type(self.batch_task_list[0])))
 
