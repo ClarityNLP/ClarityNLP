@@ -89,6 +89,15 @@
             "report_date": "2022-06-24T15:02:43.378272Z",
             "subject": "-1",
             "report_text": "The patient's ECOG performance status is 0, 1, or 2."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_0",
+            "id": "10",
+            "report_id": "10",
+            "source": "CLARITYNLP_VALIDATION_0",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "Oxygen again weaned in evening to 6L nc while pt eating dinner O2 sats 91-92%."
         }
     ]
 }

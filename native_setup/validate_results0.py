@@ -348,7 +348,50 @@ def _validate_ecog_results(results):
 
     return True
     
+
+###############################################################################
+def _validate_o2_results(results):
+
+    FIELDS = ['pao2_est', 'fio2_est', 'p_to_f_ratio_est', 'flow_rate',
+              'device', 'condition', 'value', 'value2']
     
+    if 1 != len(results):
+        return False
+
+    result = results[0]
+
+    if not _fields_exist(FIELDS, result):
+        return False
+
+    pao2_est = int(result['pao2_est'])
+    fio2_est = int(result['fio2_est'])
+    p_to_f   = int(result['p_to_f_ratio_est'])
+    flow_rate = int(result['flow_rate'])
+    device = result['device']
+    condition = result['condition']
+    value = int(result['value'])
+    value2 = int(result['value2'])
+
+    if 62 != pao2_est:
+        return False
+    if 44 != fio2_est:
+        return False
+    if 141 != p_to_f:
+        return False
+    if 6 != flow_rate:
+        return False
+    if 'nc' != device:
+        return False
+    if 'RANGE' != condition:
+        return False
+    if 91 != value:
+        return False
+    if 92 != value2:
+        return False
+
+    return True
+
+
 ###############################################################################
 def _run(csv_file):
     """
@@ -365,6 +408,7 @@ def _run(csv_file):
     race_results        = []
     term_finder_results = []
     ecog_results        = []
+    o2_results          = []
     
     print('Validating results...')
     with open(csv_file, 'rt') as infile:
@@ -391,6 +435,8 @@ def _run(csv_file):
                 term_finder_results.append(result)
             elif 'EcogStatusResult' == nlpql_feature:
                 ecog_results.append(result)
+            elif 'O2TaskResult' == nlpql_feature:
+                o2_results.append(result)
 
     all_valid = True
     
@@ -420,6 +466,9 @@ def _run(csv_file):
         all_valid = False
     if not _validate_ecog_results(ecog_results):
         print('*** EcogStatus results are invalid. ***')
+        all_valid = False
+    if not _validate_o2_results(o2_results):
+        print('*** O2SaturationTask results are invalid. ***')
         all_valid = False
         
     if all_valid:
