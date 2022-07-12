@@ -357,22 +357,25 @@ class PipelineTask(): #luigi.Task):
                                                                                                .owner)
             task = registered_pipelines[str(self.pipelinetype)]
             # log('*** task type: {0}'.format(type(task)))
-            # if task.parallel_task:
-            #     matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
-            #                for n in ranges]
-            # else:
-            #     matches = [task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)]
-            task_obj = task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)
-            log('task_obj type: {0}'.format(type(task_obj)))
-            matches = [task_obj]
+            if task.parallel_task:
+                self.batch_task_list = [task(pipeline=self.pipeline,
+                                             job=self.job,
+                                             start=n,
+                                             solr_query=self.solr_query,
+                                             batch=n) for n in ranges]
+            else:
+                self.batch_task_list = [task(pipeline=self.pipeline,
+                                             job=self.job,
+                                             start=0,
+                                             solr_query=self.solr_query,
+                                             batch=0)]
+            if len(self.batch_task_list) > 0:
+                log('task_obj type: {0}'.format(type(self.batch_task_list[0])))
 
-            #return matches
-            self.batch_task_list = matches
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             log(ex)
-        #return list()
 
         # all batches for this pipeline task run serially
         for task in self.batch_task_list:
