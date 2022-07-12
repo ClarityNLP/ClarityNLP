@@ -50,37 +50,37 @@ def run_pipeline(pipeline_type: str, pipeline_id: str, job_id: int, owner: str):
     #     log("unable to execute %s" % func, file=sys.stderr)
 
 
-def run_task(task):
-    # worker_num = int(util.luigi_workers)
-    # # multiprocess = worker_num > 1
+# def run_task(task):
+#     # worker_num = int(util.luigi_workers)
+#     # # multiprocess = worker_num > 1
 
-    # w = worker.Worker(scheduler=scheduler, no_install_shutdown_handler=True, worker_processes=worker_num)
-    # w.add(task, multiprocess=True, processes=2)
-    # w.run()
-    task.run()
-
-
-def threaded_func(arg0, arg1, arg2):
-    # time.sleep(2)
-    # active = get_active_workers() * 3
-    # log("{}=MAX LUIGI WORKERS".format(util.luigi_workers))
-    # num_workers = int(util.luigi_workers)
-    # n = 0
-    # if active > num_workers:
-    #     while active > num_workers and n < 30:
-    #         log("{}=ACTIVE LUIGI WORKERS; SLEEPING..".format(active))
-    #         time.sleep(5)
-    #         active = get_active_workers()
-    #         n += 1
-
-    log("running job %s on phenotype %s" % (str(arg0), str(arg2)))
-    task = PhenotypeTask(job=arg0, owner=arg1, phenotype=arg2)
-    run_task(task)
+#     # w = worker.Worker(scheduler=scheduler, no_install_shutdown_handler=True, worker_processes=worker_num)
+#     # w.add(task, multiprocess=True, processes=2)
+#     # w.run()
+#     task.run()
 
 
-def threaded_phenotype_task(job_id, owner, phenotype_id):
-    thread = threading.Thread(target=threaded_func, args=(job_id, owner, phenotype_id))
-    thread.start()
+# def threaded_func(arg0, arg1, arg2):
+#     # time.sleep(2)
+#     # active = get_active_workers() * 3
+#     # log("{}=MAX LUIGI WORKERS".format(util.luigi_workers))
+#     # num_workers = int(util.luigi_workers)
+#     # n = 0
+#     # if active > num_workers:
+#     #     while active > num_workers and n < 30:
+#     #         log("{}=ACTIVE LUIGI WORKERS; SLEEPING..".format(active))
+#     #         time.sleep(5)
+#     #         active = get_active_workers()
+#     #         n += 1
+
+#     log("running job %s on phenotype %s" % (str(arg0), str(arg2)))
+#     task = PhenotypeTask(job=arg0, owner=arg1, phenotype=arg2)
+#     run_task(task)
+
+
+# def threaded_phenotype_task(job_id, owner, phenotype_id):
+#     thread = threading.Thread(target=threaded_func, args=(job_id, owner, phenotype_id))
+#     thread.start()
 
 
 def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
