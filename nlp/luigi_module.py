@@ -14,23 +14,11 @@ from luigi_tools import phenotype_helper
 from tasks import *
 from claritynlp_logging import log, ERROR, DEBUG
 
-# These variables are used to control locking of the Mongo database,
-# to force writes to disk.
-
-# name of the shared lock, visible from different ClarityNLP processes
-_LOCK_NAME = 'ClarityNLP_Mongo_Lock'
-
-# wait as long as this many seconds to acquire the lock
-_LOCK_WAIT_SECS = 10.0
-
-# each ClarityNLP process will make this many attempts to acquire the lock
-_MAX_ATTEMPTS = 10
-
-
 import util
 import threading
 import multiprocessing
 from queue import Queue, Empty
+
 
 # get the number of CPU cores and use it to constrain the number of worker threads
 _cpu_count = multiprocessing.cpu_count()
@@ -52,7 +40,7 @@ _TERMINATE_WORKERS = None
 
 log('luigi_module: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
 
-# function to execute the phenotype tasks
+# function for parallel execution of the PipelineTask objects of each PhenotypeTask
 def _worker(queue, worker_id):
     """
     Continually check the queue for work items; terminate if None appears.
@@ -80,8 +68,18 @@ def _worker(queue, worker_id):
             item.run_collector_pipeline()
     log('luigi_module: worker {0} exiting...'.format(worker_id))
 
-# work queue for the worker threads
-_queue = Queue()
+
+# These variables are used to control locking of the Mongo database,
+# to force writes to disk.
+
+# name of the shared lock, visible from different ClarityNLP processes
+_LOCK_NAME = 'ClarityNLP_Mongo_Lock'
+
+# wait as long as this many seconds to acquire the lock
+_LOCK_WAIT_SECS = 10.0
+
+# each ClarityNLP process will make this many attempts to acquire the lock
+_MAX_ATTEMPTS = 10
 
 
 class PhenotypeTask(): #luigi.Task):
@@ -117,13 +115,6 @@ class PhenotypeTask(): #luigi.Task):
                 pipeline_id = pipeline_config['pipeline_id']
                 pipeline_task_obj = PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
                                                  pipelinetype=pipeline_config.config_type)
-                #pipeline_task_obj.run_batch_tasks()
-                #pipeline_task_obj.run()
-                
-                #pipeline_task_obj.run()
-                #pipeline_task_obj.run_collector_pipeline()                
-                #_queue.put(pipeline_task_obj)
-
                 # save tasks on a list for later execution
                 self.pipeline_tasks.append(pipeline_task_obj)
 
@@ -134,17 +125,19 @@ class PhenotypeTask(): #luigi.Task):
         Parallel execution of the PipelineTask objects in self.pipeline_tasks.
         """
 
+        task_queue = Queue()
+        
         # create and start the worker threads
         log('luigi_module: creating {0} worker threads'.format(_worker_count))        
-        workers = [threading.Thread(target=_worker, args=(_queue, i)) for i in range(_worker_count)]
+        workers = [threading.Thread(target=_worker, args=(task_queue, i)) for i in range(_worker_count)]
         for worker in workers:
             worker.start()
         
         for task in self.pipeline_tasks:
-            _queue.put(task)
+            task_queue.put(task)
 
         # terminate each worker after its PipelineTask object has completed execution
-        _queue.put(_TERMINATE_WORKERS)
+        task_queue.put(_TERMINATE_WORKERS)
         for worker in workers:
             worker.join()
 
@@ -386,7 +379,6 @@ class PipelineTask(): #luigi.Task):
     def run_collector_pipeline(self):
         log('running collector pipeline')
         run_pipeline(self.pipeline, self.pipelinetype, self.job, self.owner)
-        # new
         return self.complete()
 
     def complete(self):
