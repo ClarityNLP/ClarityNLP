@@ -71,6 +71,24 @@
             "report_date": "2022-06-24T15:02:43.378272Z",
             "subject": "-1",
             "report_text": "The tumor code pT4bpN1bM0 (stage IIIC) also has a stage indication.\n"
-        }        
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_0",
+            "id": "8",
+            "report_id": "8",
+            "source": "CLARITYNLP_VALIDATION_0",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "Respiratory terms include rales, wheezing, and coughing, but not walking."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_0",
+            "id": "9",
+            "report_id": "9",
+            "source": "CLARITYNLP_VALIDATION_0",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient's ECOG performance status is 0, 1, or 2."
+        }
     ]
 }

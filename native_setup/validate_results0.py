@@ -277,19 +277,94 @@ def _validate_tnm_results(results):
 
 
 ###############################################################################
+def _validate_term_finder_results(results):
+
+    # Only check that the expected terms were found. Context makes mistakes
+    # with the negation for the simple example sentence used in this test.
+    
+    FIELDS = ['experiencer', 'negation', 'temporality', 'term']
+    TERMS = set(['rales', 'wheezing', 'coughing', 'walking'])
+    
+    if 4 != len(results):
+        return False
+
+    terms_found = []
+    for result in results:
+
+        if not _fields_exist(FIELDS, result):
+            return False
+
+        term = result['term']
+        if not term in TERMS:
+            return False
+        else:
+            terms_found.append(term)
+
+    return set(terms_found) == TERMS
+    
+
+###############################################################################
+def _validate_ecog_results(results):
+
+    FIELDS = ['criteria_type', 'score_0', 'score_1', 'score_2', 'score_3',
+              'score_4', 'score_5', 'score_lo', 'score_hi']
+
+    if 1 != len(results):
+        return False
+
+    result = results[0]
+
+    if not _fields_exist(FIELDS, result):
+        return False
+
+    score_0 = result['score_0']
+    score_1 = result['score_1']
+    score_2 = result['score_2']
+    score_3 = result['score_3']
+    score_4 = result['score_4']
+    score_5 = result['score_5']
+    score_hi = result['score_hi']
+    score_lo = result['score_lo']
+    criteria_type = result['criteria_type']
+
+    if 1 != int(score_0):
+        return False
+    if 1 != int(score_1):
+        return False
+    if 1 != int(score_2):
+        return False
+    if 0 != int(score_3):
+        return False
+    if 0 != int(score_4):
+        return False
+    if 0 != int(score_5):
+        return False
+    if 2 != int(score_hi):
+        return False
+    if 0 != int(score_lo):
+        return False
+    if 'Inclusion' != criteria_type:
+        return false
+
+    return True
+    
+    
+###############################################################################
 def _run(csv_file):
     """
     Load the csv file containing the intermediate phenotype validation results
     and check with what is expected.
     """
 
-    tnm_results     = []
-    gleason_results = []
-    ef_results      = []
-    tp_results      = []
-    pa_results      = []
-    meas_results    = []
-    race_results    = []
+    tnm_results         = []
+    gleason_results     = []
+    ef_results          = []
+    tp_results          = []
+    pa_results          = []
+    meas_results        = []
+    race_results        = []
+    term_finder_results = []
+    ecog_results        = []
     
     print('Validating results...')
     with open(csv_file, 'rt') as infile:
@@ -312,6 +387,10 @@ def _run(csv_file):
                 meas_results.append(result)
             elif 'Race' == nlpql_feature:
                 race_results.append(result)
+            elif 'TermFinderResult' == nlpql_feature:
+                term_finder_results.append(result)
+            elif 'EcogStatusResult' == nlpql_feature:
+                ecog_results.append(result)
 
     all_valid = True
     
@@ -335,6 +414,12 @@ def _run(csv_file):
         all_valid = False
     if not _validate_race_results(race_results):
         print('*** Race results are invalid. ***')
+        all_valid = False
+    if not _validate_term_finder_results(term_finder_results):
+        print('*** TermFinder results are invalid. ***')
+        all_valid = False
+    if not _validate_ecog_results(ecog_results):
+        print('*** EcogStatus results are invalid. ***')
         all_valid = False
         
     if all_valid:

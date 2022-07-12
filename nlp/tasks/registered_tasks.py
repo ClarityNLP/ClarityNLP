@@ -27,8 +27,8 @@ registered_pipelines = {
     "TermProximityTask": TermProximityTask
 }
 
-for k,v in registered_pipelines.items():
-    print('{0} => {1}'.format(k, type(v)))
+#for k,v in registered_pipelines.items():
+#    print('{0} => {1}'.format(k, type(v)))
 
                                       
 registered_collectors = {

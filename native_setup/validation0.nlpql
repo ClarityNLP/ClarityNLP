@@ -3,7 +3,7 @@ limit 100;
 phenotype "Validation 0" version "1";
 include ClarityCore version "1.0" called Clarity;
 
-documentset ValidationDoc:
+documentset ValidationDocs:
     Clarity.createDocumentSet({
         "report_types":["CLARITYNLP_VALIDATION_0"]
     });
@@ -16,7 +16,7 @@ documentset ValidationDoc:
 
 define Race:
     Clarity.RaceFinderTask({
-        documentset: [ValidationDoc]
+        documentset: [ValidationDocs]
     });
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -31,7 +31,7 @@ termset LesionTerms: [
 
 define Measurement:
     Clarity.MeasurementFinder({
-        documentset: [ValidationDoc],
+        documentset: [ValidationDocs],
         termset: [LesionTerms]
     });
 
@@ -47,7 +47,7 @@ termset FeverTerms: [
 
 define hasFever:
     Clarity.ProviderAssertion({
-        documentset: [ValidationDoc],
+        documentset: [ValidationDocs],
         termset: [FeverTerms]
     });
 
@@ -63,7 +63,7 @@ termset ProstateTerms: [
 
 define hasProstateCancer:
     Clarity.TermProximityTask({
-        documentset: [ValidationDoc],
+        documentset: [ValidationDocs],
         "termset1": [ProstateTerms],
         "termset2": "cancer, Gleason, Gleason's, Gleasons",
         "word_distance": 5,
@@ -83,7 +83,7 @@ termset EjectionFractionTerms: [
 
 define EjectionFraction:
     Clarity.ValueExtraction({
-        documentset: [ValidationDoc],
+        documentset: [ValidationDocs],
         termset:[EjectionFractionTerms],
         minimum_value: "10",
         maximum_value: "85"
@@ -97,7 +97,7 @@ define EjectionFraction:
 
 define GleasonScore:
     Clarity.GleasonScoreTask({
-        documentset: [ValidationDoc]
+        documentset: [ValidationDocs]
     });
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -108,7 +108,37 @@ define GleasonScore:
 
 define TNMCode:
     Clarity.TNMStager ({
-        documentset: [ValidationDoc]
+        documentset: [ValidationDocs]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// TERM FINDER
+//
+///////////////////////////////////////////////////////////////////////////////
+
+termset ValidationTerms: [
+    "rales",
+    "wheezing",
+    "coughing",
+    "walking"
+];
+
+define TermFinderResult:
+    Clarity.TermFinder ({
+        termset: [ValidationTerms],
+        documentset: [ValidationDocs]
+    });
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// ECOG CRITERIA TASK
+//
+///////////////////////////////////////////////////////////////////////////////
+
+define EcogStatusResult:
+    Clarity.EcogCriteriaTask ({
+        documentset: [ValidationDocs]
     });
 
 

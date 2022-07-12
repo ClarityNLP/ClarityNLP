@@ -16,3 +16,8 @@ The LVEF was less than 40% on admission.
 The left ventriclular ejection fraction was measured to be 75%.
 
 The tumor code pT4bpN1bM0 (stage IIIC) also has a stage indication.
+
+Respiratory terms include rales, wheezing, and coughing, but not walking.
+
+The patient's ECOG performance status is 0, 1, or 2.
+
