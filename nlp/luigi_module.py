@@ -95,7 +95,7 @@ class PhenotypeTask(): #luigi.Task):
         self.job = job
         self.phenotype = phenotype
         self.owner = owner
-        self.tasks = list()
+        self.pipeline_tasks = list()
         self.pipelines_finished = False
         
         register_tasks()
@@ -125,11 +125,14 @@ class PhenotypeTask(): #luigi.Task):
                 #_queue.put(pipeline_task_obj)
 
                 # save tasks on a list for later execution
-                self.tasks.append(pipeline_task_obj)
+                self.pipeline_tasks.append(pipeline_task_obj)
 
-        log('task list: {0}'.format(self.tasks))
+        log('task list: {0}'.format(self.pipeline_tasks))
 
     def run(self):
+        """
+        Parallel execution of the PipelineTask objects in self.pipeline_tasks.
+        """
 
         # create and start the worker threads
         log('luigi_module: creating {0} worker threads'.format(_worker_count))        
@@ -137,12 +140,10 @@ class PhenotypeTask(): #luigi.Task):
         for worker in workers:
             worker.start()
         
-        for task in self.tasks:
+        for task in self.pipeline_tasks:
             _queue.put(task)
 
-        # wait for all workers to finish
-        
-        # the thread termination command is the appearance of _TERMINATE_WORKERS on the queue
+        # terminate each worker after its PipelineTask object has completed execution
         _queue.put(_TERMINATE_WORKERS)
         for worker in workers:
             worker.join()
