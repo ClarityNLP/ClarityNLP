@@ -6,8 +6,6 @@ from claritynlp_logging import log, setup_log, ERROR, DEBUG
 
 import sys
 import signal
-#from luigi_tools import luigi_runner
-#from luigi_module import shutdown_workers
 
 def create_app(config_filename=None):
 
@@ -35,8 +33,6 @@ CORS(application)
 # handler for CTRL-C, to shutdown worker threads
 def _ctrl_c_handler(signal, frame):
     log('CTRL-C PRESSED')
-    #luigi_runner.shutdown_workers()
-    #shutdown_workers()
     sys.exit(0)
 
 # install the singal handler for CTRL-C

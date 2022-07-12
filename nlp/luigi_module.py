@@ -74,27 +74,15 @@ def _worker(queue, worker_id):
         else:
             # run it
             log('luigi_module: worker {0} now running {1}'.format(worker_id, item))
+            # run pipeline batch tasks
             item.run()
+            # run collector
             item.run_collector_pipeline()
     log('luigi_module: worker {0} exiting...'.format(worker_id))
 
 # work queue for the worker threads
 _queue = Queue()
 
-# # create and start the worker threads, which block until work items appear on the queue
-# _workers = [threading.Thread(target=_worker, args=(_queue, i)) for i in range(_worker_count)]
-# for worker in _workers:
-#     worker.start()
-
-
-# def _shutdown_workers():
-#     # the thread termination command is the appearance of _TERMINATE_WORKERS on the queue
-#     _queue.put(_TERMINATE_WORKERS)
-#     for worker in _workers:
-#         worker.join()
-
-
-        
 
 class PhenotypeTask(): #luigi.Task):
     worker_timeout = 60 * 60 * 4
@@ -107,9 +95,10 @@ class PhenotypeTask(): #luigi.Task):
         self.job = job
         self.phenotype = phenotype
         self.owner = owner
+        self.tasks = list()
+        self.pipelines_finished = False
         
         register_tasks()
-        self.tasks = list()
         pipeline_ids = data_access.query_pipeline_ids(int(self.phenotype), util.conn_string)
         phenotype_config = data_access.query_phenotype(int(self.phenotype), util.conn_string)
         phenotype_config['phenotype_id'] = int(self.phenotype)
@@ -134,7 +123,8 @@ class PhenotypeTask(): #luigi.Task):
                 #pipeline_task_obj.run()
                 #pipeline_task_obj.run_collector_pipeline()                
                 #_queue.put(pipeline_task_obj)
-                
+
+                # save tasks on a list for later execution
                 self.tasks.append(pipeline_task_obj)
 
         log('task list: {0}'.format(self.tasks))
@@ -156,10 +146,15 @@ class PhenotypeTask(): #luigi.Task):
         _queue.put(_TERMINATE_WORKERS)
         for worker in workers:
             worker.join()
+
+        self.pipelines_finished = True
         
         
     #def run(self):
     def run_reconciliation(self):
+
+        # all pipeline tasks must have finished prior to this
+        assert self.pipelines_finished
 
         log('dependencies done; run phenotype reconciliation')
         client = util.mongo_client()
@@ -379,6 +374,7 @@ class PipelineTask(): #luigi.Task):
             log(ex)
         #return list()
 
+        # all batches for this pipeline task run serially
         for task in self.batch_task_list:
             task.run()
 
