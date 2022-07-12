@@ -57,6 +57,7 @@ def _worker(queue, worker_id):
             break
         else:
             # run it
+            log('luigi_runner: worker {0} now running {1}'.format(worker_id, item))
             item.run()
     log('luigi_runner: worker {0} exiting...'.format(worker_id))
 
@@ -184,7 +185,7 @@ def run_provider_assertion_pipeline(pipeline_id, job_id, owner):
     log("PLEASE RUN PIPELINE THROUGH PHENOTYPES", ERROR)
 
 
-def run_value_extraction_pipeline(pipeline_id, job_id, owner):
+def run_value_extraction_pipeline(pipelinze_id, job_id, owner):
     # luigi.run(['PipelineTask', '--pipeline', pipeline_id, '--job', str(job_id), '--owner', owner, '--pipelinetype',
     #            'ValueExtractor'])
     log("PLEASE RUN PIPELINE THROUGH PHENOTYPES", ERROR)

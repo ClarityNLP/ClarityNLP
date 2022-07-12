@@ -50,7 +50,7 @@ class PhenotypeTask(): #luigi.Task):
         phenotype_config['phenotype_id'] = int(self.phenotype)
 
         log("getting ready to execute pipelines...")
-        log(pipeline_ids)
+        log('pipeline_ids: {0}'.format(pipeline_ids))
         if len(pipeline_ids) > 0:
             configs = dict()
             for pipeline_id in pipeline_ids:
@@ -63,10 +63,13 @@ class PhenotypeTask(): #luigi.Task):
                 pipeline_id = pipeline_config['pipeline_id']
                 pipeline_task_obj = PipelineTask(pipeline=pipeline_id, job=self.job, owner=self.owner,
                                                  pipelinetype=pipeline_config.config_type)
-                pipeline_task_obj.run_batch_tasks()
+                #pipeline_task_obj.run_batch_tasks()
+                #pipeline_task_obj.run()
+                pipeline_task_obj.run()
+                pipeline_task_obj.run_collector_pipeline()
                 tasks.append(pipeline_task_obj)
 
-        log(tasks)
+        log('task list: {0}'.format(tasks))
 
     def run(self):
         log('dependencies done; run phenotype reconciliation')
@@ -259,7 +262,8 @@ class PipelineTask(): #luigi.Task):
         # list of pipeline tasks, one for each document batch
         self.batch_task_list = []
 
-    def run_batch_tasks(self):
+    #def run_batch_tasks(self):
+    def run(self):
 
         self.batch_task_list = []
         
@@ -268,14 +272,14 @@ class PipelineTask(): #luigi.Task):
                                                                                                self
                                                                                                .owner)
             task = registered_pipelines[str(self.pipelinetype)]
-            log('*** type of task: {0}'.format(type(task)))
+            # log('*** task type: {0}'.format(type(task)))
             # if task.parallel_task:
             #     matches = [task(pipeline=self.pipeline, job=self.job, start=n, solr_query=self.solr_query, batch=n)
             #                for n in ranges]
             # else:
             #     matches = [task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)]
             task_obj = task(pipeline=self.pipeline, job=self.job, start=0, solr_query=self.solr_query, batch=0)
-            log('*** type of task_obj: {0}'.format(type(task_obj)))
+            log('task_obj type: {0}'.format(type(task_obj)))
             matches = [task_obj]
 
             #return matches
@@ -289,7 +293,9 @@ class PipelineTask(): #luigi.Task):
         for task in self.batch_task_list:
             task.run()
 
-    def run(self):
+    #def run(self):
+    def run_collector_pipeline(self):
+        log('running collector pipeline')
         run_pipeline(self.pipeline, self.pipelinetype, self.job, self.owner)
         # new
         return self.complete()
