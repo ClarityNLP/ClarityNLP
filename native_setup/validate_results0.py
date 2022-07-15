@@ -1,6 +1,8 @@
 """
-Use this program to check the ClarityNLP validation results from a bare-bones
-run. Assumes that the Mongo database is running on localhost.
+Use this program to check the ClarityNLP results using the data in data_validation0.{txt, json}
+and the NLPQL file validation0.nlpql.
+
+Assumes that the Mongo database is running on localhost.
 """
 
 import re
