@@ -61,19 +61,39 @@ _str_word = r'[-a-z]+\.?\s?'
 _str_words = r'\s?(' + _str_word + r'){0,5}?'
 
 # sexual orientation
-_str_orientation = r'\b(gay|lesbian|(hetero|homo|bi|a)sexual)\b'
+_str_orientation = r'\b(?P<orientation>(gay|lesbian|(hetero|homo|bi|a)sexual))(?! friend)\b'
 
-_str_identifies_as = r'\b((self[-\s])?identifies|came out) as\b' + _str_words + _str_orientation
+_str_identifies_as = r'\b((self[-\s])?identifies( (him|her)self)?|(came|coming) out) as\b' + _str_words + _str_orientation
 _regex_identifies_as = re.compile(_str_identifies_as, re.IGNORECASE)
 
-_str_header = r'\b(history of present illness|social history|medical condition|other)\s?[-:]'
-_str1 = _str_header + _str_words + _str_orientation
+# Other: heterosexual
+_str_header = r'\b(history of present illness|social history|underlying medical condition|other)\s?[-:]'
+_str1 = _str_header + r'(\s?\d\d?)?' + _str_words + _str_orientation
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
+# reports being gay
+_str2 = r'\b(being|is)\b' + _str_words + _str_orientation
+_regex2 = re.compile(_str2, re.IGNORECASE)
+
+# heterosexual partner
+_str3 = _str_orientation + _str_words + r'\b(partner|intercourse|sex)\b'
+_regex3 = re.compile(_str3, re.IGNORECASE)
+
+# relationship
+_str4 = r'\bin( a)?' + _str_words + _str_orientation + r' relationship\b'
+_regex4 = re.compile(_str4, re.IGNORECASE)
+
+# 33 year old homosexual male
+_str5 = r'\b\d\d?' + _str_words + _str_orientation + r' (fe)?male\b'
+_regex5 = re.compile(_str5, re.IGNORECASE)
 
 _REGEXES = [
     _regex_identifies_as,
     _regex1,
+    _regex2,
+    _regex3,
+    _regex4,
+    _regex5,
 ]
 
 _CHAR_SPACE = ' '
@@ -126,6 +146,7 @@ def _regex_match(sentence, regex_list):
 
             if _TRACE:
                 DISPLAY('\t' + match_text)
+                DISPLAY('\t' + match.group('orientation'))
 
 
 ###############################################################################
@@ -157,7 +178,6 @@ if __name__ == '__main__':
         'Not sexually active, is bisexual.',
         'The patient reports being bisexual but monogamous for over one year',
         'He recently came out as bisexual to his wife.',
-        'He has many relationships and used to be bisexual.',
         'Not sexually active now, bisexual, questionable adherence to protection.',
 
         # homosexual / gay / lesbian
@@ -178,7 +198,6 @@ if __name__ == '__main__':
         'Self-identifies as gay',
         'Patients wife stated they do not have a sexual relationship as patient is gay',
 
-        'she thinks her husband was probably a homosexual',
         'UNDERLYING MEDICAL CONDITION: 62 year homosexual male, unknown HIV status',
         'HISTORY OF PRESENT ILLNESS: The patient is a 33 year old homosexual male',
         'Social History: homosexual, has boyfriend',
@@ -231,6 +250,8 @@ if __name__ == '__main__':
         'provided her with information re Gay and Lesbian Advocates',
         # not a lesbian relationship
         'she reports that this was not a lesbian relationship',
+        # used to be
+        'He has many relationships and used to be bisexual.',
     ]
 
     for sentence in SENTENCES:
