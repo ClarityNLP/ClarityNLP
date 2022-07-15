@@ -1,0 +1,24 @@
+limit 100;
+
+phenotype "Validation 1" version "1";
+include ClarityCore version "1.0" called Clarity;
+
+documentset ValidationDocs:
+    Clarity.createDocumentSet({
+        "report_types":["CLARITYNLP_VALIDATION_1"]
+    });
+
+termset AgeTerms: [
+    "age"
+];
+
+define AgeResult:
+    Clarity.ValueExtraction({
+        documentset: [ValidationDocs],
+        termset:[AgeTerms]
+    });
+
+
+// logical Context (Patient, Document)
+context Patient;
+

@@ -1,0 +1,373 @@
+{
+    "reports": [
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "0",
+            "report_id": "0",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 20 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "1",
+            "report_id": "1",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 21 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "2",
+            "report_id": "2",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 22 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "3",
+            "report_id": "3",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 23 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "4",
+            "report_id": "4",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 24 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "5",
+            "report_id": "5",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 25 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "6",
+            "report_id": "6",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 26 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "7",
+            "report_id": "7",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 27 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "8",
+            "report_id": "8",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 28 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "9",
+            "report_id": "9",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 29 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "10",
+            "report_id": "10",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 30 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "11",
+            "report_id": "11",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 31 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "12",
+            "report_id": "12",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 32 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "13",
+            "report_id": "13",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 33 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "14",
+            "report_id": "14",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 34 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "15",
+            "report_id": "15",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 35 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "16",
+            "report_id": "16",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 36 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "17",
+            "report_id": "17",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 37 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "18",
+            "report_id": "18",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 38 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "19",
+            "report_id": "19",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is male, age 39 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "20",
+            "report_id": "20",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 40 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "21",
+            "report_id": "21",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 41 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "22",
+            "report_id": "22",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 42 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "23",
+            "report_id": "23",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 43 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "24",
+            "report_id": "24",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 44 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "25",
+            "report_id": "25",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 45 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "26",
+            "report_id": "26",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 46 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "27",
+            "report_id": "27",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 47 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "28",
+            "report_id": "28",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 48 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "29",
+            "report_id": "29",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 49 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "30",
+            "report_id": "30",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 50 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "31",
+            "report_id": "31",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 51 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "32",
+            "report_id": "32",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 52 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "33",
+            "report_id": "33",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 53 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "34",
+            "report_id": "34",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 54 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "35",
+            "report_id": "35",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 55 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "36",
+            "report_id": "36",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 56 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "37",
+            "report_id": "37",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 57 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "38",
+            "report_id": "38",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 58 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "39",
+            "report_id": "39",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 59 years."
+        },
+        {
+            "report_type": "CLARITYNLP_VALIDATION_1",
+            "id": "40",
+            "report_id": "40",
+            "source": "CLARITYNLP_VALIDATION_1",
+            "report_date": "2022-06-24T15:02:43.378272Z",
+            "subject": "-1",
+            "report_text": "The patient is female, age 60 years."
+        }
+    ]
+}

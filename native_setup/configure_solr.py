@@ -256,7 +256,10 @@ def _create_validation_files(solr_base_url):
     """
 
     # special docs for validation purposes
-    VALIDATION_FILES = ['data_validation0.txt']
+    VALIDATION_FILES = [
+        'data_validation0.txt',
+        'data_validation1.txt'
+    ]
 
     solr_url = '{0}/update'.format(solr_base_url)
     headers = {'Content-type':'application/json'}
