@@ -32,10 +32,10 @@ except:
     
 
 # sexual orientation types
-SEXUAL_ORIENTATIION_HETEROSEXUAL = 'heterosexual'
-SEXUAL_ORIENTATION_HOMOSEXUAL    = 'homosexual'
-SEXUAL_ORIENTATION_BISEXUAL      = 'bisexual'
-SEXUAL_ORIENTATION_ASEXUAL       = 'asexual'
+SEXUAL_ORIENTATION_HETEROSEXUAL = 'heterosexual'
+SEXUAL_ORIENTATION_HOMOSEXUAL   = 'homosexual'
+SEXUAL_ORIENTATION_BISEXUAL     = 'bisexual'
+SEXUAL_ORIENTATION_ASEXUAL      = 'asexual'
 
 SEXUAL_ORIENTATION_FIELDS = [
     'sentence',
@@ -60,8 +60,20 @@ _str_word = r'[-a-z]+\.?\s?'
 # nongreedy word captures
 _str_words = r'\s?(' + _str_word + r'){0,5}?'
 
-# sexual orientation
-_str_orientation = r'\b(?P<orientation>(gay|lesbian|(hetero|homo|bi|a)sexual))(?! friend)\b'
+# sexual orientation - insert all entries into _normalization_map below
+_str_orientation = r'\b(?P<orientation>(gay|lesbian|queer|(homo|hetero|bi|a)sexual))(?! friend)\b'
+_regex_orientation = re.compile(_str_orientation, re.IGNORECASE)
+
+# all orientations recognized by this regex go in this map
+_normalization_map = {
+    'gay'          : SEXUAL_ORIENTATION_HOMOSEXUAL,
+    'lesbian'      : SEXUAL_ORIENTATION_HOMOSEXUAL,
+    'queer'        : SEXUAL_ORIENTATION_HOMOSEXUAL,
+    'homosexual'   : SEXUAL_ORIENTATION_HOMOSEXUAL,
+    'heterosexual' : SEXUAL_ORIENTATION_HETEROSEXUAL,
+    'bisexual'     : SEXUAL_ORIENTATION_BISEXUAL,
+    'asexual'      : SEXUAL_ORIENTATION_ASEXUAL,
+}
 
 _str_identifies_as = r'\b((self[-\s])?identifies( (him|her)self)?|(came|coming) out) as\b' + _str_words + _str_orientation
 _regex_identifies_as = re.compile(_str_identifies_as, re.IGNORECASE)
@@ -141,6 +153,29 @@ def _cleanup(sentence):
 
 
 ###############################################################################
+def _process_match(match, regex):
+
+    # strip any trailing whitespace (invalidates match.end())
+    match_text = match.group().rstrip()
+    start = match.start()
+    end = start + len(match_text)
+    orientation = match.group('orientation')
+    
+    if _TRACE:
+        DISPLAY('\t' + match_text)
+        DISPLAY('\t' + orientation)
+
+    # normalize
+    if orientation in _normalization_map:
+        normalized_orientation = _normalization_map[orientation]
+    else:
+        DISPLAY('sexual_orientation_finder: orientation not in normalization map')
+
+    candidate = overlap.Candidate(start, end, match_text, regex, other=orientation)
+    return candidate
+
+
+###############################################################################
 def _regex_match(sentence, regex_list):
     """
     """
@@ -149,19 +184,8 @@ def _regex_match(sentence, regex_list):
     for i, regex in enumerate(regex_list):
         iterator = regex.finditer(sentence)
         for match in iterator:
-            # strip any trailing whitespace (invalidates match.end())
-            match_text = match.group().rstrip()
-            start = match.start()
-            end = start + len(match_text)
-            orientation = match.group('orientation')
-            
-            if _TRACE:
-                DISPLAY('\t' + match_text)
-                DISPLAY('\t' + orientation)
-
-            candidates.append(overlap.Candidate(
-                start, end, match_text, regex, other=orientation
-            ))
+            candidate = _process_match(match, regex)
+            candidates.append(candidate)
 
     # sort candidates in DECREASING order of length
     candidates = sorted(candidates, key=lambda x: x.end-x.start)
