@@ -52,7 +52,7 @@ _VERSION_MAJOR = 0
 _VERSION_MINOR = 1
 
 # set to True to enable debug output
-_TRACE = True
+_TRACE = False
 
 # a word, possibly hyphenated or abbreviated
 _str_word = r'[-a-z]+\.?\s?'
@@ -72,7 +72,7 @@ _str1 = _str_header + r'(\s?\d\d?)?' + _str_words + _str_orientation
 _regex1 = re.compile(_str1, re.IGNORECASE)
 
 # reports being gay
-_str2 = r'\b(being|is)\b' + _str_words + _str_orientation
+_str2 = r'\b(?<!not )(?<!denies )(being|is(?! not)|as)\b' + _str_words + _str_orientation
 _regex2 = re.compile(_str2, re.IGNORECASE)
 
 # heterosexual partner
@@ -80,12 +80,20 @@ _str3 = _str_orientation + _str_words + r'\b(partner|intercourse|sex)\b'
 _regex3 = re.compile(_str3, re.IGNORECASE)
 
 # relationship
-_str4 = r'\bin( a)?' + _str_words + _str_orientation + r' relationship\b'
+_str4 = r'\b(?<!not )in( a)?' + _str_words + _str_orientation + r' relationship\b'
 _regex4 = re.compile(_str4, re.IGNORECASE)
 
 # 33 year old homosexual male
-_str5 = r'\b\d\d?' + _str_words + _str_orientation + r' (fe)?male\b'
+_str5 = r'\b\d\d? ' + _str_words + _str_orientation + r' ((fe)?male|(wo)?man)\b'
 _regex5 = re.compile(_str5, re.IGNORECASE)
+
+# risk factors
+_str6 = r'\brisky? (behaviors?|factors?)[-:\s]+' + _str_words + _str_orientation
+_regex6 = re.compile(_str6, re.IGNORECASE)
+
+# homosexual orientation
+_str7 = _str_orientation + _str_words + r'\b(orientation|prostitution)\b'
+_regex7 = re.compile(_str7, re.IGNORECASE)
 
 _REGEXES = [
     _regex_identifies_as,
@@ -94,6 +102,8 @@ _REGEXES = [
     _regex3,
     _regex4,
     _regex5,
+    _regex6,
+    _regex7,
 ]
 
 _CHAR_SPACE = ' '
@@ -143,10 +153,45 @@ def _regex_match(sentence, regex_list):
             match_text = match.group().rstrip()
             start = match.start()
             end = start + len(match_text)
-
+            orientation = match.group('orientation')
+            
             if _TRACE:
                 DISPLAY('\t' + match_text)
-                DISPLAY('\t' + match.group('orientation'))
+                DISPLAY('\t' + orientation)
+
+            candidates.append(overlap.Candidate(
+                start, end, match_text, regex, other=orientation
+            ))
+
+    # sort candidates in DECREASING order of length
+    candidates = sorted(candidates, key=lambda x: x.end-x.start)
+
+    if _TRACE:
+        DISPLAY('\tCandidate matches: ')
+        index = 0
+        for c in candidates:
+            regex_index = regex_list.index(c.regex)
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+                  format(index, regex_index, c.start, c.end, c.match_text))
+            index += 1
+        DISPLAY()
+
+    # keep the longest of any overlapping matches
+    pruned_candidates = overlap.remove_overlap(candidates,
+                                               False,
+                                               keep_longest=True)
+
+    if _TRACE:
+        DISPLAY('\tCandidate matches after overlap resolution: ')
+        index = 0
+        for c in pruned_candidates:
+            regex_index = regex_list.index(c.regex)
+            DISPLAY('\t[{0:2}] R{1:2}\t[{2},{3}): ->{4}<-'.
+                  format(index, regex_index, c.start, c.end, c.match_text))
+            index += 1
+        DISPLAY()
+    
+    return pruned_candidates    
 
 
 ###############################################################################
@@ -159,6 +204,18 @@ def run(sentence):
         DISPLAY(cleaned_sentence)
 
     candidates = _regex_match(cleaned_sentence, _REGEXES)
+
+    for c in candidates:
+        orientation = c.other
+
+        obj = SexualOrientationTuple(
+            sentence = cleaned_sentence,
+            sexual_orientation = orientation
+        )
+
+        results.append(obj)
+
+    return json.dumps([r._asdict() for r in results], indent=4)    
     
 
 ###############################################################################
@@ -237,6 +294,9 @@ if __name__ == '__main__':
         'presumably contracted via heterosexual intercourse',
         'stable heterosexual partner, lives with daughter',
         'risk factors included unprotected heterosexual sex as well as drug use',
+
+        # asexual
+        'She would describe her sexual orientation as asexual',
         
         # negative
         # BenGay ointment
@@ -257,8 +317,8 @@ if __name__ == '__main__':
     for sentence in SENTENCES:
         DISPLAY('\n' + sentence)
         json_result = run(sentence)
-        #json_data = json.loads(json_result)
-        #result_list = [ImmigrationTuple(**d) for d in json_data]
-        #for r in result_list:
-        #    DISPLAY('\t{0}'.format(r))
+        json_data = json.loads(json_result)
+        result_list = [SexualOrientationTuple(**d) for d in json_data]
+        for r in result_list:
+            DISPLAY('\t{0}'.format(r))
     
