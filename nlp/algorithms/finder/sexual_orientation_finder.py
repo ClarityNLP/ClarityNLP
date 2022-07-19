@@ -169,9 +169,10 @@ def _process_match(match, regex):
     if orientation in _normalization_map:
         normalized_orientation = _normalization_map[orientation]
     else:
-        DISPLAY('sexual_orientation_finder: orientation not in normalization map')
+        DISPLAY('*** sexual_orientation_finder: orientation "{0}" not in map ***'.format(orientation))
+        normalized_orientation = orientation
 
-    candidate = overlap.Candidate(start, end, match_text, regex, other=orientation)
+    candidate = overlap.Candidate(start, end, match_text, regex, other=normalized_orientation)
     return candidate
 
 
