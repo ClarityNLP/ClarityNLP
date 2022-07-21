@@ -15,6 +15,7 @@ VOLUME ["/tmp"]
 
 COPY nlp/requirements.txt $APP_HOME
 COPY nlp/config.py $APP_HOME
+COPY install_models.py $APP_HOME
 
 RUN CFLAGS="-Wno-narrowing" pip3 install -U cld2-cffi
 RUN pip3 install -r requirements.txt
