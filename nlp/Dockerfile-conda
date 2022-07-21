@@ -1,4 +1,3 @@
-# FROM python:3.6.13
 FROM continuumio/miniconda3
 
 MAINTAINER Health Data Analytics
@@ -19,7 +18,7 @@ COPY conda_requirements.txt $APP_HOME
 COPY conda_pip_requirements.txt $APP_HOME
 COPY config.py $APP_HOME
 
-RUN conda create --name claritynlp python=3.6.15
+RUN conda create --name claritynlp python=3.6
 
 RUN echo "conda activate claritynlp" >> ~/.bashrc
 SHELL ["/bin/bash", "--login", "-c"]

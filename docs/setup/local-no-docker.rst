@@ -190,7 +190,7 @@ Create the Conda Environment for ClarityNLP
 From the ``ClarityNLPNative/ClarityNLP/native_setup`` folder, create a
 new conda managed environment with:
 ::
-   conda create --name claritynlp python=3.6.15
+   conda create --name claritynlp python=3.6
    conda activate claritynlp
    conda config --env --add channels conda-forge
    conda config --env --set channel_priority strict
