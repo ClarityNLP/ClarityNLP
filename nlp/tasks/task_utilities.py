@@ -297,8 +297,8 @@ class BaseTask(luigi.Task):
                     data_store = solr_data
                 elif memory_data.IN_MEMORY_DATA == util.solr_url:
                     if not self.pipeline_config.report_source and len(self.pipeline_config.report_source) == 0:
-                        pipeline_config.report_source = str(self.job)
-                    self.pipeline_config.sources = [self.job]
+                        self.pipeline_config.report_source = str(self.job)
+                    self.pipeline_config.sources = [self.pipeline_config.report_source]
                     data_store = memory_data
                 else:
                     data_store = filesystem_data

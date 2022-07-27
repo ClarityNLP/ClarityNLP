@@ -79,6 +79,22 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False,
     return output
 
 
+def post_nlpql(raw_nlpql:str, source_id: str, background: bool):
+    nlpql_results = run_nlpql_parser(raw_nlpql)
+
+    if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+        return nlpql_results
+    else:
+        p_cfg = nlpql_results['phenotype']
+        if source_id and source_id != '':
+            p_cfg.report_source = source_id
+            util.solr_url = memory_data.IN_MEMORY_DATA
+
+        tuple_def_docs = get_tuple_def(p_cfg)
+        phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background, tuple_def_docs=tuple_def_docs)
+        return phenotype_info
+
+
 def parse_nlpql(nlpql: str):
     nlpql_results = run_nlpql_parser(nlpql)
     if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
@@ -136,20 +152,22 @@ def nlpql():
         #     # tuple syntax error
         #     return 'Tuple syntax error'
 
-        nlpql_results = run_nlpql_parser(raw_nlpql)
+        try:
+            args = request.args
+            source_id = args.get("source_id", default="", type=str)
+            if source_id == '':
+                source_id = args.get("report_source", default="", type=str)
+        except Exception as ex:
+            log(ex)
+            source_id = None
 
-        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
-            return json.dumps(nlpql_results)
+        background_str = request.args.get('background', "true")
+        if len(background_str) > 0 and (background_str[0]).lower() == 'f':
+            background = False
         else:
-            background_str = request.args.get('background', "true")
-            if len(background_str) > 0 and (background_str[0]).lower() == 'f':
-                background = False
-            else:
-                background = True
-            p_cfg = nlpql_results['phenotype']
-            tuple_def_docs = get_tuple_def(p_cfg)
-            phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background, tuple_def_docs=tuple_def_docs)
-            return json.dumps(phenotype_info, indent=4)
+            background = True
+
+        return json.dumps(post_nlpql(raw_nlpql, source_id, background), indent=4)
 
     return "Please POST text containing NLPQL."
 

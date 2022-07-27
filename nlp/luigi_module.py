@@ -189,7 +189,7 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
         data_store = memory_data
         if not pipeline_config.report_source and len(pipeline_config.report_source) == 0:
             pipeline_config.report_source = str(job_id)
-        pipeline_config.sources = [job_id]
+        pipeline_config.sources = [pipeline_config.report_source]
     else:
         data_store = filesystem_data
 
