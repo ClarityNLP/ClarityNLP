@@ -1,4 +1,6 @@
 from flask import request, Blueprint
+
+import util
 from luigi_tools import phenotype_helper, luigi_runner
 from data_access import *
 from algorithms import *
@@ -34,6 +36,13 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False,
                                              phenotype_id=p_id, pipeline_id=-1,
                                              date_started=datetime.now(),
                                              job_type='PHENOTYPE'), util.conn_string)
+    if p_cfg.reports and len(p_cfg.reports) > 0:
+        util.solr_url = memory_data.IN_MEMORY_DATA
+        memory_data.load_buffer(str(job_id), p_cfg.reports)
+        p_cfg.report_source = str(job_id)
+    elif p_cfg.report_source and len(p_cfg.report_source) > 0:
+        # assumes memory data already loaded
+        util.solr_url = memory_data.IN_MEMORY_DATA
 
     if tuple_def_docs is not None and len(tuple_def_docs) > 0:
         # insert tuple def docs into Mongo
@@ -70,6 +79,22 @@ def post_phenotype(p_cfg: PhenotypeModel, raw_nlpql: str = '', background=False,
     return output
 
 
+def post_nlpql(raw_nlpql:str, source_id: str, background: bool):
+    nlpql_results = run_nlpql_parser(raw_nlpql)
+
+    if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
+        return nlpql_results
+    else:
+        p_cfg = nlpql_results['phenotype']
+        if source_id and source_id != '':
+            p_cfg.report_source = source_id
+            util.solr_url = memory_data.IN_MEMORY_DATA
+
+        tuple_def_docs = get_tuple_def(p_cfg)
+        phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background, tuple_def_docs=tuple_def_docs)
+        return phenotype_info
+
+
 def parse_nlpql(nlpql: str):
     nlpql_results = run_nlpql_parser(nlpql)
     if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
@@ -78,8 +103,9 @@ def parse_nlpql(nlpql: str):
         return nlpql_results['phenotype'].to_json()
 
 
-@phenotype_app.route('/reports', methods=['POST'])
-def reports():
+
+@phenotype_app.route('/reports/<string:source_id>', methods=['POST'])
+def reports(source_id: str):
     """POST a JSON array of documents (typically from NLPaaS)."""
     if 'POST' == request.method and request.data:
 
@@ -91,8 +117,8 @@ def reports():
         docs = []
         if 'reports' in json_data:
             docs = json_data['reports']
-            memory_data.load_buffer(docs)
-            return '{0}\n'.format(memory_data.get_document_count())
+            memory_data.load_buffer(source_id, docs)
+            return '{0}\n'.format(memory_data.get_document_count(source_id))
     else:
         return 'Please POST report documents.'
 
@@ -126,20 +152,22 @@ def nlpql():
         #     # tuple syntax error
         #     return 'Tuple syntax error'
 
-        nlpql_results = run_nlpql_parser(raw_nlpql)
+        try:
+            args = request.args
+            source_id = args.get("source_id", default="", type=str)
+            if source_id == '':
+                source_id = args.get("report_source", default="", type=str)
+        except Exception as ex:
+            log(ex)
+            source_id = None
 
-        if nlpql_results['has_errors'] or nlpql_results['has_warnings']:
-            return json.dumps(nlpql_results)
+        background_str = request.args.get('background', "true")
+        if len(background_str) > 0 and (background_str[0]).lower() == 'f':
+            background = False
         else:
-            background_str = request.args.get('background', "true")
-            if len(background_str) > 0 and (background_str[0]).lower() == 'f':
-                background = False
-            else:
-                background = True
-            p_cfg = nlpql_results['phenotype']
-            tuple_def_docs = get_tuple_def(p_cfg)
-            phenotype_info = post_phenotype(p_cfg, raw_nlpql, background=background, tuple_def_docs=tuple_def_docs)
-            return json.dumps(phenotype_info, indent=4)
+            background = True
+
+        return json.dumps(post_nlpql(raw_nlpql, source_id, background), indent=4)
 
     return "Please POST text containing NLPQL."
 

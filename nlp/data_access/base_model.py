@@ -27,6 +27,10 @@ class BaseModel(object):
         non_empty = {k: v for k, v in self.__dict__.items() if not is_empty(v)}
         return json.dumps(non_empty, indent=4, ignore_nan=True)
 
+    def toJSON(self):
+        non_empty = {k: v for k, v in self.__dict__.items() if not is_empty(v)}
+        return json.dumps(non_empty, indent=4, ignore_nan=True)
+
     @classmethod
     def from_json(cls, string: str):
         obj = json.loads(string, strict=False)

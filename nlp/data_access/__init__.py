@@ -8,6 +8,7 @@ from .results import job_results, paged_phenotype_results, phenotype_subjects, p
     lookup_phenotype_result_by_id, phenotype_feature_results, lookup_phenotype_results_by_id, \
     phenotype_results_by_context, phenotype_stats, phenotype_performance_results
 from .phenotype import *
+from .report import *
 from .measurement_model import *
 from .library import *
 from .cql_result_parser import decode_top_level_obj

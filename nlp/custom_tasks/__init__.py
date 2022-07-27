@@ -18,3 +18,4 @@ from .HousingFinderTask import HousingFinderTask
 from .ReligionFinderTask import ReligionFinderTask
 from .ImmigrationStatusFinderTask import ImmigrationStatusFinderTask
 from .EmploymentStatusFinderTask import EmploymentStatusFinderTask
+from .SexualOrientationFinderTask import SexualOrientationFinderTask

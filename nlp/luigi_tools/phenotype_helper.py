@@ -185,7 +185,7 @@ def get_cohort_items(cohort_name, cohort_source, job_results):
 def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner, debug,
                                cohorts, phenotype_limit=0, report_types: dict = None,
                                custom_query: dict = None, filter_query: dict = None, source: dict = None,
-                               job_results: dict = None):
+                               job_results: dict = None, report_source: str = ''):
     if report_types is None:
         report_types = dict()
     if custom_query is None:
@@ -282,6 +282,9 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
         fq = get_item_by_key(filter_query, doc_sets)
         sources = get_item_list_by_key(source, doc_sets)
 
+        if report_source and len(report_source) > 0:
+            sources = [report_source]
+
         pipeline = PipelineConfig(e['funct'], e['name'],
                                   get_terms_by_keys(all_terms, terms,
                                                     e['named_arguments']['value_sets']
@@ -302,7 +305,8 @@ def data_entities_to_pipelines(e: PhenotypeEntity, report_tags, all_terms, owner
                                   concept_code_system=code_system,
                                   cql=cql,
                                   is_phenotype=True,
-                                  display_name=display_name)
+                                  display_name=display_name,
+                                  report_source=report_source)
         map_arguments(pipeline, e, all_terms)
         map_arguments(pipeline, e['named_arguments'], all_terms)
         return pipeline
@@ -351,7 +355,7 @@ def get_pipelines_from_phenotype(model: PhenotypeModel):
         for e in model.data_entities:
             pipelines.append(data_entities_to_pipelines(e, report_tags, all_terms, model.owner, model.debug, cohorts,
                                                         model.limit, report_types, custom_query, filter_query, source,
-                                                        job_results))
+                                                        job_results, model.report_source))
     return pipelines
 
 
