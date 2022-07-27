@@ -95,7 +95,6 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     if sources and len(sources) > 0:
         source_id = sources[0]
         docs = _filter_docs_by_type(types, source_id)
-        log('docs{}'.format(docs))
         return docs[start:]
     return []
 
@@ -125,7 +124,7 @@ def query_doc_by_id(report_id, solr_url='http://nlp-solr:8983/solr/sample'):
 
     for vals in _BUFFER.values():
         for doc in vals:
-            if dict == type(doc) and 'report_id' in doc and report_id == doc['report_id']:
+            if (dict == type(doc)) or (Report == type(doc)) and 'report_id' in doc and report_id == doc['report_id']:
                 return doc
 
     return {}
