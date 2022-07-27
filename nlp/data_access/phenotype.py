@@ -10,10 +10,12 @@ from claritynlp_logging import log, ERROR, DEBUG
 try:
     from .base_model import BaseModel
     from .pipeline_config import PipelineConfig
+    from .report import Report
 except Exception as e:
     log(e)
     from base_model import BaseModel
     from pipeline_config import PipelineConfig
+    from report import Report
 
 
 class PhenotypeDefine(dict):
@@ -109,7 +111,7 @@ class PhenotypeModel(BaseModel):
                  code_systems: list = None, value_sets: list = None, term_sets: list = None,
                  document_sets: list = None, data_entities: list = None, cohorts: list = None,
                  operations: list = None, debug=False, limit: int = 0, nlpql: str = '',
-                 phenotype_id=1, valid=True, tuples: list = None):
+                 phenotype_id=1, valid=True, tuples: list = None, reports: list = None, report_source: str = ''):
         self.owner = owner
         self.name = name
         self.description = description
@@ -158,10 +160,16 @@ class PhenotypeModel(BaseModel):
             self.tuples = list()
         else:
             self.tuples = tuples
+
+        if reports is None:
+            self.reports = list()
+        else:
+            self.reports = reports
         self.debug = debug
         self.limit = limit
         self.nlpql = nlpql
         self.phenotype_id = phenotype_id
+        self.report_source = report_source
 
 
 def insert_phenotype_mapping(phenotype_id, pipeline_id, connection_string):
@@ -415,6 +423,16 @@ def get_sample_phenotype():
     #                                                                     )
     #                                             ],
     #                                             final=True)
+    report1 = Report(
+        report_type='Example Doc',
+        _id='0',
+        report_id='0',
+        source='Super Test Document Set',
+        report_date="2022-06-24T15:02:43.378272Z",
+        subject='TEST_SUBJECT_1234',
+        report_text="The patient is a caucasian male, age 40 years with Hx of DM type 1 and migraines"
+    )
+
     sepsisPhenotype = PhenotypeModel(owner='jduke',
                                      phenotype=ptype,
                                      description='Sepsis definition derived from Murff HJ, FitzHenry F, Matheny ME, et al. Automated identification of postoperative complications within an electronic medical record using natural language processing. JAMA. 2011;306(8):848-855.',
@@ -430,6 +448,9 @@ def get_sample_phenotype():
                                      ],
                                      operations=[
                                          SepsisState
+                                     ],
+                                     reports=[
+                                         report1
                                      ])
     return sepsisPhenotype
 

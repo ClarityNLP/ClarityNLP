@@ -144,6 +144,10 @@ class PhenotypeTask(luigi.Task):
                         
                 data_access.update_job_status(str(self.job), util.conn_string, data_access.COMPLETED,
                                           "Job completed successfully")
+
+                # the solr "url" determines where to find the documents
+                if memory_data.IN_MEMORY_DATA == util.solr_url:
+                    memory_data._clear_buffer(self.job)
                 outfile.write("DONE!")
                 outfile.write('\n')
 
@@ -183,8 +187,13 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
         data_store = solr_data
     elif memory_data.IN_MEMORY_DATA == util.solr_url:
         data_store = memory_data
+        if not pipeline_config.report_source and len(pipeline_config.report_source) == 0:
+            pipeline_config.report_source = str(job_id)
+        pipeline_config.sources = [job_id]
     else:
         data_store = filesystem_data
+
+    print('sources {}'.format(pipeline_config.sources))
 
     total_docs = data_store.query_doc_size(solr_query,
                                            mapper_inst=util.report_mapper_inst,
