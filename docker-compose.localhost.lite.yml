@@ -1,0 +1,378 @@
+version: "3.3"
+
+networks:
+  clarity:
+    driver: bridge
+
+volumes:
+  redisdata:
+  nlp-solrdata:
+  nlp-pgdata:
+  nlp-mongodata:
+  ingest-files:
+  ingest-mongodata:
+  vhost:
+  html:
+  dhparam:
+  htpasswd:
+  luigi-frontend:
+  luigi-state:
+  luigi-logs:
+  nlp-api-data:
+
+services:
+  identity-provider:
+    container_name: IDENTITY_PROVIDER
+    hostname: ${IDENTITY_PROVIDER_HOSTNAME}
+    image: claritynlp/identity-provider
+    expose:
+      - ${IDENTITY_PROVIDER_CONTAINER_PORT}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      - PROTOCOL=http
+      - HOST=${HOST}
+      - IDP_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - CLIENT_CLI_SECRET=${CLIENT_CLI_SECRET}
+      - CLIENT_NLPASS_SECRET=${CLIENT_NLPASS_SECRET}
+      - IS_VHOST=false
+    networks:
+      - clarity
+
+  identity-and-access-proxy:
+    container_name: IDENTITY_AND_ACCESS_PROXY
+    hostname: identity-and-access-proxy
+    image: claritynlp/identity-and-access-proxy
+    expose:
+      - ${IDENTITY_AND_ACCESS_PROXY_CONTAINER_PORT}
+    entrypoint: pm2-runtime
+    command: proxy.js
+    environment:
+      - IDENTITY_PROVIDER_HOSTNAME=${IDENTITY_PROVIDER_HOSTNAME}
+      - IDENTITY_PROVIDER_CONTAINER_PORT=${IDENTITY_PROVIDER_CONTAINER_PORT}
+    networks:
+      - clarity
+
+  nlp-api:
+    restart: always
+    container_name: NLP_API
+    hostname: ${NLP_API_HOSTNAME}
+    image: claritynlp/nlp-api
+    volumes:
+      - nlp-api-data:/tmp
+    expose:
+      - ${NLP_API_CONTAINER_PORT}
+    entrypoint:
+      - /api/wait-for-it-extra.sh
+      - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
+      - ${NLP_MONGO_HOSTNAME}:${NLP_MONGO_CONTAINER_PORT}
+      - ${SCHEDULER_HOSTNAME}:${SCHEDULER_CONTAINER_PORT}
+      - ${NLP_PG_HOSTNAME}:${NLP_PG_CONTAINER_PORT}
+      - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
+      - --timeout=420
+      - --
+    command: gunicorn api --config config.py --timeout 500 -b :5000
+    environment:
+      - NLP_API_TMP_DIR=${NLP_API_TMP_DIR}
+      - NLP_API_LOG_DIR=${NLP_API_LOG_DIR}
+      - NLP_SOLR_URL=${NLP_SOLR_URL}
+      - NLP_API_DEBUG_MODE=${NLP_API_DEBUG_MODE}
+      - NLP_EXPRESSION_EVALUATOR=${NLP_EXPRESSION_EVALUATOR}
+      - NLP_API_URL=${NLP_API_URL}
+      - BATCH_SIZE=${BATCH_SIZE}
+      - RESULTS_CLIENT_URL=${RESULTS_URL}
+      - USE_MEMORY_CACHING=${USE_MEMORY_CACHING}
+      - USE_PRECOMPUTED_SEGMENTATION=${USE_PRECOMPUTED_SEGMENTATION}
+      - USE_REORDERED_NLPQL=${USE_REORDERED_NLPQL}
+      - USE_REDIS_CACHING=${USE_REDIS_CACHING}
+      - OHDSI_WEBAPI_URL=${OHDSI_WEBAPI_URL}
+      - SOLR_TEXT_FIELD=${SOLR_TEXT_FIELD}
+      - SOLR_ID_FIELD=${SOLR_ID_FIELD}
+      - SOLR_REPORT_ID_FIELD=${SOLR_REPORT_ID_FIELD}
+      - SOLR_SOURCE_FIELD=${SOLR_SOURCE_FIELD}
+      - SOLR_REPORT_DATE_FIELD=${SOLR_REPORT_DATE_FIELD}
+      - SOLR_SUBJECT_FIELD=${SOLR_SUBJECT_FIELD}
+      - SOLR_REPORT_TYPE_FIELD=${SOLR_REPORT_TYPE_FIELD}
+      - NLP_PG_HOSTNAME=${NLP_PG_HOSTNAME}
+      - NLP_PG_DATABASE=${NLP_PG_DATABASE}
+      - NLP_PG_USER=${NLP_PG_USER}
+      - NLP_PG_PASSWORD=${NLP_PG_PASSWORD}
+      - NLP_PG_CONTAINER_PORT=${NLP_PG_CONTAINER_PORT}
+      - NLP_MONGO_HOSTNAME=${NLP_MONGO_HOSTNAME}
+      - NLP_MONGO_CONTAINER_PORT=${NLP_MONGO_CONTAINER_PORT}
+      - NLP_MONGO_DATABASE=${NLP_MONGO_DATABASE}
+      - NLP_MONGO_WORKING_INDEX=${NLP_MONGO_WORKING_INDEX}
+      - NLP_MONGO_WORKING_COLLECTION=${NLP_MONGO_WORKING_COLLECTION}
+      - NLP_MONGO_USERNAME=${NLP_MONGO_USERNAME}
+      - NLP_MONGO_PASSWORD=${NLP_MONGO_PASSWORD}
+      - LUIGI_SCHEDULER_URL=${LUIGI_SCHEDULER_URL}
+      - LUIGI_URL=${LUIGI_URL}
+      - LUIGI_WORKERS=${LUIGI_WORKERS}
+      - REDIS_HOSTNAME=${REDIS_HOSTNAME}
+      - REDIS_HOST_PORT=${REDIS_HOST_PORT}
+      - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
+    networks:
+      - clarity
+    depends_on:
+      - redis
+      - nlp-solr
+      - nlp-mongo
+      - nlp-postgres
+      - luigid
+
+  luigid:
+    restart: always
+    container_name: scheduler
+    hostname: scheduler
+    image: axiom/docker-luigi:2.7.1
+    expose:
+      - ${SCHEDULER_CONTAINER_PORT}
+    volumes:
+      - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+      - luigi-state:/luigi/state
+      - luigi-logs:/luigi/logs
+    networks:
+      - clarity
+
+  frontend-ctrl:
+    restart: always
+    image: claritynlp/front-ctrl
+    volumes:
+      - luigi-frontend:/usr/local/lib/python2.7/site-packages/luigi/static/visualiser
+    links:
+      - luigid:luigid
+      - identity-provider:identity-provider
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=10000000000"
+      - "traefik.http.routers.app.middlewares=limit"
+    networks:
+      - clarity
+
+  nlp-solr:
+    restart: always
+    container_name: NLP_SOLR
+    hostname: ${NLP_SOLR_HOSTNAME}
+    image: claritynlp/nlp-solr
+    expose:
+      - ${NLP_SOLR_CONTAINER_PORT}
+    volumes:
+      - nlp-solrdata:/opt/solr/server/solr/mycores
+    environment:
+      - SOLR_HEAP=${SOLR_HEAP}
+    networks:
+      - clarity
+
+  nlp-mongo:
+    container_name: NLP_MONGO
+    hostname: ${NLP_MONGO_HOSTNAME}
+    image: claritynlp/nlp-mongo
+    expose:
+      - ${NLP_MONGO_CONTAINER_PORT}
+    volumes:
+      - nlp-mongodata:/data/db
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+      - MONGO_INITDB_DATABASE=${NLP_MONGO_DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${NLP_MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${NLP_MONGO_PASSWORD}
+    networks:
+      - clarity
+
+  nlp-postgres:
+    container_name: NLP_POSTGRES
+    hostname: ${NLP_PG_HOSTNAME}
+    image: claritynlp/nlp-postgres
+    command: postgres -c 'shared_buffers=512MB' -c 'max_connections=500'
+    environment:
+      POSTGRES_USER: ${NLP_PG_USER}
+      POSTGRES_PASSWORD: ${NLP_PG_PASSWORD}
+      POSTGRES_DB: ${NLP_PG_DATABASE}
+      INIT_OMOP: ${INIT_OMOP}
+    expose:
+      - ${NLP_PG_CONTAINER_PORT}
+    volumes:
+      - nlp-pgdata:/var/lib/postgresql/data/
+    networks:
+      - clarity
+
+  ingest-api:
+    container_name: INGEST_API
+    hostname: ${INGEST_API_HOSTNAME}
+    image: claritynlp/ingest-api
+    volumes:
+      - /app/node_modules/ #empties container node_modules, forces bcrypt to be built on container
+      - ingest-files:/var/lib/ingest-files
+    expose:
+      - ${INGEST_API_CONTAINER_PORT}
+    entrypoint:
+      - /app/wait-for-it-extra.sh
+      - ${NLP_SOLR_HOSTNAME}:${NLP_SOLR_CONTAINER_PORT}
+      - ${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}
+      - ${INGEST_MONGO_HOSTNAME}:${INGEST_MONGO_CONTAINER_PORT}
+      - ${NLP_API_HOSTNAME}:${NLP_API_CONTAINER_PORT}
+      - --timeout=420
+      - --
+      - pm2-runtime
+    command: app.js
+    environment:
+      - NODE_ENV=production
+      - JOB_TYPES=ingest
+      - NLP_SOLR_HOSTNAME=${NLP_SOLR_HOSTNAME}
+      - NLP_SOLR_CONTAINER_PORT=${NLP_SOLR_CONTAINER_PORT}
+      - NLP_CORE_NAME=${NLP_CORE_NAME}
+      - NLP_SOLR_URL_TOP_LEVEL=${NLP_SOLR_URL_TOP_LEVEL}
+      - NLP_API_HOSTNAME=${NLP_API_HOSTNAME}
+      - NLP_API_CONTAINER_PORT=${NLP_API_CONTAINER_PORT}
+      - INTERVAL=${INTERVAL}
+      - INGEST_MONGO_USERNAME=${INGEST_MONGO_USERNAME}
+      - INGEST_MONGO_PASSWORD=${INGEST_MONGO_PASSWORD}
+      - INGEST_MONGO_HOSTNAME=${INGEST_MONGO_HOSTNAME}
+      - INGEST_MONGO_CONTAINER_PORT=${INGEST_MONGO_CONTAINER_PORT}
+      - INGEST_MONGO_DATABASE=${INGEST_MONGO_DATABASE}
+      - INGEST_CLIENT_HOST_PORT=${INGEST_CLIENT_HOST_PORT}
+      - INGEST_API_LOG_LEVEL=${INGEST_API_LOG_LEVEL}
+      - REDIS_HOSTNAME=${REDIS_HOSTNAME}
+      - REDIS_CONTAINER_PORT=${REDIS_CONTAINER_PORT}
+      - PROTOCOL=http
+      - DASHBOARD_HOST=${HOST}
+      - INGEST_HOST=${HOST}
+      - ENTRYPOINT=${ENTRYPOINT_NON_SSL}
+    networks:
+      - clarity
+    depends_on:
+      - ingest-mongo
+      - redis
+      - nlp-solr
+      - nlp-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.socket.rule=PathPrefix(`/socket.io`,`/__getcookie`)"
+      - "traefik.http.routers.socket.entrypoints=web"
+
+  ingest-mongo:
+    container_name: ${INGEST_MONGO_CONTAINER_NAME}
+    hostname: ${INGEST_MONGO_HOSTNAME}
+    image: claritynlp/ingest-mongo
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+      - MONGO_INITDB_DATABASE=${INGEST_MONGO_DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${INGEST_MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${INGEST_MONGO_PASSWORD}
+    expose:
+      - ${INGEST_MONGO_CONTAINER_PORT}
+    volumes:
+      - ingest-mongodata:/data/db
+    networks:
+      - clarity
+
+  redis:
+    container_name: REDIS
+    hostname: ${REDIS_HOSTNAME}
+    image: redis:4.0.10
+    expose:
+      - ${REDIS_CONTAINER_PORT}
+    volumes:
+      - redisdata:/data
+    networks:
+      - clarity
+
+  ingest-client:
+    container_name: INGEST_CLIENT
+    hostname: ${INGEST_CLIENT_HOSTNAME}
+    image: claritynlp/ingest-client
+    volumes:
+      - /app/node_modules
+    environment:
+      - PORT=${INGEST_CLIENT_CONTAINER_PORT}
+      - IDENTITY_PROVIDER_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - API_HOST=${HOST}:${ENTRYPOINT_NON_SSL}/${IAAP_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - SOCKET_URL=${HOST}:${ENTRYPOINT_NON_SSL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=${INGEST_CLIENT_CONTAINER_PORT}"
+      - "traefik.http.middlewares.ingest-stripprefix.stripprefix.prefixes=/${INGEST_PREFIX}"
+      - "traefik.http.routers.ingest.middlewares=ingest-stripprefix"
+      - "traefik.http.routers.ingest.rule=PathPrefix(`/${INGEST_PREFIX}`)"
+      - "traefik.http.routers.ingest.entrypoints=web"
+    networks:
+      - clarity
+
+  results-client:
+    container_name: RESULTS_CLIENT
+    hostname: ${RESULTS_CLIENT_HOSTNAME}
+    image: claritynlp/viewer-client
+    volumes:
+      - /app/node_modules
+    environment:
+      - PORT=${RESULTS_CLIENT_CONTAINER_PORT}
+      - IDENTITY_PROVIDER_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - API_HOST=${HOST}:${ENTRYPOINT_NON_SSL}/${IAAP_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
+      - SOLR_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${SOLR_PREFIX}
+      - LUIGI_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${SCHEDULER_PREFIX}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=${RESULTS_CLIENT_CONTAINER_PORT}"
+      - "traefik.http.middlewares.results-stripprefix.stripprefix.prefixes=/${RESULTS_PREFIX}"
+      - "traefik.http.routers.results.middlewares=results-stripprefix"
+      - "traefik.http.routers.results.rule=PathPrefix(`/${RESULTS_PREFIX}`)"
+      - "traefik.http.routers.results.entrypoints=web"
+    networks:
+      - clarity
+
+  dashboard-client:
+    container_name: DASHBOARD_CLIENT
+    hostname: ${DASHBOARD_CLIENT_HOSTNAME}
+    image: claritynlp/dashboard-client
+    volumes:
+      - /app/node_modules
+    environment:
+      - PORT=${DASHBOARD_CLIENT_CONTAINER_PORT}
+      - IDENTITY_PROVIDER_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${IDP_PREFIX}
+      - API_HOST=${HOST}:${ENTRYPOINT_NON_SSL}/${IAAP_PREFIX}
+      - INGEST_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${INGEST_PREFIX}
+      - RESULTS_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${RESULTS_PREFIX}
+      - DASHBOARD_URL=${HOST}:${ENTRYPOINT_NON_SSL}/${DASHBOARD_PREFIX}
+      - SOCKET_URL=${HOST}:${ENTRYPOINT_NON_SSL}
+      - REACT_APP_DOCUMETATION_URL=https://claritynlp.readthedocs.io/en/latest/index.html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=${DASHBOARD_CLIENT_CONTAINER_PORT}"
+      - "traefik.http.middlewares.dashboard-stripprefix.stripprefix.prefixes=/${DASHBOARD_PREFIX}"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-stripprefix"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/${DASHBOARD_PREFIX}`)"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+    networks:
+      - clarity
+
+  traefik:
+    image: "traefik:v2.1.2"
+    container_name: "traefik"
+    command:
+      - "--log.level=INFO"
+      - "--api=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "${ENTRYPOINT_NON_SSL}:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - clarity
