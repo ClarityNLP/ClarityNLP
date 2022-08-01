@@ -184,6 +184,8 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     # if util.debug_mode == "true":
     #     log("Querying " + url)
     #     log(post_data)
+    
+    #log('solr_data.query: {0}'.format(post_data))
 
     # Getting ID for new cohort
     response = requests.post(url, headers=get_headers(), data=post_data)
@@ -198,6 +200,10 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
         return list()
 
     doc_results = response.json()['response']['docs']
+
+    #for doc in doc_results:
+    #    log('solr_data.query: found doc_id {0}'.format(doc['report_id']))
+    
     return doc_results
 
 
@@ -233,7 +239,7 @@ def query_doc_size(qry, mapper_url, mapper_inst, mapper_key, tags: list=None,
         return 0
 
     num_found = int(response.json()['response']['numFound'])
-    log("found {} solr docs".format(num_found))
+    log("solr_data.query_doc_size: solr query found {} solr docs".format(num_found))
     return num_found
 
 
