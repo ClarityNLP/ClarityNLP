@@ -30,7 +30,7 @@ if _luigi_workers > 0 and _luigi_workers <= _cpu_count:
     # user specified a valid number of worker threads
     _worker_count = _luigi_workers
 else:
-    if _cpu_count >= 4:
+    if _cpu_count > 4:
         _worker_count = _cpu_count // 2
     else:
         _worker_count = _cpu_count - 1
@@ -283,7 +283,7 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
     else:
         data_store = filesystem_data
 
-    print('sources {}'.format(pipeline_config.sources))
+    #print('sources {}'.format(pipeline_config.sources))
 
     total_docs = data_store.query_doc_size(solr_query,
                                            mapper_inst=util.report_mapper_inst,
@@ -298,7 +298,8 @@ def initialize_task_and_get_documents(pipeline_id, job_id, owner):
                                            cohort_ids=pipeline_config.cohort,
                                            job_results_filters=pipeline_config.job_results)
         
-    #log('*** FOUND {0} TOTAL DOCS, pipeline_id {1}, job_id {2} ***'.format(total_docs, pipeline_id, job_id))
+    #log('*** luigi_module: query_doc_size returned {0} docs, pipeline_id {1}, job_id {2} ***'.
+    #    format(total_docs, pipeline_id, job_id))
         
     jobs.update_job_status(str(job_id), util.conn_string, jobs.STATS + "_PIPELINE_" + str(pipeline_id) + "_SOLR_DOCS",
                            str(total_docs))
@@ -368,13 +369,11 @@ class PipelineTask(): #luigi.Task):
             #                                  batch=n) for n in ranges]
             # else:
 
-            # Run all docs in a single batch. There is no need for document batching, since this
-            # pipeline task is executed by a single thread.
             self.batch_task_list = [task(pipeline=self.pipeline,
                                          job=self.job,
-                                         start=0,
+                                         start=n,
                                          solr_query=self.solr_query,
-                                         batch=0)]
+                                         batch=n) for n in ranges]            
             if len(self.batch_task_list) > 0:
                 log('task_obj type: {0}'.format(type(self.batch_task_list[0])))
 
