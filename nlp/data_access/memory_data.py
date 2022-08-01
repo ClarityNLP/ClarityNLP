@@ -95,7 +95,7 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
     if sources and len(sources) > 0:
         source_id = sources[0]
         docs = _filter_docs_by_type(types, source_id)
-        return docs[start:start+rows]
+        return docs[start:start+int(rows)]
     return []
 
 
