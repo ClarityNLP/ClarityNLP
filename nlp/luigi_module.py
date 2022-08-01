@@ -32,6 +32,8 @@ if _luigi_workers > 0 and _luigi_workers <= _cpu_count:
 else:
     if _cpu_count > 4:
         _worker_count = _cpu_count // 2
+    elif _cpu_count == 1:
+        _worker_count = 1
     else:
         _worker_count = _cpu_count - 1
 
