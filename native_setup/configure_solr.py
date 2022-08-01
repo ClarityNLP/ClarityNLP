@@ -250,7 +250,7 @@ def _http_post(solr_url, headers, json_data, params=None):
     
 
 ###############################################################################
-def _create_validation_files(solr_base_url):
+def _create_validation_files(solr_base_url, single_line_mode=False):
     """
     Create and ingest test for ClarityNLP validation.
     """
@@ -264,40 +264,55 @@ def _create_validation_files(solr_base_url):
     solr_url = '{0}/update'.format(solr_base_url)
     headers = {'Content-type':'application/json'}
     params = {'wt':'json', 'commit':'true'}
-    
-    for i in range(len(VALIDATION_FILES)):
-        f = VALIDATION_FILES[i]
+
+    for file_id in range(len(VALIDATION_FILES)):
+        f = VALIDATION_FILES[file_id]
+        
         # load file contents into a string
         with open(f, 'r') as infile:
             text = infile.read()
+            text_list = [text]
 
-        # construct a JSON document with fields required by ClarityNLP
-        
-        # current datetime will be used as the timestamp
-        now = datetime.datetime.utcnow().isoformat()
+        if single_line_mode:
+            text_list = []
+            for line in text.split('\n'):
+                text = line.strip()
+                if 0 == len(text) or text.isspace():
+                    continue
+                text_list.append(text)
 
-        report_type = 'CLARITYNLP_VALIDATION_{0}'.format(i)
-        
-        clarity_doc = {}
-        clarity_doc['report_type'] = report_type
-        clarity_doc['id'] = '{0}_{1}'.format(report_type, i)
-        clarity_doc['report_id'] = clarity_doc['id']
-        clarity_doc['source'] = report_type
-        clarity_doc['report_date'] = now + 'Z'
-        clarity_doc['subject'] = "-1"
-        clarity_doc['report_text'] = text
+        print('\tLoading validation file {0}...'.format(f))
 
-        # solr requires an 'add' field with a 'doc' key equal to clarity_doc
-        data = {'add': {'doc':clarity_doc} }
+        for doc_id, text in enumerate(text_list):
+            # construct a JSON document with fields required by ClarityNLP
 
-        # convert to json
-        json_data = json.dumps(data, indent=4)
+            # current datetime will be used as the timestamp
+            now = datetime.datetime.utcnow().isoformat()
 
-        # HTTP POST the JSON document to the test core
-        r = _http_post(solr_url, headers, json_data, params)
-        if 200 != r.status_code:
-            print(r.text)
-            return False
+            report_type = 'CLARITYNLP_VALIDATION_{0}'.format(file_id)
+            
+            clarity_doc = {}
+            clarity_doc['report_type'] = report_type
+            clarity_doc['id'] = '{0}_{1}'.format(report_type, doc_id)
+            clarity_doc['report_id'] = clarity_doc['id']
+            clarity_doc['source'] = report_type
+            clarity_doc['report_date'] = now + 'Z'
+            clarity_doc['subject'] = "-1"
+            clarity_doc['report_text'] = text
+            
+            # solr requires an 'add' field with a 'doc' key equal to clarity_doc
+            data = {'add': {'doc':clarity_doc} }
+            
+            # convert to json
+            json_data = json.dumps(data, indent=4)
+            
+            # HTTP POST the JSON document to the test core
+            r = _http_post(solr_url, headers, json_data, params)
+            if 200 != r.status_code:
+                print(r.text)
+                return False
+
+        print('\t\tUploaded as {0} ClarityNLP documents.'.format(len(text_list)))
 
     return True
             
@@ -343,6 +358,11 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port',
                         help='port number for solr instance, default == 8983')
 
+    # use this optional argument for tests of document batching
+    parser.add_argument('-s', '--single_line',
+                        help='create a separate Solr document from each validation string',
+                        action='store_true')
+
     args = parser.parse_args()
 
     if 'version' in args and args.version:
@@ -357,9 +377,14 @@ if __name__ == '__main__':
     if 'port' in args and args.port is not None:
         port = int(args.port)
 
+    single_line_mode = False
+    if args.single_line:
+        single_line_mode = True
+        
     solr_base_url = 'http://{0}:{1}/solr/{2}'.format(hostname, port, CORE_NAME)
 
     print('Configuring solr...')
+    print('Single line mode: {0}'.format(single_line_mode))
 
     ok = _create_solr_core(CORE_NAME)
     if not ok:
@@ -407,7 +432,7 @@ if __name__ == '__main__':
 
     # create and ingest the validation files
     print('Loading validation files...')
-    if not _create_validation_files(solr_base_url):
+    if not _create_validation_files(solr_base_url, single_line_mode):
         print('\n\t*** Ingest failure for validation files ***')
     else:
         # run validation checks
