@@ -90,12 +90,12 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
           filter_query='', job_results_filters: dict=None, sources=None,
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
     """
-    Return docs in the buffer beginning with index 'start'.
+    Return the next 'rows' docs in the buffer beginning with index 'start'.
     """
     if sources and len(sources) > 0:
         source_id = sources[0]
         docs = _filter_docs_by_type(types, source_id)
-        return docs[start:]
+        return docs[start:start+rows]
     return []
 
 

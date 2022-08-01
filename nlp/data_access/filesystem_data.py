@@ -46,7 +46,8 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
           filter_query='', job_results_filters: dict=None, sources=None,
           report_type_query='', solr_url='http://nlp-solr:8983/solr/sample'):
     """
-    Return all docs in the given subdirectories indicated by the types param.
+    Return the next 'rows' docs in the filetree after enumerating them and
+    collecting into a list. Return the docs starting at offset 'start'.
     """
 
     if not os.path.isdir(solr_url):
@@ -81,7 +82,7 @@ def query(qry, mapper_url='', mapper_inst='', mapper_key='', tags: list=None,
                         json_obj = json.loads(text)
                         docs.append(json_obj)
 
-    return docs[start:]
+    return docs[start:start+rows]
 
 
 ###############################################################################
