@@ -18,7 +18,6 @@ The patient is male, age 36 years.
 The patient is male, age 37 years.
 The patient is male, age 38 years.
 The patient is male, age 39 years.
-
 The patient is female, age 40 years.
 The patient is female, age 41 years.
 The patient is female, age 42 years.
