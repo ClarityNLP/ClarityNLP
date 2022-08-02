@@ -85,18 +85,18 @@ report_mapper_inst = read_property(
 ohdsi_url = read_property('OHDSI_WEBAPI_URL', ('ohdsi', 'webapi'))
 debug_mode = read_property('NLP_API_DEBUG_MODE', ('local', 'debug'))
 azure_key = read_property('NLP_AZURE_KEY', ('apis', 'azure_key'))
-solr_text_field = read_property('SOLR_TEXT_FIELD', ('solr', 'text_field'))
-solr_id_field = read_property('SOLR_ID_FIELD', ('solr', 'id_field'))
+solr_text_field = read_property('SOLR_TEXT_FIELD', ('solr', 'text_field'), default='report_text')
+solr_id_field = read_property('SOLR_ID_FIELD', ('solr', 'id_field'), default='id')
 solr_report_id_field = read_property(
-    'SOLR_REPORT_ID_FIELD', ('solr', 'report_id_field'))
+    'SOLR_REPORT_ID_FIELD', ('solr', 'report_id_field'), default='report_id')
 solr_source_field = read_property(
-    'SOLR_SOURCE_FIELD', ('solr', 'source_field'))
+    'SOLR_SOURCE_FIELD', ('solr', 'source_field'), default='source')
 solr_report_date_field = read_property(
-    'SOLR_REPORT_DATE_FIELD', ('solr', 'date_field'))
+    'SOLR_REPORT_DATE_FIELD', ('solr', 'date_field'), default='report_date')
 solr_subject_field = read_property(
-    'SOLR_SUBJECT_FIELD', ('solr', 'subject_field'))
+    'SOLR_SUBJECT_FIELD', ('solr', 'subject_field'), default='subject')
 solr_report_type_field = read_property(
-    'SOLR_REPORT_TYPE_FIELD', ('solr', 'type_field'))
+    'SOLR_REPORT_TYPE_FIELD', ('solr', 'type_field'), default='report_type')
 expression_evaluator = read_property(
     'NLP_EXPRESSION_EVALUATOR', ('local', 'evaluator'))
 redis_hostname = read_property('REDIS_HOSTNAME', ('redis', 'hostname'))
@@ -115,7 +115,7 @@ use_reordered_nlpql = read_property('USE_REORDERED_NLPQL',
 
 use_redis_caching = read_property('USE_REDIS_CACHING',
                                   ('optimizations', 'use_redis_caching'),
-                                  default='true')
+                                  default='false')
 
 cql_eval_url = read_property('FHIR_CQL_EVAL_URL', ('local', 'cql_eval_url'), key_name='cql_eval_url')
 fhir_data_service_uri = read_property('FHIR_DATA_SERVICE_URI', ('local', 'fhir_data_service_uri'),
