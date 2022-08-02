@@ -43,7 +43,7 @@ _TERMINATE_WORKERS = None
 log('luigi_module: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
 
 # function for parallel execution of the PipelineTask objects of each PhenotypeTask
-def _worker(queue, worker_id):
+def _worker_pipelines_in_parallel(queue, worker_id):
     """
     Continually check the queue for work items; terminate if None appears.
     Work items must implement a run() function.
@@ -131,7 +131,8 @@ class PhenotypeTask(): #luigi.Task):
         
         # create and start the worker threads
         log('luigi_module: creating {0} worker threads'.format(_worker_count))        
-        workers = [threading.Thread(target=_worker, args=(task_queue, i)) for i in range(_worker_count)]
+        workers = [threading.Thread(target=_worker_pipelines_in_parallel,
+                                    args=(task_queue, i)) for i in range(_worker_count)]
         for worker in workers:
             worker.start()
         
