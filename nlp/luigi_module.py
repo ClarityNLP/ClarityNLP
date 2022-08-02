@@ -65,7 +65,7 @@ def _worker_pipelines_in_parallel(queue, worker_id):
             # run it
             log('luigi_module: worker {0} now running {1}'.format(worker_id, item))
             # run pipeline batch tasks
-            item.run()
+            item.run_task_batches_serially()
             # run collector
             item.run_collector_pipeline()
     log('luigi_module: worker {0} exiting...'.format(worker_id))
@@ -125,6 +125,7 @@ class PhenotypeTask(): #luigi.Task):
     def run_pipelines_in_parallel(self):
         """
         Parallel execution of the PipelineTask objects in self.pipeline_tasks.
+        The task batches in each PipelineTask object execute serially.
         """
 
         task_queue = Queue()
@@ -145,8 +146,7 @@ class PhenotypeTask(): #luigi.Task):
             worker.join()
 
         self.pipelines_finished = True
-        
-        
+
     #def run(self):
     def run_reconciliation(self):
 
@@ -356,7 +356,7 @@ class PipelineTask(): #luigi.Task):
         self.batches_finished = False
 
     #def run_batch_tasks(self):
-    def run(self):
+    def run_task_batches_serially(self):
 
         self.batch_task_list = []
         self.batches_finished = False
