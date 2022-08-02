@@ -365,20 +365,20 @@ class PipelineTask(): #luigi.Task):
                                                                                                self
                                                                                                .owner)
             task = registered_pipelines[str(self.pipelinetype)]
-            # log('*** task type: {0}'.format(type(task)))
-            # if task.parallel_task:
-            #     self.batch_task_list = [task(pipeline=self.pipeline,
-            #                                  job=self.job,
-            #                                  start=n,
-            #                                  solr_query=self.solr_query,
-            #                                  batch=n) for n in ranges]
-            # else:
 
-            self.batch_task_list = [task(pipeline=self.pipeline,
-                                         job=self.job,
-                                         start=n,
-                                         solr_query=self.solr_query,
-                                         batch=n) for n in ranges]            
+            # construct task list, each of which will process a unique batch of documents
+            if task.parallel_task:
+                self.batch_task_list = [task(pipeline=self.pipeline,
+                                             job=self.job,
+                                             start=n,
+                                             solr_query=self.solr_query,
+                                             batch=n) for n in ranges]
+            else:
+                self.batch_task_list = [task(pipeline=self.pipeline,
+                                             job=self.job,
+                                             start=0,
+                                             solr_query=self.solr_query,
+                                             batch=0)]
             if len(self.batch_task_list) > 0:
                 log('task_obj type: {0}'.format(type(self.batch_task_list[0])))
 
