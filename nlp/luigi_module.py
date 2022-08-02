@@ -17,6 +17,7 @@ from claritynlp_logging import log, ERROR, DEBUG
 import util
 import threading
 import multiprocessing
+from time import sleep
 from queue import Queue, Empty
 
 
@@ -42,6 +43,26 @@ _TERMINATE_WORKERS = None
 
 log('luigi_module: {0} CPUs, {1} workers'.format(_cpu_count, _worker_count))
 
+# variables for atomic access to PipelineTask completion
+_lock = threading.Lock()
+_counter = 0
+
+def _initialize_counter(value):
+    global _counter
+    _counter = value
+
+def _atomic_increment_counter():
+    global _counter
+    with _lock:
+        _counter += 1
+
+def _atomic_read_counter():
+    with _lock:
+        value = _counter
+
+    return value
+
+
 # function for parallel execution of the PipelineTask objects of each PhenotypeTask
 def _worker_pipelines_in_parallel(queue, worker_id):
     """
@@ -49,7 +70,7 @@ def _worker_pipelines_in_parallel(queue, worker_id):
     Work items must implement a run() function.
     """
     
-    log('luigi_module: worker {0} running...'.format(worker_id))
+    log('luigi_module: pipeline worker {0} running...'.format(worker_id))
     while True:
         try:
             item = queue.get(timeout = 2)
@@ -62,15 +83,39 @@ def _worker_pipelines_in_parallel(queue, worker_id):
             # now exit this worker thread
             break
         else:
-            # run it
-            log('luigi_module: worker {0} now running {1}'.format(worker_id, item))
+            # run the pipeline task
+            log('luigi_module: pipeline worker {0} now running {1}'.format(worker_id, item))
             # run pipeline batch tasks
-            item.run_task_batches_serially()
+            item.run_batches_serially()
             # run collector
             item.run_collector_pipeline()
     log('luigi_module: worker {0} exiting...'.format(worker_id))
 
 
+def _worker_batches_in_parallel(queue, worker_id):
+    """
+    """
+
+    log('luigi_module: batch worker {0} running...'.format(worker_id))
+    while True:
+        try:
+            item = queue.get(timeout = 2)
+        except Empty:
+            # haven't seen termination signal yet
+            log('luigi_module: batch worker {0} saw empty queue'.format(worker_id))
+            continue
+        if item is _TERMINATE_WORKERS:
+            # replace so that other workers will know to terminate
+            queue.put(item)
+            # exit this worker thread
+            break
+        else:
+            # run the pipeline batch task
+            log('luigi module: batch worker {0} now running {1}'.format(worker_id, item))
+            item.run()
+    log('luigi_module: batch worker {0} exiting...'.format(worker_id))
+        
+    
 # These variables are used to control locking of the Mongo database,
 # to force writes to disk.
 
@@ -146,7 +191,69 @@ class PhenotypeTask(): #luigi.Task):
             worker.join()
 
         self.pipelines_finished = True
+        
 
+    def run_batches_in_parallel(self):
+        """
+        Parallel execution of all task batches across all PipelineTask objects.
+        """
+
+        _initialize_counter(value = 0)
+
+        task_queue = Queue()
+        
+        # create and start the worker threads
+        log('luigi_module: creating {0} worker threads'.format(_worker_count))        
+        workers = [threading.Thread(target=_worker_batches_in_parallel,
+                                    args=(task_queue, i)) for i in range(_worker_count)]
+        for worker in workers:
+            worker.start()
+
+        # each pipeline task queues its batch tasks
+        # all execute in parallel
+        for task in self.pipeline_tasks:
+            task.run_batches_in_parallel(task_queue)
+            
+        # find out when all tasks have finished
+        task_count = len(self.pipeline_tasks)
+
+        log('luigi_module: entering read_counter loop...')
+        while True:
+            value = _atomic_read_counter()
+            log('luigi_module: _counter: {0}, task_count: {1}'.format(value, task_count))
+            if value == task_count:
+                break
+            else:
+                time.sleep(1)
+
+        # wait for empty queue
+        log('luigi_module: waiting for empty task queue...')
+        checks = 0
+        while True:
+            if task_queue.empty():
+                break
+            else:
+                time.sleep(1)
+                checks += 1
+                if checks >= 10:
+                    break
+                
+        # set the self.batches_finished flag in each pipeline_task object
+        log('luigi_module: running collector pipelines...')
+        for task in self.pipeline_tasks:
+            task.batches_finished = True
+            # run collector pipeline for each task in self.pipeline_task
+            task.run_collector_pipeline()
+
+        # terminate workers
+        log('luigi_module: terminating workers...')
+        task_queue.put(_TERMINATE_WORKERS)
+        for worker in workers:
+            worker.join()
+
+        self.pipelines_finished = True        
+            
+            
     #def run(self):
     def run_reconciliation(self):
 
@@ -351,15 +458,14 @@ class PipelineTask(): #luigi.Task):
         self.solr_query = solr_query
 
         # list of pipeline tasks, one for each document batch
-        self.batch_task_list = []
-
+        #self.batch_task_list = []
         self.batches_finished = False
 
-    #def run_batch_tasks(self):
-    def run_task_batches_serially(self):
-
-        self.batch_task_list = []
-        self.batches_finished = False
+    def get_task_batches(self):
+        """
+        Compute document batches and return a list of suitably-iniatialized tasks
+        for running each batch.
+        """
         
         try:
             self.solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job,
@@ -369,31 +475,55 @@ class PipelineTask(): #luigi.Task):
 
             # construct task list, each of which will process a unique batch of documents
             if task.parallel_task:
-                self.batch_task_list = [task(pipeline=self.pipeline,
-                                             job=self.job,
-                                             start=n,
-                                             solr_query=self.solr_query,
-                                             batch=n) for n in ranges]
+                batch_task_list = [task(pipeline=self.pipeline,
+                                        job=self.job,
+                                        start=n,
+                                        solr_query=self.solr_query,
+                                        batch=n) for n in ranges]
             else:
-                self.batch_task_list = [task(pipeline=self.pipeline,
-                                             job=self.job,
-                                             start=0,
-                                             solr_query=self.solr_query,
-                                             batch=0)]
-            if len(self.batch_task_list) > 0:
-                log('task_obj type: {0}'.format(type(self.batch_task_list[0])))
+                batch_task_list = [task(pipeline=self.pipeline,
+                                        job=self.job,
+                                        start=0,
+                                        solr_query=self.solr_query,
+                                        batch=0)]
+            if len(batch_task_list) > 0:
+                log('task_obj type: {0}'.format(type(batch_task_list[0])))
 
         except Exception as ex:
             traceback.print_exc(file=sys.stderr)
             jobs.update_job_status(str(self.job), util.conn_string, jobs.WARNING, ''.join(traceback.format_stack()))
             log(ex)
 
+        return batch_task_list
+    
+        
+    def run_batches_serially(self):
+
+        self.batches_finished = False
+        batch_task_list = self.get_task_batches()
+        
         # all batches for this pipeline task run serially
-        for task in self.batch_task_list:
+        for task in batch_task_list:
             task.run()
 
         self.batches_finished = True
 
+        
+    def run_batches_in_parallel(self, task_queue):
+        """
+        """
+
+        self.batches_finished = False
+        batch_task_list = self.get_task_batches()
+
+        # add these tasks to the task_queue to run with all other batch tasks in parallel
+        for task in batch_task_list:
+            task_queue.put(task)
+
+        # increment a counter to indicate that all batches for this PopelineTask have been loaded
+        _atomic_increment_counter()
+        
+        
     #def run(self):
     def run_collector_pipeline(self):
         # all batches for this PipelineTask must have run to completion

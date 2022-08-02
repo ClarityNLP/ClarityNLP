@@ -88,8 +88,13 @@ def run_phenotype_job(phenotype_id: str, job_id: str, owner: str):
         #threaded_phenotype_task(job_id, owner, phenotype_id)
         
         task = PhenotypeTask(job=job_id, phenotype=phenotype_id, owner=owner)
+        
         # runs individual pipeline tasks in parallel
-        task.run_pipelines_in_parallel()
+        #task.run_pipelines_in_parallel()
+
+        # runs individual batch tasks in parallel, across all pipelines
+        task.run_batches_in_parallel()
+        
         # runs after ALL pipeline tasks have completed
         task.run_reconciliation()
     except Exception as ex:
