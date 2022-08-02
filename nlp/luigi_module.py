@@ -122,7 +122,7 @@ class PhenotypeTask(): #luigi.Task):
 
         log('task list: {0}'.format(self.pipeline_tasks))
 
-    def run(self):
+    def run_pipelines_in_parallel(self):
         """
         Parallel execution of the PipelineTask objects in self.pipeline_tasks.
         """
@@ -352,10 +352,13 @@ class PipelineTask(): #luigi.Task):
         # list of pipeline tasks, one for each document batch
         self.batch_task_list = []
 
+        self.batches_finished = False
+
     #def run_batch_tasks(self):
     def run(self):
 
         self.batch_task_list = []
+        self.batches_finished = False
         
         try:
             self.solr_query, total_docs, doc_limit, ranges = initialize_task_and_get_documents(self.pipeline, self.job,
@@ -388,8 +391,13 @@ class PipelineTask(): #luigi.Task):
         for task in self.batch_task_list:
             task.run()
 
+        self.batches_finished = True
+
     #def run(self):
     def run_collector_pipeline(self):
+        # all batches for this PipelineTask must have run to completion
+        assert self.batches_finished
+        
         log('running collector pipeline')
         run_pipeline(self.pipeline, self.pipelinetype, self.job, self.owner)
         return self.complete()
