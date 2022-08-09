@@ -1,6 +1,49 @@
 #!/usr/bin/evn python3
 """
 Module for finding mentions of mental illness.
+
+Conditions recognized (https://www.nami.org/About-Mental-Illness/Mental-Health-Conditions):
+
+    anxiety disorder
+        generalized anxiety disorder
+        social anxiety disorder
+        panic disorder
+        phobias (acrophobia, agoraphobia, ...)
+    attention defecit hyperactivity disorder (ADHD)
+        inattention
+        hyperactivity
+        impulsivity
+    bioplar disorder
+    borderline personality disorder
+        difficulty regulating emotion
+        self-harm
+        impulsive behaviors
+        intense depression, irritability, or anxiety
+    depression
+    dissociative disorder
+        memory loss of specific times, people, or events
+        out-of-body experiences
+        sense of detachment
+        lack of a sense of self-identity
+        dissociative amnesia
+        depersonalization disorder
+        dissociative identity disorder, multiple personality disorder
+    eating disorders
+        anorexia, bulimia, binge eating
+    obsessive-compulsive disorder (OCD)
+    post-traumatic stress disorder (PTSD)
+        flaashbacks, nightmares, insomnia, outbursts of anger, hypervigilance
+    psychosis
+    schizoaffective disorder
+        hallucinations
+        delusions
+        disorganized thoughts
+        depression
+        manic behavior
+    schizophrenia
+
+    statements of general mental illness
+
 """
 
 import os
@@ -223,6 +266,11 @@ if __name__ == '__main__':
         'PAST MEDICAL HISTORY: -\"mental illness\"',
         'because of her history of malignancy and significant mental illness',
         'has major mental illness which is currently untreated',
+
+        # anxiety disorder
+        'Significant medical Hx of depression and anxiety disorder requiring multiple hospitalizations',
+
+        
         
         # # possible mental illness
         # 'There is also possibly a component of mental illness',
