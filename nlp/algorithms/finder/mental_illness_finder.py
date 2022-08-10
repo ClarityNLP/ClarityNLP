@@ -113,8 +113,10 @@ _str_her_mi = r'\b(patients|their|his|her)\b' + _str_words + _str_mi
 _regex_her_mi = re.compile(_str_her_mi, re.IGNORECASE)
 
 # Past Medical History: "Mental Illness"
-_str_pmhx = r'\b(Past Medical History|pmhx):' + _str_words + _str_mi
-_regex_pmhx = re.compile(_str_pmhx, re.IGNORECASE)
+#_str_pmhx_header = r'\b(Past Medical History|pmhx):'
+_str_header = r'\b[a-z]+:'
+_str_header_mi =  _str_header + _str_words + _str_mi
+_regex_header_mi = re.compile(_str_header_mi, re.IGNORECASE)
 
 # is mentally ill
 _str_is_mi = r'\bis\b' + _str_words + r'(?P<mi>mentally ill)'
@@ -128,14 +130,41 @@ _regex_anxiety_disorder = re.compile(_str_anxiety_disorder, re.IGNORECASE)
 _str_phobia = r'\b(?P<anxiety>(needle|multiple|many|several )?phobias?)'
 _regex_phobia = re.compile(_str_phobia, re.IGNORECASE)
 
+# ADHD
+_str_adhd = r'\b(?P<adhd>(adhd|attention defecit hyperactivity disorder))'
+_regex_adhd = re.compile(_str_adhd, re.IGNORECASE)
+
+_str_header_adhd = _str_header + _str_words + _str_adhd
+_regex_header_adhd = re.compile(_str_header_adhd, re.IGNORECASE)
+
+# bipolar disorder
+_str_bipolar = r'\b(?P<bipolar>bipolar( disorder)?)\b'
+_regex_bipolar = re.compile(_str_bipolar, re.IGNORECASE)
+
+_str_header_bipolar = _str_header + _str_words + _str_bipolar
+_regex_header_bipolar = re.compile(_str_header_bipolar, re.IGNORECASE)
+
+# borderline personality disorder
+_str_bpd = r'\b(?P<bpd>borderline personality disorder)\b'
+_regex_bpd = re.compile(_str_bpd, re.IGNORECASE)
+
+_str_header_bpd = _str_header + _str_words + _str_bpd
+_regex_header_bpd = re.compile(_str_bpd, re.IGNORECASE)
+
 _REGEXES = [
     _regex_history,
     _regex_diagnosis,
     _regex_her_mi,
     _regex_is_mi,
-    _regex_pmhx,
+    _regex_header_mi,
     _regex_anxiety_disorder,
     _regex_phobia,
+    _regex_adhd,
+    _regex_header_adhd,
+    _regex_bipolar,
+    _regex_header_bipolar,
+    _regex_bpd,
+    _regex_header_bpd,
 ]
 
 
@@ -154,7 +183,7 @@ def run(sentence):
         for obj in matchobj_list:
             matchobj = obj['matchobj']
             for k,v in matchobj.groupdict().items():
-                DISPLAY('\t{0}: {1}'.format(k.upper(), v))#obj['match_text']))
+                DISPLAY('\t{0}: {1}'.format(k.upper(), v))
         
 
     # for c in candidates:
@@ -223,8 +252,25 @@ if __name__ == '__main__':
         'Pt also has multiple phobias and gets very agitated w/ small spaces, restraints, touching etc',
         'The family relates she has long history of phobias and does not like to be touched by or close to people',
         'She has anxiety disorder, various phobias, and mental illness',
-        
 
+        # ADHD
+        '27 year old male with a history of substance abuse, bipolar, ADHD, anxiety/depression',
+        'Pt is 25yo male with PMH of ADHD',
+        'PMHx: schizoaffective, bipolar, MR, ADHD',
+
+        # bipolar disorder
+        '52 year old man with bipolar disorder admitted for sycopal episode',
+        "55 year old woman with CHF, bipolar disorder, poor ABG's post op.",
+        'UNDERLYING MEDICAL CONDITION:  59 year old man with hx bipolar disorder',
+
+        # borderline personality disorder
+        'UNDERLYING MEDICAL CONDITION: 32 year old woman with borderline personality disorder, swallowed batteries',
+        '26F with history of depression, borderline personality disorder, PTSD',
+        'Systolic CHF (EF 45-50%), Bipolar and Borderline Personality Disorder admitted ',
+        
+        # schizoafective disorder
+        'PMHx: schizoaffective, bipolar, MR, ADHD',
+        
         # # possible mental illness
         # 'There is also possibly a component of mental illness',
         # 'Pt states that there is a family hx of mental illness',
