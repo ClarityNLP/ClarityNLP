@@ -9,7 +9,7 @@ import sys
 
 # negations
 _str_neg = r'\b(denies|without|other than|lacks|understands neither|unable to|' \
-    r'cannot|cant|(did )?not|non?( (evidence|mention))?)'
+    r'cannot|cant|(did )?not(?! be taken seriously)|non?( (evidence|mention))?)(?![a-z])'
 _regex_neg = re.compile(_str_neg, re.IGNORECASE)
 
 # section header, such as "Plan: ..."
@@ -99,6 +99,7 @@ def regex_match(sentence, regex_list):
             # search the prior text for negations
             neg_match = _regex_neg.search(prior)
             if neg_match:
+                #print('*** neg match: "{0}" ***'.format(neg_match.group()))
                 continue
 
             obj = {
