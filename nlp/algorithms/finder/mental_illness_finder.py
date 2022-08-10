@@ -65,14 +65,15 @@ if __name__ == '__main__':
     
 try:
     # interactive path
+    import sdoh_common as SDOH    
     import finder_overlap as overlap
     DISPLAY = print
 except:
     # ClarityNLP path
     from claritynlp_logging import log, ERROR, DEBUG
     DISPLAY = log
+    from algorithms.finder import sdoh_common as SDOH    
     from algorithms.finder import finder_overlap as overlap
-
     
 MENTAL_ILLNESS_FIELDS = [
     'sentence',
@@ -97,12 +98,11 @@ _str_word = r'[-a-z]+\.?\s?'
 # nongreedy word captures
 _str_words = r'\s?(' + _str_word + r'){0,5}?'
 
-_str_mi = r'\bmental illness( diagnosis)?'
+_str_mi = r'\b(?P<mi>mental illness( diagnosis)?)'
 
 # history of mental illness
-_str_history = r'\b((history|setting) of|struggl(ing|e[sd]?) with)'
-#diagnos(is|ed)|known|have|has) '
-_str_history =  _str_history + _str_words + _str_mi
+_str_hist = r'\b((history|setting) of|struggl(ing|e[sd]?) with)'
+_str_history =  _str_hist + _str_words + _str_mi
 _regex_history = re.compile(_str_history, re.IGNORECASE)
 
 _str_diagnosis = r'\b(diagnos(is|ed)|chronic|known|have|has)' + _str_words + _str_mi
@@ -116,106 +116,46 @@ _regex_her_mi = re.compile(_str_her_mi, re.IGNORECASE)
 _str_pmhx = r'\b(Past Medical History|pmhx):' + _str_words + _str_mi
 _regex_pmhx = re.compile(_str_pmhx, re.IGNORECASE)
 
-# negations
-_str_neg = r'\b(denies|not|no( (evidence|mention))?)'
-_regex_neg = re.compile(_str_neg, re.IGNORECASE)
+# is mentally ill
+_str_is_mi = r'\bis\b' + _str_words + r'(?P<mi>mentally ill)'
+_regex_is_mi = re.compile(_str_is_mi, re.IGNORECASE)
 
+# anxiety disorder
+_str_anxiety_disorder = r'\b(?P<anxiety>((social )?anxiety|panic) disorder)\b'
+_regex_anxiety_disorder = re.compile(_str_anxiety_disorder, re.IGNORECASE)
+
+# phobia
+_str_phobia = r'\b(?P<anxiety>(needle|multiple|many|several )?phobias?)'
+_regex_phobia = re.compile(_str_phobia, re.IGNORECASE)
 
 _REGEXES = [
     _regex_history,
     _regex_diagnosis,
     _regex_her_mi,
+    _regex_is_mi,
     _regex_pmhx,
+    _regex_anxiety_disorder,
+    _regex_phobia,
 ]
-
-_CHAR_SPACE = ' '
-
-
-###############################################################################
-def _cleanup(sentence):
-    """
-    Apply some cleanup operations to the sentence and return the
-    cleaned sentence.
-    """
-
-    # convert to lowercase
-    sentence = sentence.lower()
-
-    # replace MIMIC [** ... **] anonymizations with whitespace
-    sentence = re.sub(r'\[\*\*[^\]]+\]', _CHAR_SPACE, sentence)    
-
-    # replace ' w/ ' with ' with '
-    sentence = re.sub(r'\sw/', ' with ', sentence)
-
-    # replace 'hx' with ' history '
-    sentence = re.sub(r'\bhx\.?\b', ' history ', sentence)
-
-    # replace 'dx' with diagnosis
-    sentence = re.sub(r'\bdx\.?\b', ' diagnosis ', sentence)
-
-    # replace 'sx' with significant
-    sentence = re.sub(r'\bsx\.?', ' significant ', sentence)
-
-    # replace "pt's" with 'patients' (no apostrophe)
-    sentence = re.sub(r"\bpt\'?s", ' patients ', sentence)
-
-    # replace 'pt' with 'patient
-    sentence = re.sub(r'\bpt\b', ' patient ', sentence)
-
-    # replace ' @ ' with ' at '
-    sentence = re.sub(r'\s@\s', ' at ', sentence)
-
-    # replace "->" with whitespace
-    sentence = re.sub(r'\->', _CHAR_SPACE, sentence)
-
-    # erase commas and apostrophes
-    sentence = re.sub(r'[,\'`]', '', sentence)
-
-    # replace other chars with whitespace
-    sentence = re.sub(r'[-&(){}\[\]~/;"]', _CHAR_SPACE, sentence)
-
-    # collapse repeated whitespace
-    sentence = re.sub(r'\s+', _CHAR_SPACE, sentence)
-
-    sentence = sentence.strip()
-
-    return sentence
-
-
-###############################################################################
-def _regex_match(sentence, regex_list):
-    """
-    """
-
-    candidates = []
-    for i, regex in enumerate(regex_list):
-        iterator = regex.finditer(sentence)
-        for match in iterator:
-            # strip any trailing whitespace (invalidates match.end())
-            match_text = match.group().rstrip()
-            start = match.start()
-            end = start + len(match_text)
-
-            # check for negations *prior* to the match
-            prior = sentence[:start]
-            neg_match = _regex_neg.search(prior)
-            if neg_match:
-                continue
-            
-            if _TRACE:
-                DISPLAY('\t' + match_text)
 
 
 ###############################################################################
 def run(sentence):
 
     results = []
-    cleaned_sentence = _cleanup(sentence)
+    cleaned_sentence = SDOH.cleanup(sentence)
 
     if _TRACE:
         DISPLAY(cleaned_sentence)
 
-    candidates = _regex_match(cleaned_sentence, _REGEXES)
+    matchobj_list = SDOH.regex_match(cleaned_sentence, _REGEXES)
+
+    if _TRACE:
+        for obj in matchobj_list:
+            matchobj = obj['matchobj']
+            for k,v in matchobj.groupdict().items():
+                DISPLAY('\t{0}: {1}'.format(k.upper(), v))#obj['match_text']))
+        
 
     # for c in candidates:
     #     immigration_status = c.other
@@ -266,12 +206,25 @@ if __name__ == '__main__':
         'PAST MEDICAL HISTORY: -\"mental illness\"',
         'because of her history of malignancy and significant mental illness',
         'has major mental illness which is currently untreated',
+        'the patient is severely mentally ill',
 
         # anxiety disorder
         'Significant medical Hx of depression and anxiety disorder requiring multiple hospitalizations',
+        '22 y old male with 2yr history of schizophrenia and anxiety disorder with multiple psychiatric admissions',
+        'depressive/anxiety disorder',
+        'Pt is nervous and has a slight anxiety disorder , taking xanax prn',
+        'She reports an anxiety disorder for which she has sought tx and has been able to manage symptoms',
+        'Pregnancy was complicated by anxiety disorder, treated with Lexapro',
+        'PT. HAS ANXIETY DISORDER',
+        'Pt receives psychiatric care for panic and anxiety disorder',
+        'Pt has anxiety disorder and she gets very agitated at times',
+        'She has a severe case of social anxiety disorder that can be debilitating',
+        'Pt other pmh significant for psoriasis, depression, panic disorder, alcohol abuse',
+        'Pt also has multiple phobias and gets very agitated w/ small spaces, restraints, touching etc',
+        'The family relates she has long history of phobias and does not like to be touched by or close to people',
+        'She has anxiety disorder, various phobias, and mental illness',
+        
 
-        
-        
         # # possible mental illness
         # 'There is also possibly a component of mental illness',
         # 'Pt states that there is a family hx of mental illness',
@@ -294,7 +247,14 @@ if __name__ == '__main__':
         'Patient denies family medical history of mental illness',
         'A psychiatric evaluation was performed, there was no evidence of mental illness ' \
         'other than severe alcohol dependence',
+        'The patient denies any significant social stressors and she did not have any features ' \
+        'of generalized anxiety disorder or other specific phobias',
+
+        
+        '"Pt is 25yo male with PMH of ADHD\n   Trauma, s/p sword injury to R hand, nerve and tendon repair of 2,3,4^th\n   fingers, amp of 5^th finger\n   Assessment:\n   Pt received from OR (11hr case), R hand in pillow splint,  ulnar artery\n   repair.\n   Action:\n   Ulnar artery pulse on 4^th finger Dopplerable q1h, adequate CSM to R\n   fingers, hand elevated on pillow,Hep drip\n   Ancef q8h\n   Response:\n   Pulse Dopplerable with good quality, fingers w/good CSM\n   Plan:\n   Continue current plan of care, PTT q6h,assess for infection\n   Anxiety\n   Assessment:\n   Pt w/baseline anxiety disorder,ADHD, on prescription meds, self-\n   medicates w/ETOH,marijuana, family members\n prescription meds,\n   extremely anxious on admit\n   Action:\n   Valium 5mg ivp, 5mg PO. Dilaudid IV prn, PCA initiated,Lexapro daily\n   dose given. Father at bedside for several hours with good effect\n   Much reassurance and encouragement given\n   Response:\n   Pt sleeping in naps, calmer overnight\n   Plan:\n   Valium prn, emotional support\n   Acute Pain\n   Assessment:\n   Pain r/t amp of finger, nerve surgery\n   Action:\n   PCA initiated,   pt using appropriately\n   Response:\n   Pt still c/o pain [**10-2**], states pain med works for a short time- pt\n   sleeping in naps\n   Plan:\n   Continue PCA, prn Valium\n   Assessment:\n   Action:\n   Response:\n   Plan:\n",',
+
     ]
+    
     
     
     for sentence in SENTENCES:
