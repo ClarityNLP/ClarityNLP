@@ -113,7 +113,6 @@ _str_her_mi = r'\b(patients|their|his|her)\b' + _str_words + _str_mi
 _regex_her_mi = re.compile(_str_her_mi, re.IGNORECASE)
 
 # Past Medical History: "Mental Illness"
-#_str_pmhx_header = r'\b(Past Medical History|pmhx):'
 _str_header = r'\b[a-z]+:'
 _str_header_mi =  _str_header + _str_words + _str_mi
 _regex_header_mi = re.compile(_str_header_mi, re.IGNORECASE)
@@ -149,7 +148,39 @@ _str_bpd = r'\b(?P<bpd>borderline personality disorder)\b'
 _regex_bpd = re.compile(_str_bpd, re.IGNORECASE)
 
 _str_header_bpd = _str_header + _str_words + _str_bpd
-_regex_header_bpd = re.compile(_str_bpd, re.IGNORECASE)
+_regex_header_bpd = re.compile(_str_header_bpd, re.IGNORECASE)
+
+# depression
+_str_depression = r'\b(?P<depression>(depression|depressive disorder))\b'
+_regex_depression = re.compile(_str_depression, re.IGNORECASE)
+
+_str_header_depression = _str_header + _str_words + _str_depression
+_regex_header_depression = re.compile(_str_header_depression, re.IGNORECASE)
+
+# dissociative disorder
+_str_dissociative = r'\b(?P<dissociative>(dissociative|multiple personality) disorder)\b'
+_regex_dissociative = re.compile(_str_dissociative, re.IGNORECASE)
+
+_str_header_dissociative = _str_header + _str_words + _str_dissociative
+_regex_header_dissociative = re.compile(_str_header_dissociative, re.IGNORECASE)
+
+# eating disorder
+_str_eating = r'\b(?P<eating>(eating disorder|anorexi[ac]( nervosa)?|bul[ei]mi[ac]|binge eat(ing|er)))'
+_regex_eating = re.compile(_str_eating, re.IGNORECASE)
+
+_str_header_eating = _str_header + _str_words + _str_eating
+_regex_header_eating = re.compile(_str_header_eating, re.IGNORECASE)
+
+# OCD
+_str_ocd = r'\b(?P<ocd>((?<!dome )ocd(?! (lesion|left|right))|obsessive compulsive disorder))'
+_regex_ocd = re.compile(_str_ocd, re.IGNORECASE)
+
+_str_header_ocd = _str_header + _str_words + _str_ocd
+_regex_header_ocd = re.compile(_str_header_ocd, re.IGNORECASE)
+
+_str_ocd_ignore = r'\b(talon|joint|elbow|ankle|ligament|bone|cartilage|fracture|tissue|swelling|evidence|spur)s?'
+_regex_ocd_ignore = re.compile(_str_ocd_ignore, re.IGNORECASE)
+
 
 _REGEXES = [
     _regex_history,
@@ -165,7 +196,38 @@ _REGEXES = [
     _regex_header_bipolar,
     _regex_bpd,
     _regex_header_bpd,
+    _regex_depression,
+    _regex_header_depression,
+    _regex_dissociative,
+    _regex_header_dissociative,
+    _regex_eating,
+    _regex_header_eating,
+    _regex_ocd,
+    _regex_header_ocd,
 ]
+
+
+###############################################################################
+def _prune_errors(matchobj_list, sentence):
+
+    pruned = []
+    for obj in matchobj_list:
+        matchobj = obj['matchobj']
+        assert 1 == len(matchobj.groupdict())
+        skip = False
+        for k,v in matchobj.groupdict().items():
+            if 'ocd' == k:
+                # search sentence for words related to Osteochondritis Dissecans
+                match = _regex_ocd_ignore.search(sentence)
+                if match:
+                    # skip this one
+                    skip = True
+                    break
+                
+        if not skip:
+            pruned.append(obj)
+
+    return pruned
 
 
 ###############################################################################
@@ -178,6 +240,7 @@ def run(sentence):
         DISPLAY(cleaned_sentence)
 
     matchobj_list = SDOH.regex_match(cleaned_sentence, _REGEXES)
+    matchobj_list = _prune_errors(matchobj_list, cleaned_sentence)
 
     if _TRACE:
         for obj in matchobj_list:
@@ -267,6 +330,40 @@ if __name__ == '__main__':
         'UNDERLYING MEDICAL CONDITION: 32 year old woman with borderline personality disorder, swallowed batteries',
         '26F with history of depression, borderline personality disorder, PTSD',
         'Systolic CHF (EF 45-50%), Bipolar and Borderline Personality Disorder admitted ',
+
+        # depression
+        '27 uo M with PMH: polysubstance abuse, depressive disorder and GERD',
+
+        # dissociative disorder
+        'PMH: AF, cataracts, high cholesterol, dissociative disorder, HTN',
+        'ast Medical History: Suicide attepts over 20 psych admissions Depression ' \
+        'Axiety Iron deficiency anemia Cervical dysplasia Anorexia Dissociative disorder ' \
+        'Etoh abuse Borderline Personality Disorder ADHD',
+        '1 hour after Hd started, pt started to have hallucinations, delerium and multiple personality disorder',
+        'PAST MEDICAL HISTORY:  PTSD secondary to abuse as a child. Multiple personality disorder.',
+
+        # eating disorder
+        'Reason: eating disorder protocol',
+        'FINAL REPORT INDICATION: 25-year-old woman with hypokalemia, anorexia',
+        '18 yo F anorexic appearing in the ED with lightheadedness and generalized weakness',
+        'Eating disorder (including Anorexia Nervosa, Bulemia)',
+        '18 year old woman with pmh significant for anorexia',
+        'Email consult was received for h/o eating disorder',
+        'She received Ensure tid as part of her eating disorder protocol, along with electrolyte repletion.',
+        'Hx: appy, hx of migraines, anorexia, bulimia, ovarian cyst surgery',
+
+        # OCD
+        'Pt is a 52F with OCD (stable recently, but h/o OD, anorexia and alcohol use in past',
+        'Her husband states that her OCD is stable currently',
+        'PMH: OSA, ADD,OCD,COPD, DM',
+        'Past medical history: Depression Anxiety Obsessive compulsive disorder with hoarding tendencies',
+        'Obsessive-compulsive disorder, depression and increasing memory deficit.',
+        'patient is a 27-year-old man with history of obsessive-compulsive disorder and depression',
+        
+        # OCD negative
+        'Reason: assess OCD lesion left talus',
+        'No talar dome OCD is identified',
+        'consistent with an OCD fracture', 
         
         # schizoafective disorder
         'PMHx: schizoaffective, bipolar, MR, ADHD',
@@ -299,6 +396,7 @@ if __name__ == '__main__':
         
         '"Pt is 25yo male with PMH of ADHD\n   Trauma, s/p sword injury to R hand, nerve and tendon repair of 2,3,4^th\n   fingers, amp of 5^th finger\n   Assessment:\n   Pt received from OR (11hr case), R hand in pillow splint,  ulnar artery\n   repair.\n   Action:\n   Ulnar artery pulse on 4^th finger Dopplerable q1h, adequate CSM to R\n   fingers, hand elevated on pillow,Hep drip\n   Ancef q8h\n   Response:\n   Pulse Dopplerable with good quality, fingers w/good CSM\n   Plan:\n   Continue current plan of care, PTT q6h,assess for infection\n   Anxiety\n   Assessment:\n   Pt w/baseline anxiety disorder,ADHD, on prescription meds, self-\n   medicates w/ETOH,marijuana, family members\n prescription meds,\n   extremely anxious on admit\n   Action:\n   Valium 5mg ivp, 5mg PO. Dilaudid IV prn, PCA initiated,Lexapro daily\n   dose given. Father at bedside for several hours with good effect\n   Much reassurance and encouragement given\n   Response:\n   Pt sleeping in naps, calmer overnight\n   Plan:\n   Valium prn, emotional support\n   Acute Pain\n   Assessment:\n   Pain r/t amp of finger, nerve surgery\n   Action:\n   PCA initiated,   pt using appropriately\n   Response:\n   Pt still c/o pain [**10-2**], states pain med works for a short time- pt\n   sleeping in naps\n   Plan:\n   Continue PCA, prn Valium\n   Assessment:\n   Action:\n   Response:\n   Plan:\n",',
 
+        
     ]
     
     

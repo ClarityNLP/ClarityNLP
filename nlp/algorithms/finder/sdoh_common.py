@@ -38,6 +38,9 @@ def cleanup(sentence):
     # replace 'hx' with ' history '
     sentence = re.sub(r'\bhx\.?', ' history ', sentence)
 
+    # replace 'h/o' with ' history of '
+    sentence = re.sub(r'\bh/o', ' history of ', sentence)
+
     # replace 'dx' with diagnosis
     sentence = re.sub(r'\bdx\.?', ' diagnosis ', sentence)
 
@@ -109,7 +112,7 @@ def regex_match(sentence, regex_list):
                 'end' : end,
                 'prior' : prior
             }
-            
+
             match_list.append(obj)
 
     return match_list
