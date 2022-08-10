@@ -48,10 +48,11 @@ def cleanup(sentence):
     sentence = re.sub(r'\bsx\.?', ' significant ', sentence)
 
     # replace "pt's" with 'patients' (no apostrophe)
-    sentence = re.sub(r"\bpt\'?s", ' patients ', sentence)
+    # don't substitute for PT in PTSD
+    sentence = re.sub(r"\bpt(?!sd)\'?s", ' patients ', sentence)
 
-    # replace 'pt' with 'patient'
-    sentence = re.sub(r'\bpt\.?', ' patient ', sentence)
+    # replace 'pt' with 'patient', avoid matching PTSD
+    sentence = re.sub(r'\bpt(?!sd)\.?', ' patient ', sentence)
 
     # replace ' @ ' with ' at '
     sentence = re.sub(r'\s@\s', ' at ', sentence)
