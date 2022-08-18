@@ -181,6 +181,12 @@ _regex_header_ocd = re.compile(_str_header_ocd, re.IGNORECASE)
 _str_ocd_ignore = r'\b(talon|joint|elbow|ankle|ligament|bone|cartilage|fracture|tissue|swelling|evidence|spur)s?'
 _regex_ocd_ignore = re.compile(_str_ocd_ignore, re.IGNORECASE)
 
+# PTSD
+_str_ptsd = r'\b(?P<ptsd>(ptsd|post traumatic stress disorder))'
+_regex_ptsd = re.compile(_str_ptsd, re.IGNORECASE)
+
+_str_header_ptsd = _str_header + _str_words + _str_ptsd
+_regex_header_ptsd = re.compile(_str_header_ptsd, re.IGNORECASE)
 
 _REGEXES = [
     _regex_history,
@@ -204,6 +210,8 @@ _REGEXES = [
     _regex_header_eating,
     _regex_ocd,
     _regex_header_ocd,
+    _regex_ptsd,
+    _regex_header_ptsd,
 ]
 
 
@@ -364,6 +372,13 @@ if __name__ == '__main__':
         'Reason: assess OCD lesion left talus',
         'No talar dome OCD is identified',
         'consistent with an OCD fracture', 
+
+        # PTSD
+        'She has a long psychiatric history including borderline personality disorder and ' \
+        'post traumatic stress disorder',
+        '41-year old male with a history of depression, post traumatic stress disorder, and suicidal ideation',
+        'History remarkable for post-traumatic stress disorder',
+        '30 year old woman with h/o MDD, anxiety, PTSD, h/o ingestion of razors, pens, and knives',
         
         # schizoafective disorder
         'PMHx: schizoaffective, bipolar, MR, ADHD',
