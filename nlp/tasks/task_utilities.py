@@ -169,7 +169,7 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     data_fields["phenotype_final"] = (phenotype_final or p_config.final)
     data_fields["display_name"] = p_config.display_name
 
-    if data_fields["_id"]:
+    if "_id" in data_fields:
         del data_fields["_id"]
 
     if doc:
