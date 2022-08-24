@@ -169,6 +169,9 @@ def pipeline_mongo_writer(client, pipeline_id, pipeline_type, job, batch, p_conf
     data_fields["phenotype_final"] = (phenotype_final or p_config.final)
     data_fields["display_name"] = p_config.display_name
 
+    if data_fields["_id"]:
+        del data_fields["_id"]
+
     if doc:
         data_fields["report_id"] = doc[util.solr_report_id_field]
         data_fields["subject"] = doc[util.solr_subject_field]
@@ -318,7 +321,7 @@ class BaseTask(luigi.Task):
                                                 filter_query=self.pipeline_config.filter_query,
                                                 cohort_ids=self.pipeline_config.cohort,
                                                 job_results_filters=self.pipeline_config.job_results)
-                
+
                 #log('BaseTask::run: found {0} docs with query "{1}"'.format(len(self.docs), self.solr_query))
                 #log('BaseTask::run: start = {0}'.format(self.start))
                 #for line in traceback.format_stack():
