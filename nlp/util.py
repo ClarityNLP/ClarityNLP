@@ -224,7 +224,7 @@ def mongo_client(host=None, port=None, username=None, password=None):
         # print('authenticated mongo')
         _mongo_client = MongoClient(host=host, port=port, username=username,
                                     password=password, socketTimeoutMS=15000, maxPoolSize=500,
-                                    maxIdleTimeMS=30000, ssl=False, retryWrites=False)
+                                    maxIdleTimeMS=30000, ssl=True, retryWrites=False)
     else:
         # print('unauthenticated mongo')
         _mongo_client = MongoClient(host, port)
