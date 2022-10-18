@@ -57,7 +57,11 @@ def delete_job_by_id(job_id: int):
 def get_job_results(job_id: int, job_type: str):
     """GET job results as CSV"""
     try:
-        job_output = job_results(job_type, str(job_id))
+        clear_mongo_results_str = str(request.args.get('clearResults', 'false')).lower()
+        clear_mongo_results_bool = False
+        if clear_mongo_results_str == 'true' or clear_mongo_results_str == '1' or clear_mongo_results_str == 'yes':
+            clear_mongo_results_bool = True
+        job_output = job_results(job_type, str(job_id), clear_mongo_results_bool)
         return send_file(job_output)
     except Exception as ex:
         return "Failed to get job results" + str(ex)

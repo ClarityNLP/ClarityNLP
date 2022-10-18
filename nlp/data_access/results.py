@@ -81,13 +81,13 @@ def display_mapping(x):
     return x
 
 
-def job_results(job_type: str, job: str):
+def job_results(job_type: str, job: str, clear_mongo_results: bool = False):
     if job_type == 'pipeline':
         return pipeline_results(job)
     elif job_type == 'phenotype' or job_type == 'cohort':
-        return phenotype_results(job)
+        return phenotype_results(job, clear_mongo_results)
     elif job_type == 'phenotype_intermediate' or job_type == 'features':
-        return phenotype_intermediate_results(job)
+        return phenotype_intermediate_results(job, clear_mongo_results)
     elif job_type == 'annotations':
         return phenotype_feedback_results(job)
     else:
@@ -232,12 +232,12 @@ def pipeline_results(job: str):
     return filename
 
 
-def phenotype_results(job: str):
-    return generic_results(job, 'phenotype', True)
+def phenotype_results(job: str, clear_mongo_results: bool = False):
+    return generic_results(job, 'phenotype', True, clear_mongo_results=True)
 
 
-def phenotype_intermediate_results(job: str):
-    return generic_results(job, 'phenotype', False)
+def phenotype_intermediate_results(job: str, clear_mongo_results: bool = False):
+    return generic_results(job, 'phenotype', False, clear_mongo_results=True)
 
 
 def get_columns(db, job: str, job_type: str, phenotype_final: bool):
@@ -256,7 +256,7 @@ def get_columns(db, job: str, job_type: str, phenotype_final: bool):
     return list(set(cols))
 
 
-def generic_results(job: str, job_type: str, phenotype_final: bool = False):
+def generic_results(job: str, job_type: str, phenotype_final: bool = False, clear_monngo_results: bool = False):
     client = util.mongo_client()
     db = client[util.mongo_db]
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
@@ -292,6 +292,8 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False):
                         output[i] = ''
                     i += 1
                 csv_writer.writerow(output)
+        if clear_monngo_results:
+            clear_results_func(db, int(job), job_type, phenotype_final)
 
     except Exception as e:
         log(e)
@@ -353,7 +355,29 @@ def lookup_phenotype_results_by_id(id_list: list):
     return obj
 
 
-def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = ''):
+def clear_results_func(db, job_id: int, job_type: str, phenotype_final: bool = False):
+    if job_type == 'phenotype':
+        query = {"job_id": int(job_id), "phenotype_final": phenotype_final}
+
+        obj = {
+                'job_id': job_id,
+                'job_type': job_type,
+                'phenotype_final': phenotype_final
+            }
+        # query_results = db[job_type + "_results"].find(query)
+        try:
+            res = db.phenotype_results.find(query)
+            d = db.phenotype_results.delete_many(query)
+            print(d.deleted_count, " deleted")
+            obj['delete_success'] = True
+            obj['delete_count'] = d.deleted_count
+        except Exception as e:
+            log(e, ERROR)
+            traceback.print_exc(file=sys.stdout)
+        return obj
+
+
+def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '', clear_results_after_retrieval: bool = False):
     client = util.mongo_client()
     db = client[util.mongo_db]
     obj = dict()
@@ -384,6 +408,10 @@ def paged_phenotype_results(job_id: str, phenotype_final: bool, last_id: str = '
         obj['columns'] = columns
         obj['result_count'] = results_length
         obj['success'] = True
+
+        if clear_results_after_retrieval:
+            del_res = clear_results_func(db, job_id, 'phenotype', phenotype_final)
+            obj['delete_outcome'] = del_res
 
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
@@ -509,6 +537,62 @@ def phenotype_results_by_context(context: str, query_filters: dict):
 def remove_tmp_file(filename):
     if filename:
         os.remove(filename)
+
+
+def clear_results_func(db, job_id: int, job_type: str, phenotype_final: bool = False):
+    query = {"job_id": int(job_id), "phenotype_final": phenotype_final}
+
+    obj = {
+            'job_id': job_id,
+            'job_type': job_type,
+            'phenotype_final': phenotype_final
+        }
+    # query_results = db[job_type + "_results"].find(query)
+    try:
+        res = db.phenotype_results.find(query)
+        d = db.phenotype_results.delete_many(query)
+        print(d.deleted_count, " deleted")
+        obj['delete_success'] = True
+        obj['delete_count'] = d.deleted_count
+    except Exception as e:
+        log(e, ERROR)
+        traceback.print_exc(file=sys.stdout)
+    return obj
+
+
+def clear_results_phentoype(job_id: int, job_type: str, phenotype_final: bool = False):
+    client = util.mongo_client()
+    db = client[util.mongo_db]
+
+    obj = dict()
+
+    obj['delete_success'] = False
+    obj['delete_count'] = 0
+
+    try:
+        return clear_results_func(db, job_id, job_type, phenotype_final)
+    except Exception as e:
+        log(e, ERROR)
+        traceback.print_exc(file=sys.stdout)
+    finally:
+        client.close()
+
+    return obj
+
+
+def clear_results(job_id: int, job_type: str, phenotype_final: bool = False):
+    if job_type == 'pipeline':
+        print('not yet implemented')
+    elif job_type == 'phenotype' or job_type == 'cohort':
+        return clear_results_phentoype(job_id, job_type, True)
+    elif job_type == 'phenotype_intermediate' or job_type == 'features':
+        return clear_results_phentoype(job_id, job_type, True)
+    elif job_type == 'annotations':
+        print('not yet implemented')
+    else:
+        print('not yet implemented')
+
+    return None
 
 
 if __name__ == "__main__":
