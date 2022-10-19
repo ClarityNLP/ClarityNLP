@@ -13,7 +13,7 @@ import time
 import uuid
 
 
-def nlpaas_test():
+def nlpaas_test(delete: bool = False):
     # Mongo, Postgres and Luigi should be running
     ptype = PhenotypeDefine('Sepsis', 'phenotype', version='1')
     using_omop = PhenotypeDefine('OMOP', 'datamodel', version='5.3')
@@ -70,8 +70,12 @@ def nlpaas_test():
     while True:
 
         if job_id:
-            results = paged_phenotype_results(job_id, False)
-            results2 = paged_phenotype_results(job_id, True)
+            if delete:
+                results = paged_phenotype_results(job_id, False, clear_results_after_retrieval=True)
+                results2 = paged_phenotype_results(job_id, True, clear_results_after_retrieval=True)
+            else:
+                results = paged_phenotype_results(job_id, False)
+                results2 = paged_phenotype_results(job_id, True)
             res2len = (len(results2.get('results')))
             res1len = (len(results.get('results')))
             if res1len > 0:
@@ -142,4 +146,5 @@ def two_calls_test():
 
 if __name__ == "__main__":
     nlpaas_test()
+    nlpaas_test(True)
     two_calls_test()
