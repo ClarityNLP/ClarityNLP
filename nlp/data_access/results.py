@@ -256,7 +256,7 @@ def get_columns(db, job: str, job_type: str, phenotype_final: bool):
     return list(set(cols))
 
 
-def generic_results(job: str, job_type: str, phenotype_final: bool = False, clear_monngo_results: bool = False):
+def generic_results(job: str, job_type: str, phenotype_final: bool = False, clear_mongo_results: bool = False):
     client = util.mongo_client()
     db = client[util.mongo_db]
     today = datetime.today().strftime('%m_%d_%Y_%H%M')
@@ -292,7 +292,7 @@ def generic_results(job: str, job_type: str, phenotype_final: bool = False, clea
                         output[i] = ''
                     i += 1
                 csv_writer.writerow(output)
-        if clear_monngo_results:
+        if clear_mongo_results:
             clear_results_func(db, int(job), job_type, phenotype_final)
 
     except Exception as e:
