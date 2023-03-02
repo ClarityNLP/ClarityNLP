@@ -257,8 +257,8 @@ def _build_patient_map(mongo_obj, job_id, tuple_feature, tuple_def_string):
         'job_id' : job_id,
         'nlpql_feature' : tuple_feature
     }
-    all_docs = mongo_obj.find(query)
-    doc_count = all_docs.count()
+    all_docs = list(mongo_obj.find(query))
+    doc_count = len(all_docs)
 
     if _TRACE:
         DISPLAY('_build_patient_map found {0} documents'.format(doc_count))
@@ -448,7 +448,7 @@ def process_tuples(mongo_obj, job_id):
             if _TRACE:
                 DISPLAY('\n*** Patient {0} has {1} result documents for tuple_feature "{2}" ***.'.
                       format(patient_id, len(doc_list), tuple_feature))
-               
+
             if 0 == len(doc_list):
                 # no docs were found for this patient, so nothing to do
                 continue
@@ -456,10 +456,10 @@ def process_tuples(mongo_obj, job_id):
             # build a tuple string for each doc for this patient in string s
             for doc in doc_list:
                 doc_id = doc['_id']
-                
+
                 # start with a new tuple def string, and fill in each field.value item
                 s = tuple_def
-                
+
                 for feature, field in feature_list:
                     DISPLAY('Building tuple string for doc {0}, feature {1}, field {2}'.
                             format(doc_id, feature, field))
@@ -481,7 +481,7 @@ def process_tuples(mongo_obj, job_id):
                     s = s[:offset] + str(value) + s[offset + len(search_str):]
 
                 tuple_string = s
-                    
+
                 # Update this doc by inserting the tuple string into it.
                 # Also delete the _NLPQL_FEATURE_SUFFIX from the nlpql_feature.
                 nlpql_feature = tuple_feature[:-len(_NLPQL_FEATURE_SUFFIX)]
