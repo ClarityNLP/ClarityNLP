@@ -1,9 +1,13 @@
 import re
-import collections
 import datetime
 import sys
 import traceback
 from functools import reduce
+
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 
 import pandas as pd
 
@@ -45,11 +49,11 @@ def get_terms(model: PhenotypeModel):
 
 def get_terms_by_keys(term_dict, term_keys: list, concept_keys: list):
     terms = list()
-    if isinstance(term_keys, collections.Iterable):
+    if isinstance(term_keys, Iterable):
         for k in term_keys:
             if k in term_dict:
                 terms.extend(term_dict[k])
-    if isinstance(concept_keys, collections.Iterable):
+    if isinstance(concept_keys, Iterable):
         for k in concept_keys:
             if k in term_dict:
                 terms.extend(term_dict[k])
@@ -538,7 +542,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
         # contain the empty string.
         parse_result = c['normalized_expr']
         if 0 == len(parse_result):
-        
+
             # get the names of the phenotype's data_entities and operations
             names = get_all_names(phenotype)
 
@@ -550,7 +554,7 @@ def process_operations(db, job, phenotype: PhenotypeModel, phenotype_id, phenoty
             # returned if the expression cannot be evaluated for some other
             # reason.
             parse_result = expr_eval.parse_expression(expression, names)
-            
+
         if 0 == len(parse_result):
             log('\n\t*** Expression cannot be evaluated. ***\n')
             mongo_failed = True
@@ -745,25 +749,25 @@ def _apply_time_filter(output_docs, filter_condition):
 
     if len(output_docs) <= 1:
         return output_docs
-    
+
     assert filter_condition == _FILTER_COND_EARLIEST or \
         filter_condition == _FILTER_COND_LATEST
-    
+
     # datetime field of interest
     KEY_RD = 'report_date'
 
     # build list of datetimes
     datetime_list = []
     for doc in output_docs:
-        
+
         # each document must have a report_date field
         assert KEY_RD in doc
         report_date = doc[KEY_RD]
-        
+
         # timestamps should be in YYYY-MM-DDThh:mm:ssZ format
         match = _regex_report_date.match(report_date)
         assert match
-        
+
         if match:
             year = int(match.group('year'))
             month = int(match.group('month'))
@@ -771,12 +775,12 @@ def _apply_time_filter(output_docs, filter_condition):
             hr = int(match.group('hour'))
             minute = int(match.group('minute'))
             sec = int(match.group('sec'))
-            
+
             dt = datetime.datetime(year, month, day, hr, minute, sec)
             datetime_list.append(dt)
 
     assert len(datetime_list) == len(output_docs)
-            
+
     # index denotes the winner
     index = 0
     winner = datetime_list[0]
@@ -827,7 +831,7 @@ def mongo_process_operations(expr_obj_list,
     # ensure integer job_id; expression evaluator needs to lookup results
     # by job_id, but a job id of 42 is different from a job_id of '42'
     job_id = int(job_id)
-    
+
     try:
         is_final_save = c['final']
 
@@ -877,7 +881,7 @@ def mongo_process_operations(expr_obj_list,
 
             # apply time filter, if any - TBD
             # output_docs = _apply_time_filter(output_docs, filter_condition)
-                
+
             if len(output_docs) > 0:
                 log('***** mongo_process_operations: writing {0} ' \
                     'output_docs *****'.format(len(output_docs)))
@@ -940,7 +944,7 @@ def write_phenotype_results(db, job, phenotype, phenotype_id, phenotype_owner):
 
 def validate_phenotype(p_cfg: PhenotypeModel):
     error = None
-    
+
     try:
         if not error:
             if not p_cfg:
@@ -960,13 +964,13 @@ def validate_phenotype(p_cfg: PhenotypeModel):
     name_list = get_all_names(p_cfg)
 
     # get raw text of all expressions
-    KEY_RAW  = 'raw_text'    
-    expression_list = []    
+    KEY_RAW  = 'raw_text'
+    expression_list = []
     for i, op in enumerate(p_cfg.operations):
         if KEY_RAW in op:
             # save expression index and raw text
             expression_list.append( (i, op[KEY_RAW]) )
-    
+
     for i, expr in expression_list:
         # The 'parse_result' is a string of whitespace-separated expression
         # tokens. Invalid expressions cause an empty string to be returned.
@@ -977,7 +981,7 @@ def validate_phenotype(p_cfg: PhenotypeModel):
         else:
             # saved the parse result for later use
             p_cfg.operations[i]['normalized_expr'] = parse_result
-    
+
     if not error:
         return {"success": True}
     else:

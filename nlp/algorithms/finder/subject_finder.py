@@ -21,8 +21,8 @@ A measurement 'subject' is the object with those dimensions.
 
 All numeric values are converted to mm, mm2, or mm3 in the JSON results.
 
-The sentence and one or more query terms are specified on the command 
-line. A Boolean result is provided in the JSON output indicating 
+The sentence and one or more query terms are specified on the command
+line. A Boolean result is provided in the JSON output indicating
 whether any of the query terms match the measurement subjects.
 
 All term matching is case-insensitive.
@@ -47,7 +47,7 @@ The set of JSON fields in the output includes:
                            values: 'CURRENT', 'PREVIOUS'
 
             units          units of the x, y, and z fields
-                           values: 'MILLIMETERS', 'SQUARE_MILLIMETERS', 
+                           values: 'MILLIMETERS', 'SQUARE_MILLIMETERS',
                                    'CUBIC_MILLIMETERS'
 
             condition      numeric ranges will have this field set to 'RANGE'
@@ -71,7 +71,7 @@ The set of JSON fields in the output includes:
 
 All JSON results will contain the same number of fields.
 
-Fields that are not applicable to a given sentence will have a value of 
+Fields that are not applicable to a given sentence will have a value of
 EMPTY_FIELD.
 
 JSON results are written to stdout.
@@ -166,7 +166,7 @@ To visualize a dependency parse of the previous sentence:
 
         python3 ./subject_finder.py -t "cyst" -s "The cyst in the lower pole of the left kidney measures 1.3 x 1.1 cm." --displacy
 
-        View the dependency parse by opening a browser to the URL 'localhost:5000'. 
+        View the dependency parse by opening a browser to the URL 'localhost:5000'.
         Press <CTRL>C to continue processing after viewing the diagram.
 
         The words in the sentence depicted in the visualization may contain
@@ -175,7 +175,7 @@ To visualize a dependency parse of the previous sentence:
 
         python3 ./subject_finder.py -t "cyst" -s "The cyst in the lower pole of the left kidney measures 1.3 x 1.1 cm." --displacy --nosub
 
-        Disabling the ngram substitions may change the dependency parse, though. 
+        Disabling the ngram substitions may change the dependency parse, though.
         In general, the use of ngram substitutions results in simpler sentences
         and helps SpaCy produce better results.
 
@@ -204,13 +204,13 @@ if __name__ == '__main__':
         sys.exit(0)
 
 try:
-    import finder_overlap as overlap 
+    import finder_overlap as overlap
     from size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
 except:
     from algorithms.finder import finder_overlap as overlap
     from algorithms.finder.size_measurement_finder import run as smf_run, SizeMeasurement, STR_PREVIOUS
 
-    
+
 FILE_DIR = os.path.dirname(__file__)
 
 # debug only
@@ -220,7 +220,7 @@ from spacy import displacy
 nlp = spacy.load('en_core_web_sm')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 11
+VERSION_MINOR = 12
 
 # set to True to enable debug output
 TRACE = False
@@ -414,7 +414,7 @@ str_m_and_m_2 = r'(?P<text1>' + str_words_1_to_n + str_meas_verb             +\
                 r'\band\s+' + str_words_1_to_n + r'\bto\s+'                  +\
                 str_meas_qualifiers + r'\bM\s*' + str_words_g
 regex_m_and_m_2 = re.compile(str_m_and_m_2)
-        
+
 # 'a M {words}' and 'a {words} M' templates
 
 str_a_m_terminations = r'(?=\b(a|an|measure[ds]?|measuring|M)\b)'
@@ -536,7 +536,7 @@ def _enable_debug():
 
     global TRACE
     TRACE = True
-    
+
 
 ###############################################################################
 class Meas():
@@ -567,7 +567,7 @@ class Meas():
         self.minValue     = sm.minValue
         self.maxValue     = sm.maxValue
 
-        
+
 ###############################################################################
 class Chunk():
     """
@@ -583,14 +583,14 @@ class Chunk():
         strings = [t.text for t in doc[start:end]]
         self.text = ' '.join(strings)
 
-        
+
 ###############################################################################
 def init(ngram_file_path=NGRAM_FILE):
     """
     Initialize this module. Must be called once, prior to sentence processing.
     """
 
-    global ngram_word_counts
+    global ngram_word_counts, nlp
 
     ngram_dict.clear()
 
@@ -601,24 +601,38 @@ def init(ngram_file_path=NGRAM_FILE):
         print('ngram min chars: {0}'.format(ngram_min_chars))
         for n in range(1, len(ngram_word_counts)+1):
             print('Number of ngrams of length {0:2}: {1:6}'.format(n, len(ngram_dict[n])))
-    
-    # 'measures' is a 3rd person singular present verb
-    special_case = [{ORTH: u'measures', LEMMA: u'measure', TAG: u'VBZ', POS: u'VERB'}]
-    nlp.tokenizer.add_special_case(u'measures', special_case)
 
-    # 'measure' is a non 3rd person singular present verb
-    special_case = [{ORTH: u'measure', LEMMA: u'measure', TAG: u'VBP', POS: u'VERB'}]
-    nlp.tokenizer.add_special_case(u'measure', special_case)
+    ruler = nlp.get_pipe('attribute_ruler')
 
-    # 'measured' is a verb, past participle
-    special_case = [{ORTH: u'measured', LEMMA: u'measure', TAG: u'VBN', POS: u'VERB'}]
-    nlp.tokenizer.add_special_case(u'measured', special_case)
+    # # 'measures' is a 3rd person singular present verb
+    # special_case = [{ORTH: u'measures', LEMMA: u'measure', TAG: u'VBZ', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measures', special_case)
+    patterns = [[{ORTH : 'measures'}]]
+    attrs = {TAG : 'VBZ', POS :'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
 
-    # 'measuring' is a verb form, either a gerund or present participle
-    special_case = [{ORTH: u'measuring', LEMMA: u'measure', TAG: u'VBG', POS: u'VERB'}]
-    nlp.tokenizer.add_special_case(u'measuring', special_case)    
+    # # 'measure' is a non 3rd person singular present verb
+    # special_case = [{ORTH: u'measure', LEMMA: u'measure', TAG: u'VBP', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measure', special_case)
+    patterns = [[{ORTH : 'measure'}]]
+    attrs = {TAG : 'VBP', POS : 'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
 
-    
+    # # 'measured' is a verb, past participle
+    # special_case = [{ORTH: u'measured', LEMMA: u'measure', TAG: u'VBN', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measured', special_case)
+    patterns = [[{ORTH : 'measured'}]]
+    attrs = {TAG : 'VBN', POS : 'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
+
+    # # 'measuring' is a verb form, either a gerund or present participle
+    # special_case = [{ORTH: u'measuring', LEMMA: u'measure', TAG: u'VBG', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measuring', special_case)
+    patterns = [[{ORTH : 'measuring'}]]
+    attrs = {TAG : 'VBG', POS : 'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
+
+
 ###############################################################################
 def load_ngram_file(filepath, ngram_dict):
     """
@@ -628,9 +642,9 @@ def load_ngram_file(filepath, ngram_dict):
 
     global ngram_min_chars
 
-    path = os.path.join(FILE_DIR, "%s" % NGRAM_FILE)    
+    path = os.path.join(FILE_DIR, "%s" % NGRAM_FILE)
     with open(path, 'rt') as fin:
-        
+
         n = -1
         for line in fin:
 
@@ -655,7 +669,7 @@ def load_ngram_file(filepath, ngram_dict):
             if char_count < ngram_min_chars:
                 ngram_min_chars = char_count
 
-                
+
 ###############################################################################
 def to_json(original_terms, original_sentence, measurements):
     """
@@ -703,7 +717,7 @@ def to_json(original_terms, original_sentence, measurements):
             m_dict['location'] = EMPTY_FIELD
 
         dict_list.append(m_dict)
-    
+
     # serialize everything to JSON
     result_dict['measurementList'] = dict_list
     return json.dumps(result_dict, indent=4)
@@ -722,7 +736,7 @@ def log_token(token):
                                                               token.dep_,
                                                               token.head))
 
-    
+
 ###############################################################################
 def log_noun_chunks(doc):
     """
@@ -746,7 +760,7 @@ def log_noun_chunks(doc):
         index += 1
     print()
 
-    
+
 ###############################################################################
 def log_tokens(doc):
     """
@@ -761,7 +775,7 @@ def log_tokens(doc):
 
     log_noun_chunks(doc)
 
-    
+
 ###############################################################################
 def erase(sentence, start, end):
     """
@@ -836,17 +850,17 @@ def replace_preserving_length(regex, sentence, str_new):
         text = match.group()
         start = match.start()
         end   = match.end()
-        
+
         piece1 = sentence[0:start]
-        
+
         pad_char_count = (end - start - len(str_new))
         #assert pad_char_count >= 0
 
         # skip if lengths are wrong
         if pad_char_count < 0:
             continue
-        
-        piece2 = str_new    
+
+        piece2 = str_new
         piece3 = ' ' * pad_char_count
         piece4 = sentence[end:]
         sentence = piece1 + piece2 + piece3 + piece4
@@ -871,7 +885,7 @@ def clean_sentence(sentence):
 
     # remove anything in [] or {}, such as anonymized dates
     sentence = replace_preserving_length(regex_brackets, sentence, STR_DATE)
-        
+
     # erase parens from the sentence, but keep any text inbetween
     sentence = regex_parens.sub(' ', sentence)
 
@@ -908,7 +922,7 @@ def clean_sentence(sentence):
             if TRACE:
                 print('\treplaced {0} with {1}'.format(segnum, decimal_num))
                 print('\tnew match text: ->{0}<-'.format(new_text))
-    
+
     # replace any problem adjectives with colors
     substitutions = []
     iterator = regex_problem_adjectives.finditer(sentence)
@@ -936,27 +950,27 @@ def clean_sentence(sentence):
         piece3 = ' '*(end - start - len(digit))
         piece4 = sentence[end:]
         sentence = piece1 + piece2 + piece3 + piece4
-        if TRACE: print("Replaced '{0}' with '{1}'".format(text, digit))            
+        if TRACE: print("Replaced '{0}' with '{1}'".format(text, digit))
 
     # SpaCy sometimes gives dramatically different results depending on whether
     # semicolons are present in the sentence or not, so replace semicolons
     # with whitespace.
     sentence = re.sub(r';', r' ', sentence)
-    
+
     return sentence
 
 
 ###############################################################################
 def find_child_candidates(token):
     """
-    Examine the syntactic children of the given node and find the child most 
+    Examine the syntactic children of the given node and find the child most
     suitable to be a measurement subject.
     """
 
     if TRACE: print('find_child_candidates...')
-    
+
     candidates = []
-    
+
     for child in token.children:
         if TRACE: log_token(child)
         # want nouns or nsubj or superlative adjectives such as 'largest'
@@ -978,7 +992,7 @@ def find_child_candidates(token):
         return pruned_candidates
     else:
         return candidates
-            
+
 
 ###############################################################################
 def resolve_superlative_adj(m_token, adj_token):
@@ -986,7 +1000,7 @@ def resolve_superlative_adj(m_token, adj_token):
     Determine what a superlative adjective such as 'largest' refers to.
     Return the result as a list.
     """
-    
+
     # follow a chain of prepositions up the tree to a terminating noun
 
     root = None
@@ -1013,7 +1027,7 @@ def resolve_superlative_adj(m_token, adj_token):
 
     if 0 == len(subject_list):
         subject_list = [adj_token]
-        
+
     return subject_list
 
 
@@ -1048,7 +1062,7 @@ def get_modifiers(start_token):
 
     # indices of nodes whose 'lefts' have been pushed
     indices = []
-    
+
     # recurse depth-first through the dependency parse tree; will pick up
     # all modifiers of each token this way
     while len(tokens) > 0:
@@ -1090,7 +1104,7 @@ def undo_substitutions(text):
         return text
 
     # remove punctuation
-    text = regex_punctuation.sub(' ', text)    
+    text = regex_punctuation.sub(' ', text)
 
     words = text.split()
     for new_text, old_text in replacements.items():
@@ -1123,7 +1137,7 @@ def extract_loc(text):
                 print('\tDISQUALIFIED')
             #return EMPTY_STRING
             continue
-        
+
         loc1 = match.group('location1') # nongreedy regex
         loc2 = match.group('location2') # greedy regex
 
@@ -1140,7 +1154,7 @@ def extract_loc(text):
 
         # remove punctuation
         loc = regex_punctuation.sub(' ', loc)
-            
+
         # ignore any text that starts with 'to be' or 'be'
         match2 = re.search(r'\A(to\s+)?be\s', loc)
         if match2:
@@ -1150,7 +1164,7 @@ def extract_loc(text):
         match2 = regex_meas_verb_no_space.search(loc)
         if match2:
             loc = loc[:match2.start()]
-        
+
         # remove any terminating words that end in 'ly'
         match2 = re.search(r'\s[a-z]+ly\s*\Z', loc)
         if match2:
@@ -1160,7 +1174,7 @@ def extract_loc(text):
         match2 = re.search(r'\A\s*(and|is|its|or|the[ym]?|this|that|those)', loc)
         if match2:
             loc = loc[match2.end():]
-        
+
         # remove various terminating words
         match2 = re.search(r'\s(and|is|its|or|the[ym]?|this|that|those)\s*\Z', loc)
         if match2:
@@ -1170,11 +1184,11 @@ def extract_loc(text):
         match2 = re.search(str_loc_ignore, loc)
         if match2:
             continue
-            
+
         if TRACE:
             print('extract_loc: matching text: ->{0}<-'.format(loc_text))
             print('extract_loc:           loc: ->{0}<-'.format(loc))
-            
+
         return loc
 
     if TRACE: print('\tno location found')
@@ -1198,7 +1212,7 @@ def find_location(subj_token, doc):
 
     m_token_index = -1
     meas_token_index = -1
-    
+
     for i in range(subj_token.i+1, len(doc)):
         if 'PUNCT' == doc[i].pos_:
             continue
@@ -1218,7 +1232,7 @@ def find_location(subj_token, doc):
 
         if TRACE:
             print('find_location: nothing between, trying in front')
-            
+
         # collect all text from the start of the sentence to the subject token
         if subj_token.i < len(doc): # subj token might not be in fragment
             for i in range(0, subj_token.i):
@@ -1231,7 +1245,7 @@ def find_location(subj_token, doc):
 
         if TRACE:
             print('find_location: nothing between or in front, trying at end')
-            
+
         if -1 != meas_token_index or -1 != m_token_index:
             index = max(meas_token_index, m_token_index)
             for i in range(index+1, len(doc)):
@@ -1244,7 +1258,7 @@ def find_location(subj_token, doc):
         if TRACE:
             print('find_location: nothing found')
         return EMPTY_STRING
-                
+
     # concat to a string for location regex search
     text = ' '.join(texts)
 
@@ -1253,29 +1267,29 @@ def find_location(subj_token, doc):
 
     if TRACE:
         print('find_location text: ->{0}<-'.format(text))
-    
+
     return extract_loc(text)
-    
+
 
 ###############################################################################
 def set_meas_locations(m_count, m_sentence, measurements, doc):
     """
     Attempt to find an anatomical location for each measurement.
     """
-    
+
     # find location
     for m in measurements:
 
         # ignore if location already set
         if EMPTY_FIELD != m.location:
             continue
-        
+
         location_strings = []
         for s in m.subject:
             this_loc = find_location(s, doc)
             if 0 == len(this_loc):
                 continue
-            
+
             # undo substitutions
             if len(replacements) > 0:
                 words = this_loc.split()
@@ -1284,7 +1298,7 @@ def set_meas_locations(m_count, m_sentence, measurements, doc):
                         if words[i] == new_text:
                             words[i] = old_text
                 this_loc = ' '.join(words)
-            
+
             if this_loc not in location_strings:
                 location_strings.append(this_loc)
 
@@ -1302,7 +1316,7 @@ def set_meas_locations(m_count, m_sentence, measurements, doc):
                     doc_strings[-1] += token.text
                 # else doc[0] is a PUNCT token, so just ignore it
             doc_text = ' '.join(doc_strings)
-            
+
             pos = m_sentence.find(doc_text)
             if -1 != pos:
                 frag = erase(m_sentence, pos, pos + len(doc_text))
@@ -1310,7 +1324,7 @@ def set_meas_locations(m_count, m_sentence, measurements, doc):
                 this_loc = extract_loc(frag)
                 if len(this_loc) > 0:
                     location_strings.append(this_loc)
-                
+
         m.location = location_strings
 
 
@@ -1324,7 +1338,7 @@ def get_chunks(doc):
 
     start = 0
     chunk_index = 0
-    for nc in doc.noun_chunks:        
+    for nc in doc.noun_chunks:
         nc_start = nc.start
         nc_end   = nc.end
         chunk = Chunk(start, nc_end, doc)
@@ -1336,7 +1350,7 @@ def get_chunks(doc):
 
     if start < len(doc):
         chunks.append( Chunk(start, len(doc), doc))
-    
+
     if TRACE:
         print('\nFULL CHUNKS: ')
         for chunk in chunks:
@@ -1389,7 +1403,7 @@ def resolve_subject(doc, subj_list, chunks):
 
     if TRACE:
         print('resolve_subject: initial subject list: {0}'.format(subj_list))
-    
+
     if chunks is None or 0 == len(chunks):
         if TRACE: print('resolve_subject: NO CHUNKS')
         return []
@@ -1411,13 +1425,13 @@ def resolve_subject(doc, subj_list, chunks):
     else:
         # use the reduced list
         subj_list = subj_list_2
-        
+
     if TRACE:
         print('resolve_subject: pruned subject list: {0}'.format(subj_list))
 
     # find the chunk containing the meas* verb, if any, and the M
     meas_chunk_index, m_chunk_index = get_ref_chunk_indices(chunks, doc)
-    
+
     if TRACE:
         print('resolve_subject: meas chunk index: {0}'.format(meas_chunk_index))
         print('resolve_subject: M    chunk index: {0}'.format(m_chunk_index))
@@ -1463,13 +1477,13 @@ def resolve_subject(doc, subj_list, chunks):
 
     if TRACE:
         print('resolve_subject: preferred subject index: {0}'.format(subj_index))
-                
+
     if -1 != subj_index:
         return [subj_list[subj_index]]
     else:
         return subj_list
-    
-        
+
+
 ###############################################################################
 def get_meas_subj(m_token_index, doc):
     """
@@ -1506,7 +1520,7 @@ def get_meas_subj(m_token_index, doc):
         if not found_it:
             if TRACE: print('\treturning empty subject...')
             return []
-        
+
     prev_dep = m_token.dep_
 
     # any other candidate subjects
@@ -1514,7 +1528,7 @@ def get_meas_subj(m_token_index, doc):
 
     if TRACE:
         print('\tstarting token: {0}'.format(token.text))
-    
+
     while True:
         if TRACE: log_token(token)
         if 'ROOT' == token.dep_:
@@ -1604,7 +1618,7 @@ def get_meas_subj(m_token_index, doc):
 
     if len(extra_candidates) > 0:
         candidates.extend(extra_candidates)
-            
+
     return candidates
 
 
@@ -1617,16 +1631,16 @@ def tokenize_and_find_subjects(sentence):
 
     # save a copy of the original sentence
     original_sentence = sentence
-    
+
     # tokenize and produce a dependency parse of the sentence
     doc = nlp(sentence)
 
     if TRACE:
         log_tokens(doc)
-        
+
     if ENABLE_DISPLACY:
         displacy.serve(doc, style='dep')
-        
+
     meas_subjects = []
 
     first_try = True
@@ -1656,11 +1670,11 @@ def tokenize_and_find_subjects(sentence):
                     if TRACE:
                         print('resolving superlative adj: {0}'.format(meas_subject[0]))
                     meas_subject = resolve_superlative_adj(tok, meas_subject[0])
-                    
+
             meas_subjects.append(meas_subject)
-            
+
         i += 1
-    
+
     return (doc, meas_subjects)
 
 
@@ -1671,7 +1685,7 @@ def flatten(l):
     http://rightfootin.blogspot.com/2006/09/more-on-python-flatten.html,
     based on code from Mike Fletcher's BasicTypes library.
     """
-    
+
     l = list(l)
     i = 0
     while i < len(l):
@@ -1683,7 +1697,7 @@ def flatten(l):
             else:
                 l[i:i + 1] = l[i]
         i += 1
-        
+
     return list(l)
 
 
@@ -1693,13 +1707,13 @@ def _find_simple_subjects(terms, sentence, measurements):
     Find <term><separator><measurement> instances, where the separator is
     either whitespace or a colon or dash character, with optional spaces on
     either side.
-    
+
     Example:   "LV V1 VTI: 16.0 cm"
     """
 
     results = []
     candidates = []
-    
+
     if TRACE:
         print('Called _find_simple_subjects...')
         print('\t   terms: {0}'.format(terms))
@@ -1722,7 +1736,7 @@ def _find_simple_subjects(terms, sentence, measurements):
                     if distance < min_distance:
                         min_distance = distance
                         index = i
-                        
+
             # check chars between term_end and start of closest measurement
             closest_meas_start = measurements[index].start
             text = sentence[term_end:closest_meas_start]
@@ -1743,7 +1757,7 @@ def _find_simple_subjects(terms, sentence, measurements):
     pruned_candidates = overlap.remove_overlap(candidates, TRACE)
 
     # update the winning measurements
-    resolved_meas_tuples = []    
+    resolved_meas_tuples = []
     for pc in pruned_candidates:
         meas_index, matching_term = pc.other
         resolved_meas = copy.deepcopy(measurements[meas_index])
@@ -1761,7 +1775,7 @@ def _find_simple_subjects(terms, sentence, measurements):
                   format(m.matchingTerm, m.text))
 
     return resolved_meas_tuples
-    
+
 
 ###############################################################################
 def run(term_string, sentence, nosub=False, use_displacy=False):
@@ -1792,7 +1806,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     # convert terms and sentence to lowercase
     terms = [term.lower() for term in terms]
     sentence = sentence.lower()
-    
+
     sentence = clean_sentence(sentence)
 
     # find all size measurements
@@ -1808,7 +1822,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
 
     # convert from immutable smf.SizeMeasurement namedtuple to mutable Meas
     measurements = [Meas(sm) for sm in size_measurements]
-            
+
     # if no measurements then no measurement subjects
     if 0 == len(measurements):
         return to_json(original_terms, original_sentence, [])
@@ -1826,7 +1840,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     for meas_index, meas in resolved_meas_tuples:
         resolved_meas_indices.append(meas_index)
         resolved_measurements.append(meas)
-        
+
     # take an early exit if possible
     num_resolved = len(resolved_meas_indices)
     if num_resolved == len(measurements) or num_resolved == len(terms):
@@ -1837,24 +1851,24 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
         num_chars = len(m.text)
         piece1 = sentence[:m.start]
         piece2 = ' M' + ' '*(num_chars - 2)
-        piece3 = sentence[m.end:]                        
+        piece3 = sentence[m.end:]
         sentence = piece1 + piece2 + piece3
-        
+
     # replace \s+ with a single space, could change sentence length
     sentence_ss = collapse_ws(sentence)
 
     # do ngram substitutions unless the 'nosub' flag is set
     if not nosub:
         sentence_ss = replace_ngrams(sentence_ss)
-    
+
     # save a copy, used to find context later
     m_sentence = sentence_ss
-    
+
     if TRACE:
         print('Sentence prior to analysis: ')
         print('\t{0}'.format(sentence_ss))
-        
-    meas_subjects = []        
+
+    meas_subjects = []
     m_count = get_meas_count(sentence_ss)
 
     # try to find subject of each measurement
@@ -1869,7 +1883,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
     if not ok:
         if TRACE: print('\tno subject found, using default')
         set_default_subject(m_sentence, sentence_ss, measurements)
-    
+
     # remove any duplicated subject tokens
     for i,m in enumerate(measurements):
         if i in resolved_meas_indices:
@@ -1884,7 +1898,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
                 continue
             subj_list = resolve_subject(doc, m.subject, chunks)
             m.subject = subj_list
-            
+
     # attempt to find any missing locations, one last time...
     if 1 == m_count and doc is not None:
         set_meas_locations(m_count, m_sentence, measurements, doc)
@@ -1898,7 +1912,7 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
         for s in meas_save:
             token_list = get_modifiers(s)
             m.subject.append(token_list)
-            
+
     # undo ngram replacements and other substitutions for subjects and locations
     if len(replacements) > 0:
         for i,m in enumerate(measurements):
@@ -1948,14 +1962,14 @@ def run(term_string, sentence, nosub=False, use_displacy=False):
                 else:
                     converted.append(s)
             m.subject = converted
-            
+
         if m.location is not None:
             m.location = flatten(m.location)
 
     # overwrite resolved measurements
     for i,meas in resolved_meas_tuples:
         measurements[i] = meas
-            
+
     # convert to a JSON result
     return to_json(original_terms, original_sentence, measurements)
 
@@ -1983,7 +1997,7 @@ def set_default_subject(m_sentence, sentence_ss, measurements):
             continue
         m.subject = noun_list.copy()
 
-        
+
 ###############################################################################
 def process_3(m_sentence, sentence, measurements, resolved_meas_indices):
     """
@@ -1997,7 +2011,7 @@ def process_3(m_sentence, sentence, measurements, resolved_meas_indices):
     if matcher_3:
 
         if TRACE: print('process_3: MEASURES_M_3 match')
-        
+
         count = 0
         found_it = False
         prev_subject = []
@@ -2015,7 +2029,7 @@ def process_3(m_sentence, sentence, measurements, resolved_meas_indices):
             m_index = m_index_from_context(m_sentence, match_text, resolved_meas_indices)
             #assert m_index < len(measurements)
             if INVALID_M_INDEX != m_index and m_index < len(measurements):
-            
+
                 #assert len(subjects) > 0
                 if subjects and subjects[0] and len(subjects[0]) > 0:
                     # found subject for this measurement
@@ -2065,7 +2079,7 @@ def process_3(m_sentence, sentence, measurements, resolved_meas_indices):
     else:
         return (False, None)
 
-    
+
 ###############################################################################
 def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
     """
@@ -2073,7 +2087,7 @@ def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
     """
 
     if TRACE: print('called process_2')
-    
+
     # check for a now-vs-then sentence form
     matcher_nvt1 = regex_now_vs_then_1.search(sentence)
     if matcher_nvt1:
@@ -2104,13 +2118,13 @@ def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
                     # find remaining locations, if any
                     set_meas_locations(2, m_sentence, measurements, doc)
                     return (True, doc)
-            
+
     # check for two independent 'measures M' clauses
     matcher_2 = regex_measures_m_2.search(sentence)
     if matcher_2:
 
         if TRACE: print('process_2: MEASURES_M_2 match')
-        
+
         count = 0
         found_it = False
         prev_subject = []
@@ -2128,7 +2142,7 @@ def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
             m_index = m_index_from_context(m_sentence, match_text, resolved_meas_indices)
             #assert m_index < len(measurements)
             if INVALID_M_INDEX != m_index and m_index < len(measurements):
-            
+
                 if subjects and subjects[0] and len(subjects[0]) > 0:
                     # found a subject for this measurement
                     for s in subjects[0]:
@@ -2154,7 +2168,7 @@ def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
                     for s in prev_subject:
                         measurements[m_index].subject.append(s)
                     found_it = True
-                    
+
             count += 1
 
         if found_it:
@@ -2248,7 +2262,7 @@ def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
             measurements[m_index + 1].location = measurements[m_index].location
 
             return (True, doc)
-    
+
     matcher_m_and_m = regex_m_and_m_1.search(sentence)
     if matcher_m_and_m:
         if TRACE: print('process_2: M AND M 1 match')
@@ -2330,7 +2344,7 @@ def process_2(m_sentence, sentence, measurements, resolved_meas_indices):
     else:
         return process_1(m_sentence, sentence, measurements, resolved_meas_indices)
 
-    
+
 ###############################################################################
 def m_index_from_context(m_sentence, match_text, resolved_meas_indices):
     """
@@ -2356,7 +2370,7 @@ def m_index_from_context(m_sentence, match_text, resolved_meas_indices):
     end = start + len(match_text)
 
     # the desired m_index is the index of the 'M' between [start, end)
-    
+
     iterator = re.finditer(r'\bM\b', m_sentence)
 
     index = 0
@@ -2368,7 +2382,7 @@ def m_index_from_context(m_sentence, match_text, resolved_meas_indices):
 
     if index in resolved_meas_indices:
         return INVALID_M_INDEX
-            
+
     # this value might be equal to len(measurements) - need to check
     # prior to use
     return index
@@ -2377,12 +2391,12 @@ def m_index_from_context(m_sentence, match_text, resolved_meas_indices):
 ###############################################################################
 def process_1(m_sentence, sentence, measurements, resolved_meas_indices):
     """
-    Find the subject of a sentence (or sentence fragment) containing a 
+    Find the subject of a sentence (or sentence fragment) containing a
     single measurement.
     """
 
     if TRACE: print('called process_1')
-    
+
     match = regex_carina.search(sentence)
     if match:
         if TRACE: print('\tprocess_1: carina match')
@@ -2411,7 +2425,7 @@ def process_1(m_sentence, sentence, measurements, resolved_meas_indices):
 
                         if -1 != preferred_index:
                             subjects[0] = [subjects[0][preferred_index]]
-                
+
                     for s in subjects[0]:
                         measurements[m_index].subject.append(s)
                     return (True, doc)
@@ -2420,9 +2434,9 @@ def process_1(m_sentence, sentence, measurements, resolved_meas_indices):
                 if TRACE: print('\tprocess_1: using endodube group text')
                 measurements[m_index].subject.append(match.group('endotube'))
                 return (True, doc)
-    
+
     match = regex_measures_m_1.search(sentence)
-    if match:        
+    if match:
         text = match.group()
 
         if TRACE:
@@ -2430,7 +2444,7 @@ def process_1(m_sentence, sentence, measurements, resolved_meas_indices):
 
         m_index = m_index_from_context(m_sentence, text, resolved_meas_indices)
         if INVALID_M_INDEX != m_index and m_index < len(measurements):
-            
+
             # subjects is a list of lists
             doc, subjects = tokenize_and_find_subjects(text)
             if len(subjects) > 0 and len(subjects[0]) > 0:
@@ -2454,14 +2468,14 @@ def process_1(m_sentence, sentence, measurements, resolved_meas_indices):
 
     m_index = m_index_from_context(m_sentence, sentence, resolved_meas_indices)
     if INVALID_M_INDEX != m_index and m_index < len(measurements):
-        
+
         doc, subjects = tokenize_and_find_subjects(sentence)
         if len(subjects) > 0 and len(subjects[0]) > 0:
             for s in subjects[0]:
                 measurements[m_index].subject.append(s)
 
             return (True, doc)
-    
+
     return (False, None)
 
 
@@ -2473,7 +2487,7 @@ def process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices):
     """
 
     if TRACE: print('called process_a_m_wds')
-    
+
     found_subject = False
 
     match = regex_a_m_wds.search(sentence)
@@ -2483,7 +2497,7 @@ def process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices):
     # either group 'wordsNG' or group 'wordsG' matches, but not both
     text1 = match.group('wordsNG')
     text2 = match.group('wordsG')
-    assert (text1 is not None) ^ (text2 is not None)                                   
+    assert (text1 is not None) ^ (text2 is not None)
 
     if text1 is not None:
         matching_text = text1
@@ -2504,7 +2518,7 @@ def process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices):
     #found_it = process_1(m_sentence, matching_text, measurements)
     text = match.group()
     m_index = m_index_from_context(m_sentence, text, resolved_meas_indices)
-    if INVALID_M_INDEX != m_index and m_index < len(measurements):    
+    if INVALID_M_INDEX != m_index and m_index < len(measurements):
 
         # subjects is a list of lists
         texts = [matching_text, text]
@@ -2544,7 +2558,7 @@ def process_a_m_wds(m_sentence, sentence, measurements, resolved_meas_indices):
     else:
         return (False, sentence, None)
 
-            
+
 ###############################################################################
 def process_a_wds_m(m_sentence, sentence, measurements, resolved_meas_indices):
     """
@@ -2553,7 +2567,7 @@ def process_a_wds_m(m_sentence, sentence, measurements, resolved_meas_indices):
     """
 
     if TRACE: print('called process_a_wds_m')
-    
+
     found_subject = False
 
     match = regex_a_wds_m.search(sentence)
@@ -2623,12 +2637,12 @@ def process_a_wds_m(m_sentence, sentence, measurements, resolved_meas_indices):
             if TRACE:
                 if not found_subject:
                     print('\tno subject found with first text, trying again...')
-                
+
     if found_subject:
         return (True, sentence, doc)
     else:
         return (False, sentence, None)
-    
+
 
 ###############################################################################
 def get_ngrams(words, n):
@@ -2659,7 +2673,7 @@ def replace_ngrams(sentence):
 
     original_sentence = sentence
     max_ngram_length = ngram_word_counts[-1]
-    
+
     # skip over common words at the start of the sentence
     str_common_start = r'\b(an?|the|there\s(is|are|was|were)(\san?)?)\b'
     regex_common_start = re.compile(str_common_start)
@@ -2684,11 +2698,11 @@ def replace_ngrams(sentence):
                 continue
             if -1 == start:
                 continue
-            
+
             chunk = sentence[start:i]
             words = chunk.split()
             max_n = min( len(words), max_ngram_length)
-            
+
             # find ngrams and substitute, work largest to smallest
             for n in reversed(ngram_word_counts):
                 if n <= max_n:
@@ -2718,7 +2732,7 @@ def replace_ngrams(sentence):
 
     # replace matching words in sentence
     sentence = original_sentence
-    
+
     pos = 0
     index = 0
     for old_wd, start, end in matches:
@@ -2736,7 +2750,7 @@ def replace_ngrams(sentence):
 
     return sentence
 
-    
+
 ###############################################################################
 def self_test(TEST_DICT, terms, nosub):
     """
@@ -2755,7 +2769,7 @@ def self_test(TEST_DICT, terms, nosub):
 
         # unpack to a SubjectFinderResult namedtuple
         result = SubjectFinderResult(**json_data)
-        
+
         # get the array of measurements
         measurement_list = result.measurementList
 
@@ -2768,7 +2782,7 @@ def self_test(TEST_DICT, terms, nosub):
         else:
             num_entries = len(subj_lists)
             assert num_entries == len(measurements)
-            
+
             # verify the subject of each
             for i in range(len(subj_lists)):
                 m = measurements[i]
@@ -2788,13 +2802,13 @@ def self_test(TEST_DICT, terms, nosub):
                         print('\t   Measurement: {0}'.format(m.text))
                         print('\tSubjects found: {0}'.format(m.subject))
                         print('\t         Truth: {0}'.format(subjects))
-        
+
 
 ###############################################################################
 def get_version():
     return 'subject_finder {0}.{1}'.format(VERSION_MAJOR, VERSION_MINOR)
 
-        
+
 # ###############################################################################
 # def show_help():
 #     print(get_version())
@@ -2821,7 +2835,7 @@ def get_version():
 #                                         localhost:5000.
 #     """)
 
-    
+
 ###############################################################################
 if __name__ == '__main__':
 
@@ -2892,15 +2906,15 @@ if __name__ == '__main__':
         'Scale imaging of the artery in this region shows a diffuse '        +\
         'symmetric wall thickening with the arterial wall measuring up to '  +\
         '7 mm in diameter over several centimeters length.' :
-        [['wall']],        
+        [['wall']],
         'Soft tissue structures demonstrate mediastinal lymphadenopathy '    +\
         'with numerous lymph nodes throughout the mediastinum, with the '    +\
         'largest node in the right paratracheal region measuring about 1.7 ' +\
         'cm in greatest short axis dimension.' :
-        [['node']],        
+        [['node']],
         'Extensive, pronounced cervical lymphadenopathy throughout levels '  +\
         'II through IV, with lymph nodes measuring up to 2 cm.' :
-        [['nodes']],        
+        [['nodes']],
         'Multiple lymph nodes are present at different mediastinal '         +\
         'stations with largest measuring 13 mm in the right upper '          +\
         'paratracheal region.' :
@@ -2910,15 +2924,15 @@ if __name__ == '__main__':
         'with a focal dilatation measuring 4.3 cm just below the renal '     +\
         'arteries.' :
         [['dilatation']],
-        
+
         'Multiple simple renal cysts are noted within the bilateral kidneys,'+\
         ' left more so than right, with the largest cyst identified within ' +\
         'the inferior pole of the left kidney measuring 2.4 cm.' :
-        [['cyst']],        
+        [['cyst']],
         'The liver is normal in architecture and echogenicity, and is '      +\
         'seen to contain numerous small cysts ranging in size from a few '   +\
         'millimeters to approximately 1.2 cm in diameter.' :
-        [['cysts']],        
+        [['cysts']],
         'Nondistended gallbladder with small amount of intraluminal sludge, '+\
         'and marked gallbladder wall edema measuring 7 mm.' :
         [['edema']],
@@ -2998,7 +3012,7 @@ if __name__ == '__main__':
         'perirenal space specifically in the right perirenal space the '     +\
         'fluid collection measures 2.2 cm x 2.4 cm now versus 2.6 x 2.5 cm ' +\
         'then.' :
-        [['collection'], ['collection']],        
+        [['collection'], ['collection']],
         'For example a left upper lung nodule measures 8.1 mm and '          +\
         'previously had measured 7.4 mm (3:36).' :
         [['nodule'], ['nodule']],
@@ -3061,7 +3075,7 @@ if __name__ == '__main__':
         [['lesions'], ['second']],
 
 
-        
+
         'The right kidney measures 11.5 cm and contains multiple '           +\
         'thin-walled anechoic rounded structures consistent with simple '    +\
         'renal cysts, the largest of which is within the mid pole and '      +\
@@ -3206,7 +3220,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--displacy',
                         help="Show dependency parse using SpaCy's 'displacy' tool (localhost:5000)",
                         action='store_true')
-    
+
     args = parser.parse_args()
 
     if 'version' in args and args.version:
@@ -3230,7 +3244,7 @@ if __name__ == '__main__':
     if 'selftest' in args and args.selftest:
         selftest = args.selftest
 
-    use_display = False
+    use_displacy = False
     if 'displacy' in args and args.displacy:
         use_displacy = args.use_displacy
 
@@ -3259,8 +3273,8 @@ if __name__ == '__main__':
 
     # call prior to processing any sentences
     init()
-    
-        
+
+
     if selftest:
         self_test(TEST_DICT, terms, nosub)
 

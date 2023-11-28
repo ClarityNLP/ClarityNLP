@@ -76,7 +76,7 @@ if __name__ == '__main__':
     else:
         print('\n*** test_lab_value_matcher.py: nlp dir not found ***\n')
         sys.exit(0)
-    
+
     import segmentation_helper as seg_helper
 else:
     from algorithms.segmentation import segmentation_helper as seg_helper
@@ -121,7 +121,7 @@ def parse_sentences_spacy(text, spacy=None):
 
     # spacy = segmentation_init()
     # doc = spacy(text)
-    # return [sent.string.strip() for sent in doc.sents]
+    # return [sent.text.strip() for sent in doc.sents]
     if not spacy:
         spacy = segmentation_init()
 
@@ -133,14 +133,14 @@ def parse_sentences_spacy(text, spacy=None):
 
     # now do the sentence tokenization with the substitutions in place
     doc = spacy(text)
-    sentences = [sent.string.strip() for sent in doc.sents]
+    sentences = [sent.text.strip() for sent in doc.sents]
 
     # fix various problems and undo the substitutions
     sentences = seg_helper.split_concatenated_sentences(sentences)
 
     # do this, if at all, BEFORE undoing the substitutions
     #sentences = seg_helper.split_section_headers(sentences)
-    
+
     sentences = seg_helper.undo_substitutions(sentences, subs)
     sentences = seg_helper.fixup_sentences(sentences)
     sentences = seg_helper.delete_junk(sentences)
@@ -184,7 +184,7 @@ def get_version():
 if __name__ == '__main__':
 
     # interactive testing, output written to stdout
-    
+
     seg_obj = Segmentation()
 
     parser = argparse.ArgumentParser(
@@ -216,7 +216,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     start_index = args.start_index
-        
+
     if start_index < 0:
         print('\n*** Start index must be a nonnegative integer. ***')
         sys.exit(-1)
@@ -241,7 +241,7 @@ if __name__ == '__main__':
     if not os.path.isfile(json_file):
         print('\n*** File not found: "{0}" ***'.format(json_file))
         sys.exit(-1)
-        
+
 
     try:
         infile = open(json_file, 'rt')
@@ -266,7 +266,7 @@ if __name__ == '__main__':
 
     # explicitly initialize for interactive testing
     seg_helper.init()
-        
+
     ok = True
     report_count = 0
     index = start_index
@@ -296,7 +296,7 @@ if __name__ == '__main__':
 
         index += 1
         report_count += 1
-        
+
         if end_index is not None and index > end_index:
             break
 

@@ -53,12 +53,14 @@ def read_boolean_property(prop, default=False):
 
 
 solr_url = read_property('NLP_SOLR_URL', ('solr', 'url'))
+
 conn_string = "host='%s' dbname='%s' user='%s' password='%s' port=%s" % (
     read_property('NLP_PG_HOSTNAME', ('pg', 'host')),
     read_property('NLP_PG_DATABASE', ('pg', 'dbname')),
     read_property('NLP_PG_USER', ('pg', 'user')),
     read_property('NLP_PG_PASSWORD', ('pg', 'password')),
     str(read_property('NLP_PG_CONTAINER_PORT', ('pg', 'port'))))
+
 mongo_host = read_property('NLP_MONGO_HOSTNAME', ('mongo', 'host'))
 mongo_port = int(read_property('NLP_MONGO_CONTAINER_PORT', ('mongo', 'port')))
 mongo_db = read_property('NLP_MONGO_DATABASE', ('mongo', 'db'))
@@ -68,8 +70,13 @@ mongo_working_collection = read_property(
     'NLP_MONGO_WORKING_COLLECTION', ('mongo', 'working_collection'))
 mongo_username = read_property('NLP_MONGO_USERNAME', ('mongo', 'username'))
 mongo_password = read_property('NLP_MONGO_PASSWORD', ('mongo', 'password'))
+mongo_use_ssl = read_property('NLP_MONGO_USE_SSL', ('mongo', 'use_ssl'), default=False)
+if isinstance(mongo_use_ssl, str): 
+    mongo_use_ssl = bool(mongo_use_ssl)
+
 tmp_dir = read_property('NLP_API_TMP_DIR', ('tmp', 'dir'))
 log_dir = read_property('NLP_API_LOG_DIR', ('log', 'dir'))
+
 luigi_scheduler = read_property('LUIGI_SCHEDULER_URL', ('luigi', 'scheduler'))
 luigi_url = read_property('SCHEDULER_VIRTUAL_HOST', ('luigi', 'url'))
 luigi_workers = read_property('LUIGI_WORKERS', ('luigi', 'workers'), default='5')
@@ -224,7 +231,7 @@ def mongo_client(host=None, port=None, username=None, password=None):
         # print('authenticated mongo')
         _mongo_client = MongoClient(host=host, port=port, username=username,
                                     password=password, socketTimeoutMS=15000, maxPoolSize=500,
-                                    maxIdleTimeMS=30000, ssl=True, retryWrites=False)
+                                    maxIdleTimeMS=30000, ssl=mongo_use_ssl, retryWrites=False)
     else:
         # print('unauthenticated mongo')
         _mongo_client = MongoClient(host, port)
