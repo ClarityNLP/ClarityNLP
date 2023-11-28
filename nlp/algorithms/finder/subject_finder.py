@@ -220,7 +220,7 @@ from spacy import displacy
 nlp = spacy.load('en_core_web_sm')
 
 VERSION_MAJOR = 0
-VERSION_MINOR = 11
+VERSION_MINOR = 12
 
 # set to True to enable debug output
 TRACE = False
@@ -590,7 +590,7 @@ def init(ngram_file_path=NGRAM_FILE):
     Initialize this module. Must be called once, prior to sentence processing.
     """
 
-    global ngram_word_counts
+    global ngram_word_counts, nlp
 
     ngram_dict.clear()
 
@@ -602,28 +602,36 @@ def init(ngram_file_path=NGRAM_FILE):
         for n in range(1, len(ngram_word_counts)+1):
             print('Number of ngrams of length {0:2}: {1:6}'.format(n, len(ngram_dict[n])))
 
-    # AttributeRuler to migrate special case attributes from spaCy 2.x to 3.x
-    ruler = nlp.replace_pipe("attribute_ruler", "attribute_ruler")
+    ruler = nlp.get_pipe('attribute_ruler')
 
-    # 'measures' is a 3rd person singular present verb
-    special_case = [{ORTH: u'measures'}]
-    nlp.tokenizer.add_special_case(u'measures', special_case)
-    ruler.add(patterns=[[{"ORTH": u'measures'}]], attrs={'LEMMA': u'measure', 'TAG':u'VBZ', 'POS': u'VERB'})
+    # # 'measures' is a 3rd person singular present verb
+    # special_case = [{ORTH: u'measures', LEMMA: u'measure', TAG: u'VBZ', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measures', special_case)
+    patterns = [[{ORTH : 'measures'}]]
+    attrs = {TAG : 'VBZ', POS :'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
 
-    # 'measure' is a non 3rd person singular present verb
-    special_case = [{ORTH: u'measure'}]
-    nlp.tokenizer.add_special_case(u'measure', special_case)
-    ruler.add(patterns=[[{"ORTH": u'measure'}]], attrs={'LEMMA': u'measure', 'TAG':u'VBP', 'POS': u'VERB'})
+    # # 'measure' is a non 3rd person singular present verb
+    # special_case = [{ORTH: u'measure', LEMMA: u'measure', TAG: u'VBP', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measure', special_case)
+    patterns = [[{ORTH : 'measure'}]]
+    attrs = {TAG : 'VBP', POS : 'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
 
-    # 'measured' is a verb, past participle
-    special_case = [{ORTH: u'measured'}]
-    nlp.tokenizer.add_special_case(u'measured', special_case)
-    ruler.add(patterns=[[{"ORTH": u'measured'}]], attrs={'LEMMA': u'measure', 'TAG':u'VBN', 'POS': u'VERB'})
+    # # 'measured' is a verb, past participle
+    # special_case = [{ORTH: u'measured', LEMMA: u'measure', TAG: u'VBN', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measured', special_case)
+    patterns = [[{ORTH : 'measured'}]]
+    attrs = {TAG : 'VBN', POS : 'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
 
-    # 'measuring' is a verb form, either a gerund or present participle
-    special_case = [{ORTH: u'measuring'}]
-    nlp.tokenizer.add_special_case(u'measuring', special_case)
-    ruler.add(patterns=[[{"ORTH": u'measuring'}]], attrs={'LEMMA': u'measure', 'TAG':u'VBG', 'POS': u'VERB'})
+    # # 'measuring' is a verb form, either a gerund or present participle
+    # special_case = [{ORTH: u'measuring', LEMMA: u'measure', TAG: u'VBG', POS: u'VERB'}]
+    # nlp.tokenizer.add_special_case(u'measuring', special_case)
+    patterns = [[{ORTH : 'measuring'}]]
+    attrs = {TAG : 'VBG', POS : 'VERB'}
+    ruler.add(patterns=patterns, attrs=attrs)
+
 
 ###############################################################################
 def load_ngram_file(filepath, ngram_dict):
@@ -3236,7 +3244,7 @@ if __name__ == '__main__':
     if 'selftest' in args and args.selftest:
         selftest = args.selftest
 
-    use_display = False
+    use_displacy = False
     if 'displacy' in args and args.displacy:
         use_displacy = args.use_displacy
 

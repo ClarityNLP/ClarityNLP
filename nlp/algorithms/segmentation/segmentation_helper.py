@@ -180,18 +180,18 @@ _DELIMITER = '&&'
 
 ###############################################################################
 def enable_debug():
-    
+
     global _TRACE
     _TRACE = True
 
     #lvm.enable_debug()
 
-    
+
 ###############################################################################
 def init():
 
     lvm.init()
-    
+
 
 ###############################################################################
 def _print_substitutions(tuple_list, banner_text):
@@ -199,19 +199,19 @@ def _print_substitutions(tuple_list, banner_text):
     Print text substitutions to stdout; for debug only.
     Tuples are (start_offset, end_offset, match_text).
     """
-    
+
     print('*** {0} ***'.format(banner_text))
     for i, t in enumerate(tuple_list):
         print('[{0:3d}]: [{1:4},{2:4}): {3}'.format(i, t[0], t[1], t[2]))
     print()
-        
+
 
 ###############################################################################
 def _print_sentence_list(caption, sentence_list):
     """
     Debug only print function.
     """
-    
+
     print('\n{0}: '.format(caption))
     for i, s in enumerate(sentence_list):
         print('[{0:3d}]: {1}'.format(i, s))
@@ -226,7 +226,7 @@ def _check_for_tokens(sentence_list):
     """
 
     token_regex = re.compile(r'&&[A-Z0-9]+&&')
-    
+
     for s in sentence_list:
         match = token_regex.search(s)
         if match:
@@ -238,8 +238,8 @@ def _check_for_tokens(sentence_list):
             # this is a fatal error; no tokens should remain after undoing
             # the token substitutions
             assert False
-    
-    
+
+
 ###############################################################################
 def _fix_broken_tokens(sentence_list):
     """
@@ -280,7 +280,7 @@ def _fix_broken_tokens(sentence_list):
 
     return new_sentences
 
-    
+
 ###############################################################################
 def _make_token(token_text, counter):
     """
@@ -291,7 +291,7 @@ def _make_token(token_text, counter):
                                      counter, _DELIMITER)
     return token
 
-    
+
 ###############################################################################
 def _insert_tokens(report, token_text, tuple_list, sub_list):
     """
@@ -327,22 +327,22 @@ def _insert_tokens(report, token_text, tuple_list, sub_list):
         new_report += chunk1 + token
         prev_end = end
     new_report += report[prev_end:]
-        
+
     return new_report
-    
-    
+
+
 ###############################################################################
 def _find_size_meas_subs(report, sub_list, token_text):
     """
     Run the size measurement finder to find measurements such as 3 cm. x 4 cm.
-    The standard NLP sentence tokenizers can incorrectly split such 
+    The standard NLP sentence tokenizers can incorrectly split such
     measurements after the first '.'.
     """
 
     json_string = smf.run(report)
     if '[]' == json_string:
         return report
-    
+
     json_data = json.loads(json_string)
 
     # unpack JSON result into a list of SizeMeasurement namedtuples
@@ -384,16 +384,16 @@ def _find_date_subs(report, sub_list, token_text):
             keep_dates.append(d)
 
     dates = keep_dates
-            
+
     # convert to a list of (start, end, match_text) tuples
-    # ignore all-digit matches, since could likely be a measured value    
+    # ignore all-digit matches, since could likely be a measured value
     tuple_list = [(d.start, d.end, d.text) for d in dates
                   if not d.text.isdigit()]
 
     if _TRACE:
         _print_substitutions(tuple_list, 'DATES')
 
-    new_report = _insert_tokens(report, token_text, tuple_list, sub_list)            
+    new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
 
 
@@ -407,7 +407,7 @@ def _find_time_subs(report, sub_list, token_text):
     json_string = tf.run(report)
     if '[]' == json_string:
         return report
-        
+
     json_data = json.loads(json_string)
 
     # unpack JSON result into a list of TimeValue namedtuples
@@ -434,13 +434,13 @@ def _find_vitals_subs(report, sub_list, token_text):
     # use lab_value_matcher to find all vitals, lab value lists, etc.
     vitals = lvm.run(report)
     tuple_list = [(v.start, v.end, v.match_text) for v in vitals]
-    
+
     if _TRACE:
         _print_substitutions(tuple_list, 'VITALS')
-        
+
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
-    
+
 
 ###############################################################################
 def _find_substitutions(report, regex_or_subs, sub_list, token_text):
@@ -456,8 +456,8 @@ def _find_substitutions(report, regex_or_subs, sub_list, token_text):
         for match in iterator:
             tuple_list.append( (match.start(), match.end(), match.group()) )
     else:
-        tuple_list = regex_or_subs    
-            
+        tuple_list = regex_or_subs
+
     if 0 == len(tuple_list):
         return report
 
@@ -466,8 +466,8 @@ def _find_substitutions(report, regex_or_subs, sub_list, token_text):
 
     new_report = _insert_tokens(report, token_text, tuple_list, sub_list)
     return new_report
-        
-        
+
+
 ###############################################################################
 def do_substitutions(report):
     """
@@ -487,7 +487,7 @@ def do_substitutions(report):
     time_subs         = []
     drug_subs         = []
     multi_token_subs  = []
-    
+
     if _TRACE:
         log('REPORT BEFORE SUBSTITUTIONS: \n' + report + '\n')
 
@@ -495,15 +495,15 @@ def do_substitutions(report):
     report = _find_substitutions(report, _regex_abbrev, abbrev_subs, 'ABBREV')
 
     report = _find_vitals_subs(report, vitals_subs, 'VITALS')
-    
+
     report = _find_substitutions(report, _regex_caps_header,
                                  header_subs, 'HEADER')
 
     report = _find_date_subs(report, date_subs, 'DATE')
     report = _find_time_subs(report, time_subs, 'TIME')
-    
-    report = _find_substitutions(report, _regex_anon, anon_subs, 'ANON')    
-    
+
+    report = _find_substitutions(report, _regex_anon, anon_subs, 'ANON')
+
     report = _find_substitutions(report, _regex_contrast,
                                  contrast_subs, 'CONTRAST')
     report = _find_substitutions(report, _regex_fov, fov_subs, 'FOV')
@@ -535,7 +535,7 @@ def do_substitutions(report):
         'multi_token_subs'  : multi_token_subs,
     }
 
-        
+
     return report, all_subs
 
 
@@ -549,7 +549,7 @@ def _replace_text(sentence_list, sub_list):
 
     if 0 == len(sub_list):
         return sentence_list
-    
+
     for i in range(len(sentence_list)):
         count = 0
         sentence = sentence_list[i]
@@ -565,7 +565,7 @@ def _replace_text(sentence_list, sub_list):
             sentence_list[i] = sentence
 
     return sentence_list
-            
+
 
 ###############################################################################
 def undo_substitutions(sentence_list, all_subs):
@@ -576,10 +576,10 @@ def undo_substitutions(sentence_list, all_subs):
 
     # fix any broken tokens that may have been split by segmentation
     sentence_list = _fix_broken_tokens(sentence_list)
-    
+
     if _TRACE:
         _print_sentence_list('SENTENCE LIST WITH SUBSTITUTIONS', sentence_list)
-        
+
     sentence_list = _replace_text(sentence_list, all_subs['multi_token_subs'])
     sentence_list = _replace_text(sentence_list, all_subs['drug_subs'])
     sentence_list = _replace_text(sentence_list, all_subs['gender_subs'])
@@ -596,9 +596,9 @@ def undo_substitutions(sentence_list, all_subs):
 
     # ensure that no more tokens remain
     _check_for_tokens(sentence_list)
-    
+
     return sentence_list
-        
+
 
 ###############################################################################
 def _erase_spans(report, span_list):
@@ -636,7 +636,7 @@ def cleanup_report(report):
         if match_cont:
             end = match_over.end() + match_cont.end()
             spans.append( (start, end))
-            
+
     report = _erase_spans(report, spans)
 
     # insert a space between list numbers and subsequent text, makes
@@ -657,18 +657,18 @@ def cleanup_report(report):
 
     # Remove long runs of dashes, underscores, stars, or question marks
     report = re.sub(r'[-_*?]{3,}', ' ', report)
-    
+
     # collapse repeated whitespace (including newlines) into a single space
     report = re.sub(r'\s+', ' ', report)
 
     # collapse multiple '/' into a single '/'
     report = re.sub(r'/+', '/', report)
-    
+
     # convert unicode left and right quotation marks to ascii
     report = re.sub(r'(\u2018|\u2019)', "'", report)
-    
+
     return report
-    
+
 
 ###############################################################################
 def fixup_sentences(sentence_list_in):
@@ -692,10 +692,10 @@ def fixup_sentences(sentence_list_in):
             sentence_list.append(s)
 
     num = len(sentence_list)
-            
+
     # Move certain punctuation chars from the start of a sentence to the end
     # of the previous sentence.
-    
+
     i = 1
     while i < num:
         s = sentence_list[i]
@@ -731,14 +731,14 @@ def fixup_sentences(sentence_list_in):
             i += 1
 
     assert len(merged_sentences) + merge_count == num
-            
+
     # check for opportunities to merge a sentence with the previous one
     num = len(merged_sentences)
     results = [merged_sentences[0]]
     merge_count = 0
     skip_count = 0
 
-    for i in range(1, len(merged_sentences)): 
+    for i in range(1, len(merged_sentences)):
         s = merged_sentences[i].strip()
 
         if _TRACE:
@@ -748,8 +748,8 @@ def fixup_sentences(sentence_list_in):
             # was all whitespace, now zero length
             skip_count += 1
             continue
-            
-        # Is the first char of the sentence an operator?        
+
+        # Is the first char of the sentence an operator?
         c = s[0]
         starts_with_op = c in _operator_set
 
@@ -767,12 +767,12 @@ def fixup_sentences(sentence_list_in):
 
         # Does the sentence start with 'and'?
         match5 = re.match(r'\Aand\b', s)
-        
+
         if match1 or match2 or starts_with_op or (match3 and match4) or match5:
-            
+
             if _TRACE:
                 log('Appending sentence: "{0}" to "{1}"'.format(s, results[-1]))
-            
+
             results[-1] = results[-1] + ' ' + s
             merge_count += 1
         else:
@@ -785,9 +785,9 @@ def fixup_sentences(sentence_list_in):
         log('MERGED SENTENCES: ')
         for s in merged_sentences:
             log(s)
-            
+
     assert len(results) + merge_count + skip_count == num
-            
+
     # The Spacy tokenizer tends to break sentences after each period in a
     # numbered list of items. Look for a sequence of sentences with
     # 1., 2., 3., ... at the ends and remove it.
@@ -807,7 +807,7 @@ def fixup_sentences(sentence_list_in):
         start = int(match.group('num'))
         if _TRACE:
             log('List start: {0}.'.format(start))
-        
+
         end = start + 1
         j = i+1
         while end < num and j < num:
@@ -820,7 +820,7 @@ def fixup_sentences(sentence_list_in):
                 log('list item {0}'.format(end))
             end += 1
             j += 1
-                
+
         if end - start > 1:
             # delete sentence-ending numbers from results[i..j-1]
             for k in range(i, j):
@@ -834,8 +834,8 @@ def fixup_sentences(sentence_list_in):
         else:
             i += 1
 
-    
-            
+
+
     return results
 
 
@@ -868,7 +868,7 @@ def split_section_headers(sentence_list):
             sentences.append(s)
 
     return sentences
-        
+
 
 ###############################################################################
 def split_concatenated_sentences(sentence_list):
