@@ -1,3 +1,10 @@
+
+# NOTE
+
+As of March 2024, this repository is no longer being maintained.
+See [https://github.com/ClarityNLP/claritynlp-nova](https://github.com/ClarityNLP/claritynlp-nova).
+
+
 ## ClarityNLP
 
 [![Build Status](https://travis-ci.com/ClarityNLP/ClarityNLP.svg?branch=master)](https://travis-ci.com/ClarityNLP/ClarityNLP)
@@ -16,5 +23,3 @@ You can read the full ClarityNLP documentation here:
 [Read the Docs](http://claritynlp.readthedocs.io/en/latest/).
 
 
-### Slack
-Connect with us on [Slack](https://join.slack.com/t/claritynlp/shared_invite/enQtNTE5NTUzNzk4MTk5LTFmNWY1NWVmZTA4Yjc5MDUwNTRhZTBmNTA0MWM0ZDNmYjdlNTAzYmViYzAzMTkwZDkzODA2YTJhYzQ1ZTliZTQ).
