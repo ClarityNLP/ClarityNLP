@@ -32,6 +32,7 @@ from:
    server. This is a Docker-based installation with OAuth2 security, Traefik,
    and Let's Encrypt.
 
+For all default setups, the login/password, after installation, is admin/admin and is found in the env.sh file.
 
 Local Machine Setup
 -------------------
